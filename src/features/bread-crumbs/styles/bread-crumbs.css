@@ -1,0 +1,20 @@
+.bread-crumbs {
+	padding: 2px 0px 2px 5px;
+	min-height:25px;
+	font-size: 12px;
+}
+
+.bread-crumb:before {
+	content: '<';
+	font-weight: bold;
+	display: inline-block;
+	margin-right: 5px;
+}
+
+.bread-crumb {
+	font-weight: bold;
+	display: inline-block;
+	margin-top: 5px;
+	margin-left: 5px;
+	cursor: pointer;
+}
