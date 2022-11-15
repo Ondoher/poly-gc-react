@@ -12,15 +12,13 @@ class GcApp extends App {
 		this.addManualChunk([
 			{includes: 'node_modules', name: 'vendor'},
 			{includes: 'src/init.js', name: 'init'},
-		])
-	}
-
-	async getFeatures() {
-		var featureList = [
-
-		]
-
-		return featureList;
+		]);
+		this.addMainCss([{
+			"dest": "css",
+			"cwd": "assets/css",
+			"glob": "**/*.css"
+		}])
+		this.addFeature('features/mj');
 	}
 }
 

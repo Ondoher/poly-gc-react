@@ -1,0 +1,24 @@
+{
+	"resources": [{
+		"dest": "css/mj",
+		"cwd": "assets/css",
+		"glob": "**/*.css"
+	},
+	{
+		"dest" : "images/mj",
+		"cwd": "assets/images",
+		"glob": "**/*.{png,jpg}",
+		"keepNest": true
+	}],
+	"loadables" : [{
+		"name" : "mahjongg",
+		"index": "src/index.js",
+		"prefix": "mj:",
+		"css": [{
+			"dest": "css/mj",
+			"cwd": "assets/css",
+			"glob": "**/*.css"
+		}]
+	}],
+	"index" : "index.js"
+}

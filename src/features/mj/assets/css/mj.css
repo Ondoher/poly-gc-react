@@ -1,0 +1,196 @@
+.mj-table {
+    display: grid;
+    grid-template-areas:
+        "header header header"
+        ". board .";
+    grid-template-columns: auto 670px auto;
+    grid-template-rows: auto 1fr;
+}
+.won .mj-table {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.mj-fireworks {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85)
+}
+
+.won.mj-board-page {
+    position: relative;
+}
+
+.mj-board-page {
+	background-image: url("../../images/mj/oak.jpg");
+}
+
+.mj-board-header {
+    display: grid;
+    grid-template-areas:
+        "controls timer"
+        "message message"
+        "short-message short-message";
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 25px 25px auto;
+    grid-area: header;
+    padding: 5px;
+}
+
+#mj-timer {
+    display: grid;
+    grid-area: timer;
+    justify-self: end;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    font-weight: bold;
+    font-size: 2.5rem;
+    color: #f8f8f7;
+}
+
+#board-canvas {
+    grid-area: board;
+    position: relative;
+    width: 670px;
+    height: 625px;
+    overflow: hidden;
+    justify-self: end;
+}
+
+.to-beat {
+    text-align: center;
+    width: 100%;
+}
+
+.to-beat .beat-timer {
+	font-weight: bold;
+    color: #d93f3a;
+}
+
+.mj-message {
+    grid-area: message;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+    font-weight: bold;
+    font-size: 25px;
+    color: #f8f8f7;
+    text-align: center;
+}
+
+.mj-short-message {
+    grid-area: short-message;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.5rem;
+    height: 30px;
+}
+
+.show-won {display: none !important}
+.won .show-won {display: inline-block !important}
+
+.show-to-beat {display: none !important}
+.to-beat .show-to-beat {display: inline-block !important}
+
+.mj-table-controls {
+    grid-area: controls;
+}
+
+.mj-table .button {
+    padding: 8px 12px 4px;
+    border-radius: 6px;
+    box-shadow: 2px 2px 0 1px rgb(0 0 0 / 30%);
+    background-color: #605fab;
+}
+
+.mj-table .button:disabled {
+    background-color: rgba(96, 95, 171, 0.66);
+    color: rgba(255, 255, 255, 0.66);
+}
+
+
+tile-highlight {
+    position: absolute;
+    top: '0px' ;
+    left: '0px';
+}
+
+@media (orientation: landscape) {
+    @media screen and (max-width: 900px) {
+        .mj-table {
+            padding: 0px;
+            grid-template-areas:
+                "header board";
+            grid-template-columns: 260px 1fr;
+            grid-template-rows: 1fr;
+        }
+        .mj-board-header {
+            padding: 5px;
+            display: grid;
+            grid-template-areas:
+                "controls"
+                "message"
+                "short-message"
+                "timer";
+            grid-template-rows: 50px 32px 25px auto;
+            grid-area: header;
+        }
+
+        .mj-message {
+            text-align: right;
+        }
+
+        #mj-timer {
+            display: grid;
+            grid-area: timer;
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            font-weight: bold;
+            font-size: 40px;
+            color: #f8f8f7;
+        }
+
+    }
+}
+
+@media (orientation: portrait) {
+    @media screen and (max-width: 900px) {
+        .mj-table {
+            grid-template-areas:
+                "header"
+                "board";
+            padding: 0px;
+            grid-template-columns: 1fr;
+
+        }
+        .mj-board-header {
+            padding: 5px;
+            display: grid;
+            grid-template-areas:
+                "controls"
+                "timer"
+                "message"
+                "short-message";
+            grid-template-rows: auto auto auto auto;
+            grid-template-columns: 1fr;
+            grid-area: header;
+        }
+
+        #mj-timer {
+            display: grid;
+            grid-area: timer;
+            text-align: right;
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            font-weight: bold;
+            font-size: 40px;
+            color: #f8f8f7;
+            padding-top: 10px;
+        }
+    }
+}

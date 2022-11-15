@@ -10,12 +10,14 @@
   "author": "Glenn Anderson",
   "license": "MIT",
   "dependencies": {
-    "@polylith/builder": "^0.0.28",
+    "@fireworks-js/react": "^2.5.1",
+    "@polylith/builder": "^0.0.34",
+    "fireworks-js": "^2.5.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
-    "@polylith/core": "^0.0.10",
+    "@polylith/core": "^0.0.11",
     "node-static": "^0.7.11"
   }
 }
