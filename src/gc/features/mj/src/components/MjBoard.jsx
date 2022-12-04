@@ -170,8 +170,8 @@ export default class MjBoard extends React.Component {
 				<div className={'mj-table ' + className}>
 					<div className="mj-board-header">
 						<div className="mj-table-controls">
-							<Button className="small-button" onClick={this.onUndo.bind(this)} disabled={!canUndo}>Undo</Button>
-							<Button className="small-button" onClick={this.onRedo.bind(this)} disabled={!canRedo}>Redo</Button>
+							<Button className="small-button" onClick={this.onUndo.bind(this)}  disabled={!canUndo}>Undo</Button>
+							<Button className="small-button" onClick={this.onRedo.bind(this)} disabled={! canRedo}>Redo</Button>
 							<Button className="small-button" onClick={this.onHint.bind(this)}>Hint</Button>
 							<Button className="small-button" onClick={this.onNew.bind(this)}>New</Button>
 						</div>

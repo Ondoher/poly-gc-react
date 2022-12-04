@@ -85,6 +85,6 @@ body {
         width: 100vw;
         grid-template-columns: 1fr;
         grid-template-areas:
-            "pages";
+         "pages";
     }
-    }
+}

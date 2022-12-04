@@ -1,0 +1,32 @@
+{
+	"name": "gc",
+	"dest": "dist/gc",
+	"source": "src/gc",
+	"index": "src/gc/index.js",
+	"template": {
+		"source": "src/gc/templates/main.html",
+		"destination": "dist/gc/index.html"
+	},
+	"resources": [
+		{
+			"dest": "css",
+			"cwd": "css",
+			"glob": "**/*.css",
+			"keepNest": true
+		},
+		{
+			"dest": "images",
+			"cwd": "images",
+			"glob": "**/*.{png,jpg,gif,svn}",
+			"keepNest": true
+		}
+	],
+	"css": [
+		{
+			"dest": "css",
+			"cwd": "assets/css",
+			"glob": "**/*.css"
+		}
+	],
+	"features": ["features/mj", "features/directory"]
+}
