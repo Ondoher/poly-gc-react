@@ -12,11 +12,13 @@ export default class Button extends React.Component {
 			onClick,
 			className,
 			disabled,
+			selected,
 		} = this.props
 
+		className = 'button ' + className + (selected ? ' selected' : '');
 		return (
 			<React.Fragment>
-				<button id={id} className={'button ' + className} onClick={onClick} disabled={Boolean(disabled)}>
+				<button id={id} className={className} onClick={onClick} disabled={Boolean(disabled)}>
 					{this.props.children}
 				</button>
 			</React.Fragment>

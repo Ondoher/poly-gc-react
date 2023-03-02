@@ -16,9 +16,9 @@ export default class App extends React.Component {
 	render () {
 		return (
 			<React.Fragment>
-				<BreadCrumbs />
+				<BreadCrumbs serviceName="bread-crumbs"/>
 				<Pages id="pages" serviceName="main-pages" className="pages"/>
 			</React.Fragment>
 		)
 	}
-} 
+}

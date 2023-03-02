@@ -1,6 +1,7 @@
 {
     "apps": [
         {
+            "name": "gc",
             "filename": "gc.json",
             "code": false,
             "default": false

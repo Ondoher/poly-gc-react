@@ -4,15 +4,27 @@
   "description": "Game Center solitaire sample polylith application",
   "main": "index.js",
   "dependencies": {
+    "@fireworks-js/react": "^2.5.1",
+    "@polylith/browser": "^0.1.0",
     "@polylith/config-store": "^0.1.0",
     "@polylith/core": "^0.1.0",
-    "@fireworks-js/react": "^2.5.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
-    "@polylith/builder": "^0.1.0",
-    "@polylith/server": "^0.1.0"
+    "@polylith/builder": "^0.1.19",
+    "@polylith/server": "^0.1.0",
+    "jasmine": "^4.5.0",
+    "jasmine-core": "^4.5.0",
+    "karma": "^6.4.1",
+    "karma-chrome-launcher": "^3.1.1",
+    "karma-jasmine": "^5.1.0",
+    "karma-jasmine-html-reporter": "^2.0.0",
+    "karma-spec-reporter": "^0.0.36",
+    "puppeteer": "^19.4.1"
+  },
+  "scripts": {
+    "test": "start polylith test -a -w && start karma start --browsers ChromeHeadless karma.conf.cjs"
   },
   "type": "module"
 }

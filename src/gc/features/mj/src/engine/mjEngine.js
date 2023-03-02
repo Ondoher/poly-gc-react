@@ -386,8 +386,9 @@ export default class MjEngine {
 		var remaining = this.tileCount;
 		var lost = !this.arePlayablePairs();
 		var open = new NumberSet([], 144).union(this.selectableTiles)
+		var played = new NumberSet([], 144).union(this.usedTiles);
 
-		var update = {canUndo, canRedo, remaining, lost, open};
+		var update = {canUndo, canRedo, remaining, lost, open, played};
 
 		this.fire('updateState', update);
 	}

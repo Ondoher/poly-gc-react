@@ -3,6 +3,9 @@
 	"dest": "dist/gc",
 	"source": "src/gc",
 	"index": "src/gc/index.js",
+	"spec": "src/gc/test.js",
+	"testDest": "tests/",
+	"router": "server/gc/routes.js",
 	"template": {
 		"source": "src/gc/templates/main.html",
 		"destination": "dist/gc/index.html"
@@ -10,16 +13,23 @@
 	"resources": [
 		{
 			"dest": "css",
-			"cwd": "css",
+			"cwd": "assets/css",
 			"glob": "**/*.css",
 			"keepNest": true
 		},
 		{
 			"dest": "images",
-			"cwd": "images",
+			"cwd": "assets/images",
 			"glob": "**/*.{png,jpg,gif,svn}",
 			"keepNest": true
+		},
+		{
+			"dest": "fonts",
+			"cwd": "assets/fonts",
+			"glob": "**/*.{woff,woff2}",
+			"keepNest": true
 		}
+
 	],
 	"css": [
 		{
@@ -28,5 +38,5 @@
 			"glob": "**/*.css"
 		}
 	],
-	"features": ["features/mj", "features/directory"]
+	"features": ["features/mj", "features/directory", "features/bread-crumbs"]
 }

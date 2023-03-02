@@ -24,7 +24,8 @@ export default class MjBoard extends React.Component {
 				'setShortMessage', 'setTiles', 'clearBoard']
 			);
 
-			props.delegator.delegateOutbound(this, ['select', 'initialized', 'hint', 'undo', 'redo', 'play'])
+			props.delegator.delegateOutbound(this, ['select', 'initialized',
+				'hint', 'undo', 'redo', 'play', 'pause', 'peek']);
 		}
 
 		this.state = {
@@ -50,6 +51,15 @@ export default class MjBoard extends React.Component {
 	onNew() {
 		this.play();
 	}
+
+	onPause() {
+		this.pause();
+	}
+
+	onPeek() {
+		this.peek();
+	}
+
 	onClickTile (tile) {
 		this.select(tile);
 	}
@@ -57,7 +67,11 @@ export default class MjBoard extends React.Component {
 	setWon (on) {
 		this.setState({won: on})
 	}
-	setButtonState () {}
+
+	setButtonState () {
+
+	}
+
 	setMessage (message) {
 		console.log(`setMessage(${message})`)
 		this.setState({
@@ -69,8 +83,8 @@ export default class MjBoard extends React.Component {
 			shortMessage: message
 		})
 	}
-	setGameState(tileCount, canUndo, canRedo) {
-		this.setState({canUndo, canRedo});
+	setGameState(state) {
+		this.setState(state);
 	}
 
 	setTiles (instance, tiles) {
@@ -152,7 +166,7 @@ export default class MjBoard extends React.Component {
 	}
 
 	render() {
-		var {canUndo, canRedo} = this.state;
+		var {canUndo, canRedo, isPeeking, isPaused} = this.state;
 		var className = this.state.tileset.class;
 
 		if (!this.props.delegator) {
@@ -171,8 +185,10 @@ export default class MjBoard extends React.Component {
 					<div className="mj-board-header">
 						<div className="mj-table-controls">
 							<Button className="small-button" onClick={this.onUndo.bind(this)}  disabled={!canUndo}>Undo</Button>
-							<Button className="small-button" onClick={this.onRedo.bind(this)} disabled={! canRedo}>Redo</Button>
+							<Button className="small-button" onClick={this.onRedo.bind(this)} disabled={!canRedo}>Redo</Button>
 							<Button className="small-button" onClick={this.onHint.bind(this)}>Hint</Button>
+							<Button className="small-button" onClick={this.onPeek.bind(this)} selected={isPeeking}>Peek</Button>
+							<Button className="small-button" onClick={this.onPause.bind(this)} selected={isPaused}> Pause</Button>
 							<Button className="small-button" onClick={this.onNew.bind(this)}>New</Button>
 						</div>
 						<Timer id="mj-timer" className="timer" delegator={this.props.delegator.newDelegator()}/>

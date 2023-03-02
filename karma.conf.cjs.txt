@@ -1,0 +1,90 @@
+// Karma configuration
+// Generated on Sun Jan 08 2023 08:06:26 GMT-0800 (Pacific Standard Time)
+
+module.exports = function(config) {
+  config.set({
+
+    // base path that will be used to resolve all patterns (eg. files, exclude)
+    basePath: '',
+
+
+    // frameworks to use
+    // available frameworks: https://www.npmjs.com/search?q=keywords:karma-adapter
+    frameworks: ['jasmine'],
+
+
+    // list of files / patterns to load in the browser
+    files: [
+      {pattern: 'tests/**/*.css', included: false},
+      'tests/**/*.js'
+    ],
+
+
+    // list of files / patterns to exclude
+    exclude: [
+    ],
+
+
+    // preprocess matching files before serving them to the browser
+    // available preprocessors: https://www.npmjs.com/search?q=keywords:karma-preprocessor
+    preprocessors: {
+    },
+
+    plugins: [
+      require('karma-jasmine'),
+      require('karma-chrome-launcher'),
+      require('karma-spec-reporter'),
+      require('karma-jasmine-html-reporter')
+  ],
+
+
+    // test results reporter to use
+    // possible values: 'dots', 'progress'
+    // available reporters: https://www.npmjs.com/search?q=keywords:karma-reporter
+    reporters: ['spec'],
+
+
+    // web server port
+    port: 9876,
+
+
+    // enable / disable colors in the output (reporters and logs)
+    colors: true,
+/*
+
+    // level of logging
+    // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
+    browserConsoleLogOptions: {
+      level: 'info',
+      format: '%b %T: %m',
+      terminal: true,
+  },
+
+  client: {
+      captureConsole: true,
+  },
+*/
+//  logLevel: 'LOG_INFO',
+  client: {
+      captureConsole: true,
+  },
+
+    // enable / disable watching file and executing tests whenever any file changes
+    autoWatch: true,
+
+
+    // start these browsers
+    // available browser launchers: https://www.npmjs.com/search?q=keywords:karma-launcher
+    browsers: ['ChromeHeadless'],
+
+
+    // Continuous Integration mode
+    // if true, Karma captures browsers, runs the tests and exits
+    singleRun: false,
+
+    // Concurrency level
+    // how many browser instances should be started simultaneously
+    concurrency: Infinity,
+
+  })
+}

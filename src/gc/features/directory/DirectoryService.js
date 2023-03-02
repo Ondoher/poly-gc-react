@@ -14,6 +14,7 @@ class DirectoryService extends Service {
 		this.pagesService.add('directory', 'directory');
 		this.pagesService.show('directory');
 		this.listen('clicked', this.onCardClicked.bind(this))
+		this.crumbs = registry.subscribe('bread-crumbs');
 	}
 
 	sendVisibility () {
@@ -37,13 +38,15 @@ class DirectoryService extends Service {
 		if (this.rendered) this.fire('added', card)
 	}
 
-	play() {
-
+	crumbClick(id) {
+		console.log('crumbClicked')
+		this.pagesService.show('directory');
 	}
 
 	onCardClicked(card) {
-		console.log('clicked')
 		card.service.invoke('clicked')
+		this.crumbs.clear();
+		this.crumbs.add('Directory', 'directory', 'directory');
 	}
 
 	async render() {

@@ -1,4 +1,4 @@
-import {Service} from '@polylith/core';
+import {registry, Service} from '@polylith/core';
 import React from 'react';
 import MjEngine from "../engine/mjEngine.js";
 import MjBoard from "../components/MjBoard.jsx";
@@ -20,7 +20,7 @@ export default class MJController extends Service {
 	constructor() {
 		super('mj:controller');
 		this.implement(['start', 'ready', 'render', 'hint', 'undo', 'redo',
-			'solve', 'play', 'select', 'initialized']);
+			'solve', 'play', 'select', 'pause', 'peek', 'initialized']);
 
 		// these methods will just fire their arguments to who ever is
 		// listening. This will be the board view component or individuals tiles
@@ -66,6 +66,9 @@ export default class MJController extends Service {
 		}, this);
 	}
 
+	ready() {
+	}
+
 	/**
 	 * This method is an event handler that will be called by the view to let
 	 * us know the view has been rendered and can now be used.
@@ -87,11 +90,11 @@ export default class MJController extends Service {
 	 * case it will continue from the last value.
 	 */
 	startTimer() {
-		var now = new Date().getTime();
+		var now = Date.now();
 		if (this.paused)
 			this.startTime += now - this.stopTime;
 		else
-			this.startTime = new Date().getTime();
+			this.startTime = Date.now();
 
 		this.timerRunning = true;
 		this.paused = false;
@@ -102,7 +105,7 @@ export default class MJController extends Service {
 	 */
 	stopTimer() {
 		if (!this.timerRunning) return;
-		var time = new Date().getTime() - this.startTime;
+		var time = Date.now() - this.startTime;
 		this.time = time;
 		this.setTime(time);
 		this.timerRunning = false;
@@ -113,7 +116,7 @@ export default class MJController extends Service {
 	 * restartTimer
 	 */
 	pauseTimer() {
-		this.stopTime = new Date().getTime();
+		this.stopTime = Date.now();
 		this.timerRunning = false;
 		this.paused = true;
 	}
@@ -123,8 +126,12 @@ export default class MJController extends Service {
 	 */
 	onTimerTick() {
 		if (!this.timerRunning) return;
-		var time = new Date().getTime() - this.startTime;
+		var time = Date.now() - this.startTime;
 		this.setTime(time);
+	}
+
+	timerPenalty(time) {
+		this.startTime -= time;
 	}
 
 	/**
@@ -162,9 +169,30 @@ export default class MJController extends Service {
 		}
 
 		this.openTiles = state.open;
-		this.setGameState(state.remaining, state.canUndo, state.canRedo);
+		this.playedTiles = state.played;
+		this.setGameState({
+			remaining: state.remaining,
+			canUndo: state.canUndo,
+			canRedo: state.canRedo,
+			isPeeking: this.peeking,
+			isPaused: this.paused,
+		});
 
 		this.shortMessage('');
+	}
+
+	hideBoard(on) {
+		if (on) {
+			for (let idx = 0; idx < this.board.count; idx++) {
+				this.showTile(idx, false)
+			}
+		} else {
+			for (let idx = 0; idx < this.board.count; idx++) {
+				if (this.playedTiles.has(idx)) {
+					this.showTile(idx, true)
+				}
+			}
+		}
 	}
 
 	/**
@@ -199,8 +227,6 @@ export default class MJController extends Service {
 	removeTile(tile) {
 		this.showTile(tile, false);
 	}
-
-
 
 	/**
 	 * call this method to hide the currently hinted tiles
@@ -303,13 +329,14 @@ export default class MJController extends Service {
 		this.hintIdx = -1;
 		this.hint1 = -1;
 		this.hint2 = -1;
+		this.peeking = false;
+		this.paused = false;
 
 		Math.randomize(gameNbr);
 
 		this.message("Loading new game ...");
 
 		this.generateGame(gameNbr);
-
 
 		this.gameLost = false;
 		this.gameWon = false;
@@ -368,6 +395,13 @@ export default class MJController extends Service {
 		this.hideHints();
 		this.currentHint = false;
 
+		if (this.peeking) {
+			this.showTile(tile, false);
+			this.peeked.push(tile);
+			this.timerPenalty(2000);
+			return;
+		}
+
 		if (!this.isOpen(tile)) return;
 
 		if (this.selectedTile === -1) {
@@ -388,6 +422,31 @@ export default class MJController extends Service {
 		}
 	}
 
+	pause() {
+		if (this.paused) {
+			this.startTimer();
+			this.hideBoard(false);
+		} else {
+			this.pauseTimer();
+			this.hideBoard(true);
+		}
+		this.setGameState({isPaused: this.paused});
+	}
+
+	peek() {
+		this.peeking = !this.peeking;
+
+		if (this.peeking) {
+			this.peeked = [];
+		} else {
+			this.peeked.forEach(function(tile) {
+				this.showTile(tile, true);
+			}, this)
+		}
+
+		this.setGameState({isPeeking: this.peeking});
+	}
+
 	/**
 	 * This method is called in response to the player pressing the play button
 	 *
@@ -404,7 +463,7 @@ export default class MJController extends Service {
 		this.engine.startOver();
 		this.drawBoard();
 		var solution = JSON.parse(JSON.stringify(this.engine.solution));
-		this.startTime = new Date().getTime() - 124000
+		this.startTime = Date.now() - 124000
 
 		var int = setInterval(function() {
 			var tile1, tile2;
