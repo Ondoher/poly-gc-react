@@ -11,5 +11,8 @@
     "dest": "dist",
     "multiple": false,
     "react": true,
-    "src": "src"
+    "src": "src",
+    "port": 3000,
+    "compression": true,
+    "minify": true
 }

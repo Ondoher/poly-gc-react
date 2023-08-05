@@ -105,3 +105,5 @@ test
 .tern-port
 package-lock.json
 /poly-gc-react.code-workspace
+/tests
+/Designs

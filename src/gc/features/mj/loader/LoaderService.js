@@ -1,16 +1,16 @@
-import {Service, registry} from '@polylith/core';
+import {Service} from '@polylith/core';
 import {load} from '@polylith/loader';
 
-class LoaderService extends Service {
-	constructor () {
-		super('mahjongg-loader');
+export default class LoaderService extends Service {
+	constructor (service) {
+		super('mahjongg-loader', service);
 		this.implement(['ready', 'clicked']);
 	}
 
 	ready() {
-		this.directory = registry.subscribe('directory');
+		this.directory = this.registry.subscribe('directory');
 		this.directory.add({image: 'images/mj/mj-tile.jpg', name: 'Mah Jongg', serviceName: 'mahjongg-loader'});
-		this.pagesService = registry.subscribe('main-pages');
+		this.pagesService = this.registry.subscribe('main-pages');
 	}
 
 	async clicked() {

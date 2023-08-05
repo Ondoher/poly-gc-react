@@ -10,6 +10,12 @@
 		"source": "src/gc/templates/main.html",
 		"destination": "dist/gc/index.html"
 	},
+	"liveReload": {
+		"port":35900,
+		"protocol": "http",
+		"hostname": "localhost",
+		"https": null
+	},
 	"resources": [
 		{
 			"dest": "css",
