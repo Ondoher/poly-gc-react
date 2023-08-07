@@ -1,32 +1,25 @@
 import React from "react";
-import {registry} from '@polylith/core';
+import GameCenterContext from 'common/GameCenterContext.js';
 
 export default class Pages extends React.Component {
+    static contextType = GameCenterContext;
 	constructor (props) {
 		super(props);
 
 		this.serviceName = props.serviceName;
-		this.pagesService = registry.subscribe(this.serviceName);
-		this.pagesService.listen('added', this.added.bind(this));
-		this.pagesService.listen('showPage', this.show.bind(this));
-		var state = this.pagesService.get();
-		this.firstPage = state.current;
-
-		this.state = {
-			pages: state.pages,
-		};
+		this.state = {};
 	}
 
 	async updatePageStates() {
 		var pages = this.state.pages;
 		var currentPage = this.state.currentPage;
+
 		if (this.previousPage) {
 			let service = pages[this.previousPage] && pages[this.previousPage].service;
-			if (!service) {
-				return;
+			if (service) {
+				service.fire('hide');
 			}
 
-			service.fire('hide');
 			this.previousPage = false;
 		}
 
@@ -40,16 +33,6 @@ export default class Pages extends React.Component {
 		}
 	}
 
-	async componentDidMount() {
-		if (this.firstPage) {
-			await this.getPageComponent(this.firstPage);
-
-			this.setState({currentPage: this.firstPage});
-		}
-
-		this.updatePageStates();
-	}
-
 	async componentDidUpdate() {
 		this.updatePageStates();
 	}
@@ -58,8 +41,10 @@ export default class Pages extends React.Component {
 		this.setState({pages: pages})
 	}
 
-	async getPageComponent(name) {
-		var pages = this.state.pages;
+	async getPageComponent(name, state={}) {
+		state = {...state, ...this.state};
+
+		var pages = state.pages || {};
 		var page = pages[name];
 
 		if (!page) {
@@ -76,7 +61,8 @@ export default class Pages extends React.Component {
 		}
 
 		page.component = component;
-		this.setState({pages: pages});
+		state = {...state, pages: pages}
+		this.setState(state);
 
 		return page.component;
 	}
@@ -95,8 +81,33 @@ export default class Pages extends React.Component {
 		});
 	}
 
+	async componentDidMount() {
+		var registry = this.context.registry;
+
+		this.pagesView = registry.subscribe(this.serviceName);
+		this.pagesView.listen('added', this.added.bind(this));
+		this.pagesView.listen('showPage', this.show.bind(this));
+		var viewState = this.pagesView.get();
+
+		var state = {
+			pages: viewState.pages,
+			ready: true,
+		}
+		this.firstPage = viewState.current;
+
+		if (this.firstPage) {
+			state = {...state, currentPage: this.firstPage};
+			this.getPageComponent(this.firstPage, state)
+		}
+
+		this.setState(state);
+		this.updatePageStates();
+}
+
 	render() {
-		var pages = this.state.pages;
+		if (!this.state.ready) return;
+
+		var pages = this.state.pages || {};
 		var childNames = Object.keys(pages);
 		var children = [];
 

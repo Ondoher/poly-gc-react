@@ -1,5 +1,5 @@
 import React from "react";
-import Page from 'components/pages/Page.jsx'
+import Page from 'components/Page.jsx'
 import Button from 'components/controls/Button.jsx'
 import Tile from './Tile.jsx';
 import Timer from './Timer.jsx';
@@ -73,7 +73,6 @@ export default class MjBoard extends React.Component {
 	}
 
 	setMessage (message) {
-		console.log(`setMessage(${message})`)
 		this.setState({
 			message: message
 		})
@@ -129,8 +128,6 @@ export default class MjBoard extends React.Component {
 	renderTiles() {
 		this.createTiles();
 
-		console.log('renderTiles', this.tiles)
-
 		return this.tiles;
 	}
 
@@ -146,12 +143,10 @@ export default class MjBoard extends React.Component {
 	}
 
 	componentDidMount() {
-		console.log('componentDidMount');
 		this.initialized();
 	}
 
 	componentDidUpdate() {
-		console.log('componentDidUpdate')
 	}
 
 

@@ -1,9 +1,8 @@
 import { makeEventable } from '@polylith/core';
 import 'utils/random.js'
 import NumberSet from 'utils/NumberSet.js';
-import Turtle from '../layouts/Turtle.js';
+import Turtle from '../layouts/turtle.json';
 import './types.js'
-
 
 /**
  * This is the engine for the mah jongg solitaire game. It keeps the game state
@@ -405,7 +404,6 @@ export default class MjEngine {
 		var pairs = this.calcPlayablePairs(-1);
 		return pairs.length > 0;
 	}
-
 
 	/**
 	 * Call this method to find all the playable pairs of tiles. This can be

@@ -1,18 +1,14 @@
 import React from "react";
-import {registry} from '@polylith/core';
-import Page from '../../components/pages/Page'
+import GameCenterContext from 'common/GameCenterContext.js';
+import Page from 'components/Page.jsx'
 import './styles/directory.css'
 
 export default class Directory extends React.Component {
+    static contextType = GameCenterContext;
 	constructor (props) {
 		super(props);
-
-		this.serviceName = props.serviceName;
-		this.directoryService = registry.subscribe(this.serviceName);
-		this.directoryService.listen('added', this.added.bind(this));
-
 		this.state = {
-			directory: props.directory,
+			directory: this.props.directory,
 		}
 	}
 
@@ -33,7 +29,7 @@ export default class Directory extends React.Component {
 
 	renderCard(card) {
 		return (
-			<div className="directory-card template" onClick={this.onCardClick.bind(this, card)}>
+			<div className="directory-card template" onClick={this.onCardClick.bind(this, card)} key={card.name}>
 				<img className="card-image" src={card.image}/>
 				<div className="card-name">{card.name}</div>
 			</div>
@@ -49,7 +45,21 @@ export default class Directory extends React.Component {
 		}, this);
 	}
 
+
+	componentDidMount() {
+		var registry = this.context.registry;
+
+		this.serviceName = this.props.serviceName;
+		this.directoryService = registry.subscribe(this.serviceName);
+		this.directoryService.listen('added', this.added.bind(this));
+
+		this.setState({
+			ready: true
+		})
+	}
+
 	render() {
+		if (!this.state.ready) return;
 		return (
 			<Page serviceName={this.serviceName} className="page directory-page">
 				<div className="directory-scroller clearfix">

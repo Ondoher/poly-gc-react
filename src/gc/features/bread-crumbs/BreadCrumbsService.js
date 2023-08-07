@@ -1,9 +1,11 @@
+import React from "react";
 import {Service} from '@polylith/core';
+import BreadCrumbs from './BreadCrumbs.jsx';
 
-class BreadCrumbsService extends Service {
+export default class BreadCrumbsService extends Service {
 	constructor () {
 		super('bread-crumbs');
-		this.implement(['ready', 'add', 'clear', 'get']);
+		this.implement(['ready', 'add', 'clear', 'get', 'getComponent']);
 
 		this.directory = [];
 		this.crumbs = [];
@@ -30,8 +32,9 @@ class BreadCrumbsService extends Service {
 		return this.crumbs;
 	}
 
+	getComponent() {
+		return <BreadCrumbs serviceName={this.serviceName} />
+	}
 }
 
 new BreadCrumbsService();
-
-export default BreadCrumbsService;

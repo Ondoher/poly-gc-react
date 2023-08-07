@@ -10,11 +10,11 @@ export default class LoaderService extends Service {
 	ready() {
 		this.directory = this.registry.subscribe('directory');
 		this.directory.add({image: 'images/mj/mj-tile.jpg', name: 'Mah Jongg', serviceName: 'mahjongg-loader'});
-		this.pagesService = this.registry.subscribe('main-pages');
 	}
 
 	async clicked() {
 		await load('mahjongg');
+		this.pagesService = this.registry.subscribe('main-pages');
 		this.pagesService.add('mahjongg', 'mj:controller');
 		this.pagesService.show('mahjongg');
 	}

@@ -321,7 +321,6 @@ export default class MJController extends Service {
 	 * 		number will always generate the same board.
 	 */
 	newGame(gameNbr) {
-		console.log(`newGame(${gameNbr})`)
 		if (gameNbr === -1) gameNbr = Math.random(0xFFFFF);
 
 		this.selectedTile = -1;
@@ -358,7 +357,7 @@ export default class MJController extends Service {
 	}
 
 	/**
-	 * Ths method is called in response to the hint button being pressed. If
+	 * This method is called in response to the hint button being pressed. If
 	 * the user is not currently showing hints, then it will start a new round
 	 * of hints. If there is a selected tile then it will find tiles that match
 	 * it. If not it will find all playable pairs. Otherwise it shows the next

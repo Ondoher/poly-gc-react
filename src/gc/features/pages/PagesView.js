@@ -1,11 +1,13 @@
-import {Service, registry} from '@polylith/core';
+import React from "react";
+import { Service } from "@polylith/core";
+import Pages from "./Pages";
 
-export default class PagesService extends Service{
-	constructor(name) {
-		super(name)
-		this.implement(['ready', 'get', 'add', 'show']);
+export default class PagesView extends Service {
+	constructor(name, registry) {
+		super(name, registry);
 
 		this.pages = {};
+		this.implement(['get', 'add', 'show', 'getComponent']);
 	}
 
 	get() {
@@ -22,7 +24,7 @@ export default class PagesService extends Service{
 
 		this.pages[name] = {
 			name: name,
-			service: registry.subscribe(serviceName),
+			service: this.registry.subscribe(serviceName),
 		};
 
 		this.fire('added', this.pages);
@@ -38,5 +40,9 @@ export default class PagesService extends Service{
 		}
 
 		this.fire('showPage', name);
+	}
+
+	getComponent(name) {
+		return <Pages id={name} serviceName={this.serviceName} className="pages" />
 	}
 }

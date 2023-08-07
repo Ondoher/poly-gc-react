@@ -1,16 +1,13 @@
 import React from "react";
-import {registry} from '@polylith/core';
 import './styles/bread-crumbs.css';
-
+import GameCenterContext from 'common/GameCenterContext.js';
 
 export default class BreadCrumbs extends React.Component {
+    static contextType = GameCenterContext;
 	constructor (props) {
 		super(props);
 
 		this.serviceName = props.serviceName;
-		this.crumbService = registry.subscribe(this.serviceName);
-		this.crumbService.listen('added', this.added.bind(this));
-		this.crumbService.listen('cleared', this.cleared.bind(this));
 
 		this.state = {
 			crumbs: []
@@ -32,7 +29,7 @@ export default class BreadCrumbs extends React.Component {
 
 	renderCrumb (crumb)  {
 		return (
-			<span id="bread-crumb" className="bread-crumb template">
+			<span id="bread-crumb" className="bread-crumb template" key={crumb.name}>
 				<span className="name" onClick={this.onCrumbClick.bind(this, crumb)}>{crumb.name}</span>
 			</span>
 		)
@@ -44,7 +41,16 @@ export default class BreadCrumbs extends React.Component {
 		}, this);
 	}
 
+
+	componentDidMount() {
+		this.crumbService = this.context.registry.subscribe(this.serviceName);
+		this.crumbService.listen('added', this.added.bind(this));
+		this.crumbService.listen('cleared', this.cleared.bind(this));
+		this.setState({ready: true})
+	}
+
 	render() {
+		if (!this.state.ready) return;
 		return (
 			<div id="bread-crumbs" className="bread-crumbs">
 				{this.renderCrumbs()}
@@ -53,12 +59,10 @@ export default class BreadCrumbs extends React.Component {
 	}
 
 	onCrumbClick (crumb) {
-		var service = registry.subscribe(crumb.service);
+		var service = this.context.registry.subscribe(crumb.service);
 		var crumbs = this.state.crumbs;
 		crumbs = crumbs.slice(0, crumb.pos);
 		this.setState({crumbs: crumbs});
-
-		console.log('onCrumbClick', crumb, service)
 
 		if (service) service.invoke('crumbClick', crumb.id);
 	}

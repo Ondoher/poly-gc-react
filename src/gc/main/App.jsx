@@ -1,24 +1,32 @@
 import React from 'react';
-import Pages from '../components/pages/Pages';
-import PagesService from '../components/pages/PagesService';
-import BreadCrumbs from '../features/bread-crumbs/index'
-
-new PagesService('main-pages');
+import GameCenterContext from 'common/GameCenterContext.js';
 
 export default class App extends React.Component {
 	constructor(props) {
 		super(props);
-	}
-
-	componentDidMount() {
+		this.registry = this.props.registry;
 	}
 
 	render () {
+		var breadCrumbs = this.registry.subscribe('bread-crumbs');
+		var pagesService = this.registry.subscribe('pages-provider');
+
+		var crumbs = breadCrumbs.getComponent();
+		var view = pagesService.getView('main-pages');
+		var pages = view.getComponent()
+
+		var contextValue = {
+			registry: this.registry,
+			mainPages: view,
+		}
+
 		return (
-			<React.Fragment>
-				<BreadCrumbs serviceName="bread-crumbs"/>
-				<Pages id="pages" serviceName="main-pages" className="pages"/>
-			</React.Fragment>
+			<GameCenterContext.Provider value={contextValue}>
+				<React.Fragment>
+					{crumbs}
+					{pages}
+				</React.Fragment>
+			</GameCenterContext.Provider>
 		)
 	}
 }
