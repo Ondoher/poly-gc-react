@@ -1,9 +1,10 @@
-import {registry, Service} from '@polylith/core';
+import {Service} from '@polylith/core';
 import React from 'react';
 import MjEngine from "../engine/mjEngine.js";
 import MjBoard from "../components/MjBoard.jsx";
 import { ServiceDelegator } from 'common/delegators.js';
-import Beetle from '../layouts/Beetle.js';
+import Random from 'utils/random.js'
+import layouts from '../layouts/layouts.js';
 
 
 /**
@@ -20,7 +21,7 @@ export default class MJController extends Service {
 	constructor() {
 		super('mj:controller');
 		this.implement(['start', 'ready', 'render', 'hint', 'undo', 'redo',
-			'solve', 'play', 'select', 'pause', 'peek', 'initialized']);
+			'solve', 'play', 'select', 'pause', 'peek', 'setLayout', 'initialized']);
 
 		// these methods will just fire their arguments to who ever is
 		// listening. This will be the board view component or individuals tiles
@@ -29,13 +30,14 @@ export default class MJController extends Service {
 			'highlightTile', 'setTiles','clearBoard',]);
 
 		this.engine = new MjEngine();
-//		this.engine.setLayout(Beetle);
+		this.layoutName = 'turtle'
 		this.timerHandle = setInterval(this.onTimerTick.bind(this), 250);
 
 		this.engine.listen('updateState', this.updateState.bind(this));
 		this.engine.listen('addTile', this.addTile.bind(this));
 		this.engine.listen('removeTile', this.removeTile.bind(this));
 		this.engine.listen('newBoard', this.newBoard.bind(this))
+		this.boardNbr = Random.random(0xFFFFF)
 	}
 
 	/**
@@ -74,7 +76,7 @@ export default class MJController extends Service {
 	 * us know the view has been rendered and can now be used.
 	 */
 	initialized() {
-		this.newGame(-1);
+		this.newGame(this.boardNbr);
 	}
 
 	/**
@@ -176,6 +178,7 @@ export default class MJController extends Service {
 			canRedo: state.canRedo,
 			isPeeking: this.peeking,
 			isPaused: this.paused,
+			boardNbr: this.boardNbr,
 		});
 
 		this.shortMessage('');
@@ -215,7 +218,7 @@ export default class MJController extends Service {
 
 		this.board = board;
 
-		this.setTiles(Math.random(), tiles);
+		this.setTiles(Random.random(), tiles);
 		this.showTile('all', true);
 		this.highlightTile('all', false);
 	}
@@ -299,15 +302,15 @@ export default class MJController extends Service {
 	/**
 	 * Call this number to generate a new starting board
 	 *
-	 * @param {Number} gameNbr
+	 * @param {Number} boardNbr
 	 */
-	generateGame(gameNbr) {
+	generateGame(boardNbr) {
 		this.logEvent('generateGame');
 
 		// remove the old board and recreate it
 		try {
 			this.clearBoard();
-			this.engine.generateGame(gameNbr);
+			this.engine.generateGame(boardNbr);
 
 		} catch (err) {
 			console.log(err);
@@ -317,11 +320,14 @@ export default class MJController extends Service {
 	/**
 	 * Call this method to start playing a new game
 	 *
-	 * @param {Number} gameNbr the number of the board to play. Passing the same
+	 * @param {Number} boardNbr the number of the board to play. Passing the same
 	 * 		number will always generate the same board.
 	 */
-	newGame(gameNbr) {
-		if (gameNbr === -1) gameNbr = Math.random(0xFFFFF);
+	newGame(boardNbr) {
+		this.layout = this.layoutName;
+		this.engine.setLayout(layouts[this.layout]);
+		if (boardNbr === undefined || boardNbr === -1) boardNbr = Random.random(0xFFFFF);
+		this.boardNbr = boardNbr;
 
 		this.selectedTile = -1;
 
@@ -331,11 +337,11 @@ export default class MJController extends Service {
 		this.peeking = false;
 		this.paused = false;
 
-		Math.randomize(gameNbr);
+		Random.randomize(boardNbr);
 
 		this.message("Loading new game ...");
 
-		this.generateGame(gameNbr);
+		this.generateGame(boardNbr);
 
 		this.gameLost = false;
 		this.gameWon = false;
@@ -380,6 +386,7 @@ export default class MJController extends Service {
 			return;
 		}
 
+		this.timerPenalty(1000);
 		this.shortMessage('');
 		this.currentHint = this.currentHints.shift();
 		this.showHints();
@@ -397,7 +404,7 @@ export default class MJController extends Service {
 		if (this.peeking) {
 			this.showTile(tile, false);
 			this.peeked.push(tile);
-			this.timerPenalty(2000);
+			this.timerPenalty(5000);
 			return;
 		}
 
@@ -452,7 +459,13 @@ export default class MJController extends Service {
 	 * @param {Number} boardNbr
 	 */
 	play(boardNbr) {
+
+		this.boardNbr = boardNbr;
 		this.newGame(boardNbr);
+	}
+
+	setLayout(layout) {
+		this.layoutName = layout;
 	}
 
 	/**
@@ -488,6 +501,8 @@ export default class MJController extends Service {
 				id='mj-board'
 				key='mj-board'
 				serviceName="mj:controller"
+				layouts={layouts}
+				layout={this.layoutName}
 			/>
 		)
 	}

@@ -1,9 +1,9 @@
+import {Fireworks} from '@fireworks-js/react';
 import React from "react";
 import Page from 'components/Page.jsx'
-import Button from 'components/controls/Button.jsx'
 import Tile from './Tile.jsx';
 import Timer from './Timer.jsx';
-import {Fireworks} from '@fireworks-js/react';
+import Controls from './Controls.jsx';
 
 const DEFAULT_TILESET = {
 	name : 'Ivory Tiles',
@@ -24,8 +24,7 @@ export default class MjBoard extends React.Component {
 				'setShortMessage', 'setTiles', 'clearBoard']
 			);
 
-			props.delegator.delegateOutbound(this, ['select', 'initialized',
-				'hint', 'undo', 'redo', 'play', 'pause', 'peek']);
+			props.delegator.delegateOutbound(this, ['select', 'initialized']);
 		}
 
 		this.state = {
@@ -35,29 +34,9 @@ export default class MjBoard extends React.Component {
 			message: '',
 			canUndo: false,
 			canRedo: false,
+			boardNbr: this.props.boardNbr,
 		}
 		this.tiles = [];
-	}
-
-	onUndo() {
-		this.undo();
-	}
-	onRedo() {
-		this.redo()
-	}
-	onHint() {
-		this.hint();
-	}
-	onNew() {
-		this.play();
-	}
-
-	onPause() {
-		this.pause();
-	}
-
-	onPeek() {
-		this.peek();
 	}
 
 	onClickTile (tile) {
@@ -69,7 +48,6 @@ export default class MjBoard extends React.Component {
 	}
 
 	setButtonState () {
-
 	}
 
 	setMessage (message) {
@@ -132,14 +110,12 @@ export default class MjBoard extends React.Component {
 	}
 
 	renderTime() {
-
 	}
 
 	renderWon() {
 	}
 
 	renderMessage() {
-
 	}
 
 	componentDidMount() {
@@ -148,7 +124,6 @@ export default class MjBoard extends React.Component {
 
 	componentDidUpdate() {
 	}
-
 
 	renderFireworks() {
 		var won = this.state.won;
@@ -161,7 +136,7 @@ export default class MjBoard extends React.Component {
 	}
 
 	render() {
-		var {canUndo, canRedo, isPeeking, isPaused} = this.state;
+		var {canUndo, canRedo, isPeeking, isPaused, boardNbr} = this.state;
 		var className = this.state.tileset.class;
 
 		if (!this.props.delegator) {
@@ -178,14 +153,7 @@ export default class MjBoard extends React.Component {
 				{this.renderFireworks()}
 				<div className={'mj-table ' + className}>
 					<div className="mj-board-header">
-						<div className="mj-table-controls">
-							<Button className="small-button" onClick={this.onUndo.bind(this)}  disabled={!canUndo}>Undo</Button>
-							<Button className="small-button" onClick={this.onRedo.bind(this)} disabled={!canRedo}>Redo</Button>
-							<Button className="small-button" onClick={this.onHint.bind(this)}>Hint</Button>
-							<Button className="small-button" onClick={this.onPeek.bind(this)} selected={isPeeking}>Peek</Button>
-							<Button className="small-button" onClick={this.onPause.bind(this)} selected={isPaused}> Pause</Button>
-							<Button className="small-button" onClick={this.onNew.bind(this)}>New</Button>
-						</div>
+						<Controls layout={this.props.layout} layouts={this.props.layouts} delegator = {this.props.delegator} canUndo={canUndo} canRedo={canRedo} isPeeking={isPeeking} isPaused={isPaused} boardNbr={boardNbr}/>
 						<Timer id="mj-timer" className="timer" delegator={this.props.delegator.newDelegator()}/>
 						<div id="message" className="mj-message">{this.state.message}</div>
 						<div id="short-message" className="mj-short-message">{this.state.shortMessage}</div>

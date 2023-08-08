@@ -1,5 +1,5 @@
 import { makeEventable } from '@polylith/core';
-import 'utils/random.js'
+import Random from 'utils/random.js'
 import NumberSet from 'utils/NumberSet.js';
 import Turtle from '../layouts/turtle.json';
 import './types.js'
@@ -195,7 +195,7 @@ export default class MjEngine {
 	 */
 	drawOneOf(faceGroup) {
 		var faceSet = this.drawPile.faceSets[faceGroup];
-		var idx = Math.random(faceSet.faces.length);
+		var idx = Random.random(faceSet.faces.length);
 		var face = faceSet.faces[idx];
 
 		faceSet.faces.splice(idx, 1);
@@ -216,7 +216,7 @@ export default class MjEngine {
 	 * @returns {FacePair} a random pair of matchign faces from the draw pile
 	 */
 	drawFacePair() {
-		var faceSetIdx = Math.random(this.drawPile.count);
+		var faceSetIdx = Random.random(this.drawPile.count);
 		var face1 = this.drawOneOf(faceSetIdx);
 		var face2 = this.drawOneOf(faceSetIdx);
 		return {face1, face2};
@@ -269,7 +269,7 @@ export default class MjEngine {
 
 	// Pick one of the available tiles. Remember that these tiles do not have
 	// faces yet, so the only selection criteria is that they are open
-		var which = Math.random(this.playableTiles.length);
+		var which = Random.random(this.playableTiles.length);
 		var tile = this.playableTiles[which];
 
 	// remember this as part of the gauranteed solution
@@ -547,6 +547,11 @@ export default class MjEngine {
 	 setLayout(layout) {
 		if (layout === undefined) this.layout = Turtle;
 		else this.layout = layout;
+		this.board = {};
+
+		this.usedSpaces = [];
+		this.usedTiles = new NumberSet([]);
+		this.playableTiles = [];
 	}
 
 	/**
@@ -554,16 +559,16 @@ export default class MjEngine {
 	 * the random number generator so that the same gameNbr will produce the same
 	 * tile arrangement.
 	 *
-	 * @param {Number} gameNbr the number of the game to generate. This number
+	 * @param {Number} boardNbr the number of the game to generate. This number
 	 * 		will seed the random number generator so that the same game number
 	 * 		produces the same board
 	 */
-	 generateGame(gameNbr) {
+	 generateGame(boardNbr) {
 		var badLayout;
 		var tries = 0;
 
-		this.gameNbr = gameNbr;
-		Math.randomize(gameNbr);
+		this.boardNbr = boardNbr;
+		Random.randomize(boardNbr);
 
 		do {
 			badLayout = false;

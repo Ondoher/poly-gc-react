@@ -9,46 +9,48 @@
  *
  * @module randomize */
 
-/**
- * Call this method to set the seed value for the randomizer. The initial value
- * will be the current time in milliseconds.
- *
- * @param {Number} value for the seed,
- */
-Math.randomize = function (value) {
+var Random = {
+	/**
+	 * Call this method to set the seed value for the randomizer. The initial value
+	 * will be the current time in milliseconds.
+	 *
+	 * @param {Number} value for the seed,
+	 */
+	randomize: function (value) {
+		value = (value === undefined) ? Date.now() : value;
 
-	value = (value === undefined) ? Date.now() : value;
+		Random.randSeed = value;
+	},
 
-	Math.randSeed = value;
+	/**
+	 * Call this method to get a random number. If passed a value, the return
+	 * will be an integer between 0 and that number - 1. without it will be a
+	 * real value between 0 and 1, not inclusive.
+	 *
+	 * @param {Number} [limit] if passed the upper boundary of the integer - 1
+	 *
+	 * @returns {Number} the randomized value as either an integer or a decimal
+	 *     value depending on how it was called.
+	 */
+	random:  function(limit)
+	{
+		var randPow = Math.pow(2, -31);
+		var randLimit = Math.pow(2, 31);
+		var magic = 0x8088405;
+		var rand = Random.randSeed * magic + 1;
+
+		Random.randSeed = rand % randLimit
+
+		rand = rand % randLimit
+		rand = rand * randPow;
+
+		if (limit) {
+			rand = Math.floor(Math.abs(rand) * limit);
+		}
+
+		return rand;
+	}
 };
 
-/**
- * Cal this number to get a random number. If passed a value, the return will be
- * an inter between 0 and that number - 1. without it will be a real value
- * between 0 and 1, not inclusive.
- *
- * @param {Number} [limit] if passed the upper boundary of the integer - 1
- *
- * @returns {Number} the randomized value as either an integer or a decimak
- *     value depending on how it was called.
- */
-
-Math.random = function(limit)
-{
-	var randPow = Math.pow(2, -31);
-	var randLimit = Math.pow(2, 31);
-	var magic = 0x8088405;
-	var rand = this.randSeed * magic + 1;
-
-	this.randSeed = rand % randLimit
-
-	rand = rand % randLimit
-	rand = rand * randPow;
-
-	if (limit)
-		rand = Math.floor(Math.abs(rand) * limit);
-
-	return rand;
-}
-
-Math.randomize();
+Random.randomize();
+export default Random
