@@ -380,14 +380,15 @@ export default class MjEngine {
 	 * @fires updateState
 	 */
 	sendState() {
-		var canUndo = this.canUndo();
-		var canRedo = this.canRedo();
 		var remaining = this.tileCount;
+		var won = remaining === 0
 		var lost = !this.arePlayablePairs();
+		var canUndo = this.canUndo() && !won;
+		var canRedo = this.canRedo() && !won;
 		var open = new NumberSet([], 144).union(this.selectableTiles)
 		var played = new NumberSet([], 144).union(this.usedTiles);
 
-		var update = {canUndo, canRedo, remaining, lost, open, played};
+		var update = {canUndo , canRedo, remaining, lost, open, played};
 
 		this.fire('updateState', update);
 	}

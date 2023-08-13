@@ -4,7 +4,7 @@ import chopper from './chopper.json';
 import cube from './cube.json';
 import diamond_hole from './diamond-hole.json';
 import medium_ant from './medium-ant.json';
-import pacman from './pac-man.json';
+import pac_man from './pac-man.json';
 import scorpion from './scorpion.json';
 import small_castle from './small-castle.json';
 import small_diamond from './small-diamond.json';
@@ -18,6 +18,7 @@ import taipei from './taipei.json';
 import theater from './theater.json';
 import tiny_stack from './tiny-stack.json';
 import turtle from './turtle.json';
+import test from './test.json';
 
 var layouts = {
 	beetle: beetle,
@@ -26,7 +27,7 @@ var layouts = {
 	cube: cube,
 	"diamond-hole": diamond_hole,
 	"medium-ant": medium_ant,
-	pacman: pacman,
+	"pac-man": pac_man,
 	scorpion: scorpion,
 	"small-castle": small_castle,
 	"small-diamond": small_diamond,
@@ -38,8 +39,9 @@ var layouts = {
 	spider: spider,
 	taipei: taipei,
 	theater: theater,
-	tiny_stack: tiny_stack,
+	"tiny-stack": tiny_stack,
 	turtle: turtle,
+	test: test,
 };
 
 export default layouts;

@@ -5,6 +5,7 @@ import MjBoard from "../components/MjBoard.jsx";
 import { ServiceDelegator } from 'common/delegators.js';
 import Random from 'utils/random.js'
 import layouts from '../layouts/layouts.js';
+import tilesets from './tilesets.js';
 
 
 /**
@@ -21,16 +22,18 @@ export default class MJController extends Service {
 	constructor() {
 		super('mj:controller');
 		this.implement(['start', 'ready', 'render', 'hint', 'undo', 'redo',
-			'solve', 'play', 'select', 'pause', 'peek', 'setLayout', 'initialized']);
+			'solve', 'play', 'select', 'pause', 'peek', 'selectLayout',
+			'selectTileset','initialized']);
 
 		// these methods will just fire their arguments to who ever is
 		// listening. This will be the board view component or individuals tiles
-		this.makeFireMethods(['setTime','setWon', 'setGameState',
+		this.makeFireMethods(['setTime','setWon', 'setGameState', 'setTileset',
 			'setMessage', 'setShortMessage', 'showTile', 'hintTile',
 			'highlightTile', 'setTiles','clearBoard',]);
 
 		this.engine = new MjEngine();
-		this.layoutName = 'turtle'
+		this.layoutName = 'turtle';
+		this.tileset = 'bone_normal';
 		this.timerHandle = setInterval(this.onTimerTick.bind(this), 250);
 
 		this.engine.listen('updateState', this.updateState.bind(this));
@@ -464,8 +467,13 @@ export default class MJController extends Service {
 		this.newGame(boardNbr);
 	}
 
-	setLayout(layout) {
+	selectLayout(layout) {
 		this.layoutName = layout;
+	}
+
+	selectTileset(tileset) {
+		this.tileset = tileset;
+		this.setTileset(tileset);
 	}
 
 	/**
@@ -503,6 +511,8 @@ export default class MJController extends Service {
 				serviceName="mj:controller"
 				layouts={layouts}
 				layout={this.layoutName}
+				tilesets={tilesets}
+				tileset={this.tileset}
 			/>
 		)
 	}

@@ -4,14 +4,15 @@ import Page from 'components/Page.jsx'
 import Tile from './Tile.jsx';
 import Timer from './Timer.jsx';
 import Controls from './Controls.jsx';
+import Options from './Options.jsx';
 
 const DEFAULT_TILESET = {
-	name : 'Ivory Tiles',
+	name : 'Bone Tiles',
 	image : 'images/mj/tilesets/ivory/dragon-r.png',
 	description : '',
 	tiles : 144,
 	css: '',
-	class: 'ivory'
+	class: 'ivory normal-size'
 };
 
 export default class MjBoard extends React.Component {
@@ -21,14 +22,14 @@ export default class MjBoard extends React.Component {
 		if (props.delegator) {
 			props.delegator.delegateInbound(this, [
 				'setWon', 'setGameState', 'setMessage',
-				'setShortMessage', 'setTiles', 'clearBoard']
+				'setShortMessage', 'setTiles', 'clearBoard', 'setTileset']
 			);
 
 			props.delegator.delegateOutbound(this, ['select', 'initialized']);
 		}
 
 		this.state = {
-			tileset: DEFAULT_TILESET,
+			tileset: this.props.tilesets[this.props.tileset],
 			instance: -1,
 			tiles: [],
 			message: '',
@@ -69,6 +70,10 @@ export default class MjBoard extends React.Component {
 			instance: instance,
 			tiles: tiles
 		});
+	}
+
+	setTileset(tileset) {
+		this.setState({tileset: this.props.tilesets[tileset]});
 	}
 
 	clearBoard() {
@@ -135,8 +140,72 @@ export default class MjBoard extends React.Component {
 		/>
 	}
 
+	renderControls() {
+		var {canUndo, canRedo, isPeeking, isPaused, won} = this.state;
+		return (
+			<Controls
+				delegator = {this.props.delegator}
+				canUndo={canUndo}
+				canRedo={canRedo}
+				isPeeking={isPeeking}
+				isPaused={isPaused}
+				won={won}
+			/>
+		)
+	}
+
+	renderOptions() {
+		var {boardNbr} = this.state;
+		return (
+			<Options
+				layout={this.props.layout}
+				layouts={this.props.layouts}
+				tileset={this.state.tileset}
+				tilesets={this.props.tilesets}
+				delegator = {this.props.delegator}
+				boardNbr={boardNbr}
+			/>
+		)
+}
+
+
+	renderHeader() {
+		return (
+			<div className="mj-board-header">
+				{this.renderControls()}
+				<Timer id="mj-timer" className="timer" delegator={this.props.delegator.newDelegator()}/>
+				<div id="message" className="mj-message">{this.state.message}</div>
+				<div id="short-message" className="mj-short-message">{this.state.shortMessage}</div>
+			</div>
+		)
+	}
+
+	renderCanvas() {
+		return(
+			<div id="board-canvas">
+				{this.renderTiles()}
+			</div>
+		)
+	}
+
+	renderSurface() {
+		return (
+			<div className="mj-surface">
+				{this.renderCanvas()}
+			</div>
+		)
+	}
+
+	renderMain() {
+		return (
+			<div class="mj-table-main">
+				{this.renderOptions()}
+				{this.renderSurface()}
+			</div>
+		)
+	}
+
 	render() {
-		var {canUndo, canRedo, isPeeking, isPaused, boardNbr} = this.state;
 		var className = this.state.tileset.class;
 
 		if (!this.props.delegator) {
@@ -150,17 +219,10 @@ export default class MjBoard extends React.Component {
 
 		return (
 			<Page serviceName={this.props.serviceName} className={pageClassName}>
-				{this.renderFireworks()}
 				<div className={'mj-table ' + className}>
-					<div className="mj-board-header">
-						<Controls layout={this.props.layout} layouts={this.props.layouts} delegator = {this.props.delegator} canUndo={canUndo} canRedo={canRedo} isPeeking={isPeeking} isPaused={isPaused} boardNbr={boardNbr}/>
-						<Timer id="mj-timer" className="timer" delegator={this.props.delegator.newDelegator()}/>
-						<div id="message" className="mj-message">{this.state.message}</div>
-						<div id="short-message" className="mj-short-message">{this.state.shortMessage}</div>
-					</div>
-					<div id="board-canvas">
-						{this.renderTiles()}
-					</div>
+					{this.renderFireworks()}
+					{this.renderHeader()}
+					{this.renderMain()}
 				</div>
 			</Page>
 		)
