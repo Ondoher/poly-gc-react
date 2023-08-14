@@ -23,6 +23,7 @@ const TIME_SETS = {
 		tiles : 144,
 		class: 'plastic normal-size'
 	},
+/*
 	wood: {
 		id: 'wood',
 		name : 'Wood',
@@ -31,6 +32,7 @@ const TIME_SETS = {
 		tiles : 144,
 		class: 'wood normal-size'
 	},
+*/
 	ivory_medium: {
 		id: 'ivory-medium',
 		name : 'Ivory - Medium',

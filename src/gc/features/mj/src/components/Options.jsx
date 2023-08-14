@@ -45,7 +45,7 @@ export default class Options extends Component {
 
 	renderLayoutItems() {
 		var layouts = this.props.layouts || [];
-		var names = Object.keys(layouts)
+		var names = Object.keys(layouts);
 		return names.map(function(name) {
 			var layout = layouts[name];
 			return (

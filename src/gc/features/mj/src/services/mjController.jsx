@@ -4,9 +4,8 @@ import MjEngine from "../engine/mjEngine.js";
 import MjBoard from "../components/MjBoard.jsx";
 import { ServiceDelegator } from 'common/delegators.js';
 import Random from 'utils/random.js'
-import layouts from '../layouts/layouts.js';
-import tilesets from './tilesets.js';
-
+import layouts from '../data/layouts.js';
+import tilesets from '../data/tilesets.js';
 
 /**
  * Use this class as the controller for a game of Mahjongg solitaire. This code

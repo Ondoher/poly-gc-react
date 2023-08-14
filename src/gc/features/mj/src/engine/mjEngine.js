@@ -1,7 +1,6 @@
 import { makeEventable } from '@polylith/core';
 import Random from 'utils/random.js'
 import NumberSet from 'utils/NumberSet.js';
-import Turtle from '../layouts/turtle.json';
 import './types.js'
 
 /**
@@ -546,8 +545,7 @@ export default class MjEngine {
 	 * @param {Layout} layout
 	 */
 	 setLayout(layout) {
-		if (layout === undefined) this.layout = Turtle;
-		else this.layout = layout;
+		this.layout = layout;
 		this.board = {};
 
 		this.usedSpaces = [];

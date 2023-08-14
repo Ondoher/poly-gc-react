@@ -39,7 +39,7 @@ This will build the source and watch it for changes
 
 **dev:serve**
 ```shell
-npm run dev:server
+npm run dev:serve
 ```
 
 This serve the application and watch the server source for changes
