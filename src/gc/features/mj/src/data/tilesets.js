@@ -23,7 +23,14 @@ const TIME_SETS = {
 		tiles : 144,
 		class: 'plastic normal-size'
 	},
-/*
+	glass_normal: {
+		id: 'glass-normal',
+		name : 'Glass',
+		image : 'images/mj/tilesets/ivory/glass-r.png',
+		description : '',
+		tiles : 144,
+		class: 'glass normal-size'
+	},
 	wood: {
 		id: 'wood',
 		name : 'Wood',
@@ -32,7 +39,6 @@ const TIME_SETS = {
 		tiles : 144,
 		class: 'wood normal-size'
 	},
-*/
 	ivory_medium: {
 		id: 'ivory-medium',
 		name : 'Ivory - Medium',
@@ -40,6 +46,14 @@ const TIME_SETS = {
 		description : '',
 		tiles : 144,
 		class: 'ivory-48 medium-size'
+	},
+	wood_medium: {
+		id: 'ivory-medium',
+		name : 'Wood - Medium',
+		image : 'images/mj/tilesets/wood-48/dragon-r.png',
+		description : '',
+		tiles : 144,
+		class: 'wood-48 medium-size'
 	},
 /*
 	bone_small: {

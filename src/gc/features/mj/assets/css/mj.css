@@ -15,7 +15,7 @@
     height: 100%;
 }
 
-.mj-fireworks {
+.mj-gameover {
     position: absolute;
     right: 0px;
     top: 0px;
@@ -88,7 +88,7 @@
     grid-template-areas:
         "options surface";
     grid-template-columns: 400px 1fr;
-
+    z-index: 0;
 }
 
 
@@ -181,7 +181,7 @@
     grid-area: message;
     text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
     font-weight: bold;
-    font-size: 25px;
+    font-size: 85px;
     color: #f8f8f7;
     text-align: center;
 }

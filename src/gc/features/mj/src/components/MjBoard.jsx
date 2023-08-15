@@ -21,7 +21,7 @@ export default class MjBoard extends React.Component {
 
 		if (props.delegator) {
 			props.delegator.delegateInbound(this, [
-				'setWon', 'setGameState', 'setMessage',
+				'setWon', 'setLost', 'setGameState', 'setMessage',
 				'setShortMessage', 'setTiles', 'clearBoard', 'setTileset']
 			);
 
@@ -44,8 +44,12 @@ export default class MjBoard extends React.Component {
 		this.select(tile);
 	}
 
-	setWon (on) {
+	setWon(on) {
 		this.setState({won: on})
+	}
+
+	setLost(on) {
+		this.setState({lost: on})
 	}
 
 	setButtonState () {
@@ -130,18 +134,25 @@ export default class MjBoard extends React.Component {
 	componentDidUpdate() {
 	}
 
+	renderLost() {
+		console.log(this.state);
+		if (!this.state.lost) return;
+
+		return <div className="mj-gameover" />;
+	}
+
 	renderFireworks() {
 		var won = this.state.won;
 
 		if (!won) return;
 
 		return <Fireworks
-			className="mj-fireworks"
+			className="mj-gameover"
 		/>
 	}
 
 	renderControls() {
-		var {canUndo, canRedo, isPeeking, isPaused, won} = this.state;
+		var {canUndo, canRedo, isPeeking, isPaused, won, lost} = this.state;
 		return (
 			<Controls
 				delegator = {this.props.delegator}
@@ -150,6 +161,7 @@ export default class MjBoard extends React.Component {
 				isPeeking={isPeeking}
 				isPaused={isPaused}
 				won={won}
+				lost={lost}
 			/>
 		)
 	}
@@ -220,9 +232,10 @@ export default class MjBoard extends React.Component {
 		return (
 			<Page serviceName={this.props.serviceName} className={pageClassName}>
 				<div className={'mj-table ' + className}>
-					{this.renderFireworks()}
-					{this.renderHeader()}
 					{this.renderMain()}
+					{this.renderFireworks()}
+					{this.renderLost()}
+					{this.renderHeader()}
 				</div>
 			</Page>
 		)

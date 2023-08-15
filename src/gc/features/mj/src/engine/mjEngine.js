@@ -387,7 +387,7 @@ export default class MjEngine {
 		var open = new NumberSet([], 144).union(this.selectableTiles)
 		var played = new NumberSet([], 144).union(this.usedTiles);
 
-		var update = {canUndo , canRedo, remaining, lost, open, played};
+		var update = {canUndo , canRedo, remaining, won, lost, open, played};
 
 		this.fire('updateState', update);
 	}

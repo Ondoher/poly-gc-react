@@ -26,7 +26,7 @@ export default class MJController extends Service {
 
 		// these methods will just fire their arguments to who ever is
 		// listening. This will be the board view component or individuals tiles
-		this.makeFireMethods(['setTime','setWon', 'setGameState', 'setTileset',
+		this.makeFireMethods(['setTime','setWon', 'setLost', 'setGameState', 'setTileset',
 			'setMessage', 'setShortMessage', 'showTile', 'hintTile',
 			'highlightTile', 'setTiles','clearBoard',]);
 
@@ -155,11 +155,13 @@ export default class MJController extends Service {
 		if (state.remaining === 0) {
 			this.stopTimer();
 			this.setWon(true);
+			this.setLost(false);
 			this.logEvent('win');
 			this.message('YOU WIN!!!');
 			this.gameWon = true;
 		} else if (state.lost) {
 			this.setWon(false);
+			this.setLost(true);
 			this.pauseTimer();
 			this.logEvent("lose");
 			this.gameLost = true;
@@ -168,6 +170,7 @@ export default class MJController extends Service {
 		} else {
 			this.message('');
 			this.setWon(false);
+			this.setLost(false);
 			this.gameWon = false;
 			this.gameLost =false;
 		}
