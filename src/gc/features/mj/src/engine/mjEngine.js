@@ -66,6 +66,13 @@ export default class MjEngine {
 	// Private methods
 	//============================================================================
 
+	makeSequentialArray(start, count) {
+		return Array.from({length: count}, function(val, index) {
+			return index + start
+		});
+	}
+
+
 	/**
 	 * Call this method to record game space as being occupied by a tile. The
 	 * board object contains the list of tiles in the current game layout and
@@ -361,14 +368,24 @@ export default class MjEngine {
 	 * @private
 	 */
 	shuffleTiles() {
-		this.drawPile.faceSets = [];
-		this.drawPile.count = 36;
+		// to properly handle layouts with fewer than 144 tiles we will fill the
+		// draw pile with full facesets
+		var fullsetList = this.makeSequentialArray(0, 144 / 4);
+		var leftover = this.layout.tiles % 4;
+		var drawpileCount = Math.floor(this.layout.tiles / 4);
 
-		for (var idx = 0; idx < 144; idx++) {
-			var faceSetIdx = Math.floor(idx / 4);
-			if (!this.drawPile.faceSets[faceSetIdx]) this.drawPile.faceSets[faceSetIdx] = {};
-			if (!this.drawPile.faceSets[faceSetIdx].faces) this.drawPile.faceSets[faceSetIdx].faces = [];
-			this.drawPile.faceSets[faceSetIdx].faces.push(idx);
+		this.drawPile.faceSets = [];
+		this.drawPile.count = 0;
+		for (let idx = 0; idx < drawpileCount; idx++) {
+			let set = Random.pickOne(fullsetList);
+			this.drawPile.faceSets.push({faces: this.makeSequentialArray(set * 4, 4)})
+			this.drawPile.count++;
+		}
+
+		if (leftover) {
+			let set = Random.pickOne(fullsetList);
+			this.drawPile.faceSets.push({faces: this.makeSequentialArray(set * 4, 2)})
+			this.drawPile.count++;
 		}
 	}
 
