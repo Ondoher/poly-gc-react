@@ -6,7 +6,6 @@ export default class Options extends Component {
 	constructor(props) {
 		super(props);
 
-		console.log(props);
 		this.state = {layout: this.props.layout, playing: this.props.boardNbr,
 			boardNbr: this.props.boardNbr, tileset: this.props.tileset};
 
@@ -35,7 +34,6 @@ export default class Options extends Component {
 
 	componentDidUpdate(prevProps) {
 		var state = {};
-		console.log(prevProps, this.props, this.state)
 		if (prevProps.boardNbr !== this.props.boardNbr) {
 			state.boardNbr = this.props.boardNbr;
 			state.playing = this.props.boardNbr;

@@ -135,7 +135,6 @@ export default class MjBoard extends React.Component {
 	}
 
 	renderLost() {
-		console.log(this.state);
 		if (!this.state.lost) return;
 
 		return <div className="mj-gameover" />;

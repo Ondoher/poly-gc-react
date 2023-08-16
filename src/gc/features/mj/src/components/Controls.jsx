@@ -9,6 +9,9 @@ export default class Controls extends Component {
 		if (props.delegator) {
 			props.delegator.delegateOutbound(this, ['hint', 'undo', 'redo', 'play', 'pause', 'peek', 'selectLayout', 'selectTileset']);
 		}
+
+		this.windowBlur = this.onPause.bind(this, true);
+		this.windowFocus = this.onPause.bind(this, false);
 	}
 
 	onUndo() {
@@ -27,12 +30,23 @@ export default class Controls extends Component {
 		this.play(-1);
 	}
 
-	onPause() {
-		this.pause();
+	onPause(on) {
+		if (on === undefined && this.props.isPaused) return;
+		this.pause(on);
 	}
 
 	onPeek() {
 		this.peek();
+	}
+
+	componentDidMount() {
+		window.addEventListener('blur', this.windowBlur);
+		window.addEventListener('focus', this.windowFocus);
+	}
+
+	componentWillUnmount() {
+		window.removeEventListener('blur', this.windowBlur);
+		window.removeEventListener('focus', this.windowFocus);
 	}
 
 	renderButtons() {

@@ -85,29 +85,43 @@ export default class MJController extends Service {
 	 * call this method to restart the timer from being paused
 	 */
 	restartTimer() {
-		if (!this.paused) return;
-		this.startTimer();
+		this.startTimer(true);
+		this.toggleTimer(true);
+		this.updateTimerState();
+	}
+
+
+	miniTimeStr(timer = 0) {
+		var seconds = Math.floor(timer / 1000);
+		var minutes = Math.floor(seconds / 60)
+		var displayMinutes = Math.floor(minutes % 60)
+		var displaySeconds = Math.floor(seconds % 60);
+
+		return `${displayMinutes}:${String(displaySeconds).padStart(2, '0')}`;
 	}
 
 	/**
 	 * Call this method to start the time from 0, unless it is paused, in which
 	 * case it will continue from the last value.
 	 */
-	startTimer() {
+	startTimer(resume) {
 		var now = Date.now();
-		if (this.paused)
+		var newStartTime = resume ? this.startTime + (now - this.stopTime) : this.startTime;
+		var delta = newStartTime - this.startTime
+		// we only recalculate the start time when first switching paused state
+		if (resume)
 			this.startTime += now - this.stopTime;
 		else
 			this.startTime = Date.now();
 
 		this.timerRunning = true;
-		this.paused = false;
 	}
 
 	/**
 	 * Call this method to permanently stop the timer. It cannot be resumed.
 	 */
 	stopTimer() {
+		this.resetTimer(false);
 		if (!this.timerRunning) return;
 		var time = Date.now() - this.startTime;
 		this.time = time;
@@ -120,9 +134,9 @@ export default class MJController extends Service {
 	 * restartTimer
 	 */
 	pauseTimer() {
-		this.stopTime = Date.now();
+		var now = Date.now()
+		this.stopTime = now;
 		this.timerRunning = false;
-		this.paused = true;
 	}
 
 	/**
@@ -162,6 +176,7 @@ export default class MJController extends Service {
 		} else if (state.lost) {
 			this.setWon(false);
 			this.setLost(true);
+			this.resetTimer(true)
 			this.pauseTimer();
 			this.logEvent("lose");
 			this.gameLost = true;
@@ -182,7 +197,7 @@ export default class MJController extends Service {
 			canUndo: state.canUndo,
 			canRedo: state.canRedo,
 			isPeeking: this.peeking,
-			isPaused: this.paused,
+			isPaused: Boolean(this.paused > 0),
 			boardNbr: this.boardNbr,
 		});
 
@@ -269,7 +284,8 @@ export default class MJController extends Service {
 		this.highlightTile(tiles.tile2, false);
 
 		if (this.gameLost) {
-			this.startTimer = true;
+			this.resetTimer(on);
+			this.updateTimerState();
 			this.gameLost = false;
 		}
 	}
@@ -340,7 +356,7 @@ export default class MJController extends Service {
 		this.hint1 = -1;
 		this.hint2 = -1;
 		this.peeking = false;
-		this.paused = false;
+		this.paused = 0;
 
 		Random.randomize(boardNbr);
 
@@ -353,8 +369,9 @@ export default class MJController extends Service {
 		this.selectedTile = -1;
 		this.message('');
 
-		this.stopTimer();
-		this.startTimer();
+		this.resetTimer(false);
+		this.startTimer(false);
+		this.updateTimerState();
 	}
 
 	/**
@@ -375,6 +392,7 @@ export default class MJController extends Service {
 	 * hint, if there are any left.
 	 */
 	hint() {
+		this.resetTimer(false);
 		this.restartTimer();
 		this.hideHints();
 
@@ -433,15 +451,44 @@ export default class MJController extends Service {
 		}
 	}
 
-	pause() {
-		if (this.paused) {
-			this.startTimer();
+
+	updatePause(on) {
+		// we have a multi-level pause flag
+		// if on does not have a value, it be will considered a toggle
+		var delta =
+			on === true ? 1 :
+			on === false ? -1 :
+			this.paused > 0 ? -1 :
+			1;
+
+		if (this.paused === 1 && delta === -1) {
+			this.startTimer(true);
+		} if (this.paused === 0 && delta === 1) {
+			this.pauseTimer(true);
+		}
+		this.paused += delta;
+	}
+
+	resetTimer(on) {
+		this.paused = on ? 1 : 0;
+	}
+
+	updateTimerState() {
+		if (this.paused <= 0) {
 			this.hideBoard(false);
 		} else {
-			this.pauseTimer();
 			this.hideBoard(true);
 		}
 		this.setGameState({isPaused: this.paused});
+	}
+
+	toggleTimer(on) {
+		this.updatePause(on)
+		this.updateTimerState();
+	}
+
+	pause(on) {
+		this.toggleTimer(on);
 	}
 
 	peek() {
