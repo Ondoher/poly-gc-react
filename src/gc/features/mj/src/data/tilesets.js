@@ -1,35 +1,35 @@
-const TIME_SETS = {
-	bone_normal: {
-		id: 'bone-normal',
+export const TILE_SETS = {
+	bone: {
+		id: 'bone',
 		name : 'Bone',
 		image : 'images/mj/tilesets/bone/dragon-r.png',
 		description : '',
 		tiles : 144,
-		class: 'bone normal-size'
+		class: 'bone'
 	},
-	ivory_normal: {
+	ivory: {
 		id: 'ivory-normal',
 		name : 'Ivory',
 		image : 'images/mj/tilesets/ivory/dragon-r.png',
 		description : '',
 		tiles : 144,
-		class: 'ivory normal-size'
+		class: 'ivory'
 	},
-	plastic_normal: {
+	plastic: {
 		id: 'plastic-normal',
 		name : 'Plastic',
 		image : 'images/mj/tilesets/plastic/dragon-r.png',
 		description : '',
 		tiles : 144,
-		class: 'plastic normal-size'
+		class: 'plastic'
 	},
-	glass_normal: {
+	glass: {
 		id: 'glass-normal',
 		name : 'Glass',
 		image : 'images/mj/tilesets/ivory/glass-r.png',
 		description : '',
 		tiles : 144,
-		class: 'glass normal-size'
+		class: 'glass'
 	},
 	wood: {
 		id: 'wood',
@@ -37,34 +37,20 @@ const TIME_SETS = {
 		image : 'images/mj/tilesets/wood/dragon-r.png',
 		description : '',
 		tiles : 144,
-		class: 'wood normal-size'
+		class: 'wood'
 	},
-	ivory_medium: {
-		id: 'ivory-medium',
-		name : 'Ivory - Medium',
-		image : 'images/mj/tilesets/ivory-48/dragon-r.png',
-		description : '',
-		tiles : 144,
-		class: 'ivory-48 medium-size'
-	},
-	wood_medium: {
-		id: 'ivory-medium',
-		name : 'Wood - Medium',
-		image : 'images/mj/tilesets/wood-48/dragon-r.png',
-		description : '',
-		tiles : 144,
-		class: 'wood-48 medium-size'
-	},
-/*
-	bone_small: {
-		id: 'bone-small',
-		name : 'Bone - Small',
-		image : 'images/mj/tilesets/bone-32/dragon-r.png',
-		description : '',
-		tiles : 144,
-		class: 'bone-32 small-size'
-	},
-*/
 }
 
-export default TIME_SETS;
+export const TILE_SIZES = {
+	normal : {
+		id: 'normal',
+		name: 'Normal',
+		class: 'normal'
+	},
+	medium : {
+		id: 'medium',
+		name: 'Medium',
+		class: 'medium'
+	},
+
+}

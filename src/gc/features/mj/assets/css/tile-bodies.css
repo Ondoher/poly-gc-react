@@ -1,0 +1,39 @@
+.bone-normal .tile {
+	background-image: url("../../images/mj/tile-bodies/bone-normal.png");
+}
+
+.ivory-normal .tile {
+	background-image: url("../../images/mj/tile-bodies/ivory-normal.png");
+}
+
+.plastic-normal .tile {
+	background-image: url("../../images/mj/tile-bodies/plastic-normal.png");
+}
+
+.wood-normal .tile {
+	background-image: url("../../images/mj/tile-bodies/wood-normal.png");
+}
+
+.glass-normal .tile {
+	background-image: url("../../images/mj/tile-bodies/glass-normal.png");
+}
+
+.bone-medium .tile {
+	background-image: url("../../images/mj/tile-bodies/bone-medium.png");
+}
+
+.ivory-medium .tile {
+	background-image: url("../../images/mj/tile-bodies/ivory-medium.png");
+}
+
+.plastic-medium .tile {
+	background-image: url("../../images/mj/tile-bodies/plastic-medium.png");
+}
+
+.wood-medium .tile {
+	background-image: url("../../images/mj/tile-bodies/wood-medium.png");
+}
+
+.glass-medium .tile {
+	background-image: url("../../images/mj/tile-bodies/glass-medium.png");
+}

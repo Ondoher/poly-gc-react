@@ -7,11 +7,14 @@ export default class Controls extends Component {
 		super(props);
 
 		if (props.delegator) {
-			props.delegator.delegateOutbound(this, ['hint', 'undo', 'redo', 'play', 'pause', 'peek', 'selectLayout', 'selectTileset']);
+			props.delegator.delegateOutbound(this, [
+				'hint', 'undo', 'redo', 'play', 'pause', 'peek']);
 		}
 
-		this.windowBlur = this.onPause.bind(this, true);
-		this.windowFocus = this.onPause.bind(this, false);
+		this.windowBlur = this.onWindowEvent.bind(this, true);
+		this.windowFocus = this.onWindowEvent.bind(this, false);
+
+		this.pauseOnBlur = window?.process?.env?.NODE_ENV !== 'dev'
 	}
 
 	onUndo() {
@@ -30,9 +33,14 @@ export default class Controls extends Component {
 		this.play(-1);
 	}
 
-	onPause(on) {
-		if (on === undefined && this.props.isPaused) return;
-		this.pause(on);
+	onWindowEvent(on, evt) {
+		this.onPause(evt, on);
+	}
+
+	onPause(evt, on) {
+		console.log('onPause', arguments, on)
+		if (on === undefined) return this.pause(on);
+		if (this.pauseOnBlur) this.pause(on);
 	}
 
 	onPeek() {

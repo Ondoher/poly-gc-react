@@ -1,10 +1,10 @@
 import {Fireworks} from '@fireworks-js/react';
 import React from "react";
 import Page from 'components/Page.jsx'
-import Tile from './Tile.jsx';
 import Timer from './Timer.jsx';
 import Controls from './Controls.jsx';
 import Options from './Options.jsx';
+import MjCanvas from './MjCanvas.jsx';
 
 const DEFAULT_TILESET = {
 	name : 'Bone Tiles',
@@ -22,7 +22,8 @@ export default class MjBoard extends React.Component {
 		if (props.delegator) {
 			props.delegator.delegateInbound(this, [
 				'setWon', 'setLost', 'setGameState', 'setMessage',
-				'setShortMessage', 'setTiles', 'clearBoard', 'setTileset']
+				'setShortMessage', 'setTiles', 'setTilesize', 'clearBoard',
+				'setTileset', 'setTilesize']
 			);
 
 			props.delegator.delegateOutbound(this, ['select', 'initialized']);
@@ -30,6 +31,7 @@ export default class MjBoard extends React.Component {
 
 		this.state = {
 			tileset: this.props.tilesets[this.props.tileset],
+			tilesize: this.props.tilesizes[this.props.tilesize],
 			instance: -1,
 			tiles: [],
 			message: '',
@@ -80,42 +82,14 @@ export default class MjBoard extends React.Component {
 		this.setState({tileset: this.props.tilesets[tileset]});
 	}
 
+	setTilesize(tilesize) {
+		this.setState({tilesize: this.props.tilesizes[tilesize]});
+	}
+
 	clearBoard() {
 		this.setState({
 			tiles: {}
 		})
-	}
-
-	createTiles() {
-		if (this.state.instance === this.instance) {
-			return this.tiles;
-		}
-		this.instance = this.state.instance;
-		var tiles = this.state.tiles;
-
-		this.tiles = [];
-		tiles.forEach(function(tile) {
-			this.tiles.push(
-				<Tile
-					key={tile.id}
-					delegator={this.props.delegator.newDelegator()}
-					id={tile.id}
-					x={tile.x}
-					y={tile.y}
-					z={tile.z}
-					face={tile.face}
-					onClick={this.onClickTile.bind(this, tile.id)}
-				/>
-			);
-
-		}, this);
-	}
-
-
-	renderTiles() {
-		this.createTiles();
-
-		return this.tiles;
 	}
 
 	renderTime() {
@@ -173,6 +147,8 @@ export default class MjBoard extends React.Component {
 				layouts={this.props.layouts}
 				tileset={this.state.tileset}
 				tilesets={this.props.tilesets}
+				tilesize={this.state.tilesize}
+				tilesizes={this.props.tilesizes}
 				delegator = {this.props.delegator}
 				boardNbr={boardNbr}
 			/>
@@ -193,9 +169,11 @@ export default class MjBoard extends React.Component {
 
 	renderCanvas() {
 		return(
-			<div id="board-canvas">
-				{this.renderTiles()}
-			</div>
+			<MjCanvas
+				delegator={this.props.delegator.newDelegator()}
+				onClick={this.onClickTile.bind(this)}
+				tiles={this.state.tiles}
+			/>
 		)
 	}
 
@@ -217,7 +195,10 @@ export default class MjBoard extends React.Component {
 	}
 
 	render() {
-		var className = this.state.tileset.class;
+		var set = this.state.tileset.class;
+		var size = this.state.tilesize.class
+
+		var className = `${set}-${size} ${size}-face ${size}-size`
 
 		if (!this.props.delegator) {
 			return (

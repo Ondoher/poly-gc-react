@@ -5,7 +5,7 @@ import MjBoard from "../components/MjBoard.jsx";
 import { ServiceDelegator } from 'common/delegators.js';
 import Random from 'utils/random.js'
 import layouts from '../data/layouts.js';
-import tilesets from '../data/tilesets.js';
+import {TILE_SETS, TILE_SIZES} from '../data/tilesets.js';
 
 /**
  * Use this class as the controller for a game of Mahjongg solitaire. This code
@@ -22,17 +22,18 @@ export default class MJController extends Service {
 		super('mj:controller');
 		this.implement(['start', 'ready', 'render', 'hint', 'undo', 'redo',
 			'solve', 'play', 'select', 'pause', 'peek', 'selectLayout',
-			'selectTileset','initialized']);
+			'selectTileset','selectTilesize','initialized']);
 
 		// these methods will just fire their arguments to who ever is
 		// listening. This will be the board view component or individuals tiles
-		this.makeFireMethods(['setTime','setWon', 'setLost', 'setGameState', 'setTileset',
-			'setMessage', 'setShortMessage', 'showTile', 'hintTile',
-			'highlightTile', 'setTiles','clearBoard',]);
+		this.makeFireMethods(['setTime','setWon', 'setLost', 'setGameState',
+			'setTileset', 'setTilesize', 'setMessage', 'setShortMessage',
+			'showTile', 'hintTile', 'highlightTile', 'setTiles','clearBoard',]);
 
 		this.engine = new MjEngine();
 		this.layoutName = 'turtle';
-		this.tileset = 'bone_normal';
+		this.tileset = 'bone';
+		this.tilesize = 'normal';
 		this.timerHandle = setInterval(this.onTimerTick.bind(this), 250);
 
 		this.engine.listen('updateState', this.updateState.bind(this));
@@ -392,8 +393,11 @@ export default class MJController extends Service {
 	 * hint, if there are any left.
 	 */
 	hint() {
-		this.resetTimer(false);
-		this.restartTimer();
+
+		if (!this.currentHint && false) {
+			this.resetTimer(false);
+			this.restartTimer();
+		}
 		this.hideHints();
 
 		if (this.currentHint && this.currentHints.length === 0) {
@@ -488,6 +492,7 @@ export default class MJController extends Service {
 	}
 
 	pause(on) {
+		console.log('pause', on)
 		this.toggleTimer(on);
 	}
 
@@ -525,6 +530,11 @@ export default class MJController extends Service {
 		this.setTileset(tileset);
 	}
 
+	selectTilesize(tilesize) {
+		this.tilesize = tilesize;
+		this.setTilesize(tilesize);
+	}
+
 	/**
 	 * This method is called in reponse to the user pressing the solve button
 	 */
@@ -560,8 +570,10 @@ export default class MJController extends Service {
 				serviceName="mj:controller"
 				layouts={layouts}
 				layout={this.layoutName}
-				tilesets={tilesets}
 				tileset={this.tileset}
+				tilesets={TILE_SETS}
+				tilesize={this.tilesize}
+				tilesizes={TILE_SIZES}
 			/>
 		)
 	}
