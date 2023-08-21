@@ -1,1 +1,1 @@
-import "./services/mjController.jsx"
+import "./controller/mjController.jsx"

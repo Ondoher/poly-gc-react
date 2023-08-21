@@ -44,5 +44,5 @@
 			"glob": "**/*.css"
 		}
 	],
-	"features": ["features/mj", "features/pages", "features/directory", "features/bread-crumbs"]
+	"features": ["features/mj", "features/tetris", "features/pages", "features/directory", "features/bread-crumbs"]
 }

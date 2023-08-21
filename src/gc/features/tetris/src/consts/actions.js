@@ -1,0 +1,12 @@
+export const STARTGAME     = 'STARTGAME';
+export const DRAWTETRONIMO = 'DRAWTETRONIMO';
+export const HIDETETRONIMO = 'HIDETETRONIMO';
+export const DRAWSHADOW    = 'DRAWSHADOW';
+export const HIDESHADOW    = 'HIDESHADOW';
+export const DRAWBOARD     = 'DRAWBOARD';
+export const DRAWONDECK    = 'DRAWONDECK';
+export const DRAWSCORE     = 'DRAWSCORE';
+export const DRAWLEVEL     = 'DRAWLEVEL';
+export const DRAWHOLD      = 'DRAWHOLD';
+export const DRAWWHOOP     = 'DRAWWHOOP';
+export const DRAWGAMEOVER  = 'DRAWGAMEOVER';

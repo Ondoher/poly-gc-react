@@ -29,7 +29,7 @@
 }
 
 .mj-board-page {
-	background-image: url("../../images/mj/oak.jpg");
+	background-image: url("../images/oak.jpg");
 }
 
 
@@ -138,7 +138,7 @@
 }
 
 .mj-surface {
-    background-image: url("../../images/mj/felt.jpg");
+    background-image: url("../images/felt.jpg");
     display: grid;
     grid-area: surface;
     grid-template-areas:

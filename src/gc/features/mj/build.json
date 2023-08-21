@@ -1,11 +1,11 @@
 {
 	"resources": [{
-		"dest": "css/mj",
+		"dest": "mj/css",
 		"cwd": "assets/css",
 		"glob": "**/*.css"
 	},
 	{
-		"dest" : "images/mj",
+		"dest" : "mj/images",
 		"cwd": "assets/images",
 		"glob": "**/*.{png,jpg}",
 		"keepNest": true
@@ -15,7 +15,7 @@
 		"index": "src/index.js",
 		"prefix": "mj:",
 		"css": [{
-			"dest": "css/mj",
+			"dest": "mj/css",
 			"cwd": "assets/css",
 			"glob": "**/*.css"
 		}]

@@ -53,4 +53,9 @@ export const TILE_SIZES = {
 		class: 'medium'
 	},
 
+	small : {
+		id: 'small',
+		name: 'Small',
+		class: 'small'
+	},
 }
