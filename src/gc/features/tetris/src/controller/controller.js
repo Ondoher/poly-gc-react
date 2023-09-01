@@ -11,7 +11,7 @@ export default class TetrisController extends Service {
 
 		this.implement([
 			'ready', 'render', 'move', 'down', 'rotate', 'harddown', 'hold',
-			'started', 'play'
+			'started', 'play', 'escape'
 		]);
 
 		this.makeFireMethods([
@@ -86,6 +86,11 @@ export default class TetrisController extends Service {
 		this.engine.newGame();
 	}
 
+	escape() {
+		console.log('ESCAPE')
+		if (this.gameOver) this.play();
+	}
+
 	engineUpdate(action, data) {
 		console.log(action, data);
 		if (action === actions.STARTGAME) this.started = true;
@@ -93,6 +98,7 @@ export default class TetrisController extends Service {
 
 		switch (action) {
 			case actions.STARTGAME: {
+				this.gameOver = false;
 				this.startGame()
 				break;
 			}
@@ -148,10 +154,13 @@ export default class TetrisController extends Service {
 				break;
 			}
 			case actions.DRAWLEVEL: {
+				let [goal, level, comment=''] = data;
+				this.drawLevel(goal, level, comment);
 				break;
 			}
 			case actions.DRAWGAMEOVER: {
 				this.started = false;
+				this.gameOver = true;
 				this.drawGameOver()
 				break;
 			}

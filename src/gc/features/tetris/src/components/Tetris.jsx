@@ -8,9 +8,9 @@ export default class Tetris extends Component {
 		super(props);
 
 		props.delegator.delegateInbound(this, [
-			'drawOnDeck', 'drawHold', 'drawScore', 'startGame', 'drawGameOver'
+			'drawOnDeck', 'drawHold', 'drawScore', 'drawLevel', 'startGame', 'drawGameOver'
 		]);
-		props.delegator.delegateOutbound(this, ['play']);
+		props.delegator.delegateOutbound(this, ['play', 'escape']);
 
 		this.state = {gameOver: false}
 	}
@@ -66,7 +66,15 @@ export default class Tetris extends Component {
 	drawScore(points, score, comment) {
 		this.setState({score: score});
 		if (comment) {
-			this.smallMessage(`${comment} ${points} points'`)
+			this.smallMessage(`${comment} ${points} points`)
+		}
+	}
+
+	drawLevel(goal, level, comment)
+	{
+		this.setState({goal, level});
+		if (comment) {
+			this.smallMessage(comment)
 		}
 	}
 
@@ -74,12 +82,14 @@ export default class Tetris extends Component {
 		var {hold = false} = this.state;
 		if (!hold) return;
 
-		console.log('rendering hold', hold)
-		var className = `game-hold-matrix tetris-small matrix`;
+		var className = `game-hold-matrix tetris-normal-side matrix`;
 		return (
 			<div className="game-hold">
-				<div key='hold' className={className}>
-					<Matrix matrix={hold}/>
+				<div className="hold-title">HOLD</div>
+				<div className="hold-pieces">
+					<div className={className}>
+						<Matrix matrix={hold}/>
+					</div>
 				</div>
 			</div>
 		)
@@ -87,9 +97,9 @@ export default class Tetris extends Component {
 
 	renderOneOnDeck(idx, matrix) {
 		var classNames = ['game-ondeck-one', 'game-ondeck-two', 'game-ondeck-three']
-		var className = `tetris-small matrix ${classNames[idx]}`;
+		var className = `tetris-normal-side matrix ${classNames[idx]}`;
 		return (
-			<div key={`ondeck-${idx}`}className={className}>
+			<div key={`ondeck-${idx}`} className={className}>
 				<Matrix matrix={matrix}/>
 			</div>
 		)
@@ -104,33 +114,40 @@ export default class Tetris extends Component {
 
 		return (
 			<div className="game-ondeck">
-				{onDeck}
+				<div className="ondeck-title">NEXT</div>
+				<div className="ondeck-pieces">
+					{onDeck}
+				</div>
 			</div>
 		)
 	}
 
 
 	renderSmallMessage() {
+//		var {smallMessage = {opacity: 1, message: 'QUATRAIN BONUS 1000 points'}} = this.state;
 		var {smallMessage = false} = this.state;
 		if (!smallMessage) return;
 		var styles = {opacity: smallMessage.opacity}
+
 		return (
-			<div className="stats">
-				<div className="score"></div>
-				<div className="level" style={styles}>{smallMessage.message}</div>
-				<div className="goal"></div>
+			<div className="small-message">
+				<div style={styles}>{smallMessage.message}</div>
 			</div>
 		)
 	}
 
 	renderStats() {
-		var {score, level = 1, goal = 10, smallMessage = false} = this.state;
+		var {score, level = 1, goal = 10, smallMessage} = this.state;
+		console.log('renderStats', score, level, goal, smallMessage)
 		if (smallMessage) return;
 		return (
 			<div className="stats">
-				<div className="score">SCORE: {score}</div>
-				<div className="level">LEVEL: {level}</div>
-				<div className="goal">GOAL: {goal}</div>
+				<div className="score-title">SCORE</div>
+				<div className="level-title">LEVEL</div>
+				<div className="goal-title">GOAL</div>
+				<div className="score">{score}</div>
+				<div className="level">{level}</div>
+				<div className="goal">{goal}</div>
 			</div>
 		)
 	}
@@ -143,10 +160,18 @@ export default class Tetris extends Component {
 		)
 	}
 
+
+	renderPlayButton() {
+		return(
+			<div className="play-button" onClick={this.onPlayClick.bind(this)}></div>
+		)
+	}
+
 	renderGameLeft() {
 		return (
 			<div className="game-left">
 				{this.renderHold()}
+				{this.renderPlayButton()}
 			</div>
 		)
 	}
@@ -154,16 +179,20 @@ export default class Tetris extends Component {
 	renderGameOver() {
 		if (!this.state.gameOver) return;
 		return (
-			<div className="game-over">GAME OVER</div>
+			<div className="gameover-cover" onClick={this.escape.bind(this)}>
+				<div className="gameover"></div>
+			</div>
 		)
 	}
 
 	renderPlayArea() {
 		return (
 			<div className="game-play">
-				<PlayMatrix
-					delegator = {this.props.delegator}
-				/>
+				<div className="game-play-grid">
+					<PlayMatrix
+						delegator = {this.props.delegator}
+					/>
+				</div>
 			</div>
 		)
 	}
@@ -177,7 +206,6 @@ export default class Tetris extends Component {
 				{this.renderGameLeft()}
 				{this.renderPlayArea()}
 				{this.renderGameRight()}
-				{this.renderGameOver()}
 			</div>
 		)
 	}
@@ -186,10 +214,9 @@ export default class Tetris extends Component {
 	renderHeader() {
 		return (
 			<div className="game-header">
-				<div className="play-button" onClick={this.onPlayClick.bind(this)}/>
+				<div className="game-title"></div>
 			</div>
 		)
-
 	}
 
 	renderGameSpace() {
@@ -197,6 +224,7 @@ export default class Tetris extends Component {
 			<div className="tetris-game">
 				{this.renderHeader()}
 				{this.renderMain()}
+				{this.renderGameOver()}
 			</div>
 		)
 	}

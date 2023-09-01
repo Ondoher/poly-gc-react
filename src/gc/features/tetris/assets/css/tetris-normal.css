@@ -3,28 +3,29 @@ This file auto generated for cell type: tetris-normal
 
 Dimensions
 ==========
-cell width:  16
-cell height: 16
+cell width:  25
+cell height: 25
 matrix rows: 20
 matrix cols: 10
-pixel width: 160
-pixel height: 160
+pixel width: 250
+pixel height: 500
 
-command: node tetris-matrix.js tetris-normal -w 16 -h 16 -r 20 -c 10
+command: node tetris-matrix.js tetris-normal -w 25 -h 25 -r 20 -c 10
 *******************************************************************************/
 
 /*==============================================================================
 The size of the canvas based on the cell and matric dimensions
 */
 .tetris-normal.matrix  {
-	width: 160px;
-	height: 320px;
+	width: 250px;
+	height: 500px;
+	position: relative;
 }
 
 /*==============================================================================
 Common css for all tiles
 */
-.tetris-normal .cell {position: absolute; width: 16px; height: 16px;}
+.tetris-normal .cell {position: absolute; width: 25px; height: 25px;}
 /*==============================================================================
 Defines absolute position for each cell in the matric. Add these classes to a cell
 to position it in the correct position.
@@ -32,211 +33,211 @@ to position it in the correct position.
 The correct class to use looks like this: cell-<x>-<y>
 */
 .tetris-normal .cell-0-0 {left: 0px; top: 0px; }
-.tetris-normal .cell-0-1 {left: 16px; top: 0px; }
-.tetris-normal .cell-0-2 {left: 32px; top: 0px; }
-.tetris-normal .cell-0-3 {left: 48px; top: 0px; }
-.tetris-normal .cell-0-4 {left: 64px; top: 0px; }
-.tetris-normal .cell-0-5 {left: 80px; top: 0px; }
-.tetris-normal .cell-0-6 {left: 96px; top: 0px; }
-.tetris-normal .cell-0-7 {left: 112px; top: 0px; }
-.tetris-normal .cell-0-8 {left: 128px; top: 0px; }
-.tetris-normal .cell-0-9 {left: 144px; top: 0px; }
-.tetris-normal .cell-1-0 {left: 0px; top: 16px; }
-.tetris-normal .cell-1-1 {left: 16px; top: 16px; }
-.tetris-normal .cell-1-2 {left: 32px; top: 16px; }
-.tetris-normal .cell-1-3 {left: 48px; top: 16px; }
-.tetris-normal .cell-1-4 {left: 64px; top: 16px; }
-.tetris-normal .cell-1-5 {left: 80px; top: 16px; }
-.tetris-normal .cell-1-6 {left: 96px; top: 16px; }
-.tetris-normal .cell-1-7 {left: 112px; top: 16px; }
-.tetris-normal .cell-1-8 {left: 128px; top: 16px; }
-.tetris-normal .cell-1-9 {left: 144px; top: 16px; }
-.tetris-normal .cell-2-0 {left: 0px; top: 32px; }
-.tetris-normal .cell-2-1 {left: 16px; top: 32px; }
-.tetris-normal .cell-2-2 {left: 32px; top: 32px; }
-.tetris-normal .cell-2-3 {left: 48px; top: 32px; }
-.tetris-normal .cell-2-4 {left: 64px; top: 32px; }
-.tetris-normal .cell-2-5 {left: 80px; top: 32px; }
-.tetris-normal .cell-2-6 {left: 96px; top: 32px; }
-.tetris-normal .cell-2-7 {left: 112px; top: 32px; }
-.tetris-normal .cell-2-8 {left: 128px; top: 32px; }
-.tetris-normal .cell-2-9 {left: 144px; top: 32px; }
-.tetris-normal .cell-3-0 {left: 0px; top: 48px; }
-.tetris-normal .cell-3-1 {left: 16px; top: 48px; }
-.tetris-normal .cell-3-2 {left: 32px; top: 48px; }
-.tetris-normal .cell-3-3 {left: 48px; top: 48px; }
-.tetris-normal .cell-3-4 {left: 64px; top: 48px; }
-.tetris-normal .cell-3-5 {left: 80px; top: 48px; }
-.tetris-normal .cell-3-6 {left: 96px; top: 48px; }
-.tetris-normal .cell-3-7 {left: 112px; top: 48px; }
-.tetris-normal .cell-3-8 {left: 128px; top: 48px; }
-.tetris-normal .cell-3-9 {left: 144px; top: 48px; }
-.tetris-normal .cell-4-0 {left: 0px; top: 64px; }
-.tetris-normal .cell-4-1 {left: 16px; top: 64px; }
-.tetris-normal .cell-4-2 {left: 32px; top: 64px; }
-.tetris-normal .cell-4-3 {left: 48px; top: 64px; }
-.tetris-normal .cell-4-4 {left: 64px; top: 64px; }
-.tetris-normal .cell-4-5 {left: 80px; top: 64px; }
-.tetris-normal .cell-4-6 {left: 96px; top: 64px; }
-.tetris-normal .cell-4-7 {left: 112px; top: 64px; }
-.tetris-normal .cell-4-8 {left: 128px; top: 64px; }
-.tetris-normal .cell-4-9 {left: 144px; top: 64px; }
-.tetris-normal .cell-5-0 {left: 0px; top: 80px; }
-.tetris-normal .cell-5-1 {left: 16px; top: 80px; }
-.tetris-normal .cell-5-2 {left: 32px; top: 80px; }
-.tetris-normal .cell-5-3 {left: 48px; top: 80px; }
-.tetris-normal .cell-5-4 {left: 64px; top: 80px; }
-.tetris-normal .cell-5-5 {left: 80px; top: 80px; }
-.tetris-normal .cell-5-6 {left: 96px; top: 80px; }
-.tetris-normal .cell-5-7 {left: 112px; top: 80px; }
-.tetris-normal .cell-5-8 {left: 128px; top: 80px; }
-.tetris-normal .cell-5-9 {left: 144px; top: 80px; }
-.tetris-normal .cell-6-0 {left: 0px; top: 96px; }
-.tetris-normal .cell-6-1 {left: 16px; top: 96px; }
-.tetris-normal .cell-6-2 {left: 32px; top: 96px; }
-.tetris-normal .cell-6-3 {left: 48px; top: 96px; }
-.tetris-normal .cell-6-4 {left: 64px; top: 96px; }
-.tetris-normal .cell-6-5 {left: 80px; top: 96px; }
-.tetris-normal .cell-6-6 {left: 96px; top: 96px; }
-.tetris-normal .cell-6-7 {left: 112px; top: 96px; }
-.tetris-normal .cell-6-8 {left: 128px; top: 96px; }
-.tetris-normal .cell-6-9 {left: 144px; top: 96px; }
-.tetris-normal .cell-7-0 {left: 0px; top: 112px; }
-.tetris-normal .cell-7-1 {left: 16px; top: 112px; }
-.tetris-normal .cell-7-2 {left: 32px; top: 112px; }
-.tetris-normal .cell-7-3 {left: 48px; top: 112px; }
-.tetris-normal .cell-7-4 {left: 64px; top: 112px; }
-.tetris-normal .cell-7-5 {left: 80px; top: 112px; }
-.tetris-normal .cell-7-6 {left: 96px; top: 112px; }
-.tetris-normal .cell-7-7 {left: 112px; top: 112px; }
-.tetris-normal .cell-7-8 {left: 128px; top: 112px; }
-.tetris-normal .cell-7-9 {left: 144px; top: 112px; }
-.tetris-normal .cell-8-0 {left: 0px; top: 128px; }
-.tetris-normal .cell-8-1 {left: 16px; top: 128px; }
-.tetris-normal .cell-8-2 {left: 32px; top: 128px; }
-.tetris-normal .cell-8-3 {left: 48px; top: 128px; }
-.tetris-normal .cell-8-4 {left: 64px; top: 128px; }
-.tetris-normal .cell-8-5 {left: 80px; top: 128px; }
-.tetris-normal .cell-8-6 {left: 96px; top: 128px; }
-.tetris-normal .cell-8-7 {left: 112px; top: 128px; }
-.tetris-normal .cell-8-8 {left: 128px; top: 128px; }
-.tetris-normal .cell-8-9 {left: 144px; top: 128px; }
-.tetris-normal .cell-9-0 {left: 0px; top: 144px; }
-.tetris-normal .cell-9-1 {left: 16px; top: 144px; }
-.tetris-normal .cell-9-2 {left: 32px; top: 144px; }
-.tetris-normal .cell-9-3 {left: 48px; top: 144px; }
-.tetris-normal .cell-9-4 {left: 64px; top: 144px; }
-.tetris-normal .cell-9-5 {left: 80px; top: 144px; }
-.tetris-normal .cell-9-6 {left: 96px; top: 144px; }
-.tetris-normal .cell-9-7 {left: 112px; top: 144px; }
-.tetris-normal .cell-9-8 {left: 128px; top: 144px; }
-.tetris-normal .cell-9-9 {left: 144px; top: 144px; }
-.tetris-normal .cell-10-0 {left: 0px; top: 160px; }
-.tetris-normal .cell-10-1 {left: 16px; top: 160px; }
-.tetris-normal .cell-10-2 {left: 32px; top: 160px; }
-.tetris-normal .cell-10-3 {left: 48px; top: 160px; }
-.tetris-normal .cell-10-4 {left: 64px; top: 160px; }
-.tetris-normal .cell-10-5 {left: 80px; top: 160px; }
-.tetris-normal .cell-10-6 {left: 96px; top: 160px; }
-.tetris-normal .cell-10-7 {left: 112px; top: 160px; }
-.tetris-normal .cell-10-8 {left: 128px; top: 160px; }
-.tetris-normal .cell-10-9 {left: 144px; top: 160px; }
-.tetris-normal .cell-11-0 {left: 0px; top: 176px; }
-.tetris-normal .cell-11-1 {left: 16px; top: 176px; }
-.tetris-normal .cell-11-2 {left: 32px; top: 176px; }
-.tetris-normal .cell-11-3 {left: 48px; top: 176px; }
-.tetris-normal .cell-11-4 {left: 64px; top: 176px; }
-.tetris-normal .cell-11-5 {left: 80px; top: 176px; }
-.tetris-normal .cell-11-6 {left: 96px; top: 176px; }
-.tetris-normal .cell-11-7 {left: 112px; top: 176px; }
-.tetris-normal .cell-11-8 {left: 128px; top: 176px; }
-.tetris-normal .cell-11-9 {left: 144px; top: 176px; }
-.tetris-normal .cell-12-0 {left: 0px; top: 192px; }
-.tetris-normal .cell-12-1 {left: 16px; top: 192px; }
-.tetris-normal .cell-12-2 {left: 32px; top: 192px; }
-.tetris-normal .cell-12-3 {left: 48px; top: 192px; }
-.tetris-normal .cell-12-4 {left: 64px; top: 192px; }
-.tetris-normal .cell-12-5 {left: 80px; top: 192px; }
-.tetris-normal .cell-12-6 {left: 96px; top: 192px; }
-.tetris-normal .cell-12-7 {left: 112px; top: 192px; }
-.tetris-normal .cell-12-8 {left: 128px; top: 192px; }
-.tetris-normal .cell-12-9 {left: 144px; top: 192px; }
-.tetris-normal .cell-13-0 {left: 0px; top: 208px; }
-.tetris-normal .cell-13-1 {left: 16px; top: 208px; }
-.tetris-normal .cell-13-2 {left: 32px; top: 208px; }
-.tetris-normal .cell-13-3 {left: 48px; top: 208px; }
-.tetris-normal .cell-13-4 {left: 64px; top: 208px; }
-.tetris-normal .cell-13-5 {left: 80px; top: 208px; }
-.tetris-normal .cell-13-6 {left: 96px; top: 208px; }
-.tetris-normal .cell-13-7 {left: 112px; top: 208px; }
-.tetris-normal .cell-13-8 {left: 128px; top: 208px; }
-.tetris-normal .cell-13-9 {left: 144px; top: 208px; }
-.tetris-normal .cell-14-0 {left: 0px; top: 224px; }
-.tetris-normal .cell-14-1 {left: 16px; top: 224px; }
-.tetris-normal .cell-14-2 {left: 32px; top: 224px; }
-.tetris-normal .cell-14-3 {left: 48px; top: 224px; }
-.tetris-normal .cell-14-4 {left: 64px; top: 224px; }
-.tetris-normal .cell-14-5 {left: 80px; top: 224px; }
-.tetris-normal .cell-14-6 {left: 96px; top: 224px; }
-.tetris-normal .cell-14-7 {left: 112px; top: 224px; }
-.tetris-normal .cell-14-8 {left: 128px; top: 224px; }
-.tetris-normal .cell-14-9 {left: 144px; top: 224px; }
-.tetris-normal .cell-15-0 {left: 0px; top: 240px; }
-.tetris-normal .cell-15-1 {left: 16px; top: 240px; }
-.tetris-normal .cell-15-2 {left: 32px; top: 240px; }
-.tetris-normal .cell-15-3 {left: 48px; top: 240px; }
-.tetris-normal .cell-15-4 {left: 64px; top: 240px; }
-.tetris-normal .cell-15-5 {left: 80px; top: 240px; }
-.tetris-normal .cell-15-6 {left: 96px; top: 240px; }
-.tetris-normal .cell-15-7 {left: 112px; top: 240px; }
-.tetris-normal .cell-15-8 {left: 128px; top: 240px; }
-.tetris-normal .cell-15-9 {left: 144px; top: 240px; }
-.tetris-normal .cell-16-0 {left: 0px; top: 256px; }
-.tetris-normal .cell-16-1 {left: 16px; top: 256px; }
-.tetris-normal .cell-16-2 {left: 32px; top: 256px; }
-.tetris-normal .cell-16-3 {left: 48px; top: 256px; }
-.tetris-normal .cell-16-4 {left: 64px; top: 256px; }
-.tetris-normal .cell-16-5 {left: 80px; top: 256px; }
-.tetris-normal .cell-16-6 {left: 96px; top: 256px; }
-.tetris-normal .cell-16-7 {left: 112px; top: 256px; }
-.tetris-normal .cell-16-8 {left: 128px; top: 256px; }
-.tetris-normal .cell-16-9 {left: 144px; top: 256px; }
-.tetris-normal .cell-17-0 {left: 0px; top: 272px; }
-.tetris-normal .cell-17-1 {left: 16px; top: 272px; }
-.tetris-normal .cell-17-2 {left: 32px; top: 272px; }
-.tetris-normal .cell-17-3 {left: 48px; top: 272px; }
-.tetris-normal .cell-17-4 {left: 64px; top: 272px; }
-.tetris-normal .cell-17-5 {left: 80px; top: 272px; }
-.tetris-normal .cell-17-6 {left: 96px; top: 272px; }
-.tetris-normal .cell-17-7 {left: 112px; top: 272px; }
-.tetris-normal .cell-17-8 {left: 128px; top: 272px; }
-.tetris-normal .cell-17-9 {left: 144px; top: 272px; }
-.tetris-normal .cell-18-0 {left: 0px; top: 288px; }
-.tetris-normal .cell-18-1 {left: 16px; top: 288px; }
-.tetris-normal .cell-18-2 {left: 32px; top: 288px; }
-.tetris-normal .cell-18-3 {left: 48px; top: 288px; }
-.tetris-normal .cell-18-4 {left: 64px; top: 288px; }
-.tetris-normal .cell-18-5 {left: 80px; top: 288px; }
-.tetris-normal .cell-18-6 {left: 96px; top: 288px; }
-.tetris-normal .cell-18-7 {left: 112px; top: 288px; }
-.tetris-normal .cell-18-8 {left: 128px; top: 288px; }
-.tetris-normal .cell-18-9 {left: 144px; top: 288px; }
-.tetris-normal .cell-19-0 {left: 0px; top: 304px; }
-.tetris-normal .cell-19-1 {left: 16px; top: 304px; }
-.tetris-normal .cell-19-2 {left: 32px; top: 304px; }
-.tetris-normal .cell-19-3 {left: 48px; top: 304px; }
-.tetris-normal .cell-19-4 {left: 64px; top: 304px; }
-.tetris-normal .cell-19-5 {left: 80px; top: 304px; }
-.tetris-normal .cell-19-6 {left: 96px; top: 304px; }
-.tetris-normal .cell-19-7 {left: 112px; top: 304px; }
-.tetris-normal .cell-19-8 {left: 128px; top: 304px; }
-.tetris-normal .cell-19-9 {left: 144px; top: 304px; }
+.tetris-normal .cell-0-1 {left: 25px; top: 0px; }
+.tetris-normal .cell-0-2 {left: 50px; top: 0px; }
+.tetris-normal .cell-0-3 {left: 75px; top: 0px; }
+.tetris-normal .cell-0-4 {left: 100px; top: 0px; }
+.tetris-normal .cell-0-5 {left: 125px; top: 0px; }
+.tetris-normal .cell-0-6 {left: 150px; top: 0px; }
+.tetris-normal .cell-0-7 {left: 175px; top: 0px; }
+.tetris-normal .cell-0-8 {left: 200px; top: 0px; }
+.tetris-normal .cell-0-9 {left: 225px; top: 0px; }
+.tetris-normal .cell-1-0 {left: 0px; top: 25px; }
+.tetris-normal .cell-1-1 {left: 25px; top: 25px; }
+.tetris-normal .cell-1-2 {left: 50px; top: 25px; }
+.tetris-normal .cell-1-3 {left: 75px; top: 25px; }
+.tetris-normal .cell-1-4 {left: 100px; top: 25px; }
+.tetris-normal .cell-1-5 {left: 125px; top: 25px; }
+.tetris-normal .cell-1-6 {left: 150px; top: 25px; }
+.tetris-normal .cell-1-7 {left: 175px; top: 25px; }
+.tetris-normal .cell-1-8 {left: 200px; top: 25px; }
+.tetris-normal .cell-1-9 {left: 225px; top: 25px; }
+.tetris-normal .cell-2-0 {left: 0px; top: 50px; }
+.tetris-normal .cell-2-1 {left: 25px; top: 50px; }
+.tetris-normal .cell-2-2 {left: 50px; top: 50px; }
+.tetris-normal .cell-2-3 {left: 75px; top: 50px; }
+.tetris-normal .cell-2-4 {left: 100px; top: 50px; }
+.tetris-normal .cell-2-5 {left: 125px; top: 50px; }
+.tetris-normal .cell-2-6 {left: 150px; top: 50px; }
+.tetris-normal .cell-2-7 {left: 175px; top: 50px; }
+.tetris-normal .cell-2-8 {left: 200px; top: 50px; }
+.tetris-normal .cell-2-9 {left: 225px; top: 50px; }
+.tetris-normal .cell-3-0 {left: 0px; top: 75px; }
+.tetris-normal .cell-3-1 {left: 25px; top: 75px; }
+.tetris-normal .cell-3-2 {left: 50px; top: 75px; }
+.tetris-normal .cell-3-3 {left: 75px; top: 75px; }
+.tetris-normal .cell-3-4 {left: 100px; top: 75px; }
+.tetris-normal .cell-3-5 {left: 125px; top: 75px; }
+.tetris-normal .cell-3-6 {left: 150px; top: 75px; }
+.tetris-normal .cell-3-7 {left: 175px; top: 75px; }
+.tetris-normal .cell-3-8 {left: 200px; top: 75px; }
+.tetris-normal .cell-3-9 {left: 225px; top: 75px; }
+.tetris-normal .cell-4-0 {left: 0px; top: 100px; }
+.tetris-normal .cell-4-1 {left: 25px; top: 100px; }
+.tetris-normal .cell-4-2 {left: 50px; top: 100px; }
+.tetris-normal .cell-4-3 {left: 75px; top: 100px; }
+.tetris-normal .cell-4-4 {left: 100px; top: 100px; }
+.tetris-normal .cell-4-5 {left: 125px; top: 100px; }
+.tetris-normal .cell-4-6 {left: 150px; top: 100px; }
+.tetris-normal .cell-4-7 {left: 175px; top: 100px; }
+.tetris-normal .cell-4-8 {left: 200px; top: 100px; }
+.tetris-normal .cell-4-9 {left: 225px; top: 100px; }
+.tetris-normal .cell-5-0 {left: 0px; top: 125px; }
+.tetris-normal .cell-5-1 {left: 25px; top: 125px; }
+.tetris-normal .cell-5-2 {left: 50px; top: 125px; }
+.tetris-normal .cell-5-3 {left: 75px; top: 125px; }
+.tetris-normal .cell-5-4 {left: 100px; top: 125px; }
+.tetris-normal .cell-5-5 {left: 125px; top: 125px; }
+.tetris-normal .cell-5-6 {left: 150px; top: 125px; }
+.tetris-normal .cell-5-7 {left: 175px; top: 125px; }
+.tetris-normal .cell-5-8 {left: 200px; top: 125px; }
+.tetris-normal .cell-5-9 {left: 225px; top: 125px; }
+.tetris-normal .cell-6-0 {left: 0px; top: 150px; }
+.tetris-normal .cell-6-1 {left: 25px; top: 150px; }
+.tetris-normal .cell-6-2 {left: 50px; top: 150px; }
+.tetris-normal .cell-6-3 {left: 75px; top: 150px; }
+.tetris-normal .cell-6-4 {left: 100px; top: 150px; }
+.tetris-normal .cell-6-5 {left: 125px; top: 150px; }
+.tetris-normal .cell-6-6 {left: 150px; top: 150px; }
+.tetris-normal .cell-6-7 {left: 175px; top: 150px; }
+.tetris-normal .cell-6-8 {left: 200px; top: 150px; }
+.tetris-normal .cell-6-9 {left: 225px; top: 150px; }
+.tetris-normal .cell-7-0 {left: 0px; top: 175px; }
+.tetris-normal .cell-7-1 {left: 25px; top: 175px; }
+.tetris-normal .cell-7-2 {left: 50px; top: 175px; }
+.tetris-normal .cell-7-3 {left: 75px; top: 175px; }
+.tetris-normal .cell-7-4 {left: 100px; top: 175px; }
+.tetris-normal .cell-7-5 {left: 125px; top: 175px; }
+.tetris-normal .cell-7-6 {left: 150px; top: 175px; }
+.tetris-normal .cell-7-7 {left: 175px; top: 175px; }
+.tetris-normal .cell-7-8 {left: 200px; top: 175px; }
+.tetris-normal .cell-7-9 {left: 225px; top: 175px; }
+.tetris-normal .cell-8-0 {left: 0px; top: 200px; }
+.tetris-normal .cell-8-1 {left: 25px; top: 200px; }
+.tetris-normal .cell-8-2 {left: 50px; top: 200px; }
+.tetris-normal .cell-8-3 {left: 75px; top: 200px; }
+.tetris-normal .cell-8-4 {left: 100px; top: 200px; }
+.tetris-normal .cell-8-5 {left: 125px; top: 200px; }
+.tetris-normal .cell-8-6 {left: 150px; top: 200px; }
+.tetris-normal .cell-8-7 {left: 175px; top: 200px; }
+.tetris-normal .cell-8-8 {left: 200px; top: 200px; }
+.tetris-normal .cell-8-9 {left: 225px; top: 200px; }
+.tetris-normal .cell-9-0 {left: 0px; top: 225px; }
+.tetris-normal .cell-9-1 {left: 25px; top: 225px; }
+.tetris-normal .cell-9-2 {left: 50px; top: 225px; }
+.tetris-normal .cell-9-3 {left: 75px; top: 225px; }
+.tetris-normal .cell-9-4 {left: 100px; top: 225px; }
+.tetris-normal .cell-9-5 {left: 125px; top: 225px; }
+.tetris-normal .cell-9-6 {left: 150px; top: 225px; }
+.tetris-normal .cell-9-7 {left: 175px; top: 225px; }
+.tetris-normal .cell-9-8 {left: 200px; top: 225px; }
+.tetris-normal .cell-9-9 {left: 225px; top: 225px; }
+.tetris-normal .cell-10-0 {left: 0px; top: 250px; }
+.tetris-normal .cell-10-1 {left: 25px; top: 250px; }
+.tetris-normal .cell-10-2 {left: 50px; top: 250px; }
+.tetris-normal .cell-10-3 {left: 75px; top: 250px; }
+.tetris-normal .cell-10-4 {left: 100px; top: 250px; }
+.tetris-normal .cell-10-5 {left: 125px; top: 250px; }
+.tetris-normal .cell-10-6 {left: 150px; top: 250px; }
+.tetris-normal .cell-10-7 {left: 175px; top: 250px; }
+.tetris-normal .cell-10-8 {left: 200px; top: 250px; }
+.tetris-normal .cell-10-9 {left: 225px; top: 250px; }
+.tetris-normal .cell-11-0 {left: 0px; top: 275px; }
+.tetris-normal .cell-11-1 {left: 25px; top: 275px; }
+.tetris-normal .cell-11-2 {left: 50px; top: 275px; }
+.tetris-normal .cell-11-3 {left: 75px; top: 275px; }
+.tetris-normal .cell-11-4 {left: 100px; top: 275px; }
+.tetris-normal .cell-11-5 {left: 125px; top: 275px; }
+.tetris-normal .cell-11-6 {left: 150px; top: 275px; }
+.tetris-normal .cell-11-7 {left: 175px; top: 275px; }
+.tetris-normal .cell-11-8 {left: 200px; top: 275px; }
+.tetris-normal .cell-11-9 {left: 225px; top: 275px; }
+.tetris-normal .cell-12-0 {left: 0px; top: 300px; }
+.tetris-normal .cell-12-1 {left: 25px; top: 300px; }
+.tetris-normal .cell-12-2 {left: 50px; top: 300px; }
+.tetris-normal .cell-12-3 {left: 75px; top: 300px; }
+.tetris-normal .cell-12-4 {left: 100px; top: 300px; }
+.tetris-normal .cell-12-5 {left: 125px; top: 300px; }
+.tetris-normal .cell-12-6 {left: 150px; top: 300px; }
+.tetris-normal .cell-12-7 {left: 175px; top: 300px; }
+.tetris-normal .cell-12-8 {left: 200px; top: 300px; }
+.tetris-normal .cell-12-9 {left: 225px; top: 300px; }
+.tetris-normal .cell-13-0 {left: 0px; top: 325px; }
+.tetris-normal .cell-13-1 {left: 25px; top: 325px; }
+.tetris-normal .cell-13-2 {left: 50px; top: 325px; }
+.tetris-normal .cell-13-3 {left: 75px; top: 325px; }
+.tetris-normal .cell-13-4 {left: 100px; top: 325px; }
+.tetris-normal .cell-13-5 {left: 125px; top: 325px; }
+.tetris-normal .cell-13-6 {left: 150px; top: 325px; }
+.tetris-normal .cell-13-7 {left: 175px; top: 325px; }
+.tetris-normal .cell-13-8 {left: 200px; top: 325px; }
+.tetris-normal .cell-13-9 {left: 225px; top: 325px; }
+.tetris-normal .cell-14-0 {left: 0px; top: 350px; }
+.tetris-normal .cell-14-1 {left: 25px; top: 350px; }
+.tetris-normal .cell-14-2 {left: 50px; top: 350px; }
+.tetris-normal .cell-14-3 {left: 75px; top: 350px; }
+.tetris-normal .cell-14-4 {left: 100px; top: 350px; }
+.tetris-normal .cell-14-5 {left: 125px; top: 350px; }
+.tetris-normal .cell-14-6 {left: 150px; top: 350px; }
+.tetris-normal .cell-14-7 {left: 175px; top: 350px; }
+.tetris-normal .cell-14-8 {left: 200px; top: 350px; }
+.tetris-normal .cell-14-9 {left: 225px; top: 350px; }
+.tetris-normal .cell-15-0 {left: 0px; top: 375px; }
+.tetris-normal .cell-15-1 {left: 25px; top: 375px; }
+.tetris-normal .cell-15-2 {left: 50px; top: 375px; }
+.tetris-normal .cell-15-3 {left: 75px; top: 375px; }
+.tetris-normal .cell-15-4 {left: 100px; top: 375px; }
+.tetris-normal .cell-15-5 {left: 125px; top: 375px; }
+.tetris-normal .cell-15-6 {left: 150px; top: 375px; }
+.tetris-normal .cell-15-7 {left: 175px; top: 375px; }
+.tetris-normal .cell-15-8 {left: 200px; top: 375px; }
+.tetris-normal .cell-15-9 {left: 225px; top: 375px; }
+.tetris-normal .cell-16-0 {left: 0px; top: 400px; }
+.tetris-normal .cell-16-1 {left: 25px; top: 400px; }
+.tetris-normal .cell-16-2 {left: 50px; top: 400px; }
+.tetris-normal .cell-16-3 {left: 75px; top: 400px; }
+.tetris-normal .cell-16-4 {left: 100px; top: 400px; }
+.tetris-normal .cell-16-5 {left: 125px; top: 400px; }
+.tetris-normal .cell-16-6 {left: 150px; top: 400px; }
+.tetris-normal .cell-16-7 {left: 175px; top: 400px; }
+.tetris-normal .cell-16-8 {left: 200px; top: 400px; }
+.tetris-normal .cell-16-9 {left: 225px; top: 400px; }
+.tetris-normal .cell-17-0 {left: 0px; top: 425px; }
+.tetris-normal .cell-17-1 {left: 25px; top: 425px; }
+.tetris-normal .cell-17-2 {left: 50px; top: 425px; }
+.tetris-normal .cell-17-3 {left: 75px; top: 425px; }
+.tetris-normal .cell-17-4 {left: 100px; top: 425px; }
+.tetris-normal .cell-17-5 {left: 125px; top: 425px; }
+.tetris-normal .cell-17-6 {left: 150px; top: 425px; }
+.tetris-normal .cell-17-7 {left: 175px; top: 425px; }
+.tetris-normal .cell-17-8 {left: 200px; top: 425px; }
+.tetris-normal .cell-17-9 {left: 225px; top: 425px; }
+.tetris-normal .cell-18-0 {left: 0px; top: 450px; }
+.tetris-normal .cell-18-1 {left: 25px; top: 450px; }
+.tetris-normal .cell-18-2 {left: 50px; top: 450px; }
+.tetris-normal .cell-18-3 {left: 75px; top: 450px; }
+.tetris-normal .cell-18-4 {left: 100px; top: 450px; }
+.tetris-normal .cell-18-5 {left: 125px; top: 450px; }
+.tetris-normal .cell-18-6 {left: 150px; top: 450px; }
+.tetris-normal .cell-18-7 {left: 175px; top: 450px; }
+.tetris-normal .cell-18-8 {left: 200px; top: 450px; }
+.tetris-normal .cell-18-9 {left: 225px; top: 450px; }
+.tetris-normal .cell-19-0 {left: 0px; top: 475px; }
+.tetris-normal .cell-19-1 {left: 25px; top: 475px; }
+.tetris-normal .cell-19-2 {left: 50px; top: 475px; }
+.tetris-normal .cell-19-3 {left: 75px; top: 475px; }
+.tetris-normal .cell-19-4 {left: 100px; top: 475px; }
+.tetris-normal .cell-19-5 {left: 125px; top: 475px; }
+.tetris-normal .cell-19-6 {left: 150px; top: 475px; }
+.tetris-normal .cell-19-7 {left: 175px; top: 475px; }
+.tetris-normal .cell-19-8 {left: 200px; top: 475px; }
+.tetris-normal .cell-19-9 {left: 225px; top: 475px; }
 
-.tetris-normal .cell-type-0 {background-image: url("../images/normal/empty.png")}
-.tetris-normal .cell-type-1 {background-image: url("../images/normal/cyan.png")}
-.tetris-normal .cell-type-2 {background-image: url("../images/normal/blue.png")}
-.tetris-normal .cell-type-3 {background-image: url("../images/normal/orange.png")}
-.tetris-normal .cell-type-4 {background-image: url("../images/normal/yellow.png")}
-.tetris-normal .cell-type-5 {background-image: url("../images/normal/green.png")}
-.tetris-normal .cell-type-6 {background-image: url("../images/normal/purple.png")}
-.tetris-normal .cell-type-7 {background-image: url("../images/normal/red.png")}
+.tetris-normal .cell-type-0 {background-image: url("../images/normal/main/empty.png")}
+.tetris-normal .cell-type-1 {background-image: url("../images/normal/main/cyan.png")}
+.tetris-normal .cell-type-2 {background-image: url("../images/normal/main/blue.png")}
+.tetris-normal .cell-type-3 {background-image: url("../images/normal/main/orange.png")}
+.tetris-normal .cell-type-4 {background-image: url("../images/normal/main/yellow.png")}
+.tetris-normal .cell-type-5 {background-image: url("../images/normal/main/green.png")}
+.tetris-normal .cell-type-6 {background-image: url("../images/normal/main/purple.png")}
+.tetris-normal .cell-type-7 {background-image: url("../images/normal/main/red.png")}

@@ -109,7 +109,7 @@ export default class TetrisEngine {
 		var score = 0;
 
 		if (this.tSpin) {
-			if (this.rowCount != 0) comment = "T-SPIN BONUS, " + this.rowCount + ' ROWS CLEARED';
+			if (this.rowCount != 0) comment = `T-SPIN BONUS ${this.rowCount} ROWS CLEARED`;
 			else comment = 'T-SPIN BONUS';
 
 			score = consts.TSPIN_VALUES[this.rowCount] * (this.level + 1);
@@ -119,7 +119,7 @@ export default class TetrisEngine {
 			score = consts.ROW_CLEAR_VALUES[this.rowCount - 1] * (this.level + 1);
 		}
 		else if (this.rowCount != 0) {
-			comment = this.rowCount + ' ROWS CLEARED';
+			comment = `${this.rowCount} ROWS CLEARED`;
 			score = consts.ROW_CLEAR_VALUES[this.rowCount - 1] * (this.level + 1);
 		}
 
@@ -412,8 +412,12 @@ export default class TetrisEngine {
 		var matrix = this.piece.matrix();
 		for (var row = 0; row < matrix.length; row++)
 			for (var col = 0; col < matrix[row].length; col++)
-				if (row >= 0 && matrix[row][col] != 0)
-					this.board[this.piece.y + row][this.piece.x + col] = matrix[row][col];
+				if (row >= 0 && matrix[row][col] != 0) {
+					var y = this.piece.y + row;
+					var x = this.piece.x + col;
+
+					if (x >= 0 && y >= 0) this.board[y][x] = matrix[row][col];
+				}
 
 		// look for and remove full rows
 		this.checkRows();

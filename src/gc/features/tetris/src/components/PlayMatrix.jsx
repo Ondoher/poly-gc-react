@@ -14,7 +14,7 @@ export default class PlayMatrix extends Component {
 			]);
 
 			props.delegator.delegateOutbound(this, [
-				'move', 'down', 'rotate', 'harddown', 'hold', 'started'
+				'move', 'down', 'rotate', 'harddown', 'hold', 'started', 'escape'
 			]);
 		}
 
@@ -40,6 +40,9 @@ export default class PlayMatrix extends Component {
 		var handled = true;
 		switch(keyID)
 		{
+			case 27:
+				this.escape();
+				break;
 			case 37:
 				this.move(consts.LEFT);
 				break;
@@ -65,6 +68,7 @@ export default class PlayMatrix extends Component {
 		var handled = true;
 
 		var keyChar = event.key;
+
 
 		switch(keyChar)
 		{
@@ -148,15 +152,14 @@ export default class PlayMatrix extends Component {
 		this.setState({tetronimo: false})
 	}
 
-
 	renderWhoop() {
 		if (!this.state.whoop) return;
 		var {x, y, width, height, opacity} = this.state.whoop;;
 		var styles = {
-			left: x * 16 + 'px',
-			top: y * 16 + 'px',
-			width: width * 16 + 'px',
-			height: height * 16 + 'px',
+			left: x * 25 + 'px',
+			top: y * 25 + 'px',
+			width: width * 25 + 'px',
+			height: height * 25 + 'px',
 			opacity: opacity,
 		}
 
