@@ -492,7 +492,6 @@ export default class MJController extends Service {
 	}
 
 	pause(on) {
-		console.log('pause', on)
 		this.toggleTimer(on);
 	}
 

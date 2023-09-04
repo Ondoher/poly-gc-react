@@ -53,3 +53,12 @@ export const CONFIGURATION = {
     smallTileHeight: 12,
     whoopPath: "tertis/images/whoop.png"
 };
+
+export const FAST_SPEEDS = [
+    1000, 793, 617, 472, 355, 262, 189, 134, 93, 64, 42, 28, 18
+]
+
+export const CURRENT_SPEEDS = [
+    1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300,
+    250, 200, 150, 100
+];

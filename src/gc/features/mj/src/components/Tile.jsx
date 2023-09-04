@@ -4,15 +4,23 @@ export default class Tile extends React.Component {
 	constructor (props) {
 		super(props);
 
-		if (props.delegator) {
-			props.delegator.delegateInbound(this, [
-				'showTile', 'hintTile', 'highlightTile'
-			]);
-		}
-
 		this.state = {
 			show: true,
 			highlight: false
+		}
+	}
+
+	componentDidMount() {
+		if (this.props.delegator) {
+			this.props.delegator.delegateInbound(this, [
+				'showTile', 'hintTile', 'highlightTile'
+			]);
+		}
+	}
+
+	componentWillUnmount() {
+		if (this.props.delegator) {
+			this.props.delegator.freeDelegator();
 		}
 	}
 

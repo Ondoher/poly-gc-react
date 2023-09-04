@@ -5,18 +5,20 @@ import TetrisEngine from "../engine/TetrisEngine.js";
 import Tetris from "../components/Tetris.jsx";
 import * as actions from '../consts/actions.js';
 
+const DEBUG = false;
+
 export default class TetrisController extends Service {
 	constructor(registry) {
 		super('tetris:controller', registry);
 
 		this.implement([
 			'ready', 'render', 'move', 'down', 'rotate', 'harddown', 'hold',
-			'started', 'play', 'escape'
+			'mounted', 'play', 'escape', 'pause', 'resume'
 		]);
 
 		this.makeFireMethods([
 			'drawBoard', 'drawTetronimo', 'drawShadow', 'drawOnDeck',
-			'hideShadow', 'hideTetronimo', 'drawWhoop', 'drawGameOver',
+			'hideShadow', 'hideTetronimo', 'drawWhoop', 'drawPaused', 'drawGameOver',
 			'drawHold', 'drawScore', 'drawLevel', 'startGame'
 		]);
 
@@ -57,7 +59,6 @@ export default class TetrisController extends Service {
 	}
 
 	move(direction) {
-		console.log('move', direction)
 		this.engine.move(direction);
 	}
 
@@ -70,7 +71,6 @@ export default class TetrisController extends Service {
 	}
 
 	harddown() {
-		console.log('harddown')
 		this.engine.doHardDown();
 	}
 
@@ -78,21 +78,29 @@ export default class TetrisController extends Service {
 		this.engine.hold();
 	}
 
-	started() {
-		this.engine.newGame();
+	mounted() {
+		if (!this.hasBeenMounted) this.engine.newGame();
+		this.hasBeenMounted = true;
 	}
 
 	play() {
 		this.engine.newGame();
 	}
 
+	pause() {
+		this.engine.pause();
+	}
+
+	resume() {
+		this.engine.resume();
+	}
+
 	escape() {
-		console.log('ESCAPE')
 		if (this.gameOver) this.play();
 	}
 
 	engineUpdate(action, data) {
-		console.log(action, data);
+		if (DEBUG) console.log(action, data);
 		if (action === actions.STARTGAME) this.started = true;
 		if (!this.started) return;
 
@@ -110,9 +118,9 @@ export default class TetrisController extends Service {
 			}
 			case actions.DRAWTETRONIMO: {
 				data = data[0];
-				let [row, col, matrix] = data
+				let [row, col, matrix, force = false] = data
 
-				this.drawTetronimo(row, col, matrix)
+				this.drawTetronimo(row, col, matrix, force);
 				break;
 			}
 			case actions.HIDETETRONIMO: {
@@ -156,6 +164,11 @@ export default class TetrisController extends Service {
 			case actions.DRAWLEVEL: {
 				let [goal, level, comment=''] = data;
 				this.drawLevel(goal, level, comment);
+				break;
+			}
+			case actions.DRAWPAUSED: {
+				let [paused] = data;
+				this.drawPaused(paused);
 				break;
 			}
 			case actions.DRAWGAMEOVER: {

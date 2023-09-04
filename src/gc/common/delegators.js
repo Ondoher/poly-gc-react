@@ -1,9 +1,14 @@
 import {registry} from '@polylith/core';
 
+var counter = 0;
+
 export class ServiceDelegator {
 	constructor(serviceName) {
 		this.serviceName = serviceName;
 		this.service = registry.subscribe(serviceName);
+		this.inboundMethods = []
+		counter++;
+		this.uniqueId = `delegator-${counter}`
 	}
 
 	bindInbound(that, method) {
@@ -16,7 +21,8 @@ export class ServiceDelegator {
 
 	delegateInbound(that, methods) {
 		methods.forEach(function(method) {
-			this.service.listen(method, this.bindInbound(that, method));
+			var listener = this.service.listen(method, this.bindInbound(that, method));
+			this.inboundMethods.push({method, listener});
 		}, this)
 	}
 
@@ -28,5 +34,14 @@ export class ServiceDelegator {
 
 	newDelegator() {
 		return new ServiceDelegator(this.serviceName);
+	}
+
+	freeDelegator() {
+		var methods = [];
+		this.inboundMethods.forEach(function({method, listener}) {
+			this.service.unlisten(method, listener);
+			methods.push(arguments[0]);
+		}.bind(this));
+		this.inboundMethods = [];
 	}
 }

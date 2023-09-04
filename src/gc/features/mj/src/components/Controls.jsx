@@ -38,7 +38,6 @@ export default class Controls extends Component {
 	}
 
 	onPause(evt, on) {
-		console.log('onPause', arguments, on)
 		if (on === undefined) return this.pause(on);
 		if (this.pauseOnBlur) this.pause(on);
 	}

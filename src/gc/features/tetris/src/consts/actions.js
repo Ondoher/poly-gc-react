@@ -9,4 +9,5 @@ export const DRAWSCORE     = 'DRAWSCORE';
 export const DRAWLEVEL     = 'DRAWLEVEL';
 export const DRAWHOLD      = 'DRAWHOLD';
 export const DRAWWHOOP     = 'DRAWWHOOP';
+export const DRAWPAUSED  = 'DRAWPAUSED';
 export const DRAWGAMEOVER  = 'DRAWGAMEOVER';

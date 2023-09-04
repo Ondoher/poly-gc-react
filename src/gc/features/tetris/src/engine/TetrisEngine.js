@@ -6,6 +6,14 @@ import * as consts from '../consts/consts.js';
 import * as actions from '../consts/actions.js';
 import * as tetronomos from '../consts/tetronimos.js';
 
+/*
+Future upgrades:
+	- T-Spin Triple
+	- T-Spin Mini (regular T-spin cannot happen with a wall kick)
+	- Back to Back scoring
+	- Variable goal?
+*/
+
 export default class TetrisEngine {
 	constructor() {
 		makeEventable(this);
@@ -21,6 +29,7 @@ export default class TetrisEngine {
 
 		this.playClock = setInterval(this.clockCycle.bind(this), 16);
 	}
+
 	newGame() {
 		this.board = make2DArray(20, 10, 0);
 		this.bag = [];
@@ -31,11 +40,13 @@ export default class TetrisEngine {
 		this.gameOver = false;
 		this.hardDown = false;
 		this.roundHeld = false;
+		this.paused = false;
 		this.time = new Date();
 		this.lastMove = this.time.getTime();
 		this.score = 0;
 		this.rowCount = 0;
-		this.speed = 1000;
+		this.speeds = consts.FAST_SPEEDS;
+		this.speed = this.speeds[0];
 		this.rotation = 0;
 		this.motion = 0;
 		this.level = 0;
@@ -125,23 +136,26 @@ export default class TetrisEngine {
 
 		if (score != 0)
 			this.addScore(score, comment);
+
+		// look for a level up
+		if (this.goal <= 0)
+			this.levelUp()
+		else
+			this.fire('update', actions.DRAWLEVEL, [this.goal, this.level + 1, '']);
 	}
 
 	levelUp() {
 		this.level++;
 		this.goal = 10;
+
 		this.fire('update', actions.DRAWLEVEL, [this.goal, this.level + 1, 'LEVEL UP']);
-		this.speed -= 50;
-		if (this.speed < 50) this.speed = 100;
+
+		this.speed = this.speeds[Math.min(this.level, this.speeds.length)];
 	}
 
 	addLines(lines) {
 		this.goal -= lines;
 		this.lines += lines;
-		if (this.goal <= 0)
-			this.levelUp()
-		else
-			this.fire('update', actions.DRAWLEVEL, [this.goal, this.level + 1, '']);
 	}
 
 	drawPiece() {
@@ -199,7 +213,7 @@ export default class TetrisEngine {
 				this.piece.drop()
 			}
 			else {
-				this.lockClock = new Date().getTime();
+				this.lockClock = Date.now();
 				done = true;
 				this.addScore(this.hardDownCount * 2, '')
 			}
@@ -208,21 +222,34 @@ export default class TetrisEngine {
 
 		this.fire('update', actions.DRAWTETRONIMO, [[this.piece.y, this.piece.x, this.piece.matrix()]]);
 
-		this.lastMove = new Date().getTime() + consts.SPAWN_DELAY;
+		this.lastMove = Date.now() + consts.SPAWN_DELAY;
 		this.hardDown = false;
 		if (done) this.animate = false;
 		return !done;
 	}
 
+	shortTime(time) {
+		var trimmed = time % 60000;
+		var ms = String(time % 1000).padStart(4, '0');
+		var seconds = String(Math.floor(trimmed / 1000));
+
+		return `${seconds}:${ms}`;
+	}
+
 	clockCycle() {
 		var dirty = false;
 		var softDown = false;
-
+		if (this.paused) return;
 		if (this.gameOver) return;
 		if (this.animate) return;
 
-		var date = new Date();
-		var time = date.getTime();
+		if (this.drawNow) {
+			this.fire('update', actions.DRAWBOARD, [[0, 0, this.board]]);
+			this.fire('update', actions.DRAWTETRONIMO, [[this.piece.y, this.piece.x, this.piece.matrix(), true]]);
+			this.drawNow = false;
+		}
+
+		var now = Date.now();
 		var beforeX, beforeY;
 		var lockedDown = false;
 		var newShadow = false;
@@ -239,8 +266,8 @@ export default class TetrisEngine {
 			this.piece.y = this.calcBottom();
 			this.addScore(2 * this.piece.y - top, '');
 
-			this.lockClock = new Date().getTime();
-			this.lastMove = time + consts.SPAWN_DELAY;
+			this.lockClock = now;
+			this.lastMove = now + consts.SPAWN_DELAY;
 
 			this.fire('update', actions.DRAWTETRONIMO, [[this.piece.y, this.piece.x, this.piece.matrix()]]);
 
@@ -265,12 +292,12 @@ export default class TetrisEngine {
 
 			this.fire('update', actions.DRAWWHOOP, [xPos, top, width, bottom - top]);
 
-			this.lastMove = time + consts.SPAWN_DELAY;
+			this.lastMove = now + consts.SPAWN_DELAY;
 			this.fire('update', actions.DRAWBOARD, [[0, 0, this.board]]);
 			this.hideShadow();
 
-			this.lockClock = new Date().getTime();
-			this.lastMove = new Date().getTime() + consts.SPAWN_DELAY;
+			this.lockClock = now;
+			this.lastMove = now + consts.SPAWN_DELAY;
 
 			return;
 		}
@@ -296,7 +323,7 @@ export default class TetrisEngine {
 
 		// If the lock clock is running, see if it has timed out
 		if (this.lockClock !== 0) {
-			if (time - this.lockClock > this.speed)
+			if (now - this.lockClock > this.speed)
 				if (this.bottomedOut()) {
 					this.lockDown();
 					lockedDown = true;
@@ -308,15 +335,15 @@ export default class TetrisEngine {
 		}
 
 		// is it time to move yet?
-		if (!lockedDown && (time - this.lastMove > this.speed || (softDown && !lockedDown))) {
+		if (!lockedDown && (now - this.lastMove > this.speed || (softDown && !lockedDown))) {
 			if (!this.bottomedOut())
 				this.piece.drop()
 			if (this.bottomedOut() && this.lockClock == 0) {
-				this.lockClock = time;
+				this.lockClock = now;
 			}
 
 			dirty = true;
-			this.lastMove = time;
+			this.lastMove = now;
 
 			if (softDown)
 				this.addScore(1, '');
@@ -325,7 +352,7 @@ export default class TetrisEngine {
 
 		// update display by calling the callback
 		if (this.gameOver || lockedDown) {
-			this.lastMove = time + consts.SPAWN_DELAY;
+			this.lastMove = now + consts.SPAWN_DELAY;
 			this.fire('update', actions.DRAWBOARD, [[0, 0, this.board]]);
 			if (!this.gameOver)
 				this.fire('update', actions.DRAWTETRONIMO, [[this.piece.y, this.piece.x, this.piece.matrix()]]);
@@ -333,8 +360,9 @@ export default class TetrisEngine {
 				this.fire('update', actions.HIDETETRONIMO, []);
 			newShadow = true;
 		}
-		else if (dirty)
+		else if (dirty) {
 			this.fire('update', actions.DRAWTETRONIMO, [[this.piece.y, this.piece.x, this.piece.matrix()]]);
+		}
 
 		if (newShadow) {
 			this.shadowX = this.piece.x;
@@ -549,10 +577,10 @@ export default class TetrisEngine {
 
 	getDown() {
 		if (this.downButton != 0) {
-			var now = new Date().getTime();
+			var now = Date.now();
 
 			if (now - this.downStart >= this.downDelay) {
-				this.downStart = new Date().getTime();
+				this.downStart = Date.now();
 				this.downDelay = consts.REPEAT_DELAY;
 				return this.downButton;
 			}
@@ -564,10 +592,10 @@ export default class TetrisEngine {
 
 	getRotation() {
 		if (this.rotateButton != 0) {
-			var now = new Date().getTime();
+			var now = Date.now();
 
 			if (now - this.rotateStart >= this.rotateDelay) {
-				this.rotateStart = new Date().getTime();
+				this.rotateStart = Date.now();
 				this.rotateDelay = consts.REPEAT_DELAY;
 				if (this.rotateButton == consts.ROTATELEFT_BUTTON)
 					return consts.LEFT;
@@ -582,10 +610,10 @@ export default class TetrisEngine {
 
 	getMotion() {
 		if (this.moveButton != 0) {
-			var now = new Date().getTime();
+			var now = Date.now();
 
 			if (now - this.moveStart >= this.moveDelay) {
-				this.moveStart = new Date().getTime();
+				this.moveStart = Date.now();
 				this.moveDelay = consts.REPEAT_DELAY;
 				if (this.moveButton == consts.LEFT_BUTTON)
 					return consts.LEFT;
@@ -603,18 +631,18 @@ export default class TetrisEngine {
 			case consts.DOWN_BTN:
 				if (button == consts.HARDDOWN_BUTTON) this.hardDown = true;
 				this.downButton = button;
-				this.downStart = new Date().getTime();
+				this.downStart = Date.now();
 				this.downDelay = consts.BOUCE_DELAY;
 				break;
 			case consts.MOVE_BTN:
 				this.motion = (button == consts.LEFT_BUTTON ? consts.LEFT : consts.RIGHT);
-				this.moveStart = new Date().getTime();
+				this.moveStart = Date.now();
 				this.moveDelay = consts.BOUCE_DELAY;
 				this.moveButton = button;
 				break;
 			case ROTATE_BTN:
 				this.rotation = (button == consts.ROTATELEFT_BUTTON ? consts.LEFT : consts.RIGHT);
-				this.rotateStart = new Date().getTime();
+				this.rotateStart = Date.now();
 				this.rotateDelay = consts.BOUCE_DELAY;
 				this.rotateButton = button;
 				break;
@@ -651,7 +679,6 @@ export default class TetrisEngine {
 	}
 
 	move(direction) {
-		console.log('move', direction)
 		this.motion = direction;
 	}
 
@@ -664,7 +691,6 @@ export default class TetrisEngine {
 	}
 
 	doHardDown() {
-		console.log('doHardDown', this.hardDown)
 		this.hardDown = true;
 	}
 
@@ -692,5 +718,22 @@ export default class TetrisEngine {
 		this.drawShadow();
 		this.drawOnDeck();
 		this.drawHold();
+	}
+
+	pause() {
+		this.paused = true;
+		this.pauseDelay = Date.now() - this.lastMove;
+		var delta = Date.now()  - this.lastMove;
+
+		this.fire('update', actions.DRAWPAUSED, [true]);
+	}
+
+	resume() {
+		this.paused = false;
+		var delta = Date.now() - this.lastMove ;
+		this.lastMove = Date.now() - this.pauseDelay;
+
+		this.fire('update', actions.DRAWPAUSED, [false]);
+		this.drawNow = true;
 	}
 }

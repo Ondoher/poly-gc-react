@@ -131,14 +131,28 @@
 }
 
 
-
 .tetris-page .game-hold-matrix {
 	position: relative;
 }
 
-
 .tetris-page .play-button {
 	background-image: url("../images/normal/play.png");
+	width: 116px;
+	height: 46px;
+	cursor: pointer;
+	margin-top: 11px;
+}
+
+.tetris-page .pause-button {
+	background-image: url("../images/normal/pause.png");
+	width: 116px;
+	height: 46px;
+	cursor: pointer;
+	margin-top: 11px;
+}
+
+.tetris-page .resume-button {
+	background-image: url("../images/normal/resume.png");
 	width: 116px;
 	height: 46px;
 	cursor: pointer;

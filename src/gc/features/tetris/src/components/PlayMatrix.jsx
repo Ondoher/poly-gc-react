@@ -2,11 +2,23 @@ import React, { Component } from "react";
 import Matrix from "./Matrix";
 import * as consts from "../consts/consts.js"
 
+var counter = 0;
+
 export default class PlayMatrix extends Component {
 	constructor (props) {
 		super(props);
+		counter++;
+		this.uniqueId = `play-matrix-${counter}`
 
 		this.state = {matrix: [[]]}
+		this.keyPress = this.keyPress.bind(this);
+		this.keyDown = this.keyDown.bind(this);
+		this.state = {};
+	}
+
+	componentDidMount() {
+		var props = this.props;
+
 		if (props.delegator) {
 			props.delegator.delegateInbound(this, [
 				'drawTetronimo', 'drawBoard', 'drawShadow', 'hideShadow',
@@ -14,28 +26,24 @@ export default class PlayMatrix extends Component {
 			]);
 
 			props.delegator.delegateOutbound(this, [
-				'move', 'down', 'rotate', 'harddown', 'hold', 'started', 'escape'
+				'move', 'down', 'rotate', 'harddown', 'hold', 'mounted', 'escape'
 			]);
 		}
 
-		this.keyPress = this.keyPress.bind(this);
-		this.keyDown = this.keyDown.bind(this);
-		this.state = {};
-	}
-
-	componentDidMount() {
 		document.addEventListener('keydown', this.keyDown)
 		document.addEventListener('keypress', this.keyPress)
-		this.started();
+		this.mounted();
 	}
 
 	componentWillUnmount() {
+		if (this.props.delegator) {
+			this.props.delegator.freeDelegator();
+		}
 		document.removeEventListener('keydown', this.keyDown)
 		document.removeEventListener('keypress', this.keyPress)
 	}
 
 	keyDown(event) {
-		console.log('keyDown', event);
 		var keyID = event.keyCode;
 		var handled = true;
 		switch(keyID)
@@ -50,7 +58,6 @@ export default class PlayMatrix extends Component {
 				this.rotate(consts.RIGHT);
 				break;
 			case 39:
-				console.log('moving')
 				this.move(consts.RIGHT);
 				break;
 			case 40:
@@ -121,7 +128,6 @@ export default class PlayMatrix extends Component {
 
 		var delta = Date.now() - whoop.start;;
 		if (delta > timeout) {
-			console.log('whoop gone')
 			this.setState({whoop: false})
 			clearInterval(this.whoopTimer);
 			return;
@@ -132,8 +138,8 @@ export default class PlayMatrix extends Component {
 		this.setState({whoop: whoop})
 	}
 
-	drawTetronimo(row, col, matrix) {
-		this.setState({tetronimo: {row, col, matrix}})
+	drawTetronimo(row, col, matrix, force) {
+		this.setState({tetronimo: {row, col, matrix, force}})
 	}
 
 	drawBoard(matrix) {
