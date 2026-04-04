@@ -18,15 +18,9 @@
 	},
 	"resources": [
 		{
-			"dest": "css",
-			"cwd": "assets/css",
-			"glob": "**/*.css",
-			"keepNest": true
-		},
-		{
 			"dest": "images",
 			"cwd": "assets/images",
-			"glob": "**/*.{png,jpg,gif,svn}",
+			"glob": "**/*.{png,jpg,gif,svg}",
 			"keepNest": true
 		},
 		{
@@ -35,7 +29,6 @@
 			"glob": "**/*.{woff,woff2}",
 			"keepNest": true
 		}
-
 	],
 	"css": [
 		{

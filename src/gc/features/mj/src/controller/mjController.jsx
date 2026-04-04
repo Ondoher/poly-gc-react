@@ -32,8 +32,8 @@ export default class MJController extends Service {
 
 		this.engine = new MjEngine();
 		this.layoutName = 'turtle';
-		this.tileset = 'bone';
-		this.tilesize = 'normal';
+		this.tileset = 'wood';
+		this.tilesize = 'tiny';
 		this.timerHandle = setInterval(this.onTimerTick.bind(this), 250);
 
 		this.engine.listen('updateState', this.updateState.bind(this));

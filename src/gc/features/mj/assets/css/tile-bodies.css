@@ -57,3 +57,23 @@
 .glass-small .tile {
 	background-image: url("../images/tile-bodies/small/glass.png");
 }
+
+.bone-tiny .tile {
+	background-image: url("../images/tile-bodies/tiny/bone.png");
+}
+
+.ivory-tiny .tile {
+	background-image: url("../images/tile-bodies/tiny/ivory.png");
+}
+
+.plastic-tiny .tile {
+	background-image: url("../images/tile-bodies/tiny/plastic.png");
+}
+
+.wood-tiny .tile {
+	background-image: url("../images/tile-bodies/tiny/wood.png");
+}
+
+.glass-tiny .tile {
+	background-image: url("../images/tile-bodies/tiny/glass.png");
+}

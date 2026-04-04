@@ -39,7 +39,7 @@ export default class Page extends React.Component {
 		var display = visible ? 'block' : 'none';
 
 		return (
-			<div style={{display: display}} id={this.props.id} className={this.props.className}>
+			<div visible={visible} style={{display: display}} id={this.props.id} className={this.props.className}>
 				{this.props.children}
 			</div>
 		)
