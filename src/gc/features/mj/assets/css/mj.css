@@ -1,197 +1,353 @@
+.mj-frame-shell {
+    --frame-padding: 24px;
+    --crumb-offset: 25px;
+    --frame-top-left-width: 32px;
+    --frame-top-right-width: 31px;
+    --frame-bottom-left-width: 32px;
+    --frame-bottom-right-width: 32px;
+    --frame-corner-height: 32px;
+    --frame-left-width: 3px;
+    --frame-right-width: 2px;
+    --frame-edge-height: 3px;
+    position: relative;
+    height: calc(100% - var(--crumb-offset));
+    min-height: calc(100% - var(--crumb-offset));
+    box-sizing: border-box;
+    padding: var(--frame-padding);
+    background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.08)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.15)),
+        url("../images/frame/pattern.png");
+    background-color: #6b2424;
+    background-size: auto, auto, 220px 220px;
+}
+
+.mj-board-page {
+    background: transparent;
+}
+
 .mj-table {
+    position: absolute;
+    inset: var(--frame-padding);
     display: grid;
     grid-template-areas:
         "header"
         "main";
     grid-template-columns: 100%;
     grid-template-rows: auto 1fr;
-    height: calc(100% - 50px);
+    padding:
+        calc(var(--frame-corner-height) + 16px)
+        calc(var(--frame-top-right-width) + 16px)
+        calc(var(--frame-corner-height) + 16px)
+        calc(var(--frame-top-left-width) + 16px);
+    min-height: 0;
 }
-.won .mj-table {
-    position: absolute;
-    right: 0px;
-    top: 0px;
-    width: 100%;
-    height: 100%;
+
+.won .mj-frame-shell {
+    position: relative;
 }
 
 .mj-gameover {
     position: absolute;
-    right: 0px;
-    top: 0px;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.85)
+    inset: var(--frame-padding);
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 5;
 }
 
-.won.mj-board-page {
-    position: relative;
+.mj-frame-shell .mj-gameover {
+    border-radius: 6px;
 }
 
-.mj-board-page {
-	background-image: url("../images/oak.jpg");
-}
-
-
-.mj-table-controls {
+.frame-top {
+    position: absolute;
+    top: var(--frame-padding);
+    left: var(--frame-padding);
+    right: var(--frame-padding);
+    height: var(--frame-corner-height);
     display: grid;
-    grid-area: controls;
-    grid-template-areas:
-        "buttons";
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
+    grid-template-columns: var(--frame-top-left-width) 1fr var(--frame-top-right-width);
+    align-items: start;
+    pointer-events: none;
 }
 
-.mj-board-options {
-    grid-area: options;
+.frame-bottom {
+    position: absolute;
+    left: var(--frame-padding);
+    right: var(--frame-padding);
+    bottom: calc(var(--frame-padding) + 1px);
+    height: var(--frame-corner-height);
+    display: grid;
+    grid-template-columns: var(--frame-bottom-left-width) 1fr var(--frame-bottom-right-width);
+    align-items: end;
+    pointer-events: none;
 }
 
-.mj-board-buttons {
-    grid-area: buttons;
+.frame-corner {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
 }
 
+.frame-corner-tl {
+    top: 0;
+    left: 0;
+    width: var(--frame-top-left-width);
+    height: var(--frame-corner-height);
+    background-image: url("../images/frame/tl-corner.png");
+}
 
-.mj-table .button.play-button {
-    border-radius: 0px 6px 6px 0px;
-    border-left-width: 0px;
-    border-left-color: black;
+.frame-corner-tr {
+    top: 0;
+    right: 0;
+    width: var(--frame-top-right-width);
+    height: var(--frame-corner-height);
+    background-image: url("../images/frame/tr-corner.png");
+}
+
+.frame-corner-bl {
+    bottom: 0;
+    left: 0;
+    width: var(--frame-bottom-left-width);
+    height: var(--frame-corner-height);
+    background-image: url("../images/frame/bl-corner.png");
+}
+
+.frame-corner-br {
+    bottom: 0;
+    right: 0;
+    width: var(--frame-bottom-right-width);
+    height: var(--frame-corner-height);
+    background-image: url("../images/frame/br-corner.png");
+}
+
+.frame-top-edge {
+    grid-column: 2;
+    height: var(--frame-edge-height);
+    background-image: url("../images/frame/top-middle-slice.png");
+    background-repeat: repeat-x;
+    background-size: auto var(--frame-edge-height);
+    background-position: top center;
+}
+
+.frame-bottom-edge {
+    grid-column: 2;
+    align-self: end;
+    height: var(--frame-edge-height);
+    background-image: url("../images/frame/bottom-middle-slice.png");
+    background-repeat: repeat-x;
+    background-size: auto var(--frame-edge-height);
+    background-position: bottom center;
+}
+
+.frame-sides {
+    position: absolute;
+    top: calc(var(--frame-padding) + var(--frame-corner-height));
+    bottom: calc(var(--frame-padding) + var(--frame-corner-height));
+    left: var(--frame-padding);
+    right: var(--frame-padding);
+    pointer-events: none;
+}
+
+.frame-left-edge,
+.frame-right-edge {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background-repeat: repeat-y;
+    background-position: top center;
+}
+
+.frame-left-edge {
+    left: 0;
+    width: var(--frame-left-width);
+    background-image: url("../images/frame/left-middle-slice.png");
+    background-size: var(--frame-left-width) auto;
+}
+
+.frame-right-edge {
+    right: 0;
+    width: var(--frame-right-width);
+    background-image: url("../images/frame/right-middle-slice.png");
+    background-size: var(--frame-right-width) auto;
 }
 
 .mj-board-header {
     display: grid;
     grid-template-areas:
-        "controls timer"
-        "message message"
-        "short-message short-message";
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto 25px 25px auto;
+        "title timer"
+        "message timer"
+        "short-message timer";
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto auto;
+    gap: 8px 16px;
     grid-area: header;
-    padding: 5px;
-    position:relative;
+    align-items: start;
+    margin-bottom: 18px;
 }
 
-
+.mj-frame-title {
+    grid-area: title;
+    font-size: clamp(2rem, 3vw, 3.25rem);
+    font-style: italic;
+    font-weight: bold;
+    color: #e0b54a;
+    text-shadow: 0 2px 0 rgba(75, 33, 5, 0.8);
+}
 
 #mj-timer {
     display: grid;
     grid-area: timer;
+    align-self: start;
     justify-self: end;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
     font-weight: bold;
-    font-size: 2.5rem;
+    font-size: clamp(1.4rem, 2.3vw, 2.5rem);
     color: #f8f8f7;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.mj-message {
+    grid-area: message;
+    min-height: 1.5em;
+    font-weight: bold;
+    font-size: clamp(1.4rem, 2.8vw, 3.75rem);
+    color: #f8f8f7;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.mj-short-message {
+    grid-area: short-message;
+    min-height: 1.5em;
+    font-weight: bold;
+    font-size: clamp(1rem, 1.6vw, 1.5rem);
+    color: #f1d58d;
 }
 
 .mj-table-main {
     display: grid;
     grid-area: main;
-    grid-template-areas:
-        "options surface";
-    grid-template-columns: 400px 1fr;
-    z-index: 0;
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) 96px;
+    gap: 18px;
+    min-height: 0;
+    align-items: stretch;
 }
 
-
-.mj-table-controls {
-    grid-area: "options";
-    margin-top: 15px;
+.mj-frame-left,
+.mj-frame-center,
+.mj-frame-right {
+    min-height: 0;
 }
 
-.mj-control-label {
-    color: white;
-    font-weight: bold;
-    margin: 0px 4px;
-    font-size: 20px;
-    background-color: rgba(0, 0, 0, .1);
-    padding: 5px 5px 4px;
-    top: 2px;
-    display: inline-block;
-    width: 90;
-    margin-right: 10px;
+.mj-frame-left {
+    padding: 12px 16px;
+    background: rgba(114, 28, 23, 0.35);
+    border: 3px solid #d8aa3f;
+    box-shadow: inset 0 0 0 1px rgba(255, 220, 132, 0.25);
+}
+
+.mj-frame-center {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+}
+
+.mj-frame-right {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.mj-board-options {
+    display: grid;
+    gap: 12px;
 }
 
 .mj-option {
-    margin-top: 15px;
+    display: grid;
+    gap: 6px;
+}
+
+.mj-game-number {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 8px;
+}
+
+.mj-game-number .mj-control-label,
+.mj-game-number .mj-board-number {
+    grid-column: 1 / -1;
+}
+
+.mj-control-label {
+    color: #f6ddb1;
+    font-weight: bold;
+    font-size: 1rem;
+    letter-spacing: 0.03em;
 }
 
 .tileset-selector,
 .tilesize-selector,
-.layout-selector {
-    top: 2px;
-    height: 32px;
-    font-size: 16px;
-    font-weight: bold;
-    padding: 0px 5px;
-    box-shadow: 2px 2px 0 1px rgb(0 0 0 / 30%);
-    border-style: none;
-    width: 250px;
-}
-
+.layout-selector,
 .mj-board-number {
-    height: 32px;
-    width: 178px;
+    height: 38px;
+    width: 100%;
     font-size: 16px;
     font-weight: bold;
-    padding: 0px 5px;
-    box-shadow: 0px 2px 0 1px rgb(0 0 0 / 30%);
-    border-style: none;
+    padding: 0 10px;
+    border: none;
+    box-shadow: 0 2px 0 1px rgb(0 0 0 / 30%);
 }
 
 .mj-surface {
     background-image: url("../images/felt.jpg");
+    background-size: cover;
+    background-position: center;
     display: grid;
-    grid-area: surface;
-    grid-template-areas:
-        "."
-        "canvas"
-        ".";
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-    width: calc(100% - 50px);
-    border: 1px solid;
-    border-color:
-        rgba(0, 0, 0, 0.5)
-        rgba(240, 240, 240, 0.5)
-        rgba(240, 240, 240, 0.5)
-        rgba(0, 0, 0, 0.5)
-    ;
-
+    place-items: center;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    padding: 16px;
+    border: 3px solid #d8aa3f;
+    box-shadow: inset 0 0 0 1px rgba(255, 220, 132, 0.25);
+    overflow: hidden;
 }
 
 .board-canvas {
-    grid-area: canvas;
     position: relative;
-    width: 670px;
-    height: 625px;
+    width: min(100%, 670px);
+    aspect-ratio: 670 / 625;
+    height: auto;
+    max-height: 100%;
     overflow: hidden;
-    justify-self: center;
 }
 
-.to-beat {
-    text-align: center;
-    width: 100%;
+.mj-table-controls {
+    display: grid;
+    height: 100%;
 }
 
-.to-beat .beat-timer {
-	font-weight: bold;
-    color: #d93f3a;
+.mj-board-buttons {
+    display: grid;
+    gap: 10px;
+    align-content: start;
 }
 
-.mj-message {
-    grid-area: message;
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
-    font-weight: bold;
-    font-size: 85px;
-    color: #f8f8f7;
-    text-align: center;
+.mj-table .button {
+    min-width: 0;
+    padding: 9px 10px;
+    border-radius: 6px;
+    box-shadow: 2px 2px 0 1px rgb(0 0 0 / 30%);
+    background-color: #605fab;
 }
 
-.mj-short-message {
-    grid-area: short-message;
-    text-align: center;
-    font-weight: bold;
-    font-size: 1.5rem;
-    height: 30px;
+.mj-table .button.play-button {
+    min-width: 96px;
+}
+
+.mj-table .button:disabled {
+    background-color: rgba(96, 95, 171, 0.66);
+    color: rgba(255, 255, 255, 0.66);
 }
 
 .show-won {display: none !important}
@@ -200,92 +356,80 @@
 .show-to-beat {display: none !important}
 .to-beat .show-to-beat {display: inline-block !important}
 
-.mj-table .button {
-    padding: 7px 12px;
-    border-radius: 6px;
-    box-shadow: 2px 2px 0 1px rgb(0 0 0 / 30%);
-    background-color: #605fab;
-}
-
-.mj-table .button:disabled {
-    background-color: rgba(96, 95, 171, 0.66);
-    color: rgba(255, 255, 255, 0.66);
-}
-
 tile-highlight {
     position: absolute;
     top: '0px' ;
     left: '0px';
 }
 
-@media (orientation: landscape) {
-    @media screen and (max-width: 900px) {
-        .mj-table {
-            padding: 0px;
-            grid-template-areas:
-                "header board";
-            grid-template-columns: 260px 1fr;
-            grid-template-rows: 1fr;
-        }
-        .mj-board-header {
-            padding: 5px;
-            display: grid;
-            grid-template-areas:
-                "controls"
-                "message"
-                "short-message"
-                "timer";
-            grid-template-rows: 50px 32px 25px auto;
-            grid-area: header;
-        }
+@media screen and (max-width: 1200px) {
+    .mj-table-main {
+        grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) 88px;
+    }
 
-        .mj-message {
-            text-align: right;
-        }
-
-        #mj-timer {
-            display: grid;
-            grid-area: timer;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-            font-weight: bold;
-            font-size: 40px;
-            color: #f8f8f7;
-        }
+    .board-canvas {
+        width: min(100%, 620px);
     }
 }
 
-@media (orientation: portrait) {
-    @media screen and (max-width: 900px) {
-        .mj-table {
-            grid-template-areas:
-                "header"
-                "board";
-            padding: 0px;
-            grid-template-columns: 1fr;
+@media screen and (max-width: 980px) {
+    .mj-table {
+        padding:
+            calc(var(--frame-corner-height) + 12px)
+            calc(var(--frame-top-right-width) + 12px)
+            calc(var(--frame-corner-height) + 12px)
+            calc(var(--frame-top-left-width) + 12px);
+    }
 
-        }
-        .mj-board-header {
-            padding: 5px;
-            display: grid;
-            grid-template-areas:
-                "controls"
-                "timer"
-                "message"
-                "short-message";
-            grid-template-rows: auto auto auto auto;
-            grid-template-columns: 1fr;
-            grid-area: header;
-        }
+    .mj-table-main {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+    }
 
-        #mj-timer {
-            display: grid;
-            grid-area: timer;
-            text-align: right;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-            font-weight: bold;
-            font-size: 40px;
-            color: #f8f8f7;
-            padding-top: 10px;
-        }
+    .mj-frame-right {
+        justify-content: stretch;
+    }
+
+    .mj-board-buttons {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .board-canvas {
+        width: min(100%, 670px);
+    }
+}
+
+@media screen and (max-width: 700px) {
+    .mj-frame-shell {
+        --frame-padding: 12px;
+    }
+
+    .mj-board-header {
+        grid-template-areas:
+            "title"
+            "timer"
+            "message"
+            "short-message";
+        grid-template-columns: 1fr;
+    }
+
+    #mj-timer {
+        justify-self: start;
+    }
+
+    .mj-board-buttons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mj-game-number {
+        grid-template-columns: 1fr;
+    }
+
+    .mj-table .button.play-button {
+        width: 100%;
+    }
+
+    .board-canvas {
+        width: min(100%, 540px);
     }
 }

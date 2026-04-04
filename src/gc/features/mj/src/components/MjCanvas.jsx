@@ -35,7 +35,7 @@ export default class MjCanvas extends Component {
 
 	renderCanvas() {
 		return(
-			<div class="board-canvas">
+			<div className="board-canvas">
 				{this.renderTiles()}
 			</div>
 		)

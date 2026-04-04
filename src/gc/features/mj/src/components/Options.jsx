@@ -6,8 +6,11 @@ export default class Options extends Component {
 	constructor(props) {
 		super(props);
 
-		this.state = {layout: this.props.layout, playing: this.props.boardNbr,
-			boardNbr: this.props.boardNbr, tileset: this.props.tileset};
+		this.state = {
+			layout: this.props.layout,
+			playing: this.props.boardNbr,
+			boardNbr: this.props.boardNbr,
+		};
 
 		if (props.delegator) {
 			props.delegator.delegateOutbound(this, [
@@ -46,13 +49,21 @@ export default class Options extends Component {
 		}
 	}
 
+	getSelectedTileset() {
+		return this.props.tileset?.class || '';
+	}
+
+	getSelectedTilesize() {
+		return this.props.tilesize?.class || '';
+	}
+
 	renderLayoutItems() {
 		var layouts = this.props.layouts || [];
 		var names = Object.keys(layouts);
 		return names.map(function(name) {
 			var layout = layouts[name];
 			return (
-				<option value={layout.id} selected={layout.id === this.state.layout} key={layout.id}>{layout.title} ({layout.tiles})</option>
+				<option value={layout.id} key={layout.id}>{layout.title} ({layout.tiles})</option>
 			)
 		}, this)
 	}
@@ -61,9 +72,9 @@ export default class Options extends Component {
 		var options = this.renderLayoutItems();
 
 		return (
-			<div class="mj-game-layout mj-option">
-				<span class="mj-control-label">Layout #</span>
-				<select className="layout-selector" onChange={this.onLayoutChange.bind(this)}>
+			<div className="mj-game-layout mj-option">
+				<span className="mj-control-label">Layout #</span>
+				<select className="layout-selector" value={this.state.layout} onChange={this.onLayoutChange.bind(this)}>
 					{options}
 				</select>
 			</div>
@@ -74,8 +85,8 @@ export default class Options extends Component {
 		var playLabel = this.state.boardNbr !== this.state.playing ? 'Start' : 'Restart';
 
 		return (
-			<div class="mj-game-number mj-option">
-				<span class="mj-control-label">Game #</span>
+			<div className="mj-game-number mj-option">
+				<span className="mj-control-label">Game #</span>
 				<input type="number" placeholder="Board" onChange={this.onBoardNbrChange.bind(this)} value={this.state.boardNbr} className="mj-board-number"/>
 				<Button className="small-button play-button" onClick={this.onPlay.bind(this)}>{playLabel}</Button>
 			</div>
@@ -88,7 +99,7 @@ export default class Options extends Component {
 		return names.map(function(name) {
 			var tileset = tilesets[name];
 			return (
-				<option value={name} selected={name === this.state.tileset} key={name}>{tileset.name}</option>
+				<option value={name} key={name}>{tileset.name}</option>
 			)
 		}, this)
 	}
@@ -97,9 +108,9 @@ export default class Options extends Component {
 		var options = this.renderTilesetItems();
 
 		return (
-			<div class="mj-tileset mj-option">
-				<span class="mj-control-label">Tile Set</span>
-				<select className="tileset-selector" onChange={this.onTilesetChange.bind(this)}>
+			<div className="mj-tileset mj-option">
+				<span className="mj-control-label">Tile Set</span>
+				<select className="tileset-selector" value={this.getSelectedTileset()} onChange={this.onTilesetChange.bind(this)}>
 					{options}
 				</select>
 			</div>
@@ -113,7 +124,7 @@ export default class Options extends Component {
 		return names.map(function(name) {
 			var tilesize = tilesizes[name];
 			return (
-				<option value={name} selected={name === this.state.tilesize} key={name}>{tilesize.name}</option>
+				<option value={name} key={name}>{tilesize.name}</option>
 			)
 		}, this)
 	}
@@ -122,9 +133,9 @@ export default class Options extends Component {
 		var options = this.renderTilesizeItems();
 
 		return (
-			<div class="mj-tilesize mj-option">
-				<span class="mj-control-label">Tile Size</span>
-				<select className="tilesize-selector" onChange={this.onTilesizeChange.bind(this)}>
+			<div className="mj-tilesize mj-option">
+				<span className="mj-control-label">Tile Size</span>
+				<select className="tilesize-selector" value={this.getSelectedTilesize()} onChange={this.onTilesizeChange.bind(this)}>
 					{options}
 				</select>
 			</div>

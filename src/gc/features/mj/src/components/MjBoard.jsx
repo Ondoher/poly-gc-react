@@ -159,7 +159,7 @@ export default class MjBoard extends React.Component {
 	renderHeader() {
 		return (
 			<div className="mj-board-header">
-				{this.renderControls()}
+				<div className="mj-frame-title">Mahjongg</div>
 				<Timer id="mj-timer" className="timer" delegator={this.props.delegator.newDelegator()}/>
 				<div id="message" className="mj-message">{this.state.message}</div>
 				<div id="short-message" className="mj-short-message">{this.state.shortMessage}</div>
@@ -187,10 +187,38 @@ export default class MjBoard extends React.Component {
 
 	renderMain() {
 		return (
-			<div class="mj-table-main">
-				{this.renderOptions()}
-				{this.renderSurface()}
+			<div className="mj-table-main">
+				<div className="mj-frame-left">
+					{this.renderOptions()}
+				</div>
+				<div className="mj-frame-center">
+					{this.renderSurface()}
+				</div>
+				<div className="mj-frame-right">
+					{this.renderControls()}
+				</div>
 			</div>
+		)
+	}
+
+	renderFrame() {
+		return (
+			<React.Fragment>
+				<div className="frame-top">
+					<div className="frame-corner frame-corner-tl"></div>
+					<div className="frame-top-edge"></div>
+					<div className="frame-corner frame-corner-tr"></div>
+				</div>
+				<div className="frame-sides">
+					<div className="frame-left-edge"></div>
+					<div className="frame-right-edge"></div>
+				</div>
+				<div className="frame-bottom">
+					<div className="frame-corner frame-corner-bl"></div>
+					<div className="frame-bottom-edge"></div>
+					<div className="frame-corner frame-corner-br"></div>
+				</div>
+			</React.Fragment>
 		)
 	}
 
@@ -211,11 +239,14 @@ export default class MjBoard extends React.Component {
 
 		return (
 			<Page serviceName={this.props.serviceName} className={pageClassName}>
-				<div className={'mj-table ' + className}>
-					{this.renderMain()}
+				<div className={'mj-frame-shell ' + className}>
+					{this.renderFrame()}
+					<div className="mj-table">
+						{this.renderHeader()}
+						{this.renderMain()}
+					</div>
 					{this.renderFireworks()}
 					{this.renderLost()}
-					{this.renderHeader()}
 				</div>
 			</Page>
 		)
