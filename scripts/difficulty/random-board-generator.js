@@ -39,7 +39,6 @@ export class MahjonggRandomBoardGenerator {
 		this.placedTiles = new Set();
 		this.usedSpaces = new Set();
 		this.drawPile = {
-			count: 0,
 			faceSets: [],
 		};
 	}
@@ -111,7 +110,6 @@ export class MahjonggRandomBoardGenerator {
 			this.drawPile.faceSets.push({
 				faces: makeSequentialArray(set * FACES_PER_SET, FACES_PER_SET),
 			});
-			this.drawPile.count++;
 		}
 
 		if (leftover) {
@@ -119,7 +117,6 @@ export class MahjonggRandomBoardGenerator {
 			this.drawPile.faceSets.push({
 				faces: makeSequentialArray(set * FACES_PER_SET, 2),
 			});
-			this.drawPile.count++;
 		}
 	}
 
@@ -143,7 +140,7 @@ export class MahjonggRandomBoardGenerator {
 	}
 
 	drawFacePair() {
-		var faceSetIdx = Random.random(this.drawPile.count);
+		var faceSetIdx = Random.random(this.drawPile.faceSets.length);
 
 		return {
 			face1: this.drawOneOf(faceSetIdx),
@@ -160,7 +157,6 @@ export class MahjonggRandomBoardGenerator {
 
 		if (faceSet.faces.length === 0) {
 			this.drawPile.faceSets.splice(faceGroup, 1);
-			this.drawPile.count--;
 		}
 
 		return face;

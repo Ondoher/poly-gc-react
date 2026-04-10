@@ -22,6 +22,28 @@ Useful options:
   example `1..100` or `1,5,9`
 - `--batch` runs batch analysis
 - `--generator <name>` chooses `engine`, `standalone`, or `random`
+- `--generation-difficulty <preset>` sets the weighted engine picker
+  difficulty; currently `easy`, `medium`, or `hard`
+- `--generation-difficulty-value <n>` sets the weighted engine picker
+  difficulty directly as a number from `0` to `1`
+- `--open-pressure-multiplier <n>` overrides how strongly hard-side tile
+  picking favors candidates that open fewer new tiles
+- `--max-freed-pressure <n>` overrides the freed-tile range used to calculate
+  low-open pressure
+- `--balance-pressure-multiplier <n>` overrides how strongly hard-side tile
+  picking favors low safe stack-balance margins
+- `--max-balance-margin <n>` overrides the margin range used to calculate
+  stack-balance pressure
+- `--short-horizon-probe` enables the short-horizon structural collapse probe
+  with default experimental settings
+- `--short-horizon-probe-moves <n>` overrides the short-horizon probe depth
+- `--short-horizon-pressure-multiplier <n>` overrides the pressure applied when
+  a probe collapses inside that depth
+- `--face-avoidance` enables weighted face-set avoidance during face assignment
+- `--face-avoidance-weight <n>` controls the normal-pair avoidance mark weight
+- `--suspension-face-avoidance-weight <n>` controls the stronger suspension
+  avoidance mark weight
+- `--face-avoidance-max-weight <n>` caps accumulated avoidance per tile/face set
 - `--suspension <preset>` applies an engine suspension preset; currently
   `conservative`, `moderate`, or `aggressive`
 - `--force-release-at-effective-open <n>` overrides the suspension force-release
@@ -75,6 +97,12 @@ Run the ad hoc script with:
 node .\scripts\difficulty\tile-picker-ad-hoc.js
 ```
 
+Run the face-avoidance ad hoc checks with:
+
+```powershell
+node .\scripts\difficulty\face-avoidance-ad-hoc.js
+```
+
 The prototype includes:
 
 - horizontal reference masks built from whole rows for each vertical half of
@@ -121,6 +149,36 @@ Run the active engine with the aggressive suspension preset:
 node .\scripts\difficulty\cli.js --layout turtle --board 12345 --suspension aggressive
 ```
 
+Run the active engine with the hard weighted picker:
+
+```powershell
+node .\scripts\difficulty\cli.js --layout turtle --board 12345 --generation-difficulty hard
+```
+
+Run the hard picker with explicit stack-balance pressure:
+
+```powershell
+node .\scripts\difficulty\cli.js --layout turtle --board 12345 --generation-difficulty hard --balance-pressure-multiplier 1 --max-balance-margin 48
+```
+
+Run the hard picker with explicit low-open pressure:
+
+```powershell
+node .\scripts\difficulty\cli.js --layout turtle --board 12345 --generation-difficulty hard --open-pressure-multiplier 1 --max-freed-pressure 6
+```
+
+Run the hard picker with the short-horizon probe enabled:
+
+```powershell
+node .\scripts\difficulty\cli.js --layout turtle --board 12345 --generation-difficulty hard --short-horizon-probe
+```
+
+Run the hard picker with weighted face-set avoidance:
+
+```powershell
+node .\scripts\difficulty\cli.js --layout turtle --board 12345 --generation-difficulty hard --face-avoidance --face-avoidance-weight 1 --suspension-face-avoidance-weight 3
+```
+
 Run the aggressive preset with looser safety thresholds:
 
 ```powershell
@@ -134,6 +192,75 @@ node .\scripts\difficulty\cli.js --layout turtle --boards 1..100 --batch --suspe
 ```
 
 Batch output includes suspension instrumentation for engine-generated boards:
+
+- `Brutality score` separates random-play punishment from authored
+  pair-choice pressure. It combines playout dead-end rate, high-percentile
+  remaining tiles at dead end, shallow dead-end timing, and dominant-stack risk
+  at dead ends.
+- `Playout average dead-end moves` shows how far random play usually gets
+  before failing. Lower values mean the board punishes bad lines earlier.
+- `Playout p75 dead-end moves` shows a high-percentile dead-end depth so one or
+  two very early failures do not dominate the reading.
+- `Playout p75 dead-end remaining tiles` shows how much of the board is usually
+  still locked when a bad sampled line dies. This is useful for comparing random
+  face deals against solved-by-construction boards.
+- `Known solution early/middle/late branching` splits the guaranteed solution
+  path into thirds. This helps identify boards that are open early but tighten
+  late, or boards that are constrained from the start.
+- `Known solution longest low-branch run` counts the longest run of known
+  solution moves with two or fewer legal pairs.
+- `Known solution dominant-stack risk moves` records how often the known
+  solution passes through a stack-balance state close to the bad layout shape.
+- `Search dominant-stack risk rate` and `Search dominant-stack rate` record the
+  same stack-balance pressure across bounded search states.
+- `Picker picks` counts weighted picker calls during generation
+- `Picker average weight` shows the average final weighted score selected by
+  the picker
+- `Picker average freed tiles` shows how many blocked tiles the selected tile
+  would open if removed
+- `Picker average freed rank` shows the inverted freed-tile rank used in the
+  current score, where lower values are easier
+- `Picker average open pressure` shows the raw freed-tile multiplier applied to
+  hard-side selections; higher values mean the picker is favoring candidates
+  that open fewer new tiles
+- `Picker average z` and `Picker average z weight` show how the picker is
+  interacting with stack height
+- `Picker average balance margin` shows how much slack remains between the
+  tallest remaining stack and the other remaining tile groups after selected
+  removals; lower safe values mean the picker is riding closer to the
+  dominant-stack boundary
+- `Picker average balance pressure` shows the multiplier applied from that
+  margin; hard picker settings raise this when candidates stay close to the
+  safe side of the stack-balance boundary
+- `Picker average short-horizon moves` shows how far selected candidate probes
+  ran before collapsing, or the configured probe depth if they did not collapse
+- `Picker average short-horizon remaining tiles` shows how many structural
+  tiles remained when the selected candidate probe stopped
+- `Picker average short-horizon pressure` shows the multiplier applied from the
+  probe
+- `Picker short-horizon collapse rate` shows how often selected candidate
+  probes collapsed inside the configured horizon
+- `Picker average horizontal intersections` and `Picker average vertical
+  intersections` show how much the picker is selecting tiles entangled with the
+  reference set
+- `Picker average candidates`, `Picker average window size`, and `Picker
+  average window start` show how broad the active selection window was
+- `Picker normal first/second`, `Picker suspension first/second/third`, and
+  `Picker released partner` counts show which generation paths used the picker
+
+- `Face avoidance marks` counts soft avoid-face marks added to frontier tiles
+- `Face avoidance preferred groups` counts pair records that preselected a
+  stable face-group id while avoidance was enabled
+- `Face avoidance preferred draws` counts preferred face groups that were still
+  available when final face assignment ran
+- `Face avoidance preferred fallbacks` counts preferred face groups that had
+  already been consumed and had to fall back to weighted face assignment
+- `Face avoidance draws` counts weighted face assignments made while avoidance
+  is enabled
+- `Face avoidance average selected penalty` shows how much avoidance penalty the
+  chosen face sets carried
+- `Face avoidance non-zero penalty draw rate` shows how often the generator had
+  to choose a face set that was discouraged for the pair
 
 - `Suspension attempts` counts calls that considered starting a suspension
 - `Suspensions created` counts successful suspensions

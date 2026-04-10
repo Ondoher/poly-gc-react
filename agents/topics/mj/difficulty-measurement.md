@@ -152,6 +152,102 @@ Useful downstream values:
 This is still a sampled metric, not a proof of optimal play, but it is closer to
 the kind of delayed order pressure the suspension algorithm is trying to create.
 
+### Random-Play Brutality
+
+The analyzer now reports a separate brutality score so random face-dealt boards
+and solved-by-construction boards can be compared without pretending they are
+difficult in the same way.
+
+Useful values:
+
+- playout dead-end rate
+- average moves before dead end
+- p75 moves before dead end
+- p75 remaining tiles at dead end
+- dominant-stack risk at dead end
+
+This should help separate:
+
+- chaotic random boards, which often punish random play brutally but have no
+  authored solution pressure
+- generated boards, which can have a known valid solution and still build
+  increasing punishment into bad choices
+
+The eventual nightmare target should score high on both brutality and authored
+choice pressure.
+
+### Known-Solution Timeline
+
+The analyzer also splits the known solution path into early, middle, and late
+thirds.
+
+Useful values:
+
+- average branching in each third
+- low-branch move count in each third
+- longest low-branch run
+- dominant-stack risk moves along the known solution
+
+This helps identify whether a generator is producing boards that tighten
+gradually, collapse late, or constrain the player from the start.
+
+### Dominant-Stack Risk
+
+The bad layout shape discussed during suspension tuning happens when one stack
+is taller than the other remaining placed tile groups, counting a stack as one
+placed group.
+
+The analyzer now records a stack-balance profile for states:
+
+- stack group count
+- maximum stack height
+- other stack group count
+- balance margin
+- at-risk state
+- dominant state
+
+The same signal is summarized for the initial board, the known solution path,
+bounded search, and sampled playout dead ends.
+
+The weighted tile picker now also uses this balance margin as a hard-side
+pressure signal. Candidate removals that would create a dominant stack are still
+rejected by the safety rule. Candidate removals that remain safe but closer to
+the boundary can receive extra weight in harder generation settings.
+
+The current experimental CLI knobs are:
+
+- `--open-pressure-multiplier`
+- `--max-freed-pressure`
+- `--balance-pressure-multiplier`
+- `--max-balance-margin`
+- `--short-horizon-probe`
+- `--short-horizon-probe-moves`
+- `--short-horizon-pressure-multiplier`
+
+Open pressure is the raw freed-tile companion to the older freed-rank score. In
+harder settings it gives more weight to candidate removals that open fewer new
+tiles, which should reduce recovery paths and push bad playouts toward earlier
+dead ends.
+
+The short-horizon probe is off by default. When enabled, it structurally removes
+a candidate pair, walks forward for a small number of greedy low-continuation
+moves, and adds hard-side pressure if the probe collapses inside that horizon.
+This is intended to target early dead ends more directly than static picker
+signals.
+
+Face-set avoidance is another opt-in experiment. When enabled, assigned solution
+pairs mark nearby frontier tiles with soft penalties against the assigned face
+set. Later face assignment chooses among remaining face sets by the lowest
+avoidance penalty, not by hard exclusion. This should reduce accidental local
+matches while preserving fallbacks if the draw pile has no clean option.
+
+The current experimental CLI knobs are:
+
+- `--face-avoidance`
+- `--face-avoidance-weight`
+- `--suspension-face-avoidance-weight`
+- `--face-avoidance-max-weight`
+
 ## Suggested Derived Score
 
 Instead of one final score immediately, start with a multi-metric profile.

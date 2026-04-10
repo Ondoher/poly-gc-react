@@ -39,6 +39,7 @@ type Layout = {
  * be rendered on the screen.
  */
 type FaceSet = {
+	id: number;
 	faces: number[];
 }
 
@@ -53,8 +54,7 @@ type FaceGroup = number;
  * pile to be placed.
  */
 type DrawPile = {
-	count: number;
-	faceSets: FaceSet[]
+	faceSets: Map<number, FaceSet>
 }
 
 /**
@@ -70,6 +70,20 @@ type Face = number;
 type FacePair = {
 	face1: Face;
 	face2: Face;
+}
+
+type FaceAvoidanceRules = {
+	enabled?: boolean;
+	weight?: number;
+	suspensionWeight?: number;
+	maxWeight?: number;
+}
+
+type GeneratedPairRecord = {
+	tiles: Tile[];
+	preferredFaceGroup: FaceGroup | false;
+	avoidanceTargets: Tile[];
+	avoidanceWeight: number;
 }
 
 /**
@@ -135,11 +149,62 @@ type Suspended = {
 
 	/** The maximum open tiles must be available before being released. */
 	openCount: number;
+
+	/** The original pair that created this suspension. */
+	originalPair?: Tile[];
 }
 
 type pickTileOptions = {
 	remove: boolean,
 	useTile: number | false
+}
+
+type TilePickScore = {
+	tile: Tile;
+	weight: number;
+	freedCount: number;
+	freedRank: number;
+	openPressure: number;
+	z: number;
+	zWeight: number;
+	horizontalIntersections: number;
+	verticalIntersections: number;
+	balanceMargin: number;
+	balancePressure: number;
+	shortHorizonMoves: number;
+	shortHorizonRemainingTiles: number;
+	shortHorizonPressure: number;
+	shortHorizonEnabled: boolean;
+	shortHorizonCollapsed: boolean;
+}
+
+type TilePickPair = {
+	tile1: Tile;
+	tile2: Tile;
+	picks: TilePickScore[];
+}
+
+type TilePickSuspensionTriple = {
+	placed: Tile[];
+	suspended: Tile;
+	picks: TilePickScore[];
+}
+
+type TilePickerOptions = {
+	openTiles?: Tile[];
+	difficulty?: number;
+	minWindowRatio?: number;
+	highestZOrder?: number;
+	horizontalMultiplier?: number;
+	verticalMultiplier?: number;
+	openPressureMultiplier?: number;
+	maxFreedPressure?: number;
+	balancePressureMultiplier?: number;
+	maxBalanceMargin?: number;
+	shortHorizonProbeMoves?: number;
+	shortHorizonPressureMultiplier?: number;
+	enforceStackBalance?: boolean;
+	pendingRemovedTiles?: Tile[];
 }
 
 type MatchType = "either" | "both"
