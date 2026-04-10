@@ -1,0 +1,73 @@
+.mj-raised-button {
+    --mj-css-rect-ridge-light: rgb(245 215 134);
+    --mj-css-rect-ridge-dark: rgb(185 141 23);
+    --mj-css-rect-border-color: rgba(255, 201, 71, 0.82);
+    --mj-css-rect-shadow-color: rgba(88, 26, 10, 0.34);
+    --mj-raised-button-shadow: rgba(88, 26, 10, 0.34);
+    --mj-raised-button-face-top: rgba(175, 50, 30, 0.76);
+    --mj-raised-button-face-bottom: rgba(151, 41, 24, 0.82);
+    position: relative;
+    min-width: 108px;
+    min-height: 38px;
+    padding: 0 18px;
+    box-sizing: border-box;
+    background: transparent;
+    cursor: pointer;
+}
+
+.mj-raised-button::before {
+    content: none;
+}
+
+.mj-raised-button::after {
+    content: none;
+}
+
+.mj-raised-button-face {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background:
+        linear-gradient(180deg, var(--mj-raised-button-face-top), var(--mj-raised-button-face-bottom));
+    box-shadow: inset 0 0 0 2px rgba(214, 145, 40, 0.72);
+}
+
+.mj-raised-button.mj-css-rect {
+    overflow: visible;
+}
+
+.mj-raised-button.mj-css-rect::after {
+    content: none;
+}
+
+.mj-raised-button.is-selected {
+    --mj-raised-button-face-top: rgba(194, 68, 39, 0.84);
+    --mj-raised-button-face-bottom: rgba(166, 49, 28, 0.88);
+}
+
+.mj-raised-button-label {
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+    color: #f4ca57;
+    font-family: "Merienda", "Trebuchet MS", serif;
+    font-size: 16px;
+    font-style: italic;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+    transform: translateY(-1px);
+}
+
+.mj-raised-button:hover {
+    filter: brightness(1.06);
+}
+
+.mj-raised-button:focus-visible {
+    outline: 2px solid rgba(255, 222, 123, 0.95);
+    outline-offset: 3px;
+}

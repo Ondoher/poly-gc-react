@@ -107,4 +107,6 @@ package-lock.json
 /poly-gc-react.code-workspace
 /tests
 /Designs
-/scripts
+/scripts/*
+!/scripts/difficulty/
+!/scripts/difficulty/**

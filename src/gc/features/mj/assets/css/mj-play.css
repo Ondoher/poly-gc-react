@@ -1,0 +1,259 @@
+.mj-game-area {
+    position: relative;
+    margin: var(--frame-padding);
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr) 96px;
+    grid-template-areas: "left play right";
+    min-height: 0;
+}
+
+.mj-left-hud,
+.mj-right-hud,
+.mj-playfield {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+}
+
+.mj-left-hud {
+    grid-area: left;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-content: start;
+    padding-top: 44px;
+    padding-left: 22px;
+}
+
+.mj-right-hud {
+    grid-area: right;
+    display: grid;
+/*    justify-items: center;*/
+    align-content: start;
+    row-gap: 4px;
+    padding-top: 24px;
+    padding-right: 10px;
+}
+
+.mj-css-rect.mj-playfield {
+    grid-area: play;
+    display: grid;
+    align-content: start;
+    --mj-css-rect-fill-top: rgba(120, 20, 20, 0.52);
+    --mj-css-rect-fill-bottom: rgba(110, 17, 17, 0.56);
+    justify-items: center;
+    margin: 6px 18px 8px;
+    padding: 4px 6px 10px;
+}
+
+.mj-playfield-stage {
+    position: relative;
+    z-index: 2;
+    justify-self: center;
+    align-self: start;
+    width: max-content;
+    max-width: 100%;
+    margin-top: clamp(3px, 0.75vh, 12px);
+}
+
+.board-canvas {
+    position: relative;
+}
+
+.mj-game-number-wrap {
+    justify-self: start;
+    align-self: start;
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.mj-game-number-input {
+    color: var(--mj-ui-text-color);
+    font-family: "Merienda", "Trebuchet MS", serif;
+    font-size: 12px;
+    font-style: italic;
+    font-weight: bold;
+    text-shadow: 0 1px 0 var(--mj-ui-text-shadow);
+}
+
+.mj-game-number-control {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 30px;
+    align-items: stretch;
+    width: 96px;
+    height: 28px;
+}
+
+.mj-game-number-input {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: 0;
+    background: transparent;
+    padding: 0 1px 0 7px;
+    line-height: 1;
+    text-align: left;
+    transform: translateY(-2px);
+}
+
+.mj-game-number-input:focus {
+    outline: none;
+}
+
+.mj-shuffle-button-control {
+    position: relative;
+    z-index: 2;
+    width: 30px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0 0 0 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.mj-shuffle-button-control:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+.mj-shuffle-button-icon {
+    position: relative;
+    z-index: 2;
+    display: block;
+    width: 20px;
+    height: 14px;
+    margin: 0;
+    background: url("../images/shuffle.png") no-repeat center;
+    background-size: 20px 14px;
+}
+
+.mj-game-number-input::placeholder {
+    color: var(--mj-ui-text-color);
+    opacity: 1;
+}
+
+.mj-css-rect.mj-right-hud-rail {
+    --mj-css-rect-fill-top: rgba(117, 17, 19, 0.78);
+    --mj-css-rect-fill-bottom: rgba(97, 14, 16, 0.84);
+    width: 31px;
+    height: 290px;
+}
+
+.mj-right-hud-timer {
+    color: var(--mj-ui-text-color);
+    font-family: "Merienda", "Trebuchet MS", serif;
+    font-size: 18px;
+    font-style: italic;
+    font-weight: bold;
+    text-shadow: 0 1px 0 var(--mj-ui-text-shadow);
+    transform: translateX(-2px);
+}
+
+.mj-right-hud-button-bar {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    height: 100%;
+    justify-items: center;
+    align-content: stretch;
+    padding: 7px 0 12px;
+}
+
+.mj-right-hud-button {
+    --mj-right-hud-icon-width: 16px;
+    --mj-right-hud-icon-height: 16px;
+    border: 0;
+    padding: 0;
+    width: var(--mj-right-hud-icon-width);
+    height: var(--mj-right-hud-icon-height);
+    background: transparent;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+.mj-right-hud-button:disabled {
+    cursor: default;
+    opacity: 0.35;
+}
+
+.mj-right-hud-button.is-active .mj-right-hud-button-icon {
+    filter: brightness(1.2) drop-shadow(0 0 4px rgba(241, 192, 54, 0.35));
+}
+
+.mj-right-hud-button-icon {
+    display: block;
+    width: var(--mj-right-hud-icon-width);
+    height: var(--mj-right-hud-icon-height);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
+}
+
+.mj-right-hud-button-pause .mj-right-hud-button-icon {
+    background-image: url("../images/pause.png");
+}
+
+.mj-right-hud-button-pause {
+    --mj-right-hud-icon-width: 17px;
+    --mj-right-hud-icon-height: 20px;
+}
+
+.mj-right-hud-button-restart .mj-right-hud-button-icon {
+    background-image: url("../images/restart.png");
+}
+
+.mj-right-hud-button-restart {
+    --mj-right-hud-icon-width: 17px;
+    --mj-right-hud-icon-height: 22px;
+}
+
+.mj-right-hud-button-undo .mj-right-hud-button-icon {
+    background-image: url("../images/undo.png");
+}
+
+.mj-right-hud-button-undo {
+    --mj-right-hud-icon-width: 21px;
+    --mj-right-hud-icon-height: 21px;
+}
+
+.mj-right-hud-button-redo .mj-right-hud-button-icon {
+    background-image: url("../images/redo.png");
+}
+
+.mj-right-hud-button-redo {
+    --mj-right-hud-icon-width: 21px;
+    --mj-right-hud-icon-height: 20px;
+}
+
+.mj-right-hud-button-hint .mj-right-hud-button-icon {
+    background-image: url("../images/hint.png");
+}
+
+.mj-right-hud-button-hint {
+    --mj-right-hud-icon-width: 17px;
+    --mj-right-hud-icon-height: 23px;
+}
+
+.mj-right-hud-button-peek .mj-right-hud-button-icon {
+    background-image: url("../images/peek.png");
+}
+
+.mj-right-hud-button-peek {
+    --mj-right-hud-icon-width: 21px;
+    --mj-right-hud-icon-height: 15px;
+}
+
+.mj-right-hud-button-settings .mj-right-hud-button-icon {
+    background-image: url("../images/settings.png");
+}
+
+.mj-right-hud-button-settings {
+    --mj-right-hud-icon-width: 20px;
+    --mj-right-hud-icon-height: 20px;
+}

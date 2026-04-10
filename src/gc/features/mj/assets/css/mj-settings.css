@@ -1,0 +1,266 @@
+@import url('./mj-settings-selector.css');
+
+.mj-settings-dialog {
+    --mj-settings-panel-width: 860px;
+    --mj-settings-panel-height: 520px;
+    --mj-settings-panel-pad-top: clamp(10px, 3.2vh, 22px);
+    --mj-settings-panel-pad-side: clamp(10px, 2vw, 18px);
+    --mj-settings-panel-pad-bottom: clamp(10px, 2.4vh, 18px);
+    --mj-settings-title-font-size: clamp(20px, 5.2vh, 30px);
+    --mj-settings-title-gap: clamp(5px, 1.4vh, 10px);
+    --mj-settings-tabs-gap: clamp(8px, 1.4vw, 16px);
+    --mj-settings-tabs-margin-bottom: clamp(5px, 1.4vh, 10px);
+    --mj-settings-body-pad: clamp(3px, 0.7vh, 6px);
+    --mj-settings-content-gap: clamp(8px, 1.2vw, 12px);
+    --mj-settings-preview-pad: clamp(6px, 1.2vh, 10px);
+    --mj-settings-actions-gap: clamp(8px, 1.6vh, 14px);
+    grid-column: 1;
+    grid-row: 1;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: var(--frame-padding);
+    box-sizing: border-box;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.mj-settings-dialog-overlay {
+    grid-column: 1;
+    grid-row: 1;
+    background: rgba(17, 7, 7, 0.56);
+    min-width: 0;
+    min-height: 0;
+}
+
+.mj-settings-dialog-panel {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: center;
+    align-self: center;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    inline-size: min(var(--mj-settings-panel-width), calc(100% - 8px));
+    block-size: min(var(--mj-settings-panel-height), 100%);
+    max-width: 100%;
+    max-height: 100%;
+    min-height: 0;
+    padding:
+        var(--mj-settings-panel-pad-top)
+        var(--mj-settings-panel-pad-side)
+        var(--mj-settings-panel-pad-bottom);
+    /* border: 2px solid var(--mj-ui-primary-color); */
+    background:
+        linear-gradient(180deg, rgba(176, 25, 25, 0.96), rgba(136, 24, 24, 0.97)),
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 48%);
+    /* box-shadow:
+        0 24px 48px rgba(0, 0, 0, 0.45),
+        inset 0 0 0 2px rgba(130, 16, 16, 0.55); */
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.mj-settings-dialog-title {
+    margin: -2px 0 var(--mj-settings-title-gap);
+    color: var(--mj-ui-primary-color);
+    font-family: "Merienda", "Trebuchet MS", serif;
+    font-size: var(--mj-settings-title-font-size);
+    font-style: italic;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-settings-dialog-tabs {
+    display: flex;
+    justify-content: center;
+    gap: var(--mj-settings-tabs-gap);
+    margin: 0 0 var(--mj-settings-tabs-margin-bottom);
+    flex-wrap: wrap;
+}
+
+.mj-settings-button,
+.mj-settings-selector-option,
+.mj-settings-dialog-confirm {
+    --mj-raised-button-face-top: rgba(98, 25, 21, 0.92);
+    --mj-raised-button-face-bottom: rgba(98, 25, 21, 0.92);
+}
+
+.mj-settings-button.is-selected,
+.mj-settings-selector-option.is-selected {
+    --mj-raised-button-face-top: rgba(112, 31, 24, 0.94);
+    --mj-raised-button-face-bottom: rgba(112, 31, 24, 0.94);
+}
+
+.mj-settings-dialog-close {
+    position: absolute;
+    top: clamp(8px, 2vh, 12px);
+    right: clamp(10px, 1.8vw, 14px);
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--mj-ui-primary-color);
+    font-family: "Merienda", "Trebuchet MS", serif;
+    font-size: clamp(22px, 5vh, 26px);
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-settings-dialog-body {
+    min-height: 0;
+    padding: var(--mj-settings-body-pad);
+    border: 2px solid var(--mj-ui-primary-color);
+    background: rgba(112, 14, 14, 0.18);
+    overflow: hidden;
+}
+
+.mj-settings-dialog-content {
+    display: grid;
+    grid-template-columns: var(--mj-settings-selector-width) minmax(0, 1fr);
+    gap: var(--mj-settings-content-gap);
+    align-items: start;
+    min-height: 0;
+    min-width: 0;
+    height: 100%;
+}
+
+.mj-settings-dialog-preview {
+    align-self: stretch;
+    display: grid;
+    min-height: 0;
+    padding: var(--mj-settings-preview-pad);
+    border: 2px solid var(--mj-ui-primary-color);
+    background: rgba(116, 14, 14, 0.18);
+    overflow: hidden;
+}
+
+.mj-settings-dialog-preview-surface {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: auto;
+    height: 100%;
+    max-height: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+    aspect-ratio: 785.5 / 629;
+    justify-self: center;
+    align-self: center;
+    border: 2px solid rgba(214, 145, 40, 0.72);
+    background:
+        linear-gradient(180deg, rgba(112, 22, 18, 0.9), rgba(96, 16, 16, 0.94));
+    overflow: hidden;
+}
+
+.mj-settings-dialog-preview-image {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.mj-settings-dialog-preview-loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    align-content: center;
+    background: rgba(62, 8, 8, 0.34);
+}
+
+.mj-settings-dialog-preview-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(245, 205, 78, 0.28);
+    border-top-color: rgba(245, 205, 78, 0.98);
+    border-radius: 50%;
+    animation: mj-settings-preview-spin 0.9s linear infinite;
+}
+
+.mj-settings-dialog-preview-loading-label {
+    color: var(--mj-ui-primary-color);
+    font-family: "Merienda", "Trebuchet MS", serif;
+    font-size: 14px;
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-settings-dialog-preview-source-host {
+    position: fixed;
+    left: -10000px;
+    top: -10000px;
+    display: block;
+    width: max-content;
+    height: max-content;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.mj-preview-wrapper {
+    display: grid;
+    place-items: center;
+}
+
+.mj-preview-wrapper .mj-playfield-stage {
+    align-self: center;
+    justify-self: center;
+}
+
+.mj-settings-dialog-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--mj-settings-actions-gap);
+    min-height: 0;
+}
+
+.mj-settings-dialog-confirm {
+    min-width: clamp(126px, 20vw, 150px);
+    min-height: clamp(34px, 6vh, 42px);
+}
+
+.mj-settings-dialog-tab {
+    min-width: clamp(96px, 18vw, 108px);
+    min-height: clamp(30px, 6vh, 38px);
+    padding-inline: clamp(10px, 2vw, 18px);
+}
+
+.mj-settings-dialog-tab .mj-raised-button-label,
+.mj-settings-dialog-confirm .mj-raised-button-label {
+    font-size: clamp(13px, 3vh, 16px);
+}
+
+.mj-settings-dialog-placeholder {
+    color: var(--mj-ui-primary-color);
+    font-family: "Merienda", "Trebuchet MS", serif;
+    font-size: 16px;
+    font-style: italic;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-settings-dialog-close:focus-visible {
+    outline: 2px solid var(--mj-ui-primary-color);
+    outline-offset: 3px;
+}
+
+@keyframes mj-settings-preview-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

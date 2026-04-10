@@ -1,0 +1,123 @@
+.mj-toast {
+    position: absolute;
+    top: calc(var(--frame-padding) + 18px);
+    left: 50%;
+    z-index: 6;
+    width: min(320px, calc(100% - 96px));
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -18px);
+    transition:
+        opacity 180ms ease,
+        transform 220ms ease;
+}
+
+.mj-toast.is-modal {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    opacity: 0;
+    width: auto;
+    pointer-events: none;
+    transform: none;
+}
+
+.mj-toast.is-visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.mj-toast.is-modal.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+}
+
+.mj-toast-panel {
+    position: relative;
+}
+
+.mj-toast.is-modal .mj-toast-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(360px, calc(100% - 64px));
+    transform: translate(-50%, calc(-50% - 18px));
+    transition:
+        opacity 180ms ease,
+        transform 220ms ease;
+    z-index: 1;
+}
+
+.mj-toast.is-modal.is-visible .mj-toast-panel {
+    transform: translate(-50%, -50%);
+}
+
+.mj-toast-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 7, 7, 0.52);
+}
+
+.mj-toast-body {
+    padding: 8px 16px 10px;
+    border: 1px solid rgba(255, 201, 71, 0.75);
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(162, 34, 34, 0.92), rgba(92, 16, 16, 0.96));
+    box-shadow:
+        0 8px 18px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 245, 214, 0.2);
+    color: #f4ca57;
+    font-family: "Merienda", "Trebuchet MS", serif;
+    font-size: 13px;
+    font-style: italic;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-toast.is-modal .mj-toast-body {
+    display: grid;
+    justify-items: center;
+    row-gap: 14px;
+    padding: 20px 20px 18px;
+    border-radius: 14px;
+    pointer-events: auto;
+    box-shadow:
+        0 16px 32px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 245, 214, 0.2);
+}
+
+.mj-toast-message {
+    max-width: 100%;
+}
+
+.mj-toast-close {
+    min-width: 104px;
+    padding: 6px 14px 7px;
+    border: 1px solid rgba(255, 201, 71, 0.8);
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(196, 91, 36, 0.95), rgba(135, 42, 18, 0.98));
+    color: #fff2bf;
+    font-family: "Merienda", "Trebuchet MS", serif;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-toast-close:hover {
+    filter: brightness(1.06);
+}
+
+.mj-toast-close:focus-visible {
+    outline: 2px solid rgba(255, 222, 123, 0.95);
+    outline-offset: 2px;
+}

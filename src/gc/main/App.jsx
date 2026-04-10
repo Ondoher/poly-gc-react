@@ -11,7 +11,6 @@ export default class App extends React.Component {
 		var breadCrumbs = this.registry.subscribe('bread-crumbs');
 		var pagesService = this.registry.subscribe('pages-provider');
 
-		var crumbs = breadCrumbs.getComponent();
 		var view = pagesService.getView('main-pages');
 		var pages = view.getComponent()
 
@@ -23,7 +22,6 @@ export default class App extends React.Component {
 		return (
 			<GameCenterContext.Provider value={contextValue}>
 				<React.Fragment>
-					{crumbs}
 					{pages}
 				</React.Fragment>
 			</GameCenterContext.Provider>

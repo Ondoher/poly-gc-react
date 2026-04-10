@@ -56,6 +56,172 @@ class Random {
 	}
 
 	/**
+	 * Generate a random number using a bell curve. The curve is created using
+	 * the analogy of dice. For example, a random number built with two six
+	 * sided dice will have the peak of the curve at 7 with 2 and 12 being at
+	 * the bottom.
+	 *
+	 * @param {number} dice - how many random numbers to pick
+	 * @param {number} faces - the range, from 1 - faces, of the number
+	 * @param {boolean} [zeroBased] - if true, the random range for each die will be from 0 - faces-1
+	 *
+	 * @return {number} the random number
+	 */
+	randomCurve(dice, faces, zeroBased = false) {
+		let result = 0;
+		let adjust = zeroBased ? 0 : 1
+		for (let idx = 0; idx < dice; idx++) {
+			result += this.random(faces) + adjust;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Generate a bell-shaped integer within an inclusive range using the faster
+	 * dice-curve approximation.
+	 *
+	 * @param {number} start - inclusive lower bound
+	 * @param {number} end - inclusive upper bound
+	 * @param {number} [dice] - how many random rolls to average
+	 *
+	 * @returns {number} a bell-shaped integer within the given range
+	 */
+	randomCurveRange(start, end, dice = 3) {
+		if (!Number.isInteger(start) || !Number.isInteger(end)) {
+			throw new Error('start and end must be integers');
+		}
+
+		if (!Number.isInteger(dice) || dice < 1) {
+			throw new Error('dice must be a positive integer');
+		}
+
+		if (end < start) {
+			throw new Error('end must be greater than or equal to start');
+		}
+
+		if (start === end) {
+			return start;
+		}
+
+		let span = end - start;
+		let curve = this.randomCurve(dice, span + 1, true);
+		let averaged = Math.round(curve / dice);
+
+		return start + averaged;
+	}
+
+	/**
+	 * Generate a normally distributed random number using the Box-Muller transform.
+	 *
+	 * @param {number} [mean] - center of the distribution
+	 * @param {number} [stddev] - standard deviation
+	 *
+	 * @returns {number} a normally distributed random number
+	 */
+	randomNormal(mean = 0, stddev = 1) {
+		let u1 = 0;
+		let u2 = 0;
+
+		// Avoid log(0)
+		while (u1 === 0) {
+			u1 = this.random();
+		}
+
+		while (u2 === 0) {
+			u2 = this.random();
+		}
+
+		let z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+
+		return z0 * stddev + mean;
+	}
+
+	/**
+	 * Generate a uniformly distributed integer in the inclusive range [start, end].
+	 *
+	 * @param {number} start
+	 * @param {number} end
+	 *
+	 * @returns {number} a uniformly distributed integer
+	 */
+	randomInt(start, end) {
+		if (!Number.isInteger(start) || !Number.isInteger(end)) {
+			throw new Error('start and end must be integers');
+		}
+
+		if (end < start) {
+			throw new Error('end must be greater than or equal to start');
+		}
+
+		return start + this.random(end - start + 1);
+	}
+
+	/**
+	 * Generate a normally distributed integer by rounding the output of randomNormal.
+	 *
+	 * @param {number} [mean] - center of the distribution
+	 * @param {number} [stddev] - standard deviation
+	 *
+	 * @returns {number} a rounded normally distributed integer
+	 */
+	randomNormalInt(mean = 0, stddev = 1) {
+		return Math.round(this.randomNormal(mean, stddev));
+	}
+
+	/**
+	 * Generate a normally distributed integer within an inclusive range.
+	 * Values outside the range are discarded and retried.
+	 *
+	 * @param {number} start - inclusive lower bound
+	 * @param {number} end - inclusive upper bound
+	 * @param {number} [mean] - defaults to midpoint
+	 * @param {number} [stddev] - defaults to range / 6
+	 *
+	 * @returns {number} a normally distributed integer within the given range
+	 */
+	randomNormalRange(start, end, mean = undefined, stddev = undefined) {
+		if (!Number.isInteger(start) || !Number.isInteger(end)) {
+			throw new Error('start and end must be integers');
+		}
+
+		if (end < start) {
+			throw new Error('end must be greater than or equal to start');
+		}
+
+		if (start === end) {
+			return start;
+		}
+
+		let width = end - start;
+		let center = mean ?? (start + end) / 2;
+		let spread = stddev ?? (width / 6);
+
+		while (true) {
+			let value = this.randomNormalInt(center, spread);
+			if (value >= start && value <= end) {
+				return value;
+			}
+		}
+	}
+
+	/**
+	 * Convenience alias for a bell-shaped integer over an inclusive range.
+	 *
+	 * @param {number} start
+	 * @param {number} end
+	 *
+	 * @returns {number} a normally distributed integer within the given range
+	 */
+	randomBell(start, end) {
+		return this.randomNormalRange(start, end);
+	}
+
+
+
+
+
+	/**
 	 * call this method to pick a random number from an array and remove it
 	 * @param {Array} list the array of itens to chooise from
 	 *

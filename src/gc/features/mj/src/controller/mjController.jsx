@@ -1,11 +1,20 @@
 import {Service} from '@polylith/core';
 import React from 'react';
-import MjEngine from "../engine/mjEngine.js";
-import MjBoard from "../components/MjBoard.jsx";
+import Board from "../components/Board.jsx";
 import { ServiceDelegator } from 'common/delegators.js';
 import Random from 'utils/random.js'
 import layouts from '../data/layouts.js';
 import {TILE_SETS, TILE_SIZES} from '../data/tilesets.js';
+import Engine from '../engine/Engine.js';
+
+const TILE_SIZE_ORDER = ['tiny', 'small', 'medium', 'normal'];
+const TILE_SIZE_MIN_VIEWPORTS = {
+	tiny: { width: 730, height: 410 },
+	small: { width: 870, height: 540 },
+	medium: { width: 950, height: 590 },
+	normal: { width: 1080, height: 690 },
+};
+const TILE_SIZE_HYSTERESIS_PX = 2;
 
 /**
  * Use this class as the controller for a game of Mahjongg solitaire. This code
@@ -30,10 +39,13 @@ export default class MJController extends Service {
 			'setTileset', 'setTilesize', 'setMessage', 'setShortMessage',
 			'showTile', 'hintTile', 'highlightTile', 'setTiles','clearBoard',]);
 
-		this.engine = new MjEngine();
+		this.engine = new Engine();
 		this.layoutName = 'turtle';
-		this.tileset = 'wood';
-		this.tilesize = 'tiny';
+		this.tileSet = 'ivory';
+		this.tileSize = 'tiny';
+		this.allowedTileSizes = TILE_SIZE_ORDER.slice();
+		this.maxTileSize = 'normal';
+		this.isBelowMinimum = false;
 		this.timerHandle = setInterval(this.onTimerTick.bind(this), 250);
 
 		this.engine.listen('updateState', this.updateState.bind(this));
@@ -41,6 +53,7 @@ export default class MJController extends Service {
 		this.engine.listen('removeTile', this.removeTile.bind(this));
 		this.engine.listen('newBoard', this.newBoard.bind(this))
 		this.boardNbr = Random.random(0xFFFFF)
+		this.onSizeChanged = this.onSizeChanged.bind(this);
 	}
 
 	/**
@@ -72,6 +85,102 @@ export default class MJController extends Service {
 	}
 
 	ready() {
+		this.sizeWatcher = this.registry.subscribe('size-watcher');
+		this.sizeWatcher.listen('changed', this.onSizeChanged);
+		this.sizeWatcher.check();
+	}
+
+	onSizeChanged(size) {
+		var allowedTileSizes = this.getAllowedTileSizesForViewport(size, this.maxTileSize);
+		var maxTileSize = allowedTileSizes.length
+			? allowedTileSizes[allowedTileSizes.length - 1]
+			: null;
+		var isBelowMinimum = allowedTileSizes.length === 0;
+
+		this.allowedTileSizes = allowedTileSizes;
+		this.maxTileSize = maxTileSize;
+		this.isBelowMinimum = isBelowMinimum;
+
+		if (allowedTileSizes.length > 0 && !allowedTileSizes.includes(this.tileSize)) {
+			this.tileSize = maxTileSize;
+			this.setTilesize(this.tileSize);
+		}
+
+		this.setGameState({
+			allowedTileSizes: allowedTileSizes,
+			maxTileSize: maxTileSize,
+			isBelowMinimum: isBelowMinimum,
+		});
+	}
+
+	getAllowedTileSizesForViewport(size, currentMaxTileSize = null) {
+		var width = size?.width || 0;
+		var height = size?.height || 0;
+		var rawMaxIndex = this.getMaxTileSizeIndex(width, height);
+		var stableMaxIndex = rawMaxIndex;
+		var currentIndex = TILE_SIZE_ORDER.indexOf(currentMaxTileSize);
+
+		if (currentIndex >= 0) {
+			if (rawMaxIndex < currentIndex) {
+				stableMaxIndex = this.shouldRetainCurrentTileSize(width, height, currentIndex)
+					? currentIndex
+					: rawMaxIndex;
+			} else if (rawMaxIndex > currentIndex) {
+				stableMaxIndex = this.getUpgradeTileSizeIndex(width, height, currentIndex, rawMaxIndex);
+			}
+		}
+
+		if (stableMaxIndex < 0) {
+			return [];
+		}
+
+		return TILE_SIZE_ORDER.slice(0, stableMaxIndex + 1);
+	}
+
+	getMaxTileSizeIndex(width, height) {
+		var maxIndex = -1;
+
+		TILE_SIZE_ORDER.forEach(function(tileSize, index) {
+			var min = TILE_SIZE_MIN_VIEWPORTS[tileSize];
+
+			if (width >= min.width && height >= min.height) {
+				maxIndex = index;
+			}
+		});
+
+		return maxIndex;
+	}
+
+	shouldRetainCurrentTileSize(width, height, currentIndex) {
+		var currentTileSize = TILE_SIZE_ORDER[currentIndex];
+		var min = TILE_SIZE_MIN_VIEWPORTS[currentTileSize];
+
+		return (
+			width >= min.width - TILE_SIZE_HYSTERESIS_PX &&
+			height >= min.height - TILE_SIZE_HYSTERESIS_PX
+		);
+	}
+
+	getUpgradeTileSizeIndex(width, height, currentIndex, rawMaxIndex) {
+		var nextIndex = currentIndex;
+
+		while (nextIndex + 1 <= rawMaxIndex) {
+			var candidateIndex = nextIndex + 1;
+			var candidateTileSize = TILE_SIZE_ORDER[candidateIndex];
+			var min = TILE_SIZE_MIN_VIEWPORTS[candidateTileSize];
+
+			if (
+				width >= min.width + TILE_SIZE_HYSTERESIS_PX &&
+				height >= min.height + TILE_SIZE_HYSTERESIS_PX
+			) {
+				nextIndex = candidateIndex;
+				continue;
+			}
+
+			break;
+		}
+
+		return nextIndex;
 	}
 
 	/**
@@ -162,7 +271,7 @@ export default class MJController extends Service {
 	}
 
 	/**
-	 * Called in respponse to the updateState event.
+	 * Called in response to the updateState event.
 	 *
 	 * @param {GameState} state the current state of the game
 	 */
@@ -192,7 +301,7 @@ export default class MJController extends Service {
 		}
 
 		this.openTiles = state.open;
-		this.playedTiles = state.played;
+		this.placedTiles = state.placed;
 		this.setGameState({
 			remaining: state.remaining,
 			canUndo: state.canUndo,
@@ -200,6 +309,8 @@ export default class MJController extends Service {
 			isPeeking: this.peeking,
 			isPaused: Boolean(this.paused > 0),
 			boardNbr: this.boardNbr,
+			allowedTilesizes: this.allowedTileSizes,
+			maxTileSize: this.maxTileSize,
 		});
 
 		this.shortMessage('');
@@ -212,7 +323,7 @@ export default class MJController extends Service {
 			}
 		} else {
 			for (let idx = 0; idx < this.board.count; idx++) {
-				if (this.playedTiles.has(idx)) {
+				if (this.placedTiles.has(idx)) {
 					this.showTile(idx, true)
 				}
 			}
@@ -524,18 +635,18 @@ export default class MJController extends Service {
 		this.layoutName = layout;
 	}
 
-	selectTileset(tileset) {
-		this.tileset = tileset;
-		this.setTileset(tileset);
+	selectTileSet(tileSet) {
+		this.tileSet = tileSet;
+		this.setTileset(tileSet);
 	}
 
-	selectTilesize(tilesize) {
-		this.tilesize = tilesize;
-		this.setTilesize(tilesize);
+	selectTileSize(tileSize) {
+		this.tileSize = tileSize;
+		this.setTilesize(tileSize);
 	}
 
 	/**
-	 * This method is called in reponse to the user pressing the solve button
+	 * This method is called in response to the user pressing the solve button
 	 */
 	solve() {
 		this.engine.startOver();
@@ -562,17 +673,20 @@ export default class MJController extends Service {
 
 	async render() {
 		return (
-			<MjBoard
+			<Board
 				delegator={new ServiceDelegator('mj:controller')}
 				id='mj-board'
 				key='mj-board'
 				serviceName="mj:controller"
 				layouts={layouts}
 				layout={this.layoutName}
-				tileset={this.tileset}
+				tileset={this.tileSet}
 				tilesets={TILE_SETS}
-				tilesize={this.tilesize}
+				tilesize={this.tileSize}
 				tilesizes={TILE_SIZES}
+				allowedTilesizes={this.allowedTileSizes}
+				maxTileSize={this.maxTileSize}
+				isBelowMinimum={this.isBelowMinimum}
 			/>
 		)
 	}

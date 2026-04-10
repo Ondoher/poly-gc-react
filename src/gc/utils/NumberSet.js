@@ -124,7 +124,7 @@ export default class NumberSet
 	 */
 	intersection(set) {
 		for (var idx = 0; idx < this.chunks.length; idx++)
-			this.chunks[idx] &= set.chunks[$idx];
+			this.chunks[idx] &= set.chunks[idx];
 		return this;
 	}
 

@@ -1,7 +1,7 @@
 import {Service} from '@polylith/core';
 import {load} from '@polylith/loader';
 
-export default class MjLoader extends Service {
+export default class Loader extends Service {
 	constructor (registry) {
 		super('mahjongg-loader', registry);
 		this.implement(['ready', 'clicked']);
@@ -20,4 +20,4 @@ export default class MjLoader extends Service {
 	}
 }
 
-new MjLoader();
+new Loader();

@@ -33,10 +33,12 @@ export default class Timer extends React.Component {
 	}
 
 	render() {
+		var display = this.props.isPaused ? 'Paused' : this.state.duration;
+
 		return (
 			<React.Fragment>
 				<div id={this.props.id} className={this.props.className}>
-					{this.state.duration}
+					{display}
 				</div>
 			</React.Fragment>
 		)

@@ -1,0 +1,121 @@
+.mj-ornamental-rect {
+    --mj-rect-left-corner-width: 18px;
+    --mj-rect-right-corner-width: 18px;
+    --mj-rect-top-corner-height: 18px;
+    --mj-rect-bottom-corner-height: 18px;
+    --mj-rect-top-edge-height: 6px;
+    --mj-rect-bottom-edge-height: 5px;
+    --mj-rect-side-edge-width: 4px;
+    --mj-rect-fill-inset-top: var(--mj-rect-top-edge-height);
+    --mj-rect-fill-inset-right: var(--mj-rect-side-edge-width);
+    --mj-rect-fill-inset-bottom: var(--mj-rect-bottom-edge-height);
+    --mj-rect-fill-inset-left: var(--mj-rect-side-edge-width);
+    --mj-rect-tl-image: url("../images/rect/stdrect-tl.png");
+    --mj-rect-tr-image: url("../images/rect/stdrect-tr.png");
+    --mj-rect-bl-image: url("../images/rect/stdrect-bl.png");
+    --mj-rect-br-image: url("../images/rect/stdrect-br.png");
+    --mj-rect-top-image: url("../images/rect/stdrect-top-stretch.png");
+    --mj-rect-bottom-image: url("../images/rect/stdrect-bottom-stretch.png");
+    --mj-rect-left-image: url("../images/rect/stdrect-left-stretch.png");
+    --mj-rect-right-image: url("../images/rect/stdrect-right-stretch.png");
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    border: 0;
+    background: transparent;
+    isolation: isolate;
+}
+
+.mj-ornamental-rect::before,
+.mj-ornamental-rect::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+}
+
+.mj-ornamental-rect::before {
+    inset: 0;
+    z-index: 1;
+    background-image:
+        var(--mj-rect-tl-image),
+        var(--mj-rect-tr-image),
+        var(--mj-rect-bl-image),
+        var(--mj-rect-br-image),
+        var(--mj-rect-top-image),
+        var(--mj-rect-bottom-image),
+        var(--mj-rect-left-image),
+        var(--mj-rect-right-image);
+    background-repeat:
+        no-repeat,
+        no-repeat,
+        no-repeat,
+        no-repeat,
+        no-repeat,
+        no-repeat,
+        no-repeat,
+        no-repeat;
+    background-position:
+        left top,
+        right top,
+        left bottom,
+        right bottom,
+        top center,
+        bottom center,
+        left center,
+        right center;
+    background-size:
+        var(--mj-rect-left-corner-width) var(--mj-rect-top-corner-height),
+        var(--mj-rect-right-corner-width) var(--mj-rect-top-corner-height),
+        var(--mj-rect-left-corner-width) var(--mj-rect-bottom-corner-height),
+        var(--mj-rect-right-corner-width) var(--mj-rect-bottom-corner-height),
+        calc(100% - var(--mj-rect-left-corner-width) - var(--mj-rect-right-corner-width)) var(--mj-rect-top-edge-height),
+        calc(100% - var(--mj-rect-left-corner-width) - var(--mj-rect-right-corner-width)) var(--mj-rect-bottom-edge-height),
+        var(--mj-rect-side-edge-width) calc(100% - var(--mj-rect-top-corner-height) - var(--mj-rect-bottom-corner-height)),
+        var(--mj-rect-side-edge-width) calc(100% - var(--mj-rect-top-corner-height) - var(--mj-rect-bottom-corner-height));
+}
+
+.mj-ornamental-rect::after {
+    top: var(--mj-rect-fill-inset-top);
+    right: var(--mj-rect-fill-inset-right);
+    bottom: var(--mj-rect-fill-inset-bottom);
+    left: var(--mj-rect-fill-inset-left);
+    z-index: 0;
+    background: var(--mj-rect-fill, transparent);
+    box-shadow: none;
+}
+
+.mj-ornamental-rect-large {
+    --mj-rect-left-corner-width: 18px;
+    --mj-rect-right-corner-width: 18px;
+    --mj-rect-top-corner-height: 18px;
+    --mj-rect-bottom-corner-height: 18px;
+    --mj-rect-top-edge-height: 6px;
+    --mj-rect-bottom-edge-height: 5px;
+    --mj-rect-side-edge-width: 4px;
+    --mj-rect-tl-image: url("../images/rect/stdrect-tl.png");
+    --mj-rect-tr-image: url("../images/rect/stdrect-tr.png");
+    --mj-rect-bl-image: url("../images/rect/stdrect-bl.png");
+    --mj-rect-br-image: url("../images/rect/stdrect-br.png");
+    --mj-rect-top-image: url("../images/rect/stdrect-top-stretch.png");
+    --mj-rect-bottom-image: url("../images/rect/stdrect-bottom-stretch.png");
+    --mj-rect-left-image: url("../images/rect/stdrect-left-stretch.png");
+    --mj-rect-right-image: url("../images/rect/stdrect-right-stretch.png");
+}
+
+.mj-ornamental-rect-small {
+    --mj-rect-left-corner-width: 12px;
+    --mj-rect-right-corner-width: 12px;
+    --mj-rect-top-corner-height: 10px;
+    --mj-rect-bottom-corner-height: 10px;
+    --mj-rect-top-edge-height: 4px;
+    --mj-rect-bottom-edge-height: 5px;
+    --mj-rect-side-edge-width: 3px;
+    --mj-rect-tl-image: url("../images/rect/editrect-tl.png");
+    --mj-rect-tr-image: url("../images/rect/editrect-tr.png");
+    --mj-rect-bl-image: url("../images/rect/editrect-bl.png");
+    --mj-rect-br-image: url("../images/rect/editrect-br.png");
+    --mj-rect-top-image: url("../images/rect/editrect-top-stretch.png");
+    --mj-rect-bottom-image: url("../images/rect/editrect-bottom-stretch.png");
+    --mj-rect-left-image: url("../images/rect/editrect-left-stretch.png");
+    --mj-rect-right-image: url("../images/rect/editrect-right-stretch.png");
+}

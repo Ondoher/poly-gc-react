@@ -1,0 +1,33 @@
+.mj-text-edit-control {
+    --mj-text-edit-padding: 0;
+    --mj-text-edit-text-align: left;
+    --mj-text-edit-line-height: 1;
+    --mj-text-edit-transform: none;
+    display: flex;
+    align-items: center;
+}
+
+.mj-text-edit-control-input {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: 0;
+    background: transparent;
+    padding: var(--mj-text-edit-padding);
+    line-height: var(--mj-text-edit-line-height);
+    text-align: var(--mj-text-edit-text-align);
+    transform: var(--mj-text-edit-transform);
+}
+
+.mj-text-edit-control-input:focus {
+    outline: none;
+}
+
+.mj-game-number-control {
+    --mj-text-edit-padding: 0 0 0 7px;
+    --mj-text-edit-text-align: left;
+    --mj-text-edit-line-height: 1;
+    --mj-text-edit-transform: translateY(-2px);
+}

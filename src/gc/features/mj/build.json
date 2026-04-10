@@ -2,7 +2,8 @@
 	"resources": [{
 		"dest": "mj/css",
 		"cwd": "assets/css",
-		"glob": "**/*.css"
+		"glob": "**/*.css",
+		"keepNest": true
 	},
 	{
 		"dest" : "mj/images",
@@ -17,7 +18,8 @@
 		"css": [{
 			"dest": "mj/css",
 			"cwd": "assets/css",
-			"glob": "**/*.css"
+			"glob": "**/*.css",
+			"keepNest": true
 		}]
 	}],
 	"index" : "index.js"

@@ -1,61 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Merienda:wght@400;700&display=swap');
+@import url('./ornamental-rect.css');
+@import url('./mj-css-rect.css');
+@import url('./mj-raised-button.css');
+@import url('./mj-text-edit-control.css');
+@import url('./mj-play.css');
+@import url('./mj-toast.css');
+@import url('./mj-settings.css');
+
 .mj-frame-shell {
-    --frame-padding: 24px;
-    --crumb-offset: 25px;
-    --frame-top-left-width: 32px;
-    --frame-top-right-width: 31px;
-    --frame-bottom-left-width: 32px;
-    --frame-bottom-right-width: 32px;
-    --frame-corner-height: 32px;
-    --frame-left-width: 3px;
-    --frame-right-width: 2px;
-    --frame-edge-height: 3px;
+    --frame-padding: 12px;
+    --mj-page-pattern-size: 220px 220px;
+    /* --mj-ui-text-color: #f1c036; */
+    --mj-ui-text-color: #d3a024;
+    --mj-ui-fill-strong: rgba(117, 17, 19, 0.75);
+    --mj-ui-fill-soft: rgba(120, 20, 20, 0.45);
+    --mj-ui-text-shadow: rgba(75, 33, 5, 0.7);
+    --mj-ui-primary-color: #d3a024;
+    --frame-top-left-width: 42px;
+    --frame-top-right-width: 42px;
+    --frame-bottom-left-width: 42px;
+    --frame-bottom-right-width: 42px;
+    --frame-corner-height: 42px;
+    --frame-left-width: 6px;
+    --frame-right-width: 6px;
+    --frame-edge-height: 6px;
     position: relative;
-    height: calc(100% - var(--crumb-offset));
-    min-height: calc(100% - var(--crumb-offset));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    height: 100%;
+    min-height: 100%;
+    min-width: 0;
     box-sizing: border-box;
-    padding: var(--frame-padding);
+    padding: 0;
+    overflow: hidden;
     background:
         linear-gradient(90deg, rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.08)),
         linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.15)),
         url("../images/frame/pattern.png");
     background-color: #6b2424;
-    background-size: auto, auto, 220px 220px;
+    background-repeat: repeat, repeat, repeat;
+    background-position: 0 0, 0 0, 0 0;
+    background-size: auto, auto, var(--mj-page-pattern-size);
+    font-family: "Merienda", "Trebuchet MS", serif;
 }
 
 .mj-board-page {
     background: transparent;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
 }
 
-.mj-table {
-    position: absolute;
-    inset: var(--frame-padding);
-    display: grid;
-    grid-template-areas:
-        "header"
-        "main";
-    grid-template-columns: 100%;
-    grid-template-rows: auto 1fr;
-    padding:
-        calc(var(--frame-corner-height) + 16px)
-        calc(var(--frame-top-right-width) + 16px)
-        calc(var(--frame-corner-height) + 16px)
-        calc(var(--frame-top-left-width) + 16px);
-    min-height: 0;
+.mj-board-page.mj-below-minimum {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.mj-frame-shell.mj-below-minimum {
+    min-width: 730px;
+    min-height: 410px;
+}
+
+@media (pointer: coarse) {
+    .mj-board-page.mj-below-minimum {
+        overflow: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        touch-action: pan-x pan-y;
+    }
+
+    .mj-board-page.mj-below-minimum::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+    }
 }
 
 .won .mj-frame-shell {
     position: relative;
 }
 
+
+.mj-game-wrapper {
+
+}
+
+.mj-game-area,
+.mj-pretty-frame,
+.mj-gameover,
+.mj-settings-dialog {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
 .mj-gameover {
-    position: absolute;
-    inset: var(--frame-padding);
+    position: relative;
+    margin: var(--frame-padding);
     background: rgba(0, 0, 0, 0.85);
     z-index: 5;
 }
 
 .mj-frame-shell .mj-gameover {
     border-radius: 6px;
+}
+
+.mj-win-action {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--frame-padding) + 18px);
+    z-index: 6;
+    min-width: 124px;
+    padding: 7px 18px 9px;
+    border: 1px solid rgba(255, 201, 71, 0.8);
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(162, 34, 34, 0.94), rgba(92, 16, 16, 0.98));
+    box-shadow:
+        0 8px 18px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 245, 214, 0.18);
+    color: #f4ca57;
+    font-family: "Merienda", "Trebuchet MS", serif;
+    font-size: 13px;
+    font-style: italic;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+    transform: translateX(-50%);
+    cursor: pointer;
+}
+
+.mj-win-action:hover {
+    filter: brightness(1.06);
+}
+
+.mj-win-action:focus-visible {
+    outline: 2px solid rgba(255, 222, 123, 0.95);
+    outline-offset: 2px;
 }
 
 .frame-top {
@@ -85,7 +168,7 @@
 .frame-corner {
     position: absolute;
     pointer-events: none;
-    z-index: 2;
+    z-index: 4;
     background-repeat: no-repeat;
     background-size: 100% 100%;
 }
@@ -95,7 +178,7 @@
     left: 0;
     width: var(--frame-top-left-width);
     height: var(--frame-corner-height);
-    background-image: url("../images/frame/tl-corner.png");
+    background-image: url("../images/frame/outline-tl.png");
 }
 
 .frame-corner-tr {
@@ -103,7 +186,7 @@
     right: 0;
     width: var(--frame-top-right-width);
     height: var(--frame-corner-height);
-    background-image: url("../images/frame/tr-corner.png");
+    background-image: url("../images/frame/outline-tr.png");
 }
 
 .frame-corner-bl {
@@ -111,7 +194,7 @@
     left: 0;
     width: var(--frame-bottom-left-width);
     height: var(--frame-corner-height);
-    background-image: url("../images/frame/bl-corner.png");
+    background-image: url("../images/frame/outline-bl.png");
 }
 
 .frame-corner-br {
@@ -119,26 +202,32 @@
     right: 0;
     width: var(--frame-bottom-right-width);
     height: var(--frame-corner-height);
-    background-image: url("../images/frame/br-corner.png");
+    background-image: url("../images/frame/outline-br.png");
 }
 
 .frame-top-edge {
     grid-column: 2;
     height: var(--frame-edge-height);
-    background-image: url("../images/frame/top-middle-slice.png");
-    background-repeat: repeat-x;
-    background-size: auto var(--frame-edge-height);
+    margin-left: 0;
+    margin-right: 0;
+    background-image: url("../images/frame/outline-top-stretch.png");
+    background-repeat: no-repeat;
+    background-size: 100% var(--frame-edge-height);
     background-position: top center;
+    z-index: 2;
 }
 
 .frame-bottom-edge {
     grid-column: 2;
     align-self: end;
     height: var(--frame-edge-height);
-    background-image: url("../images/frame/bottom-middle-slice.png");
-    background-repeat: repeat-x;
-    background-size: auto var(--frame-edge-height);
+    margin-left: 0;
+    margin-right: 0;
+    background-image: url("../images/frame/outline-bottom-stretch.png");
+    background-repeat: no-repeat;
+    background-size: 100% var(--frame-edge-height);
     background-position: bottom center;
+    z-index: 2;
 }
 
 .frame-sides {
@@ -155,200 +244,26 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    background-repeat: repeat-y;
+    background-repeat: no-repeat;
     background-position: top center;
+    z-index: 2;
 }
 
 .frame-left-edge {
     left: 0;
     width: var(--frame-left-width);
-    background-image: url("../images/frame/left-middle-slice.png");
-    background-size: var(--frame-left-width) auto;
+    background-image: url("../images/frame/outline-left-stretch.png");
+    background-size: var(--frame-left-width) 100%;
 }
 
 .frame-right-edge {
     right: 0;
     width: var(--frame-right-width);
-    background-image: url("../images/frame/right-middle-slice.png");
-    background-size: var(--frame-right-width) auto;
+    background-image: url("../images/frame/outline-right-stretch.png");
+    background-size: var(--frame-right-width) 100%;
 }
 
-.mj-board-header {
-    display: grid;
-    grid-template-areas:
-        "title timer"
-        "message timer"
-        "short-message timer";
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto auto;
-    gap: 8px 16px;
-    grid-area: header;
-    align-items: start;
-    margin-bottom: 18px;
-}
 
-.mj-frame-title {
-    grid-area: title;
-    font-size: clamp(2rem, 3vw, 3.25rem);
-    font-style: italic;
-    font-weight: bold;
-    color: #e0b54a;
-    text-shadow: 0 2px 0 rgba(75, 33, 5, 0.8);
-}
-
-#mj-timer {
-    display: grid;
-    grid-area: timer;
-    align-self: start;
-    justify-self: end;
-    font-weight: bold;
-    font-size: clamp(1.4rem, 2.3vw, 2.5rem);
-    color: #f8f8f7;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.mj-message {
-    grid-area: message;
-    min-height: 1.5em;
-    font-weight: bold;
-    font-size: clamp(1.4rem, 2.8vw, 3.75rem);
-    color: #f8f8f7;
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
-}
-
-.mj-short-message {
-    grid-area: short-message;
-    min-height: 1.5em;
-    font-weight: bold;
-    font-size: clamp(1rem, 1.6vw, 1.5rem);
-    color: #f1d58d;
-}
-
-.mj-table-main {
-    display: grid;
-    grid-area: main;
-    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) 96px;
-    gap: 18px;
-    min-height: 0;
-    align-items: stretch;
-}
-
-.mj-frame-left,
-.mj-frame-center,
-.mj-frame-right {
-    min-height: 0;
-}
-
-.mj-frame-left {
-    padding: 12px 16px;
-    background: rgba(114, 28, 23, 0.35);
-    border: 3px solid #d8aa3f;
-    box-shadow: inset 0 0 0 1px rgba(255, 220, 132, 0.25);
-}
-
-.mj-frame-center {
-    display: flex;
-    min-width: 0;
-    min-height: 0;
-}
-
-.mj-frame-right {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.mj-board-options {
-    display: grid;
-    gap: 12px;
-}
-
-.mj-option {
-    display: grid;
-    gap: 6px;
-}
-
-.mj-game-number {
-    grid-template-columns: 1fr auto;
-    align-items: end;
-    gap: 8px;
-}
-
-.mj-game-number .mj-control-label,
-.mj-game-number .mj-board-number {
-    grid-column: 1 / -1;
-}
-
-.mj-control-label {
-    color: #f6ddb1;
-    font-weight: bold;
-    font-size: 1rem;
-    letter-spacing: 0.03em;
-}
-
-.tileset-selector,
-.tilesize-selector,
-.layout-selector,
-.mj-board-number {
-    height: 38px;
-    width: 100%;
-    font-size: 16px;
-    font-weight: bold;
-    padding: 0 10px;
-    border: none;
-    box-shadow: 0 2px 0 1px rgb(0 0 0 / 30%);
-}
-
-.mj-surface {
-    background-image: url("../images/felt.jpg");
-    background-size: cover;
-    background-position: center;
-    display: grid;
-    place-items: center;
-    flex: 1;
-    min-width: 0;
-    min-height: 0;
-    padding: 16px;
-    border: 3px solid #d8aa3f;
-    box-shadow: inset 0 0 0 1px rgba(255, 220, 132, 0.25);
-    overflow: hidden;
-}
-
-.board-canvas {
-    position: relative;
-    width: min(100%, 670px);
-    aspect-ratio: 670 / 625;
-    height: auto;
-    max-height: 100%;
-    overflow: hidden;
-}
-
-.mj-table-controls {
-    display: grid;
-    height: 100%;
-}
-
-.mj-board-buttons {
-    display: grid;
-    gap: 10px;
-    align-content: start;
-}
-
-.mj-table .button {
-    min-width: 0;
-    padding: 9px 10px;
-    border-radius: 6px;
-    box-shadow: 2px 2px 0 1px rgb(0 0 0 / 30%);
-    background-color: #605fab;
-}
-
-.mj-table .button.play-button {
-    min-width: 96px;
-}
-
-.mj-table .button:disabled {
-    background-color: rgba(96, 95, 171, 0.66);
-    color: rgba(255, 255, 255, 0.66);
-}
 
 .show-won {display: none !important}
 .won .show-won {display: inline-block !important}
@@ -362,16 +277,7 @@ tile-highlight {
     left: '0px';
 }
 
-@media screen and (max-width: 1200px) {
-    .mj-table-main {
-        grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) 88px;
-    }
-
-    .board-canvas {
-        width: min(100%, 620px);
-    }
-}
-
+/*
 @media screen and (max-width: 980px) {
     .mj-table {
         padding:
@@ -380,56 +286,11 @@ tile-highlight {
             calc(var(--frame-corner-height) + 12px)
             calc(var(--frame-top-left-width) + 12px);
     }
-
-    .mj-table-main {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto minmax(0, 1fr) auto;
-    }
-
-    .mj-frame-right {
-        justify-content: stretch;
-    }
-
-    .mj-board-buttons {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .board-canvas {
-        width: min(100%, 670px);
-    }
 }
 
 @media screen and (max-width: 700px) {
     .mj-frame-shell {
         --frame-padding: 12px;
     }
-
-    .mj-board-header {
-        grid-template-areas:
-            "title"
-            "timer"
-            "message"
-            "short-message";
-        grid-template-columns: 1fr;
-    }
-
-    #mj-timer {
-        justify-self: start;
-    }
-
-    .mj-board-buttons {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .mj-game-number {
-        grid-template-columns: 1fr;
-    }
-
-    .mj-table .button.play-button {
-        width: 100%;
-    }
-
-    .board-canvas {
-        width: min(100%, 540px);
-    }
 }
+*/
