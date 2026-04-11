@@ -1,5 +1,24 @@
 # Mahjongg Generation Difficulty
 
+## Scope Note
+
+This note started as the main design writeup for generation-time difficulty.
+The live engine has moved on since then.
+
+Use this file for:
+
+- the core generation-difficulty framing
+- the original suspension design intent
+- safety invariants and future generator ideas that are still useful context
+
+Use these for the canonical current implementation:
+
+- [engine README](/c:/dev/poly-gc-react/src/gc/features/mj/src/engine/README.md)
+- [difficulty-tuning-knobs.md](/c:/dev/poly-gc-react/agents/topics/mj/difficulty-tuning-knobs.md)
+
+So this document is now a companion note, not the single source of truth for
+the current runtime ladder or the final picker/face-assignment behavior.
+
 ## Goal
 
 Capture a generation-time difficulty mechanism that works within a four-of-a-kind
@@ -238,35 +257,19 @@ each other.
 The suspension model gives the builder a direct way to delay and shape those
 relationships.
 
-## Current Implementation Status
+## Current Status
 
-The first pass is implemented in the active engine and can be exercised through
-the difficulty CLI with `conservative`, `moderate`, and `aggressive` presets.
+Suspension is now implemented in the live engine and is one of the core
+generation-side difficulty mechanisms.
 
-The current rule shape includes:
+For the current rule shape, current aggressive profile, and current measured
+ladder behavior, use:
 
-- `frequency`
-- `maxSuspended`
-- `maxNested`
-- `placementCount`
-- `maxOpenCount`
-- `matchType`
-- `forceReleaseAtEffectiveOpen`
-- `suspendAtEffectiveOpen`
+- [engine README](/c:/dev/poly-gc-react/src/gc/features/mj/src/engine/README.md)
+- [difficulty-tuning-knobs.md](/c:/dev/poly-gc-react/agents/topics/mj/difficulty-tuning-knobs.md)
 
-Current aggressive settings use frequent attempts, a high total cap,
-`maxNested: 4`, longer placement waits, lower open-count release targets,
-`matchType: both`, `forceReleaseAtEffectiveOpen: 4`, and
-`suspendAtEffectiveOpen: 6`.
-
-The main finding so far is that `matchType: both` behaves like a switch, while
-`maxNested` and the effective-open thresholds behave more like tunable dials.
-Raising `maxSuspended` alone has little effect unless the run is actually
-hitting that cap.
-
-In a `maxNested` sweep, values around `5` or `6` looked promising. Higher values
-created more pressure, but also shifted more work to force-release and open-tile
-safety behavior.
+This file keeps the design framing and the historical reasoning that led to the
+current system.
 
 ## Implementation Note
 
@@ -342,70 +345,6 @@ that means cases such as:
 Those failures belong to the underlying layout and pair-removal model, not to
 the suspension layer.
 
-## Suggested `placeRandomPair` Flow
-
-Most of the v1 suspension logic can live around the existing generation-time
-`placeRandomPair` behavior.
-
-The method should continue to be responsible for choosing the next removable
-pair, removing it from the temporary occupied board, assigning faces, and
-recording the generated solution order. Suspension adds extra selection and face
-reservation rules around that same flow.
-
-Suggested high-level flow:
-
-1. Recalculate playable tiles.
-2. Release a suspension if the release rule says one is ready.
-3. Force-release a suspension if ordinary playable selection would otherwise be
-   unable to continue.
-4. If a suspension was released, force the released tile into the next pair.
-5. If no suspension was released, choose two playable tiles normally.
-6. If it is time to start a new suspension, choose a third playable tile from
-   the remaining playable candidates.
-7. Choose faces:
-   - if consuming a released suspension, use the reserved faces from that
-     suspension
-   - if starting a new suspension, draw a full four-face set, assign two faces
-     now, and reserve the other two faces for the suspended tile's future pair
-   - otherwise draw a normal face pair
-8. Remove the chosen pair from the temporary occupied board.
-9. Assign the chosen faces to the pair.
-10. Record the pair in the solution order.
-
-A possible helper-level structure:
-
-```js
-placeRandomPair() {
-    this.calcPlayableTiles();
-
-    const released = this.releaseSuspensionIfNeeded();
-
-    if (released) {
-        return this.placeReleasedSuspensionPair(released);
-    }
-
-    const tile1 = this.pickPlayableTile();
-    const tile2 = this.pickPlayableTile();
-
-    if (this.shouldStartSuspension()) {
-        return this.placePairAndStartSuspension(tile1, tile2);
-    }
-
-    return this.placeNormalPair(tile1, tile2);
-}
-```
-
-The exact helper names can change, but the responsibilities should stay clear:
-
-- release handling decides whether a suspended tile is forced into this pair
-- tile selection chooses one or two playable tiles depending on whether a tile
-  was released
-- suspension creation chooses an additional playable tile to hold for later
-- face assignment either draws a normal pair or consumes/reserves linked faces
-
-During generation, "placing a pair" means removing that pair from the temporary
-occupied board and assigning faces. The final board is rebuilt after generation.
-
 ## Future Generator Improvement
 
 A future improvement to the base generator could reduce or eliminate those
@@ -445,133 +384,18 @@ A successful nightmare board should have a signature like:
 In other words, nightmare should be authored cruelty rather than accidental
 chaos.
 
-## Follow-Up: Selection Bias
+## Follow-Up: Tile-Selection Pressure
 
-A future pass can add weighted tile selection to control which open tiles are
-chosen for normal pairs, suspension, and released partners.
+The old "selection bias" material from this note has largely become the live
+weighted tile-picker system. The core idea survived:
 
-For a structural blocking score:
+- score current open candidates by structural pressure
+- order them
+- use a difficulty-shaped window instead of a hard deterministic pick
 
-1. calculate the current open tile set
-2. temporarily remove a candidate open tile
-3. recalculate open tiles
-4. score the candidate by the number of newly opened tiles
-5. restore the candidate
+That implementation is now documented in the canonical current-system doc:
 
-The generator can then sort candidates by that score and use weighted rank
-selection. Positive bias prefers most-blocking tiles, negative bias prefers
-least-blocking tiles, and zero bias preserves random choice.
+- [engine README](/c:/dev/poly-gc-react/src/gc/features/mj/src/engine/README.md)
 
-Candidate future knobs:
-
-- `suspendTileSelectionBias`
-- `releasedPartnerSelectionBias`
-- `normalPairSelectionBias`
-- `suspendTileSelection`
-- `partnerSelection`
-
-Possible strategies include random, nearest, farthest, most-blocking,
-least-blocking, and highest-z. Euclidean distance may be mostly a human-facing
-difficulty signal unless it also changes structural unlock order, but it is
-worth tracking for later playtesting.
-
-Normal pair selection can use the same scoring model, but it should be treated
-as a different kind of knob. Suspension selection changes which delayed
-relationship gets created or consumed. Normal pair selection changes the base
-shape of the generated removal order on almost every step.
-
-For normal selection, the generator could score all legal candidate pairs from
-their tile scores, for example:
-
-- `pairScore = tile1Score + tile2Score`
-- `pairScore = Math.max(tile1Score, tile2Score)`
-
-Then it could use weighted rank choice across legal pairs. Because this would
-run constantly, it is likely to be a louder and more global generator-pressure
-knob than suspension partner selection. It should be measured independently
-before combining it with aggressive suspension.
-
-### Proposed Tile Picker
-
-A future generalized picker could take reference tiles and return a weighted
-open tile:
-
-```js
-pickTile(referenceTiles)
-```
-
-The picker should not remove tiles, assign faces, or write to the solution
-sequence. It should only score the currently open candidates and return a tile.
-Board mutation and solution recording should remain distinct placement actions,
-because that flow is already complex and needs to stay explicit.
-
-The scoring pass:
-
-1. Start with all open tiles.
-2. Remove any tile already in `referenceTiles`.
-3. For each remaining tile, record the number of board spaces it frees.
-4. Make a sorted list of each unique freed-space count, lowest first.
-5. Give each tile a base weight equal to the index of its freed-space count in
-   that sorted list.
-6. Multiply each tile weight by the inverse of its z level so lower z levels get
-   more weight.
-7. For each horizontal intersection with a reference tile, multiply the weight
-   by `2`.
-8. For each vertical intersection with a reference tile, multiply the weight by
-   `4`.
-9. Sort tiles by final weight.
-
-The z-level and intersection multipliers should be treated as score components,
-not hard-coded constants. In the current scoring direction, lower scores are the
-easy end. Tiles that open more tiles and tiles higher up the stack should score
-lower, because clearing stack height quickly tends to make play easier. Tiles
-that open fewer tiles, sit lower in the stack, or intersect the reference set
-should score higher, because they preserve more stack pressure and local
-entanglement around the pair or suspension group. Horizontal and vertical
-intersections should remain separate score components, with vertical
-intersections likely carrying more weight.
-
-The sliding selection window should manage how strongly those score components
-affect the final pick. The score can rank lower-z and intersecting tiles higher,
-but medium difficulty can still use a broad window, harder difficulty can move
-the window toward the high-score end, and lower difficulty can move it toward
-the low-score end.
-
-The intersection algorithms can use `NumberSet` masks. For horizontal testing,
-build a set by adding the whole horizontal row for each vertical half of each
-reference tile, then check the candidate tile against that set. For vertical
-testing, build a set from the four quadrants occupied by each reference tile and
-check candidate intersection against that quadrant set. That keeps the picker
-logic in the same coordinate model the engine already uses for tile overlap and
-open-tile checks.
-
-The picker then chooses from a sliding window over the sorted list:
-
-- medium difficulty uses the full list
-- harder difficulty shrinks the window and moves it toward higher weights
-- lower difficulty shrinks the window and moves it toward lower weights
-
-The final tile is selected randomly from that window. This keeps the picker from
-becoming fully deterministic while still letting difficulty tune the structural
-pressure of tile choice.
-
-A weighted normalization curve could be added later, but it is probably not
-needed for the first version because the shrinking window already gives a clear
-difficulty control. The place where a curve might help most is medium
-difficulty: it could keep the full candidate list available while still gently
-favoring the center or one side of the distribution.
-
-The same picker can be composed for each generation case:
-
-- normal pair selection calls `pickTile([])` for the first tile, then
-  `pickTile([firstTile])` for the second tile
-- suspension creation calls `pickTile([firstTile, secondTile])` for the third
-  candidate tile
-- when creating a suspension from those three candidates, place the two
-  lowest-scored tiles on the board now and suspend the remaining higher-scored
-  tile
-- released-suspension partner selection calls `pickTile(referenceTiles)` where
-  `referenceTiles` includes the original pair plus the suspended tile
-
-That keeps the scoring rule centralized while letting each generation path
-provide the context that should pull or repel the next tile choice.
+Future work in this area should build on the current picker rather than trying
+to resurrect the earlier pseudo-code version that originally lived here.

@@ -79,9 +79,17 @@ type FaceAvoidanceRules = {
 	maxWeight?: number;
 }
 
+type FaceAssignmentRules = {
+	preferredMultiplier?: number;
+	easyReuseDuplicateScale?: number;
+}
+
 type GeneratedPairRecord = {
 	tiles: Tile[];
 	preferredFaceGroup: FaceGroup | false;
+	faceGroup?: FaceGroup | false;
+	face1?: Face;
+	face2?: Face;
 	avoidanceTargets: Tile[];
 	avoidanceWeight: number;
 }
@@ -152,6 +160,9 @@ type Suspended = {
 
 	/** The original pair that created this suspension. */
 	originalPair?: Tile[];
+
+	/** The stable face-group id reserved for this suspension. */
+	faceGroup: FaceGroup;
 }
 
 type pickTileOptions = {
@@ -188,6 +199,22 @@ type TilePickSuspensionTriple = {
 	placed: Tile[];
 	suspended: Tile;
 	picks: TilePickScore[];
+}
+
+type AssignedFacePair = {
+	tile1: Tile;
+	tile2: Tile;
+	faceGroup: FaceGroup;
+}
+
+type FaceGroupDistanceCandidate = {
+	faceGroup: FaceGroup;
+	distance: number | null;
+	previousIndex: number;
+	isReuse: boolean;
+	availableFaces: number;
+	preferred: boolean;
+	sortValue: number;
 }
 
 type TilePickerOptions = {

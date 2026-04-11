@@ -23,6 +23,7 @@ export default class SettingsPreview extends React.Component {
 	componentDidUpdate(prevProps) {
 		if (
 			prevProps.layout !== this.props.layout ||
+			prevProps.difficulty !== this.props.difficulty ||
 			prevProps.tileset !== this.props.tileset ||
 			prevProps.tilesize !== this.props.tilesize ||
 			prevProps.maxTileSize !== this.props.maxTileSize
@@ -75,6 +76,7 @@ export default class SettingsPreview extends React.Component {
 		this.previewGenerator.setTileSize(tileSize);
 		this.previewGenerator.setTileStyle(this.props.tileset);
 		this.previewGenerator.setLayout(this.props.layout);
+		this.previewGenerator.setDifficulty(this.props.difficulty);
 		this.schedulePendingState(!this.state.imageUrl);
 		this.previewGenerator.renderNow();
 	}

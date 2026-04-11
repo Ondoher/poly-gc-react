@@ -73,6 +73,13 @@ export interface MJControllerService {
 	selectLayout(layout: string): void;
 
 	/**
+	 * Called by difficulty selection when the current difficulty should change.
+	 *
+	 * @param difficulty - Specify the difficulty id to use.
+	 */
+	selectDifficulty(difficulty: string): void;
+
+	/**
 	 * Called by tileset selection when the current tileset should change.
 	 *
 	 * @param tileset - Specify the tileset name to use.

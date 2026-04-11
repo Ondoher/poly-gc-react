@@ -30,12 +30,13 @@ export default class Board extends React.Component {
 
 			props.delegator.delegateOutbound(this, [
 				'select', 'initialized', 'play', 'undo', 'redo', 'hint', 'pause', 'peek',
-				'selectLayout', 'selectTileset', 'selectTilesize'
+				'selectLayout', 'selectTileset', 'selectTilesize', 'selectDifficulty'
 			]);
 		}
 
 		this.state = {
 			layout: this.props.layout,
+			difficulty: this.props.difficulty,
 			tileset: this.props.tilesets[this.props.tileset],
 			tilesetKey: this.props.tileset,
 			tilesize: this.props.tilesizes[this.props.tilesize],
@@ -133,6 +134,16 @@ export default class Board extends React.Component {
 		this.setState({
 			tilesize: this.props.tilesizes[tilesize],
 			tilesizeKey: tilesize,
+		});
+	}
+
+	onSelectDifficulty(difficulty) {
+		if (this.selectDifficulty) {
+			this.selectDifficulty(difficulty);
+		}
+
+		this.setState({
+			difficulty,
 		});
 	}
 
@@ -368,6 +379,8 @@ export default class Board extends React.Component {
 				open={this.state.settingsOpen}
 				layout={this.state.layout}
 				layouts={this.props.layouts}
+				difficulty={this.state.difficulty}
+				difficulties={this.props.difficulties}
 				tileset={this.state.tilesetKey}
 				tilesets={this.props.tilesets}
 				tilesize={this.state.tilesizeKey}
@@ -375,6 +388,7 @@ export default class Board extends React.Component {
 				allowedTilesizes={this.state.allowedTilesizes}
 				maxTileSize={this.state.maxTileSize}
 				onSelectLayout={this.onSelectLayout.bind(this)}
+				onSelectDifficulty={this.onSelectDifficulty.bind(this)}
 				onSelectTileset={this.onSelectTileset.bind(this)}
 				onSelectTilesize={this.onSelectTilesize.bind(this)}
 				onPlay={this.onPlay.bind(this)}

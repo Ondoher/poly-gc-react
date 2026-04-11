@@ -7,6 +7,7 @@ import layouts from '../data/layouts.js';
 import { TILE_SETS, TILE_SIZES } from '../data/tilesets.js';
 import { debounce, shortId } from '../../../../common/utils.js';
 import Engine from '../engine/Engine.js';
+import { applyDifficultyPreset } from '../engine/difficultyPresets.js';
 
 /**
  * Use this class to manage the preview render pipeline for the Mahjongg
@@ -29,6 +30,7 @@ export default class PreviewGenerator {
 		this.tileSize = null;
 		this.tileStyle = null;
 		this.layout = null;
+		this.difficulty = 'standard';
 		this.boardNbr = 1;
 		this.renderCount = 0;
 		this.lastResult = null;
@@ -80,6 +82,7 @@ export default class PreviewGenerator {
 		}
 
 		this.engine.setLayout(layout);
+		applyDifficultyPreset(this.engine, this.difficulty);
 		this.engine.generateGame(this.boardNbr);
 
 		if (!this.engine.board?.pieces) {
@@ -136,6 +139,11 @@ export default class PreviewGenerator {
 	 */
 	setLayout(layout) {
 		this.layout = layout;
+		this.scheduleRender();
+	}
+
+	setDifficulty(difficulty) {
+		this.difficulty = difficulty || 'standard';
 		this.scheduleRender();
 	}
 

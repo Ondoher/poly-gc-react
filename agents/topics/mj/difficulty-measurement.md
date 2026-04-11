@@ -1,5 +1,25 @@
 # Mahjongg Difficulty Measurement
 
+## Scope Note
+
+This document is the analyzer-semantics companion to the engine README.
+
+Use it for:
+
+- what each measurement is trying to capture
+- how the analyzer samples those measurements
+- why certain metrics matter for this generator
+
+Do not use it as the primary source for the current runtime ladder or the
+current user-facing difficulty summary. Those now live in:
+
+- [engine README](/c:/dev/poly-gc-react/src/gc/features/mj/src/engine/README.md)
+- [difficulty-tuning-knobs.md](/c:/dev/poly-gc-react/agents/topics/mj/difficulty-tuning-knobs.md)
+
+Some later sections in this file preserve historical baselines and early
+experiments. They are still useful context, but they are not the source of
+truth for the latest ladder settings.
+
 ## Goal
 
 Define a repeatable way to measure Mahjongg board difficulty so generation
@@ -152,6 +172,20 @@ Useful downstream values:
 This is still a sampled metric, not a proof of optimal play, but it is closer to
 the kind of delayed order pressure the suspension algorithm is trying to create.
 
+Important detail: these downstream initial-choice metrics are anchored to the
+starting board state, not to arbitrary later search states. For each immediately
+available same-face pair choice:
+
+- the analyzer applies that initial choice
+- runs sampled continuations from that branch until termination
+- summarizes the branch outcomes
+- then compares those branch summaries across the alternative initial choices
+
+So:
+
+- dead-end spread is about how often those branches fail
+- remaining spread is about how deep those branches get before they end
+
 ### Random-Play Brutality
 
 The analyzer now reports a separate brutality score so random face-dealt boards
@@ -241,12 +275,27 @@ set. Later face assignment chooses among remaining face sets by the lowest
 avoidance penalty, not by hard exclusion. This should reduce accidental local
 matches while preserving fallbacks if the draw pile has no clean option.
 
+Face assignment now also has a spacing-aware chooser. The analyzer-facing model
+to keep in mind is:
+
+- assigned face-group pairs are recorded in placement order
+- reusable face groups can be sorted by distance from their previous use
+- unused groups remain the neutral remainder of the candidate list
+- the same sliding difficulty window used by tile picking can then shape face
+  assignment
+
+That means face assignment is no longer only a "which clean face set is left"
+question. It can now contribute to difficulty by clustering or delaying same-
+face reuse through the authored solve order.
+
 The current experimental CLI knobs are:
 
 - `--face-avoidance`
 - `--face-avoidance-weight`
 - `--suspension-face-avoidance-weight`
 - `--face-avoidance-max-weight`
+- `--preferred-face-group-multiplier`
+- `--easy-reuse-duplicate-scale`
 
 ## Suggested Derived Score
 
@@ -401,6 +450,14 @@ cap, `maxNested: 4`, a placement release range of `8..16`, an open-count release
 range of `4..8`, `matchType: both`, `forceReleaseAtEffectiveOpen: 4`, and
 `suspendAtEffectiveOpen: 6`.
 
+The current face-assignment defaults use:
+
+- `preferredMultiplier: 0.5`
+- `easyReuseDuplicateScale: 0` by default in the engine
+
+The named difficulty ladder overrides that for Easy only, setting
+`easyReuseDuplicateScale: 2`.
+
 `matchType: both` has behaved more like a regime switch than a smooth knob. Once
 that switch is on, the stronger numeric dials so far are `maxNested` and the
 effective-open release thresholds. `frequency` and `maxSuspended` are linked:
@@ -445,7 +502,7 @@ question.
 Subjective playtesting is still important, but it should be used alongside the
 solver metrics rather than in place of them.
 
-## Baseline Results Before Suspension
+## Historical Baseline Results Before Suspension
 
 After restoring the normal Turtle layout, the first script-side analyzer was run
 against both solved-by-construction engine boards and fully random face-dealt
@@ -473,7 +530,7 @@ Random face-dealt boards:
 - board 404: medium, 74/100, 7 initial playable pairs, 4.2% playout solve rate, 95.8% playout dead-end rate, 45.75 average remaining tiles
 - board 505: hard, 81/100, 11 initial playable pairs, 0.0% playout solve rate, 100.0% playout dead-end rate, 64.92 average remaining tiles
 
-This gives a useful baseline for suspension work:
+This gives a useful historical baseline for suspension work:
 
 - engine-generated boards cluster around easy/medium
 - random face-dealt boards cluster around medium-hard/hard
@@ -491,7 +548,7 @@ Important interpretation note:
 For this project, the random-face baseline is best treated as a high-friction
 comparison target, not as the desired generator behavior.
 
-## Nightmare Difficulty Target
+## Historical Nightmare Difficulty Target
 
 The eventual `nightmare` difficulty target is not merely to approach random
 face-dealt behavior.

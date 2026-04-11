@@ -3,11 +3,21 @@
 This note summarizes the generation-time difficulty levers for Mahjongg and
 how they tend to move the analyzer metrics.
 
+Scope note:
+
+- use the [engine README](/c:/dev/poly-gc-react/src/gc/features/mj/src/engine/README.md)
+  for the canonical current-system walkthrough and the current ladder summary
+- use this note for knob-by-knob effects, tuning interpretation, and the latest
+  experiments that informed the current presets
+
+That split is intentional. The engine README explains the system. This file
+explains which dials have proven worth keeping an eye on.
+
 The current goal is not to make boards merely fail more often. The useful target
 is a solvable board where early choices and same-face pair choices matter more:
 
 - easy should be easier than random
-- medium should be near random
+- standard should be near random
 - nightmare should be significantly more decision-dense than random while still
   preserving a known solution
 
@@ -18,11 +28,13 @@ These are the most useful metrics for tuning toward human-perceived difficulty:
 - `Search consequential pair-choice states`: counts searched states where one
   legal same-face pair choice has different downstream consequences than another.
   Higher usually means more meaningful player decisions.
-- `Initial downstream dead-end spread`: measures how much the opening pair
-  changes downstream dead-end rate. Higher means early choices matter more.
-- `Initial downstream remaining spread`: measures how much the opening pair
-  changes how many tiles remain at downstream termination. Higher means some
-  early choices fail much earlier than others.
+- `Initial downstream dead-end spread`: from the starting board, measures how
+  much the available same-face pair choices change downstream dead-end rate.
+  Higher means the first ambiguous pair choice matters more.
+- `Initial downstream remaining spread`: from the starting board, measures the
+  spread of the average remaining tiles at termination across those initial
+  same-face pair-choice branches. Higher means some early choices fail much
+  earlier than others.
 - `Known solution longest low-branch run`: measures long constrained stretches
   along the generated solution. Higher can feel tighter, especially on hard
   levels.
@@ -38,7 +50,7 @@ boards are expected to keep a valid known solution.
 Code:
 
 - `Engine.setupDifficulty(difficulty)`
-- CLI: `--generation-difficulty easy|medium|hard`
+- CLI convenience presets: `--generation-difficulty easy|medium|hard`
 - CLI: `--generation-difficulty-value <0..1>`
 
 Effect:
@@ -247,6 +259,49 @@ Expected metrics:
 - A high fallback rate is a signal that a formal two-pass reservation model may
   become useful.
 
+## Face-Group Reuse Spacing
+
+Code:
+
+- `recordAssignedFacePair(tile1, tile2, faceGroup)`
+- `getSortedFaceGroupDistanceCandidates(requiredFaces, pairRecord, options)`
+- `getFaceGroupDistanceWindowDetails(requiredFaces, pairRecord, options)`
+- `pickFaceGroupDistanceCandidate(requiredFaces, pairRecord, options)`
+- `setupFaceAssignmentRules(rules)`
+- `getFaceGroupPreferredSortValue(baseSortValue, preferred)`
+- `getFaceGroupDuplicateCount(reusedIndex, reusedCount, options)`
+- CLI: `--preferred-face-group-multiplier <n>`
+- CLI: `--easy-reuse-duplicate-scale <n>`
+
+Effect:
+
+- Face assignment now keeps an ordered history of already assigned face-group
+  pairs.
+- Reusable face groups are sorted by placement distance, nearest first.
+- Unused groups are appended after the reused candidates in stable order.
+- The same sliding difficulty window used by tile picking is then applied to
+  that ordered face-group list.
+- Preferred face groups are not handled by a separate branch anymore. They are
+  folded into the same ordering with a fractional multiplier.
+- Easy can additionally duplicate nearby reused face groups in the candidate
+  list, making clustered reuse more likely.
+
+Current rule shape:
+
+- `preferredMultiplier: 0.5` is the default soft continuity bias.
+- `easyReuseDuplicateScale` only acts on the easy side of the difficulty range.
+- Once difficulty reaches the harder side, duplication becomes inert and reuse
+  is delayed naturally by the ordered list.
+
+Expected metrics:
+
+- Easy should become more forgiving: higher solve rate, lower dead-end rate,
+  lower remaining tiles at failure, and much lower brutality.
+- Standard and harder levels should remain effectively unchanged by the
+  duplication knob.
+- Search consequential states can stay high on easy because the board is still
+  authored; the low-end target is "friendlier," not "choice-free."
+
 ## Full Sets Versus Partial Sets
 
 Current rule:
@@ -280,3 +335,68 @@ more decision-dense:
 Random still had a higher raw playout dead-end rate, but those boards did not
 preserve a known solution. Treat that as a different kind of failure than a
 solvable constructed board with punishing choices.
+
+## Recommended Five-Level Settings
+
+The current five-level ladder should use these settings as the starting point.
+These were checked on turtle boards `1..20` with analysis depth `3`, state cap
+`500`, `16` playouts, and `2` pair-choice playouts.
+
+| Level | Generation Difficulty | Suspension | Tile Picker Rules | Face Assignment | Face Avoidance |
+| --- | ---: | --- | --- | --- | --- |
+| Easy | `0` | off | default | `preferredMultiplier: 0.5`, `easyReuseDuplicateScale: 2` | off |
+| Standard | `0.35` | off | default | `preferredMultiplier: 0.5`, `easyReuseDuplicateScale: 0` | off |
+| Challenging | `0.6` | aggressive | default | `preferredMultiplier: 0.5`, `easyReuseDuplicateScale: 0` | off |
+| Expert | `0.75` | aggressive | `openPressureMultiplier: 1`, `maxFreedPressure: 6`, `balancePressureMultiplier: 1`, `maxBalanceMargin: 48` | `preferredMultiplier: 0.5`, `easyReuseDuplicateScale: 0` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
+| Nightmare | `1` | aggressive with `forceReleaseAtEffectiveOpen: 3`, `suspendAtEffectiveOpen: 5` | Expert rules plus `shortHorizonProbeMoves: 8`, `shortHorizonPressureMultiplier: 1` | `preferredMultiplier: 0.5`, `easyReuseDuplicateScale: 0` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
+
+The sampled metric shape was:
+
+| Metric | Random | Easy | Standard | Challenging | Expert | Nightmare |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Playout solve rate | `3.8%` | `46.3%` | `35.6%` | `19.1%` | `16.3%` | `5.6%` |
+| Playout dead-end rate | `96.3%` | `53.8%` | `64.4%` | `80.9%` | `83.8%` | `94.4%` |
+| Playout average remaining tiles | `59.07` | `11.45` | `21.52` | `39.91` | `47.34` | `57.74` |
+| P75 dead-end remaining tiles | `73.40` | `26.50` | `42.90` | `65.30` | `70.60` | `69.90` |
+| Initial downstream dead-end spread | `6.9%` | `57.8%` | `48.0%` | `32.3%` | `23.6%` | `14.5%` |
+| Initial downstream remaining spread | `21.99` | `20.94` | `24.91` | `31.65` | `34.16` | `29.38` |
+| Search consequential pair-choice states | `129.20` | `480.90` | `407.15` | `467.05` | `419.25` | `180.55` |
+| Score avg | `37.00` | `44.15` | `39.00` | `42.10` | `41.65` | `36.55` |
+| Brutality avg | `51.75` | `29.15` | `38.54` | `51.46` | `54.54` | `58.57` |
+
+The score column does not fully express the desired human-facing progression.
+The better signal is the combination of solvability, solve rate, remaining
+tiles, P75 dead-end remaining, and consequential pair-choice states:
+
+- Easy and Standard are much more solvable than random and fail later.
+- Easy now gets its extra softness partly from clustered face-group reuse, and
+  that knob is effectively isolated to Easy.
+- Challenging raises dead-end rate and remaining-tile severity while keeping a rich
+  choice tree.
+- Expert adds the face/pressure knobs and crosses random on P75 dead-end
+  remaining while staying solvable.
+- Nightmare is the most punitive on playout dead-end rate and remaining-tile
+  severity, but the tight selection window reduces the number of consequential
+  search states. That is acceptable for now because the intended feel is less
+  "many rich options" and more "tight, punishing, and still constructed."
+
+## Recent Face-Assignment Findings
+
+The first ladder-wide sweep after enabling the face-group spacing chooser made
+all constructed levels harsher. Adding the easy-only reuse duplication rule
+pulled the low end back into a better place without moving the harder levels.
+
+The useful result was:
+
+- `preferredMultiplier: 0.5` everywhere
+- `easyReuseDuplicateScale: 2` for Easy
+- `easyReuseDuplicateScale: 0` for Standard and above
+
+A light 10-board sweep across duplication scales `0..3` showed:
+
+- Easy moved strongly as duplication increased.
+- Standard, Challenging, Expert, and Nightmare were unchanged across the same
+  duplication values.
+
+That makes `easyReuseDuplicateScale` a clean low-end tuning lever rather than a
+ladder-wide destabilizer.

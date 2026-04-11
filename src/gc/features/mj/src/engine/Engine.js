@@ -1,6 +1,7 @@
 import { makeEventable } from '@polylith/core';
 import Random from 'utils/random.js'
 import NumberSet from 'utils/NumberSet.js';
+import GameGenerator from './GameGenerator.js';
 
 /**
  * This is the engine for the Mah Jongg solitaire game. It keeps the game state
@@ -37,6 +38,12 @@ export default class Engine {
 			maxWeight: 8,
 		};
 
+		/** @type {FaceAssignmentRules} */
+		this.faceAssignmentRules = {
+			preferredMultiplier: 0.5,
+			easyReuseDuplicateScale: 0,
+		};
+
 		/** @type {Suspended[]} */
 		this.suspended = [];
 
@@ -50,6 +57,7 @@ export default class Engine {
 		this.tilePickerStats = this.createTilePickerStats();
 		this.faceAvoidanceStats = this.createFaceAvoidanceStats();
 		this.faceAvoidance = new Map();
+		this.assignedFacePairs = [];
 
 		this.undoStack = [];
 		this.redoStack = [];
@@ -118,6 +126,13 @@ export default class Engine {
 	setupFaceAvoidanceRules(rules = {}) {
 		this.faceAvoidanceRules = {
 			...this.faceAvoidanceRules,
+			...rules,
+		};
+	}
+
+	setupFaceAssignmentRules(rules = {}) {
+		this.faceAssignmentRules = {
+			...this.faceAssignmentRules,
 			...rules,
 		};
 	}
@@ -337,6 +352,7 @@ export default class Engine {
 		this.faceAvoidance = new Map();
 		this.solution = [];
 		this.pairs = [];
+		this.assignedFacePairs = [];
 	}
 
 	/**
@@ -374,12 +390,8 @@ export default class Engine {
 		return this.drawWeightedFacePairForTiles([]);
 	}
 
-	getFaceSetForFace(face) {
-		return Math.floor(face / 4);
-	}
-
 	getFaceSetId(faceSet) {
-		return faceSet.id ?? this.getFaceSetForFace(faceSet.faces[0]);
+		return faceSet.id ?? Math.floor(faceSet.faces[0] / 4);
 	}
 
 	/**
@@ -434,22 +446,6 @@ export default class Engine {
 	}
 
 	/**
-	 * Return currently open tiles around a reference choice, excluding the
-	 * reference tiles themselves.
-	 *
-	 * @private
-	 * @param {Tile[]} referenceTiles
-	 * @returns {Tile[]}
-	 */
-	getFaceAvoidanceNeighborhood(referenceTiles) {
-		let references = new NumberSet(referenceTiles, this.board.count);
-
-		return this.openTiles.filter((tile) => {
-			return !references.has(tile);
-		});
-	}
-
-	/**
 	 * Simulate removing a generated pair and return the tiles that would become
 	 * open after that removal. These future frontier tiles are the main targets
 	 * for face-avoidance marks because they are likely to be available soon after
@@ -461,56 +457,10 @@ export default class Engine {
 	 * @returns {Tile[]}
 	 */
 	getFaceAvoidanceTargetsAfterRemoval(referenceTiles, removedTiles = referenceTiles) {
-		if (!this.faceAvoidanceRules.enabled) {
-			return [];
-		}
-
-		let references = new NumberSet(referenceTiles, this.board.count);
-		let placedTiles = new NumberSet([], this.board.count).union(this.placedTiles);
-
-		removedTiles.forEach((tile) => placedTiles.exclude(tile));
-
-		let usedSpaces = this.buildUsedSpacesForPlacedTiles(placedTiles);
-
-		return this.getOpenTilesInState(placedTiles, usedSpaces).filter((tile) => {
-			return !references.has(tile);
-		});
-	}
-
-	/**
-	 * Add avoidance marks to the current open frontier around a completed pair.
-	 *
-	 * @private
-	 * @param {Tile[]} referenceTiles
-	 * @param {FaceGroup} faceSet
-	 * @param {number} weight
-	 */
-	markFaceAvoidanceAroundTiles(referenceTiles, faceSet, weight) {
-		if (!this.faceAvoidanceRules.enabled) {
-			return;
-		}
-
-		this.getFaceAvoidanceNeighborhood(referenceTiles).forEach((tile) => {
-			this.addFaceAvoidance(tile, faceSet, weight);
-		});
-	}
-
-	/**
-	 * Add avoidance marks to a precomputed target list.
-	 *
-	 * @private
-	 * @param {Tile[]} targets
-	 * @param {FaceGroup} faceSet
-	 * @param {number} weight
-	 */
-	markFaceAvoidanceForTargets(targets, faceSet, weight) {
-		if (!this.faceAvoidanceRules.enabled) {
-			return;
-		}
-
-		targets.forEach((tile) => {
-			this.addFaceAvoidance(tile, faceSet, weight);
-		});
+		return new GameGenerator(this).getFaceAvoidanceTargetsAfterRemoval(
+			referenceTiles,
+			removedTiles
+		);
 	}
 
 	/**
@@ -579,35 +529,6 @@ export default class Engine {
 	}
 
 	/**
-	 * Softly preselect a face group for a generated pair.
-	 *
-	 * Preferred groups are not reserved. Final assignment tries the preferred
-	 * group first and falls back to weighted assignment if another draw has
-	 * already consumed it. This gives face avoidance more continuity without
-	 * forcing a full two-pass reservation model yet.
-	 *
-	 * @private
-	 * @param {number} requiredFaces
-	 * @param {Tile[]} tiles
-	 * @returns {FaceGroup | false}
-	 */
-	getPreferredFaceGroup(requiredFaces, tiles = []) {
-		if (!this.faceAvoidanceRules.enabled) {
-			return false;
-		}
-
-		let faceGroup = this.getWeightedFaceGroup(requiredFaces, tiles, false);
-
-		if (faceGroup === -1) {
-			return false;
-		}
-
-		this.faceAvoidanceStats.preferredFaceGroups++;
-
-		return faceGroup;
-	}
-
-	/**
 	 * Test whether a stable face-group id still has enough remaining faces.
 	 *
 	 * @private
@@ -641,6 +562,183 @@ export default class Engine {
 		}
 	}
 
+	/**
+	 * Record one face-group assignment in placement order.
+	 *
+	 * This history is used for analysis and future face-spacing experiments.
+	 * Each entry tracks the generated pair tiles plus the stable face-group id
+	 * assigned to that pair.
+	 *
+	 * @private
+	 * @param {Tile} tile1
+	 * @param {Tile} tile2
+	 * @param {FaceGroup} faceGroup
+	 */
+	recordAssignedFacePair(tile1, tile2, faceGroup) {
+		return new GameGenerator(this).recordAssignedFacePair(
+			tile1,
+			tile2,
+			faceGroup
+		);
+	}
+
+	/**
+	 * Return the most recent assignment index for each face group that has
+	 * already been used during generation.
+	 *
+	 * @private
+	 * @returns {Map<FaceGroup, number>}
+	 */
+	getAssignedFaceGroupIndexes() {
+		let indexes = new Map();
+
+		this.assignedFacePairs.forEach((pair, index) => {
+			indexes.set(pair.faceGroup, index);
+		});
+
+		return indexes;
+	}
+
+	getFaceGroupPreferredSortValue(baseSortValue, preferred = false) {
+		let multiplier = this.faceAssignmentRules.preferredMultiplier ?? 0.5;
+
+		return preferred ? baseSortValue * multiplier : baseSortValue;
+	}
+
+	getFaceGroupDuplicateCount(reusedIndex, reusedCount, options = {}) {
+		let difficulty = Math.max(0, Math.min(1, options.difficulty ?? this.difficulty));
+		let easeStrength = Math.max(0, (0.5 - difficulty) * 2);
+		let duplicateScale = this.faceAssignmentRules.easyReuseDuplicateScale ?? 0;
+
+		if (duplicateScale <= 0 || easeStrength === 0 || reusedCount <= 0) {
+			return 1;
+		}
+
+		let closenessRatio = reusedCount <= 1
+			? 1
+			: 1 - (reusedIndex / (reusedCount - 1));
+		let extra = Math.floor(easeStrength * closenessRatio * duplicateScale);
+
+		return 1 + extra;
+	}
+
+	/**
+	 * Build the currently available face-group candidates annotated with
+	 * placement distance from the latest prior assignment of the same face group.
+	 *
+	 * Reused groups get a numeric distance based on assignment-history index
+	 * difference. Unused groups remain neutral with `distance = null`.
+	 * The returned list always places the distance-sorted reused groups first,
+	 * then appends the remaining neutral groups in stable draw-pile order.
+	 *
+	 * This does not change face assignment yet; it only exposes the sorted data
+	 * needed for future spacing-based selection experiments.
+	 *
+	 * @private
+	 * @param {number} requiredFaces
+	 * @param {GeneratedPairRecord | Tile[] | null} pairRecord
+	 * @param {{difficulty?: number}} options
+	 * @returns {FaceGroupDistanceCandidate[]}
+	 */
+	getSortedFaceGroupDistanceCandidates(requiredFaces = 2, pairRecord = null, options = {}) {
+		let currentIndex = this.assignedFacePairs.length;
+		let assignedIndexes = this.getAssignedFaceGroupIndexes();
+		let preferredFaceGroup = Array.isArray(pairRecord)
+			? false
+			: pairRecord?.preferredFaceGroup;
+		let reused = [];
+		let unused = [];
+
+		for (let [faceGroup, faceSet] of this.drawPile.faceSets) {
+			if (faceSet.faces.length < requiredFaces) {
+				continue;
+			}
+
+			let previousIndex = assignedIndexes.has(faceGroup)
+				? assignedIndexes.get(faceGroup)
+				: -1;
+			let preferred = preferredFaceGroup === faceGroup;
+			let baseSortValue = previousIndex === -1
+				? currentIndex + 1
+				: currentIndex - previousIndex;
+			let candidate = {
+				faceGroup,
+				distance: previousIndex === -1 ? null : currentIndex - previousIndex,
+				previousIndex,
+				isReuse: previousIndex !== -1,
+				availableFaces: faceSet.faces.length,
+				preferred,
+				sortValue: this.getFaceGroupPreferredSortValue(baseSortValue, preferred),
+			};
+
+			if (candidate.isReuse) {
+				reused.push(candidate);
+			} else {
+				unused.push(candidate);
+			}
+		}
+
+		let compare = function(left, right) {
+			return left.sortValue - right.sortValue || left.faceGroup - right.faceGroup;
+		};
+
+		reused.sort(compare);
+		unused.sort(compare);
+
+		let expandedReused = reused.flatMap((candidate, index) => {
+			let count = this.getFaceGroupDuplicateCount(index, reused.length, options);
+
+			return Array.from({length: count}, function() {
+				return candidate;
+			});
+		}, this);
+
+		return [...expandedReused, ...unused];
+	}
+
+	/**
+	 * Return difficulty-window details for the current face-group distance
+	 * candidates.
+	 *
+	 * This uses the same sliding-window idea as tile picking: easy leans toward
+	 * the front of the sorted candidate list, hard leans toward the back, and
+	 * medium keeps a broader middle.
+	 *
+	 * @private
+	 * @param {number} requiredFaces
+	 * @param {GeneratedPairRecord | Tile[] | null} pairRecord
+	 * @param {{difficulty?: number, minWindowRatio?: number}} options
+	 * @returns {{window: FaceGroupDistanceCandidate[], start: number, end: number, size: number, count: number, difficulty: number}}
+	 */
+	getFaceGroupDistanceWindowDetails(requiredFaces = 2, pairRecord = null, options = {}) {
+		let candidates = this.getSortedFaceGroupDistanceCandidates(requiredFaces, pairRecord, options);
+
+		return this.getDifficultyWindowDetails(candidates, options);
+	}
+
+	/**
+	 * Pick one face-group distance candidate from the difficulty window.
+	 *
+	 * This helper does not affect face assignment until a caller chooses to use
+	 * it. It simply exposes the same sliding-window selection model on top of
+	 * the face-group distance ordering.
+	 *
+	 * @private
+	 * @param {number} requiredFaces
+	 * @param {GeneratedPairRecord | Tile[] | null} pairRecord
+	 * @param {{difficulty?: number, minWindowRatio?: number}} options
+	 * @returns {FaceGroupDistanceCandidate | false}
+	 */
+	pickFaceGroupDistanceCandidate(requiredFaces = 2, pairRecord = null, options = {}) {
+		let details = this.getFaceGroupDistanceWindowDetails(requiredFaces, pairRecord, options);
+
+		if (details.window.length === 0) {
+			return false;
+		}
+
+		return details.window[Random.random(details.window.length)];
+	}
+
 	drawWeightedFacePairForTiles(tiles = []) {
 		var faceSetIdx = this.getWeightedFaceGroup(2, tiles);
 
@@ -653,6 +751,24 @@ export default class Engine {
 		return {face1, face2};
 	}
 
+	drawFacePairFromGroup(faceGroup, tiles = [], recordDraw = true) {
+		if (!this.canDrawFromFaceGroup(faceGroup, 2)) {
+			return false;
+		}
+
+		if (this.faceAvoidanceRules.enabled && recordDraw) {
+			this.recordFaceAvoidanceDraw(
+				this.getFaceGroupPenalty(faceGroup, tiles)
+			);
+		}
+
+		return {
+			faceGroup,
+			face1: this.drawOneOf(faceGroup),
+			face2: this.drawOneOf(faceGroup),
+		};
+	}
+
 	/**
 	 * Draw a pair for a generated pair record, honoring its preferred face group
 	 * if that group is still available.
@@ -662,30 +778,7 @@ export default class Engine {
 	 * @returns {FacePair}
 	 */
 	drawPreferredFacePairForRecord(pairRecord) {
-		let tiles = pairRecord.tiles || pairRecord;
-		let preferredFaceGroup = pairRecord.preferredFaceGroup;
-
-		if (
-			this.faceAvoidanceRules.enabled
-			&& preferredFaceGroup !== false
-			&& preferredFaceGroup !== undefined
-		) {
-			if (this.canDrawFromFaceGroup(preferredFaceGroup, 2)) {
-				this.faceAvoidanceStats.preferredFaceGroupDraws++;
-				this.recordFaceAvoidanceDraw(
-					this.getFaceGroupPenalty(preferredFaceGroup, tiles)
-				);
-
-				return {
-					face1: this.drawOneOf(preferredFaceGroup),
-					face2: this.drawOneOf(preferredFaceGroup),
-				};
-			}
-
-			this.faceAvoidanceStats.preferredFaceGroupFallbacks++;
-		}
-
-		return this.drawWeightedFacePairForTiles(tiles);
+		return new GameGenerator(this).drawPreferredFacePairForRecord(pairRecord);
 	}
 
 	getFullFaceGroup() {
@@ -711,99 +804,12 @@ export default class Engine {
 		return -1;
 	}
 
-	hasFullFaceSet() {
-		let faceSets = this.drawPile.faceSets;
-		return [...faceSets.values()].some((faceSet) => {
-			return faceSet.faces.length === 4;
-		});
-
-	}
-
-	drawFaceSet() {
-		return this.drawWeightedFaceSetForTiles([]);
-	}
-
-	drawWeightedFaceSetForTiles(tiles = []) {
-		let faceGroup = this.faceAvoidanceRules.enabled
-			? this.getWeightedFaceGroup(4, tiles)
-			: this.getFullFaceGroup();
-
-		if (faceGroup === -1) {
-			return false;
-		}
-
-		const faces = this.drawPile.faceSets.get(faceGroup).faces;
-
-		this.drawPile.faceSets.delete(faceGroup);
-
-		return faces;
-	}
-
 	/**
 	 * Call this method to place tiles on the board. The game number seed will
 	 * have already been set.
 	 */
 	generateLayout() {
-		var tileCount = this.board.count;
-
-		// start with a sorted pile of tiles
-		this.shuffleTiles();
-
-		// Mark every playable space as occupied. Board generation consists of
-		// randomly removing playable pairs of tiles and assigning them matching
-		// faces.
-		for (let idx = 0; idx < tileCount; idx++) {
-			this.addPos(this.board.pieces[idx].pos, idx);
-		}
-
-		// Randomly picking pairs of tiles could lead to a situation where
-		// there are no playable tiles, but not all tiles have been played. This
-		// should be rare and would only happen with a single remaining stack
-		// of tiles. This may throw an error, which the caller will catch and
-		// try again
-
-		// Place all the tiles randomly, two at a time.
-		for (let idx = 0; idx < Math.floor(tileCount / 2); idx++) {
-			this.placeWeightedRandomPair();
-		}
-
-		this.fillInRemainingFaces();
-
-		// now that we are done, go back and mark every playable space as
-		// occupied again
-		for (let idx = 0; idx < tileCount; idx++) {
-			this.addPos(this.board.pieces[idx].pos, idx);
-		}
-	}
-
-	/**
-	 * Call this method to select a random open tile. If called with remove
-	 * false subsequent calls may pick that same tile.
-	 *
-	 * @private
-	 * @param {pickTileOptions} options - if set to true, remove the tile and add to the
-	 * 	solution
-	 * @returns {Tile} an open time
-	 */
-	pickOpenTile(options = {remove: true, useTile: false}) {
-		if (this.openTiles.length === 0) {
-			throw "BadLayoutException";
-		}
-
-	// Pick one of the available tiles. Remember that these tiles do not have
-	// faces yet, so the only selection criteria is that they are open
-		var which = Random.random(this.openTiles.length);
-		var chosen = options.useTile === false ? this.openTiles[which] : options.useTile;
-
-		if (options.remove) {
-		// remember this as part of the guaranteed solution
-			this.solution.push(chosen);
-
-		// remove from playable tiles so it cannot be chosen again
-			this.openTiles = this.openTiles.filter((tile) => tile !== chosen)
-		}
-
-		return chosen;
+		new GameGenerator(this).generate();
 	}
 
 	getTilePickerGrid() {
@@ -1476,17 +1482,6 @@ export default class Engine {
 		return 1 + (pressure - 1) * hardMultiplier;
 	}
 
-	getTilePickerOptions() {
-		return {
-			...this.tilePickerRules,
-			difficulty: this.difficulty,
-		};
-	}
-
-	getDifficultyWindow(scoredTiles, options = {}) {
-		return this.getDifficultyWindowDetails(scoredTiles, options).window;
-	}
-
 	/**
 	 * Choose the difficulty-dependent slice of the sorted tile scores.
 	 *
@@ -1600,54 +1595,6 @@ export default class Engine {
 		return selected;
 	}
 
-	/**
-	 * Pick a generated normal pair. The first tile is tried from the difficulty
-	 * window first, then lower-priority candidates are used as fallback if no
-	 * stack-safe second tile can be found.
-	 *
-	 * @private
-	 * @param {TilePickerOptions} options
-	 * @returns {TilePickPair}
-	 */
-	pickWeightedPair(options = {}) {
-		let firstScores = this.scoreOpenTiles([], options);
-		let firstWindowDetails = this.getDifficultyWindowDetails(firstScores, options);
-		let firstCandidates = this.shuffleTileScores([
-			...firstWindowDetails.window,
-			...firstScores.filter((score) => {
-				return !firstWindowDetails.window.some((windowScore) => {
-					return windowScore.tile === score.tile;
-				});
-			}),
-		]);
-
-		for (let first of firstCandidates) {
-			let second = this.pickWeightedTile([first.tile], {
-				...options,
-				enforceStackBalance: true,
-				pendingRemovedTiles: [first.tile],
-				context: 'normalSecondPicks',
-			});
-
-			if (second) {
-				this.recordTilePickerStats(
-					first,
-					firstScores,
-					firstWindowDetails,
-					'normalFirstPicks'
-				);
-
-				return {
-					tile1: first.tile,
-					tile2: second.tile,
-					picks: [first, second],
-				};
-			}
-		}
-
-		throw "BadLayoutException";
-	}
-
 	shuffleTileScores(scores) {
 		let shuffled = scores.slice();
 
@@ -1660,523 +1607,6 @@ export default class Engine {
 		}
 
 		return shuffled;
-	}
-
-	/**
-	 * Pick two tiles to place now and one tile to suspend.
-	 *
-	 * The suspended tile is selected from the highest-scored member of the
-	 * triple when possible, which tends to make the hidden match less obvious.
-	 * The two placed tiles are sorted back toward the lower-scored members of
-	 * the triple.
-	 *
-	 * @private
-	 * @param {TilePickerOptions} options
-	 * @returns {TilePickSuspensionTriple}
-	 */
-	pickWeightedSuspensionTriple(options = {}) {
-		let first = this.pickWeightedTile([], {
-			...options,
-			context: 'suspensionFirstPicks',
-		});
-		if (!first) {
-			throw "BadLayoutException";
-		}
-		let second = this.pickWeightedTile([first.tile], {
-			...options,
-			context: 'suspensionSecondPicks',
-		});
-		if (!second) {
-			throw "BadLayoutException";
-		}
-		let third = this.pickWeightedTile([first.tile, second.tile], {
-			...options,
-			context: 'suspensionThirdPicks',
-		});
-		if (!third) {
-			throw "BadLayoutException";
-		}
-		let picks = [first, second, third];
-		let ranked = picks.slice().sort((left, right) => {
-			return right.weight - left.weight || right.tile - left.tile;
-		});
-		let selected = ranked.find((candidate) => {
-			let placed = picks
-				.filter((pick) => pick.tile !== candidate.tile)
-				.map((pick) => pick.tile);
-
-			return !this.wouldCreateDominantStack(placed);
-		});
-
-		if (!selected) {
-			this.tilePickerStats.stackSafetyRejected++;
-			throw "BadLayoutException";
-		}
-
-		let placed = picks
-			.filter((pick) => pick.tile !== selected.tile)
-			.sort((left, right) => {
-				return left.weight - right.weight || left.tile - right.tile;
-			});
-
-		return {
-			placed: [placed[0].tile, placed[1].tile],
-			suspended: selected.tile,
-			picks,
-		};
-	}
-
-	/**
-	 * Pick a partner for a suspended tile when the suspension is released.
-	 *
-	 * The original pair and suspended tile are used as references so the picker
-	 * can continue applying intersection and pressure scoring to the delayed
-	 * match.
-	 *
-	 * @private
-	 * @param {Suspended} suspended
-	 * @param {TilePickerOptions} options
-	 * @returns {TilePickScore | false}
-	 */
-	pickWeightedReleasedPartner(suspended, options = {}) {
-		let referenceTiles = [
-			...(suspended.originalPair || []),
-			suspended.tile,
-		];
-
-		return this.pickWeightedTile(referenceTiles, {
-			...options,
-			enforceStackBalance: true,
-			pendingRemovedTiles: [suspended.tile],
-			context: 'releasedPartnerPicks',
-		});
-	}
-
-	/**
-	 * Call this method to test if a given suspension is ready to be released
-	 *
-	 * @param {Suspended} suspended
-	 * @return {Boolean}
-	 */
-	testRelease(suspended) {
-		if (this.openTiles.length <= 2) {
-			return true
-		}
-
-		const placed = Math.floor(this.solution.length / 2);
-		const delta = placed - suspended.placedAt;
-		const open = this.openTiles.length;
-
-		const hitPlacedTarget = delta >= suspended.placementCount;
-		const hitOpenTarget = open <= suspended.openCount;
-
-		if (this.suspensionRules.matchType === "both") {
-			return hitPlacedTarget && hitOpenTarget
-		}
-
-		return hitPlacedTarget || hitOpenTarget;
-	}
-
-	/**
-	 * make sure there are enough free tiles to manage all the nested suspended
-	 * tiles
-	 *
-	 * @returns
-	 */
-	mustRelease() {
-		if (this.suspended.length === 0) {
-			return false;
-		}
-
-		// need to reserve a match for the suspended tiles
-		let effectiveOpen = this.openTiles.length - this.suspended.length;
-
-		// leave a little wiggle room
-		if (effectiveOpen < (this.suspensionRules.forceReleaseAtEffectiveOpen ?? 4)) {
-			return true;
-		}
-
-		return false;
-	}
-
-	countOpenSuspensions() {
-		return this.suspended.filter(function(suspended) {
-			return this.isTileOpen(suspended.tile);
-		}, this).length;
-	}
-
-	recordSuspensionSafetyStats(prefix, effectiveOpen) {
-		let stats = this.suspensionStats;
-
-		stats[`${prefix}OpenTilesTotal`] += this.openTiles.length;
-		stats[`${prefix}SuspendedTotal`] += this.suspended.length;
-		stats[`${prefix}OpenSuspendedTotal`] += this.countOpenSuspensions();
-		stats[`${prefix}EffectiveOpenTotal`] += effectiveOpen;
-	}
-
-	/**
-	 * Release the suspended tile
-	 *
-	 * @param {number} index
-	 */
-	releaseSuspendedTile(index) {
-		let suspended = this.suspended[index];
-		let faces = suspended.faces;
-		let stats = this.suspensionStats;
-		let tile1 = this.pickOpenTile({remove: true, useTile: suspended.tile});
-		let tile2 = this.pickOpenTile();
-
-		this.subtractPos(this.board.pieces[tile1].pos, tile1);
-		this.subtractPos(this.board.pieces[tile2].pos, tile2);
-		this.board.pieces[tile1].face = faces[0]
-		this.board.pieces[tile2].face = faces[1]
-
-		this.suspended.splice(index, 1);
-		stats.released++;
-	}
-
-	canSuspend() {
-		// need to reserve a match for the suspended tiles
-		let effectiveOpen = this.openTiles.length - this.suspended.length;
-
-		let chance = Random.random();
-		let rules = this.suspensionRules;
-		let stats = this.suspensionStats;
-		stats.attempts++;
-		if (chance >= rules.frequency) {
-			stats.skippedByFrequency++;
-			return false;
-		}
-
-		if (this.suspendedCount >= rules.maxSuspended) {
-			stats.skippedByTotalCap++;
-			return false;
-		}
-
-		if (this.suspended.length >= rules.maxNested) {
-			stats.skippedByNestedCap++;
-			return false;
-		}
-
-		// suspending tiles becomes less useful as there are fewer pieces, leave some wiggle room
-		if (effectiveOpen < (rules.suspendAtEffectiveOpen ?? 6)) {
-			stats.skippedByOpenTiles++;
-			this.recordSuspensionSafetyStats('skipOpenTiles', effectiveOpen);
-			return false;
-		}
-
-		if (!this.hasFullFaceSet()) {
-			stats.skippedByNoFullFaceSet++;
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * place a pair of tiles and place a third in suspension
-	 */
-	suspendTile() {
-		let rules = this.suspensionRules;
-		let faces = this.drawFaceSet();
-		let tile1 = this.pickOpenTile();
-		let tile2 = this.pickOpenTile();
-		let tile3 = this.pickOpenTile({remove: false, useTile: false});
-
-		// remove the chosen pair
-		this.subtractPos(this.board.pieces[tile1].pos, tile1);
-		this.subtractPos(this.board.pieces[tile2].pos, tile2);
-
-		// when part of a suspended tile set, the faces are assigned, immediately
-		this.board.pieces[tile1].face = faces[0];
-		this.board.pieces[tile2].face = faces[1];
-
-		let placementCount = Random.randomCurveRange(rules.placementCount.min, rules.placementCount.max);
-		let openCount = Random.randomCurveRange(rules.maxOpenCount.min, rules.maxOpenCount.max);
-
-		/** @type {Suspended} */
-		let suspended = {
-			tile: tile3,
-			faces: [faces[2], faces[3]],
-			placedAt: Math.floor(this.solution.length / 2),
-			placementCount,
-			openCount
-		}
-
-		this.suspended.push(suspended);
-		this.suspendedCount++;
-		this.suspensionStats.created++;
-		this.suspensionStats.maxNestedSeen = Math.max(
-			this.suspensionStats.maxNestedSeen,
-			this.suspended.length
-		);
-	}
-
-
-	findReleasableTile() {
-		let force = this.mustRelease();
-		if (this.suspended.length === 0) {
-			return false;
-		}
-
-		let idx = this.suspended.findIndex((suspended ) => {
-			return this.testRelease(suspended);
-		});
-
-		if (idx === -1 && force) {
-			let effectiveOpen = this.openTiles.length - this.suspended.length;
-			this.recordSuspensionSafetyStats('forceRelease', effectiveOpen);
-			this.suspensionStats.forceReleased++;
-			return 0;
-		} else if (idx === -1) {
-			return false;
-		}
-
-		return idx;
-	}
-
-	/**
-	 * Remove a generated pair from the board and append it to the guaranteed
-	 * solution path. Face assignment is intentionally handled separately.
-	 *
-	 * @private
-	 * @param {Tile} tile1
-	 * @param {Tile} tile2
-	 */
-	removeGeneratedPair(tile1, tile2) {
-		this.solution.push(tile1);
-		this.solution.push(tile2);
-
-		this.openTiles = this.openTiles.filter((tile) => {
-			return tile !== tile1 && tile !== tile2;
-		});
-
-		this.subtractPos(this.board.pieces[tile1].pos, tile1);
-		this.subtractPos(this.board.pieces[tile2].pos, tile2);
-	}
-
-	/**
-	 * Create the deferred face-assignment record for a normal generated pair.
-	 *
-	 * Normal pairs only need two faces from a face group, so they can be filled
-	 * after all generation-time removals. When face avoidance is enabled, the
-	 * record also stores a soft preferred face group and the future frontier
-	 * tiles that should avoid that group after assignment.
-	 *
-	 * @private
-	 * @param {Tile} tile1
-	 * @param {Tile} tile2
-	 * @param {Tile[]} avoidanceTargets
-	 * @returns {GeneratedPairRecord}
-	 */
-	createGeneratedPairRecord(tile1, tile2, avoidanceTargets = this.getFaceAvoidanceNeighborhood([
-		tile1,
-		tile2,
-	])) {
-		return {
-			tiles: [tile1, tile2],
-			preferredFaceGroup: this.getPreferredFaceGroup(2, [tile1, tile2]),
-			avoidanceTargets,
-			avoidanceWeight: this.faceAvoidanceRules.weight ?? 1,
-		};
-	}
-
-	/**
-	 * Place a normal generated pair using the weighted tile picker.
-	 *
-	 * @private
-	 */
-	placeWeightedNormalPair() {
-		let pair = this.pickWeightedPair(this.getTilePickerOptions());
-		let pairRecord = this.createGeneratedPairRecord(
-			pair.tile1,
-			pair.tile2,
-			this.getFaceAvoidanceTargetsAfterRemoval([pair.tile1, pair.tile2])
-		);
-
-		this.removeGeneratedPair(pair.tile1, pair.tile2);
-		this.pairs.push(pairRecord);
-	}
-
-	/**
-	 * Create a weighted suspension.
-	 *
-	 * Suspensions are the only current generation path that requires a full face
-	 * set immediately: two faces are assigned to the placed pair now and the
-	 * other two are held for the suspended tile plus its future partner.
-	 *
-	 * @private
-	 */
-	placeWeightedSuspensionPair() {
-		let rules = this.suspensionRules;
-		let triple;
-
-		try {
-			triple = this.pickWeightedSuspensionTriple(this.getTilePickerOptions());
-		} catch (err) {
-			if (err !== "BadLayoutException") {
-				throw err;
-			}
-
-			this.placeWeightedNormalPair();
-			return;
-		}
-		let tile1 = triple.placed[0];
-		let tile2 = triple.placed[1];
-		let tile3 = triple.suspended;
-		let avoidanceTargets = this.getFaceAvoidanceTargetsAfterRemoval(
-			[tile1, tile2, tile3],
-			[tile1, tile2]
-		);
-		let faces = this.drawWeightedFaceSetForTiles([tile1, tile2, tile3]);
-
-		this.removeGeneratedPair(tile1, tile2);
-
-		this.board.pieces[tile1].face = faces[0];
-		this.board.pieces[tile2].face = faces[1];
-		this.markFaceAvoidanceForTargets(
-			avoidanceTargets,
-			this.getFaceSetForFace(faces[0]),
-			this.faceAvoidanceRules.suspensionWeight ?? 3
-		);
-
-		let placementCount = Random.randomCurveRange(rules.placementCount.min, rules.placementCount.max);
-		let openCount = Random.randomCurveRange(rules.maxOpenCount.min, rules.maxOpenCount.max);
-
-		/** @type {Suspended} */
-		let suspended = {
-			tile: tile3,
-			faces: [faces[2], faces[3]],
-			placedAt: Math.floor(this.solution.length / 2),
-			placementCount,
-			openCount,
-			originalPair: [tile1, tile2],
-		}
-
-		this.suspended.push(suspended);
-		this.suspendedCount++;
-		this.suspensionStats.created++;
-		this.suspensionStats.maxNestedSeen = Math.max(
-			this.suspensionStats.maxNestedSeen,
-			this.suspended.length
-		);
-	}
-
-	/**
-	 * Release a weighted suspension by choosing a partner for the suspended tile
-	 * and assigning the reserved faces.
-	 *
-	 * @private
-	 * @param {number} index
-	 */
-	placeWeightedReleasedSuspensionPair(index) {
-		let suspended = this.suspended[index];
-		let faces = suspended.faces;
-		let partner = this.pickWeightedReleasedPartner(
-			suspended,
-			this.getTilePickerOptions()
-		);
-
-		if (!partner) {
-			throw "BadLayoutException";
-		}
-
-		this.removeGeneratedPair(suspended.tile, partner.tile);
-		this.board.pieces[suspended.tile].face = faces[0]
-		this.board.pieces[partner.tile].face = faces[1]
-		this.markFaceAvoidanceAroundTiles(
-			[suspended.tile, partner.tile],
-			this.getFaceSetForFace(faces[0]),
-			this.faceAvoidanceRules.suspensionWeight ?? 3
-		);
-
-		this.suspended.splice(index, 1);
-		this.suspensionStats.released++;
-	}
-
-	/**
-	 * Weighted replacement for placeRandomPair. This is the active generation
-	 * pair flow and coordinates suspension release, suspension creation, and
-	 * normal weighted pair placement.
-	 *
-	 * @private
-	 */
-	placeWeightedRandomPair() {
-		this.calcOpenTiles();
-
-		let toRelease = this.findReleasableTile();
-		if (toRelease !== false) {
-			this.placeWeightedReleasedSuspensionPair(toRelease);
-			return;
-		}
-
-		let willSuspend = this.canSuspend()
-		if (willSuspend) {
-			this.placeWeightedSuspensionPair();
-			return;
-		}
-
-		this.placeWeightedNormalPair();
-	}
-
-
-	/**
-	 * Call this method to randomly pick two tiles that are open, and assign
-	 * them matching faces. Then remove them from play
-	 * @private
-	 */
-	placeRandomPair() {
-		this.calcOpenTiles();
-
-		let toRelease = this.findReleasableTile();
-		if (toRelease !== false) {
-			this.releaseSuspendedTile(toRelease);
-			return;
-		}
-
-		let willSuspend = this.canSuspend()
-		if (willSuspend) {
-			this.suspendTile();
-			return;
-		}
-
-		// pick the two tiles
-		let tile1 = this.pickOpenTile();
-		let tile2 = this.pickOpenTile();
-
-		// remove the chosen pair
-		this.subtractPos(this.board.pieces[tile1].pos, tile1);
-		this.subtractPos(this.board.pieces[tile2].pos, tile2);
-
-		// assign the faces later
-		this.pairs.push(this.createGeneratedPairRecord(tile1, tile2));
-	}
-
-
-	/**
-	 * Assign faces to all deferred normal pair records.
-	 *
-	 * Full face-set assignments are already consumed by suspensions during
-	 * generation. This pass fills the remaining normal pairs with two-face draws,
-	 * preferring each record's soft preferred face group when it is still
-	 * available.
-	 *
-	 * @private
-	 */
-	fillInRemainingFaces() {
-		for (let pairRecord of this.pairs) {
-			let tiles = pairRecord.tiles || pairRecord;
-			let pair = this.drawPreferredFacePairForRecord(pairRecord);
-
-			// assign faces to selected tiles
-			this.board.pieces[tiles[0]].face = pair.face1;
-			this.board.pieces[tiles[1]].face = pair.face2;
-			this.markFaceAvoidanceForTargets(
-				pairRecord.avoidanceTargets || [],
-				this.getFaceSetForFace(pair.face1),
-				pairRecord.avoidanceWeight ?? this.faceAvoidanceRules.weight ?? 1
-			);
-		}
 	}
 
 	/**
@@ -2226,37 +1656,6 @@ export default class Engine {
 
 		this.fire('removeTile', tile1)
 		this.fire('removeTile', tile2)
-	}
-
-	/**
-	 * Call this method to shuffle the tiles. This method doesn't actually
-	 * shuffle the tiles, it just resets the drawpile back to its full state.
-	 * Tiles will be drawn randomly from the drawpile.
-	 * @private
-	 */
-	shuffleTiles() {
-		// to properly handle layouts with fewer than 144 tiles we will fill the
-		// draw pile with full facesets
-		var fullsetList = this.makeSequentialArray(0, 144 / 4);
-		var leftover = this.layout.tiles % 4;
-		var drawpileCount = Math.floor(this.layout.tiles / 4);
-
-		this.drawPile.faceSets = new Map();
-		for (let idx = 0; idx < drawpileCount; idx++) {
-			let set = Random.pickOne(fullsetList);
-			this.drawPile.faceSets.set(set, {
-				id: set,
-				faces: this.makeSequentialArray(set * 4, 4)
-			})
-		}
-
-		if (leftover) {
-			let set = Random.pickOne(fullsetList);
-			this.drawPile.faceSets.set(set, {
-				id: set,
-				faces: this.makeSequentialArray(set * 4, 2)
-			})
-		}
 	}
 
 	/**

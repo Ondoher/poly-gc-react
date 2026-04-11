@@ -51,6 +51,14 @@ function assertIncludes(label, values, expected) {
 	console.log(`ok: ${label} includes ${expected}`);
 }
 
+function assertTruthy(label, actual) {
+	if (!actual) {
+		throw new Error(`${label}: expected a truthy value, got ${actual}`);
+	}
+
+	console.log(`ok: ${label} = ${actual}`);
+}
+
 function makeEngine(Engine) {
 	const engine = new Engine();
 
@@ -136,25 +144,28 @@ function testFallsBackToLeastBadFaceSet(Engine) {
 	assertEqual('max selected penalty tracked', stats.maxSelectedPenalty, 2);
 }
 
-function testPreferredFaceGroupAssignment(Engine) {
+function testDistanceWindowFaceGroupAssignment(Engine, GameGenerator) {
 	const engine = makeEngine(Engine);
+	const generator = new GameGenerator(engine);
 
+	engine.setupDifficulty(0);
 	setFacePairs(engine, [
-		[0, 1],
-		[4, 5],
 		[8, 9],
+		[0, 1],
 	]);
-	engine.addFaceAvoidance(0, 0, 5);
-	engine.addFaceAvoidance(1, 1, 2);
+	engine.recordAssignedFacePair(0, 1, 2);
 
-	const record = engine.createGeneratedPairRecord(0, 1, []);
+	const record = generator.createGeneratedPairRecord(0, 1, []);
 	const pair = engine.drawPreferredFacePairForRecord(record);
 	const stats = engine.getFaceAvoidanceStats();
 
-	assertEqual('preferred face group records zero-penalty face set', record.preferredFaceGroup, 2);
-	assertEqual('preferred face group draw uses preferred set', selectedFaceSet(pair), 2);
+	assertTruthy('preferred face group is recorded', record.preferredFaceGroup !== false && record.preferredFaceGroup !== undefined);
+	assertEqual('distance-window draw uses reused face set', selectedFaceSet(pair), 2);
+	assertEqual('resolved record stores face group', record.faceGroup, 2);
+	assertEqual('resolved record stores face1', record.face1, pair.face1);
+	assertEqual('resolved record stores face2', record.face2, pair.face2);
 	assertEqual('preferred face group counted', stats.preferredFaceGroups, 1);
-	assertEqual('preferred face group draw counted', stats.preferredFaceGroupDraws, 1);
+	assertEqual('preferred face group draw counted', stats.preferredFaceGroupDraws, 0);
 	assertEqual('preferred face group fallback not counted', stats.preferredFaceGroupFallbacks, 0);
 }
 
@@ -172,10 +183,11 @@ async function main() {
 	ensureLoader();
 
 	const {default: Engine} = await import('../../src/gc/features/mj/src/engine/Engine.js');
+	const {default: GameGenerator} = await import('../../src/gc/features/mj/src/engine/GameGenerator.js');
 
 	testAvoidsPenalizedFaceSet(Engine);
 	testFallsBackToLeastBadFaceSet(Engine);
-	testPreferredFaceGroupAssignment(Engine);
+	testDistanceWindowFaceGroupAssignment(Engine, GameGenerator);
 	testPostRemovalFrontierTargets(Engine);
 
 	console.log('\nface avoidance ad hoc checks passed');

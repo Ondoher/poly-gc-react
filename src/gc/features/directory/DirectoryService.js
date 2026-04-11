@@ -1,6 +1,7 @@
 import {Service} from '@polylith/core';
 import React from 'react';
 import Directory from './Directory.jsx'
+import {shouldLaunchDirectory} from 'common/startup.js';
 
 class DirectoryService extends Service {
 	constructor (registry) {
@@ -35,7 +36,9 @@ class DirectoryService extends Service {
 		if (name === 'main-pages') {
 			this.pagesView = this.registry.subscribe('main-pages');
 			this.pagesView.add('directory', 'directory');
-			this.pagesView.show('directory');
+			if (shouldLaunchDirectory()) {
+				this.pagesView.show('directory');
+			}
 		}
 	}
 

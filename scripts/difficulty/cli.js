@@ -46,6 +46,7 @@ function parseArgs(argv) {
 		generationDifficulty: null,
 		tilePickerRules: {},
 		faceAvoidanceRules: null,
+		faceAssignmentRules: null,
 		suspensionPreset: null,
 		suspensionOverrides: {},
 		json: false,
@@ -118,6 +119,16 @@ function parseArgs(argv) {
 				...(options.faceAvoidanceRules || {}),
 				enabled: true,
 				maxWeight: Number(argv[++idx]),
+			};
+		} else if (arg === '--preferred-face-group-multiplier') {
+			options.faceAssignmentRules = {
+				...(options.faceAssignmentRules || {}),
+				preferredMultiplier: Number(argv[++idx]),
+			};
+		} else if (arg === '--easy-reuse-duplicate-scale') {
+			options.faceAssignmentRules = {
+				...(options.faceAssignmentRules || {}),
+				easyReuseDuplicateScale: Number(argv[++idx]),
 			};
 		} else if (arg === '--suspension') {
 			options.suspensionPreset = argv[++idx];
@@ -257,6 +268,7 @@ function summarizeBatch(rows, options) {
 			? options.tilePickerRules
 			: null,
 		faceAvoidanceRules: options.faceAvoidanceRules,
+		faceAssignmentRules: options.faceAssignmentRules,
 		suspension: options.suspension || null,
 		boardCount: rows.length,
 		validKnownSolutionCount: rows.filter(function(row) {
@@ -448,6 +460,10 @@ Options:
                     Set suspension face-set avoidance weight
   --face-avoidance-max-weight <n>
                     Set maximum accumulated avoidance weight per tile/face set
+  --preferred-face-group-multiplier <n>
+                    Fractional sort multiplier for preferred face groups
+  --easy-reuse-duplicate-scale <n>
+                    Duplicate reused face-group entries on easy difficulties
   --suspension <preset>
                     Engine suspension preset: conservative, moderate, or aggressive
   --force-release-at-effective-open <n>
@@ -532,6 +548,7 @@ Layout: ${summary.layoutTitle} (${summary.layout})
 Board: ${summary.boardNumber}
 Generator: ${summary.generator}
 Generation difficulty: ${summary.generationDifficulty}
+Face assignment: ${summary.faceAssignmentRules ? JSON.stringify(summary.faceAssignmentRules) : 'default'}
 Suspension: ${summary.suspension ? summary.suspension.name : 'off'}
 Tiles: ${summary.tileCount}
 Difficulty: ${summary.difficulty.label} (${summary.difficulty.score}/100)
@@ -585,6 +602,7 @@ Generator: ${batch.aggregate.generator}
 Generation difficulty: ${batch.aggregate.generationDifficulty}
 Tile picker rules: ${batch.aggregate.tilePickerRules ? JSON.stringify(batch.aggregate.tilePickerRules) : 'default'}
 Face avoidance: ${batch.aggregate.faceAvoidanceRules ? JSON.stringify(batch.aggregate.faceAvoidanceRules) : 'off'}
+Face assignment: ${batch.aggregate.faceAssignmentRules ? JSON.stringify(batch.aggregate.faceAssignmentRules) : 'default'}
 Suspension: ${batch.aggregate.suspension ? batch.aggregate.suspension.name : 'off'}
 Boards: ${batch.aggregate.boardCount}
 Known solutions valid: ${batch.aggregate.validKnownSolutionCount}/${batch.aggregate.boardCount}

@@ -6,6 +6,10 @@ import Random from 'utils/random.js'
 import layouts from '../data/layouts.js';
 import {TILE_SETS, TILE_SIZES} from '../data/tilesets.js';
 import Engine from '../engine/Engine.js';
+import {
+	DIFFICULTY_LEVELS,
+	applyDifficultyPreset,
+} from '../engine/difficultyPresets.js';
 
 const TILE_SIZE_ORDER = ['tiny', 'small', 'medium', 'normal'];
 const TILE_SIZE_MIN_VIEWPORTS = {
@@ -31,7 +35,7 @@ export default class MJController extends Service {
 		super('mj:controller');
 		this.implement(['start', 'ready', 'render', 'hint', 'undo', 'redo',
 			'solve', 'play', 'select', 'pause', 'peek', 'selectLayout',
-			'selectTileset','selectTilesize','initialized']);
+			'selectTileset','selectTilesize', 'selectDifficulty', 'initialized']);
 
 		// these methods will just fire their arguments to who ever is
 		// listening. This will be the board view component or individuals tiles
@@ -41,8 +45,10 @@ export default class MJController extends Service {
 
 		this.engine = new Engine();
 		this.layoutName = 'turtle';
+		this.difficulty = 'standard';
+		this.difficulties = DIFFICULTY_LEVELS;
 		this.tileSet = 'ivory';
-		this.tileSize = 'tiny';
+		this.tileSize = null;
 		this.allowedTileSizes = TILE_SIZE_ORDER.slice();
 		this.maxTileSize = 'normal';
 		this.isBelowMinimum = false;
@@ -101,7 +107,7 @@ export default class MJController extends Service {
 		this.maxTileSize = maxTileSize;
 		this.isBelowMinimum = isBelowMinimum;
 
-		if (allowedTileSizes.length > 0 && !allowedTileSizes.includes(this.tileSize)) {
+		if (allowedTileSizes.length > 0 && (!this.tileSize || !allowedTileSizes.includes(this.tileSize))) {
 			this.tileSize = maxTileSize;
 			this.setTilesize(this.tileSize);
 		}
@@ -309,6 +315,7 @@ export default class MJController extends Service {
 			isPeeking: this.peeking,
 			isPaused: Boolean(this.paused > 0),
 			boardNbr: this.boardNbr,
+			difficulty: this.difficulty,
 			allowedTilesizes: this.allowedTileSizes,
 			maxTileSize: this.maxTileSize,
 		});
@@ -459,6 +466,7 @@ export default class MJController extends Service {
 	newGame(boardNbr) {
 		this.layout = this.layoutName;
 		this.engine.setLayout(layouts[this.layout]);
+		applyDifficultyPreset(this.engine, this.difficulty);
 		if (boardNbr === undefined || boardNbr === -1) boardNbr = Random.random(0xFFFFF);
 		this.boardNbr = boardNbr;
 
@@ -645,6 +653,17 @@ export default class MJController extends Service {
 		this.setTilesize(tileSize);
 	}
 
+	selectDifficulty(difficulty) {
+		if (!this.difficulties[difficulty]) {
+			return;
+		}
+
+		this.difficulty = difficulty;
+		this.setGameState({
+			difficulty: this.difficulty,
+		});
+	}
+
 	/**
 	 * This method is called in response to the user pressing the solve button
 	 */
@@ -680,9 +699,11 @@ export default class MJController extends Service {
 				serviceName="mj:controller"
 				layouts={layouts}
 				layout={this.layoutName}
+				difficulty={this.difficulty}
+				difficulties={this.difficulties}
 				tileset={this.tileSet}
 				tilesets={TILE_SETS}
-				tilesize={this.tileSize}
+				tilesize={this.tileSize || this.maxTileSize || 'tiny'}
 				tilesizes={TILE_SIZES}
 				allowedTilesizes={this.allowedTileSizes}
 				maxTileSize={this.maxTileSize}

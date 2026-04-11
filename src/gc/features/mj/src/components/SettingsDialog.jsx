@@ -6,6 +6,7 @@ import SettingsPreview from "./SettingsPreview.jsx";
 
 const TABS = [
 	{id: "layout", label: "Layout"},
+	{id: "difficulty", label: "Difficulty"},
 	{id: "tileSize", label: "Tile Size"},
 	{id: "tileStyle", label: "Tile Style"},
 ];
@@ -17,6 +18,7 @@ export default class SettingsDialog extends React.Component {
 		this.state = {
 			activeTab: "layout",
 			draftLayout: props.layout,
+			draftDifficulty: props.difficulty,
 			draftTileset: props.tileset,
 			draftTilesize: props.tilesize,
 		};
@@ -46,6 +48,7 @@ export default class SettingsDialog extends React.Component {
 		this.setState({
 			activeTab: "layout",
 			draftLayout: this.props.layout,
+			draftDifficulty: this.props.difficulty,
 			draftTileset: this.props.tileset,
 			draftTilesize: this.getValidDraftTilesize(this.props.tilesize),
 		});
@@ -60,6 +63,12 @@ export default class SettingsDialog extends React.Component {
 	onSelectLayout(layoutId) {
 		this.setState({
 			draftLayout: layoutId,
+		});
+	}
+
+	onSelectDifficulty(difficultyId) {
+		this.setState({
+			draftDifficulty: difficultyId,
 		});
 	}
 
@@ -107,8 +116,10 @@ export default class SettingsDialog extends React.Component {
 
 	onConfirm() {
 		var layoutChanged = this.state.draftLayout !== this.props.layout;
+		var difficultyChanged = this.state.draftDifficulty !== this.props.difficulty;
 		var tilesetChanged = this.state.draftTileset !== this.props.tileset;
 		var tilesizeChanged = this.state.draftTilesize !== this.props.tilesize;
+		var shouldRegenerateBoard = layoutChanged || difficultyChanged;
 
 		if (tilesetChanged && this.props.onSelectTileset) {
 			this.props.onSelectTileset(this.state.draftTileset);
@@ -122,7 +133,11 @@ export default class SettingsDialog extends React.Component {
 			this.props.onSelectLayout(this.state.draftLayout);
 		}
 
-		if (layoutChanged && this.props.onPlay) {
+		if (difficultyChanged && this.props.onSelectDifficulty) {
+			this.props.onSelectDifficulty(this.state.draftDifficulty);
+		}
+
+		if (shouldRegenerateBoard && this.props.onPlay) {
 			this.props.onPlay(-1);
 		}
 
@@ -140,6 +155,16 @@ export default class SettingsDialog extends React.Component {
 				return {
 					value: layout.id,
 					label: layout.title,
+				};
+			}, this);
+		}
+
+		if (activeTab === "difficulty") {
+			return Object.keys(this.props.difficulties || {}).map(function(name) {
+				var difficulty = this.props.difficulties[name];
+				return {
+					value: difficulty.id,
+					label: difficulty.label,
 				};
 			}, this);
 		}
@@ -165,6 +190,8 @@ export default class SettingsDialog extends React.Component {
 
 	getSelectedValue() {
 		switch (this.state.activeTab) {
+			case "difficulty":
+				return this.state.draftDifficulty;
 			case "tileSize":
 				return this.state.draftTilesize || "";
 			case "tileStyle":
@@ -176,6 +203,9 @@ export default class SettingsDialog extends React.Component {
 
 	onSelectOption(value) {
 		switch (this.state.activeTab) {
+			case "difficulty":
+				this.onSelectDifficulty(value);
+				break;
 			case "tileSize":
 				this.onSelectTilesize(value);
 				break;
@@ -246,6 +276,7 @@ export default class SettingsDialog extends React.Component {
 							/>
 							<SettingsPreview
 								layout={this.state.draftLayout}
+								difficulty={this.state.draftDifficulty}
 								maxTileSize={this.props.maxTileSize}
 								tilesize={this.state.draftTilesize || this.props.tilesize}
 								tileset={this.state.draftTileset}

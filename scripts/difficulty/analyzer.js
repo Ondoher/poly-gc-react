@@ -160,6 +160,7 @@ export function createGeneratedBoard({
 	generationDifficulty = GENERATION_DIFFICULTY_PRESETS.medium,
 	tilePickerRules = null,
 	faceAvoidanceRules = null,
+	faceAssignmentRules = null,
 } = {}) {
 	var layouts = loadLayouts();
 	var layoutDefinition = layouts[layout];
@@ -204,6 +205,9 @@ export function createGeneratedBoard({
 	if (faceAvoidanceRules) {
 		engine.setupFaceAvoidanceRules(faceAvoidanceRules);
 	}
+	if (faceAssignmentRules) {
+		engine.setupFaceAssignmentRules(faceAssignmentRules);
+	}
 	if (tilePickerRules) {
 		engine.setupTilePickerRules(tilePickerRules);
 	}
@@ -212,6 +216,9 @@ export function createGeneratedBoard({
 		engine.setupSuspensionRules(suspension);
 		if (faceAvoidanceRules) {
 			engine.setupFaceAvoidanceRules(faceAvoidanceRules);
+		}
+		if (faceAssignmentRules) {
+			engine.setupFaceAssignmentRules(faceAssignmentRules);
 		}
 		if (tilePickerRules) {
 			engine.setupTilePickerRules(tilePickerRules);
@@ -228,6 +235,7 @@ export function createGeneratedBoard({
 		generationDifficulty,
 		suspension,
 		faceAvoidanceRules,
+		faceAssignmentRules,
 	};
 }
 
@@ -1331,9 +1339,11 @@ export function analyzeGeneratedBoard(options = {}) {
 		layoutTitle: generated.layout.title,
 		boardNumber: generated.boardNumber,
 		generator: generated.generator,
+		generationDifficulty: generated.generationDifficulty,
 		generationAttempt: generated.generationAttempt,
 		suspension: generated.suspension,
 		faceAvoidanceRules: generated.faceAvoidanceRules,
+		faceAssignmentRules: generated.faceAssignmentRules,
 		suspensionStats: typeof generated.engine.getSuspensionStats === 'function'
 			? generated.engine.getSuspensionStats()
 			: null,
