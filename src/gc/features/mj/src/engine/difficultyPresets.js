@@ -26,7 +26,7 @@ export const DIFFICULTY_LEVELS = {
 		tilePickerRules: {},
 		faceAssignmentRules: {
 			preferredMultiplier: 0.5,
-			easyReuseDuplicateScale: 2,
+			easyReuseDuplicateScale: 0,
 		},
 		faceAvoidanceRules: {
 			enabled: false,
@@ -39,7 +39,7 @@ export const DIFFICULTY_LEVELS = {
 		suspensionRules: null,
 		tilePickerRules: {},
 		faceAssignmentRules: {
-			preferredMultiplier: 0.5,
+			preferredMultiplier: 0.33,
 			easyReuseDuplicateScale: 0,
 		},
 		faceAvoidanceRules: {
@@ -49,11 +49,11 @@ export const DIFFICULTY_LEVELS = {
 	challenging: {
 		id: 'challenging',
 		label: 'Challenging',
-		generationDifficulty: 0.6,
+		generationDifficulty: 0.55,
 		suspensionRules: SUSPENSION_RULE_PRESETS.aggressive,
 		tilePickerRules: {},
 		faceAssignmentRules: {
-			preferredMultiplier: 0.5,
+			preferredMultiplier: 0.33,
 			easyReuseDuplicateScale: 0,
 		},
 		faceAvoidanceRules: {

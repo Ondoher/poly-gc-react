@@ -1,5 +1,99 @@
 @import url('./mj-settings-selector.css');
 
+.mj-modal-dialog {
+    --mj-modal-viewport-pad: clamp(14px, 2vw, 24px);
+    position: fixed;
+    inset: 0;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: var(--mj-modal-viewport-pad);
+    box-sizing: border-box;
+    z-index: 1100;
+    overflow: hidden;
+}
+
+.mj-modal-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 7, 7, 0.72);
+    min-width: 0;
+    min-height: 0;
+    z-index: 0;
+}
+
+.mj-modal-dialog-panel {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: center;
+    align-self: center;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    max-width: 100%;
+    max-height: 100%;
+    min-height: 0;
+    position: relative;
+    z-index: 1;
+    padding:
+        var(--mj-settings-panel-pad-top)
+        var(--mj-settings-panel-pad-side)
+        var(--mj-settings-panel-pad-bottom);
+    background:
+        linear-gradient(180deg, rgba(176, 25, 25, 0.96), rgba(136, 24, 24, 0.97)),
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 48%);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.mj-modal-dialog-close {
+    position: absolute;
+    top: clamp(8px, 2vh, 12px);
+    right: clamp(10px, 1.8vw, 14px);
+    z-index: 3;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(22px, 5vh, 26px);
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-modal-dialog-title {
+    margin: -2px 0 var(--mj-settings-title-gap);
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: var(--mj-settings-title-font-size);
+    font-style: italic;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-modal-dialog-body {
+    min-height: 0;
+}
+
+.mj-modal-dialog-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: var(--mj-settings-actions-gap);
+    min-height: 0;
+}
+
+.mj-modal-dialog-close:focus-visible {
+    outline: 2px solid var(--mj-ui-primary-color);
+    outline-offset: 3px;
+}
+
 .mj-settings-dialog {
     --mj-settings-panel-width: 860px;
     --mj-settings-panel-height: 520px;
@@ -41,11 +135,11 @@
     justify-self: center;
     align-self: center;
     display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
-    inline-size: min(var(--mj-settings-panel-width), calc(100% - 8px));
-    block-size: min(var(--mj-settings-panel-height), 100%);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    inline-size: min(var(--mj-settings-panel-width), calc(100% - 32px));
+    block-size: auto;
     max-width: 100%;
-    max-height: 100%;
+    max-height: min(var(--mj-settings-panel-height), calc(100% - 32px));
     min-height: 0;
     padding:
         var(--mj-settings-panel-pad-top)
@@ -62,10 +156,18 @@
     box-sizing: border-box;
 }
 
+.mj-settings-dialog .mj-modal-dialog-title {
+    margin-bottom: clamp(6px, 1.4vh, 10px);
+}
+
+.mj-settings-dialog .mj-modal-dialog-actions {
+    margin-top: clamp(6px, 1.2vh, 10px);
+}
+
 .mj-settings-dialog-title {
     margin: -2px 0 var(--mj-settings-title-gap);
     color: var(--mj-ui-primary-color);
-    font-family: "Merienda", "Trebuchet MS", serif;
+    font-family: var(--mj-ui-font-family);
     font-size: var(--mj-settings-title-font-size);
     font-style: italic;
     font-weight: bold;
@@ -92,8 +194,11 @@
 
 .mj-settings-button.is-selected,
 .mj-settings-selector-option.is-selected {
-    --mj-raised-button-face-top: rgba(112, 31, 24, 0.94);
-    --mj-raised-button-face-bottom: rgba(112, 31, 24, 0.94);
+    --mj-css-rect-border-color: rgba(255, 230, 148, 0.96);
+    --mj-raised-button-face-top: rgba(150, 44, 31, 0.98);
+    --mj-raised-button-face-bottom: rgba(124, 31, 24, 0.98);
+    --mj-raised-button-face-ring: rgba(255, 231, 154, 0.94);
+    --mj-raised-button-label-color: #fff3bf;
 }
 
 .mj-settings-dialog-close {
@@ -104,7 +209,7 @@
     padding: 0;
     background: transparent;
     color: var(--mj-ui-primary-color);
-    font-family: "Merienda", "Trebuchet MS", serif;
+    font-family: var(--mj-ui-font-family);
     font-size: clamp(22px, 5vh, 26px);
     font-weight: bold;
     line-height: 1;
@@ -113,8 +218,11 @@
 }
 
 .mj-settings-dialog-body {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: clamp(6px, 1.2vh, 10px);
     min-height: 0;
-    padding: var(--mj-settings-body-pad);
+    padding: clamp(3px, 0.7vh, 6px) clamp(4px, 0.8vw, 8px) clamp(4px, 0.8vh, 8px);
     border: 2px solid var(--mj-ui-primary-color);
     background: rgba(112, 14, 14, 0.18);
     overflow: hidden;
@@ -128,6 +236,7 @@
     min-height: 0;
     min-width: 0;
     height: 100%;
+    overflow: hidden;
 }
 
 .mj-settings-dialog-preview {
@@ -187,7 +296,7 @@
 
 .mj-settings-dialog-preview-loading-label {
     color: var(--mj-ui-primary-color);
-    font-family: "Merienda", "Trebuchet MS", serif;
+    font-family: var(--mj-ui-font-family);
     font-size: 14px;
     font-style: italic;
     font-weight: bold;
@@ -224,6 +333,77 @@
     min-height: 0;
 }
 
+.mj-settings-dialog-support {
+    display: flex;
+    align-items: center;
+    min-height: 0;
+    padding-top: clamp(14px, 2.2vh, 18px);
+    padding-bottom: 0;
+    margin: 0 clamp(10px, 1.8vw, 16px);
+    border-top: 2px solid rgba(211, 160, 36, 0.72);
+    overflow: hidden;
+}
+
+.mj-settings-dialog-support-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(10px, 1.4vw, 14px);
+    width: 100%;
+    min-height: clamp(28px, 4.8vh, 34px);
+    border: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--mj-ui-primary-color);
+    cursor: pointer;
+}
+
+.mj-settings-dialog-support-checkbox-box {
+    display: grid;
+    place-items: center;
+    width: clamp(18px, 2.7vh, 22px);
+    height: clamp(18px, 2.7vh, 22px);
+    border: 1px solid rgb(245 215 134);
+    border-right-color: rgb(185 141 23);
+    border-bottom-color: rgb(185 141 23);
+    background:
+        linear-gradient(180deg, rgba(82, 16, 16, 0.9), rgba(62, 12, 12, 0.94));
+    box-shadow:
+        inset 0 0 0 2px var(--mj-ui-primary-color),
+        inset -1px 2px 2px rgba(88, 26, 10, 0.36);
+}
+
+.mj-settings-dialog-support-checkbox-mark {
+    color: #ffe79a;
+    font-size: clamp(14px, 2.5vh, 17px);
+    font-weight: bold;
+    line-height: 1;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.mj-settings-dialog-support-checkbox-box.is-checked .mj-settings-dialog-support-checkbox-mark {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.mj-settings-dialog-support-checkbox-copy {
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(12px, 2vh, 13px);
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.15;
+    text-align: left;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-settings-dialog-support-checkbox:focus-visible {
+    outline: 2px solid rgba(255, 231, 154, 0.96);
+    outline-offset: 3px;
+}
+
 .mj-settings-dialog-confirm {
     min-width: clamp(126px, 20vw, 150px);
     min-height: clamp(34px, 6vh, 42px);
@@ -242,7 +422,7 @@
 
 .mj-settings-dialog-placeholder {
     color: var(--mj-ui-primary-color);
-    font-family: "Merienda", "Trebuchet MS", serif;
+    font-family: var(--mj-ui-font-family);
     font-size: 16px;
     font-style: italic;
     font-weight: bold;
@@ -253,6 +433,759 @@
 .mj-settings-dialog-close:focus-visible {
     outline: 2px solid var(--mj-ui-primary-color);
     outline-offset: 3px;
+}
+
+.mj-startup-consent-dialog {
+    --mj-startup-panel-width: 760px;
+    --mj-startup-panel-height: 460px;
+    position: absolute;
+    inset: 0;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: var(--frame-padding);
+    box-sizing: border-box;
+    z-index: 1100;
+    overflow: hidden;
+}
+
+.mj-startup-consent-overlay {
+    grid-column: 1;
+    grid-row: 1;
+    background: rgba(17, 7, 7, 0.72);
+    min-width: 0;
+    min-height: 0;
+}
+
+.mj-startup-consent-panel {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: center;
+    align-self: center;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    inline-size: min(var(--mj-startup-panel-width), calc(100% - 40px));
+    block-size: auto;
+    max-width: 100%;
+    max-height: min(var(--mj-startup-panel-height), calc(100% - 40px));
+    min-height: 0;
+    padding: clamp(14px, 3.2vh, 24px) clamp(14px, 2.2vw, 20px) clamp(12px, 2.4vh, 18px);
+    background:
+        linear-gradient(180deg, rgba(176, 25, 25, 0.97), rgba(136, 24, 24, 0.98)),
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 48%);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.mj-startup-consent-dialog .mj-modal-dialog-title {
+    margin: 0 0 clamp(14px, 2.4vh, 20px);
+    font-size: clamp(18px, 4.2vh, 24px);
+}
+
+.mj-startup-consent-body {
+    display: grid;
+    gap: clamp(10px, 2vh, 16px);
+    min-height: 0;
+    padding: 0;
+    overflow: auto;
+}
+
+.mj-startup-consent-section {
+    display: grid;
+    gap: clamp(8px, 1.4vh, 12px);
+}
+
+.mj-startup-consent-heading {
+    margin: 0;
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(16px, 3.4vh, 21px);
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.1;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-startup-consent-copy {
+    margin: 0;
+    color: rgba(255, 232, 182, 0.92);
+    font-size: clamp(13px, 2.4vh, 15px);
+    line-height: 1.45;
+}
+
+.mj-startup-consent-difficulty-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(8px, 1.2vw, 12px);
+}
+
+.mj-startup-consent-difficulty-option,
+.mj-startup-consent-confirm {
+    min-height: clamp(34px, 6vh, 42px);
+    padding-inline: clamp(12px, 2vw, 18px);
+}
+
+.mj-startup-consent-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(10px, 1.4vw, 14px);
+    width: fit-content;
+    min-height: clamp(38px, 6.5vh, 46px);
+    border: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--mj-ui-primary-color);
+    cursor: pointer;
+}
+
+.mj-startup-consent-checkbox-box {
+    display: grid;
+    place-items: center;
+    width: clamp(22px, 3.2vh, 26px);
+    height: clamp(22px, 3.2vh, 26px);
+    border: 1px solid rgb(245 215 134);
+    border-right-color: rgb(185 141 23);
+    border-bottom-color: rgb(185 141 23);
+    background:
+        linear-gradient(180deg, rgba(82, 16, 16, 0.9), rgba(62, 12, 12, 0.94));
+    box-shadow:
+        inset 0 0 0 2px var(--mj-ui-primary-color),
+        inset -1px 2px 2px rgba(88, 26, 10, 0.36);
+}
+
+.mj-startup-consent-checkbox-mark {
+    color: #ffe79a;
+    font-size: clamp(15px, 2.8vh, 18px);
+    font-weight: bold;
+    line-height: 1;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.mj-startup-consent-checkbox-box.is-checked .mj-startup-consent-checkbox-mark {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.mj-startup-consent-checkbox-copy {
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(14px, 2.8vh, 17px);
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.2;
+    text-align: left;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-startup-consent-checkbox:focus-visible {
+    outline: 2px solid rgba(255, 231, 154, 0.96);
+    outline-offset: 3px;
+}
+
+.mj-startup-consent-dialog .mj-modal-dialog-actions {
+    margin-top: clamp(10px, 2vh, 14px);
+    padding-top: clamp(10px, 1.8vh, 14px);
+    border-top: 2px solid rgba(211, 160, 36, 0.72);
+}
+
+.mj-startup-consent-confirm {
+    min-width: clamp(138px, 22vw, 168px);
+}
+
+.mj-feedback-dialog {
+    --mj-feedback-panel-width: 860px;
+    --mj-feedback-panel-height: 560px;
+    position: absolute;
+    inset: 0;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: var(--frame-padding);
+    box-sizing: border-box;
+    z-index: 1100;
+    overflow: hidden;
+}
+
+.mj-feedback-dialog-overlay {
+    grid-column: 1;
+    grid-row: 1;
+    background: rgba(17, 7, 7, 0.72);
+    min-width: 0;
+    min-height: 0;
+}
+
+.mj-feedback-dialog-panel {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: center;
+    align-self: center;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    inline-size: min(var(--mj-feedback-panel-width), calc(100% - 32px));
+    block-size: auto;
+    max-width: 100%;
+    max-height: min(var(--mj-feedback-panel-height), calc(100% - 32px));
+    min-height: 0;
+    padding:
+        var(--mj-settings-panel-pad-top)
+        var(--mj-settings-panel-pad-side)
+        var(--mj-settings-panel-pad-bottom);
+    background:
+        linear-gradient(180deg, rgba(176, 25, 25, 0.96), rgba(136, 24, 24, 0.97)),
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 48%);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.mj-feedback-dialog-close {
+    position: absolute;
+    top: clamp(8px, 2vh, 12px);
+    right: clamp(10px, 1.8vw, 14px);
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(22px, 5vh, 26px);
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-feedback-dialog-title {
+    margin: -2px 0 clamp(8px, 1.6vh, 12px);
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(20px, 5.2vh, 30px);
+    font-style: italic;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-feedback-dialog .mj-modal-dialog-title {
+    margin-top: clamp(10px, 1.6vh, 16px);
+    margin-bottom: clamp(2px, 0.6vh, 6px);
+    font-size: clamp(22px, 5.8vh, 34px);
+}
+
+.mj-feedback-dialog-body {
+    display: grid;
+    gap: clamp(6px, 1vh, 10px);
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    min-height: 0;
+    align-content: start;
+    overflow: hidden;
+    padding: 4px 2px 2px;
+}
+
+.mj-feedback-dialog-step-label {
+    color: rgba(255, 232, 182, 0.82);
+    font-size: clamp(11px, 1.9vh, 13px);
+    line-height: 1;
+    margin-top: 1px;
+    text-align: center;
+}
+
+.mj-feedback-dialog-left-column,
+.mj-feedback-dialog-context-comments {
+    display: grid;
+    gap: clamp(10px, 1.6vh, 14px);
+    min-width: 0;
+    min-height: 0;
+}
+
+.mj-feedback-dialog-left-column {
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.mj-feedback-dialog-context-comments {
+    grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.05fr);
+    align-items: stretch;
+}
+
+.mj-feedback-dialog-body.is-step-one .mj-feedback-dialog-questions,
+.mj-feedback-dialog-body.is-step-two .mj-feedback-dialog-questions {
+    min-height: 0;
+}
+
+.mj-feedback-dialog-body.is-step-one .mj-feedback-dialog-questions {
+    align-self: start;
+    border-bottom: 0;
+    padding-top: clamp(6px, 0.9vh, 8px);
+    padding-bottom: 0;
+}
+
+.mj-feedback-dialog-body.is-step-two .mj-feedback-dialog-context-comments {
+    padding-bottom: clamp(8px, 1.2vh, 12px);
+}
+
+.mj-feedback-dialog-section {
+    display: grid;
+    gap: clamp(8px, 1.2vh, 10px);
+    align-content: start;
+    padding: clamp(8px, 1.2vh, 10px) clamp(10px, 1.6vw, 14px);
+    border: 0;
+    background: transparent;
+}
+
+.mj-feedback-dialog-context {
+    min-height: 0;
+}
+
+.mj-feedback-dialog-comments,
+.mj-feedback-dialog-questions {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+}
+
+.mj-feedback-dialog-comments {
+    padding-bottom: clamp(14px, 2vh, 18px);
+}
+
+.mj-feedback-dialog-heading {
+    margin: 0;
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(16px, 3vh, 20px);
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.1;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-feedback-dialog-context-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.mj-feedback-dialog-context-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: baseline;
+}
+
+.mj-feedback-dialog-context-label,
+.mj-feedback-dialog-question-label {
+    color: rgba(255, 232, 182, 0.92);
+    font-size: clamp(13px, 2.1vh, 14px);
+    line-height: 1.3;
+}
+
+.mj-feedback-dialog-context-value {
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(13px, 2.3vh, 15px);
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.2;
+    text-align: right;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-feedback-dialog-copy {
+    margin: 0;
+    color: rgba(255, 232, 182, 0.92);
+    font-size: clamp(12px, 2vh, 14px);
+    line-height: 1.4;
+}
+
+.mj-feedback-dialog-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    min-height: 34px;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--mj-ui-primary-color);
+    cursor: pointer;
+}
+
+.mj-feedback-dialog-checkbox-box {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid rgb(245 215 134);
+    border-right-color: rgb(185 141 23);
+    border-bottom-color: rgb(185 141 23);
+    background:
+        linear-gradient(180deg, rgba(82, 16, 16, 0.9), rgba(62, 12, 12, 0.94));
+    box-shadow:
+        inset 0 0 0 2px var(--mj-ui-primary-color),
+        inset -1px 2px 2px rgba(88, 26, 10, 0.36);
+}
+
+.mj-feedback-dialog-checkbox-mark {
+    color: #ffe79a;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.mj-feedback-dialog-checkbox-box.is-checked .mj-feedback-dialog-checkbox-mark {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.mj-feedback-dialog-checkbox-copy {
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(13px, 2.2vh, 15px);
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.2;
+    text-align: left;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-feedback-dialog-question {
+    display: grid;
+    gap: 4px;
+}
+
+.mj-feedback-dialog-question-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: clamp(14px, 2vw, 24px);
+    row-gap: clamp(10px, 1.4vh, 14px);
+    align-items: start;
+}
+
+.mj-feedback-dialog-question-skill {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+}
+
+.mj-feedback-dialog-choice-list {
+    display: grid;
+    gap: 4px;
+}
+
+.mj-feedback-dialog-radio {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 24px;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--mj-ui-primary-color);
+    cursor: pointer;
+    text-align: left;
+}
+
+.mj-feedback-dialog-radio-dot {
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border: 1px solid rgb(245 215 134);
+    border-right-color: rgb(185 141 23);
+    border-bottom-color: rgb(185 141 23);
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(82, 16, 16, 0.9), rgba(62, 12, 12, 0.94));
+    box-shadow:
+        inset 0 0 0 2px var(--mj-ui-primary-color),
+        inset -1px 2px 2px rgba(88, 26, 10, 0.36);
+    flex: 0 0 auto;
+}
+
+.mj-feedback-dialog-radio-dot-inner {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #ffe79a;
+    opacity: 0;
+    transform: scale(0.7);
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.mj-feedback-dialog-radio-dot.is-selected .mj-feedback-dialog-radio-dot-inner {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.mj-feedback-dialog-radio-copy {
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(13px, 2.2vh, 15px);
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.2;
+    text-align: left;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-feedback-dialog-radio:focus-visible {
+    outline: 2px solid rgba(255, 231, 154, 0.96);
+    outline-offset: 3px;
+}
+
+.mj-feedback-dialog-comment-field {
+    display: grid;
+    align-self: start;
+    min-height: 0;
+    height: auto;
+    min-height: clamp(150px, 24vh, 220px);
+    padding: 8px 10px 14px;
+    border: 2px solid rgba(211, 160, 36, 0.72);
+    background: rgba(90, 12, 12, 0.24);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.mj-feedback-dialog-comment-input {
+    width: 100%;
+    height: 100%;
+    min-height: 120px;
+    border: 0;
+    resize: none;
+    background: transparent;
+    color: rgba(255, 232, 182, 0.96);
+    font-family: var(--mj-ui-font-family);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.mj-feedback-dialog-comment-input:focus {
+    outline: none;
+}
+
+.mj-feedback-dialog .mj-modal-dialog-actions {
+    margin-top: clamp(4px, 0.8vh, 8px);
+    padding-top: clamp(8px, 1.4vh, 12px);
+    padding-bottom: clamp(10px, 1.8vh, 16px);
+    border-top: 2px solid rgba(211, 160, 36, 0.72);
+}
+
+.mj-feedback-dialog-confirm,
+.mj-feedback-dialog-cancel {
+    min-width: clamp(126px, 20vw, 150px);
+    min-height: clamp(34px, 6vh, 42px);
+}
+
+.mj-feedback-dialog-close:focus-visible,
+.mj-feedback-dialog-checkbox:focus-visible {
+    outline: 2px solid rgba(255, 231, 154, 0.96);
+    outline-offset: 3px;
+}
+
+.mj-solve-dialog {
+    --mj-solve-panel-width: 1120px;
+    --mj-solve-panel-height: 720px;
+}
+
+.mj-solve-dialog-panel {
+    inline-size: min(var(--mj-solve-panel-width), calc(100% - 20px));
+    block-size: auto;
+    max-width: 100%;
+    max-height: min(var(--mj-solve-panel-height), calc(100% - 20px));
+    grid-template-rows: minmax(0, 1fr);
+}
+
+.mj-solve-dialog-body {
+    display: grid;
+    min-height: 0;
+    overflow: hidden;
+    height: 100%;
+    padding: 0;
+}
+
+.mj-solve-dialog-section {
+    display: grid;
+    grid-template-columns:
+        minmax(118px, 152px)
+        clamp(38px, 4.8vw, 52px)
+        minmax(0, 1fr)
+        clamp(38px, 4.8vw, 52px);
+    min-height: 0;
+    height: 100%;
+}
+
+.mj-solve-dialog-sidebar {
+    display: grid;
+    align-content: start;
+    gap: clamp(12px, 1.8vh, 16px);
+    min-width: 0;
+    padding:
+        clamp(6px, 0.9vh, 10px)
+        clamp(8px, 1.2vw, 12px)
+        clamp(6px, 0.9vh, 10px)
+        clamp(8px, 1.2vw, 12px);
+}
+
+.mj-solve-dialog-heading {
+    margin: 0;
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(16px, 3vh, 20px);
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.1;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-solve-dialog-copy {
+    margin: 0;
+    color: rgba(255, 232, 182, 0.92);
+    font-size: clamp(13px, 2.2vh, 15px);
+    line-height: 1.45;
+}
+
+.mj-solve-dialog-context {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(10px, 1.4vh, 14px);
+    justify-self: start;
+    width: min(100%, 148px);
+    margin-left: clamp(6px, 0.8vw, 10px);
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.mj-solve-dialog-context-item {
+    display: grid;
+    gap: 5px;
+    padding-bottom: clamp(8px, 1.2vh, 10px);
+    border-bottom: 1px solid rgba(211, 160, 36, 0.44);
+    margin-right: calc(clamp(8px, 1.2vw, 12px) * -1);
+}
+
+.mj-solve-dialog-context-item:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.mj-solve-dialog-context-label {
+    color: rgba(255, 232, 182, 0.92);
+    font-size: clamp(12px, 2vh, 14px);
+    line-height: 1.2;
+}
+
+.mj-solve-dialog-context-value {
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(14px, 2.4vh, 16px);
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.2;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-solve-dialog-board-frame {
+    display: grid;
+    min-height: 0;
+    height: auto;
+    padding: 2px;
+    border: 0;
+    background: transparent;
+    overflow: hidden;
+}
+
+.mj-solve-dialog-board-frame.mj-css-rect-separator-left::before {
+    top: 0;
+    bottom: 0;
+}
+
+.mj-solve-dialog-utility-column {
+    position: relative;
+    display: grid;
+    align-items: center;
+    min-width: 0;
+    min-height: 0;
+    background:
+        linear-gradient(180deg, rgba(146, 23, 23, 0.34), rgba(118, 18, 18, 0.42));
+    box-sizing: border-box;
+}
+
+.mj-solve-dialog-utility-column.mj-css-rect-separator-left::before {
+    top: 0;
+    bottom: 0;
+}
+
+.mj-solve-dialog-nav-slot {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    padding: clamp(10px, 1.4vh, 14px) 0;
+    box-sizing: border-box;
+}
+
+.mj-solve-dialog-nav-button {
+    min-width: clamp(24px, 3vw, 30px);
+    width: clamp(24px, 3vw, 30px);
+    min-height: clamp(64px, 16vh, 92px);
+    padding-inline: 0;
+}
+
+.mj-solve-dialog-nav-button .mj-raised-button-label {
+    font-size: clamp(18px, 4.2vh, 26px);
+    line-height: 1;
+}
+
+.mj-solve-dialog-nav-button.is-disabled {
+    opacity: 0.42;
+}
+
+.mj-solve-dialog-nav-button.is-disabled .mj-raised-button-face,
+.mj-solve-dialog-nav-button.is-disabled .mj-raised-button-label {
+    cursor: default;
+}
+
+.mj-solve-dialog-board-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    padding:
+        clamp(10px, 1.4vh, 14px)
+        clamp(10px, 1.4vw, 14px)
+        clamp(10px, 1.4vh, 14px)
+        clamp(10px, 1.2vw, 14px);
+    border: 0;
+    background:
+        linear-gradient(180deg, rgba(112, 22, 18, 0.9), rgba(96, 16, 16, 0.94));
+    overflow: hidden;
+}
+
+.mj-solve-dialog-board-canvas-wrap {
+    width: 439px;
+    height: 353px;
+    transform-origin: center center;
+    will-change: transform;
+}
+
+.mj-solve-dialog-board-stage .board-canvas {
+    margin: 0;
 }
 
 @keyframes mj-settings-preview-spin {

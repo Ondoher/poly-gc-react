@@ -235,6 +235,8 @@ export function scoreOpenTiles(board, openTiles, referenceTiles = [], options = 
 			...(options.grid ?? {}),
 		},
 	};
+	const zDenominator = Math.max(1, settings.highestZOrder);
+	const zBias = (settings.difficulty - 0.5) * 2;
 	const references = new NumberSet(referenceTiles, board.count);
 	const candidates = openTiles.filter((tile) => !references.has(tile));
 	const horizontalMasks = buildHorizontalReferenceMasks(board, referenceTiles, settings);
@@ -265,9 +267,11 @@ export function scoreOpenTiles(board, openTiles, referenceTiles = [], options = 
 			verticalMasks,
 			settings
 		);
-		const zWeight = Math.max(1, settings.highestZOrder - position.z);
+		const zWeight = (position.z + 0.5) / zDenominator;
+		const centeredZWeight = (zWeight - 0.5) * 2;
+		const zPressure = Math.max(0.25, 1 + (centeredZWeight * zBias));
 		const weight = freedRank
-			* zWeight
+			* zPressure
 			* Math.pow(settings.horizontalMultiplier, horizontalIntersections)
 			* Math.pow(settings.verticalMultiplier, verticalIntersections);
 
@@ -278,6 +282,7 @@ export function scoreOpenTiles(board, openTiles, referenceTiles = [], options = 
 			freedRank,
 			z: position.z,
 			zWeight,
+			zPressure,
 			horizontalIntersections,
 			verticalIntersections,
 		};

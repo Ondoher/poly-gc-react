@@ -1,4 +1,18 @@
-/** @module types */
+
+type Suit  =
+	"bamboo" |
+	"characters" |
+	"dots" |
+	"winds" |
+	"dragons" |
+	"seasons" |
+	"flowers";
+
+type SuitRange = number[];
+
+type SuitSpec = {[suit: Suit]: SuitRange}
+
+
 
 /**
  * This is the position of where a tile can be placed on the board. The board
@@ -39,7 +53,8 @@ type Layout = {
  * be rendered on the screen.
  */
 type FaceSet = {
-	id: number;
+	id: FaceGroup;
+	suit: Suit;
 	faces: number[];
 }
 
@@ -67,11 +82,6 @@ type DrawPile = {
  */
 type Face = number;
 
-type FacePair = {
-	face1: Face;
-	face2: Face;
-}
-
 type FaceAvoidanceRules = {
 	enabled?: boolean;
 	weight?: number;
@@ -85,12 +95,12 @@ type FaceAssignmentRules = {
 }
 
 type GeneratedPairRecord = {
-	tiles: Tile[];
+	tiles: TileKey[];
 	preferredFaceGroup: FaceGroup | false;
 	faceGroup?: FaceGroup | false;
 	face1?: Face;
 	face2?: Face;
-	avoidanceTargets: Tile[];
+	avoidanceTargets: TileKey[];
 	avoidanceWeight: number;
 }
 
@@ -114,14 +124,14 @@ type Board = {
  * This is an index into the pieces array of a board. The board represent the
  * current layout of the tiles and their faces
  */
-type Tile = number;
+type TileKey = number;
 
 /**
  * This is a pair of tiles, usually used to describe a match
  */
 type TilePair = {
-	tile1: Tile;
-	tile2: Tile;
+	tile1: TileKey;
+	tile2: TileKey;
 }
 
 /**
@@ -134,7 +144,7 @@ type GameState = {
 	lost: Boolean;
 	open: NumberSet;
 	placed: NumberSet;
-	allowedTileSizes?: String[];
+	allowedTilesizes?: String[];
 	maxTileSize?: String | null;
 	isBelowMinimum?: Boolean;
 }
@@ -159,7 +169,7 @@ type Suspended = {
 	openCount: number;
 
 	/** The original pair that created this suspension. */
-	originalPair?: Tile[];
+	originalPair?: TileKey[];
 
 	/** The stable face-group id reserved for this suspension. */
 	faceGroup: FaceGroup;
@@ -171,13 +181,14 @@ type pickTileOptions = {
 }
 
 type TilePickScore = {
-	tile: Tile;
+	tile: TileKey;
 	weight: number;
 	freedCount: number;
 	freedRank: number;
 	openPressure: number;
 	z: number;
 	zWeight: number;
+	zPressure: number;
 	horizontalIntersections: number;
 	verticalIntersections: number;
 	balanceMargin: number;
@@ -190,24 +201,24 @@ type TilePickScore = {
 }
 
 type TilePickPair = {
-	tile1: Tile;
-	tile2: Tile;
+	tile1: TileKey;
+	tile2: TileKey;
 	picks: TilePickScore[];
 }
 
 type TilePickSuspensionTriple = {
-	placed: Tile[];
-	suspended: Tile;
+	placed: TileKey[];
+	suspended: TileKey;
 	picks: TilePickScore[];
 }
 
 type AssignedFacePair = {
-	tile1: Tile;
-	tile2: Tile;
+	tile1: TileKey;
+	tile2: TileKey;
 	faceGroup: FaceGroup;
 }
 
-type FaceGroupDistanceCandidate = {
+type RankedFaces = {
 	faceGroup: FaceGroup;
 	distance: number | null;
 	previousIndex: number;
@@ -218,7 +229,7 @@ type FaceGroupDistanceCandidate = {
 }
 
 type TilePickerOptions = {
-	openTiles?: Tile[];
+	openTiles?: TileKey[];
 	difficulty?: number;
 	minWindowRatio?: number;
 	highestZOrder?: number;
@@ -231,7 +242,7 @@ type TilePickerOptions = {
 	shortHorizonProbeMoves?: number;
 	shortHorizonPressureMultiplier?: number;
 	enforceStackBalance?: boolean;
-	pendingRemovedTiles?: Tile[];
+	pendingRemovedTiles?: TileKey[];
 }
 
 type MatchType = "either" | "both"
@@ -239,6 +250,12 @@ type MatchType = "either" | "both"
 type NumberRange = {
 	min: number;
 	max: number;
+}
+
+type FacePair = {
+	faceGroup: FaceGroup,
+	face1: Face,
+	face2: Face
 }
 
 /**
@@ -289,14 +306,14 @@ type ToRelease = {
  * This event is fired when the game should remove a tile from the board
  *
  * @event removeTile
- * @type {Tile}
+ * @type {TileKey}
  */
 
 /**
  * This event is fired when the game should add a tile to the board
  *
  * @event addTile
- * @type {Tile}
+ * @type {TileKey}
  */
 
 /**

@@ -8,8 +8,14 @@ Current topic areas under this folder:
 
 - [Architecture](/c:/dev/poly-gc-react/agents/topics/architecture/README.md)
 - [Components](/c:/dev/poly-gc-react/agents/topics/components/porting-guidance.md)
+- [CSS Animations](/c:/dev/poly-gc-react/agents/topics/css-animations/README.md)
+- [Difficulty](/c:/dev/poly-gc-react/agents/topics/difficulty/README.md)
+- [Deployment](/c:/dev/poly-gc-react/agents/topics/deployment/README.md)
 - [Engine Refactor](/c:/dev/poly-gc-react/agents/topics/engine-refactor/README.md)
 - [MJ](/c:/dev/poly-gc-react/agents/topics/mj/README.md)
+- [MVP](/c:/dev/poly-gc-react/agents/topics/mvp/README.md)
+- [Progressive Web App](/c:/dev/poly-gc-react/agents/topics/progressive-web-app/README.md)
+- [Real 3D Rendering](/c:/dev/poly-gc-react/agents/topics/real-3d-rendering/README.md)
 - [Scripts](/c:/dev/poly-gc-react/agents/topics/scripts/README.md)
 - [Testing](/c:/dev/poly-gc-react/agents/topics/testing/README.md)
 
@@ -24,6 +30,7 @@ Primary topic entry points:
 - [REMVC Architecture](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md)
 - [Feature Mechanics](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md)
 - [Build And Asset Flow](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md)
+- [Handling Randomness](/c:/dev/poly-gc-react/agents/topics/architecture/handling-randomness.md)
 
 Fast path for common questions:
 
@@ -41,6 +48,12 @@ MJ topic entry points:
 - [MJ Topic Index](/c:/dev/poly-gc-react/agents/topics/mj/README.md)
 - [Engine Refactor](/c:/dev/poly-gc-react/agents/topics/mj/engine-refactor/README.md)
 
+## MVP
+
+MVP topic entry points:
+
+- [MVP README](/c:/dev/poly-gc-react/agents/topics/mvp/README.md)
+
 ## Components
 
 Component-related topic entry points:
@@ -50,6 +63,24 @@ Component-related topic entry points:
 - [ModMod Context Support](/c:/dev/poly-gc-react/agents/topics/components/modmod-context-support.md)
 - [ModMod File Inventory](/c:/dev/poly-gc-react/agents/topics/components/modmod-file-inventory.md)
 - [ModMod Text Input Dependencies](/c:/dev/poly-gc-react/agents/topics/components/modmod-text-input-dependencies.md)
+
+## CSS Animations
+
+CSS animation topic entry points:
+
+- [CSS Animations README](/c:/dev/poly-gc-react/agents/topics/css-animations/README.md)
+
+## Difficulty
+
+Difficulty topic entry points:
+
+- [Difficulty Topic Index](/c:/dev/poly-gc-react/agents/topics/difficulty/README.md)
+
+## Deployment
+
+Deployment topic entry points:
+
+- [Deployment README](/c:/dev/poly-gc-react/agents/topics/deployment/README.md)
 
 ## Engine Refactor
 
@@ -72,3 +103,15 @@ Testing topic entry points:
 - [Testing Topic Index](/c:/dev/poly-gc-react/agents/topics/testing/README.md)
 - [Testing](/c:/dev/poly-gc-react/agents/topics/testing/testing.md)
 - [Testing Implementation Plan](/c:/dev/poly-gc-react/agents/topics/testing/testing-implementation-plan.md)
+
+## Progressive Web App
+
+PWA topic entry points:
+
+- [Progressive Web App README](/c:/dev/poly-gc-react/agents/topics/progressive-web-app/README.md)
+
+## Real 3D Rendering
+
+3D rendering topic entry points:
+
+- [Real 3D Rendering README](/c:/dev/poly-gc-react/agents/topics/real-3d-rendering/README.md)

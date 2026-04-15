@@ -14,7 +14,7 @@ Use these for adjacent concerns:
 
 - [engine README](/c:/dev/poly-gc-react/src/gc/features/mj/src/engine/README.md)
   for the current engine-side difficulty model
-- [difficulty-measurement.md](/c:/dev/poly-gc-react/agents/topics/mj/difficulty-measurement.md)
+- [difficulty-measurement.md](/c:/dev/poly-gc-react/agents/topics/difficulty/difficulty-measurement.md)
   for what the analyzer metrics mean
 
 ## Goal

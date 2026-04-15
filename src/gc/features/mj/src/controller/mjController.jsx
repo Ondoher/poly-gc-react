@@ -44,6 +44,7 @@ export default class MJController extends Service {
 			'showTile', 'hintTile', 'highlightTile', 'setTiles','clearBoard',]);
 
 		this.engine = new Engine();
+		this.actionCollector = this.registry.subscribe("mj:action-collector");
 		this.layoutName = 'turtle';
 		this.difficulty = 'standard';
 		this.difficulties = DIFFICULTY_LEVELS;
@@ -60,6 +61,15 @@ export default class MJController extends Service {
 		this.engine.listen('newBoard', this.newBoard.bind(this))
 		this.boardNbr = Random.random(0xFFFFF)
 		this.onSizeChanged = this.onSizeChanged.bind(this);
+		this.lastTrackedElapsedSecond = -1;
+	}
+
+	recordAction(action) {
+		if (!this.actionCollector || !this.actionCollector.recordAction) {
+			return;
+		}
+
+		this.actionCollector.recordAction(action);
 	}
 
 	/**
@@ -113,7 +123,7 @@ export default class MJController extends Service {
 		}
 
 		this.setGameState({
-			allowedTileSizes: allowedTileSizes,
+			allowedTilesizes: allowedTileSizes,
 			maxTileSize: maxTileSize,
 			isBelowMinimum: isBelowMinimum,
 		});
@@ -242,6 +252,7 @@ export default class MJController extends Service {
 		var time = Date.now() - this.startTime;
 		this.time = time;
 		this.setTime(time);
+		this.trackElapsedTime(time);
 		this.timerRunning = false;
 	}
 
@@ -252,6 +263,9 @@ export default class MJController extends Service {
 	pauseTimer() {
 		var now = Date.now()
 		this.stopTime = now;
+		if (this.startTime) {
+			this.trackElapsedTime(now - this.startTime);
+		}
 		this.timerRunning = false;
 	}
 
@@ -262,6 +276,21 @@ export default class MJController extends Service {
 		if (!this.timerRunning) return;
 		var time = Date.now() - this.startTime;
 		this.setTime(time);
+		this.trackElapsedTime(time);
+	}
+
+	trackElapsedTime(time) {
+		var elapsedSeconds = Math.floor(Math.max(0, time) / 1000);
+
+		if (elapsedSeconds === this.lastTrackedElapsedSecond) {
+			return;
+		}
+
+		this.lastTrackedElapsedSecond = elapsedSeconds;
+		this.recordAction({
+			type: "session-elapsed",
+			elapsedTimeMs: Math.max(0, Math.floor(time)),
+		});
 	}
 
 	timerPenalty(time) {
@@ -286,6 +315,9 @@ export default class MJController extends Service {
 			this.stopTimer();
 			this.setWon(true);
 			this.setLost(false);
+			if (!this.gameWon) {
+				this.recordAction({type: "session-ended", result: "won"});
+			}
 			this.logEvent('win');
 			this.message('YOU WIN!!!');
 			this.gameWon = true;
@@ -294,6 +326,9 @@ export default class MJController extends Service {
 			this.setLost(true);
 			this.resetTimer(true)
 			this.pauseTimer();
+			if (!this.gameLost) {
+				this.recordAction({type: "session-ended", result: "lost"});
+			}
 			this.logEvent("lose");
 			this.gameLost = true;
 			this.message('NO MORE MOVES, GAME OVER');
@@ -397,8 +432,8 @@ export default class MJController extends Service {
 		var tiles = this.engine.undo();
 		if (tiles === undefined) return;
 
-		this.showTile(tiles.tile1, true);
-		this.highlightTile(tiles.tile1, false);
+		this.showTile(tiles.key1, true);
+		this.highlightTile(tiles.key1, false);
 		this.showTile(tiles.tile2, true);
 		this.highlightTile(tiles.tile2, false);
 
@@ -417,8 +452,8 @@ export default class MJController extends Service {
 
 		if (tiles === undefined) return;
 
-		this.showTile(tiles.tile1, false);
-		this.highlightTile(tiles.tile1, false);
+		this.showTile(tiles.key1, false);
+		this.highlightTile(tiles.key1, false);
 		this.showTile(tiles.tile2, false);
 		this.highlightTile(tiles.tile2, false);
 	}
@@ -492,11 +527,19 @@ export default class MJController extends Service {
 		this.resetTimer(false);
 		this.startTimer(false);
 		this.updateTimerState();
+		this.lastTrackedElapsedSecond = -1;
+		this.recordAction({
+			type: "session-started",
+			boardNbr: Number.isFinite(Number(this.boardNbr)) ? Number(this.boardNbr) : null,
+			difficulty: this.difficulty,
+			layout: this.layout,
+		});
+		this.trackElapsedTime(0);
 	}
 
 	/**
 	 * Call this method to check if a specific tile is open for play
-	 * @param {Tile} tile
+	 * @param {TileKey} tile
 	 *
 	 * @returns {Boolean} true if open, false if not
 	 */
@@ -541,7 +584,7 @@ export default class MJController extends Service {
 	/**
 	 * This method is called in response to the user selecting a tile.
 	 *
-	 * @param {Tile} tile the tile the use selected.
+	 * @param {TileKey} tile the tile the use selected.
 	 */
 	select(tile) {
 		this.hideHints();
@@ -643,12 +686,12 @@ export default class MJController extends Service {
 		this.layoutName = layout;
 	}
 
-	selectTileSet(tileSet) {
+	selectTileset(tileSet) {
 		this.tileSet = tileSet;
 		this.setTileset(tileSet);
 	}
 
-	selectTileSize(tileSize) {
+	selectTilesize(tileSize) {
 		this.tileSize = tileSize;
 		this.setTilesize(tileSize);
 	}

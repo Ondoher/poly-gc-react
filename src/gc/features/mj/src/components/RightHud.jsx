@@ -48,6 +48,11 @@ export default class RightHud extends React.Component {
 					disabled: false,
 					onClick: this.props.onSettings,
 				};
+			case 'feedback':
+				return {
+					disabled: false,
+					onClick: this.props.onFeedback,
+				};
 			default:
 				return {};
 		}
@@ -98,6 +103,9 @@ export default class RightHud extends React.Component {
 						{this.renderButton('settings', 'Settings')}
 					</div>
 				</CssRect>
+				<div className="mj-right-hud-feedback-wrap">
+					{this.renderButton('feedback', 'Feedback')}
+				</div>
 			</div>
 		);
 	}

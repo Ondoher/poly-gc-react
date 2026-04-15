@@ -1,1 +1,2 @@
-import "./controller/mjController.jsx"
+import "./models/index.js";
+import "./controller/mjController.jsx";

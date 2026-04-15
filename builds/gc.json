@@ -5,7 +5,7 @@
 	"index": "src/gc/index.js",
 	"spec": "src/gc/test.js",
 	"testDest": "tests/",
-	"router": "server/gc/routes.js",
+	"router": "server/gc/index.js",
 	"template": {
 		"source": "src/gc/templates/main.html",
 		"destination": "dist/gc/index.html"
@@ -21,6 +21,12 @@
 			"dest": "images",
 			"cwd": "assets/images",
 			"glob": "**/*.{png,jpg,gif,svg}",
+			"keepNest": true
+		},
+		{
+			"dest": "pwa",
+			"cwd": "assets/pwa",
+			"glob": "**/*.{png,webmanifest}",
 			"keepNest": true
 		},
 		{

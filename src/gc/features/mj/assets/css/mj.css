@@ -7,10 +7,21 @@
 @import url('./mj-toast.css');
 @import url('./mj-settings.css');
 
+
+.mj-board-page {
+    --mj-ui-text-color: #d3a024;
+    --mj-ui-fill-strong: rgba(117, 17, 19, 0.75);
+    --mj-ui-fill-soft: rgba(120, 20, 20, 0.45);
+    --mj-ui-text-shadow: rgba(75, 33, 5, 0.7);
+    --mj-ui-primary-color: #d3a024;
+    --mj-ui-font-family: "Merienda", "Trebuchet MS", serif;
+    font-family: var(--mj-ui-font-family)
+}
+
+
 .mj-frame-shell {
     --frame-padding: 12px;
     --mj-page-pattern-size: 220px 220px;
-    /* --mj-ui-text-color: #f1c036; */
     --mj-ui-text-color: #d3a024;
     --mj-ui-fill-strong: rgba(117, 17, 19, 0.75);
     --mj-ui-fill-soft: rgba(120, 20, 20, 0.45);
@@ -42,7 +53,7 @@
     background-repeat: repeat, repeat, repeat;
     background-position: 0 0, 0 0, 0 0;
     background-size: auto, auto, var(--mj-page-pattern-size);
-    font-family: "Merienda", "Trebuchet MS", serif;
+    font-family: var(--mj-ui-font-family);
 }
 
 .mj-board-page {
@@ -89,7 +100,9 @@
 .mj-game-area,
 .mj-pretty-frame,
 .mj-gameover,
-.mj-settings-dialog {
+.mj-settings-dialog,
+.mj-startup-consent-dialog,
+.mj-feedback-dialog {
     grid-column: 1;
     grid-row: 1;
     min-width: 0;
@@ -101,6 +114,7 @@
     margin: var(--frame-padding);
     background: rgba(0, 0, 0, 0.85);
     z-index: 5;
+    pointer-events: none;
 }
 
 .mj-frame-shell .mj-gameover {
@@ -122,7 +136,7 @@
         0 8px 18px rgba(0, 0, 0, 0.35),
         inset 0 1px 0 rgba(255, 245, 214, 0.18);
     color: #f4ca57;
-    font-family: "Merienda", "Trebuchet MS", serif;
+    font-family: var(--mj-ui-font-family);
     font-size: 13px;
     font-style: italic;
     font-weight: bold;
@@ -130,6 +144,40 @@
     text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
     transform: translateX(-50%);
     cursor: pointer;
+}
+
+.mj-lost-action {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--frame-padding) + 18px);
+    z-index: 6;
+    min-width: 124px;
+    padding: 7px 18px 9px;
+    border: 1px solid rgba(255, 201, 71, 0.8);
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(162, 34, 34, 0.94), rgba(92, 16, 16, 0.98));
+    box-shadow:
+        0 8px 18px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 245, 214, 0.18);
+    color: #f4ca57;
+    font-family: var(--mj-ui-font-family);
+    font-size: 13px;
+    font-style: italic;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+    transform: translateX(-50%);
+    cursor: pointer;
+}
+
+.mj-lost-action:hover {
+    filter: brightness(1.06);
+}
+
+.mj-lost-action:focus-visible {
+    outline: 2px solid rgba(255, 222, 123, 0.95);
+    outline-offset: 2px;
 }
 
 .mj-win-action:hover {

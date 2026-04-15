@@ -219,31 +219,85 @@ class Random {
 
 
 
-
-
 	/**
 	 * call this method to pick a random number from an array and remove it
-	 * @param {Array} list the array of itens to chooise from
 	 *
-	 * @returns {*} the chosen item
+	 * @template T
+	 * @param {T[]} list - the array of items to choose from
+	 *
+	 * @returns {T} the chosen item
 	 */
 	pickOne(list) {
-		var pos = Math.floor(this.random() * list.length);
-		var choice = list.splice(pos, 1);
+		let pos = Math.floor(this.random() * list.length);
+		let choice = list.splice(pos, 1);
 		return choice[0];
 	}
 
 	/**
 	 * Call this method to pick two items from a given list. The items are
-	 * removed from the array
+	 * removed from the array. If the array is less than two items then it
+	 * will return either an empty array or an array with one element.
 	 *
-	 * @param {Array} list the array of items to choose
-	 * @returns {Array} the two chosen items
+	 * @template T
+	 *
+	 * @param {T[]} list - the array of items to choose
+	 * @returns {T[]} the two chosen items
 	 */
 	pickPair(list) {
-		var result = [];
-		result.push(this.pickOne(list))
-		result.push(this.pickOne(list))
+		if (list.length === 0) {
+			return [];
+		}
+
+		if (list.length === 1) {
+			return [this.pickOne(list)];
+		}
+
+		return [
+			this.pickOne(list),
+			this.pickOne(list)
+		]
+	}
+
+	/**
+	 * Call this method to choose a given number of items from a list. The items
+	 * are removed.
+	 *
+	 * @template T
+	 *
+	 * @param {Number} count - the number of items to pick
+	 * @param {T[]} list - the list of items to choose from
+	 *
+	 * @returns {T[]} the chosen items
+	 */
+	pick(count, list) {
+		let result = [];
+		let limit = Math.min(list.length, count)
+		for(let idx = 0; idx < limit; idx++) {
+			result.push(this.pickOne(list));
+		}
+
+		return result;
+	}
+
+
+	/**
+	 * Call this method to randomly pick a set of item pairs. The items
+	 * will be removed from the list.
+	 *
+	 * @template T
+	 * @param {Number} count - the number of pairs to pick
+	 * @param {T[]} list - the list of items to choose from
+	 *,
+	 * @returns {T[][]}} the item pairs chosen. Each pair is an array of
+	 * 	two items from the list
+	 */
+	pickPairs(count, list) {
+		/** @type {T[][]} */
+		let result = [];
+
+		for(let idx = 0; idx < count; idx++) {
+			result.push(this.pickPair(list));
+		}
 
 		return result;
 	}
@@ -252,96 +306,75 @@ class Random {
 	 * Call this method to chose a random item from a list. The item is not
 	 * removed.
 	 *
-	 * @param {Array} list the list of items to choose from
+	 * @template T
 	 *
-	 * @returns {*} the chosen item
+	 * @param {T[]} list - the list of items to choose from
+	 * @returns {T} the chosen item
 	 */
 	chooseOne(list) {
-		var pos = Math.floor(this.random() * list.length);
+		let pos = Math.floor(this.random() * list.length);
 		return list[pos];
 	}
 
 	/**
-	 * Call this method to choose a given number of items from a list. The items
-	 * are removed.
+	 * Call this method to pick a pair of items from the given list. The items
+	 * are guaranteed to be unique.
 	 *
-	 * @param {Number} count te number of items to pick
-	 * @param {*} list the list of items to choose from
+	 * @template T
 	 *
-	 * @returns {Array} the chosen items
+	 * @param {T[]} list - the list of items
+	 * @returns {T[]}
 	 */
-	pick(count, list) {
+	choosePair(list) {
+		if (list.length < 2) {
+			return list;
+		}
+		let first = Math.floor(this.random() * list.length);
+		let second = Math.floor(this.random() * list.length);
 
-		var result = [];
-		for(var idx = 0; idx < count; idx++) {
-			result.push(this.pickOne(list));
+		while (second === first) {
+			second = Math.floor(this.random() * list.length);
 		}
 
-		return result;
+		return [list[first], list[second]];
+
 	}
 
 	/**
-	 * Call this method to randomly pick a number of items from a list. The
+	 * Call this method to return a random list of contiguous items from the
+	 * given list. The items are not removed.
+	 *
+	 * @template T
+	 * @param {number} count - the number of items to choose
+	 * @param {T[]} list - the list to choose from
+	 *
+	 * return {T[]}
+	 */
+	chooseRange(count, list) {
+		let start = this.random(list.length) -  count;
+
+		return list.slice(start, start + count).join(' ');
+	}
+
+	/**
+	 * Call this method to randomly pick a subset of items from a list. The
 	 * items are not removed.
 	 *
-	 * @param {Number} count the number of items to choose
-	 * @param {Array} list the list of items to choose from
+	 * @template T
 	 *
-	 * @returns {Array} the list of items chosen
+	 * @param {Number} count - the number of items to choose
+	 * @param {T[]} list - the list of items to choose from
+	 *
+	 * @returns {T[]} the list of items chosen
 	 */
 	choose(count, list){
-		var result = [];
-		for(var idx = 0; idx < count; idx++) {
+		let result = [];
+		for(let idx = 0; idx < count; idx++) {
 			result.push(this.chooseOne(list));
 		}
 
 		return result;
 	}
-
-	/**
-	 * Call this method to randmply pick a given number of item pairs. The items
-	 * will be removed from the list.
-	 *
-	 * @param {Number} count the number of pairs to pick
-	 * @param {Array} list the list of items to choose from
-	 *
-	 * @returns {Array.<Array>} the item pairs chosen. Each pair is an array of
-	 * 	two items from the list
-	 */
-	pickPairs(count, list) {
-		var result = [];
-
-		for(var idx = 0; idx < count; idx++) {
-			result.push(this.pickPair(list));
-		}
-
-		return result;
-	}
-
-	/**
-	 * Call this method to pick pairs of strings from an array of strings. This
-	 * returns an array of strings where each chosen pair has been concatenated.
-	 * The strings are removed from the list.
-	 *
-	 * @param {Number} the number of pairs to pick
-	 * @param {Array.<String>} list the strings to pick from
-	 * @returns {Array.<String>} the array of string pairs
-	 */
-	pickStringPairs(count, list) {
-		var result = [];
-
-		for(var idx = 0; idx < count; idx++) {
-			result.push(this.pickPair(list).join(''));
-		}
-
-		return result;
-
-	}
-
-
-
-
-
 };
 
 export default new Random();

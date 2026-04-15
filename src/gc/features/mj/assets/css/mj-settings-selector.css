@@ -6,7 +6,7 @@
 
 .mj-settings-dialog-selector {
     align-self: start;
-    height: fit-content;
+    height: 100%;
     max-height: 100%;
     min-height: 0;
     box-sizing: border-box;
@@ -36,6 +36,13 @@
     min-height: var(--mj-settings-selector-option-height);
     width: 100%;
     padding-inline: 2px;
+}
+
+.mj-settings-dialog-list-separator {
+    height: 1px;
+    margin: -2px 4px 0 2px;
+    background: rgba(211, 160, 36, 0.6);
+    box-shadow: 0 1px 0 rgba(75, 33, 5, 0.28);
 }
 
 .mj-settings-dialog-list-option .mj-raised-button-label {
@@ -73,6 +80,7 @@
     grid-template-columns: minmax(0, 1fr) 16px;
     gap: 14px;
     align-items: stretch;
+    height: 100%;
     max-height: 100%;
     min-height: 0;
 }
@@ -80,13 +88,15 @@
 .mj-settings-dialog-list-viewport {
     min-width: 0;
     min-height: 0;
-    padding: 6px 0 6px 6px;
+    padding: 10px 0 10px 10px;
     overflow: hidden;
 }
 
 .mj-settings-dialog-list-rail {
     position: relative;
     width: 16px;
+    align-self: stretch;
+    height: 100%;
     min-height: 0;
 }
 
@@ -228,7 +238,7 @@
     min-height: 100%;
     padding: 12px 8px;
     color: var(--mj-ui-primary-color);
-    font-family: "Merienda", "Trebuchet MS", serif;
+    font-family: var(--mj-ui-font-family);
     font-size: 12px;
     font-style: italic;
     font-weight: bold;

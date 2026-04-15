@@ -1,4 +1,7 @@
 import Random from 'utils/random.js'
+import Engine from './Engine.js';
+
+
 
 /**
  * Coordinates construction of a generated Mahjongg game.
@@ -10,32 +13,42 @@ import Random from 'utils/random.js'
  */
 export default class GameGenerator {
 	/**
+	 *
 	 * @param {Engine} engine
 	 */
 	constructor(engine) {
 		this.engine = engine;
 	}
 
+
 	shuffleTiles() {
 		let engine = this.engine;
-		let fullsetList = engine.makeSequentialArray(0, 144 / 4);
+
+		let fullSetList = engine.makeSequentialArray(0, 144 / 4);
 		let leftover = engine.layout.tiles % 4;
-		let drawpileCount = Math.floor(engine.layout.tiles / 4);
+		let drawPileCount = Math.floor(engine.layout.tiles / 4);
 
 		engine.drawPile.faceSets = new Map();
-		for (let idx = 0; idx < drawpileCount; idx++) {
-			let set = Random.pickOne(fullsetList);
-			engine.drawPile.faceSets.set(set, {
-				id: set,
-				faces: engine.makeSequentialArray(set * 4, 4)
+
+		for (let idx = 0; idx < drawPileCount; idx++) {
+			let id = Random.pickOne(fullSetList);
+			let faces = engine.makeSequentialArray(id * 4, 4);
+			let suit = engine.getSuit(faces[0]);
+			engine.drawPile.faceSets.set(id, {
+				id,
+				suit,
+				faces
 			});
 		}
 
 		if (leftover) {
-			let set = Random.pickOne(fullsetList);
-			engine.drawPile.faceSets.set(set, {
-				id: set,
-				faces: engine.makeSequentialArray(set * 4, 2)
+			let id = Random.pickOne(fullSetList);
+			let faces = engine.makeSequentialArray(id * 4, 2);
+			let suit = engine.getSuit(faces[0]);
+			engine.drawPile.faceSets.set(id, {
+				id,
+				suit,
+				faces
 			});
 		}
 	}
@@ -170,64 +183,44 @@ export default class GameGenerator {
 		return faces;
 	}
 
-	drawPreferredFacePairForRecord(pairRecord) {
+	/**
+	 *
+	 * @param {GeneratedPairRecord} pending
+	 * @returns
+	 */
+	drawPendingFaces(pending) {
 		let engine = this.engine;
-		let record = Array.isArray(pairRecord) ? null : pairRecord;
-		let tiles = record?.tiles || pairRecord;
+		let tiles = pending?.tiles || pending;
 
 		if (
-			record
-			&& record.faceGroup !== false
-			&& record.faceGroup !== undefined
-			&& record.face1 !== undefined
-			&& record.face2 !== undefined
+			pending
+			&& pending.faceGroup !== false
+			&& pending.faceGroup !== undefined
+			&& pending.face1 !== undefined
+			&& pending.face2 !== undefined
 		) {
 			return {
-				faceGroup: record.faceGroup,
-				face1: record.face1,
-				face2: record.face2,
+				faceGroup: pending.faceGroup,
+				face1: pending.face1,
+				face2: pending.face2,
 			};
 		}
 
-		let distanceCandidate = engine.pickFaceGroupDistanceCandidate(2, record || tiles);
 
-		if (distanceCandidate) {
-			let resolved = engine.drawFacePairFromGroup(distanceCandidate.faceGroup, tiles);
+		let faceGroup = engine.pickRankedFaceGroup(2, pending || tiles);
+		let pair = engine.drawFacePairFromGroup(faceGroup, tiles);
 
-			if (record) {
-				record.faceGroup = resolved.faceGroup;
-				record.face1 = resolved.face1;
-				record.face2 = resolved.face2;
-			}
+		pending.faceGroup = pair.faceGroup;
+		pending.face1 = pair.face1;
+		pending.face2 = pair.face2;
 
-			return resolved;
-		}
-
-		let weighted = engine.drawWeightedFacePairForTiles(tiles);
-
-		if (!weighted) {
-			return false;
-		}
-
-		let faceGroup = Math.floor(weighted.face1 / 4);
-
-		if (record) {
-			record.faceGroup = faceGroup;
-			record.face1 = weighted.face1;
-			record.face2 = weighted.face2;
-		}
-
-		return {
-			faceGroup,
-			face1: weighted.face1,
-			face2: weighted.face2,
-		};
+		return pair;
 	}
 
 	pickWeightedPair(options = {}) {
 		let engine = this.engine;
 		let firstScores = engine.scoreOpenTiles([], options);
-		let firstWindowDetails = engine.getDifficultyWindowDetails(firstScores, options);
+		let firstWindowDetails = engine.getRankedWindow(firstScores, options);
 		let firstCandidates = engine.shuffleTileScores([
 			...firstWindowDetails.window,
 			...firstScores.filter((score) => {
@@ -543,8 +536,8 @@ export default class GameGenerator {
 	 * Remove a generated pair and append it to the guaranteed solution path.
 	 *
 	 * @private
-	 * @param {Tile} tile1
-	 * @param {Tile} tile2
+	 * @param {TileKey} tile1
+	 * @param {TileKey} tile2
 	 */
 	removeGeneratedPair(tile1, tile2) {
 		let engine = this.engine;
@@ -564,9 +557,9 @@ export default class GameGenerator {
 	 * Create the deferred face-assignment record for a normal generated pair.
 	 *
 	 * @private
-	 * @param {Tile} tile1
-	 * @param {Tile} tile2
-	 * @param {Tile[]} avoidanceTargets
+	 * @param {TileKey} tile1
+	 * @param {TileKey} tile2
+	 * @param {TileKey[]} avoidanceTargets
 	 * @returns {GeneratedPairRecord}
 	 */
 	createGeneratedPairRecord(tile1, tile2, avoidanceTargets = this.getFaceAvoidanceNeighborhood([
@@ -592,14 +585,14 @@ export default class GameGenerator {
 	placeWeightedNormalPair() {
 		let engine = this.engine;
 		let pair = this.pickWeightedPair(this.getTilePickerOptions());
-		let pairRecord = this.createGeneratedPairRecord(
+		let pendingPair = this.createGeneratedPairRecord(
 			pair.tile1,
 			pair.tile2,
 			this.getFaceAvoidanceTargetsAfterRemoval([pair.tile1, pair.tile2])
 		);
 
 		this.removeGeneratedPair(pair.tile1, pair.tile2);
-		engine.pairs.push(pairRecord);
+		engine.pendingPairs.push(pendingPair);
 	}
 
 	/**
@@ -722,9 +715,9 @@ export default class GameGenerator {
 	fillInRemainingFaces() {
 		let engine = this.engine;
 
-		for (let pairRecord of engine.pairs) {
-			let tiles = pairRecord.tiles || pairRecord;
-			let pair = this.drawPreferredFacePairForRecord(pairRecord);
+		for (let pending of engine.pendingPairs) {
+			let tiles = pending.tiles || pending;
+			let pair = this.drawPendingFaces(pending);
 
 			engine.board.pieces[tiles[0]].face = pair.face1;
 			engine.board.pieces[tiles[1]].face = pair.face2;
@@ -734,9 +727,9 @@ export default class GameGenerator {
 				this.getFaceSetForFace(pair.face1)
 			);
 			this.markFaceAvoidanceForTargets(
-				pairRecord.avoidanceTargets || [],
+				pending.avoidanceTargets || [],
 				this.getFaceSetForFace(pair.face1),
-				pairRecord.avoidanceWeight ?? engine.faceAvoidanceRules.weight ?? 1
+				pending.avoidanceWeight ?? engine.faceAvoidanceRules.weight ?? 1
 			);
 		}
 	}

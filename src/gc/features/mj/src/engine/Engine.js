@@ -1,7 +1,18 @@
-import { makeEventable } from '@polylith/core';
+import { makeEventable, registry } from '@polylith/core';
 import Random from 'utils/random.js'
 import NumberSet from 'utils/NumberSet.js';
 import GameGenerator from './GameGenerator.js';
+
+/** @type {SuitSpec} */
+const SUITS = {
+	bamboo: [0, 35],
+	characters: [36, 71],
+	dots: [72, 107],
+	dragon: [108, 119],
+	wind: [120, 135],
+	flower: [136, 139],
+	season: [140, 143]
+}
 
 /**
  * This is the engine for the Mah Jongg solitaire game. It keeps the game state
@@ -50,13 +61,15 @@ export default class Engine {
 		/** @type {number} */
 		this.suspendedCount = 0;
 
-		/** @type {number[][]} */
-		this.pairs = [];
+		/** @type {GeneratedPairRecord[]} */
+		this.pendingPairs = [];
 
 		this.suspensionStats = this.createSuspensionStats();
 		this.tilePickerStats = this.createTilePickerStats();
 		this.faceAvoidanceStats = this.createFaceAvoidanceStats();
 		this.faceAvoidance = new Map();
+
+		/** @type {AssignedFacePair[]} */
 		this.assignedFacePairs = [];
 
 		this.undoStack = [];
@@ -84,7 +97,7 @@ export default class Engine {
 		/**
 		 * Track which currently placed tiles are open and selectable for play.
 		 *
-		 * @type {Array.<Tile>}
+		 * @type {Array.<TileKey>}
 		 */
 		this.openTiles = [];
 
@@ -93,9 +106,13 @@ export default class Engine {
 		 * indexes are recorded in the order they were assigned during board
 		 * generation.
 		 *
-		 * @type {Array.<Tile>}
+		 * @type {Array.<TileKey>}
 		 */
 		this.solution = [];
+
+		/** @type {{[face: Face]: Suit} */
+		this.suits = {};
+		this.makeSuits();
 
 		/**
 		 * Track the remaining face groups available to draw from while the board
@@ -104,11 +121,58 @@ export default class Engine {
 	 * @type {DrawPile}
 		 */
 		this.drawPile = {
-			faceSets: new Map()
+			faceSets: []
 		};
 
 		this.setLayout();
+
+		this.actionCollector = registry.subscribe("mj:action-collector");
 	}
+
+	/**
+	 * Call this method to record one gameplay action if the action collector is available.
+	 *
+	 * @param {MjGameplayAction} action - Describe one gameplay action in the current session.
+	 */
+	recordAction(action) {
+		if (!this.actionCollector || !this.actionCollector.recordAction) {
+			return;
+		}
+
+		this.actionCollector.recordAction(action);
+	}
+
+
+	makeSuits() {
+		let entries = Object.entries(SUITS);
+
+		for (let [suit, range] of entries) {
+			for (let idx = range[0]; idx <= range[1]; idx++) {
+				this.suits[idx] = suit;
+			}
+		}
+	}
+
+	/**
+	 * Given a face, find it's suit
+	 *
+	 * @param {face} face
+	 * @returns {Suit}
+	 */
+	getSuit(face) {
+		return this.suits[face];
+	}
+
+	/**
+	 *
+	 * @param {FaceGroup} faceGroup
+	 * @returns {Suit}
+	 */
+	getSuitFromFaceGroup(faceGroup) {
+		let face = faceGroup * 4;
+		return this.suits[face];
+	}
+
 
 	setupSuspensionRules(rules) {
 		this.suspensionRules = rules;
@@ -210,6 +274,12 @@ export default class Engine {
 	// Private methods
 	//============================================================================
 
+	/**
+	 *
+	 * @param {number} start
+	 * @param {number} count
+	 * @returns {number[]}
+	 */
 	makeSequentialArray(start, count) {
 		return Array.from({length: count}, function(val, index) {
 			return index + start
@@ -226,9 +296,9 @@ export default class Engine {
 	 * used to determine which tiles on the board can be played because they are
 	 * open on the top and the left or the right.
 	 *
-	 * @private
+	 *
 	 * @param {TilePosition} position the position on the board to be occupied
-	 * @param {Tile} tile the tile that will occupy that position
+	 * @param {TileKey} tile the tile that will occupy that position
 	 */
 	addPos(position, tile)	{
 		var {x, y, z} = position;
@@ -250,9 +320,9 @@ export default class Engine {
 	 * the board does not change the board layout, but will release the grid
 	 * space that had been previously occupied.
 	 *
-	 * @private
+	 *
 	 * @param {TilePosition} position the position the tile occupies on the board
-	 * @param {Tile} tile which tile is being removed
+	 * @param {TileKey} tile which tile is being removed
 	 */
 	subtractPos(position, tile) {
 		var {x, y, z} = position;
@@ -270,7 +340,7 @@ export default class Engine {
 	 * Call this method to check if a specific coordinate in the game grid is
 	 * currently occupied.
 	 *
-	 * @private
+	 *
 	 * @param {Number} x the x coordinate
 	 * @param {Number} y the y coordinate
 	 * @param {Number} z the z coordinate
@@ -307,7 +377,7 @@ export default class Engine {
 	 * on all sides and above. This does not take assigned faces into account.
 	 * This updates both playableTiles and selectableTiles
 	 *
-	 * @private
+	 *
 	 */
 	calcOpenTiles() {
 		this.selectableTiles.clear();
@@ -331,7 +401,7 @@ export default class Engine {
 	/**
 	 * Call this method to setup the board for initial play
 	 *
-	 * @private
+	 *
 	 */
 	configureBoard() {
 		this.curtile = 0;
@@ -351,7 +421,7 @@ export default class Engine {
 		this.faceAvoidanceStats = this.createFaceAvoidanceStats();
 		this.faceAvoidance = new Map();
 		this.solution = [];
-		this.pairs = [];
+		this.pendingPairs = [];
 		this.assignedFacePairs = [];
 	}
 
@@ -359,7 +429,7 @@ export default class Engine {
 	 * Call this method to pick a random tile from the draw pile of a specific
 	 * face set
 	 *
-	 * @private
+	 *
 	 * @param {FaceGroup} faceGroup the index into the list of all face sets. A
 	 * 		from this face set will be chosen, and removed from the draw pile
 
@@ -379,17 +449,6 @@ export default class Engine {
 		return face;
 	}
 
-	/**
-	 *	Call this method to remove a matching pair of tile faces the
-	 * 	the draw pile.
-	 *
-	 * @private
-	 * @returns {FacePair} a random pair of matching faces from the draw pile
-	 */
-	drawFacePair() {
-		return this.drawWeightedFacePairForTiles([]);
-	}
-
 	getFaceSetId(faceSet) {
 		return faceSet.id ?? Math.floor(faceSet.faces[0] / 4);
 	}
@@ -400,8 +459,8 @@ export default class Engine {
 	 * not prevent a face set from being chosen when it is the best remaining
 	 * option.
 	 *
-	 * @private
-	 * @param {Tile} tile
+	 *
+	 * @param {TileKey} tile
 	 * @param {FaceGroup} faceSet
 	 * @returns {number}
 	 */
@@ -418,8 +477,8 @@ export default class Engine {
 	 * total penalty, which makes local same-face rescues less likely without
 	 * making generation brittle.
 	 *
-	 * @private
-	 * @param {Tile} tile
+	 *
+	 * @param {TileKey} tile
 	 * @param {FaceGroup} faceSet
 	 * @param {number} weight
 	 */
@@ -451,10 +510,10 @@ export default class Engine {
 	 * for face-avoidance marks because they are likely to be available soon after
 	 * the current pair is assigned.
 	 *
-	 * @private
-	 * @param {Tile[]} referenceTiles tiles whose face set is being avoided
-	 * @param {Tile[]} removedTiles tiles to remove in the simulated state
-	 * @returns {Tile[]}
+	 *
+	 * @param {TileKey[]} referenceTiles tiles whose face set is being avoided
+	 * @param {TileKey[]} removedTiles tiles to remove in the simulated state
+	 * @returns {TileKey[]}
 	 */
 	getFaceAvoidanceTargetsAfterRemoval(referenceTiles, removedTiles = referenceTiles) {
 		return new GameGenerator(this).getFaceAvoidanceTargetsAfterRemoval(
@@ -467,9 +526,9 @@ export default class Engine {
 	 * Calculate the combined avoidance penalty for assigning a face group to a
 	 * set of generated tiles.
 	 *
-	 * @private
+	 *
 	 * @param {FaceGroup} faceGroup
-	 * @param {Tile[]} tiles
+	 * @param {TileKey[]} tiles
 	 * @returns {number}
 	 */
 	getFaceGroupPenalty(faceGroup, tiles) {
@@ -488,9 +547,9 @@ export default class Engine {
 	 * `requiredFaces = 4` because it must split a complete face set between the
 	 * placed pair and the suspended future pair.
 	 *
-	 * @private
+	 *
 	 * @param {number} requiredFaces
-	 * @param {Tile[]} tiles
+	 * @param {TileKey[]} tiles
 	 * @param {boolean} recordDraw
 	 * @returns {FaceGroup | -1}
 	 */
@@ -531,7 +590,7 @@ export default class Engine {
 	/**
 	 * Test whether a stable face-group id still has enough remaining faces.
 	 *
-	 * @private
+	 *
 	 * @param {FaceGroup} faceGroup
 	 * @param {number} requiredFaces
 	 * @returns {boolean}
@@ -545,7 +604,7 @@ export default class Engine {
 	/**
 	 * Record face-avoidance assignment pressure for analytics.
 	 *
-	 * @private
+	 *
 	 * @param {number} penalty
 	 */
 	recordFaceAvoidanceDraw(penalty) {
@@ -569,9 +628,8 @@ export default class Engine {
 	 * Each entry tracks the generated pair tiles plus the stable face-group id
 	 * assigned to that pair.
 	 *
-	 * @private
-	 * @param {Tile} tile1
-	 * @param {Tile} tile2
+	 * @param {TileKey} tile1
+	 * @param {TileKey} tile2
 	 * @param {FaceGroup} faceGroup
 	 */
 	recordAssignedFacePair(tile1, tile2, faceGroup) {
@@ -586,7 +644,7 @@ export default class Engine {
 	 * Return the most recent assignment index for each face group that has
 	 * already been used during generation.
 	 *
-	 * @private
+	 *
 	 * @returns {Map<FaceGroup, number>}
 	 */
 	getAssignedFaceGroupIndexes() {
@@ -599,11 +657,6 @@ export default class Engine {
 		return indexes;
 	}
 
-	getFaceGroupPreferredSortValue(baseSortValue, preferred = false) {
-		let multiplier = this.faceAssignmentRules.preferredMultiplier ?? 0.5;
-
-		return preferred ? baseSortValue * multiplier : baseSortValue;
-	}
 
 	getFaceGroupDuplicateCount(reusedIndex, reusedCount, options = {}) {
 		let difficulty = Math.max(0, Math.min(1, options.difficulty ?? this.difficulty));
@@ -622,6 +675,12 @@ export default class Engine {
 		return 1 + extra;
 	}
 
+	getAdjustedDistanceFactor(baseSortValue, preferred = false) {
+		let multiplier = this.faceAssignmentRules.preferredMultiplier ?? 0.5;
+
+		return preferred ? baseSortValue * multiplier : baseSortValue;
+	}
+
 	/**
 	 * Build the currently available face-group candidates annotated with
 	 * placement distance from the latest prior assignment of the same face group.
@@ -634,66 +693,102 @@ export default class Engine {
 	 * This does not change face assignment yet; it only exposes the sorted data
 	 * needed for future spacing-based selection experiments.
 	 *
-	 * @private
+	 *
 	 * @param {number} requiredFaces
-	 * @param {GeneratedPairRecord | Tile[] | null} pairRecord
+	 * @param {GeneratedPairRecord} pending
 	 * @param {{difficulty?: number}} options
-	 * @returns {FaceGroupDistanceCandidate[]}
+	 * @returns {FaceGroup[]}
 	 */
-	getSortedFaceGroupDistanceCandidates(requiredFaces = 2, pairRecord = null, options = {}) {
-		let currentIndex = this.assignedFacePairs.length;
-		let assignedIndexes = this.getAssignedFaceGroupIndexes();
-		let preferredFaceGroup = Array.isArray(pairRecord)
-			? false
-			: pairRecord?.preferredFaceGroup;
-		let reused = [];
-		let unused = [];
+	rankFaceGroups(requiredFaces = 2, pending = null, options = {}) {
+		/** @type {Suit[]} */
+		let preferredFaceGroup = pending?.preferredFaceGroup;
+
+		let candidates = [];
 
 		for (let [faceGroup, faceSet] of this.drawPile.faceSets) {
-			if (faceSet.faces.length < requiredFaces) {
+			let { faces } = faceSet;
+
+			if (faces.length < requiredFaces) {
 				continue;
 			}
 
-			let previousIndex = assignedIndexes.has(faceGroup)
-				? assignedIndexes.get(faceGroup)
-				: -1;
-			let preferred = preferredFaceGroup === faceGroup;
-			let baseSortValue = previousIndex === -1
-				? currentIndex + 1
-				: currentIndex - previousIndex;
+			/** @type {Suit[]} */
+			let suit = this.getSuit(faces[0]);
+
+			let baseFactor = 1;
+			let pairCountFactor = faces.length === 4 ? 2 : 1;
+
+			let weightFactor = this.getFaceGroupPenalty(faceGroup, pending.tiles);
+			if (weightFactor !== 0)  {
+				weightFactor = 1 / weightFactor;
+			}
+
+			// find the distance between the face group I'm ranking, and the last time it
+			// was assigned. Lower values will be ranked towards easy
+			let searchPairs = this.assignedFacePairs.slice().reverse();
+			let distance = searchPairs.findIndex((pair) => pair.faceGroup === faceGroup);
+			let distanceFactor = distance === -1 ? searchPairs.length : distance + 1;
+			distanceFactor = this.getAdjustedDistanceFactor(distanceFactor);
+
+			let dups = this.getFaceGroupDuplicateCount(distance, searchPairs.length, {}) - 1;
+//			if (distance !== -1) console.log({distance, distanceFactor, searchPairs, dups, faceGroup, weightPenalty})
+
+			// Find the distance between the face group I'm ranking and the last time the
+			// same suit was assigned
+
+			let suitDistance = searchPairs.findIndex((pair) => this.getSuitFromFaceGroup(pair.faceGroup) === suit);
+			// let suitDistanceFactor = suitDistance === -1 ?
+			// 	searchPairs.length :
+			// 	suitDistance + 1;
+
+			let normalized = suitDistance === -1 ?
+				1 :
+				(suitDistance + 1) / Math.max(1, searchPairs.length);
+			let min = 1
+			let max = 2;
+
+			let suitDistanceFactor = min + (max - min) * normalized;
+
+			suitDistanceFactor = 1;
+
+			let preferredFactor =  preferredFaceGroup === faceGroup ?
+				this.faceAssignmentRules.preferredMultiplier ?? 0.5 :
+				1;
+
+			let finalFactor = baseFactor *
+				pairCountFactor *
+				distanceFactor *
+				suitDistanceFactor *
+				preferredFactor;
+
+			if (weightFactor !== 0 && distance === -1) {
+				finalFactor = weightFactor;
+			}
+
 			let candidate = {
+				dups,
 				faceGroup,
-				distance: previousIndex === -1 ? null : currentIndex - previousIndex,
-				previousIndex,
-				isReuse: previousIndex !== -1,
-				availableFaces: faceSet.faces.length,
-				preferred,
-				sortValue: this.getFaceGroupPreferredSortValue(baseSortValue, preferred),
+				sortValue: finalFactor,
 			};
 
-			if (candidate.isReuse) {
-				reused.push(candidate);
-			} else {
-				unused.push(candidate);
-			}
+			candidates.push(candidate);
 		}
 
 		let compare = function(left, right) {
 			return left.sortValue - right.sortValue || left.faceGroup - right.faceGroup;
 		};
 
-		reused.sort(compare);
-		unused.sort(compare);
+		candidates.sort(compare);
 
-		let expandedReused = reused.flatMap((candidate, index) => {
-			let count = this.getFaceGroupDuplicateCount(index, reused.length, options);
+		let expanded = [];
+		candidates.forEach((candidate) => {
+			expanded.push(candidate);
+			for (let idx = 0; idx < candidate.dups; idx++) {
+				expanded.push(candidate);
+			}
+		})
 
-			return Array.from({length: count}, function() {
-				return candidate;
-			});
-		}, this);
-
-		return [...expandedReused, ...unused];
+		return expanded.map((candidate) => candidate.faceGroup);
 	}
 
 	/**
@@ -704,16 +799,16 @@ export default class Engine {
 	 * the front of the sorted candidate list, hard leans toward the back, and
 	 * medium keeps a broader middle.
 	 *
-	 * @private
+	 *
 	 * @param {number} requiredFaces
-	 * @param {GeneratedPairRecord | Tile[] | null} pairRecord
+	 * @param {GeneratedPairRecord | TileKey[] | null} pairRecord
 	 * @param {{difficulty?: number, minWindowRatio?: number}} options
-	 * @returns {{window: FaceGroupDistanceCandidate[], start: number, end: number, size: number, count: number, difficulty: number}}
+	 * @returns {{window: RankedFaces[], start: number, end: number, size: number, count: number, difficulty: number}}
 	 */
-	getFaceGroupDistanceWindowDetails(requiredFaces = 2, pairRecord = null, options = {}) {
-		let candidates = this.getSortedFaceGroupDistanceCandidates(requiredFaces, pairRecord, options);
+	getRankedFaceGroupWindow(requiredFaces = 2, pairRecord = null, options = {}) {
+		let rakedGroups = this.rankFaceGroups(requiredFaces, pairRecord, options);
 
-		return this.getDifficultyWindowDetails(candidates, options);
+		return this.getRankedWindow(rakedGroups, options);
 	}
 
 	/**
@@ -723,14 +818,13 @@ export default class Engine {
 	 * it. It simply exposes the same sliding-window selection model on top of
 	 * the face-group distance ordering.
 	 *
-	 * @private
 	 * @param {number} requiredFaces
-	 * @param {GeneratedPairRecord | Tile[] | null} pairRecord
+	 * @param {GeneratedPairRecord | TileKey[] | null} pairRecord
 	 * @param {{difficulty?: number, minWindowRatio?: number}} options
-	 * @returns {FaceGroupDistanceCandidate | false}
+	 * @returns {FaceGroup | false}
 	 */
-	pickFaceGroupDistanceCandidate(requiredFaces = 2, pairRecord = null, options = {}) {
-		let details = this.getFaceGroupDistanceWindowDetails(requiredFaces, pairRecord, options);
+	pickRankedFaceGroup(requiredFaces = 2, pairRecord = null, options = {}) {
+		let details = this.getRankedFaceGroupWindow(requiredFaces, pairRecord, options);
 
 		if (details.window.length === 0) {
 			return false;
@@ -751,6 +845,13 @@ export default class Engine {
 		return {face1, face2};
 	}
 
+	/**
+	 *
+	 * @param {FaceGroup} faceGroup
+	 * @param {*} tiles
+	 * @param {*} recordDraw
+	 * @returns {FacePair}
+	 */
 	drawFacePairFromGroup(faceGroup, tiles = [], recordDraw = true) {
 		if (!this.canDrawFromFaceGroup(faceGroup, 2)) {
 			return false;
@@ -767,18 +868,6 @@ export default class Engine {
 			face1: this.drawOneOf(faceGroup),
 			face2: this.drawOneOf(faceGroup),
 		};
-	}
-
-	/**
-	 * Draw a pair for a generated pair record, honoring its preferred face group
-	 * if that group is still available.
-	 *
-	 * @private
-	 * @param {GeneratedPairRecord | Tile[]} pairRecord
-	 * @returns {FacePair}
-	 */
-	drawPreferredFacePairForRecord(pairRecord) {
-		return new GameGenerator(this).drawPreferredFacePairForRecord(pairRecord);
 	}
 
 	getFullFaceGroup() {
@@ -839,7 +928,7 @@ export default class Engine {
 	 * include row occupancy at a specific z level so same-level row intersections
 	 * can be scored separately from vertical overlap.
 	 *
-	 * @private
+	 *
 	 */
 	tilePickerHorizontalKey(x, y, z, grid) {
 		return z * grid.height * grid.width + y * grid.width + x;
@@ -849,7 +938,7 @@ export default class Engine {
 	 * Build a flattened key for tile-picker vertical masks. Vertical masks ignore
 	 * z and compare the four quarter spaces a tile occupies in x/y.
 	 *
-	 * @private
+	 *
 	 */
 	tilePickerVerticalKey(x, y, grid) {
 		return y * grid.width + x;
@@ -864,8 +953,8 @@ export default class Engine {
 	 * reference tile. A candidate gets one horizontal intersection for each
 	 * reference row mask it touches.
 	 *
-	 * @private
-	 * @param {Tile[]} referenceTiles
+	 *
+	 * @param {TileKey[]} referenceTiles
 	 * @param {{width: number, height: number, depth: number}} grid
 	 * @returns {NumberSet[]}
 	 */
@@ -894,8 +983,8 @@ export default class Engine {
 	 * Build quarter-space x/y masks for reference tiles. These masks allow
 	 * vertical scoring to detect quarter overlaps between stacked tiles.
 	 *
-	 * @private
-	 * @param {Tile[]} referenceTiles
+	 *
+	 * @param {TileKey[]} referenceTiles
 	 * @param {{width: number, height: number, depth: number}} grid
 	 * @returns {NumberSet[]}
 	 */
@@ -908,8 +997,8 @@ export default class Engine {
 	/**
 	 * Return the occupied same-level spaces for one tile.
 	 *
-	 * @private
-	 * @param {Tile} tile
+	 *
+	 * @param {TileKey} tile
 	 * @param {{width: number, height: number, depth: number}} grid
 	 * @returns {NumberSet}
 	 */
@@ -929,8 +1018,8 @@ export default class Engine {
 	/**
 	 * Return the four x/y quarter spaces for one tile, ignoring z level.
 	 *
-	 * @private
-	 * @param {Tile} tile
+	 *
+	 * @param {TileKey} tile
 	 * @param {{width: number, height: number, depth: number}} grid
 	 * @returns {NumberSet}
 	 */
@@ -950,8 +1039,8 @@ export default class Engine {
 	/**
 	 * Count same-level row intersections with the reference tiles.
 	 *
-	 * @private
-	 * @param {Tile} tile
+	 *
+	 * @param {TileKey} tile
 	 * @param {NumberSet[]} masks
 	 * @param {{width: number, height: number, depth: number}} grid
 	 * @returns {number}
@@ -968,8 +1057,8 @@ export default class Engine {
 	/**
 	 * Count x/y quarter-overlaps with the reference tiles, independent of z.
 	 *
-	 * @private
-	 * @param {Tile} tile
+	 *
+	 * @param {TileKey} tile
 	 * @param {NumberSet[]} masks
 	 * @param {{width: number, height: number, depth: number}} grid
 	 * @returns {number}
@@ -995,7 +1084,7 @@ export default class Engine {
 	 * Rebuild an occupied-space grid from an arbitrary placed-tile state.
 	 * Analysis probes use this instead of mutating `this.usedSpaces`.
 	 *
-	 * @private
+	 *
 	 * @param {NumberSet} placedTiles
 	 * @param {NumberSet} skipTiles
 	 * @returns {Array.<Array.<NumberSet>>}
@@ -1035,8 +1124,8 @@ export default class Engine {
 	/**
 	 * Test whether a tile is open in a simulated board state.
 	 *
-	 * @private
-	 * @param {Tile} tile
+	 *
+	 * @param {TileKey} tile
 	 * @param {NumberSet} placedTiles
 	 * @param {Array.<Array.<NumberSet>>} usedSpaces
 	 * @param {{width: number, height: number, depth: number}} grid
@@ -1073,9 +1162,9 @@ export default class Engine {
 	/**
 	 * Count tiles that would newly become open after removing one tile.
 	 *
-	 * @private
-	 * @param {Tile} tile
-	 * @param {Tile[]} openTiles
+	 *
+	 * @param {TileKey} tile
+	 * @param {TileKey[]} openTiles
 	 * @returns {number}
 	 */
 	countTilesFreedByRemoval(tile, openTiles = this.openTiles) {
@@ -1103,11 +1192,11 @@ export default class Engine {
 	/**
 	 * Return all open tiles in a simulated board state.
 	 *
-	 * @private
+	 *
 	 * @param {NumberSet} placedTiles
 	 * @param {Array.<Array.<NumberSet>>} usedSpaces
 	 * @param {{width: number, height: number, depth: number}} grid
-	 * @returns {Tile[]}
+	 * @returns {TileKey[]}
 	 */
 	getOpenTilesInState(placedTiles, usedSpaces, grid = this.getTilePickerGrid()) {
 		let openTiles = [];
@@ -1136,8 +1225,8 @@ export default class Engine {
 	/**
 	 * Remove a tile from the simulated state used by short-horizon probes.
 	 *
-	 * @private
-	 * @param {Tile} tile
+	 *
+	 * @param {TileKey} tile
 	 * @param {NumberSet} placedTiles
 	 * @param {Array.<Array.<NumberSet>>} usedSpaces
 	 */
@@ -1161,9 +1250,9 @@ export default class Engine {
 	 * intentionally simple; it measures whether a local removal collapses soon,
 	 * not whether the board can be solved optimally.
 	 *
-	 * @private
-	 * @param {Tile[]} openTiles
-	 * @returns {Tile[]}
+	 *
+	 * @param {TileKey[]} openTiles
+	 * @returns {TileKey[]}
 	 */
 	pickShortHorizonProbePair(openTiles) {
 		return openTiles.slice().sort((left, right) => {
@@ -1180,8 +1269,8 @@ export default class Engine {
 	 * candidate higher because it is more likely to create early dead-end
 	 * pressure.
 	 *
-	 * @private
-	 * @param {Tile[]} removedTiles
+	 *
+	 * @param {TileKey[]} removedTiles
 	 * @param {TilePickerOptions} options
 	 * @returns {{enabled: boolean, collapsed: boolean, moves: number, remainingTiles: number, pressure: number}}
 	 */
@@ -1247,8 +1336,8 @@ export default class Engine {
 	 * number of other remaining stack groups. That shape is avoided as a safety
 	 * valve because it can force a terminal stack without enough balancing tiles.
 	 *
-	 * @private
-	 * @param {Tile[]} removedTiles
+	 *
+	 * @param {TileKey[]} removedTiles
 	 * @returns {boolean}
 	 */
 	wouldCreateDominantStack(removedTiles = []) {
@@ -1261,8 +1350,8 @@ export default class Engine {
 	 * `balanceMargin` is other stack groups minus the tallest stack height. A
 	 * negative margin means the tallest stack dominates the remaining board.
 	 *
-	 * @private
-	 * @param {Tile[]} removedTiles
+	 *
+	 * @param {TileKey[]} removedTiles
 	 * @returns {{stackGroupCount: number, maxStackHeight: number, otherStackGroupCount: number, balanceMargin: number, createsDominantStack: boolean}}
 	 */
 	getStackBalanceAfterRemoval(removedTiles = []) {
@@ -1316,8 +1405,8 @@ export default class Engine {
 	 * z choices, reference intersections, stack-balance pressure, and optional
 	 * short-horizon collapses.
 	 *
-	 * @private
-	 * @param {Tile[]} referenceTiles tiles already chosen for the same generated pair/triple
+	 *
+	 * @param {TileKey[]} referenceTiles tiles already chosen for the same generated pair/triple
 	 * @param {TilePickerOptions} options
 	 * @returns {TilePickScore[]}
 	 */
@@ -1327,6 +1416,8 @@ export default class Engine {
 		let horizontalMultiplier = options.horizontalMultiplier ?? 2;
 		let verticalMultiplier = options.verticalMultiplier ?? 4;
 		let highestZOrder = options.highestZOrder ?? grid.depth;
+		let zDenominator = Math.max(1, highestZOrder);
+		let zBias = ((options.difficulty ?? this.difficulty) - 0.5) * 2;
 		let references = new NumberSet(referenceTiles, this.board.count);
 		let candidates = openTiles.filter((tile) => !references.has(tile));
 		let pendingRemovedTiles = options.pendingRemovedTiles || [];
@@ -1382,10 +1473,12 @@ export default class Engine {
 				...pendingRemovedTiles,
 				tile,
 			], options);
-			let zWeight = Math.max(1, highestZOrder - z);
+			let zWeight = (z + 0.5) / zDenominator;
+			let centeredZWeight = (zWeight - 0.5) * 2;
+			let zPressure = Math.max(0.25, 1 + (centeredZWeight * zBias));
 			let weight = freedRank
 				* openPressure
-				* zWeight
+				* zPressure
 				* Math.pow(horizontalMultiplier, horizontalIntersections)
 				* Math.pow(verticalMultiplier, verticalIntersections)
 				* balancePressure
@@ -1399,6 +1492,7 @@ export default class Engine {
 				openPressure,
 				z,
 				zWeight,
+				zPressure,
 				horizontalIntersections,
 				verticalIntersections,
 				balanceMargin: balance.balanceMargin,
@@ -1437,7 +1531,7 @@ export default class Engine {
 	 * Earlier collapses receive more pressure. Non-collapsing probes stay neutral
 	 * so the probe does not dominate normal tile scoring.
 	 *
-	 * @private
+	 *
 	 * @param {number} moves
 	 * @param {boolean} collapsed
 	 * @param {TilePickerOptions} options
@@ -1461,7 +1555,7 @@ export default class Engine {
 	 * multiplier. Harder settings prefer choices that open fewer tiles, keeping
 	 * the board tighter and preserving stack pressure.
 	 *
-	 * @private
+	 *
 	 * @param {number} freedCount
 	 * @param {TilePickerOptions} options
 	 * @returns {number}
@@ -1488,15 +1582,14 @@ export default class Engine {
 	 * Medium difficulty keeps the whole list. Easy and hard shrink the window
 	 * toward opposite ends: easy toward lower scores, hard toward higher scores.
 	 *
-	 * @private
-	 * @param {TilePickScore[]} scoredTiles
+	 * @param {unknown[]} rankings
 	 * @param {TilePickerOptions} options
-	 * @returns {{window: TilePickScore[], start: number, end: number, size: number, count: number, difficulty: number}}
+	 * @returns {{window: unknown[], start: number, end: number, size: number, count: number, difficulty: number}}
 	 */
-	getDifficultyWindowDetails(scoredTiles, options = {}) {
+	getRankedWindow(rankings, options = {}) {
 		let difficulty = Math.max(0, Math.min(1, options.difficulty ?? this.difficulty));
 		let minWindowRatio = Math.max(0, Math.min(1, options.minWindowRatio ?? 0.25));
-		let count = scoredTiles.length;
+		let count = rankings.length;
 
 		if (count === 0) {
 			return {
@@ -1515,7 +1608,7 @@ export default class Engine {
 		let start = Math.round((count - windowSize) * difficulty);
 
 		return {
-			window: scoredTiles.slice(start, start + windowSize),
+			window: rankings.slice(start, start + windowSize),
 			start,
 			end: start + windowSize,
 			size: windowSize,
@@ -1527,7 +1620,6 @@ export default class Engine {
 	/**
 	 * Accumulate picker telemetry for the analysis CLI.
 	 *
-	 * @private
 	 * @param {TilePickScore} selected
 	 * @param {TilePickScore[]} scoredTiles
 	 * @param {{start: number, end: number, size: number}} windowDetails
@@ -1569,8 +1661,8 @@ export default class Engine {
 	/**
 	 * Score open tiles and pick one tile from the difficulty window.
 	 *
-	 * @private
-	 * @param {Tile[]} referenceTiles
+	 *
+	 * @param {TileKey[]} referenceTiles
 	 * @param {TilePickerOptions} options
 	 * @returns {TilePickScore | false}
 	 */
@@ -1581,7 +1673,7 @@ export default class Engine {
 	}
 
 	pickWeightedTileFromScores(scoredTiles, options = {}) {
-		let windowDetails = this.getDifficultyWindowDetails(scoredTiles, options);
+		let windowDetails = this.getRankedWindow(scoredTiles, options);
 		let window = windowDetails.window;
 
 		if (window.length === 0) {
@@ -1612,9 +1704,9 @@ export default class Engine {
 	/**
 	 * Call this method to determine if the two tiles match and are playable.
 	 *
-	 * @private
-	 * @param {Tile} tile1
-	 * @param {Tile} tile2
+	 *
+	 * @param {TileKey} tile1
+	 * @param {TileKey} tile2
 	 * @return {Boolean} true if the two tiles match and can be played
 	 */
 	isPlayablePair(tile1, tile2) {
@@ -1627,9 +1719,9 @@ export default class Engine {
 	 * into the board object. the board already records where they will be
 	 * placed.
 	 *
-	 * @private
-	 * @param {Tile} tile1 the first tile of a pair
-	 * @param {Tile} tile2 the second tile of the pair.
+	 *
+	 * @param {TileKey} tile1 the first tile of a pair
+	 * @param {TileKey} tile2 the second tile of the pair.
 	 *
 	 * @fires addTile
 	 */
@@ -1644,9 +1736,9 @@ export default class Engine {
 	/**
 	 * Call this method to remove two tiles from the board.
 	 *
-	 * @private
-	 * @param {Tile} tile1 first tile of the pair
-	 * @param {Tile} tile2 second tile of the pair
+	 *
+	 * @param {TileKey} tile1 first tile of the pair
+	 * @param {TileKey} tile2 second tile of the pair
 	 *
 	 * @fires removeTile
 	 */
@@ -1661,7 +1753,7 @@ export default class Engine {
 	/**
 	 * Call this method to fire the updateState event with the latest state.
 	 *
-	 * @private
+	 *
 	 * @fires updateState
 	 */
 	sendState() {
@@ -1682,7 +1774,7 @@ export default class Engine {
 	 * Call this method to check if there are any more tiles left to play. It
 	 * will always recalculate all the playable pairs
 	 *
-	 * @private
+	 *
 	 * @returns {Boolean} true if there are stiull tiles to play, false
 	 * 		otherwise
 	 */
@@ -1696,8 +1788,8 @@ export default class Engine {
 	 * done for all the tiles on the board, or only in referece to a specfic
 	 * tile when looking for hints.
 	 *
-	 * @private
-	 * @param {Tile} [selectedTile] if set, it will only find matches against
+	 *
+	 * @param {TileKey} [selectedTile] if set, it will only find matches against
 	 * 		the given tile;
 	 *
 	 * @returns {Array.<TilePair>} pairs of tiles that can be played.
@@ -1738,7 +1830,7 @@ export default class Engine {
 	 * Call this method to determine if the player can redo a previously undone
 	 * move
 	 *
-	 * @private
+	 *
 	 * @returns {Boolean} true if there is a move to redo
 	 */
 	canRedo() {
@@ -1748,7 +1840,7 @@ export default class Engine {
 	/**
 	 * Call this method to determine if there is a move to be undone
 	 *
-	 * @private
+	 *
 	 * @returns {Boolean} true if there is
 	 */
 	canUndo() {
@@ -1759,7 +1851,7 @@ export default class Engine {
 	/**
 	 * Call this method to determine of the given faces are in the same FaceSet
 	 *
-	 * @private
+	 *
 	 * @param {Face} face1
 	 * @param {Face} face2
 	 *
@@ -1776,9 +1868,9 @@ export default class Engine {
 	 * Call this method to remove two tiles from the board. It is assumed that
 	 * all the appropriate matching has already been done.
 	 *
-	 * @private
-	 * @param {Tile} tile1
-	 * @param {Tile} tile2
+	 *
+	 * @param {TileKey} tile1
+	 * @param {TileKey} tile2
 	 */
 	playPair(tile1, tile2) {
 		// Remove them from the grid
@@ -1788,6 +1880,7 @@ export default class Engine {
 		this.undoStack.push(tile1);
 		this.undoStack.push(tile2);
 		this.redoStack = [];
+		this.recordAction({type: "play-pair", tile1, tile2});
 
 		this.tileCount -= 2;
 	}
@@ -1862,8 +1955,8 @@ export default class Engine {
 	/**
 	 * Call this method if the the two tiles form a match and are playable
 	 *
-	 * @param {Tile} tile1
-	 * @param {Tile} tile2
+	 * @param {TileKey} tile1
+	 * @param {TileKey} tile2
 	 * @returns {Boolean} true if the tiles match and can be played
 	 */
 	canPlay(tile1, tile2) {
@@ -1875,8 +1968,8 @@ export default class Engine {
 	 * all the appropriate matching has already been done.
 	 *
 	 * @fires updateState
-	 * @param {Tile} tile1
-	 * @param {Tile} tile2
+	 * @param {TileKey} tile1
+	 * @param {TileKey} tile2
 	 */
 	playTiles(tile1, tile2) {
 		this.playPair(tile1, tile2);
@@ -1900,6 +1993,7 @@ export default class Engine {
 		this.redoStack.push(tile2);
 
 		this.addPair(tile1, tile2);
+		this.recordAction({type: "undo-pair", tile1, tile2});
 
 		this.tileCount += 2;
 		this.sendState();
@@ -1925,6 +2019,7 @@ export default class Engine {
 		this.undoStack.push(tile2);
 
 		this.removePair(tile1, tile2);
+		this.recordAction({type: "redo-pair", tile1, tile2});
 
 		this.tileCount -= 2;
 		this.sendState();
@@ -2054,7 +2149,7 @@ export default class Engine {
 	 * that can be played. If you pass it a tile it will only find tiles that
 	 * match that one.
 	 *
-	 * @param {Tile} [tile] the option tile to get hints for
+	 * @param {TileKey} [tile] the option tile to get hints for
 	 * @returns {Array.<TilePair>} the playable tiles. Array will be empty if
 	 * 		there are none.
 	 */

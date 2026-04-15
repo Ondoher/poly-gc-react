@@ -1,5 +1,8 @@
 import React from "react";
 import CssRect from "./CssRect.jsx";
+import RaisedButton from "./RaisedButton.jsx";
+
+const ENABLE_DEBUG_LOSE_BUTTON = false;
 
 export default class GameNumberControl extends React.Component {
 	constructor(props) {
@@ -10,7 +13,7 @@ export default class GameNumberControl extends React.Component {
 		};
 
 		if (props.delegator) {
-			props.delegator.delegateOutbound(this, ['play']);
+			props.delegator.delegateOutbound(this, ['play', 'solve']);
 		}
 	}
 
@@ -20,6 +23,21 @@ export default class GameNumberControl extends React.Component {
 		}
 
 		return String(boardNbr);
+	}
+
+	formatDifficultyLabel() {
+		var difficulty = this.props.difficulty;
+		var difficulties = this.props.difficulties || {};
+
+		if (difficulty && difficulties[difficulty]?.label) {
+			return difficulties[difficulty].label;
+		}
+
+		if (!difficulty) {
+			return '';
+		}
+
+		return String(difficulty).charAt(0).toUpperCase() + String(difficulty).slice(1);
 	}
 
 	componentDidUpdate(prevProps) {
@@ -54,33 +72,73 @@ export default class GameNumberControl extends React.Component {
 		}
 	}
 
+	onSolve() {
+		if (this.props.onSolve) {
+			this.props.onSolve();
+			return;
+		}
+
+		if (this.solve) {
+			this.solve();
+		}
+	}
+
+	onLoseDebug() {
+		if (this.props.onLoseDebug) {
+			this.props.onLoseDebug();
+		}
+	}
+
 	render() {
+		var difficultyLabel = this.formatDifficultyLabel();
+
 		return (
-			<CssRect
-				className="mj-game-number-wrap mj-game-number-control"
-				size="small"
-				variant="inset"
-			>
-				<input
-					className="mj-text-edit-control-input mj-game-number-input"
-					type="text"
-					inputMode="numeric"
-					pattern="[0-9]*"
-					placeholder="Game #"
-					aria-label="Game number"
-					value={this.state.boardNbr}
-					onChange={this.onChange.bind(this)}
-					onKeyDown={this.onKeyDown.bind(this)}
-				/>
-				<button
-					type="button"
-					className="mj-shuffle-button-control mj-css-rect-separator-left"
-					aria-label="Shuffle board"
-					onClick={this.onShuffle.bind(this)}
+			<div className="mj-game-number-stack">
+				{difficultyLabel ? (
+					<div className="mj-game-difficulty-label" aria-label={`Difficulty ${difficultyLabel}`}>
+						{difficultyLabel}
+					</div>
+				) : null}
+				<CssRect
+					className="mj-game-number-wrap mj-game-number-control"
+					size="small"
+					variant="inset"
 				>
-					<span className="mj-shuffle-button-icon"></span>
-				</button>
-			</CssRect>
+					<input
+						className="mj-text-edit-control-input mj-game-number-input"
+						type="text"
+						inputMode="numeric"
+						pattern="[0-9]*"
+						placeholder="Game #"
+						aria-label="Game number"
+						value={this.state.boardNbr}
+						onChange={this.onChange.bind(this)}
+						onKeyDown={this.onKeyDown.bind(this)}
+					/>
+					<button
+						type="button"
+						className="mj-shuffle-button-control mj-css-rect-separator-left"
+						aria-label="Shuffle board"
+						onClick={this.onShuffle.bind(this)}
+					>
+						<span className="mj-shuffle-button-icon"></span>
+					</button>
+				</CssRect>
+				<RaisedButton
+					className="mj-game-number-solve-button"
+					onClick={this.onSolve.bind(this)}
+				>
+					Solve
+				</RaisedButton>
+				{ENABLE_DEBUG_LOSE_BUTTON ? (
+					<RaisedButton
+						className="mj-game-number-lose-button"
+						onClick={this.onLoseDebug.bind(this)}
+					>
+						Lose
+					</RaisedButton>
+				) : null}
+			</div>
 		)
 	}
 }

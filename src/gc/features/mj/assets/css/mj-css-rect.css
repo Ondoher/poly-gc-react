@@ -7,7 +7,7 @@
     position: relative;
     display: block;
     box-sizing: border-box;
-    border: 1px solid var(--mj-css-rect-ridge-light);;
+    border: 1px solid var(--mj-css-rect-ridge-light);
     border-right-color: var(--mj-css-rect-ridge-dark);
     border-bottom-color: var(--mj-css-rect-ridge-dark);
     background: transparent;

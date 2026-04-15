@@ -6,6 +6,8 @@
     --mj-raised-button-shadow: rgba(88, 26, 10, 0.34);
     --mj-raised-button-face-top: rgba(175, 50, 30, 0.76);
     --mj-raised-button-face-bottom: rgba(151, 41, 24, 0.82);
+    --mj-raised-button-face-ring: rgba(214, 145, 40, 0.72);
+    --mj-raised-button-label-color: #f4ca57;
     position: relative;
     min-width: 108px;
     min-height: 38px;
@@ -31,7 +33,8 @@
     left: 0;
     background:
         linear-gradient(180deg, var(--mj-raised-button-face-top), var(--mj-raised-button-face-bottom));
-    box-shadow: inset 0 0 0 2px rgba(214, 145, 40, 0.72);
+    box-shadow:
+        inset 0 0 0 2px var(--mj-raised-button-face-ring);
 }
 
 .mj-raised-button.mj-css-rect {
@@ -43,16 +46,19 @@
 }
 
 .mj-raised-button.is-selected {
-    --mj-raised-button-face-top: rgba(194, 68, 39, 0.84);
-    --mj-raised-button-face-bottom: rgba(166, 49, 28, 0.88);
+    --mj-css-rect-border-color: rgba(255, 230, 148, 0.96);
+    --mj-raised-button-face-top: rgba(214, 86, 44, 0.96);
+    --mj-raised-button-face-bottom: rgba(182, 58, 29, 0.98);
+    --mj-raised-button-face-ring: rgba(255, 231, 154, 0.94);
+    --mj-raised-button-label-color: #fff3bf;
 }
 
 .mj-raised-button-label {
     position: relative;
     z-index: 2;
     display: inline-block;
-    color: #f4ca57;
-    font-family: "Merienda", "Trebuchet MS", serif;
+    color: var(--mj-raised-button-label-color);
+    font-family: var(--mj-ui-font-family);
     font-size: 16px;
     font-style: italic;
     font-weight: bold;
@@ -61,6 +67,13 @@
     text-align: center;
     text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
     transform: translateY(-1px);
+}
+
+.mj-raised-button.is-selected .mj-raised-button-face {
+    box-shadow:
+        inset 0 0 0 2px var(--mj-raised-button-face-ring),
+        inset 0 0 0 4px rgba(121, 28, 16, 0.34),
+        0 0 10px rgba(255, 213, 104, 0.16);
 }
 
 .mj-raised-button:hover {

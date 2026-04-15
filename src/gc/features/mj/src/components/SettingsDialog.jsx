@@ -1,12 +1,12 @@
 import React from "react";
-import CssRect from "./CssRect.jsx";
+import ModalDialog from "./ModalDialog.jsx";
 import SettingsButton from "./SettingsButton.jsx";
 import SettingsSelector from "./SettingsSelector.jsx";
 import SettingsPreview from "./SettingsPreview.jsx";
 
 const TABS = [
-	{id: "layout", label: "Layout"},
 	{id: "difficulty", label: "Difficulty"},
+	{id: "layout", label: "Layout"},
 	{id: "tileSize", label: "Tile Size"},
 	{id: "tileStyle", label: "Tile Style"},
 ];
@@ -16,11 +16,12 @@ export default class SettingsDialog extends React.Component {
 		super(props);
 
 		this.state = {
-			activeTab: "layout",
+			activeTab: "difficulty",
 			draftLayout: props.layout,
 			draftDifficulty: props.difficulty,
 			draftTileset: props.tileset,
 			draftTilesize: props.tilesize,
+			draftTelemetryConsent: props.telemetryConsent === true,
 		};
 	}
 
@@ -46,11 +47,12 @@ export default class SettingsDialog extends React.Component {
 
 	resetDraftState() {
 		this.setState({
-			activeTab: "layout",
+			activeTab: "difficulty",
 			draftLayout: this.props.layout,
 			draftDifficulty: this.props.difficulty,
 			draftTileset: this.props.tileset,
 			draftTilesize: this.getValidDraftTilesize(this.props.tilesize),
+			draftTelemetryConsent: this.props.telemetryConsent === true,
 		});
 	}
 
@@ -88,8 +90,24 @@ export default class SettingsDialog extends React.Component {
 		});
 	}
 
+	onToggleTelemetryConsent() {
+		this.setState(function(prevState) {
+			return {
+				draftTelemetryConsent: !prevState.draftTelemetryConsent,
+			};
+		});
+	}
+
 	getAllowedTilesizes() {
 		if (Array.isArray(this.props.allowedTilesizes)) {
+			if (this.props.allowedTilesizes.length > 0) {
+				return this.props.allowedTilesizes;
+			}
+
+			if (this.props.tilesizes?.tiny) {
+				return ["tiny"];
+			}
+
 			return this.props.allowedTilesizes;
 		}
 
@@ -119,6 +137,8 @@ export default class SettingsDialog extends React.Component {
 		var difficultyChanged = this.state.draftDifficulty !== this.props.difficulty;
 		var tilesetChanged = this.state.draftTileset !== this.props.tileset;
 		var tilesizeChanged = this.state.draftTilesize !== this.props.tilesize;
+		var telemetryConsentChanged =
+			this.state.draftTelemetryConsent !== (this.props.telemetryConsent === true);
 		var shouldRegenerateBoard = layoutChanged || difficultyChanged;
 
 		if (tilesetChanged && this.props.onSelectTileset) {
@@ -135,6 +155,10 @@ export default class SettingsDialog extends React.Component {
 
 		if (difficultyChanged && this.props.onSelectDifficulty) {
 			this.props.onSelectDifficulty(this.state.draftDifficulty);
+		}
+
+		if (telemetryConsentChanged && this.props.onSetTelemetryConsent) {
+			this.props.onSetTelemetryConsent(this.state.draftTelemetryConsent);
 		}
 
 		if (shouldRegenerateBoard && this.props.onPlay) {
@@ -232,68 +256,82 @@ export default class SettingsDialog extends React.Component {
 		}, this);
 	}
 
+	renderTelemetrySection() {
+		return (
+			<div className="mj-settings-dialog-support">
+				<button
+					type="button"
+					className="mj-settings-dialog-support-checkbox"
+					role="checkbox"
+					aria-checked={this.state.draftTelemetryConsent ? "true" : "false"}
+					onClick={this.onToggleTelemetryConsent.bind(this)}
+				>
+					<span
+						className={
+							this.state.draftTelemetryConsent
+								? "mj-settings-dialog-support-checkbox-box is-checked"
+								: "mj-settings-dialog-support-checkbox-box"
+						}
+						aria-hidden="true"
+					>
+						<span className="mj-settings-dialog-support-checkbox-mark">
+							✓
+						</span>
+					</span>
+					<span className="mj-settings-dialog-support-checkbox-copy">
+						Help us make this game better by sending anonymous play data
+					</span>
+				</button>
+			</div>
+		);
+	}
+
 	render() {
 		if (!this.props.open) return null;
 
 		return (
-			<div
+			<ModalDialog
+				open={this.props.open}
 				className="mj-settings-dialog"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="mj-settings-dialog-title"
+				panelClassName="mj-settings-dialog-panel"
+				bodyClassName="mj-settings-dialog-body"
+				title="Settings"
+				titleId="mj-settings-dialog-title"
+				closeLabel="Close settings"
+				onClose={this.props.onClose}
+				actions={
+					<SettingsButton
+						className="mj-settings-dialog-confirm"
+						selected={false}
+						onClick={this.onConfirm.bind(this)}
+					>
+						Confirm
+					</SettingsButton>
+				}
 			>
-				<div className="mj-settings-dialog-overlay"></div>
-				<CssRect
-					className="mj-settings-dialog-panel"
-					size="large"
-					variant="inset"
-				>
-					<button
-						type="button"
-						className="mj-settings-dialog-close"
-						aria-label="Close settings"
-						onClick={this.props.onClose}
-					>
-						X
-					</button>
-					<h2
-						id="mj-settings-dialog-title"
-						className="mj-settings-dialog-title"
-					>
-						Settings
-					</h2>
-					<div className="mj-settings-dialog-tabs">
-						{this.renderTabs()}
-					</div>
-					<div className="mj-settings-dialog-body">
-						<div className="mj-settings-dialog-content">
+				<div className="mj-settings-dialog-tabs">
+					{this.renderTabs()}
+				</div>
+				<div className="mj-settings-dialog-content">
 							<SettingsSelector
 								className="mj-settings-dialog-selector"
 								options={this.getActiveOptions()}
+								pinSelectedToTop={true}
+								pinSelectedMinimumOptions={6}
 								emptyLabel={this.state.activeTab === "tileSize" ? "No sizes fit" : undefined}
 								selectedValue={this.getSelectedValue()}
 								onSelect={this.onSelectOption.bind(this)}
 							/>
-							<SettingsPreview
-								layout={this.state.draftLayout}
-								difficulty={this.state.draftDifficulty}
-								maxTileSize={this.props.maxTileSize}
-								tilesize={this.state.draftTilesize || this.props.tilesize}
-								tileset={this.state.draftTileset}
-							/>
-						</div>
-					</div>
-					<div className="mj-settings-dialog-actions">
-						<SettingsButton
-							className="mj-settings-dialog-confirm"
-							selected={false}
-							onClick={this.onConfirm.bind(this)}
-						>
-							Confirm
-						</SettingsButton>
-					</div>
-				</CssRect>
-			</div>
+					<SettingsPreview
+						layout={this.state.draftLayout}
+						difficulty={this.state.draftDifficulty}
+						maxTileSize={this.props.maxTileSize}
+						tilesize={this.state.draftTilesize || this.props.tilesize}
+						tileset={this.state.draftTileset}
+					/>
+				</div>
+				{this.renderTelemetrySection()}
+			</ModalDialog>
 		);
 	}
 }

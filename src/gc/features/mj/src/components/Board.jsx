@@ -1,12 +1,20 @@
 import {Fireworks} from '@fireworks-js/react';
+import { registry } from "@polylith/core";
 import React from "react";
 import Page from 'components/Page.jsx'
 import Canvas from './Canvas.jsx';
 import CssRect from './CssRect.jsx';
 import GameNumberControl from './GameNumberControl.jsx';
 import RightHud from './RightHud.jsx';
+import FeedbackDialog from './FeedbackDialog.jsx';
+import SolveDialog from './SolveDialog.jsx';
+import StartupConsentDialog from './StartupConsentDialog.jsx';
 import SettingsDialog from './SettingsDialog.jsx';
 import Toast from './Toast.jsx';
+import {
+	readMjPreferencesCookie,
+	writeMjPreferencesCookie,
+} from "../utils/preferencesCookies.js";
 
 const DEFAULT_TILESET = {
 	name : 'Bone Tiles',
@@ -20,6 +28,7 @@ const DEFAULT_TILESET = {
 export default class Board extends React.Component {
 	constructor (props) {
 		super(props);
+		var persistedPreferences = this.getPersistedPreferences(props);
 
 		if (props.delegator) {
 			props.delegator.delegateInbound(this, [
@@ -29,18 +38,18 @@ export default class Board extends React.Component {
 			);
 
 			props.delegator.delegateOutbound(this, [
-				'select', 'initialized', 'play', 'undo', 'redo', 'hint', 'pause', 'peek',
+				'select', 'initialized', 'play', 'solve', 'undo', 'redo', 'hint', 'pause', 'peek',
 				'selectLayout', 'selectTileset', 'selectTilesize', 'selectDifficulty'
 			]);
 		}
 
 		this.state = {
-			layout: this.props.layout,
-			difficulty: this.props.difficulty,
-			tileset: this.props.tilesets[this.props.tileset],
-			tilesetKey: this.props.tileset,
-			tilesize: this.props.tilesizes[this.props.tilesize],
-			tilesizeKey: this.props.tilesize,
+			layout: persistedPreferences.layout,
+			difficulty: persistedPreferences.difficulty,
+			tileset: this.props.tilesets[persistedPreferences.tilesetKey],
+			tilesetKey: persistedPreferences.tilesetKey,
+			tilesize: this.props.tilesizes[persistedPreferences.tilesizeKey],
+			tilesizeKey: persistedPreferences.tilesizeKey,
 			allowedTilesizes: this.props.allowedTilesizes || Object.keys(this.props.tilesizes || {}),
 			maxTileSize: this.props.maxTileSize || this.props.tilesize,
 			isBelowMinimum: Boolean(this.props.isBelowMinimum),
@@ -49,7 +58,11 @@ export default class Board extends React.Component {
 			message: '',
 			shortMessage: '',
 			shortMessageKey: 0,
+			startupConsentOpen: true,
+			telemetryConsent: persistedPreferences.telemetryConsent,
 			settingsOpen: false,
+			feedbackOpen: false,
+			solveOpen: false,
 			canUndo: false,
 			canRedo: false,
 			isPeeking: false,
@@ -59,8 +72,87 @@ export default class Board extends React.Component {
 			lost: false,
 			boardNbr: this.props.boardNbr,
 		}
+		this.persistedPreferences = persistedPreferences;
+		this.trackingModel = registry.subscribe("mj:tracking-model");
+		this.feedbackModel = registry.subscribe("mj:feedback-model");
 		this.tiles = [];
+		this.hasStartedGame = false;
 		this.onWindowKeyDown = this.onWindowKeyDown.bind(this);
+	}
+
+	getPersistedPreferences(props) {
+		var persistedPreferences = readMjPreferencesCookie() || {};
+		var allowedTilesizes = props.allowedTilesizes || Object.keys(props.tilesizes || {});
+		var persistedLayout = persistedPreferences.layout;
+		var persistedDifficulty = persistedPreferences.difficulty;
+		var persistedTileset = persistedPreferences.tilesetKey;
+		var persistedTilesize = persistedPreferences.tilesizeKey;
+
+		if (!props.layouts || !props.layouts[persistedLayout]) {
+			persistedLayout = props.layout;
+		}
+
+		if (!props.difficulties || !props.difficulties[persistedDifficulty]) {
+			persistedDifficulty = props.difficulty;
+		}
+
+		if (!props.tilesets || !props.tilesets[persistedTileset]) {
+			persistedTileset = props.tileset;
+		}
+
+		if (!persistedTilesize || !allowedTilesizes.includes(persistedTilesize)) {
+			persistedTilesize = props.tilesize;
+		}
+
+		return {
+			layout: persistedLayout,
+			difficulty: persistedDifficulty,
+			tilesetKey: persistedTileset,
+			tilesizeKey: persistedTilesize,
+			telemetryConsent: persistedPreferences.telemetryConsent === true,
+			hasViewedStartupConsent: persistedPreferences.hasViewedStartupConsent === true,
+		};
+	}
+
+	applyPersistedSelections() {
+		if (
+			this.persistedPreferences.layout !== this.props.layout &&
+			this.selectLayout
+		) {
+			this.selectLayout(this.persistedPreferences.layout);
+		}
+
+		if (
+			this.persistedPreferences.difficulty !== this.props.difficulty &&
+			this.selectDifficulty
+		) {
+			this.selectDifficulty(this.persistedPreferences.difficulty);
+		}
+
+		if (
+			this.persistedPreferences.tilesetKey !== this.props.tileset &&
+			this.selectTileset
+		) {
+			this.selectTileset(this.persistedPreferences.tilesetKey);
+		}
+
+		if (
+			this.persistedPreferences.tilesizeKey !== this.props.tilesize &&
+			this.selectTilesize
+		) {
+			this.selectTilesize(this.persistedPreferences.tilesizeKey);
+		}
+	}
+
+	writePersistedPreferences() {
+		writeMjPreferencesCookie({
+			hasViewedStartupConsent: !this.state.startupConsentOpen,
+			telemetryConsent: this.state.telemetryConsent === true,
+			layout: this.state.layout,
+			difficulty: this.state.difficulty,
+			tilesetKey: this.state.tilesetKey,
+			tilesizeKey: this.state.tilesizeKey,
+		});
 	}
 
 	onClickTile (tile) {
@@ -75,6 +167,20 @@ export default class Board extends React.Component {
 
 	onRestart() {
 		this.onPlay(this.state.boardNbr);
+	}
+
+	onSolve() {
+		this.setState({
+			solveOpen: true,
+		});
+	}
+
+	onLoseDebug() {
+		this.setState({
+			lost: true,
+			won: false,
+			celebrationDismissed: false,
+		});
 	}
 
 	onShuffle() {
@@ -154,8 +260,58 @@ export default class Board extends React.Component {
 	}
 
 	onSettings() {
+		if (this.state.startupConsentOpen) {
+			return;
+		}
+
 		this.setState({
 			settingsOpen: true,
+		});
+	}
+
+	onFeedback() {
+		if (this.state.startupConsentOpen) {
+			return;
+		}
+
+		this.setState({
+			feedbackOpen: true,
+		});
+	}
+
+	onConfirmStartupConsent(selection) {
+		var difficultyChanged = selection.difficulty !== this.state.difficulty;
+
+		if (difficultyChanged) {
+			this.onSelectDifficulty(selection.difficulty);
+		}
+
+		this.setState({
+			startupConsentOpen: false,
+			telemetryConsent: selection.telemetryConsent === true,
+		}, function() {
+			if (!this.hasStartedGame) {
+				this.hasStartedGame = true;
+				this.initialized();
+				return;
+			}
+
+			if (difficultyChanged) {
+				this.onPlay(-1);
+			}
+		}.bind(this));
+	}
+
+	onSetTelemetryConsent(telemetryConsent) {
+		this.setState({
+			telemetryConsent,
+		});
+	}
+
+	onCloseStartupConsent() {
+		this.onConfirmStartupConsent({
+			telemetryConsent: false,
+			difficulty: this.state.difficulty,
 		});
 	}
 
@@ -163,10 +319,32 @@ export default class Board extends React.Component {
 		this.setState({
 			celebrationDismissed: true,
 		});
+
+		this.onPlay(-1);
+	}
+
+	onDismissLost() {
+		this.setState({
+			lost: false,
+		});
+
+		this.onPlay(-1);
 	}
 
 	onWindowKeyDown(evt) {
 		if (evt.key !== 'Escape') return;
+		if (this.state.startupConsentOpen) {
+			this.onCloseStartupConsent();
+			return;
+		}
+		if (this.state.feedbackOpen) {
+			this.onCloseFeedbackDialog();
+			return;
+		}
+		if (this.state.solveOpen) {
+			this.onCloseSolveDialog();
+			return;
+		}
 		if (this.state.settingsOpen) {
 			this.onCloseSettingsDialog();
 			return;
@@ -180,6 +358,63 @@ export default class Board extends React.Component {
 		this.setState({
 			settingsOpen: false,
 		});
+	}
+
+	onCloseFeedbackDialog() {
+		this.setState({
+			feedbackOpen: false,
+		});
+	}
+
+	onCloseSolveDialog() {
+		this.setState({
+			solveOpen: false,
+		});
+	}
+
+	async onSubmitFeedback(feedback) {
+		var difficulty = this.props.difficulties[this.state.difficulty];
+		var layout = this.props.layouts[this.state.layout];
+		var canIncludeContext = Boolean(
+			this.trackingModel &&
+			this.trackingModel.hasFeedbackContext &&
+			this.trackingModel.hasFeedbackContext()
+		);
+		var payload = {
+			boardNbr: Number.isFinite(Number(this.state.boardNbr))
+				? Number(this.state.boardNbr)
+				: null,
+			difficultyLabel: difficulty ? difficulty.label : this.state.difficulty,
+			layoutTitle: layout ? layout.title : this.state.layout,
+			includeContext: canIncludeContext && feedback.includeContext === true,
+			skillLevel: feedback.skillLevel || "",
+			difficultyFeeling: feedback.difficultyFeeling || "",
+			fairnessFeeling: feedback.fairnessFeeling || "",
+			comment: feedback.comment || "",
+		};
+
+		if (
+			payload.includeContext &&
+			this.trackingModel &&
+			this.trackingModel.getFeedbackContextSnapshot
+		) {
+			payload.context = this.trackingModel.getFeedbackContextSnapshot();
+		}
+
+		if (!this.feedbackModel || !this.feedbackModel.submit) {
+			this.setShortMessage("Feedback is unavailable right now.");
+			return;
+		}
+
+		let result = await this.feedbackModel.submit(payload);
+
+		if (result && result.success) {
+			this.setShortMessage("Thanks for the feedback.");
+			this.onCloseFeedbackDialog();
+			return;
+		}
+
+		this.setShortMessage("Unable to send feedback right now.");
 	}
 
 	setWon(on) {
@@ -253,20 +488,37 @@ export default class Board extends React.Component {
 
 	componentDidMount() {
 		window.addEventListener('keydown', this.onWindowKeyDown);
-		this.initialized();
+		this.applyPersistedSelections();
 	}
 
 	componentWillUnmount() {
 		window.removeEventListener('keydown', this.onWindowKeyDown);
 	}
 
-	componentDidUpdate() {
+	componentDidUpdate(prevProps, prevState) {
+		if (
+			prevState.startupConsentOpen !== this.state.startupConsentOpen ||
+			prevState.telemetryConsent !== this.state.telemetryConsent ||
+			prevState.layout !== this.state.layout ||
+			prevState.difficulty !== this.state.difficulty ||
+			prevState.tilesetKey !== this.state.tilesetKey ||
+			prevState.tilesizeKey !== this.state.tilesizeKey
+		) {
+			this.writePersistedPreferences();
+		}
 	}
 
 	renderLost() {
 		if (!this.state.lost) return;
 
-		return <div className="mj-gameover" />;
+		return (
+			<Toast
+				modal={true}
+				visible={true}
+				message="No more moves. Game over."
+				onClose={this.onDismissLost.bind(this)}
+			/>
+		);
 	}
 
 	renderFireworks() {
@@ -319,7 +571,11 @@ export default class Board extends React.Component {
 					<GameNumberControl
 						delegator={this.props.delegator.newDelegator()}
 						boardNbr={this.state.boardNbr}
+						difficulty={this.state.difficulty}
+						difficulties={this.props.difficulties}
 						onShuffle={this.onShuffle.bind(this)}
+						onSolve={this.onSolve.bind(this)}
+						onLoseDebug={this.onLoseDebug.bind(this)}
 					/>
 				</div>
 				{this.renderMain(canvasClassName)}
@@ -338,6 +594,7 @@ export default class Board extends React.Component {
 					onPause={this.onPause.bind(this)}
 					onPeek={this.onPeek.bind(this)}
 					onSettings={this.onSettings.bind(this)}
+					onFeedback={this.onFeedback.bind(this)}
 				/>
 			</div>
 		)
@@ -373,6 +630,19 @@ export default class Board extends React.Component {
 		);
 	}
 
+	renderStartupConsentDialog() {
+		return (
+			<StartupConsentDialog
+				open={this.state.startupConsentOpen}
+				difficulty={this.state.difficulty}
+				difficulties={this.props.difficulties}
+				telemetryConsent={this.state.telemetryConsent}
+				onClose={this.onCloseStartupConsent.bind(this)}
+				onConfirm={this.onConfirmStartupConsent.bind(this)}
+			/>
+		);
+	}
+
 	renderSettingsDialog() {
 		return (
 			<SettingsDialog
@@ -387,12 +657,55 @@ export default class Board extends React.Component {
 				tilesizes={this.props.tilesizes}
 				allowedTilesizes={this.state.allowedTilesizes}
 				maxTileSize={this.state.maxTileSize}
+				telemetryConsent={this.state.telemetryConsent}
 				onSelectLayout={this.onSelectLayout.bind(this)}
 				onSelectDifficulty={this.onSelectDifficulty.bind(this)}
 				onSelectTileset={this.onSelectTileset.bind(this)}
 				onSelectTilesize={this.onSelectTilesize.bind(this)}
+				onSetTelemetryConsent={this.onSetTelemetryConsent.bind(this)}
 				onPlay={this.onPlay.bind(this)}
 				onClose={this.onCloseSettingsDialog.bind(this)}
+			/>
+		);
+	}
+
+	renderFeedbackDialog() {
+		var difficulty = this.props.difficulties[this.state.difficulty];
+		var layout = this.props.layouts[this.state.layout];
+		var canIncludeContext = Boolean(
+			this.trackingModel &&
+			this.trackingModel.hasFeedbackContext &&
+			this.trackingModel.hasFeedbackContext()
+		);
+
+		return (
+			<FeedbackDialog
+				open={this.state.feedbackOpen}
+				boardNbr={this.state.boardNbr}
+				difficultyLabel={difficulty ? difficulty.label : this.state.difficulty}
+				layoutTitle={layout ? layout.title : this.state.layout}
+				canIncludeContext={canIncludeContext}
+				onClose={this.onCloseFeedbackDialog.bind(this)}
+				onSubmit={this.onSubmitFeedback.bind(this)}
+			/>
+		);
+	}
+
+	renderSolveDialog() {
+		var difficulty = this.props.difficulties[this.state.difficulty];
+		var layout = this.props.layouts[this.state.layout];
+		var boardClassName = `${this.state.tileset.class}-tiny tiny-face tiny-size`;
+
+		return (
+			<SolveDialog
+				open={this.state.solveOpen}
+				boardNbr={this.state.boardNbr}
+				layout={this.state.layout}
+				layoutTitle={layout ? layout.title : this.state.layout}
+				difficulty={this.state.difficulty}
+				difficultyLabel={difficulty ? difficulty.label : this.state.difficulty}
+				boardClassName={boardClassName}
+				onClose={this.onCloseSolveDialog.bind(this)}
 			/>
 		);
 	}
@@ -427,8 +740,11 @@ export default class Board extends React.Component {
 					{this.renderFireworks()}
 					{this.renderWinAction()}
 					{this.renderLost()}
-					{this.renderSettingsDialog()}
 				</div>
+				{this.renderStartupConsentDialog()}
+				{this.renderSettingsDialog()}
+				{this.renderFeedbackDialog()}
+				{this.renderSolveDialog()}
 			</Page>
 		)
 	}

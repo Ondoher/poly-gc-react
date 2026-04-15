@@ -126,7 +126,7 @@ export default class PlayMatrix extends Component {
 			return;
 		}
 
-		var delta = Date.now() - whoop.start;;
+		var delta = Date.now() - whoop.start;
 		if (delta > timeout) {
 			this.setState({whoop: false})
 			clearInterval(this.whoopTimer);
@@ -160,7 +160,7 @@ export default class PlayMatrix extends Component {
 
 	renderWhoop() {
 		if (!this.state.whoop) return;
-		var {x, y, width, height, opacity} = this.state.whoop;;
+		var {x, y, width, height, opacity} = this.state.whoop;
 		var styles = {
 			left: x * 25 + 'px',
 			top: y * 25 + 'px',

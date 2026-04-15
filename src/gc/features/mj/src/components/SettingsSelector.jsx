@@ -125,8 +125,50 @@ export default class SettingsSelector extends React.Component {
 		});
 	}
 
-	renderOptionButtons() {
+	getDisplayOptions() {
 		var options = this.props.options || [];
+		var selectedValue = this.props.selectedValue;
+		var minimumOptions = this.props.pinSelectedMinimumOptions || 0;
+
+		if (!this.props.pinSelectedToTop || options.length < minimumOptions) {
+			return {
+				options,
+				showPinnedSeparator: false,
+			};
+		}
+
+		var selectedIndex = options.findIndex(function(option) {
+			return option.value === selectedValue;
+		});
+
+		if (selectedIndex < 0) {
+			return {
+				options,
+				showPinnedSeparator: false,
+			};
+		}
+
+		if (selectedIndex === 0) {
+			return {
+				options,
+				showPinnedSeparator: true,
+			};
+		}
+
+		var displayOptions = options.slice();
+		var selectedOption = displayOptions.splice(selectedIndex, 1)[0];
+
+		displayOptions.unshift(selectedOption);
+
+		return {
+			options: displayOptions,
+			showPinnedSeparator: true,
+		};
+	}
+
+	renderOptionButtons() {
+		var displayState = this.getDisplayOptions();
+		var options = displayState.options;
 		var selectedValue = this.props.selectedValue;
 
 		if (options.length === 0) {
@@ -137,7 +179,7 @@ export default class SettingsSelector extends React.Component {
 			);
 		}
 
-		return options.map(function(option) {
+		var optionButtons = options.map(function(option) {
 			var className = "mj-settings-dialog-list-option";
 			var labelLength = (option.label || "").length;
 
@@ -158,6 +200,18 @@ export default class SettingsSelector extends React.Component {
 				</SettingsButton>
 			);
 		}, this);
+
+		if (displayState.showPinnedSeparator) {
+			optionButtons.splice(1, 0, (
+				<div
+					key="selected-separator"
+					className="mj-settings-dialog-list-separator"
+					aria-hidden="true"
+				></div>
+			));
+		}
+
+		return optionButtons;
 	}
 
 	renderOptionList() {

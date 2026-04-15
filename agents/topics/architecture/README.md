@@ -9,6 +9,7 @@ Use this file as the entry point for the topic.
 - [REMVC Architecture](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md)
 - [Feature Mechanics](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md)
 - [Build And Asset Flow](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md)
+- [Handling Randomness](/c:/dev/poly-gc-react/agents/topics/architecture/handling-randomness.md)
 
 ## Fast Links
 
@@ -35,14 +36,20 @@ Build and assets:
 - [Practical Placement Rules](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md#practical-placement-rules)
 - [Feature Build Files](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md#feature-build-files)
 
+Randomness:
+
+- [Handling Randomness](/c:/dev/poly-gc-react/agents/topics/architecture/handling-randomness.md)
+
 ## Suggested Reading Order
 
 1. Start with [REMVC Architecture](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md) for the application model.
 2. Then read [Feature Mechanics](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md) for feature ownership, runtime activation, naming, and placement.
 3. Use [Build And Asset Flow](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md) when a task involves build inclusion, copied assets, `dist`, or runtime asset paths.
+4. Use [Handling Randomness](/c:/dev/poly-gc-react/agents/topics/architecture/handling-randomness.md) when code needs seeded, reproducible, or array-based random behavior.
 
 ## Which Doc?
 
 - If the question is about overall application architecture, start with [REMVC Architecture](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md).
 - If the question is about feature boundaries, naming, placement, or runtime feature activation, use [Feature Mechanics](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md).
 - If the question is about build inclusion, copied assets, `dist`, or asset paths, use [Build And Asset Flow](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md).
+- If the question is about seeded randomness, reproducibility, or list-selection helpers, use [Handling Randomness](/c:/dev/poly-gc-react/agents/topics/architecture/handling-randomness.md).

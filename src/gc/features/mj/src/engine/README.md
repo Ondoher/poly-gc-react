@@ -486,12 +486,16 @@ The factors mean:
     the top
 
 - `zWeight`
-  - calculated from `highestZOrder - z`, clamped so the topmost layer still has
-    weight `1`
-  - lower tiles therefore carry more hard-side weight, while higher tiles stay
-    lighter
-  - easy tends to select the lighter high-stack tiles; hard tends to leave them
-    in place longer and dig into lower support structure
+  - calculated as a fractional stack position: `(z + 0.5) / highestZOrder`
+  - lower layers are below `0.5`, higher layers are above `0.5`
+  - the midpoint therefore stays fractional instead of going negative
+
+- `zPressure`
+  - converts the fractional `zWeight` into a centered positive multiplier using
+    difficulty bias
+  - easy levels make higher-stack tiles lighter and lower support tiles heavier
+  - hard levels make higher-stack tiles heavier and lower support tiles lighter
+  - neutral difficulty keeps z order close to a no-op
 
 - `horizontalIntersections`
   - how many reference-row masks the candidate intersects on the same level
@@ -977,19 +981,18 @@ and `2` pair-choice playouts.
 
 | Level | Generation Difficulty | Suspension | Tile Picker Rules | Face Assignment | Face Avoidance |
 | --- | ---: | --- | --- | --- | --- |
-| Easy | `0` | off | default | `preferredMultiplier: 0.5`, `easyReuseDuplicateScale: 2` | off |
-| Standard | `0.35` | off | default | `preferredMultiplier: 0.5`, `easyReuseDuplicateScale: 0` | off |
-| Challenging | `0.6` | aggressive | default | `preferredMultiplier: 0.5`, `easyReuseDuplicateScale: 0` | off |
-| Expert | `0.75` | aggressive | `openPressureMultiplier: 1`, `maxFreedPressure: 6`, `balancePressureMultiplier: 1`, `maxBalanceMargin: 48` | `preferredMultiplier: 0.5`, `easyReuseDuplicateScale: 0` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
-| Nightmare | `1` | aggressive with `forceReleaseAtEffectiveOpen: 3`, `suspendAtEffectiveOpen: 5` | Expert rules plus `shortHorizonProbeMoves: 8`, `shortHorizonPressureMultiplier: 1` | `preferredMultiplier: 0.5`, `easyReuseDuplicateScale: 0` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
+| Easy | `0` | off | default | `preferredMultiplier: 0.5` | off |
+| Standard | `0.35` | off | default | `preferredMultiplier: 0.5` | off |
+| Challenging | `0.55` | aggressive | default | `preferredMultiplier: 0.5` | off |
+| Expert | `0.75` | aggressive | `openPressureMultiplier: 1`, `maxFreedPressure: 6`, `balancePressureMultiplier: 1`, `maxBalanceMargin: 48` | `preferredMultiplier: 0.33` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
+| Nightmare | `1` | aggressive with `forceReleaseAtEffectiveOpen: 3`, `suspendAtEffectiveOpen: 5` | Expert rules plus `shortHorizonProbeMoves: 8`, `shortHorizonPressureMultiplier: 1` | `preferredMultiplier: 0.33` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
 
 ### Easy
 
 Easy is meant to be easier than random. It disables suspension and uses the
 easy end of the weighted picker. The board should open up quickly, reduce stacks
-early, and give sampled play more recovery paths. It also duplicates nearby
-reused face groups during face assignment, which makes same-face relationships
-cluster more tightly in the authored placement order.
+early, and give sampled play more recovery paths. Its softness currently comes
+from the base generation profile rather than any extra face-group reuse rule.
 
 ### Standard
 
@@ -1002,14 +1005,17 @@ adding natural variability.
 Challenging is the first level where suspension is active. It uses aggressive
 suspension with a mid-high picker value, but does not add the face or pressure
 experiments. This level should raise dead-end rate and remaining-tile severity
-while keeping a rich choice tree.
+while keeping a rich choice tree. The current preset uses `generationDifficulty:
+0.55` to keep this center rung close to the intended target.
 
 ### Expert
 
 Expert layers in open-pressure, stack-balance pressure, and face avoidance. It
 tries to cross random on harsh failure metrics while still preserving a known
 solution. This is where off-path choices should start feeling intentionally
-punishing instead of merely unlucky.
+punishing instead of merely unlucky. It also uses a stronger
+`preferredMultiplier: 0.33` to increase upper-ladder face-group continuity
+pressure.
 
 ### Nightmare
 
@@ -1020,7 +1026,8 @@ The target feel is tight, punishing, and still constructed. Its search
 consequential state count may be lower than challenging or expert because the
 selection window is tighter and there are fewer branches, but the brutality,
 dead-end rate, average remaining tiles, and P75 dead-end remaining should be the
-strongest signals.
+strongest signals. It uses the same stronger `preferredMultiplier: 0.33` as
+Expert.
 
 ## Current Metric Shape
 
@@ -1028,15 +1035,15 @@ The latest 20-board turtle sweep produced this shape:
 
 | Metric | Random | Easy | Standard | Challenging | Expert | Nightmare |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| [Playout solve rate](#playout-solve-rate) | `3.8%` | `46.3%` | `35.6%` | `19.1%` | `16.3%` | `5.6%` |
-| [Playout dead-end rate](#playout-dead-end-rate) | `96.3%` | `53.8%` | `64.4%` | `80.9%` | `83.8%` | `94.4%` |
-| [Playout average remaining tiles](#playout-average-remaining-tiles) | `59.07` | `11.45` | `21.52` | `39.91` | `47.34` | `57.74` |
-| [P75 dead-end remaining tiles](#p75-dead-end-remaining-tiles) | `73.40` | `26.50` | `42.90` | `65.30` | `70.60` | `69.90` |
-| [Initial downstream dead-end spread](#initial-downstream-dead-end-spread) | `6.9%` | `57.8%` | `48.0%` | `32.3%` | `23.6%` | `14.5%` |
-| [Initial downstream remaining spread](#initial-downstream-remaining-spread) | `21.99` | `20.94` | `24.91` | `31.65` | `34.16` | `29.38` |
-| [Search consequential pair-choice states](#search-consequential-pair-choice-states) | `129.20` | `480.90` | `407.15` | `467.05` | `419.25` | `180.55` |
-| [Score](#score) avg | `37.00` | `44.15` | `39.00` | `42.10` | `41.65` | `36.55` |
-| [Brutality](#brutality) avg | `51.75` | `29.15` | `38.54` | `51.46` | `54.54` | `58.57` |
+| [Playout solve rate](#playout-solve-rate) | `3.8%` | `47.5%` | `37.8%` | `18.1%` | `17.5%` | `7.2%` |
+| [Playout dead-end rate](#playout-dead-end-rate) | `96.3%` | `52.5%` | `62.2%` | `81.9%` | `82.5%` | `92.8%` |
+| [Playout average remaining tiles](#playout-average-remaining-tiles) | `59.07` | `15.06` | `18.15` | `40.63` | `41.77` | `49.49` |
+| [P75 dead-end remaining tiles](#p75-dead-end-remaining-tiles) | `73.40` | `34.40` | `40.40` | `64.30` | `66.50` | `69.60` |
+| [Initial downstream dead-end spread](#initial-downstream-dead-end-spread) | `6.9%` | `57.2%` | `53.6%` | `40.2%` | `30.9%` | `19.5%` |
+| [Initial downstream remaining spread](#initial-downstream-remaining-spread) | `21.99` | `24.16` | `21.68` | `35.04` | `34.20` | `36.50` |
+| [Search consequential pair-choice states](#search-consequential-pair-choice-states) | `129.20` | `496.10` | `420.80` | `455.40` | `364.55` | `321.35` |
+| [Score](#score) avg | `37.00` | `44.75` | `39.50` | `43.75` | `40.90` | `39.85` |
+| [Brutality](#brutality) avg | `51.75` | `31.54` | `37.05` | `51.41` | `52.13` | `57.25` |
 
 The score column does not fully express the intended progression. For
 human-facing difficulty, the more important pattern is:
@@ -1044,8 +1051,7 @@ human-facing difficulty, the more important pattern is:
 - the constructed levels preserve an authored solution path, while random is
   only a chaos baseline
 - Easy and standard solve much more often than random.
-- Easy is now much more forgiving than random on both solve rate and brutality,
-  helped by the easy-only face-group reuse duplication rule.
+- Easy is much more forgiving than random on both solve rate and brutality.
 - Challenging raises punishment while keeping lots of meaningful decisions.
 - Expert pushes punishment beyond random while preserving validity.
 - Nightmare is the harshest constructed profile, even though its branch count
@@ -1073,13 +1079,13 @@ becomes. The result is not just solvable generation, but authored difficulty.
 
 ## Related Notes
 
-- `agents/topics/mj/difficulty-measurement.md` describes the analyzer metrics.
-- `agents/topics/mj/difficulty-tuning-knobs.md` records the tuning knobs and
+- `agents/topics/difficulty/difficulty-measurement.md` describes the analyzer metrics.
+- `agents/topics/difficulty/difficulty-tuning-knobs.md` records the tuning knobs and
   recent experiments.
-- `agents/topics/mj/strategy-advice-proxy-research.md` summarizes public
+- `agents/topics/difficulty/strategy-advice-proxy-research.md` summarizes public
   Mahjong Solitaire strategy advice and maps repeated human-facing themes back
   to the current heuristics.
-- [DESIGN-NOTES.md](/c:/dev/poly-gc-react/src/gc/features/mj/src/engine/DESIGN-NOTES.md) holds
+- [engine-design-notes.md](/c:/dev/poly-gc-react/agents/topics/difficulty/engine-design-notes.md) holds
   design framing, cleanup ideas, and future considerations.
 - `scripts/difficulty/cli.js` runs direct board analysis.
 - `scripts/difficulty/tune-levels.js` runs the current ladder comparison.

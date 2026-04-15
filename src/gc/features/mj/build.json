@@ -8,7 +8,7 @@
 	{
 		"dest" : "mj/images",
 		"cwd": "assets/images",
-		"glob": "**/*.{png,jpg}",
+		"glob": "**/*.{png,jpg,svg}",
 		"keepNest": true
 	}],
 	"loadables" : [{
