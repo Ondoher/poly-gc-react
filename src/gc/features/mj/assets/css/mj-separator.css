@@ -1,0 +1,31 @@
+.mj-separator {
+    position: relative;
+    width: 100%;
+    min-height: 2px;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(211, 160, 36, 0),
+            rgba(245, 215, 134, 0.9) 18%,
+            rgba(211, 160, 36, 0.86) 50%,
+            rgba(185, 141, 23, 0.82) 82%,
+            rgba(211, 160, 36, 0)
+        );
+}
+
+.mj-separator::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 1px;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        rgba(75, 33, 5, 0),
+        rgba(75, 33, 5, 0.24) 16%,
+        rgba(75, 33, 5, 0.38) 50%,
+        rgba(75, 33, 5, 0.24) 84%,
+        rgba(75, 33, 5, 0)
+    );
+}
