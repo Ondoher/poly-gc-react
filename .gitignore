@@ -111,5 +111,7 @@ package-lock.json
 /scripts/*
 !/scripts/difficulty/
 !/scripts/difficulty/**
+!/scripts/deploy/
+!/scripts/deploy/**
 /security
 /config
