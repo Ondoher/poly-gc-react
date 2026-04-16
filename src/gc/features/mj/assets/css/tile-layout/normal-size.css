@@ -10,7 +10,8 @@ ydepth: 7
 rpad:   9
 bpad:   9
 
-command: node tilesize.js normal-size -w 56 -h 77 -x 8 -y 7 -r 9 -b 9
+command: node .\scripts\tile-css\tilesize.js normal-size -w 56 -h 77 -x 8 -y 7 -r 9 -b 9
+config:  /dev/poly-gc-react/scripts/tile-css/tile-sizes.json
 
 Dimensions
 ==========
@@ -39,9 +40,35 @@ The preview surface size when this tile size is the maximum available size
 /*==============================================================================
 Common css for all tiles
 */
-.normal-size .tile {position: absolute; width: 56px; height: 77px;}
-.normal-size .highlight:after {content: ""; position: absolute; left:0; right: 0; width: 56px; height: 77px;}
-.normal-size .face {width: 56px; height: 77px;}
+.normal-size .tile {
+	position: absolute;
+	width: 56px;
+	height: 77px;
+	--mj-tile-width: 56px;
+	--mj-tile-height: 77px;
+	--mj-tile-face-width: 47px;
+	--mj-tile-face-height: 68px;
+	--mj-tile-right-pad: 9px;
+	--mj-tile-bottom-pad: 9px;
+}
+.normal-size .face {
+	position: relative;
+	width: 56px;
+	height: 77px;
+}
+.normal-size .face:after {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 47px;
+	height: 68px;
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
+	opacity: 0;
+	pointer-events: none;
+}
+.normal-size .highlight:after {opacity: 1;}
 /*==============================================================================
 Defines absolute position for each cell in the grid. Add these classes to a tile
 to position it in the correct grid cell.

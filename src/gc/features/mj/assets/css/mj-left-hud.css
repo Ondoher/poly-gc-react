@@ -1,0 +1,44 @@
+.mj-left-hud {
+    --mj-left-hud-control-width: 96px;
+    grid-area: left;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-content: start;
+    padding-top: 44px;
+    padding-left: 22px;
+}
+
+.mj-left-hud-stack {
+    justify-self: start;
+    align-self: start;
+    display: grid;
+    width: var(--mj-left-hud-control-width);
+    row-gap: 5px;
+    justify-items: stretch;
+}
+
+.mj-left-hud .mj-game-number-solve-button,
+.mj-left-hud .mj-game-number-settings-button,
+.mj-left-hud .mj-game-number-help-button,
+.mj-left-hud .mj-game-number-half-solution-button,
+.mj-left-hud .mj-game-number-lose-button {
+    min-width: var(--mj-left-hud-control-width);
+    max-width: var(--mj-left-hud-control-width);
+    width: 100%;
+    min-height: 28px;
+    padding: 0 10px;
+    --mj-raised-button-face-top: rgba(98, 25, 21, 0.92);
+    --mj-raised-button-face-bottom: rgba(98, 25, 21, 0.92);
+    --mj-raised-button-face-ring: rgba(214, 145, 40, 0.82);
+}
+
+.mj-left-hud .mj-game-number-solve-button .mj-raised-button-label,
+.mj-left-hud .mj-game-number-settings-button .mj-raised-button-label,
+.mj-left-hud .mj-game-number-help-button .mj-raised-button-label,
+.mj-left-hud .mj-game-number-half-solution-button .mj-raised-button-label,
+.mj-left-hud .mj-game-number-lose-button .mj-raised-button-label {
+    font-size: 14px;
+}

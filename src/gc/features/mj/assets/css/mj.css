@@ -1,7 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Merienda:wght@400;700&display=swap');
 @import url('./ornamental-rect.css');
 @import url('./mj-css-rect.css');
+@import url('./mj-left-hud.css');
 @import url('./mj-raised-button.css');
+@import url('./mj-scroll-pane.css');
 @import url('./mj-text-edit-control.css');
 @import url('./mj-play.css');
 @import url('./mj-toast.css');
@@ -54,6 +56,18 @@
     background-position: 0 0, 0 0, 0 0;
     background-size: auto, auto, var(--mj-page-pattern-size);
     font-family: var(--mj-ui-font-family);
+}
+
+.mj-frame-shell.is-expanded {
+    --frame-padding: 0;
+    background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.08)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.15)),
+        url("../images/frame/pattern.png");
+    background-color: #6b2424;
+    background-repeat: repeat, repeat, repeat;
+    background-position: 0 0, 0 0, 0 0;
+    background-size: auto, auto, var(--mj-page-pattern-size);
 }
 
 .mj-board-page {

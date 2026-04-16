@@ -1764,8 +1764,9 @@ export default class Engine {
 		var canRedo = this.canRedo() && !won;
 		var open = new NumberSet([], 144).union(this.selectableTiles)
 		var placed = new NumberSet([], 144).union(this.placedTiles);
+		var multiUndoHistory = this.getUndoHistory();
 
-		var update = {canUndo , canRedo, remaining, won, lost, open, placed};
+		var update = {canUndo , canRedo, remaining, won, lost, open, placed, multiUndoHistory};
 
 		this.fire('updateState', update);
 	}
@@ -1845,6 +1846,32 @@ export default class Engine {
 	 */
 	canUndo() {
 		return this.undoStack.length !== 0;
+	}
+
+	getUndoHistory() {
+		var history = [];
+
+		for (let index = 0; index < this.undoStack.length; index += 2) {
+			let tile1 = this.undoStack[index];
+			let tile2 = this.undoStack[index + 1];
+			let piece1 = this.board?.pieces?.[tile1];
+			let piece2 = this.board?.pieces?.[tile2];
+
+			if (!piece1 || !piece2) {
+				continue;
+			}
+
+			history.push({
+				id: `move-${index / 2 + 1}-${tile1}-${tile2}`,
+				moveNumber: index / 2 + 1,
+				tile1,
+				tile2,
+				face1: piece1.face,
+				face2: piece2.face,
+			});
+		}
+
+		return history;
 	}
 
 

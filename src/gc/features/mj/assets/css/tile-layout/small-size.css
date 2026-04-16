@@ -10,7 +10,8 @@ ydepth: 5
 rpad:   8
 bpad:   7
 
-command: node tilesize.js small-size -w 42 -h 58 -x 6 -y 5 -r 8 -b 7
+command: node .\scripts\tile-css\tilesize.js small-size -w 42 -h 58 -x 6 -y 5 -r 8 -b 7
+config:  /dev/poly-gc-react/scripts/tile-css/tile-sizes.json
 
 Dimensions
 ==========
@@ -39,9 +40,35 @@ The preview surface size when this tile size is the maximum available size
 /*==============================================================================
 Common css for all tiles
 */
-.small-size .tile {position: absolute; width: 42px; height: 58px;}
-.small-size .highlight:after {content: ""; position: absolute; left:0; right: 0; width: 42px; height: 58px;}
-.small-size .face {width: 42px; height: 58px;}
+.small-size .tile {
+	position: absolute;
+	width: 42px;
+	height: 58px;
+	--mj-tile-width: 42px;
+	--mj-tile-height: 58px;
+	--mj-tile-face-width: 34px;
+	--mj-tile-face-height: 51px;
+	--mj-tile-right-pad: 8px;
+	--mj-tile-bottom-pad: 7px;
+}
+.small-size .face {
+	position: relative;
+	width: 42px;
+	height: 58px;
+}
+.small-size .face:after {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 34px;
+	height: 51px;
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
+	opacity: 0;
+	pointer-events: none;
+}
+.small-size .highlight:after {opacity: 1;}
 /*==============================================================================
 Defines absolute position for each cell in the grid. Add these classes to a tile
 to position it in the correct grid cell.

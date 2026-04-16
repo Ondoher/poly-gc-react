@@ -6,9 +6,19 @@
     grid-template-columns: 120px minmax(0, 1fr) 96px;
     grid-template-areas: "left play right";
     min-height: 0;
+    transition:
+        margin 180ms ease-out,
+        column-gap 180ms ease-out,
+        grid-template-columns 180ms ease-out;
 }
 
-.mj-left-hud,
+.mj-game-area.is-expanded {
+    margin: 0;
+    grid-template-columns: minmax(0, 1fr) 78px;
+    grid-template-areas: "play right";
+    column-gap: 0;
+}
+
 .mj-right-hud,
 .mj-playfield {
     position: relative;
@@ -16,29 +26,51 @@
     min-height: 0;
 }
 
-.mj-left-hud {
-    grid-area: left;
+.mj-playfield-wrap {
+    grid-area: play;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    transition: opacity 160ms ease-out;
+}
+
+.mj-playfield-wrap.is-expanded {
     display: grid;
-    grid-template-rows: auto 1fr;
-    align-content: start;
-    padding-top: 44px;
-    padding-left: 22px;
+    align-self: stretch;
+    min-width: 0;
+    min-height: 0;
+}
+
+.mj-playfield-wrap.is-expanded .mj-playfield-expand-button {
+    top: 8px;
+    right: 8px;
 }
 
 .mj-right-hud {
     grid-area: right;
     position: relative;
     display: grid;
-/*    justify-items: center;*/
-    grid-template-rows: auto auto 1fr auto;
+    justify-items: center;
+    grid-template-rows: auto auto 1fr;
+    row-gap: 10px;
     align-content: start;
-    row-gap: 8px;
     padding-top: 24px;
     padding-right: 8px;
+    transition:
+        padding 180ms ease-out,
+        box-shadow 180ms ease-out,
+        opacity 160ms ease-out;
+}
+
+.mj-game-area.is-expanded .mj-right-hud {
+    justify-items: center;
+    width: 78px;
+    padding-top: 6px;
+    padding-right: 0;
+    box-shadow: inset 8px 0 14px -10px rgba(0, 0, 0, 0.5);
 }
 
 .mj-css-rect.mj-playfield {
-    grid-area: play;
     display: grid;
     align-content: start;
     --mj-css-rect-fill-top: rgba(120, 20, 20, 0.52);
@@ -46,6 +78,49 @@
     justify-items: center;
     margin: 6px 18px 8px;
     padding: 4px 6px 10px;
+}
+
+.mj-playfield-expand-button {
+    position: absolute;
+    top: 3px;
+    right: -7px;
+    z-index: 3;
+    width: 24px;
+    height: 24px;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+.mj-playfield-expand-button-icon {
+    display: block;
+    width: 23px;
+    height: 23px;
+    background-color: var(--mj-ui-text-color);
+    -webkit-mask-image: url("../images/icons/window-maximize.svg");
+    mask-image: url("../images/icons/window-maximize.svg");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    filter: drop-shadow(0 1px 0 rgba(75, 33, 5, 0.45));
+}
+
+.mj-playfield-expand-button.is-expanded .mj-playfield-expand-button-icon {
+    -webkit-mask-image: url("../images/icons/window-minimize.svg");
+    mask-image: url("../images/icons/window-minimize.svg");
+}
+
+.mj-playfield-expand-button:hover,
+.mj-playfield-expand-button:focus-visible {
+    filter: brightness(1.08);
+    outline: none;
 }
 
 .mj-playfield-stage {
@@ -56,11 +131,585 @@
     width: max-content;
     max-width: 100%;
     margin-top: clamp(3px, 0.75vh, 12px);
+    opacity: 0.98;
+    transform: scale(1);
+    transform-origin: center center;
+    transition:
+        transform 180ms ease-out,
+        opacity 180ms ease-out,
+        margin-top 180ms ease-out;
 }
+
+.mj-playfield-expanded-surface {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background:
+        linear-gradient(180deg, rgba(120, 20, 20, 0.92), rgba(110, 17, 17, 0.96));
+    background-color: #7a1717;
+    overflow: hidden;
+    transition:
+        padding 180ms ease-out,
+        background 180ms ease-out,
+        background-color 180ms ease-out;
+}
+
+.mj-css-rect.mj-playfield-expanded-surface.is-expanded {
+    border: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    align-content: center;
+    justify-items: center;
+}
+
+.mj-playfield-expanded-stage {
+    margin-top: 14px;
+    align-self: center;
+    max-width: 100%;
+    max-height: 100%;
+    transform: scale(1.18);
+    transform-origin: center center;
+    opacity: 1;
+}
+
 
 .board-canvas {
     position: relative;
+    opacity: 1;
+    transform: scale(1);
+    transform-origin: center center;
+    filter: brightness(1);
+    animation: mj-board-generate 220ms ease-out;
+    transition:
+        opacity 180ms ease-out,
+        filter 180ms ease-out;
 }
+
+.board-canvas.is-paused {
+    opacity: 0;
+    filter: brightness(0.9);
+    pointer-events: none;
+}
+
+.board-canvas.is-lost {
+    animation: mj-board-lost 320ms ease-out forwards;
+    pointer-events: none;
+}
+
+.mj-gameover {
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(160px) scale(0.96);
+    transform-origin: center bottom;
+    animation: mj-fireworks-arrive 560ms cubic-bezier(0.16, 0.78, 0.28, 1) 420ms forwards;
+}
+
+.board-canvas .tile.played {
+    pointer-events: none;
+    animation: mj-tile-played-fade 180ms ease-out forwards;
+}
+
+.board-canvas .tile.final-played-left,
+.board-canvas .tile.final-played-right {
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.board-canvas .tile.selected {
+    transform: translateY(1px) scale(0.982);
+    filter: brightness(0.97);
+}
+
+.board-canvas .face.selected:after {
+    background-color: rgba(118, 196, 236, 0.42);
+    opacity: 1;
+    animation: mj-tile-selected-hold 140ms ease-out forwards;
+}
+
+.board-canvas .face.hint {
+    animation: mj-tile-hint-face 760ms ease-in-out 3;
+}
+
+.board-canvas .face.hint:after {
+    background-color: rgba(244, 148, 126, 0.34);
+    opacity: 1;
+    animation: mj-tile-hint-overlay 760ms ease-in-out 3;
+}
+
+.board-canvas .face.unselected:after {
+    opacity: 1;
+    animation: mj-tile-unselected-release 120ms ease-out forwards;
+}
+
+.board-canvas .face.blocked {
+    animation: mj-tile-blocked-face 180ms ease-out forwards;
+}
+
+.board-canvas .face.blocked:after {
+    opacity: 1;
+    animation: mj-tile-blocked-overlay 180ms ease-out forwards;
+}
+
+.board-canvas .face.undo {
+    animation: mj-tile-undo-face 240ms ease-out forwards;
+}
+
+.board-canvas .face.undo:after {
+    opacity: 1;
+    animation: mj-tile-undo-overlay 240ms ease-out forwards;
+}
+
+.board-canvas .tile.undo {
+    animation: mj-tile-undo-tile 240ms ease-out forwards;
+}
+
+.board-canvas .tile.redo {
+    pointer-events: none;
+    animation: mj-tile-redo-tile 240ms ease-out forwards;
+}
+
+.board-canvas .tile.peek {
+    pointer-events: none;
+    animation: mj-tile-peek-tile 220ms ease-out forwards;
+}
+
+.board-canvas .tile.restart {
+    animation: mj-tile-restart-tile 220ms ease-out forwards;
+}
+
+.board-canvas .face.restart:after {
+    background-color: transparent;
+    box-shadow: none;
+    opacity: 0;
+    animation: none;
+    filter: none;
+}
+
+.board-canvas .face.peek {
+    animation: mj-tile-peek-face 220ms ease-out forwards;
+}
+
+.board-canvas .face.peek:after {
+    opacity: 1;
+    animation: mj-tile-peek-overlay 220ms ease-out forwards;
+}
+
+.board-canvas .face.redo {
+    animation: mj-tile-redo-face 240ms ease-out forwards;
+}
+
+.board-canvas .face.redo:after {
+    opacity: 1;
+    animation: mj-tile-redo-overlay 240ms ease-out forwards;
+}
+
+.board-canvas .face.played {
+    animation: mj-tile-played-face 180ms ease-out forwards;
+}
+
+.board-canvas .face.played:after {
+    opacity: 1;
+    animation: mj-tile-played-overlay 180ms ease-out forwards;
+}
+
+.board-canvas .tile.final-played-left {
+    animation: mj-tile-final-played-left 900ms cubic-bezier(0.18, 0.72, 0.3, 1) forwards;
+}
+
+.board-canvas .tile.final-played-right {
+    animation: mj-tile-final-played-right 900ms cubic-bezier(0.18, 0.72, 0.3, 1) forwards;
+}
+
+@keyframes mj-tile-played-fade {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes mj-tile-final-played-left {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-280px, -340px) scale(0.92) rotate(-28deg);
+    }
+}
+
+@keyframes mj-tile-final-played-right {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(280px, -340px) scale(0.92) rotate(28deg);
+    }
+}
+
+@keyframes mj-board-generate {
+    0% {
+        opacity: 0;
+        transform: scale(0.2);
+        filter: brightness(1.08);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+@keyframes mj-fireworks-arrive {
+    0% {
+        opacity: 0;
+        transform: translateY(160px) scale(0.96);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes mj-board-lost {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: brightness(1) saturate(1);
+    }
+
+    100% {
+        opacity: 0.92;
+        transform: translateY(18px) scale(0.992);
+        filter: brightness(0.72) saturate(0.78);
+    }
+}
+
+@keyframes mj-tile-selected-hold {
+    0% {
+        opacity: 0.45;
+        filter: brightness(1);
+    }
+
+    100% {
+        opacity: 0.62;
+        filter: brightness(1.08);
+    }
+}
+
+@keyframes mj-tile-hint-face {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+
+    50% {
+        transform: scale(1.035);
+        filter: brightness(1.12);
+    }
+
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+@keyframes mj-tile-hint-overlay {
+    0% {
+        background-color: rgba(244, 148, 126, 0.22);
+        box-shadow: 0 0 0 rgba(244, 148, 126, 0);
+        opacity: 0.3;
+        filter: brightness(1);
+    }
+
+    50% {
+        background-color: rgba(244, 148, 126, 0.6);
+        box-shadow: 0 0 12px rgba(244, 148, 126, 0.34);
+        opacity: 1;
+        filter: brightness(1.22);
+    }
+
+    100% {
+        background-color: rgba(244, 148, 126, 0.22);
+        box-shadow: 0 0 0 rgba(244, 148, 126, 0);
+        opacity: 0.3;
+        filter: brightness(1);
+    }
+}
+
+@keyframes mj-tile-unselected-release {
+    0% {
+        opacity: 0.62;
+        filter: brightness(1.08);
+    }
+
+    100% {
+        opacity: 0;
+        filter: brightness(1);
+    }
+}
+
+@keyframes mj-tile-blocked-face {
+    0% {
+        transform: scale(1);
+    }
+
+    25% {
+        transform: scale(0.985);
+    }
+
+    55% {
+        transform: scale(1.01);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes mj-tile-blocked-overlay {
+    0% {
+        background-color: rgba(224, 92, 74, 0.18);
+        opacity: 0;
+        filter: brightness(1);
+    }
+
+    35% {
+        background-color: rgba(224, 92, 74, 0.42);
+        opacity: 1;
+        filter: brightness(1.12);
+    }
+
+    100% {
+        background-color: rgba(224, 92, 74, 0.12);
+        opacity: 0;
+        filter: brightness(1);
+    }
+}
+
+@keyframes mj-tile-undo-face {
+    0% {
+        transform: scale(0.94);
+        filter: brightness(0.92);
+    }
+
+    55% {
+        transform: scale(1.015);
+        filter: brightness(1.06);
+    }
+
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+@keyframes mj-tile-undo-overlay {
+    0% {
+        background-color: rgba(255, 214, 150, 0.16);
+        opacity: 0;
+        filter: brightness(1);
+    }
+
+    34% {
+        background-color: rgba(255, 214, 150, 0.82);
+        opacity: 1;
+        filter: brightness(1.24);
+    }
+
+    100% {
+        background-color: rgba(255, 214, 150, 0.12);
+        opacity: 0;
+        filter: brightness(1);
+    }
+}
+
+@keyframes mj-tile-undo-tile {
+    0% {
+        opacity: 0;
+        transform: scale(0.88);
+    }
+
+    60% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes mj-tile-redo-face {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+
+    45% {
+        transform: scale(1.015);
+        filter: brightness(1.06);
+    }
+
+    100% {
+        transform: scale(0.94);
+        filter: brightness(0.92);
+    }
+}
+
+@keyframes mj-tile-redo-overlay {
+    0% {
+        background-color: rgba(255, 214, 150, 0.12);
+        opacity: 0;
+        filter: brightness(1);
+    }
+
+    32% {
+        background-color: rgba(255, 214, 150, 0.82);
+        opacity: 1;
+        filter: brightness(1.24);
+    }
+
+    100% {
+        background-color: rgba(255, 214, 150, 0.16);
+        opacity: 0;
+        filter: brightness(1);
+    }
+}
+
+@keyframes mj-tile-redo-tile {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    40% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.88);
+    }
+}
+
+@keyframes mj-tile-peek-tile {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    35% {
+        opacity: 1;
+        transform: scale(1.07);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.16);
+    }
+}
+
+@keyframes mj-tile-peek-face {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+
+    35% {
+        transform: scale(1.03);
+        filter: brightness(1.1);
+    }
+
+    100% {
+        transform: scale(1.08);
+        filter: brightness(1.18);
+    }
+}
+
+@keyframes mj-tile-peek-overlay {
+    0% {
+        background-color: rgba(255, 224, 196, 0.1);
+        box-shadow: 0 0 0 rgba(255, 224, 196, 0);
+        opacity: 0;
+        filter: brightness(1);
+    }
+
+    38% {
+        background-color: rgba(255, 224, 196, 0.32);
+        box-shadow: 0 0 14px rgba(255, 224, 196, 0.45);
+        opacity: 1;
+        filter: brightness(1.22);
+    }
+
+    100% {
+        background-color: rgba(255, 224, 196, 0.08);
+        box-shadow: 0 0 0 rgba(255, 224, 196, 0);
+        opacity: 0;
+        filter: brightness(1);
+    }
+}
+
+@keyframes mj-tile-restart-tile {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes mj-tile-played-face {
+    0% {
+        transform: scale(1);
+    }
+
+    65% {
+        transform: scale(0.97);
+    }
+
+    100% {
+        transform: scale(0.94);
+    }
+}
+
+@keyframes mj-tile-played-overlay {
+    0% {
+        opacity: 0.28;
+        filter: brightness(1);
+    }
+
+    35% {
+        opacity: 0.65;
+        filter: brightness(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        filter: brightness(1);
+    }
+}
+
+
 
 .mj-game-number-wrap {
     justify-self: start;
@@ -69,12 +718,22 @@
     align-items: stretch;
 }
 
-.mj-game-number-stack {
+.mj-game-number-control-stack {
     justify-self: start;
     align-self: start;
     display: grid;
     row-gap: 5px;
     justify-items: start;
+}
+
+.mj-left-hud {
+    transition:
+        opacity 140ms ease-out,
+        transform 180ms ease-out;
+}
+
+.mj-game-area.is-expanded .mj-playfield-wrap {
+    opacity: 1;
 }
 
 .mj-game-number-input {
@@ -158,40 +817,15 @@
     line-height: 1.1;
 }
 
-.mj-game-number-solve-button {
-    min-width: 96px;
-    min-height: 28px;
-    padding: 0 10px;
-    --mj-raised-button-face-top: rgba(98, 25, 21, 0.92);
-    --mj-raised-button-face-bottom: rgba(98, 25, 21, 0.92);
-    --mj-raised-button-face-ring: rgba(214, 145, 40, 0.82);
-}
-
-.mj-game-number-solve-button .mj-raised-button-label {
-    font-size: 14px;
-}
-
-.mj-game-number-lose-button {
-    min-width: 96px;
-    min-height: 28px;
-    padding: 0 10px;
-    --mj-raised-button-face-top: rgba(126, 33, 27, 0.92);
-    --mj-raised-button-face-bottom: rgba(96, 16, 16, 0.96);
-    --mj-raised-button-face-ring: rgba(214, 145, 40, 0.82);
-}
-
-.mj-game-number-lose-button .mj-raised-button-label {
-    font-size: 14px;
-}
-
 .mj-css-rect.mj-right-hud-rail {
     --mj-css-rect-fill-top: rgba(117, 17, 19, 0.78);
     --mj-css-rect-fill-bottom: rgba(97, 14, 16, 0.84);
     width: 31px;
-    height: 290px;
+    height: 240px;
 }
 
 .mj-right-hud-timer {
+    margin-top: 10px;
     color: var(--mj-ui-text-color);
     font-family: var(--mj-ui-font-family);
     font-size: 18px;
@@ -278,6 +912,15 @@
     --mj-right-hud-icon-height: 20px;
 }
 
+.mj-right-hud-button-multi-undo .mj-right-hud-button-icon {
+    background-image: url("../images/multi-undo.png");
+}
+
+.mj-right-hud-button-multi-undo {
+    --mj-right-hud-icon-width: 21px;
+    --mj-right-hud-icon-height: 21px;
+}
+
 .mj-right-hud-button-hint .mj-right-hud-button-icon {
     background-image: url("../images/hint.png");
 }
@@ -301,6 +944,15 @@
 }
 
 .mj-right-hud-button-settings {
+    --mj-right-hud-icon-width: 20px;
+    --mj-right-hud-icon-height: 20px;
+}
+
+.mj-right-hud-button-help .mj-right-hud-button-icon {
+    background-image: url("../images/info.png");
+}
+
+.mj-right-hud-button-help {
     --mj-right-hud-icon-width: 20px;
     --mj-right-hud-icon-height: 20px;
 }
@@ -354,18 +1006,20 @@
 
 .mj-right-hud-feedback-wrap {
     display: grid;
+    width: 31px;
     justify-items: center;
+    justify-self: center;
     align-self: end;
-    padding-bottom: 22px;
-    transform: translateX(-6px);
+    padding-bottom: 18px;
 }
 
 @media screen and (max-height: 430px) {
     .mj-right-hud-feedback-wrap {
         position: absolute;
-        right: 17px;
-        bottom: 42px;
+        left: 50%;
+        right: auto;
+        bottom: 28px;
         padding-bottom: 0;
-        transform: none;
+        transform: translateX(-50%);
     }
 }

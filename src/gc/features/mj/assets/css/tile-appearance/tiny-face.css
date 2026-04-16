@@ -142,4 +142,4 @@
 .tiny-face .face-141 {background-image: url("../../images/tile-faces/tiny-face/season-2.png")}
 .tiny-face .face-142 {background-image: url("../../images/tile-faces/tiny-face/season-3.png")}
 .tiny-face .face-143 {background-image: url("../../images/tile-faces/tiny-face/season-4.png")}
-.tiny-face .highlight:after {background-image: url("../../images/tile-faces/tiny-face/highlight.png")}
+.tiny-face .highlight:after {background-color: rgba(244, 148, 126, 0.34)}

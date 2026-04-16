@@ -142,5 +142,4 @@
 .medium-face .face-141 {background-image: url("../../images/tile-faces/medium-face/season-2.png")}
 .medium-face .face-142 {background-image: url("../../images/tile-faces/medium-face/season-3.png")}
 .medium-face .face-143 {background-image: url("../../images/tile-faces/medium-face/season-4.png")}
-.medium-face .highlight:after {background-image: url("../../images/tile-faces/medium-face/highlight.png")
-}
+.medium-face .highlight:after {background-color: rgba(244, 148, 126, 0.34)}

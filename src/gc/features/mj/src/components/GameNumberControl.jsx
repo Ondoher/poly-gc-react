@@ -1,8 +1,5 @@
 import React from "react";
 import CssRect from "./CssRect.jsx";
-import RaisedButton from "./RaisedButton.jsx";
-
-const ENABLE_DEBUG_LOSE_BUTTON = false;
 
 export default class GameNumberControl extends React.Component {
 	constructor(props) {
@@ -13,7 +10,7 @@ export default class GameNumberControl extends React.Component {
 		};
 
 		if (props.delegator) {
-			props.delegator.delegateOutbound(this, ['play', 'solve']);
+			props.delegator.delegateOutbound(this, ['play']);
 		}
 	}
 
@@ -62,30 +59,8 @@ export default class GameNumberControl extends React.Component {
 	}
 
 	onShuffle() {
-		if (this.props.onShuffle) {
-			this.props.onShuffle();
-			return;
-		}
-
 		if (this.play) {
 			this.play(-1);
-		}
-	}
-
-	onSolve() {
-		if (this.props.onSolve) {
-			this.props.onSolve();
-			return;
-		}
-
-		if (this.solve) {
-			this.solve();
-		}
-	}
-
-	onLoseDebug() {
-		if (this.props.onLoseDebug) {
-			this.props.onLoseDebug();
 		}
 	}
 
@@ -93,7 +68,7 @@ export default class GameNumberControl extends React.Component {
 		var difficultyLabel = this.formatDifficultyLabel();
 
 		return (
-			<div className="mj-game-number-stack">
+			<div className="mj-game-number-control-stack">
 				{difficultyLabel ? (
 					<div className="mj-game-difficulty-label" aria-label={`Difficulty ${difficultyLabel}`}>
 						{difficultyLabel}
@@ -124,21 +99,7 @@ export default class GameNumberControl extends React.Component {
 						<span className="mj-shuffle-button-icon"></span>
 					</button>
 				</CssRect>
-				<RaisedButton
-					className="mj-game-number-solve-button"
-					onClick={this.onSolve.bind(this)}
-				>
-					Solve
-				</RaisedButton>
-				{ENABLE_DEBUG_LOSE_BUTTON ? (
-					<RaisedButton
-						className="mj-game-number-lose-button"
-						onClick={this.onLoseDebug.bind(this)}
-					>
-						Lose
-					</RaisedButton>
-				) : null}
 			</div>
-		)
+		);
 	}
 }

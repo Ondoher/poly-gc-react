@@ -140,14 +140,31 @@ Completed:
   - `large` from `standard-rect.png`
 - the live `Game #` field is now using `CssRect` rather than the image-cut rectangle treatment
 - the live `Game #` field and shuffle action now render as one composite control with an internal separator
+- the left-side setup controls are now split into a dedicated `LeftHud` with a focused `GameNumberControl`
+- `Settings` and `Help` were moved out of the right icon rail and into left-side text buttons
 - the right-side control rail is now wired back into play actions
+- the right-side control rail is now focused on play actions rather than setup/meta actions
 - the settings rail action now opens the tabbed settings dialog
+- a dedicated help dialog is now wired into the MJ UI with control explanations and touch-oriented guidance
+- the help dialog now includes the actual HUD button imagery as a visual legend
+- the feedback action now has a dedicated floating bottom-right treatment rather than living in the main right-side icon rail
 - short messages are now displayed through a toast-style overlay
 - the win fireworks state now has a bottom-center `Continue` action
 - the win fireworks state can be dismissed with either that action or `Escape`
 - the timer now swaps to the word `Paused` while the board is paused
 - the current live MJ UI is now using `CssRect` in place of `OrnamentalRect` for the board playfield, right HUD rail, settings buttons, text edit control, and shuffle control
 - the settings dialog now includes a live selector component with a custom draggable scrollbar and wired layout, tile size, and tile style draft selection
+- the move-history dialog is now implemented as a real multi-level undo surface backed by live engine undo history rather than a static preview
+- the move-history dialog now uses a reusable custom scrollbar shared with the settings selector
+- a temporary localhost-only half-solve/debug path was introduced for multi-undo testing and later hidden from the normal UI
+- a first-pass expand/contract mode now exists:
+  - the board can expand into a borderless red-field view
+  - the left HUD is hidden in expanded mode
+  - the right HUD remains available
+  - the contract control reuses the same corner slot as expand
+  - feedback is intentionally hidden in expanded mode for now while the layout is still being tuned
+- the expand/contract affordance now uses Tabler `window-maximize` / `window-minimize` SVG assets
+- the first pass of expand/contract motion now animates board scale and surrounding layout changes rather than snapping immediately
 
 Still in progress:
 
@@ -157,8 +174,13 @@ Still in progress:
 - final `CssRect` surface/border tuning against the PSD
 - final exact `Game #` placement
 - final right-HUD rail positioning/content
+- final separation and sizing between the expanded board area and right HUD
+- final expand/contract placement, sizing, and motion polish on real displays
+- final decision on where non-play utility actions should live once expand mode settles
 - final board-area and control spacing polish
 - final settings dialog structure and PSD fidelity
+- final help dialog PSD fidelity and copy polish
+- final multi-undo dialog PSD fidelity and spacing polish
 - preview sizing rules, centering behavior, and PSD fidelity
 - final presentation for larger blocking `message` states
 - dedicated touch polish for settings-dialog scrolling and dragging interactions
@@ -201,6 +223,24 @@ Current implementation note:
   - creates board data through a local `Engine` instance
   - captures a bitmap with `html-to-image`
   - currently anchors the preview to a temporary fixed maximum tile size of `normal` until the real responsive size-selection rules are implemented
+- the current right HUD should now be read as the gameplay rail:
+  - `Pause`
+  - `Restart`
+  - `Undo`
+  - `Redo`
+  - `Multi-level undo`
+  - `Hint`
+  - `Peek`
+- the current left HUD should now be read as the setup/utility side:
+  - difficulty label
+  - `Game #` field plus shuffle/new-board action
+  - `Solution`
+  - `Settings`
+  - `Help`
+- the current expand mode is intentionally still a tuning pass:
+  - it removes the ornamental frame
+  - it keeps the standard red-field family rather than introducing a new color system
+  - it uses a simple borderless board surface so sizing can be tuned before decorative decisions are reintroduced
 
 ### Current Layout Constraint
 
@@ -314,7 +354,10 @@ Do not block the structural refactor on:
 
 Next work session should:
 
+- continue tuning expanded-mode sizing so the board uses more of the available screen area without crowding the right HUD
+- continue deciding whether the expanded board needs a subtle surface separation from the background
+- continue testing the expand/contract affordance and motion on real hardware before locking icon size and offsets
 - continue integrating the preview with a real maximum-tile-size selection rule
 - continue tuning preview sizing and centering against the stable max-size canvas
-- continue PSD-tuning the settings dialog and selector treatment
+- continue PSD-tuning the settings dialog, help dialog, and selector treatment
 - continue tuning the live `Game #` field text and interior fill/transparency

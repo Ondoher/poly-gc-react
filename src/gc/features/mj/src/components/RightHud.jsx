@@ -32,6 +32,11 @@ export default class RightHud extends React.Component {
 					disabled: !this.props.canRedo,
 					onClick: this.props.onRedo,
 				};
+			case 'multi-undo':
+				return {
+					disabled: !this.props.canUndo,
+					onClick: this.props.onShowMultiUndo,
+				};
 			case 'hint':
 				return {
 					disabled: gameOver,
@@ -42,11 +47,6 @@ export default class RightHud extends React.Component {
 					active: Boolean(this.props.isPeeking),
 					disabled: gameOver,
 					onClick: this.props.onPeek,
-				};
-			case 'settings':
-				return {
-					disabled: false,
-					onClick: this.props.onSettings,
 				};
 			case 'feedback':
 				return {
@@ -71,6 +71,7 @@ export default class RightHud extends React.Component {
 				type="button"
 				className={className}
 				aria-label={label}
+				title={label}
 				aria-pressed={active ? 'true' : 'false'}
 				disabled={disabled}
 				onClick={onClick}
@@ -98,14 +99,16 @@ export default class RightHud extends React.Component {
 						{this.renderButton('restart', 'Restart')}
 						{this.renderButton('undo', 'Undo')}
 						{this.renderButton('redo', 'Redo')}
+						{this.renderButton('multi-undo', 'Multi-level undo')}
 						{this.renderButton('hint', 'Hint')}
 						{this.renderButton('peek', 'Peek')}
-						{this.renderButton('settings', 'Settings')}
 					</div>
 				</CssRect>
-				<div className="mj-right-hud-feedback-wrap">
-					{this.renderButton('feedback', 'Feedback')}
-				</div>
+				{!this.props.hideFeedback ? (
+					<div className="mj-right-hud-feedback-wrap">
+						{this.renderButton('feedback', 'Feedback')}
+					</div>
+				) : null}
 			</div>
 		);
 	}

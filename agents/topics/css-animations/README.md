@@ -11,4 +11,4 @@ Use this folder when the task involves:
 
 ## Main Documents
 
-- Add CSS animation notes here as the topic grows.
+- [MJ Play Animations](/c:/dev/poly-gc-react/agents/topics/css-animations/mj-play-animations.md)

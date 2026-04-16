@@ -994,6 +994,193 @@
     outline-offset: 3px;
 }
 
+.mj-help-dialog {
+    --mj-help-panel-width: 860px;
+    --mj-help-panel-height: 620px;
+}
+
+.mj-help-dialog-panel {
+    inline-size: min(var(--mj-help-panel-width), calc(100% - 24px));
+    block-size: auto;
+    max-width: 100%;
+    max-height: min(var(--mj-help-panel-height), calc(100% - 24px));
+}
+
+.mj-help-dialog .mj-modal-dialog-title {
+    margin-top: clamp(10px, 1.6vh, 16px);
+    margin-bottom: clamp(8px, 1.4vh, 12px);
+}
+
+.mj-help-dialog-body {
+    display: grid;
+    min-height: 0;
+    overflow: hidden;
+    padding: 2px 2px 0;
+}
+
+.mj-help-dialog-section {
+    display: grid;
+    gap: 14px;
+    min-height: 0;
+    padding: 10px 12px 12px;
+    border: 2px solid rgba(211, 160, 36, 0.72);
+    background: rgba(112, 14, 14, 0.18);
+    overflow: auto;
+}
+
+.mj-help-dialog-copy-block {
+    display: grid;
+    gap: 10px;
+}
+
+.mj-help-dialog-heading {
+    margin: 0;
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: clamp(16px, 3vh, 20px);
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.1;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-help-dialog-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mj-help-dialog-item {
+    display: grid;
+    gap: 4px;
+    padding: 8px 10px;
+    border: 1px solid rgba(211, 160, 36, 0.42);
+    background: rgba(96, 14, 14, 0.2);
+}
+
+.mj-help-dialog-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.mj-help-dialog-item-icon {
+    --mj-help-icon-width: 22px;
+    --mj-help-icon-height: 22px;
+    display: block;
+    width: var(--mj-help-icon-width);
+    height: var(--mj-help-icon-height);
+    flex: 0 0 auto;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
+}
+
+.mj-help-dialog-item-icon-pause {
+    --mj-help-icon-width: 17px;
+    --mj-help-icon-height: 20px;
+    background-image: url("./../images/pause.png");
+}
+
+.mj-help-dialog-item-icon-restart {
+    --mj-help-icon-width: 17px;
+    --mj-help-icon-height: 22px;
+    background-image: url("./../images/restart.png");
+}
+
+.mj-help-dialog-item-icon-undo {
+    --mj-help-icon-width: 21px;
+    --mj-help-icon-height: 21px;
+    background-image: url("./../images/undo.png");
+}
+
+.mj-help-dialog-item-icon-redo {
+    --mj-help-icon-width: 21px;
+    --mj-help-icon-height: 20px;
+    background-image: url("./../images/redo.png");
+}
+
+.mj-help-dialog-item-icon-multi-undo {
+    --mj-help-icon-width: 21px;
+    --mj-help-icon-height: 21px;
+    background-image: url("./../images/multi-undo.png");
+}
+
+.mj-help-dialog-item-icon-hint {
+    --mj-help-icon-width: 17px;
+    --mj-help-icon-height: 23px;
+    background-image: url("./../images/hint.png");
+}
+
+.mj-help-dialog-item-icon-peek {
+    --mj-help-icon-width: 21px;
+    --mj-help-icon-height: 15px;
+    background-image: url("./../images/peek.png");
+}
+
+.mj-help-dialog-item-icon-settings {
+    --mj-help-icon-width: 20px;
+    --mj-help-icon-height: 20px;
+    background-image: url("./../images/settings.png");
+}
+
+.mj-help-dialog-item-icon-help,
+.mj-help-dialog-item-icon-feedback {
+    background-color: var(--mj-ui-text-color);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    filter: drop-shadow(0 1px 0 rgba(75, 33, 5, 0.45));
+}
+
+.mj-help-dialog-item-icon-help {
+    --mj-help-icon-width: 20px;
+    --mj-help-icon-height: 20px;
+    background-color: transparent;
+    background-image: url("./../images/info.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
+    -webkit-mask-image: none;
+    mask-image: none;
+    filter: none;
+}
+
+.mj-help-dialog-item-icon-feedback {
+    --mj-help-icon-width: 22px;
+    --mj-help-icon-height: 22px;
+    -webkit-mask-image: url("./../images/icons/chat-bubble.svg");
+    mask-image: url("./../images/icons/chat-bubble.svg");
+}
+
+.mj-help-dialog-item-label {
+    color: var(--mj-ui-primary-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: 15px;
+    font-style: italic;
+    font-weight: bold;
+    line-height: 1.1;
+    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+}
+
+.mj-help-dialog-item-copy,
+.mj-help-dialog-copy {
+    margin: 0;
+    color: rgba(255, 232, 182, 0.92);
+    font-size: 14px;
+    line-height: 1.42;
+}
+
+@media (max-width: 760px) {
+    .mj-help-dialog-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .mj-solve-dialog {
     --mj-solve-panel-width: 1120px;
     --mj-solve-panel-height: 720px;

@@ -18,11 +18,27 @@ The scripts that appear to have the best chance of ongoing reuse are the ones th
 
 If the repo later formalizes a shared scripts area, those are the strongest candidates to promote into that more permanent repository-level tooling layer.
 
+## Tile CSS Generators
+
+The Mahjongg tile CSS generators now live together under:
+
+- [scripts/tile-css](/c:/dev/poly-gc-react/scripts/tile-css)
+
+That folder currently contains:
+
+- [tilesize.js](/c:/dev/poly-gc-react/scripts/tile-css/tilesize.js)
+- [tileface.js](/c:/dev/poly-gc-react/scripts/tile-css/tileface.js)
+- [tile-sizes.json](/c:/dev/poly-gc-react/scripts/tile-css/tile-sizes.json)
+- shared helper modules used by those generators
+
+Older top-level script paths still exist during the transition, but the
+tile CSS generator folder above is the canonical location for current work.
+
 ## `tilesize.js`
 
 The tile-size generator lives at:
 
-- [scripts/tilesize.js](/c:/dev/poly-gc-react/scripts/tilesize.js)
+- [scripts/tile-css/tilesize.js](/c:/dev/poly-gc-react/scripts/tile-css/tilesize.js)
 
 Its current purpose is to generate Mahjongg tile-layout CSS files under:
 
@@ -44,11 +60,17 @@ Current generated targets are:
 The script is intended to be run from the repository root. Current regeneration commands are:
 
 ```powershell
-node .\scripts\tilesize.js normal-size .\src\gc\features\mj\assets\css\tile-layout\normal-size.css -w 56 -h 77 -x 8 -y 7 -r 9 -b 9
-node .\scripts\tilesize.js medium-size .\src\gc\features\mj\assets\css\tile-layout\medium-size.css -w 48 -h 66 -x 6 -y 5 -r 8 -b 7
-node .\scripts\tilesize.js small-size .\src\gc\features\mj\assets\css\tile-layout\small-size.css -w 42 -h 58 -x 6 -y 5 -r 8 -b 7
-node .\scripts\tilesize.js tiny-size .\src\gc\features\mj\assets\css\tile-layout\tiny-size.css -w 32 -h 44 -x 5 -y 4 -r 6 -b 6
+node .\scripts\tile-css\tilesize.js normal-size .\src\gc\features\mj\assets\css\tile-layout\normal-size.css -w 56 -h 77 -x 8 -y 7 -r 9 -b 9
+node .\scripts\tile-css\tilesize.js medium-size .\src\gc\features\mj\assets\css\tile-layout\medium-size.css -w 48 -h 66 -x 6 -y 5 -r 8 -b 7
+node .\scripts\tile-css\tilesize.js small-size .\src\gc\features\mj\assets\css\tile-layout\small-size.css -w 42 -h 58 -x 6 -y 5 -r 8 -b 7
+node .\scripts\tile-css\tilesize.js tiny-size .\src\gc\features\mj\assets\css\tile-layout\tiny-size.css -w 32 -h 44 -x 5 -y 4 -r 6 -b 6
 ```
+
+The script now loads its default size definitions from:
+
+- [tile-sizes.json](/c:/dev/poly-gc-react/scripts/tile-css/tile-sizes.json)
+
+You can point it at an alternate config file with `--config` or `-c`.
 
 One recent behavior change is important:
 

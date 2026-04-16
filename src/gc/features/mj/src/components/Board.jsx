@@ -4,9 +4,11 @@ import React from "react";
 import Page from 'components/Page.jsx'
 import Canvas from './Canvas.jsx';
 import CssRect from './CssRect.jsx';
-import GameNumberControl from './GameNumberControl.jsx';
+import LeftHud from './LeftHud.jsx';
 import RightHud from './RightHud.jsx';
 import FeedbackDialog from './FeedbackDialog.jsx';
+import HelpDialog from './HelpDialog.jsx';
+import MultiUndoDialog from './MultiUndoDialog.jsx';
 import SolveDialog from './SolveDialog.jsx';
 import StartupConsentDialog from './StartupConsentDialog.jsx';
 import SettingsDialog from './SettingsDialog.jsx';
@@ -25,6 +27,8 @@ const DEFAULT_TILESET = {
 	class: 'ivory normal-size'
 };
 
+const FIREWORKS_DELAY_MS = 420;
+
 export default class Board extends React.Component {
 	constructor (props) {
 		super(props);
@@ -38,7 +42,7 @@ export default class Board extends React.Component {
 			);
 
 			props.delegator.delegateOutbound(this, [
-				'select', 'initialized', 'play', 'solve', 'undo', 'redo', 'hint', 'pause', 'peek',
+				'select', 'deselect', 'initialized', 'play', 'restart', 'solve', 'playHalfSolution', 'undo', 'redo', 'hint', 'pause', 'peek',
 				'selectLayout', 'selectTileset', 'selectTilesize', 'selectDifficulty'
 			]);
 		}
@@ -61,13 +65,18 @@ export default class Board extends React.Component {
 			startupConsentOpen: true,
 			telemetryConsent: persistedPreferences.telemetryConsent,
 			settingsOpen: false,
+			helpOpen: false,
 			feedbackOpen: false,
 			solveOpen: false,
+			multiUndoOpen: false,
+			multiUndoHistory: [],
+			isExpanded: false,
 			canUndo: false,
 			canRedo: false,
 			isPeeking: false,
 			isPaused: false,
 			won: false,
+			showFireworks: false,
 			celebrationDismissed: false,
 			lost: false,
 			boardNbr: this.props.boardNbr,
@@ -78,6 +87,7 @@ export default class Board extends React.Component {
 		this.tiles = [];
 		this.hasStartedGame = false;
 		this.onWindowKeyDown = this.onWindowKeyDown.bind(this);
+		this.fireworksTimer = null;
 	}
 
 	getPersistedPreferences(props) {
@@ -159,6 +169,26 @@ export default class Board extends React.Component {
 		this.select(tile);
 	}
 
+	onClickCanvas(evt) {
+		if (evt?.target !== evt?.currentTarget) {
+			return;
+		}
+
+		if (this.deselect) {
+			this.deselect();
+		}
+	}
+
+	onClickPlayfieldBackground(evt) {
+		if (evt?.target?.closest?.('.mj-playfield-expand-button')) {
+			return;
+		}
+
+		if (this.deselect) {
+			this.deselect();
+		}
+	}
+
 	onPlay(boardNbr) {
 		if (this.play) {
 			this.play(boardNbr);
@@ -166,6 +196,11 @@ export default class Board extends React.Component {
 	}
 
 	onRestart() {
+		if (this.restart) {
+			this.restart();
+			return;
+		}
+
 		this.onPlay(this.state.boardNbr);
 	}
 
@@ -183,8 +218,45 @@ export default class Board extends React.Component {
 		});
 	}
 
-	onShuffle() {
-		this.onPlay(-1);
+	onShowMultiUndoPreview() {
+		this.setState({
+			multiUndoOpen: true,
+		});
+	}
+
+	onPlayHalfSolution() {
+		if (this.playHalfSolution) {
+			this.playHalfSolution();
+		}
+	}
+
+	onToggleExpanded() {
+		this.setState(function(prevState) {
+			return {
+				isExpanded: !prevState.isExpanded,
+			};
+		});
+	}
+
+	onApplyMultiUndo(moveNumber) {
+		var historyLength = this.state.multiUndoHistory.length;
+		var targetMoveNumber = Number(moveNumber);
+
+		if (!Number.isFinite(targetMoveNumber) || targetMoveNumber < 1 || targetMoveNumber > historyLength) {
+			return;
+		}
+
+		var undoCount = historyLength - targetMoveNumber + 1;
+
+		for (let index = 0; index < undoCount; index++) {
+			if (this.undo) {
+				this.undo();
+			}
+		}
+
+		this.setState({
+			multiUndoOpen: false,
+		});
 	}
 
 	onUndo() {
@@ -279,6 +351,16 @@ export default class Board extends React.Component {
 		});
 	}
 
+	onHelp() {
+		if (this.state.startupConsentOpen) {
+			return;
+		}
+
+		this.setState({
+			helpOpen: true,
+		});
+	}
+
 	onConfirmStartupConsent(selection) {
 		var difficultyChanged = selection.difficulty !== this.state.difficulty;
 
@@ -341,12 +423,24 @@ export default class Board extends React.Component {
 			this.onCloseFeedbackDialog();
 			return;
 		}
+		if (this.state.helpOpen) {
+			this.onCloseHelpDialog();
+			return;
+		}
 		if (this.state.solveOpen) {
 			this.onCloseSolveDialog();
 			return;
 		}
+		if (this.state.multiUndoOpen) {
+			this.onCloseMultiUndoDialog();
+			return;
+		}
 		if (this.state.settingsOpen) {
 			this.onCloseSettingsDialog();
+			return;
+		}
+		if (this.state.isExpanded) {
+			this.onToggleExpanded();
 			return;
 		}
 		if (!this.state.won || this.state.celebrationDismissed) return;
@@ -366,9 +460,21 @@ export default class Board extends React.Component {
 		});
 	}
 
+	onCloseHelpDialog() {
+		this.setState({
+			helpOpen: false,
+		});
+	}
+
 	onCloseSolveDialog() {
 		this.setState({
 			solveOpen: false,
+		});
+	}
+
+	onCloseMultiUndoDialog() {
+		this.setState({
+			multiUndoOpen: false,
 		});
 	}
 
@@ -421,6 +527,7 @@ export default class Board extends React.Component {
 		this.setState(function (prevState) {
 			return {
 				won: on,
+				showFireworks: on ? prevState.showFireworks : false,
 				celebrationDismissed: on ? false : prevState.celebrationDismissed,
 			};
 		})
@@ -447,7 +554,12 @@ export default class Board extends React.Component {
 		})
 	}
 	setGameState(state) {
-		this.setState(state);
+		this.setState(function(prevState) {
+			return {
+				...state,
+				multiUndoHistory: state.multiUndoHistory || prevState.multiUndoHistory,
+			};
+		});
 	}
 
 	setTiles (instance, tiles) {
@@ -492,10 +604,37 @@ export default class Board extends React.Component {
 	}
 
 	componentWillUnmount() {
+		if (this.fireworksTimer) {
+			clearTimeout(this.fireworksTimer);
+			this.fireworksTimer = null;
+		}
+
 		window.removeEventListener('keydown', this.onWindowKeyDown);
 	}
 
 	componentDidUpdate(prevProps, prevState) {
+		if (prevState.won !== this.state.won || prevState.celebrationDismissed !== this.state.celebrationDismissed) {
+			if (this.fireworksTimer) {
+				clearTimeout(this.fireworksTimer);
+				this.fireworksTimer = null;
+			}
+
+			if (this.state.won && !this.state.celebrationDismissed) {
+				if (!this.state.showFireworks) {
+					this.fireworksTimer = setTimeout(function() {
+						this.fireworksTimer = null;
+						this.setState({
+							showFireworks: true,
+						});
+					}.bind(this), FIREWORKS_DELAY_MS);
+				}
+			} else if (this.state.showFireworks) {
+				this.setState({
+					showFireworks: false,
+				});
+			}
+		}
+
 		if (
 			prevState.startupConsentOpen !== this.state.startupConsentOpen ||
 			prevState.telemetryConsent !== this.state.telemetryConsent ||
@@ -522,7 +661,7 @@ export default class Board extends React.Component {
 	}
 
 	renderFireworks() {
-		var won = this.state.won && !this.state.celebrationDismissed;
+		var won = this.state.won && this.state.showFireworks && !this.state.celebrationDismissed;
 
 		if (!won) return;
 
@@ -546,38 +685,75 @@ export default class Board extends React.Component {
 	}
 
 	renderMain(canvasClassName) {
+		var expandButtonLabel = this.state.isExpanded ? "Contract board" : "Expand board";
+		var expandButtonClassName = "mj-playfield-expand-button";
+		var playfieldWrapClassName = "mj-playfield-wrap";
+		var playfieldClassName = "mj-playfield mj-playfield-frame";
+		var playfieldStageClassName = "mj-playfield-stage";
+
+		if (this.state.isExpanded) {
+			expandButtonClassName += " is-expanded";
+			playfieldWrapClassName += " is-expanded";
+			playfieldClassName += " mj-playfield-expanded-surface is-expanded";
+			playfieldStageClassName += " mj-playfield-expanded-stage";
+		}
+
 		return (
-			<CssRect
-				className="mj-playfield mj-playfield-frame"
-				size="large"
-				variant="inset"
+			<div
+				className={playfieldWrapClassName}
+				onClick={this.onClickPlayfieldBackground.bind(this)}
 			>
-				<div className="mj-playfield-stage">
-					<Canvas
-						className={canvasClassName}
-						delegator={this.props.delegator.newDelegator()}
-						tiles={this.state.tiles || []}
-						onClick={this.onClickTile.bind(this)}
-					/>
-				</div>
-			</CssRect>
+				<button
+					type="button"
+					className={expandButtonClassName}
+					aria-label={expandButtonLabel}
+					title={expandButtonLabel}
+					onClick={this.onToggleExpanded.bind(this)}
+				>
+					<span className="mj-playfield-expand-button-icon"></span>
+				</button>
+				<CssRect
+					className={playfieldClassName}
+					size="large"
+					variant="inset"
+				>
+					<div className={playfieldStageClassName}>
+						<Canvas
+							key={this.state.instance}
+							className={canvasClassName}
+							delegator={this.props.delegator.newDelegator()}
+							tiles={this.state.tiles || []}
+							onClick={this.onClickTile.bind(this)}
+							onCanvasClick={this.onClickCanvas.bind(this)}
+						/>
+					</div>
+				</CssRect>
+			</div>
 		)
 	}
 
 	renderGameArea(canvasClassName) {
+		var gameAreaClassName = "mj-game-area";
+
+		if (this.state.isExpanded) {
+			gameAreaClassName += " is-expanded";
+		}
+
 		return (
-			<div className="mj-game-area">
-				<div className="mj-left-hud">
-					<GameNumberControl
+			<div className={gameAreaClassName}>
+				{!this.state.isExpanded ? (
+					<LeftHud
 						delegator={this.props.delegator.newDelegator()}
 						boardNbr={this.state.boardNbr}
 						difficulty={this.state.difficulty}
 						difficulties={this.props.difficulties}
-						onShuffle={this.onShuffle.bind(this)}
 						onSolve={this.onSolve.bind(this)}
+						onSettings={this.onSettings.bind(this)}
+						onHelp={this.onHelp.bind(this)}
+						onPlayHalfSolution={this.onPlayHalfSolution.bind(this)}
 						onLoseDebug={this.onLoseDebug.bind(this)}
 					/>
-				</div>
+				) : null}
 				{this.renderMain(canvasClassName)}
 				<RightHud
 					delegator={this.props.delegator.newDelegator()}
@@ -590,10 +766,11 @@ export default class Board extends React.Component {
 					onRestart={this.onRestart.bind(this)}
 					onUndo={this.onUndo.bind(this)}
 					onRedo={this.onRedo.bind(this)}
+					onShowMultiUndo={this.onShowMultiUndoPreview.bind(this)}
 					onHint={this.onHint.bind(this)}
 					onPause={this.onPause.bind(this)}
 					onPeek={this.onPeek.bind(this)}
-					onSettings={this.onSettings.bind(this)}
+					hideFeedback={this.state.isExpanded}
 					onFeedback={this.onFeedback.bind(this)}
 				/>
 			</div>
@@ -691,6 +868,15 @@ export default class Board extends React.Component {
 		);
 	}
 
+	renderHelpDialog() {
+		return (
+			<HelpDialog
+				open={this.state.helpOpen}
+				onClose={this.onCloseHelpDialog.bind(this)}
+			/>
+		);
+	}
+
 	renderSolveDialog() {
 		var difficulty = this.props.difficulties[this.state.difficulty];
 		var layout = this.props.layouts[this.state.layout];
@@ -710,11 +896,31 @@ export default class Board extends React.Component {
 		);
 	}
 
+	renderMultiUndoDialog() {
+		return (
+			<MultiUndoDialog
+				open={this.state.multiUndoOpen}
+				history={this.state.multiUndoHistory}
+				boardClassName={`${this.state.tileset.class}-tiny tiny-face tiny-size`}
+				onChooseHistoryEntry={this.onApplyMultiUndo.bind(this)}
+				onClose={this.onCloseMultiUndoDialog.bind(this)}
+			/>
+		);
+	}
+
 	render() {
 		var set = this.state.tileset.class;
-		var size = this.state.tilesize.class
+		var size = this.state.tilesize.class;
 
-		var className = `${set}-${size} ${size}-face ${size}-size`
+		var className = `${set}-${size} ${size}-face ${size}-size`;
+
+		if (this.state.isPaused) {
+			className += ' is-paused';
+		}
+
+		if (this.state.lost) {
+			className += ' is-lost';
+		}
 
 		if (!this.props.delegator) {
 			return (
@@ -731,11 +937,15 @@ export default class Board extends React.Component {
 			frameClassName += ' mj-below-minimum';
 		}
 
+		if (this.state.isExpanded) {
+			frameClassName += ' is-expanded';
+		}
+
 		return (
 			<Page serviceName={this.props.serviceName} className={pageClassName}>
 				<div className={frameClassName}>
 					{this.renderGameArea(className)}
-					{this.renderFrame()}
+					{!this.state.isExpanded ? this.renderFrame() : null}
 					{this.renderTransientToast()}
 					{this.renderFireworks()}
 					{this.renderWinAction()}
@@ -743,8 +953,10 @@ export default class Board extends React.Component {
 				</div>
 				{this.renderStartupConsentDialog()}
 				{this.renderSettingsDialog()}
+				{this.renderHelpDialog()}
 				{this.renderFeedbackDialog()}
 				{this.renderSolveDialog()}
+				{this.renderMultiUndoDialog()}
 			</Page>
 		)
 	}

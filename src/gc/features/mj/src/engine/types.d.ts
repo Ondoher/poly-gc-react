@@ -144,9 +144,19 @@ type GameState = {
 	lost: Boolean;
 	open: NumberSet;
 	placed: NumberSet;
+	multiUndoHistory?: MultiUndoHistoryEntry[];
 	allowedTilesizes?: String[];
 	maxTileSize?: String | null;
 	isBelowMinimum?: Boolean;
+}
+
+type MultiUndoHistoryEntry = {
+	id: string;
+	moveNumber: number;
+	tile1: TileKey;
+	tile2: TileKey;
+	face1: Face;
+	face2: Face;
 }
 
 /**

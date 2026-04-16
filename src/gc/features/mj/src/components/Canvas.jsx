@@ -10,10 +10,18 @@ export default class Canvas extends Component {
 		if (this.props.onClick) this.props.onClick(tile);
 	}
 
+	onClickTileEvent(tile, evt) {
+		if (evt && typeof evt.stopPropagation === 'function') {
+			evt.stopPropagation();
+		}
+
+		this.onClickTile(tile);
+	}
+
 	createTiles() {
 		return this.props.tiles.map(function(tile) {
 			var onClick = this.props.onClick
-				? this.props.onClick.bind(this, tile.id)
+				? this.onClickTileEvent.bind(this, tile.id)
 				: undefined;
 
 			return (
@@ -46,7 +54,11 @@ export default class Canvas extends Component {
 		}
 
 		return(
-			<div className={className} style={this.props.style}>
+			<div
+				className={className}
+				style={this.props.style}
+				onClick={this.props.onCanvasClick}
+			>
 				{this.renderTiles()}
 			</div>
 		)

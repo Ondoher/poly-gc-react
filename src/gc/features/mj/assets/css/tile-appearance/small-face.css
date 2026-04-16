@@ -142,5 +142,4 @@
 .small-face .face-141 {background-image: url("../../images/tile-faces/small-face/season-2.png")}
 .small-face .face-142 {background-image: url("../../images/tile-faces/small-face/season-3.png")}
 .small-face .face-143 {background-image: url("../../images/tile-faces/small-face/season-4.png")}
-.small-face .highlight:after {background-image: url("../../images/tile-faces/small-face/highlight.png")
-}
+.small-face .highlight:after {background-color: rgba(244, 148, 126, 0.34)}

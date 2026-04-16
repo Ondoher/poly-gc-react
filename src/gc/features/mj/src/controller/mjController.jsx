@@ -33,8 +33,8 @@ const TILE_SIZE_HYSTERESIS_PX = 2;
 export default class MJController extends Service {
 	constructor() {
 		super('mj:controller');
-		this.implement(['start', 'ready', 'render', 'hint', 'undo', 'redo',
-			'solve', 'play', 'select', 'pause', 'peek', 'selectLayout',
+		this.implement(['start', 'ready', 'render', 'restart', 'hint', 'undo', 'redo',
+			'solve', 'playHalfSolution', 'play', 'select', 'deselect', 'pause', 'peek', 'selectLayout',
 			'selectTileset','selectTilesize', 'selectDifficulty', 'initialized']);
 
 		// these methods will just fire their arguments to who ever is
@@ -62,6 +62,7 @@ export default class MJController extends Service {
 		this.boardNbr = Random.random(0xFFFFF)
 		this.onSizeChanged = this.onSizeChanged.bind(this);
 		this.lastTrackedElapsedSecond = -1;
+		this.finalPlayTiles = null;
 	}
 
 	recordAction(action) {
@@ -347,6 +348,7 @@ export default class MJController extends Service {
 			remaining: state.remaining,
 			canUndo: state.canUndo,
 			canRedo: state.canRedo,
+			multiUndoHistory: state.multiUndoHistory,
 			isPeeking: this.peeking,
 			isPaused: Boolean(this.paused > 0),
 			boardNbr: this.boardNbr,
@@ -402,7 +404,16 @@ export default class MJController extends Service {
 	}
 
 	removeTile(tile) {
-		this.showTile(tile, false);
+		if (this.finalPlayTiles && this.finalPlayTiles.has(tile)) {
+			this.showTile(tile, this.finalPlayTiles.get(tile));
+			this.finalPlayTiles.delete(tile);
+			if (this.finalPlayTiles.size === 0) {
+				this.finalPlayTiles = null;
+			}
+			return;
+		}
+
+		this.showTile(tile, 'played');
 	}
 
 	/**
@@ -432,10 +443,10 @@ export default class MJController extends Service {
 		var tiles = this.engine.undo();
 		if (tiles === undefined) return;
 
-		this.showTile(tiles.key1, true);
-		this.highlightTile(tiles.key1, false);
+		this.showTile(tiles.tile1, true);
+		this.highlightTile(tiles.tile1, 'undo');
 		this.showTile(tiles.tile2, true);
-		this.highlightTile(tiles.tile2, false);
+		this.highlightTile(tiles.tile2, 'undo');
 
 		if (this.gameLost) {
 			this.resetTimer(on);
@@ -452,10 +463,48 @@ export default class MJController extends Service {
 
 		if (tiles === undefined) return;
 
-		this.showTile(tiles.key1, false);
-		this.highlightTile(tiles.key1, false);
-		this.showTile(tiles.tile2, false);
-		this.highlightTile(tiles.tile2, false);
+		this.showTile(tiles.tile1, 'redo');
+		this.showTile(tiles.tile2, 'redo');
+	}
+
+	restart() {
+		var history = this.engine.getUndoHistory();
+		var restoredTiles = history.flatMap(function(move) {
+			return [move.tile1, move.tile2];
+		});
+
+		this.hideHints();
+		this.currentHint = false;
+		this.currentHints = [];
+
+		if (this.selectedTile !== -1) {
+			this.highlightTile(this.selectedTile, false);
+			this.selectedTile = -1;
+		}
+
+		if (this.peeking) {
+			this.peek();
+		}
+
+		this.engine.startOver();
+
+		restoredTiles.forEach(function(tile) {
+			this.showTile(tile, true);
+			this.highlightTile(tile, 'restart');
+		}, this);
+
+		this.gameLost = false;
+		this.gameWon = false;
+		this.setWon(false);
+		this.setLost(false);
+		this.message('');
+		this.shortMessage('');
+
+		this.resetTimer(false);
+		this.startTimer(false);
+		this.updateTimerState();
+		this.lastTrackedElapsedSecond = -1;
+		this.trackElapsedTime(0);
 	}
 
 	/**
@@ -591,30 +640,51 @@ export default class MJController extends Service {
 		this.currentHint = false;
 
 		if (this.peeking) {
-			this.showTile(tile, false);
+			this.showTile(tile, 'peek');
 			this.peeked.push(tile);
 			this.timerPenalty(5000);
 			return;
 		}
 
-		if (!this.isOpen(tile)) return;
+		if (!this.isOpen(tile)) {
+			this.highlightTile(tile, 'blocked');
+			return;
+		}
 
 		if (this.selectedTile === -1) {
-			this.highlightTile(tile, true);
+			this.highlightTile(tile, 'selected');
 			this.selectedTile = tile;
 		} else if (this.selectedTile === tile) {
 			this.highlightTile(this.selectedTile, false);
 			this.selectedTile = -1;
 		} else {
 			if (this.engine.canPlay(tile, this.selectedTile)) {
+				if (this.engine.tileCount === 2) {
+					this.finalPlayTiles = new Map([
+						[tile, 'final-played-left'],
+						[this.selectedTile, 'final-played-right'],
+					]);
+				}
 				this.engine.playTiles(tile, this.selectedTile)
 				this.selectedTile = -1;
 			} else {
-				this.highlightTile(tile, true);
+				this.highlightTile(tile, 'selected');
 				this.highlightTile(this.selectedTile, false);
 				this.selectedTile = tile;
 			}
 		}
+	}
+
+	deselect() {
+		this.hideHints();
+		this.currentHint = false;
+
+		if (this.selectedTile === -1) {
+			return;
+		}
+
+		this.highlightTile(this.selectedTile, false);
+		this.selectedTile = -1;
 	}
 
 
@@ -640,11 +710,6 @@ export default class MJController extends Service {
 	}
 
 	updateTimerState() {
-		if (this.paused <= 0) {
-			this.hideBoard(false);
-		} else {
-			this.hideBoard(true);
-		}
 		this.setGameState({isPaused: this.paused});
 	}
 
@@ -665,6 +730,7 @@ export default class MJController extends Service {
 		} else {
 			this.peeked.forEach(function(tile) {
 				this.showTile(tile, true);
+				this.highlightTile(tile, 'restart');
 			}, this)
 		}
 
@@ -731,6 +797,39 @@ export default class MJController extends Service {
 				this.showTile(tile2, false)
 			}
 		}.bind(this), 50)
+	}
+
+	playHalfSolution() {
+		let solution = Array.isArray(this.engine.solution) ? this.engine.solution.slice() : [];
+		let moveCount = Math.floor(solution.length / 2);
+		let halfMoveCount = Math.floor(moveCount / 2);
+
+		if (halfMoveCount <= 0) {
+			return;
+		}
+
+		this.hideHints();
+		this.currentHint = false;
+
+		if (this.selectedTile !== -1) {
+			this.highlightTile(this.selectedTile, false);
+			this.selectedTile = -1;
+		}
+
+		for (let idx = 0; idx < halfMoveCount; idx++) {
+			let tile1 = solution[idx * 2];
+			let tile2 = solution[idx * 2 + 1];
+
+			if (!this.engine.canPlay(tile1, tile2)) {
+				break;
+			}
+
+			this.engine.playTiles(tile1, tile2);
+			this.showTile(tile1, false);
+			this.highlightTile(tile1, false);
+			this.showTile(tile2, false);
+			this.highlightTile(tile2, false);
+		}
 	}
 
 	async render() {

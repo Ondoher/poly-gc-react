@@ -20,6 +20,11 @@ export interface MJControllerService {
 	render(): Promise<ReactElement>;
 
 	/**
+	 * Restart the current board by restoring all played tiles.
+	 */
+	restart(): void;
+
+	/**
 	 * Called by the hint action when the player asks for a hint.
 	 */
 	hint(): void;
@@ -40,6 +45,11 @@ export interface MJControllerService {
 	solve(): void;
 
 	/**
+	 * Called by the debug action when half of the known solution should be played automatically.
+	 */
+	playHalfSolution(): void;
+
+	/**
 	 * Called by the play action when a board number should be started.
 	 *
 	 * @param boardNbr - Specify the board number to play.
@@ -52,6 +62,11 @@ export interface MJControllerService {
 	 * @param tile - Specify the selected tile id.
 	 */
 	select(tile: number): void;
+
+	/**
+	 * Called when selection should be cleared without selecting a new tile.
+	 */
+	deselect(): void;
 
 	/**
 	 * Called by the pause action when the paused state should change.

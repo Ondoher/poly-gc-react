@@ -18,6 +18,7 @@ Current topic areas under this folder:
 - [Real 3D Rendering](/c:/dev/poly-gc-react/agents/topics/real-3d-rendering/README.md)
 - [Scripts](/c:/dev/poly-gc-react/agents/topics/scripts/README.md)
 - [Testing](/c:/dev/poly-gc-react/agents/topics/testing/README.md)
+- [Telemetry Analysis](/c:/dev/poly-gc-react/agents/topics/telemetry-analysis/README.md)
 
 ## Architecture
 
@@ -103,6 +104,12 @@ Testing topic entry points:
 - [Testing Topic Index](/c:/dev/poly-gc-react/agents/topics/testing/README.md)
 - [Testing](/c:/dev/poly-gc-react/agents/topics/testing/testing.md)
 - [Testing Implementation Plan](/c:/dev/poly-gc-react/agents/topics/testing/testing-implementation-plan.md)
+
+## Telemetry Analysis
+
+Telemetry analysis topic entry points:
+
+- [Telemetry Analysis README](/c:/dev/poly-gc-react/agents/topics/telemetry-analysis/README.md)
 
 ## Progressive Web App
 

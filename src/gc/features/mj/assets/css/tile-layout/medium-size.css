@@ -10,7 +10,8 @@ ydepth: 5
 rpad:   8
 bpad:   7
 
-command: node tilesize.js medium-size -w 48 -h 66 -x 6 -y 5 -r 8 -b 7
+command: node .\scripts\tile-css\tilesize.js medium-size -w 48 -h 66 -x 6 -y 5 -r 8 -b 7
+config:  /dev/poly-gc-react/scripts/tile-css/tile-sizes.json
 
 Dimensions
 ==========
@@ -39,9 +40,35 @@ The preview surface size when this tile size is the maximum available size
 /*==============================================================================
 Common css for all tiles
 */
-.medium-size .tile {position: absolute; width: 48px; height: 66px;}
-.medium-size .highlight:after {content: ""; position: absolute; left:0; right: 0; width: 48px; height: 66px;}
-.medium-size .face {width: 48px; height: 66px;}
+.medium-size .tile {
+	position: absolute;
+	width: 48px;
+	height: 66px;
+	--mj-tile-width: 48px;
+	--mj-tile-height: 66px;
+	--mj-tile-face-width: 40px;
+	--mj-tile-face-height: 59px;
+	--mj-tile-right-pad: 8px;
+	--mj-tile-bottom-pad: 7px;
+}
+.medium-size .face {
+	position: relative;
+	width: 48px;
+	height: 66px;
+}
+.medium-size .face:after {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 40px;
+	height: 59px;
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
+	opacity: 0;
+	pointer-events: none;
+}
+.medium-size .highlight:after {opacity: 1;}
 /*==============================================================================
 Defines absolute position for each cell in the grid. Add these classes to a tile
 to position it in the correct grid cell.
