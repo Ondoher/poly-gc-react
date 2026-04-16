@@ -18,6 +18,31 @@ The scripts that appear to have the best chance of ongoing reuse are the ones th
 
 If the repo later formalizes a shared scripts area, those are the strongest candidates to promote into that more permanent repository-level tooling layer.
 
+One exception now exists:
+
+- [scripts/deploy/production-deploy.sh](/c:/dev/poly-gc-react/scripts/deploy/production-deploy.sh)
+
+That script is an intentionally reusable operational helper for the current
+server deploy flow. It is not a one-off content-generation tool.
+
+## Deployment Script
+
+The current production deploy helper lives at:
+
+- [scripts/deploy/production-deploy.sh](/c:/dev/poly-gc-react/scripts/deploy/production-deploy.sh)
+
+Its purpose is to run the verified server-side update flow:
+
+- load `nvm`
+- `git pull`
+- `npm install`
+- `pm2 restart poly-gc --update-env`
+- show status and recent logs
+
+The exact live runbook and environment assumptions are documented in:
+
+- [Production Deploy Runbook](/c:/dev/poly-gc-react/agents/topics/deployment/production-deploy-runbook.md)
+
 ## Tile CSS Generators
 
 The Mahjongg tile CSS generators now live together under:

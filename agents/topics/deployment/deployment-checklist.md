@@ -77,3 +77,7 @@ Current assumptions:
 - [ ] Document where logs live
 - [ ] Document certificate renewal/install steps
 - [ ] Document who owns server access and DNS access
+
+Current verified live runbook:
+
+- [Production Deploy Runbook](/c:/dev/poly-gc-react/agents/topics/deployment/production-deploy-runbook.md)

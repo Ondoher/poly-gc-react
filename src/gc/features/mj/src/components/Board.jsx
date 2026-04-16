@@ -62,7 +62,7 @@ export default class Board extends React.Component {
 			message: '',
 			shortMessage: '',
 			shortMessageKey: 0,
-			startupConsentOpen: true,
+			startupConsentOpen: !persistedPreferences.hasViewedStartupConsent,
 			telemetryConsent: persistedPreferences.telemetryConsent,
 			settingsOpen: false,
 			helpOpen: false,
@@ -601,6 +601,11 @@ export default class Board extends React.Component {
 	componentDidMount() {
 		window.addEventListener('keydown', this.onWindowKeyDown);
 		this.applyPersistedSelections();
+
+		if (!this.state.startupConsentOpen && !this.hasStartedGame) {
+			this.hasStartedGame = true;
+			this.initialized();
+		}
 	}
 
 	componentWillUnmount() {
