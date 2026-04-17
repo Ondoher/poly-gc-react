@@ -138,6 +138,7 @@ export default class MJController extends Service {
 	ready() {
 		this.actionCollector = this.registry.subscribe("mj:action-collector");
 		this.cssVars = this.registry.subscribe("mj:css-vars");
+		this.engine.setActionCollector(this.actionCollector);
 
 		if (this.cssVars && this.cssVars.precache) {
 			this.cssVars.precache(TIMING_VAR_NAMES);

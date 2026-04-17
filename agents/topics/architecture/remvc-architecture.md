@@ -52,6 +52,15 @@ In practice, this often means classes declare their dependencies by calling `thi
 
 So in practical terms, the repo behaves more like a registry-centered architecture containing multiple scoped MVC groupings than a single monolithic MVC stack.
 
+There is also an important lifecycle rule for registry-backed services:
+
+- service `start()` should be used for local initialization that makes the service usable
+- service `start()` should not assume other services are ready yet
+- code should not call or depend on other services until `ready()` has been called
+- cross-service subscriptions, listener wiring, and precache work that depends on another service should happen in `ready()`
+
+This matters because Polylith startup can initialize services in parallel. A service may exist in the registry during startup without yet being safe to call as a dependency.
+
 ## Model And Service Boundary
 
 Another useful architectural boundary is the distinction between models and services on the client side.

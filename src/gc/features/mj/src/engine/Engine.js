@@ -1,4 +1,4 @@
-import { makeEventable, registry } from '@polylith/core';
+import { makeEventable } from '@polylith/core';
 import Random from 'utils/random.js'
 import NumberSet from 'utils/NumberSet.js';
 import GameGenerator from './GameGenerator.js';
@@ -125,8 +125,16 @@ export default class Engine {
 		};
 
 		this.setLayout();
+		this.actionCollector = null;
+	}
 
-		this.actionCollector = registry.subscribe("mj:action-collector");
+	/**
+	 * Call this method to wire the action collector after the controller service becomes ready.
+	 *
+	 * @param {{recordAction?: Function} | null} actionCollector
+	 */
+	setActionCollector(actionCollector) {
+		this.actionCollector = actionCollector || null;
 	}
 
 	/**

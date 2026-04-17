@@ -90,6 +90,11 @@ Current working rules are:
 - lifecycle methods such as `start` and `ready` are called directly by Polylith and do not need to be documented in the service `.d.ts` interface
 - service interfaces should include JSDoc comments
 - when the service implementation already has JSDoc, copy that documentation into the service interface where it still applies
+- service `start()` should do local initialization only
+- local initialization in `start()` should leave the service internally usable once dependencies become available
+- service `start()` should not call methods on other services or assume those services are ready yet
+- service `ready()` is the point where cross-service subscriptions, listener wiring, precache calls, and other dependency-driven setup should happen
+- if a non-service class needs a registry service, it should wait until its own runtime-ready point, such as React `componentDidMount`, rather than subscribing in the constructor
 
 Script-specific guidance now lives in the scripts topic:
 

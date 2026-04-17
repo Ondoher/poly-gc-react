@@ -82,8 +82,8 @@ export default class Board extends React.Component {
 			boardNbr: this.props.boardNbr,
 		}
 		this.persistedPreferences = persistedPreferences;
-		this.trackingModel = registry.subscribe("mj:tracking-model");
-		this.feedbackModel = registry.subscribe("mj:feedback-model");
+		this.trackingModel = null;
+		this.feedbackModel = null;
 		this.tiles = [];
 		this.hasStartedGame = false;
 		this.onWindowKeyDown = this.onWindowKeyDown.bind(this);
@@ -650,6 +650,9 @@ export default class Board extends React.Component {
 	}
 
 	componentDidMount() {
+		this.trackingModel = registry.subscribe("mj:tracking-model");
+		this.feedbackModel = registry.subscribe("mj:feedback-model");
+
 		window.addEventListener('keydown', this.onWindowKeyDown);
 		this.applyPersistedSelections();
 

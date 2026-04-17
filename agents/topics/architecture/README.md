@@ -20,6 +20,7 @@ REMVC architecture:
 - [Registry](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md#registry)
 - [Model And Service Boundary](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md#model-and-service-boundary)
 - [View And Presentation](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md#view-and-presentation)
+- service lifecycle usage: [Registry](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md#registry)
 
 Feature organization:
 
@@ -27,6 +28,7 @@ Feature organization:
 - [Feature Ownership And Structure](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md#feature-ownership-and-structure)
 - [Naming And Placement Conventions](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md#naming-and-placement-conventions)
 - [Runtime Feature Activation](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md#runtime-feature-activation)
+- service startup and ready rules: [Naming And Placement Conventions](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md#naming-and-placement-conventions)
 
 Build and assets:
 
