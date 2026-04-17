@@ -29,6 +29,8 @@
 .mj-playfield-wrap {
     grid-area: play;
     position: relative;
+    display: grid;
+    align-self: stretch;
     min-width: 0;
     min-height: 0;
     transition: opacity 160ms ease-out;
@@ -39,11 +41,6 @@
     align-self: stretch;
     min-width: 0;
     min-height: 0;
-}
-
-.mj-playfield-wrap.is-expanded .mj-playfield-expand-button {
-    top: 8px;
-    right: 8px;
 }
 
 .mj-right-hud {
@@ -72,19 +69,33 @@
 
 .mj-css-rect.mj-playfield {
     display: grid;
+    align-self: stretch;
     align-content: start;
+    width: 100%;
+    height: auto;
+    min-height: calc(100% - 24px);
     --mj-css-rect-fill-top: rgba(120, 20, 20, 0.52);
     --mj-css-rect-fill-bottom: rgba(110, 17, 17, 0.56);
     justify-items: center;
-    margin: 6px 18px 8px;
+    margin: 12px 8px 14px;
     padding: 4px 6px 10px;
 }
 
+.mj-playfield-surface {
+    width: 100%;
+    min-height: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 24px;
+    align-items: start;
+}
+
+.mj-playfield-expand-slot {
+    display: grid;
+    justify-items: end;
+    align-items: start;
+}
+
 .mj-playfield-expand-button {
-    position: absolute;
-    top: 3px;
-    right: -7px;
-    z-index: 3;
     width: 24px;
     height: 24px;
     border: 0;
@@ -128,9 +139,9 @@
     z-index: 2;
     justify-self: center;
     align-self: start;
+    grid-column: 1;
     width: max-content;
     max-width: 100%;
-    margin-top: clamp(3px, 0.75vh, 12px);
     opacity: 0.98;
     transform: scale(1);
     transform-origin: center center;
@@ -143,7 +154,8 @@
 .mj-playfield-expanded-surface {
     position: relative;
     display: grid;
-    place-items: center;
+    align-items: start;
+    justify-items: stretch;
     width: 100%;
     height: 100%;
     min-width: 0;
@@ -164,17 +176,21 @@
     border: 0;
     box-shadow: none;
     margin: 0;
-    padding: 0;
-    align-content: center;
-    justify-items: center;
+    padding: 8px 0 0;
+    align-content: start;
+    justify-items: stretch;
+}
+
+.mj-css-rect.mj-playfield-expanded-surface.is-expanded .mj-playfield-surface {
+    height: 100%;
 }
 
 .mj-playfield-expanded-stage {
-    margin-top: 14px;
-    align-self: center;
+    margin-top: 20px;
+    align-self: start;
     max-width: 100%;
     max-height: 100%;
-    transform: scale(1.18);
+    transform: scale(1.15);
     transform-origin: center center;
     opacity: 1;
 }
@@ -928,6 +944,39 @@
 .mj-right-hud-button-hint {
     --mj-right-hud-icon-width: 17px;
     --mj-right-hud-icon-height: 23px;
+    position: relative;
+}
+
+.mj-right-hud-button-hint::before {
+    content: "";
+    position: absolute;
+    inset: -4px -3px;
+    border-radius: 7px;
+    background:
+        linear-gradient(180deg, rgba(255, 194, 154, 0.18), rgba(173, 67, 44, 0.1));
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 210, 166, 0.16),
+        0 0 0 1px rgba(122, 18, 18, 0.14);
+    opacity: 0;
+    transition:
+        opacity 140ms ease-out,
+        box-shadow 140ms ease-out,
+        background 140ms ease-out;
+    pointer-events: none;
+}
+
+.mj-right-hud-button-hint.is-active::before {
+    opacity: 1;
+    background:
+        linear-gradient(180deg, rgba(255, 210, 166, 0.34), rgba(194, 89, 58, 0.18));
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 229, 194, 0.42),
+        0 0 10px rgba(241, 164, 98, 0.16);
+}
+
+.mj-right-hud-button-hint.is-active .mj-right-hud-button-icon {
+    filter: brightness(1.25) drop-shadow(0 0 5px rgba(241, 164, 98, 0.36));
+    transform: scale(1.05);
 }
 
 .mj-right-hud-button-peek .mj-right-hud-button-icon {
@@ -937,6 +986,39 @@
 .mj-right-hud-button-peek {
     --mj-right-hud-icon-width: 21px;
     --mj-right-hud-icon-height: 15px;
+    position: relative;
+}
+
+.mj-right-hud-button-peek::before {
+    content: "";
+    position: absolute;
+    inset: -4px -3px;
+    border-radius: 7px;
+    background:
+        linear-gradient(180deg, rgba(255, 179, 151, 0.2), rgba(176, 42, 49, 0.12));
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 188, 145, 0.18),
+        0 0 0 1px rgba(122, 18, 18, 0.16);
+    opacity: 0;
+    transition:
+        opacity 140ms ease-out,
+        box-shadow 140ms ease-out,
+        background 140ms ease-out;
+    pointer-events: none;
+}
+
+.mj-right-hud-button-peek.is-active::before {
+    opacity: 1;
+    background:
+        linear-gradient(180deg, rgba(255, 190, 156, 0.38), rgba(188, 44, 58, 0.2));
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 216, 176, 0.44),
+        0 0 10px rgba(236, 128, 94, 0.18);
+}
+
+.mj-right-hud-button-peek.is-active .mj-right-hud-button-icon {
+    filter: brightness(1.28) drop-shadow(0 0 5px rgba(245, 154, 118, 0.42));
+    transform: scale(1.05);
 }
 
 .mj-right-hud-button-settings .mj-right-hud-button-icon {

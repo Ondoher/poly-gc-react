@@ -424,6 +424,27 @@ export default class MJController extends Service {
 
 		this.hintTile(this.currentHint.tile1, false);
 		this.hintTile(this.currentHint.tile2, false);
+		this.setGameState({isHinting: false});
+	}
+
+	preserveSelectionForHints() {
+		if (this.selectedTile === -1 || this.hintSelectedTile !== -1) return;
+
+		this.hintSelectedTile = this.selectedTile;
+		this.highlightTile(this.selectedTile, false);
+		this.selectedTile = -1;
+	}
+
+	restoreSelectionFromHints() {
+		if (this.hintSelectedTile === -1 || this.selectedTile !== -1) return;
+
+		this.selectedTile = this.hintSelectedTile;
+		this.hintSelectedTile = -1;
+		this.highlightTile(this.selectedTile, 'selected');
+	}
+
+	clearHintSelectionAnchor() {
+		this.hintSelectedTile = -1;
 	}
 
 	/**
@@ -434,6 +455,7 @@ export default class MJController extends Service {
 
 		this.hintTile(this.currentHint.tile1, true);
 		this.hintTile(this.currentHint.tile2, true);
+		this.setGameState({isHinting: true});
 	}
 
 	/**
@@ -476,6 +498,7 @@ export default class MJController extends Service {
 		this.hideHints();
 		this.currentHint = false;
 		this.currentHints = [];
+		this.clearHintSelectionAnchor();
 
 		if (this.selectedTile !== -1) {
 			this.highlightTile(this.selectedTile, false);
@@ -497,6 +520,7 @@ export default class MJController extends Service {
 		this.gameWon = false;
 		this.setWon(false);
 		this.setLost(false);
+		this.setGameState({isHinting: false});
 		this.message('');
 		this.shortMessage('');
 
@@ -555,10 +579,14 @@ export default class MJController extends Service {
 		this.boardNbr = boardNbr;
 
 		this.selectedTile = -1;
+		this.hintSelectedTile = -1;
 
 		this.hintIdx = -1;
 		this.hint1 = -1;
 		this.hint2 = -1;
+		this.currentHint = false;
+		this.currentHints = [];
+		this.clearHintSelectionAnchor();
 		this.peeking = false;
 		this.paused = 0;
 
@@ -576,6 +604,7 @@ export default class MJController extends Service {
 		this.resetTimer(false);
 		this.startTimer(false);
 		this.updateTimerState();
+		this.setGameState({isHinting: false});
 		this.lastTrackedElapsedSecond = -1;
 		this.recordAction({
 			type: "session-started",
@@ -609,18 +638,26 @@ export default class MJController extends Service {
 			this.resetTimer(false);
 			this.restartTimer();
 		}
+
 		this.hideHints();
 
 		if (this.currentHint && this.currentHints.length === 0) {
 			this.shortMessage('NO MORE HINTS');
 			this.currentHint= false;
+			this.setGameState({isHinting: false});
+			this.restoreSelectionFromHints();
 			return;
 		}
 
-		if (!this.currentHint) this.currentHints = this.engine.getHints(this.selectedTile);
+		if (!this.currentHint) {
+			this.preserveSelectionForHints();
+			this.currentHints = this.engine.getHints(this.hintSelectedTile !== -1 ? this.hintSelectedTile : this.selectedTile);
+		}
 
 		if (this.currentHints.length === 0) {
 			this.shortMessage('NO AVAILABLE HINTS');
+			this.setGameState({isHinting: false});
+			this.restoreSelectionFromHints();
 			return;
 		}
 
@@ -638,6 +675,8 @@ export default class MJController extends Service {
 	select(tile) {
 		this.hideHints();
 		this.currentHint = false;
+		this.currentHints = [];
+		this.clearHintSelectionAnchor();
 
 		if (this.peeking) {
 			this.showTile(tile, 'peek');
@@ -678,6 +717,8 @@ export default class MJController extends Service {
 	deselect() {
 		this.hideHints();
 		this.currentHint = false;
+		this.currentHints = [];
+		this.clearHintSelectionAnchor();
 
 		if (this.selectedTile === -1) {
 			return;

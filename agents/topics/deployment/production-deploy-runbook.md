@@ -47,6 +47,7 @@ cd ~/poly-gc-react
 git status -sb
 git pull
 npm install
+npm run build
 pm2 restart poly-gc --update-env
 ```
 
@@ -59,6 +60,7 @@ bash ./scripts/deploy/production-deploy.sh
 Notes:
 
 - `npm install` is included so deploys stay safe when dependencies change.
+- `npm run build` is required before restart because production serves the built bundles under `dist/`.
 - `pm2 restart poly-gc --update-env` matches the live process name and refreshes environment usage.
 - The deploy helper script assumes:
   - app name: `poly-gc`
@@ -89,6 +91,7 @@ Then smoke test the site in a browser:
 
 - load `https://apps.uber-geek.com`
 - load the Mahjongg screen
+- hard refresh if a browser cache is suspected after a JS/CSS bundle change
 - verify a fresh board starts
 - verify restart, undo, redo, hint, and feedback/help entry points still open
 

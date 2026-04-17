@@ -65,6 +65,7 @@ Current assumptions:
 ## First Deploy
 
 - [ ] Run the first `git pull` based deploy
+- [ ] Rebuild production bundles if the app serves compiled frontend assets
 - [ ] Restart or reload the app process
 - [ ] Verify the app is serving correctly
 - [ ] Smoke test the main user flow

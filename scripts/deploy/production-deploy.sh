@@ -28,6 +28,10 @@ echo "== Install dependencies =="
 npm install
 
 echo
+echo "== Build app bundles =="
+npm run build
+
+echo
 echo "== Restart PM2 app =="
 pm2 restart "$APP_NAME" --update-env
 

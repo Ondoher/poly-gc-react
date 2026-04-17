@@ -39,6 +39,7 @@ export default class RightHud extends React.Component {
 				};
 			case 'hint':
 				return {
+					active: Boolean(this.props.isHinting),
 					disabled: gameOver,
 					onClick: this.props.onHint,
 				};

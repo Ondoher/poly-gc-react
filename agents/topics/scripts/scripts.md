@@ -36,6 +36,7 @@ Its purpose is to run the verified server-side update flow:
 - load `nvm`
 - `git pull`
 - `npm install`
+- `npm run build`
 - `pm2 restart poly-gc --update-env`
 - show status and recent logs
 

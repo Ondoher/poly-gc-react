@@ -73,6 +73,7 @@ export default class Board extends React.Component {
 			isExpanded: false,
 			canUndo: false,
 			canRedo: false,
+			isHinting: false,
 			isPeeking: false,
 			isPaused: false,
 			won: false,
@@ -708,29 +709,33 @@ export default class Board extends React.Component {
 				className={playfieldWrapClassName}
 				onClick={this.onClickPlayfieldBackground.bind(this)}
 			>
-				<button
-					type="button"
-					className={expandButtonClassName}
-					aria-label={expandButtonLabel}
-					title={expandButtonLabel}
-					onClick={this.onToggleExpanded.bind(this)}
-				>
-					<span className="mj-playfield-expand-button-icon"></span>
-				</button>
 				<CssRect
 					className={playfieldClassName}
 					size="large"
 					variant="inset"
 				>
-					<div className={playfieldStageClassName}>
-						<Canvas
-							key={this.state.instance}
-							className={canvasClassName}
-							delegator={this.props.delegator.newDelegator()}
-							tiles={this.state.tiles || []}
-							onClick={this.onClickTile.bind(this)}
-							onCanvasClick={this.onClickCanvas.bind(this)}
-						/>
+					<div className="mj-playfield-surface">
+						<div className={playfieldStageClassName}>
+							<Canvas
+								key={this.state.instance}
+								className={canvasClassName}
+								delegator={this.props.delegator.newDelegator()}
+								tiles={this.state.tiles || []}
+								onClick={this.onClickTile.bind(this)}
+								onCanvasClick={this.onClickCanvas.bind(this)}
+							/>
+						</div>
+						<div className="mj-playfield-expand-slot">
+							<button
+								type="button"
+								className={expandButtonClassName}
+								aria-label={expandButtonLabel}
+								title={expandButtonLabel}
+								onClick={this.onToggleExpanded.bind(this)}
+							>
+								<span className="mj-playfield-expand-button-icon"></span>
+							</button>
+						</div>
 					</div>
 				</CssRect>
 			</div>
@@ -764,6 +769,7 @@ export default class Board extends React.Component {
 					delegator={this.props.delegator.newDelegator()}
 					canUndo={this.state.canUndo}
 					canRedo={this.state.canRedo}
+					isHinting={this.state.isHinting}
 					isPeeking={this.state.isPeeking}
 					isPaused={Boolean(this.state.isPaused)}
 					won={this.state.won}
@@ -936,6 +942,7 @@ export default class Board extends React.Component {
 		var pageClassName = 'page mj-board-page ';
 		pageClassName += won ? 'won' : 'not-won';
 		pageClassName += this.state.isBelowMinimum ? ' mj-below-minimum' : '';
+		pageClassName += this.state.isExpanded ? ' is-expanded' : '';
 		var frameClassName = 'mj-frame-shell';
 
 		if (this.state.isBelowMinimum) {
