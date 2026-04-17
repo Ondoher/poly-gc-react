@@ -26,9 +26,6 @@ const DEFAULT_TILESET = {
 	css: '',
 	class: 'ivory normal-size'
 };
-
-const FIREWORKS_DELAY_MS = 420;
-
 export default class Board extends React.Component {
 	constructor (props) {
 		super(props);
@@ -80,6 +77,8 @@ export default class Board extends React.Component {
 			showFireworks: false,
 			celebrationDismissed: false,
 			lost: false,
+			isFailureAnimating: false,
+			isGenerating: false,
 			boardNbr: this.props.boardNbr,
 		}
 		this.persistedPreferences = persistedPreferences;
@@ -89,6 +88,8 @@ export default class Board extends React.Component {
 		this.hasStartedGame = false;
 		this.onWindowKeyDown = this.onWindowKeyDown.bind(this);
 		this.fireworksTimer = null;
+		this.failureAnimationTimer = null;
+		this.generateAnimationTimer = null;
 	}
 
 	getPersistedPreferences(props) {
@@ -410,8 +411,6 @@ export default class Board extends React.Component {
 		this.setState({
 			lost: false,
 		});
-
-		this.onPlay(-1);
 	}
 
 	onWindowKeyDown(evt) {
@@ -574,6 +573,46 @@ export default class Board extends React.Component {
 		});
 	}
 
+	startFailureAnimation() {
+		this.clearFailureAnimationTimer();
+		this.setState({
+			isFailureAnimating: true,
+		});
+		this.failureAnimationTimer = setTimeout(function() {
+			this.failureAnimationTimer = null;
+			this.setState({
+				isFailureAnimating: false,
+			});
+		}.bind(this), this.props.timings.failureAnimation);
+	}
+
+	clearFailureAnimationTimer() {
+		if (!this.failureAnimationTimer) return;
+
+		clearTimeout(this.failureAnimationTimer);
+		this.failureAnimationTimer = null;
+	}
+
+	startGenerateAnimation() {
+		this.clearGenerateAnimationTimer();
+		this.setState({
+			isGenerating: true,
+		});
+		this.generateAnimationTimer = setTimeout(function() {
+			this.generateAnimationTimer = null;
+			this.setState({
+				isGenerating: false,
+			});
+		}.bind(this), this.props.timings.tile.restart);
+	}
+
+	clearGenerateAnimationTimer() {
+		if (!this.generateAnimationTimer) return;
+
+		clearTimeout(this.generateAnimationTimer);
+		this.generateAnimationTimer = null;
+	}
+
 	setTiles (instance, tiles) {
 		this.setState({
 			instance: instance,
@@ -626,10 +665,21 @@ export default class Board extends React.Component {
 			this.fireworksTimer = null;
 		}
 
+		this.clearFailureAnimationTimer();
+		this.clearGenerateAnimationTimer();
+
 		window.removeEventListener('keydown', this.onWindowKeyDown);
 	}
 
 	componentDidUpdate(prevProps, prevState) {
+		if (prevState.instance !== this.state.instance && this.state.instance !== -1) {
+			this.startGenerateAnimation();
+		}
+
+		if (!prevState.lost && this.state.lost) {
+			this.startFailureAnimation();
+		}
+
 		if (prevState.won !== this.state.won || prevState.celebrationDismissed !== this.state.celebrationDismissed) {
 			if (this.fireworksTimer) {
 				clearTimeout(this.fireworksTimer);
@@ -643,7 +693,7 @@ export default class Board extends React.Component {
 						this.setState({
 							showFireworks: true,
 						});
-					}.bind(this), FIREWORKS_DELAY_MS);
+					}.bind(this), this.props.timings.fireworksDelay);
 				}
 			} else if (this.state.showFireworks) {
 				this.setState({
@@ -669,10 +719,8 @@ export default class Board extends React.Component {
 
 		return (
 			<Toast
-				modal={true}
-				visible={true}
-				message="No more moves. Game over."
-				onClose={this.onDismissLost.bind(this)}
+				message="No more moves. This board has failed. Use Undo or Move History to continue."
+				duration={this.props.timings.toastLong}
 			/>
 		);
 	}
@@ -707,12 +755,22 @@ export default class Board extends React.Component {
 		var playfieldWrapClassName = "mj-playfield-wrap";
 		var playfieldClassName = "mj-playfield mj-playfield-frame";
 		var playfieldStageClassName = "mj-playfield-stage";
+		var runtimeCanvasClassName = canvasClassName;
 
 		if (this.state.isExpanded) {
 			expandButtonClassName += " is-expanded";
 			playfieldWrapClassName += " is-expanded";
 			playfieldClassName += " mj-playfield-expanded-surface is-expanded";
 			playfieldStageClassName += " mj-playfield-expanded-stage";
+		}
+
+		if (this.state.isFailureAnimating) {
+			playfieldStageClassName += " is-failure-animating";
+			runtimeCanvasClassName += " is-failure-animating";
+		}
+
+		if (this.state.isGenerating) {
+			runtimeCanvasClassName += " is-generating";
 		}
 
 		return (
@@ -729,9 +787,10 @@ export default class Board extends React.Component {
 						<div className={playfieldStageClassName}>
 							<Canvas
 								key={this.state.instance}
-								className={canvasClassName}
+								className={runtimeCanvasClassName}
 								delegator={this.props.delegator.newDelegator()}
 								tiles={this.state.tiles || []}
+								timings={this.props.timings.tile}
 								onClick={this.onClickTile.bind(this)}
 								onCanvasClick={this.onClickCanvas.bind(this)}
 							/>
@@ -938,10 +997,6 @@ export default class Board extends React.Component {
 
 		if (this.state.isPaused) {
 			className += ' is-paused';
-		}
-
-		if (this.state.lost) {
-			className += ' is-lost';
 		}
 
 		if (!this.props.delegator) {

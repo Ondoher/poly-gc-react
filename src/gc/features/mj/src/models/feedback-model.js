@@ -10,9 +10,22 @@ export default class FeedbackModelService extends Service {
 	 */
 	constructor(registry) {
 		super("mj:feedback-model", registry);
-		this.implement(["submit", "submitTelemetry", "getTelemetryReference"]);
-		this.trackingModel = this.registry.subscribe("mj:tracking-model");
+		this.implement(["start", "ready", "submit", "submitTelemetry", "getTelemetryReference"]);
+	}
+
+	/**
+	 * Start the feedback-model service lifecycle.
+	 */
+	start() {
+		this.trackingModel = null;
 		this.lastTelemetrySubmission = null;
+	}
+
+	/**
+	 * Mark the feedback-model service as ready by wiring its dependent services.
+	 */
+	ready() {
+		this.trackingModel = this.registry.subscribe("mj:tracking-model");
 
 		if (this.trackingModel) {
 			this.trackingModel.listen("session-complete", this.onSessionComplete.bind(this));
@@ -45,7 +58,6 @@ export default class FeedbackModelService extends Service {
 				: 0,
 			result:
 				session.result === "won" ||
-				session.result === "lost" ||
 				session.result === "abandoned"
 					? session.result
 					: "",

@@ -158,11 +158,19 @@ they are easy to add:
 - session id
 - started at timestamp
 - ended at timestamp
-- completion status such as won, lost, restarted, or abandoned
+- completion status such as won or abandoned
 - remaining tiles at session end
 - restart count
 - hint count if hint remains part of normal gameplay
 - consent source such as startup dialog or later settings change
+
+Dead-end note:
+
+- reaching a failed board with no playable pairs should not end the session
+- instead, record a sentinel tile pair of `[-1, -1]` inside the ordered move
+  stream and keep the same run active
+- a single run may therefore contain zero, one, or many dead-end markers before
+  the final result
 
 ## Suggested Event Model
 
@@ -197,6 +205,14 @@ Suggested `game_finished` fields:
 
 This is enough to start validating difficulty without committing to full
 per-action telemetry yet.
+
+When per-action telemetry is expanded later, the replay stream should treat
+recoverable dead ends as in-stream markers rather than session boundaries:
+
+- record one sentinel pair of `[-1, -1]` when the board reaches a failed state
+  with no playable pairs
+- keep the timer and session running
+- allow the player to recover in the same run through undo or multi-undo
 
 ## Consent And Preference Flow
 
@@ -239,7 +255,8 @@ not required for the first rollout.
 ### Telemetry Scope
 
 - [ ] Confirm the first-pass data fields
-- [ ] Confirm whether result state should include abandoned sessions
+- [ ] Confirm whether result state should include only won and abandoned sessions
+- [ ] Confirm the `[-1, -1]` sentinel marker for recoverable dead ends
 - [ ] Confirm whether hint usage should be included in the first pass
 - [ ] Confirm whether restart count should be included in the first pass
 - [ ] Confirm the exact consent wording shown in the startup dialog

@@ -19,6 +19,34 @@ const TILE_SIZE_MIN_VIEWPORTS = {
 	normal: { width: 1080, height: 690 },
 };
 const TILE_SIZE_HYSTERESIS_PX = 2;
+const DEFAULT_TIMINGS = {
+	fireworksDelay: 420,
+	failureAnimation: 90,
+	toastLong: 5000,
+	tile: {
+		played: 180,
+		unselected: 120,
+		blocked: 180,
+		undo: 240,
+		redo: 240,
+		restart: 220,
+		peek: 220,
+		finalPlayed: 900,
+	},
+};
+const TIMING_VAR_NAMES = [
+	"--mj-motion-fireworks-delay",
+	"--mj-motion-failure",
+	"--mj-motion-toast-long",
+	"--mj-motion-tile-played",
+	"--mj-motion-tile-unselected",
+	"--mj-motion-tile-blocked",
+	"--mj-motion-tile-undo",
+	"--mj-motion-tile-redo",
+	"--mj-motion-tile-restart",
+	"--mj-motion-tile-peek",
+	"--mj-motion-tile-final-played",
+];
 
 /**
  * Use this class as the controller for a game of Mahjongg solitaire. This code
@@ -44,7 +72,6 @@ export default class MJController extends Service {
 			'showTile', 'hintTile', 'highlightTile', 'setTiles','clearBoard',]);
 
 		this.engine = new Engine();
-		this.actionCollector = this.registry.subscribe("mj:action-collector");
 		this.layoutName = 'turtle';
 		this.difficulty = 'standard';
 		this.difficulties = DIFFICULTY_LEVELS;
@@ -63,6 +90,13 @@ export default class MJController extends Service {
 		this.onSizeChanged = this.onSizeChanged.bind(this);
 		this.lastTrackedElapsedSecond = -1;
 		this.finalPlayTiles = null;
+	}
+
+	start() {
+		this.actionCollector = null;
+		this.cssVars = null;
+		this.sizeWatcher = null;
+		this.timings = DEFAULT_TIMINGS;
 	}
 
 	recordAction(action) {
@@ -102,9 +136,65 @@ export default class MJController extends Service {
 	}
 
 	ready() {
+		this.actionCollector = this.registry.subscribe("mj:action-collector");
+		this.cssVars = this.registry.subscribe("mj:css-vars");
+
+		if (this.cssVars && this.cssVars.precache) {
+			this.cssVars.precache(TIMING_VAR_NAMES);
+			this.timings = this.buildTimingsFromCssVars();
+		}
+
 		this.sizeWatcher = this.registry.subscribe('size-watcher');
-		this.sizeWatcher.listen('changed', this.onSizeChanged);
-		this.sizeWatcher.check();
+
+		if (this.sizeWatcher) {
+			this.sizeWatcher.listen('changed', this.onSizeChanged);
+			this.sizeWatcher.check();
+		}
+	}
+
+	buildTimingsFromCssVars() {
+		if (!this.cssVars || !this.cssVars.get) {
+			return DEFAULT_TIMINGS;
+		}
+
+		return {
+			fireworksDelay: this.getCssDurationMs("--mj-motion-fireworks-delay", DEFAULT_TIMINGS.fireworksDelay),
+			failureAnimation: this.getCssDurationMs("--mj-motion-failure", DEFAULT_TIMINGS.failureAnimation),
+			toastLong: this.getCssDurationMs("--mj-motion-toast-long", DEFAULT_TIMINGS.toastLong),
+			tile: {
+				played: this.getCssDurationMs("--mj-motion-tile-played", DEFAULT_TIMINGS.tile.played),
+				unselected: this.getCssDurationMs("--mj-motion-tile-unselected", DEFAULT_TIMINGS.tile.unselected),
+				blocked: this.getCssDurationMs("--mj-motion-tile-blocked", DEFAULT_TIMINGS.tile.blocked),
+				undo: this.getCssDurationMs("--mj-motion-tile-undo", DEFAULT_TIMINGS.tile.undo),
+				redo: this.getCssDurationMs("--mj-motion-tile-redo", DEFAULT_TIMINGS.tile.redo),
+				restart: this.getCssDurationMs("--mj-motion-tile-restart", DEFAULT_TIMINGS.tile.restart),
+				peek: this.getCssDurationMs("--mj-motion-tile-peek", DEFAULT_TIMINGS.tile.peek),
+				finalPlayed: this.getCssDurationMs("--mj-motion-tile-final-played", DEFAULT_TIMINGS.tile.finalPlayed),
+			},
+		};
+	}
+
+	getCssDurationMs(name, fallbackMs) {
+		let rawValue = this.cssVars && this.cssVars.get
+			? this.cssVars.get(name)
+			: "";
+
+		if (!rawValue) {
+			return fallbackMs;
+		}
+
+		if (rawValue.endsWith("ms")) {
+			let valueMs = Number.parseFloat(rawValue);
+			return Number.isFinite(valueMs) ? valueMs : fallbackMs;
+		}
+
+		if (rawValue.endsWith("s")) {
+			let valueSeconds = Number.parseFloat(rawValue);
+			return Number.isFinite(valueSeconds) ? valueSeconds * 1000 : fallbackMs;
+		}
+
+		let numericValue = Number.parseFloat(rawValue);
+		return Number.isFinite(numericValue) ? numericValue : fallbackMs;
 	}
 
 	onSizeChanged(size) {
@@ -325,14 +415,12 @@ export default class MJController extends Service {
 		} else if (state.lost) {
 			this.setWon(false);
 			this.setLost(true);
-			this.resetTimer(true)
-			this.pauseTimer();
 			if (!this.gameLost) {
-				this.recordAction({type: "session-ended", result: "lost"});
+				this.recordAction({type: "dead-end"});
 			}
 			this.logEvent("lose");
 			this.gameLost = true;
-			this.message('NO MORE MOVES, GAME OVER');
+			this.message('NO MORE MOVES. THIS BOARD HAS FAILED. USE UNDO OR MOVE HISTORY TO CONTINUE.');
 
 		} else {
 			this.message('');
@@ -469,12 +557,6 @@ export default class MJController extends Service {
 		this.highlightTile(tiles.tile1, 'undo');
 		this.showTile(tiles.tile2, true);
 		this.highlightTile(tiles.tile2, 'undo');
-
-		if (this.gameLost) {
-			this.resetTimer(on);
-			this.updateTimerState();
-			this.gameLost = false;
-		}
 	}
 
 	/**
@@ -891,6 +973,7 @@ export default class MJController extends Service {
 				allowedTilesizes={this.allowedTileSizes}
 				maxTileSize={this.maxTileSize}
 				isBelowMinimum={this.isBelowMinimum}
+				timings={this.timings}
 			/>
 		)
 	}

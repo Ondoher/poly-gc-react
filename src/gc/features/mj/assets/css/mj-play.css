@@ -202,16 +202,24 @@
     transform: scale(1);
     transform-origin: center center;
     filter: brightness(1);
-    animation: mj-board-generate 220ms ease-out;
     transition:
         opacity 180ms ease-out,
         filter 180ms ease-out;
+}
+
+.board-canvas.is-generating {
+    animation: mj-board-generate var(--mj-motion-tile-restart) ease-out;
 }
 
 .board-canvas.is-paused {
     opacity: 0;
     filter: brightness(0.9);
     pointer-events: none;
+}
+
+.mj-playfield-stage.is-failure-animating {
+    transform-origin: center center;
+    animation: mj-board-failure-shake var(--mj-motion-failure) linear;
 }
 
 .board-canvas.is-lost {
@@ -224,12 +232,12 @@
     opacity: 0;
     transform: translateY(160px) scale(0.96);
     transform-origin: center bottom;
-    animation: mj-fireworks-arrive 560ms cubic-bezier(0.16, 0.78, 0.28, 1) 420ms forwards;
+    animation: mj-fireworks-arrive 560ms cubic-bezier(0.16, 0.78, 0.28, 1) var(--mj-motion-fireworks-delay) forwards;
 }
 
 .board-canvas .tile.played {
     pointer-events: none;
-    animation: mj-tile-played-fade 180ms ease-out forwards;
+    animation: mj-tile-played-fade var(--mj-motion-tile-played) ease-out forwards;
 }
 
 .board-canvas .tile.final-played-left,
@@ -246,58 +254,58 @@
 .board-canvas .face.selected:after {
     background-color: rgba(118, 196, 236, 0.42);
     opacity: 1;
-    animation: mj-tile-selected-hold 140ms ease-out forwards;
+    animation: mj-tile-selected-hold var(--mj-motion-tile-unselected) ease-out forwards;
 }
 
 .board-canvas .face.hint {
-    animation: mj-tile-hint-face 760ms ease-in-out 3;
+    animation: mj-tile-hint-face calc(var(--mj-motion-tile-peek) * 3.4545) ease-in-out 3;
 }
 
 .board-canvas .face.hint:after {
     background-color: rgba(244, 148, 126, 0.34);
     opacity: 1;
-    animation: mj-tile-hint-overlay 760ms ease-in-out 3;
+    animation: mj-tile-hint-overlay calc(var(--mj-motion-tile-peek) * 3.4545) ease-in-out 3;
 }
 
 .board-canvas .face.unselected:after {
     opacity: 1;
-    animation: mj-tile-unselected-release 120ms ease-out forwards;
+    animation: mj-tile-unselected-release var(--mj-motion-tile-unselected) ease-out forwards;
 }
 
 .board-canvas .face.blocked {
-    animation: mj-tile-blocked-face 180ms ease-out forwards;
+    animation: mj-tile-blocked-face var(--mj-motion-tile-blocked) ease-out forwards;
 }
 
 .board-canvas .face.blocked:after {
     opacity: 1;
-    animation: mj-tile-blocked-overlay 180ms ease-out forwards;
+    animation: mj-tile-blocked-overlay var(--mj-motion-tile-blocked) ease-out forwards;
 }
 
 .board-canvas .face.undo {
-    animation: mj-tile-undo-face 240ms ease-out forwards;
+    animation: mj-tile-undo-face var(--mj-motion-tile-undo) ease-out forwards;
 }
 
 .board-canvas .face.undo:after {
     opacity: 1;
-    animation: mj-tile-undo-overlay 240ms ease-out forwards;
+    animation: mj-tile-undo-overlay var(--mj-motion-tile-undo) ease-out forwards;
 }
 
 .board-canvas .tile.undo {
-    animation: mj-tile-undo-tile 240ms ease-out forwards;
+    animation: mj-tile-undo-tile var(--mj-motion-tile-undo) ease-out forwards;
 }
 
 .board-canvas .tile.redo {
     pointer-events: none;
-    animation: mj-tile-redo-tile 240ms ease-out forwards;
+    animation: mj-tile-redo-tile var(--mj-motion-tile-redo) ease-out forwards;
 }
 
 .board-canvas .tile.peek {
     pointer-events: none;
-    animation: mj-tile-peek-tile 220ms ease-out forwards;
+    animation: mj-tile-peek-tile var(--mj-motion-tile-peek) ease-out forwards;
 }
 
 .board-canvas .tile.restart {
-    animation: mj-tile-restart-tile 220ms ease-out forwards;
+    animation: mj-tile-restart-tile var(--mj-motion-tile-restart) ease-out forwards;
 }
 
 .board-canvas .face.restart:after {
@@ -309,38 +317,38 @@
 }
 
 .board-canvas .face.peek {
-    animation: mj-tile-peek-face 220ms ease-out forwards;
+    animation: mj-tile-peek-face var(--mj-motion-tile-peek) ease-out forwards;
 }
 
 .board-canvas .face.peek:after {
     opacity: 1;
-    animation: mj-tile-peek-overlay 220ms ease-out forwards;
+    animation: mj-tile-peek-overlay var(--mj-motion-tile-peek) ease-out forwards;
 }
 
 .board-canvas .face.redo {
-    animation: mj-tile-redo-face 240ms ease-out forwards;
+    animation: mj-tile-redo-face var(--mj-motion-tile-redo) ease-out forwards;
 }
 
 .board-canvas .face.redo:after {
     opacity: 1;
-    animation: mj-tile-redo-overlay 240ms ease-out forwards;
+    animation: mj-tile-redo-overlay var(--mj-motion-tile-redo) ease-out forwards;
 }
 
 .board-canvas .face.played {
-    animation: mj-tile-played-face 180ms ease-out forwards;
+    animation: mj-tile-played-face var(--mj-motion-tile-played) ease-out forwards;
 }
 
 .board-canvas .face.played:after {
     opacity: 1;
-    animation: mj-tile-played-overlay 180ms ease-out forwards;
+    animation: mj-tile-played-overlay var(--mj-motion-tile-played) ease-out forwards;
 }
 
 .board-canvas .tile.final-played-left {
-    animation: mj-tile-final-played-left 900ms cubic-bezier(0.18, 0.72, 0.3, 1) forwards;
+    animation: mj-tile-final-played-left var(--mj-motion-tile-final-played) cubic-bezier(0.18, 0.72, 0.3, 1) forwards;
 }
 
 .board-canvas .tile.final-played-right {
-    animation: mj-tile-final-played-right 900ms cubic-bezier(0.18, 0.72, 0.3, 1) forwards;
+    animation: mj-tile-final-played-right var(--mj-motion-tile-final-played) cubic-bezier(0.18, 0.72, 0.3, 1) forwards;
 }
 
 @keyframes mj-tile-played-fade {
@@ -414,6 +422,44 @@
         opacity: 0.92;
         transform: translateY(18px) scale(0.992);
         filter: brightness(0.72) saturate(0.78);
+    }
+}
+
+@keyframes mj-board-failure-shake {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    10% {
+        transform: translate3d(-18px, 0, 0);
+    }
+
+    20% {
+        transform: translate3d(18px, 0, 0);
+    }
+
+    34% {
+        transform: translate3d(-14px, 0, 0);
+    }
+
+    48% {
+        transform: translate3d(13px, 0, 0);
+    }
+
+    62% {
+        transform: translate3d(-9px, 0, 0);
+    }
+
+    76% {
+        transform: translate3d(7px, 0, 0);
+    }
+
+    88% {
+        transform: translate3d(-3px, 0, 0);
+    }
+
+    100% {
+        transform: translate3d(0, 0, 0);
     }
 }
 

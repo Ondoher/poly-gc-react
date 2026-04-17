@@ -256,10 +256,17 @@ The smallest useful board-session record would likely include:
 - board number
 - session outcome
   - solved
-  - dead-ended
   - abandoned
   - restarted
 - start time and end time
+
+Dead-end handling note:
+
+- a recoverable dead end should remain inside the same session rather than
+  becoming its own terminal outcome
+- record that moment in ordered move history as a sentinel pair of `[-1, -1]`
+- this allows one session to contain multiple dead-end markers before the final
+  result
 
 This is enough to regenerate the exact board later and join it with analyzer
 output.
@@ -284,6 +291,8 @@ For each event, record:
 - for pair plays:
   - tile1
   - tile2
+- for recoverable dead ends:
+  - record sentinel tile values `-1, -1`
 - optional local state context:
   - remaining tile count
   - playable pair count

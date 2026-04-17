@@ -56,7 +56,7 @@ export default class Toast extends React.Component {
 			displayedMessage: message,
 		});
 
-		if (modal) return;
+		if (modal || nextProps.visible !== undefined) return;
 
 		this.dismissHandle = setTimeout(function () {
 			this.dismissHandle = null;

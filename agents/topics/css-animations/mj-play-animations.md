@@ -19,6 +19,36 @@ Because of those constraints, the first animation passes should favor:
 
 The first evaluation pass should go from conservative to more exciting.
 
+## Shared Timing Source
+
+When one animation timing needs to be used by both CSS and JavaScript, the
+preferred MJ pattern is:
+
+1. define the timing token as a CSS custom property in `mj.css`
+2. expose that value through the `mj:css-vars` service
+3. let an MJ service such as `mj:controller` precache and parse the timing
+   values it needs
+4. pass the resulting timing object down to React components as props
+
+This keeps the timing source of truth in CSS while still allowing JavaScript
+timers such as `setTimeout(...)` to stay aligned with live animation durations.
+
+The current service contract is intentionally simple:
+
+- `mj:css-vars.precache(names)` caches a known set of CSS custom properties
+- `mj:css-vars.get(name)` returns one cached value, or reads it synchronously on
+  demand when it was not cached yet
+
+The CSS side must provide a documented readiness sentinel such as
+`--mj-css-ready: 1`, because the service startup path depends on that contract
+to know when the stylesheet has become available.
+
+Practical rule:
+
+- if the timing affects both CSS animation declarations and JavaScript behavior,
+  do not duplicate the number in both places
+- define one CSS variable, then read it through `mj:css-vars`
+
 ## Interaction Targets
 
 The current gameplay/UI events worth animating are:

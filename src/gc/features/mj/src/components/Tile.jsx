@@ -1,21 +1,12 @@
 import React from "react";
 
-const PLAYED_ANIMATION_MS = 180;
-const UNSELECT_ANIMATION_MS = 120;
-const BLOCKED_ANIMATION_MS = 180;
-const UNDO_ANIMATION_MS = 240;
-const REDO_ANIMATION_MS = 240;
-const RESTART_ANIMATION_MS = 220;
-const PEEK_ANIMATION_MS = 220;
-const FINAL_PLAYED_ANIMATION_MS = 900;
+function getHideAnimationMs(highlightType, timings) {
+	if (highlightType === 'final-played-left' || highlightType === 'final-played-right') return timings.finalPlayed;
+	if (highlightType === 'peek') return timings.peek;
+	if (highlightType === 'redo') return timings.redo;
+	if (highlightType === 'played') return timings.played;
 
-function getHideAnimationMs(highlightType) {
-	if (highlightType === 'final-played-left' || highlightType === 'final-played-right') return FINAL_PLAYED_ANIMATION_MS;
-	if (highlightType === 'peek') return PEEK_ANIMATION_MS;
-	if (highlightType === 'redo') return REDO_ANIMATION_MS;
-	if (highlightType === 'played') return PLAYED_ANIMATION_MS;
-
-	return PLAYED_ANIMATION_MS;
+	return timings.played;
 }
 
 function normalizeHighlightType(value, defaultType = 'highlight') {
@@ -78,6 +69,7 @@ export default class Tile extends React.Component {
 
 		if (typeof on === 'string') {
 			var highlightType = normalizeHighlightType(on);
+			var timings = this.props.timings;
 
 			this.clearHideTimer();
 			this.clearHighlightTimerHandle();
@@ -91,7 +83,7 @@ export default class Tile extends React.Component {
 					show: false,
 					highlight: false
 				});
-			}.bind(this), getHideAnimationMs(highlightType));
+			}.bind(this), getHideAnimationMs(highlightType, timings));
 			return;
 		}
 
@@ -114,6 +106,7 @@ export default class Tile extends React.Component {
 		if (id !== this.props.id && id !== 'all') return;
 
 		var highlight = normalizeHighlightType(on);
+		var timings = this.props.timings;
 
 		if (highlight === 'blocked') {
 			this.clearHighlightTimerHandle();
@@ -127,7 +120,7 @@ export default class Tile extends React.Component {
 						? {highlight: false}
 						: null;
 				});
-			}.bind(this), BLOCKED_ANIMATION_MS);
+			}.bind(this), timings.blocked);
 			return;
 		}
 
@@ -143,7 +136,7 @@ export default class Tile extends React.Component {
 						? {highlight: false}
 						: null;
 				});
-			}.bind(this), UNDO_ANIMATION_MS);
+			}.bind(this), timings.undo);
 			return;
 		}
 
@@ -159,7 +152,7 @@ export default class Tile extends React.Component {
 						? {highlight: false}
 						: null;
 				});
-			}.bind(this), RESTART_ANIMATION_MS);
+			}.bind(this), timings.restart);
 			return;
 		}
 
@@ -175,7 +168,7 @@ export default class Tile extends React.Component {
 				this.setState({
 					highlight: false
 				});
-			}.bind(this), UNSELECT_ANIMATION_MS);
+			}.bind(this), timings.unselected);
 			return;
 		}
 

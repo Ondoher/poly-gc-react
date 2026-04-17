@@ -9,6 +9,22 @@
 @import url('./mj-toast.css');
 @import url('./mj-settings.css');
 
+:root {
+    /* Startup sentinel for the mj:css-vars service.
+       The service waits for this variable before reading MJ timing tokens. */
+    --mj-css-ready: 1;
+    --mj-motion-fireworks-delay: 420ms;
+    --mj-motion-failure: 90ms;
+    --mj-motion-toast-long: 5000ms;
+    --mj-motion-tile-played: 180ms;
+    --mj-motion-tile-unselected: 120ms;
+    --mj-motion-tile-blocked: 180ms;
+    --mj-motion-tile-undo: 240ms;
+    --mj-motion-tile-redo: 240ms;
+    --mj-motion-tile-restart: 220ms;
+    --mj-motion-tile-peek: 220ms;
+    --mj-motion-tile-final-played: 900ms;
+}
 
 .mj-board-page {
     --mj-ui-text-color: #d3a024;
