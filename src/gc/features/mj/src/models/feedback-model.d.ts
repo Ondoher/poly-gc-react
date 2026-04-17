@@ -8,4 +8,11 @@ export interface FeedbackModelService {
 	 * @param payload - Carry the feedback request body sent by the dialog.
 	 */
 	submit(payload: MjFeedbackPayload): Promise<MjFeedbackSubmitResult>;
+
+	/**
+	 * Return the telemetry id previously saved for one completed session.
+	 *
+	 * @param session - Carry the feedback context snapshot to match.
+	 */
+	getTelemetryReference(session: MjGameplaySession | null): string;
 }

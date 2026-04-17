@@ -487,6 +487,7 @@ export default class Board extends React.Component {
 			this.trackingModel.hasFeedbackContext &&
 			this.trackingModel.hasFeedbackContext()
 		);
+		var feedbackContext = null;
 		var payload = {
 			boardNbr: Number.isFinite(Number(this.state.boardNbr))
 				? Number(this.state.boardNbr)
@@ -505,7 +506,17 @@ export default class Board extends React.Component {
 			this.trackingModel &&
 			this.trackingModel.getFeedbackContextSnapshot
 		) {
-			payload.context = this.trackingModel.getFeedbackContextSnapshot();
+			feedbackContext = this.trackingModel.getFeedbackContextSnapshot();
+			payload.context = feedbackContext;
+		}
+
+		if (
+			payload.includeContext &&
+			feedbackContext &&
+			this.feedbackModel &&
+			this.feedbackModel.getTelemetryReference
+		) {
+			payload.telemetryId = this.feedbackModel.getTelemetryReference(feedbackContext);
 		}
 
 		if (!this.feedbackModel || !this.feedbackModel.submit) {

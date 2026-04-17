@@ -36,11 +36,22 @@ interface MjStoredFeedbackContext {
 }
 
 /**
+ * Defines the server-side telemetry record stored in Mongo.
+ */
+interface MjStoredTelemetryRecord extends MjTelemetryPayload {
+	/** Records when the telemetry document was created. */
+	submittedAt: string;
+}
+
+/**
  * Defines the server-side feedback record stored in Mongo.
  */
 interface MjStoredFeedbackRecord extends MjFeedbackPayload {
-	/** Records when the feedback was submitted. */
+	/** Records when the feedback document was created. */
 	submittedAt: string;
+
+	/** Stores the linked telemetry record id when feedback references telemetry. */
+	telemetryId: string | null;
 
 	/** Stores the optional board context snapshot captured with the feedback. */
 	context: MjStoredFeedbackContext | null;

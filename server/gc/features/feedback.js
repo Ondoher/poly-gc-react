@@ -106,6 +106,45 @@ export default class FeedbackService extends Service {
 	}
 
 	/**
+	 * Return one sanitized telemetry document id reference.
+	 *
+	 * @param {unknown} value - Carry the raw telemetry id candidate from the request payload.
+	 * @returns {string} Return the telemetry id string or an empty string when unavailable.
+	 */
+	coerceTelemetryId(value) {
+		return typeof value === "string" ? value.trim() : "";
+	}
+
+	/**
+	 * Return one ISO timestamp for persisted document creation.
+	 *
+	 * @returns {string} Return the current UTC timestamp.
+	 */
+	createSubmittedAt() {
+		return new Date().toISOString();
+	}
+
+	/**
+	 * Return one HTML-safe comment string for storage and later display.
+	 *
+	 * @param {unknown} value - Carry the raw comment candidate from the request payload.
+	 * @returns {string} Return the escaped comment text.
+	 */
+	escapeComment(value) {
+		if (typeof value !== "string") {
+			return "";
+		}
+
+		return value
+			.trim()
+			.replaceAll("&", "&amp;")
+			.replaceAll("<", "&lt;")
+			.replaceAll(">", "&gt;")
+			.replaceAll("\"", "&quot;")
+			.replaceAll("'", "&#39;");
+	}
+
+	/**
 	 * Return one sanitized telemetry payload.
 	 *
 	 * @param {unknown} body - Carry the submitted telemetry payload candidate.
@@ -120,7 +159,7 @@ export default class FeedbackService extends Service {
 		let elapsedTimeMs = Number(body.elapsedTimeMs);
 
 		return {
-			submittedAt: new Date().toISOString(),
+			submittedAt: this.createSubmittedAt(),
 			boardNbr: Number.isFinite(boardNbr) ? boardNbr : null,
 			difficulty: typeof body.difficulty === "string" ? body.difficulty : "",
 			layout: typeof body.layout === "string" ? body.layout : "",
@@ -134,6 +173,31 @@ export default class FeedbackService extends Service {
 					? body.result
 					: "",
 			tileSequence: this.coerceTileSequence(body.tileSequence),
+		};
+	}
+
+	/**
+	 * Return one telemetry payload synthesized from feedback context.
+	 *
+	 * @param {MjFeedbackPayload} body - Carry the validated feedback payload.
+	 * @param {number | null} fallbackBoardNbr - Identify the already-sanitized top-level board number.
+	 * @returns {MjStoredTelemetryRecord | null} Return the synthesized telemetry record or null when context is unavailable.
+	 */
+	buildTelemetryRecordFromFeedback(body, fallbackBoardNbr) {
+		let context = this.buildFeedbackContext(body, fallbackBoardNbr);
+
+		if (!context) {
+			return null;
+		}
+
+		return {
+			submittedAt: this.createSubmittedAt(),
+			boardNbr: context.boardNbr,
+			difficulty: context.difficulty,
+			layout: context.layout,
+			elapsedTimeMs: context.elapsedTimeMs,
+			result: context.result,
+			tileSequence: context.tileSequence,
 		};
 	}
 
@@ -186,18 +250,20 @@ export default class FeedbackService extends Service {
 	buildFeedbackRecord(body) {
 		let boardNbr = Number(body.boardNbr);
 		let includeContext = body.includeContext === true;
-		let comment = typeof body.comment === "string" ? body.comment.trim() : "";
+		let telemetryId = this.coerceTelemetryId(body.telemetryId);
+		let comment = this.escapeComment(body.comment);
 		let difficultyLabel =
 			typeof body.difficultyLabel === "string" ? body.difficultyLabel : "";
 		let layoutTitle =
 			typeof body.layoutTitle === "string" ? body.layoutTitle : "";
 
 		return {
-			submittedAt: new Date().toISOString(),
+			submittedAt: this.createSubmittedAt(),
 			boardNbr: Number.isFinite(boardNbr) ? boardNbr : null,
 			difficultyLabel,
 			layoutTitle,
 			includeContext,
+			telemetryId: telemetryId || null,
 			skillLevel: this.coerceEnum(body.skillLevel, ALLOWED_SKILL_LEVELS),
 			difficultyFeeling: this.coerceEnum(
 				body.difficultyFeeling,
@@ -209,12 +275,43 @@ export default class FeedbackService extends Service {
 			),
 			comment,
 			context: includeContext
+				&& !telemetryId
 				? this.buildFeedbackContext(
 					body,
 					Number.isFinite(boardNbr) ? boardNbr : null
 				)
 				: null,
 		};
+	}
+
+	/**
+	 * Return the telemetry id linked to one feedback payload.
+	 *
+	 * Reuse a supplied telemetry id when present; otherwise synthesize one
+	 * telemetry record from the feedback context so feedback and telemetry share
+	 * one canonical gameplay snapshot.
+	 *
+	 * @param {MjFeedbackPayload} body - Carry the validated feedback payload.
+	 * @param {MjStoredFeedbackRecord} feedback - Carry the pending feedback record.
+	 * @returns {Promise<string>} Return the linked telemetry id or an empty string when unavailable.
+	 */
+	async resolveFeedbackTelemetryId(body, feedback) {
+		if (feedback.telemetryId) {
+			return feedback.telemetryId;
+		}
+
+		if (feedback.includeContext !== true) {
+			return "";
+		}
+
+		let telemetry = this.buildTelemetryRecordFromFeedback(body, feedback.boardNbr);
+
+		if (!telemetry) {
+			return "";
+		}
+
+		let insertedId = await this.getTelemetryDb().insertTelemetry(telemetry);
+		return String(insertedId);
 	}
 
 	/**
@@ -236,6 +333,13 @@ export default class FeedbackService extends Service {
 		let feedback = this.buildFeedbackRecord(body);
 
 		try {
+			let telemetryId = await this.resolveFeedbackTelemetryId(body, feedback);
+
+			if (telemetryId) {
+				feedback.telemetryId = telemetryId;
+				feedback.context = null;
+			}
+
 			let insertedId = await this.getFeedbackDb().insertFeedback(feedback);
 			return res.json({
 				success: true,
