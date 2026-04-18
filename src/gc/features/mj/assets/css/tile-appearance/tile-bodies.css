@@ -1,79 +1,139 @@
 .bone-normal .tile {
-	background-image: url("../../images/tile-bodies/normal/bone.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/normal/bone.png") 1x,
+		url("../../images/tile-bodies/normal/bone@2x.png") 2x
+	);
 }
 
 .ivory-normal .tile {
-	background-image: url("../../images/tile-bodies/normal/ivory.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/normal/ivory.png") 1x,
+		url("../../images/tile-bodies/normal/ivory@2x.png") 2x
+	);
 }
 
 .plastic-normal .tile {
-	background-image: url("../../images/tile-bodies/normal/plastic.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/normal/plastic.png") 1x,
+		url("../../images/tile-bodies/normal/plastic@2x.png") 2x
+	);
 }
 
 .wood-normal .tile {
-	background-image: url("../../images/tile-bodies/normal/wood.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/normal/wood.png") 1x,
+		url("../../images/tile-bodies/normal/wood@2x.png") 2x
+	);
 }
 
 .glass-normal .tile {
-	background-image: url("../../images/tile-bodies/normal/glass.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/normal/glass.png") 1x,
+		url("../../images/tile-bodies/normal/glass@2x.png") 2x
+	);
 }
 
 .bone-medium .tile {
-	background-image: url("../../images/tile-bodies/medium/bone.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/medium/bone.png") 1x,
+		url("../../images/tile-bodies/medium/bone@2x.png") 2x
+	);
 }
 
 .ivory-medium .tile {
-	background-image: url("../../images/tile-bodies/medium/ivory.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/medium/ivory.png") 1x,
+		url("../../images/tile-bodies/medium/ivory@2x.png") 2x
+	);
 }
 
 .plastic-medium .tile {
-	background-image: url("../../images/tile-bodies/medium/plastic.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/medium/plastic.png") 1x,
+		url("../../images/tile-bodies/medium/plastic@2x.png") 2x
+	);
 }
 
 .wood-medium .tile {
-	background-image: url("../../images/tile-bodies/medium/wood.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/medium/wood.png") 1x,
+		url("../../images/tile-bodies/medium/wood@2x.png") 2x
+	);
 }
 
 .glass-medium .tile {
-	background-image: url("../../images/tile-bodies/medium/glass.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/medium/glass.png") 1x,
+		url("../../images/tile-bodies/medium/glass@2x.png") 2x
+	);
 }
 
 .bone-small .tile {
-	background-image: url("../../images/tile-bodies/small/bone.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/small/bone.png") 1x,
+		url("../../images/tile-bodies/small/bone@2x.png") 2x
+	);
 }
 
 .ivory-small .tile {
-	background-image: url("../../images/tile-bodies/small/ivory.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/small/ivory.png") 1x,
+		url("../../images/tile-bodies/small/ivory@2x.png") 2x
+	);
 }
 
 .plastic-small .tile {
-	background-image: url("../../images/tile-bodies/small/plastic.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/small/plastic.png") 1x,
+		url("../../images/tile-bodies/small/plastic@2x.png") 2x
+	);
 }
 
 .wood-small .tile {
-	background-image: url("../../images/tile-bodies/small/wood.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/small/wood.png") 1x,
+		url("../../images/tile-bodies/small/wood@2x.png") 2x
+	);
 }
 
 .glass-small .tile {
-	background-image: url("../../images/tile-bodies/small/glass.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/small/glass.png") 1x,
+		url("../../images/tile-bodies/small/glass@2x.png") 2x
+	);
 }
 
 .bone-tiny .tile {
-	background-image: url("../../images/tile-bodies/tiny/bone.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/tiny/bone.png") 1x,
+		url("../../images/tile-bodies/tiny/bone@2x.png") 2x
+	);
 }
 
 .ivory-tiny .tile {
-	background-image: url("../../images/tile-bodies/tiny/ivory.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/tiny/ivory.png") 1x,
+		url("../../images/tile-bodies/tiny/ivory@2x.png") 2x
+	);
 }
 
 .plastic-tiny .tile {
-	background-image: url("../../images/tile-bodies/tiny/plastic.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/tiny/plastic.png") 1x,
+		url("../../images/tile-bodies/tiny/plastic@2x.png") 2x
+	);
 }
 
 .wood-tiny .tile {
-	background-image: url("../../images/tile-bodies/tiny/wood.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/tiny/wood.png") 1x,
+		url("../../images/tile-bodies/tiny/wood@2x.png") 2x
+	);
 }
 
 .glass-tiny .tile {
-	background-image: url("../../images/tile-bodies/tiny/glass.png");
+	background-image: image-set(
+		url("../../images/tile-bodies/tiny/glass.png") 1x,
+		url("../../images/tile-bodies/tiny/glass@2x.png") 2x
+	);
 }

@@ -89,7 +89,7 @@ pm2 logs poly-gc --lines 100
 
 Then smoke test the site in a browser:
 
-- load `https://apps.uber-geek.com`
+- load `https://apps.uber-geek.com/gc`
 - load the Mahjongg screen
 - hard refresh if a browser cache is suspected after a JS/CSS bundle change
 - verify a fresh board starts

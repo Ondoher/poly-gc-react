@@ -14,9 +14,14 @@ function isLocalHost() {
 export default class LeftHud extends React.Component {
 	render() {
 		var showDebugButtons = isLocalHost();
+		var className = "mj-left-hud";
+
+		if (this.props.className) {
+			className += ` ${this.props.className}`;
+		}
 
 		return (
-			<div className="mj-left-hud">
+			<div className={className}>
 				<div className="mj-left-hud-stack">
 					<GameNumberControl
 						delegator={this.props.delegator}

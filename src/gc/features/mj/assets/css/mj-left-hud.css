@@ -1,7 +1,6 @@
 .mj-left-hud {
     --mj-left-hud-control-width: 96px;
     grid-area: left;
-    position: relative;
     min-width: 0;
     min-height: 0;
     display: grid;
@@ -9,6 +8,11 @@
     align-content: start;
     padding-top: 44px;
     padding-left: 22px;
+}
+
+.mj-board-page.mj-shell-mode:not(.is-expanded) .mj-left-hud {
+    padding-top: 30px;
+    padding-left: 12;
 }
 
 .mj-left-hud-stack {

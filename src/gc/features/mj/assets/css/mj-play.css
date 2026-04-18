@@ -1,5 +1,4 @@
 .mj-game-area {
-    position: relative;
     margin: var(--frame-padding);
     z-index: 1;
     display: grid;
@@ -12,28 +11,97 @@
         grid-template-columns 180ms ease-out;
 }
 
-.mj-game-area.is-expanded {
+.mj-shell-mode .mj-game-area {
     margin: 0;
-    grid-template-columns: minmax(0, 1fr) 78px;
-    grid-template-areas: "play right";
-    column-gap: 0;
+    height: 100%;
+    grid-template-columns: 140px minmax(0, 1fr) 120px;
+    grid-template-areas: "left play right";
+    column-gap: 16px;
+}
+
+.mj-shell-mode .mj-game-area.is-expanded {
+    margin: 0;
+    grid-template-columns: 0px 1fr 120px;
+    grid-template-areas: "left play right";
+    column-gap: 0px;
+}
+
+.mj-shell-mode .mj-game-area.is-expanded .mj-shell-box {
+    border: none;
 }
 
 .mj-right-hud,
 .mj-playfield {
-    position: relative;
     min-width: 0;
     min-height: 0;
 }
 
+
+
 .mj-playfield-wrap {
     grid-area: play;
-    position: relative;
     display: grid;
     align-self: stretch;
     min-width: 0;
     min-height: 0;
-    transition: opacity 160ms ease-out;
+    transition:
+        opacity 160ms ease-out,
+        transform 180ms ease-out;
+}
+
+.mj-shell-mode .mj-playfield-wrap,
+.mj-shell-mode .mj-left-hud,
+.mj-shell-mode .mj-right-hud {
+    position: static;
+    padding: 0;
+    box-shadow: none;
+    min-height: 0;
+}
+
+.mj-shell-mode .mj-left-hud {
+    grid-template-rows: none;
+    grid-auto-rows: min-content;
+    align-content: start;
+}
+
+.mj-shell-mode .mj-playfield-viewport,
+.mj-shell-mode .mj-shell-box {
+    position: static;
+}
+
+.mj-playfield-viewport {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    min-width: 0;
+    min-height: 0;
+}
+
+.mj-playfield-viewport {
+    align-self: stretch;
+}
+
+.mj-shell-mode .mj-playfield-viewport {
+    --mj-shell-canvas-width: 439px;
+    --mj-shell-canvas-height: 353px;
+    --mj-shell-canvas-min-side-padding: 4px;
+    --mj-shell-canvas-min-top-padding: 2px;
+    --mj-shell-canvas-min-bottom-padding: 4px;
+    --mj-shell-canvas-max-scale: 1;
+    --mj-shell-playfield-inner-width: calc(
+        100cqw - (var(--mj-shell-canvas-min-side-padding) * 2)
+    );
+    --mj-shell-playfield-inner-height: calc(
+        100cqh - var(--mj-shell-canvas-min-top-padding) - var(--mj-shell-canvas-min-bottom-padding)
+    );
+    --mj-shell-canvas-scale-x: calc(var(--mj-shell-playfield-inner-width) / var(--mj-shell-canvas-width));
+    --mj-shell-canvas-scale-y: calc(var(--mj-shell-playfield-inner-height) / var(--mj-shell-canvas-height));
+    --mj-shell-canvas-scale: min(
+        var(--mj-shell-canvas-max-scale),
+        var(--mj-shell-canvas-scale-x),
+        var(--mj-shell-canvas-scale-y)
+    );
+    container-type: size;
 }
 
 .mj-playfield-wrap.is-expanded {
@@ -43,9 +111,288 @@
     min-height: 0;
 }
 
+.mj-overlay-layer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-self: stretch;
+    min-width: 0;
+    min-height: 0;
+    background: rgba(15, 16, 24, 0.22);
+    border: 3px solid #2ea8ff;
+    box-sizing: border-box;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.mj-shell-box {
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    min-height: 0;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-sizing: border-box;
+}
+
+.mj-shell-box {
+    color: rgba(255, 255, 255, 0.92);
+    font: 600 14px/1.2 sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.mj-shell-label {
+    color: rgba(255, 255, 255, 0.92);
+    font: 600 14px/1.2 sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.mj-shell-playfield {
+    grid-column: 1;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    width: 100%;
+    min-height: 100%;
+    z-index: 1;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.08)),
+        linear-gradient(180deg, rgba(158, 32, 24, 0.96), rgba(125, 24, 18, 0.98)),
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 55%);
+    background-color: #8f2018;
+    align-items: start;
+    padding: var(--mj-shell-canvas-min-top-padding) var(--mj-shell-canvas-min-side-padding) var(--mj-shell-canvas-min-bottom-padding);
+    transition:
+        padding 180ms ease-out;
+}
+
+.mj-shell-playfield-frame-box.mj-css-rect-inset {
+    background: rgba(0, 0, 0, 0)
+}
+
+.mj-shell-playfield.is-expanded {
+    min-height: 100%;
+    --mj-shell-canvas-max-scale: 1.18;
+}
+
+.is-expanded .mj-shell-playfield-frame-box {
+    display: none;
+}
+
+
+.mj-shell-playfield-frame-box {
+    grid-column: 1;
+    grid-row: 1;
+    z-index: 2;
+    /* align-self: stretch;
+    justify-self: stretch;
+    width: calc(var(--mj-shell-canvas-width) * var(--mj-shell-canvas-scale));
+    height: calc(var(--mj-shell-canvas-height) * var(--mj-shell-canvas-scale));
+    justify-self: center;
+    align-self: center;
+    box-sizing: border-box; */
+    pointer-events: none;
+}
+
+.mj-shell-canvas-fit-box {
+    grid-column: 1;
+    grid-row: 1;
+    z-index: 1;
+    justify-self: stretch;
+    align-self: stretch;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    justify-items: center;
+    align-items: center;
+    padding:
+        var(--mj-shell-canvas-min-top-padding)
+        0
+        var(--mj-shell-canvas-min-bottom-padding);
+    box-sizing: border-box;
+}
+
+.mj-shell-canvas-gesture-viewport,
+.mj-shell-canvas-gesture-surface {
+    width: 100%;
+    height: 100%;
+}
+
+.mj-shell-canvas-gesture-viewport {
+    display: grid;
+    overflow: hidden;
+    touch-action: none;
+}
+
+.mj-shell-canvas-gesture-surface {
+    display: grid;
+    justify-items: center;
+    align-items: start;
+}
+
+.mj-shell-canvas-scale-box {
+    width: var(--mj-shell-canvas-width);
+    height: var(--mj-shell-canvas-height);
+    zoom: var(--mj-shell-canvas-scale);
+}
+
+.mj-shell-expand-box {
+    grid-column: 1;
+    grid-row: 1;
+    z-index: 2;
+    justify-self: end;
+    align-self: start;
+    margin: 6px;
+    transition:
+        transform 180ms ease-out,
+        opacity 180ms ease-out;
+}
+
+.mj-shell-expand-box.is-expanded {
+}
+
+.mj-shell-toast {
+    justify-self: center;
+    align-self: start;
+    min-width: 220px;
+    min-height: 54px;
+    margin-top: 18px;
+    padding: 12px 18px;
+    background: rgba(255, 255, 255, 0.18);
+    pointer-events: auto;
+}
+
+.mj-shell-left-hud {
+    grid-area: left;
+    display: grid;
+    grid-template-columns: 1fr;
+    background: #2f6f8f;
+    padding: 12px;
+    grid-auto-rows: min-content;
+}
+
+.mj-shell-right-hud {
+    grid-area: right;
+    background: #6f4a8e;
+    padding: 12px;
+}
+
+.mj-shell-left-hud,
+.mj-shell-right-hud,
+.mj-shell-right-rail {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+}
+
+.mj-shell-left-hud {
+    row-gap: 8px;
+    align-content: start;
+    justify-items: stretch;
+    overflow: hidden;
+    transform: translateX(0);
+    opacity: 1;
+    transition:
+        opacity 180ms ease-out,
+        transform 180ms ease-out,
+        padding 180ms ease-out;
+}
+
+.mj-left-hud.is-collapsed {
+    opacity: 0;
+    transform: translateX(-18px);
+    padding-left: 0;
+    padding-right: 0;
+    pointer-events: none;
+}
+
+.mj-shell-right-hud {
+    row-gap: 10px;
+    align-content: start;
+    transition:
+        opacity 180ms ease-out,
+        transform 180ms ease-out;
+}
+
+.mj-shell-right-rail {
+    row-gap: 8px;
+    justify-items: center;
+    align-content: start;
+}
+
+.mj-shell-game-field,
+.mj-shell-left-button,
+.mj-shell-timer,
+.mj-shell-right-rail,
+.mj-shell-right-button {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.mj-shell-game-field,
+.mj-shell-left-button {
+    width: 100%;
+}
+
+.mj-shell-game-field {
+    min-height: 40px;
+}
+
+.mj-shell-left-button {
+    min-height: 34px;
+}
+
+.mj-shell-timer {
+    width: 100%;
+    min-height: 40px;
+}
+
+.mj-shell-right-rail {
+    width: 100%;
+    min-height: 260px;
+    padding: 10px 8px;
+}
+
+.mj-shell-right-button {
+    width: 36px;
+    min-height: 28px;
+}
+
+button.mj-shell-right-button,
+button.mj-shell-expand-box {
+    appearance: none;
+    font: inherit;
+    color: inherit;
+}
+
+.mj-shell-mode .mj-playfield-viewport {
+    align-self: stretch;
+}
+
+.mj-shell-mode .mj-right-hud {
+}
+
+.mj-shell-mode .mj-game-area.is-expanded .mj-right-hud {
+    grid-template-rows: auto 1fr;
+    row-gap: 10px;
+    align-content: start;
+    width: 100%;
+    padding-top: 0;
+    padding-right: 0;
+    box-shadow: inset 8px 0 14px -10px rgba(0, 0, 0, 0.5);
+}
+
+.mj-shell-mode .mj-left-hud,
+.mj-shell-mode .mj-right-hud,
+.mj-shell-mode .mj-playfield-viewport {
+    display: grid;
+    align-self: stretch;
+}
+
 .mj-right-hud {
     grid-area: right;
-    position: relative;
     display: grid;
     justify-items: center;
     grid-template-rows: auto auto 1fr;
@@ -57,6 +404,12 @@
         padding 180ms ease-out,
         box-shadow 180ms ease-out,
         opacity 160ms ease-out;
+}
+
+.mj-shell-mode .mj-board-page:not(.is-expanded) .mj-right-hud,
+.mj-board-page.mj-shell-mode:not(.is-expanded) .mj-right-hud {
+    padding-top: 12px;
+    padding-right: 0;
 }
 
 .mj-game-area.is-expanded .mj-right-hud {
@@ -217,13 +570,13 @@
     pointer-events: none;
 }
 
-.mj-playfield-stage.is-failure-animating {
+.mj-shell-playfield.is-failure-animating {
     transform-origin: center center;
     animation: mj-board-failure-shake var(--mj-motion-failure) linear;
 }
 
 .board-canvas.is-lost {
-    animation: mj-board-lost 320ms ease-out forwards;
+    animation: none;
     pointer-events: none;
 }
 
@@ -1139,6 +1492,234 @@
     justify-self: center;
     align-self: end;
     padding-bottom: 18px;
+}
+
+@media screen and (orientation: landscape) and (max-width: 860px) {
+    .mj-shell-mode .mj-game-area {
+        grid-template-columns: 120px minmax(0, 1fr) 120px;
+        column-gap: 12px;
+    }
+
+    .mj-shell-left-hud {
+        padding: 10px;
+    }
+}
+
+@media screen and (orientation: landscape) {
+    .mj-board-page.mj-shell-mode:not(.is-expanded) .mj-layout-shell {
+        padding: 20px;
+    }
+}
+
+
+@media screen and (orientation: portrait) and (max-width: 900px) {
+    .mj-shell-mode .mj-left-hud,
+    .mj-shell-mode .mj-right-hud {
+        justify-self: stretch;
+        align-self: start;
+        width: 100%;
+    }
+
+    .page.mj-shell-mode:not(.is-expanded) .mj-right-hud {
+        padding: 5px 0px;
+    }
+
+    .mj-shell-mode .mj-game-area {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto;
+        grid-template-areas:
+            "right"
+            "play"
+            "left";
+        row-gap: 4px;
+        column-gap: 0;
+        height: auto;
+        min-height: 0;
+        align-content: start;
+    }
+
+    .mj-shell-mode .mj-game-area.is-expanded {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "play"
+            "right";
+        row-gap: 6px;
+        column-gap: 0;
+        height: auto;
+        align-content: start;
+    }
+
+    .mj-shell-mode .mj-playfield-wrap,
+    .mj-shell-mode .mj-playfield-viewport {
+        min-height: 0;
+        align-self: start;
+    }
+
+    .mj-shell-mode .mj-shell-box.mj-shell-playfield {
+        border: none;
+    }
+
+
+    .mj-shell-mode .mj-playfield-viewport {
+        container-type: normal;
+    }
+
+    .mj-shell-mode .mj-shell-canvas-fit-box {
+        align-items: start;
+        padding-top: 2px;
+    }
+
+    .mj-shell-mode .mj-shell-playfield {
+        --mj-shell-canvas-width: 439px;
+        --mj-shell-canvas-height: 353px;
+        --mj-shell-canvas-min-side-padding: 2px;
+        --mj-shell-canvas-max-scale: 1;
+        --mj-shell-canvas-scale-x: calc(
+            (100vw - (var(--mj-shell-canvas-min-side-padding) * 2) - 12px) /
+            var(--mj-shell-canvas-width)
+        );
+        --mj-shell-canvas-scale-y: 1;
+        --mj-shell-canvas-scale: min(1, var(--mj-shell-canvas-scale-x));
+        --mj-shell-canvas-min-bottom-padding: 0px;
+        grid-template-rows: auto;
+        min-height: calc(
+            (var(--mj-shell-canvas-height) * var(--mj-shell-canvas-scale)) +
+            var(--mj-shell-canvas-min-top-padding) +
+            var(--mj-shell-canvas-min-bottom-padding)
+        );
+        height: auto;
+    }
+
+    .mj-shell-mode .mj-shell-playfield-frame-box {
+        display: none;
+    }
+
+    .mj-shell-mode .mj-shell-canvas-scale-box {
+        width: var(--mj-shell-canvas-width);
+        height: var(--mj-shell-canvas-height);
+    }
+
+    .mj-shell-mode .mj-right-hud {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto;
+        column-gap: 12px;
+        row-gap: 0;
+        align-items: center;
+        align-content: start;
+        justify-items: stretch;
+        padding: 0;
+        min-height: 0;
+    }
+
+    .mj-shell-mode .mj-game-area.is-expanded .mj-right-hud {
+        grid-template-columns: minmax(88px, auto) minmax(0, 1fr);
+        grid-template-rows: auto;
+        column-gap: 12px;
+        row-gap: 0;
+        align-items: center;
+    }
+
+    .mj-shell-mode .mj-right-hud-timer {
+        margin-top: 0;
+        align-self: center;
+        justify-self: start;
+        transform: none;
+        white-space: nowrap;
+        font-size: 16px;
+    }
+
+    .mj-shell-mode .mj-css-rect.mj-right-hud-rail {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        justify-self: stretch;
+        align-self: stretch;
+    }
+
+    .mj-shell-mode .mj-right-hud-button-bar {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        width: 100%;
+        justify-content: stretch;
+        justify-items: center;
+        align-items: center;
+        align-content: center;
+        height: auto;
+        min-height: 0;
+        padding: 6px 0px;
+        column-gap: 6px;
+        row-gap: 0;
+    }
+
+    .mj-shell-mode .mj-left-hud {
+        --mj-left-hud-control-width: auto;
+        display: block;
+        margin-top: 6px;
+        padding-top: 0;
+        padding-left: 0;
+        min-height: 0;
+        grid-template-rows: none;
+    }
+
+    .mj-shell-mode .mj-left-hud-stack {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-auto-rows: auto;
+        column-gap: 6px;
+        row-gap: 6px;
+        align-items: start;
+        align-content: start;
+        justify-items: stretch;
+        justify-self: stretch;
+        align-self: start;
+    }
+
+    .mj-shell-mode .mj-game-number-control-stack {
+        grid-column: 1 / -1;
+        width: auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 3px;
+        justify-items: stretch;
+        align-self: stretch;
+        justify-self: start;
+    }
+
+    .mj-shell-mode .mj-left-hud .mj-game-number-solve-button,
+    .mj-shell-mode .mj-left-hud .mj-game-number-settings-button,
+    .mj-shell-mode .mj-left-hud .mj-game-number-help-button {
+        grid-row: 2;
+    }
+
+    .mj-shell-mode .mj-left-hud .mj-game-number-half-solution-button,
+    .mj-shell-mode .mj-left-hud .mj-game-number-lose-button {
+        grid-row: 3;
+    }
+
+    .mj-shell-mode .mj-game-number-control {
+        width: 100%;
+    }
+
+    .mj-shell-mode .mj-game-difficulty-label {
+        font-size: 12px;
+        padding-left: 2px;
+    }
+
+    .mj-shell-mode .mj-left-hud .mj-game-number-solve-button,
+    .mj-shell-mode .mj-left-hud .mj-game-number-settings-button,
+    .mj-shell-mode .mj-left-hud .mj-game-number-help-button,
+    .mj-shell-mode .mj-left-hud .mj-game-number-half-solution-button,
+    .mj-shell-mode .mj-left-hud .mj-game-number-lose-button {
+        min-width: 0;
+        max-width: none;
+        width: 100%;
+        padding-left: 6px;
+        padding-right: 6px;
+    }
 }
 
 @media screen and (max-height: 430px) {

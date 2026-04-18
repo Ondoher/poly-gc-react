@@ -27,6 +27,8 @@ The size of the canvas based on the tile dimensions
 .normal-size.board-canvas {
 	width: 785.5px;
 	height: 629px;
+	--mj-board-canvas-width: 785.5;
+	--mj-board-canvas-height: 629;
 }
 
 /*==============================================================================

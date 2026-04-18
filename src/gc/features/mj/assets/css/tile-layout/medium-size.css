@@ -27,6 +27,8 @@ The size of the canvas based on the tile dimensions
 .medium-size.board-canvas {
 	width: 664px;
 	height: 538.5px;
+	--mj-board-canvas-width: 664;
+	--mj-board-canvas-height: 538.5;
 }
 
 /*==============================================================================

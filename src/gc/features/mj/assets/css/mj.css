@@ -36,9 +36,19 @@
     font-family: var(--mj-ui-font-family)
 }
 
+.mj-shell-page-stack {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
 
 .mj-frame-shell {
-    --frame-padding: 12px;
+    --frame-padding: 0px;
     --mj-page-pattern-size: 220px 220px;
     --mj-ui-text-color: #d3a024;
     --mj-ui-fill-strong: rgba(117, 17, 19, 0.75);
@@ -53,7 +63,6 @@
     --frame-left-width: 6px;
     --frame-right-width: 6px;
     --frame-edge-height: 6px;
-    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
@@ -72,6 +81,44 @@
     background-position: 0 0, 0 0, 0 0;
     background-size: auto, auto, var(--mj-page-pattern-size);
     font-family: var(--mj-ui-font-family);
+}
+
+.mj-shell-page-stack > .mj-frame-shell {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.mj-shell-page-stack > .mj-shell-border-layer {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    height: 100%;
+}
+
+.mj-board-page.is-expanded .mj-shell-border-layer {
+    display: none;
+}
+
+.mj-main-border-shell {
+    --frame-padding: 10px;
+    --frame-top-left-width: 42px;
+    --frame-top-right-width: 42px;
+    --frame-bottom-left-width: 42px;
+    --frame-bottom-right-width: 42px;
+    --frame-corner-height: 42px;
+    --frame-left-width: 6px;
+    --frame-right-width: 6px;
+    --frame-edge-height: 6px;
+    display: grid;
+    grid-template-columns: var(--frame-top-left-width) minmax(0, 1fr) var(--frame-top-right-width);
+    grid-template-rows: var(--frame-corner-height) minmax(0, 1fr) var(--frame-corner-height);
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: var(--frame-padding);
+    box-sizing: border-box;
+    pointer-events: none;
 }
 
 .mj-frame-shell.is-expanded {
@@ -111,18 +158,129 @@
     min-height: 410px;
 }
 
-@media (pointer: coarse) {
-    .mj-board-page.mj-below-minimum {
-        overflow: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        touch-action: pan-x pan-y;
-    }
+.mj-layout-shell {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    min-height: 0;
+}
 
-    .mj-board-page.mj-below-minimum::-webkit-scrollbar {
-        width: 0;
-        height: 0;
-    }
+.mj-layout-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    width: 100%;
+    height: 100%;
+}
+
+.mj-shell-mode .mj-frame-shell {
+    overflow: hidden;
+}
+
+.mj-shell-mode .mj-layout-shell {
+    padding:
+        calc(var(--frame-padding) + var(--frame-corner-height))
+        calc(var(--frame-padding) + var(--frame-top-right-width))
+        calc(var(--frame-padding) + var(--frame-corner-height))
+        calc(var(--frame-padding) + var(--frame-top-left-width));
+    box-sizing: border-box;
+}
+
+.mj-board-page.mj-shell-mode.mj-below-minimum {
+    width: auto;
+    height: auto;
+}
+
+.mj-shell-mode .mj-frame-shell.mj-below-minimum {
+    min-width: 0;
+    min-height: 0;
+}
+
+.mj-shell-border-box {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.mj-main-border-piece {
+    background-repeat: no-repeat;
+    pointer-events: none;
+}
+
+.mj-main-border-corner {
+    background-size: 100% 100%;
+}
+
+.mj-main-border-corner-tl {
+    grid-column: 1;
+    grid-row: 1;
+    background-image: url("../images/frame/outline-tl.png");
+}
+
+.mj-main-border-corner-tr {
+    grid-column: 3;
+    grid-row: 1;
+    background-image: url("../images/frame/outline-tr.png");
+}
+
+.mj-main-border-corner-bl {
+    grid-column: 1;
+    grid-row: 3;
+    background-image: url("../images/frame/outline-bl.png");
+}
+
+.mj-main-border-corner-br {
+    grid-column: 3;
+    grid-row: 3;
+    background-image: url("../images/frame/outline-br.png");
+}
+
+.mj-main-border-edge-top {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    height: var(--frame-edge-height);
+    background-image: url("../images/frame/outline-top-stretch.png");
+    background-size: 100% var(--frame-edge-height);
+    background-position: top center;
+}
+
+.mj-main-border-edge-bottom {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: end;
+    height: var(--frame-edge-height);
+    background-image: url("../images/frame/outline-bottom-stretch.png");
+    background-size: 100% var(--frame-edge-height);
+    background-position: bottom center;
+}
+
+.mj-main-border-edge-left {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    width: var(--frame-left-width);
+    background-image: url("../images/frame/outline-left-stretch.png");
+    background-size: var(--frame-left-width) 100%;
+    background-position: top center;
+}
+
+.mj-main-border-edge-right {
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: end;
+    width: var(--frame-right-width);
+    background-image: url("../images/frame/outline-right-stretch.png");
+    background-size: var(--frame-right-width) 100%;
+    background-position: top center;
+}
+
+.mj-main-border-center {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    min-height: 0;
 }
 
 .won .mj-frame-shell {
@@ -135,6 +293,7 @@
 }
 
 .mj-game-area,
+.mj-overlay-layer,
 .mj-pretty-frame,
 .mj-gameover,
 .mj-settings-dialog,
@@ -360,6 +519,35 @@ tile-highlight {
     position: absolute;
     top: '0px' ;
     left: '0px';
+}
+
+@media (pointer: coarse) {
+    .mj-board-page.mj-below-minimum {
+        overflow: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        touch-action: pan-x pan-y;
+    }
+
+    .mj-board-page.mj-below-minimum::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+    }
+}
+
+@media screen and (orientation: portrait) and (max-width: 900px) {
+    .mj-shell-mode .mj-layout-shell {
+        padding: 4px;
+    }
+
+    .mj-shell-border-layer {
+        display: none;
+    }
+
+    .mj-frame-shell.mj-below-minimum {
+        min-width: 0;
+        min-height: 0;
+    }
 }
 
 /*

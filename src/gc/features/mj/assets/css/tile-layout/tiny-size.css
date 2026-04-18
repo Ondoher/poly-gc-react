@@ -27,6 +27,8 @@ The size of the canvas based on the tile dimensions
 .tiny-size.board-canvas {
 	width: 439px;
 	height: 353px;
+	--mj-board-canvas-width: 439;
+	--mj-board-canvas-height: 353;
 }
 
 /*==============================================================================

@@ -83,8 +83,14 @@ export default class RightHud extends React.Component {
 	}
 
 	render() {
+		var className = "mj-right-hud";
+
+		if (this.props.className) {
+			className += ` ${this.props.className}`;
+		}
+
 		return (
-			<div className="mj-right-hud">
+			<div className={className}>
 				<Timer
 					delegator={this.props.delegator}
 					className="mj-right-hud-timer"

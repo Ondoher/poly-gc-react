@@ -67,7 +67,7 @@ Current assumptions:
 - [ ] Run the first `git pull` based deploy
 - [ ] Rebuild production bundles if the app serves compiled frontend assets
 - [ ] Restart or reload the app process
-- [ ] Verify the app is serving correctly
+- [ ] Verify the app is serving correctly at `/gc`
 - [ ] Smoke test the main user flow
 - [ ] Check app logs and web server logs
 

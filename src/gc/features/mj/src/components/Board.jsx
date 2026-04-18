@@ -1,18 +1,19 @@
-import {Fireworks} from '@fireworks-js/react';
 import { registry } from "@polylith/core";
 import React from "react";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
+import Canvas from "./Canvas.jsx";
+import CssRect from "./CssRect.jsx";
+import FeedbackDialog from "./FeedbackDialog.jsx";
+import HelpDialog from "./HelpDialog.jsx";
+import LeftHud from "./LeftHud.jsx";
+import MainBorder from "./MainBorder.jsx";
+import MultiUndoDialog from "./MultiUndoDialog.jsx";
 import Page from 'components/Page.jsx'
-import Canvas from './Canvas.jsx';
-import CssRect from './CssRect.jsx';
-import LeftHud from './LeftHud.jsx';
-import RightHud from './RightHud.jsx';
-import FeedbackDialog from './FeedbackDialog.jsx';
-import HelpDialog from './HelpDialog.jsx';
-import MultiUndoDialog from './MultiUndoDialog.jsx';
-import SolveDialog from './SolveDialog.jsx';
-import StartupConsentDialog from './StartupConsentDialog.jsx';
-import SettingsDialog from './SettingsDialog.jsx';
-import Toast from './Toast.jsx';
+import RightHud from "./RightHud.jsx";
+import SettingsDialog from "./SettingsDialog.jsx";
+import SolveDialog from "./SolveDialog.jsx";
+import StartupConsentDialog from "./StartupConsentDialog.jsx";
+import Toast from "./Toast.jsx";
 import {
 	readMjPreferencesCookie,
 	writeMjPreferencesCookie,
@@ -79,6 +80,8 @@ export default class Board extends React.Component {
 			lost: false,
 			isFailureAnimating: false,
 			isGenerating: false,
+			shellToastOpen: false,
+			isShellPortrait: this.getIsShellPortrait(),
 			boardNbr: this.props.boardNbr,
 		}
 		this.persistedPreferences = persistedPreferences;
@@ -87,9 +90,19 @@ export default class Board extends React.Component {
 		this.tiles = [];
 		this.hasStartedGame = false;
 		this.onWindowKeyDown = this.onWindowKeyDown.bind(this);
+		this.onShellViewportChange = this.onShellViewportChange.bind(this);
 		this.fireworksTimer = null;
 		this.failureAnimationTimer = null;
 		this.generateAnimationTimer = null;
+		this.shellPortraitMediaQuery = null;
+	}
+
+	getIsShellPortrait() {
+		if (typeof window === "undefined" || !window.matchMedia) {
+			return false;
+		}
+
+		return window.matchMedia("(orientation: portrait) and (max-width: 900px)").matches;
 	}
 
 	getPersistedPreferences(props) {
@@ -237,6 +250,32 @@ export default class Board extends React.Component {
 			return {
 				isExpanded: !prevState.isExpanded,
 			};
+		});
+	}
+
+	onShellPlayfieldClick(evt) {
+		if (evt?.target?.closest?.('.mj-shell-expand-box')) {
+			return;
+		}
+
+		if (this.state.isExpanded) {
+			this.setState({
+				isExpanded: false,
+			});
+		}
+	}
+
+	onToggleShellToast() {
+		this.setState(function(prevState) {
+			return {
+				shellToastOpen: !prevState.shellToastOpen,
+			};
+		});
+	}
+
+	onDismissShellToast() {
+		this.setState({
+			shellToastOpen: false,
 		});
 	}
 
@@ -410,6 +449,21 @@ export default class Board extends React.Component {
 	onDismissLost() {
 		this.setState({
 			lost: false,
+		});
+	}
+
+	onShellViewportChange() {
+		var isShellPortrait = this.getIsShellPortrait();
+
+		this.setState(function(prevState) {
+			if (prevState.isShellPortrait === isShellPortrait) {
+				return null;
+			}
+
+			return {
+				isShellPortrait: isShellPortrait,
+				isExpanded: isShellPortrait ? false : prevState.isExpanded,
+			};
 		});
 	}
 
@@ -654,6 +708,20 @@ export default class Board extends React.Component {
 		this.feedbackModel = registry.subscribe("mj:feedback-model");
 
 		window.addEventListener('keydown', this.onWindowKeyDown);
+		window.addEventListener('resize', this.onShellViewportChange);
+		this.shellPortraitMediaQuery = window.matchMedia
+			? window.matchMedia("(orientation: portrait) and (max-width: 900px)")
+			: null;
+
+		if (this.shellPortraitMediaQuery) {
+			if (this.shellPortraitMediaQuery.addEventListener) {
+				this.shellPortraitMediaQuery.addEventListener("change", this.onShellViewportChange);
+			} else if (this.shellPortraitMediaQuery.addListener) {
+				this.shellPortraitMediaQuery.addListener(this.onShellViewportChange);
+			}
+		}
+
+		this.onShellViewportChange();
 		this.applyPersistedSelections();
 
 		if (!this.state.startupConsentOpen && !this.hasStartedGame) {
@@ -672,6 +740,17 @@ export default class Board extends React.Component {
 		this.clearGenerateAnimationTimer();
 
 		window.removeEventListener('keydown', this.onWindowKeyDown);
+
+		window.removeEventListener('resize', this.onShellViewportChange);
+
+		if (this.shellPortraitMediaQuery) {
+			if (this.shellPortraitMediaQuery.removeEventListener) {
+				this.shellPortraitMediaQuery.removeEventListener("change", this.onShellViewportChange);
+			} else if (this.shellPortraitMediaQuery.removeListener) {
+				this.shellPortraitMediaQuery.removeListener(this.onShellViewportChange);
+			}
+			this.shellPortraitMediaQuery = null;
+		}
 	}
 
 	componentDidUpdate(prevProps, prevState) {
@@ -729,13 +808,7 @@ export default class Board extends React.Component {
 	}
 
 	renderFireworks() {
-		var won = this.state.won && this.state.showFireworks && !this.state.celebrationDismissed;
-
-		if (!won) return;
-
-		return <Fireworks
-			className="mj-gameover"
-		/>
+		return null;
 	}
 
 	renderWinAction() {
@@ -753,133 +826,186 @@ export default class Board extends React.Component {
 	}
 
 	renderMain(canvasClassName) {
-		var expandButtonLabel = this.state.isExpanded ? "Contract board" : "Expand board";
-		var expandButtonClassName = "mj-playfield-expand-button";
 		var playfieldWrapClassName = "mj-playfield-wrap";
-		var playfieldClassName = "mj-playfield mj-playfield-frame";
-		var playfieldStageClassName = "mj-playfield-stage";
-		var runtimeCanvasClassName = canvasClassName;
+		var playfieldClassName = "mj-shell-box mj-shell-playfield";
+		var expandButtonClassName = "mj-playfield-expand-button mj-shell-expand-box";
+		var expandIconClassName = "mj-playfield-expand-button-icon";
 
 		if (this.state.isExpanded) {
-			expandButtonClassName += " is-expanded";
 			playfieldWrapClassName += " is-expanded";
-			playfieldClassName += " mj-playfield-expanded-surface is-expanded";
-			playfieldStageClassName += " mj-playfield-expanded-stage";
+			playfieldClassName += " is-expanded";
+			expandButtonClassName += " is-expanded";
 		}
 
 		if (this.state.isFailureAnimating) {
-			playfieldStageClassName += " is-failure-animating";
-			runtimeCanvasClassName += " is-failure-animating";
-		}
-
-		if (this.state.isGenerating) {
-			runtimeCanvasClassName += " is-generating";
+			playfieldClassName += " is-failure-animating";
 		}
 
 		return (
-			<div
-				className={playfieldWrapClassName}
-				onClick={this.onClickPlayfieldBackground.bind(this)}
-			>
-				<CssRect
-					className={playfieldClassName}
-					size="large"
-					variant="inset"
-				>
-					<div className="mj-playfield-surface">
-						<div className={playfieldStageClassName}>
-							<Canvas
-								key={this.state.instance}
-								className={runtimeCanvasClassName}
-								delegator={this.props.delegator.newDelegator()}
-								tiles={this.state.tiles || []}
-								timings={this.props.timings.tile}
-								onClick={this.onClickTile.bind(this)}
-								onCanvasClick={this.onClickCanvas.bind(this)}
-							/>
-						</div>
-						<div className="mj-playfield-expand-slot">
+			<div className={playfieldWrapClassName}>
+				<div className="mj-playfield-viewport">
+					<CssRect
+						className="mj-shell-playfield-frame-box"
+						size="large"
+						variant="inset"
+						hideChildren={true}
+						aria-hidden="true"
+					/>
+					<div
+						className={playfieldClassName}
+						onClick={this.onShellPlayfieldClick.bind(this)}
+					>
+						{this.renderShellCanvas()}
+						{!this.isShellPortrait() ? (
 							<button
 								type="button"
 								className={expandButtonClassName}
-								aria-label={expandButtonLabel}
-								title={expandButtonLabel}
 								onClick={this.onToggleExpanded.bind(this)}
+								aria-label={this.state.isExpanded ? "Contract board" : "Expand board"}
+								title={this.state.isExpanded ? "Contract" : "Expand"}
 							>
-								<span className="mj-playfield-expand-button-icon"></span>
+								<span className={expandIconClassName}></span>
 							</button>
-						</div>
+						) : null}
 					</div>
-				</CssRect>
+				</div>
 			</div>
 		)
 	}
 
+	renderShellCanvasContent() {
+		var boardClassName = `${this.state.tileset.class}-tiny tiny-face tiny-size mj-shell-canvas-box`;
+
+		if (this.state.isGenerating) {
+			boardClassName += " is-generating";
+		}
+
+		if (this.state.isPaused) {
+			boardClassName += " is-paused";
+		}
+
+		if (this.state.lost) {
+			boardClassName += " is-lost";
+		}
+
+		return (
+			<div className="mj-shell-canvas-scale-box">
+				<Canvas
+					className={boardClassName}
+					delegator={this.props.delegator}
+					tiles={this.state.tiles}
+					timings={this.props.timings.tile}
+					onClick={this.onClickTile.bind(this)}
+					onCanvasClick={this.onClickCanvas.bind(this)}
+				/>
+			</div>
+		);
+	}
+
+	isShellPortrait() {
+		if (typeof window === "undefined" || !window.matchMedia) {
+			return false;
+		}
+
+		return window.matchMedia("(orientation: portrait) and (max-width: 900px)").matches;
+	}
+
+	renderShellCanvas() {
+		if (!this.state.isExpanded && !this.isShellPortrait()) {
+			return (
+				<div className="mj-shell-canvas-fit-box">
+					{this.renderShellCanvasContent()}
+				</div>
+			);
+		}
+
+		return (
+			<div className="mj-shell-canvas-fit-box">
+				<TransformWrapper
+					initialScale={1}
+					minScale={1}
+					maxScale={2.5}
+					centerOnInit={true}
+					limitToBounds={true}
+					smooth={false}
+					doubleClick={{
+						disabled: true,
+					}}
+					wheel={{
+						step: 0.12,
+					}}
+				>
+					<TransformComponent
+						wrapperClass="mj-shell-canvas-gesture-viewport"
+						contentClass="mj-shell-canvas-gesture-surface"
+					>
+						{this.renderShellCanvasContent()}
+					</TransformComponent>
+				</TransformWrapper>
+			</div>
+		);
+	}
+
 	renderGameArea(canvasClassName) {
 		var gameAreaClassName = "mj-game-area";
+		var leftHudClassName = "";
 
 		if (this.state.isExpanded) {
 			gameAreaClassName += " is-expanded";
+			leftHudClassName = "is-collapsed";
 		}
 
 		return (
 			<div className={gameAreaClassName}>
-				{!this.state.isExpanded ? (
-					<LeftHud
-						delegator={this.props.delegator.newDelegator()}
-						boardNbr={this.state.boardNbr}
-						difficulty={this.state.difficulty}
-						difficulties={this.props.difficulties}
-						onSolve={this.onSolve.bind(this)}
-						onSettings={this.onSettings.bind(this)}
-						onHelp={this.onHelp.bind(this)}
-						onPlayHalfSolution={this.onPlayHalfSolution.bind(this)}
-						onLoseDebug={this.onLoseDebug.bind(this)}
-					/>
-				) : null}
+				<LeftHud
+					className={leftHudClassName}
+					delegator={this.props.delegator}
+					boardNbr={this.state.boardNbr}
+					difficulty={this.state.difficulty}
+					difficulties={this.props.difficulties}
+					onSolve={this.onSolve.bind(this)}
+					onSettings={this.onSettings.bind(this)}
+					onHelp={this.onHelp.bind(this)}
+					onPlayHalfSolution={this.onPlayHalfSolution.bind(this)}
+					onLoseDebug={this.onLoseDebug.bind(this)}
+				/>
 				{this.renderMain(canvasClassName)}
 				<RightHud
-					delegator={this.props.delegator.newDelegator()}
-					canUndo={this.state.canUndo}
-					canRedo={this.state.canRedo}
-					isHinting={this.state.isHinting}
-					isPeeking={this.state.isPeeking}
+					delegator={this.props.delegator}
 					isPaused={Boolean(this.state.isPaused)}
-					won={this.state.won}
-					lost={this.state.lost}
+					won={Boolean(this.state.won)}
+					lost={Boolean(this.state.lost)}
+					canUndo={Boolean(this.state.canUndo)}
+					canRedo={Boolean(this.state.canRedo)}
+					isHinting={Boolean(this.state.isHinting)}
+					isPeeking={Boolean(this.state.isPeeking)}
+					onPause={this.onPause.bind(this)}
 					onRestart={this.onRestart.bind(this)}
 					onUndo={this.onUndo.bind(this)}
 					onRedo={this.onRedo.bind(this)}
 					onShowMultiUndo={this.onShowMultiUndoPreview.bind(this)}
 					onHint={this.onHint.bind(this)}
-					onPause={this.onPause.bind(this)}
 					onPeek={this.onPeek.bind(this)}
-					hideFeedback={this.state.isExpanded}
 					onFeedback={this.onFeedback.bind(this)}
+					hideFeedback={true}
 				/>
 			</div>
 		)
 	}
 
-	renderFrame() {
+	renderShellOverlay() {
+		if (!this.state.shellToastOpen) return null;
+
 		return (
-			<div className="mj-pretty-frame">
-				<div className="frame-top">
-					<div className="frame-corner frame-corner-tl"></div>
-					<div className="frame-top-edge"></div>
-					<div className="frame-corner frame-corner-tr"></div>
-				</div>
-				<div className="frame-sides">
-					<div className="frame-left-edge"></div>
-					<div className="frame-right-edge"></div>
-				</div>
-				<div className="frame-bottom">
-					<div className="frame-corner frame-corner-bl"></div>
-					<div className="frame-bottom-edge"></div>
-					<div className="frame-corner frame-corner-br"></div>
+			<div
+				className="mj-overlay-layer"
+				onClick={this.onDismissShellToast.bind(this)}
+			>
+				<div className="mj-shell-box mj-shell-toast">
+					Toast
 				</div>
 			</div>
-		)
+		);
 	}
 
 	renderTransientToast() {
@@ -993,14 +1119,7 @@ export default class Board extends React.Component {
 	}
 
 	render() {
-		var set = this.state.tileset.class;
-		var size = this.state.tilesize.class;
-
-		var className = `${set}-${size} ${size}-face ${size}-size`;
-
-		if (this.state.isPaused) {
-			className += ' is-paused';
-		}
+		var className = "mj-shell-canvas";
 
 		if (!this.props.delegator) {
 			return (
@@ -1008,7 +1127,7 @@ export default class Board extends React.Component {
 			)
 		}
 		var won = this.state.won;
-		var pageClassName = 'page mj-board-page ';
+		var pageClassName = 'page mj-board-page mj-shell-mode ';
 		pageClassName += won ? 'won' : 'not-won';
 		pageClassName += this.state.isBelowMinimum ? ' mj-below-minimum' : '';
 		pageClassName += this.state.isExpanded ? ' is-expanded' : '';
@@ -1024,20 +1143,27 @@ export default class Board extends React.Component {
 
 		return (
 			<Page serviceName={this.props.serviceName} className={pageClassName}>
-				<div className={frameClassName}>
-					{this.renderGameArea(className)}
-					{!this.state.isExpanded ? this.renderFrame() : null}
+				<div className="mj-shell-page-stack">
+					<div className={frameClassName}>
+						<div className="mj-layout-shell">
+							{this.renderGameArea(className)}
+							{this.renderShellOverlay()}
+						</div>
+					</div>
+					<div className="mj-shell-border-layer" aria-hidden="true">
+						<MainBorder className="mj-shell-border-box" />
+					</div>
 					{this.renderTransientToast()}
+					{this.renderLost()}
 					{this.renderFireworks()}
 					{this.renderWinAction()}
-					{this.renderLost()}
+					{this.renderStartupConsentDialog()}
+					{this.renderSettingsDialog()}
+					{this.renderFeedbackDialog()}
+					{this.renderHelpDialog()}
+					{this.renderSolveDialog()}
+					{this.renderMultiUndoDialog()}
 				</div>
-				{this.renderStartupConsentDialog()}
-				{this.renderSettingsDialog()}
-				{this.renderHelpDialog()}
-				{this.renderFeedbackDialog()}
-				{this.renderSolveDialog()}
-				{this.renderMultiUndoDialog()}
 			</Page>
 		)
 	}
