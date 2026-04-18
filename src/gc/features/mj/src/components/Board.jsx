@@ -3,6 +3,7 @@ import React from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import Canvas from "./Canvas.jsx";
 import CssRect from "./CssRect.jsx";
+import FeedbackButton from "./FeedbackButton.jsx";
 import FeedbackDialog from "./FeedbackDialog.jsx";
 import HelpDialog from "./HelpDialog.jsx";
 import LeftHud from "./LeftHud.jsx";
@@ -911,17 +912,12 @@ export default class Board extends React.Component {
 	}
 
 	renderShellCanvas() {
-		if (!this.state.isExpanded && !this.isShellPortrait()) {
-			return (
-				<div className="mj-shell-canvas-fit-box">
-					{this.renderShellCanvasContent()}
-				</div>
-			);
-		}
+		var enableGestureCanvas = this.state.isExpanded || this.state.isShellPortrait;
 
 		return (
 			<div className="mj-shell-canvas-fit-box">
 				<TransformWrapper
+					disabled={!enableGestureCanvas}
 					initialScale={1}
 					minScale={1}
 					maxScale={2.5}
@@ -932,7 +928,14 @@ export default class Board extends React.Component {
 						disabled: true,
 					}}
 					wheel={{
+						disabled: !enableGestureCanvas,
 						step: 0.12,
+					}}
+					panning={{
+						disabled: !enableGestureCanvas,
+					}}
+					pinch={{
+						disabled: !enableGestureCanvas,
 					}}
 				>
 					<TransformComponent
@@ -989,6 +992,11 @@ export default class Board extends React.Component {
 					onFeedback={this.onFeedback.bind(this)}
 					hideFeedback={true}
 				/>
+				{!this.state.isExpanded ? (
+					<div className="mj-shell-feedback-wrap">
+						<FeedbackButton onClick={this.onFeedback.bind(this)} />
+					</div>
+				) : null}
 			</div>
 		)
 	}

@@ -54,7 +54,10 @@ That folder currently contains:
 
 - [tilesize.js](/c:/dev/poly-gc-react/scripts/tile-css/tilesize.js)
 - [tileface.js](/c:/dev/poly-gc-react/scripts/tile-css/tileface.js)
+- [generate-tile-assets.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-tile-assets.js)
 - [tile-sizes.json](/c:/dev/poly-gc-react/scripts/tile-css/tile-sizes.json)
+- [assets/generate-runtime-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-runtime-assets.json)
+- [assets/generate-tiny-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-tiny-assets.json)
 - shared helper modules used by those generators
 
 Older top-level script paths still exist during the transition, but the
@@ -109,6 +112,113 @@ Future cleanup note:
 - the current script still relies on explicit command-line sizing arguments for each generated size
 - later, this should be replaced or supplemented with a JSON configuration file that contains the tile sizing parameters
 - that file should become the single source of truth for size-related generation inputs such as width, height, depth offsets, and padding values
+
+## `tileface.js`
+
+The face CSS generator lives at:
+
+- [scripts/tile-css/tileface.js](/c:/dev/poly-gc-react/scripts/tile-css/tileface.js)
+
+Its current purpose is to generate the size-specific face appearance CSS files
+under:
+
+- [src/gc/features/mj/assets/css/tile-appearance](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-appearance)
+
+Current generated targets are:
+
+- [normal-face.css](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-appearance/normal-face.css)
+- [medium-face.css](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-appearance/medium-face.css)
+- [small-face.css](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-appearance/small-face.css)
+- [tiny-face.css](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-appearance/tiny-face.css)
+
+Current behavior:
+
+- preserves the canonical Mahjongg face ordering used by the runtime
+- emits a base `.face` rule with `background-repeat: no-repeat` and
+  `background-position: 0 0`
+- emits one `background-image` rule for each face index
+- supports plain `url(...)` output or retina-aware `image-set(...)` output via
+  `--image-set`
+
+Current regeneration commands are:
+
+```powershell
+node .\scripts\tile-css\tileface.js normal-face .\src\gc\features\mj\assets\css\tile-appearance\normal-face.css --image-set
+node .\scripts\tile-css\tileface.js medium-face .\src\gc\features\mj\assets\css\tile-appearance\medium-face.css --image-set
+node .\scripts\tile-css\tileface.js small-face .\src\gc\features\mj\assets\css\tile-appearance\small-face.css --image-set
+node .\scripts\tile-css\tileface.js tiny-face .\src\gc\features\mj\assets\css\tile-appearance\tiny-face.css --image-set
+```
+
+Important current assumption:
+
+- the generated face image files are now face-only PNGs sized to the face area,
+  not full tile PNGs
+- because of that, the generated CSS must keep the non-repeating top-left face
+  placement rule
+
+## `generate-tile-assets.js`
+
+The raster asset generator lives at:
+
+- [scripts/tile-css/generate-tile-assets.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-tile-assets.js)
+
+Its current purpose is to generate the face and body PNG assets that the MJ
+runtime CSS references.
+
+Current model:
+
+- source face art comes from full-tile PNGs positioned correctly in the upper
+  left of the tile body
+- the generator crops the face region from those full-tile sources
+- the generator writes size-specific face PNGs for:
+  - `normal-face`
+  - `medium-face`
+  - `small-face`
+  - `tiny-face`
+- the generator writes size-specific body PNGs for:
+  - `normal`
+  - `medium`
+  - `small`
+  - `tiny`
+- each generated asset set includes:
+  - `1x`
+  - `@2x`
+
+The generator now ignores existing `@2x` files when scanning a source
+directory, so reruns do not accidentally treat derived assets as source
+material.
+
+Current checked-in config entry points are:
+
+- [generate-runtime-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-runtime-assets.json)
+  - generate all runtime sizes
+- [generate-tiny-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-tiny-assets.json)
+  - generate only the tiny runtime size
+
+The script can also generate optional composite test images when a config
+includes a `composite` section, but that is no longer part of the normal asset
+generation flow.
+
+Current full regeneration command is:
+
+```powershell
+node .\scripts\tile-css\generate-tile-assets.js --config .\scripts\tile-css\assets\generate-runtime-assets.json
+```
+
+## Tile Image CSS
+
+Current MJ tile imagery now uses retina-aware CSS for all four runtime sizes:
+
+- face CSS files use `image-set(...)`
+- [tile-bodies.css](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-appearance/tile-bodies.css)
+  uses `image-set(...)` for:
+  - `normal`
+  - `medium`
+  - `small`
+  - `tiny`
+
+The tile layout CSS under `tile-layout/` is intentionally unchanged by this
+work because runtime geometry still uses `1x` CSS pixel dimensions.
 
 ## Mahjongg Difficulty Scripts
 

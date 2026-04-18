@@ -1,0 +1,59 @@
+.mj-game-number-wrap {
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.mj-game-number-input {
+    color: var(--mj-ui-text-color);
+    font-family: var(--mj-ui-font-family);
+    font-size: 12px;
+    font-style: italic;
+    font-weight: bold;
+    text-shadow: 0 1px 0 var(--mj-ui-text-shadow);
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: 0;
+    background: transparent;
+    padding: 0 1px 0 7px;
+    line-height: 1;
+    text-align: left;
+    transform: translateY(-2px);
+}
+
+.mj-game-number-input:focus {
+    outline: none;
+}
+
+.mj-game-number-input::placeholder {
+    color: var(--mj-ui-text-color);
+    opacity: 1;
+}
+
+.mj-shuffle-button-control {
+    position: relative;
+    z-index: 2;
+    border: 0;
+    background: transparent;
+    padding: 0 0 0 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.mj-shuffle-button-control:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+.mj-shuffle-button-icon {
+    position: relative;
+    z-index: 2;
+    display: block;
+    width: 20px;
+    height: 14px;
+    margin: 0;
+    background: url("../images/shuffle.png") no-repeat center;
+    background-size: 20px 14px;
+}

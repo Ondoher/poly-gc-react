@@ -1384,3 +1384,20 @@
         transform: rotate(360deg);
     }
 }
+
+@media screen and (orientation: portrait) and (max-width: 900px) {
+    .mj-feedback-dialog-context-comments {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        align-items: start;
+    }
+
+    .mj-feedback-dialog-comments {
+        padding-bottom: clamp(10px, 1.6vh, 14px);
+    }
+
+    .mj-feedback-dialog-comment-field,
+    .mj-feedback-dialog-comment-input {
+        min-height: 160px;
+    }
+}

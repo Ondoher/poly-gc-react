@@ -22,21 +22,6 @@ export default class GameNumberControl extends React.Component {
 		return String(boardNbr);
 	}
 
-	formatDifficultyLabel() {
-		var difficulty = this.props.difficulty;
-		var difficulties = this.props.difficulties || {};
-
-		if (difficulty && difficulties[difficulty]?.label) {
-			return difficulties[difficulty].label;
-		}
-
-		if (!difficulty) {
-			return '';
-		}
-
-		return String(difficulty).charAt(0).toUpperCase() + String(difficulty).slice(1);
-	}
-
 	componentDidUpdate(prevProps) {
 		if (prevProps.boardNbr !== this.props.boardNbr) {
 			this.setState({
@@ -65,15 +50,8 @@ export default class GameNumberControl extends React.Component {
 	}
 
 	render() {
-		var difficultyLabel = this.formatDifficultyLabel();
-
 		return (
 			<div className="mj-game-number-control-stack">
-				{difficultyLabel ? (
-					<div className="mj-game-difficulty-label" aria-label={`Difficulty ${difficultyLabel}`}>
-						{difficultyLabel}
-					</div>
-				) : null}
 				<CssRect
 					className="mj-game-number-wrap mj-game-number-control"
 					size="small"

@@ -36,6 +36,7 @@ export default class Tile extends React.Component {
 
 		this.hideTimer = null;
 		this.clearHighlightTimer = null;
+		this.restartHintTimer = null;
 	}
 
 	componentDidMount() {
@@ -49,6 +50,7 @@ export default class Tile extends React.Component {
 	componentWillUnmount() {
 		this.clearHideTimer();
 		this.clearHighlightTimerHandle();
+		this.clearRestartHintTimer();
 
 		if (this.props.delegator) {
 			this.props.delegator.freeDelegator();
@@ -96,10 +98,28 @@ export default class Tile extends React.Component {
 	}
 
 	hintTile(id, on) {
-		if (id === this.props.id)
+		if (id !== this.props.id) return;
+
+		var highlight = normalizeHighlightType(on, 'hint');
+
+		if (highlight === 'hint' && this.state.highlight === 'hint') {
+			this.clearRestartHintTimer();
 			this.setState({
-				highlight: normalizeHighlightType(on, 'hint')
-			})
+				highlight: false
+			});
+			this.restartHintTimer = setTimeout(function() {
+				this.restartHintTimer = null;
+				this.setState({
+					highlight: 'hint'
+				});
+			}.bind(this), 0);
+			return;
+		}
+
+		this.clearRestartHintTimer();
+		this.setState({
+			highlight: highlight
+		})
 	}
 
 	highlightTile(id, on) {
@@ -190,6 +210,13 @@ export default class Tile extends React.Component {
 
 		clearTimeout(this.clearHighlightTimer);
 		this.clearHighlightTimer = null;
+	}
+
+	clearRestartHintTimer() {
+		if (!this.restartHintTimer) return;
+
+		clearTimeout(this.restartHintTimer);
+		this.restartHintTimer = null;
 	}
 
 	render() {

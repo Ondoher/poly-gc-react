@@ -154,6 +154,12 @@ Useful first checks in Mongo are:
 - grouped counts by difficulty
 - grouped counts by layout
 
+## Planned Tooling
+
+Add a small repo-local Mongo query script for ad hoc production checks so simple
+questions such as collection counts, latest records, and grouped summaries do
+not require manual shell quoting or one-off remote commands each time.
+
 ## Practical Success Criteria
 
 This topic is doing its job if it helps us:

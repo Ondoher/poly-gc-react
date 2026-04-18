@@ -1,4 +1,5 @@
 .mj-game-area {
+    position: relative;
     margin: var(--frame-padding);
     z-index: 1;
     display: grid;
@@ -611,6 +612,7 @@ button.mj-shell-expand-box {
 }
 
 .board-canvas .face.hint {
+    filter: drop-shadow(0 0 0 rgba(255, 196, 118, 0));
     animation: mj-tile-hint-face calc(var(--mj-motion-tile-peek) * 3.4545) ease-in-out 3;
 }
 
@@ -831,17 +833,26 @@ button.mj-shell-expand-box {
 @keyframes mj-tile-hint-face {
     0% {
         transform: scale(1);
-        filter: brightness(1);
+        filter:
+            brightness(1)
+            drop-shadow(0 0 0 rgba(255, 196, 118, 0))
+            drop-shadow(0 0 0 rgba(255, 151, 92, 0));
     }
 
     50% {
-        transform: scale(1.035);
-        filter: brightness(1.12);
+        transform: scale(1.04);
+        filter:
+            brightness(1.16)
+            drop-shadow(0 0 8px rgba(255, 196, 118, 0.52))
+            drop-shadow(0 0 16px rgba(255, 151, 92, 0.3));
     }
 
     100% {
         transform: scale(1);
-        filter: brightness(1);
+        filter:
+            brightness(1)
+            drop-shadow(0 0 0 rgba(255, 196, 118, 0))
+            drop-shadow(0 0 0 rgba(255, 151, 92, 0));
     }
 }
 
@@ -854,10 +865,12 @@ button.mj-shell-expand-box {
     }
 
     50% {
-        background-color: rgba(244, 148, 126, 0.6);
-        box-shadow: 0 0 12px rgba(244, 148, 126, 0.34);
+        background-color: rgba(255, 173, 118, 0.66);
+        box-shadow:
+            0 0 14px rgba(255, 176, 118, 0.42),
+            0 0 26px rgba(244, 148, 126, 0.3);
         opacity: 1;
-        filter: brightness(1.22);
+        filter: brightness(1.26);
     }
 
     100% {
@@ -1133,103 +1146,8 @@ button.mj-shell-expand-box {
     align-items: stretch;
 }
 
-.mj-game-number-control-stack {
-    justify-self: start;
-    align-self: start;
-    display: grid;
-    row-gap: 5px;
-    justify-items: start;
-}
-
-.mj-left-hud {
-    transition:
-        opacity 140ms ease-out,
-        transform 180ms ease-out;
-}
-
 .mj-game-area.is-expanded .mj-playfield-wrap {
     opacity: 1;
-}
-
-.mj-game-number-input {
-    color: var(--mj-ui-text-color);
-    font-family: var(--mj-ui-font-family);
-    font-size: 12px;
-    font-style: italic;
-    font-weight: bold;
-    text-shadow: 0 1px 0 var(--mj-ui-text-shadow);
-}
-
-.mj-game-number-control {
-    position: relative;
-    z-index: 2;
-    display: grid;
-    grid-template-columns: 1fr 30px;
-    align-items: stretch;
-    width: 96px;
-    height: 28px;
-}
-
-.mj-game-number-input {
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    border: 0;
-    background: transparent;
-    padding: 0 1px 0 7px;
-    line-height: 1;
-    text-align: left;
-    transform: translateY(-2px);
-}
-
-.mj-game-number-input:focus {
-    outline: none;
-}
-
-.mj-shuffle-button-control {
-    position: relative;
-    z-index: 2;
-    width: 30px;
-    height: 100%;
-    border: 0;
-    background: transparent;
-    padding: 0 0 0 1px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.mj-shuffle-button-control:disabled {
-    cursor: default;
-    opacity: 0.45;
-}
-
-.mj-shuffle-button-icon {
-    position: relative;
-    z-index: 2;
-    display: block;
-    width: 20px;
-    height: 14px;
-    margin: 0;
-    background: url("../images/shuffle.png") no-repeat center;
-    background-size: 20px 14px;
-}
-
-.mj-game-number-input::placeholder {
-    color: var(--mj-ui-text-color);
-    opacity: 1;
-}
-
-.mj-game-difficulty-label {
-    color: var(--mj-ui-text-color);
-    font-family: var(--mj-ui-font-family);
-    font-size: 14px;
-    font-style: italic;
-    font-weight: bold;
-    text-shadow: 0 1px 0 var(--mj-ui-text-shadow);
-    padding-left: 4px;
-    line-height: 1.1;
 }
 
 .mj-css-rect.mj-right-hud-rail {
@@ -1494,6 +1412,20 @@ button.mj-shell-expand-box {
     padding-bottom: 18px;
 }
 
+.mj-shell-feedback-wrap {
+    position: absolute;
+    right: 44px;
+    bottom: 4px;
+    display: grid;
+    justify-items: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.mj-shell-feedback-wrap .mj-right-hud-button-feedback {
+    pointer-events: auto;
+}
+
 @media screen and (orientation: landscape) and (max-width: 860px) {
     .mj-shell-mode .mj-game-area {
         grid-template-columns: 120px minmax(0, 1fr) 120px;
@@ -1602,7 +1534,7 @@ button.mj-shell-expand-box {
 
     .mj-shell-mode .mj-right-hud {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: auto minmax(0, 1fr);
         grid-template-rows: auto;
         column-gap: 12px;
         row-gap: 0;
@@ -1638,6 +1570,11 @@ button.mj-shell-expand-box {
         align-self: stretch;
     }
 
+    .mj-shell-mode .mj-shell-feedback-wrap {
+        right: 0;
+        bottom: 2px;
+    }
+
     .mj-shell-mode .mj-right-hud-button-bar {
         display: grid;
         grid-auto-flow: column;
@@ -1657,68 +1594,6 @@ button.mj-shell-expand-box {
     .mj-shell-mode .mj-left-hud {
         --mj-left-hud-control-width: auto;
         display: block;
-        margin-top: 6px;
-        padding-top: 0;
-        padding-left: 0;
-        min-height: 0;
-        grid-template-rows: none;
-    }
-
-    .mj-shell-mode .mj-left-hud-stack {
-        width: 100%;
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        grid-auto-rows: auto;
-        column-gap: 6px;
-        row-gap: 6px;
-        align-items: start;
-        align-content: start;
-        justify-items: stretch;
-        justify-self: stretch;
-        align-self: start;
-    }
-
-    .mj-shell-mode .mj-game-number-control-stack {
-        grid-column: 1 / -1;
-        width: auto;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        row-gap: 3px;
-        justify-items: stretch;
-        align-self: stretch;
-        justify-self: start;
-    }
-
-    .mj-shell-mode .mj-left-hud .mj-game-number-solve-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-settings-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-help-button {
-        grid-row: 2;
-    }
-
-    .mj-shell-mode .mj-left-hud .mj-game-number-half-solution-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-lose-button {
-        grid-row: 3;
-    }
-
-    .mj-shell-mode .mj-game-number-control {
-        width: 100%;
-    }
-
-    .mj-shell-mode .mj-game-difficulty-label {
-        font-size: 12px;
-        padding-left: 2px;
-    }
-
-    .mj-shell-mode .mj-left-hud .mj-game-number-solve-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-settings-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-help-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-half-solution-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-lose-button {
-        min-width: 0;
-        max-width: none;
-        width: 100%;
-        padding-left: 6px;
-        padding-right: 6px;
     }
 }
 
@@ -1730,5 +1605,12 @@ button.mj-shell-expand-box {
         bottom: 28px;
         padding-bottom: 0;
         transform: translateX(-50%);
+    }
+}
+
+@media screen and (orientation: landscape) and (max-height: 380px) {
+    .mj-shell-feedback-wrap {
+        right: 4px;
+        bottom: 30px;
     }
 }
