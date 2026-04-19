@@ -14,7 +14,7 @@ describe('FaceInventory', () => {
 	it('builds a simple set of matching pairs for a board size', () => {
 		Random.randomize(123);
 
-		let inventory = new FaceInventory().initializeSimplePairs(8);
+		let inventory = new FaceInventory().shuffleTiles(8);
 
 		expect(inventory.getRemainingPairCount()).toBe(4);
 		expect(inventory.hasRemainingPairs()).toBe(true);
@@ -29,7 +29,7 @@ describe('FaceInventory', () => {
 	it('draws pairs in order and reduces remaining count', () => {
 		Random.randomize(321);
 
-		let inventory = new FaceInventory().initializeSimplePairs(4);
+		let inventory = new FaceInventory().shuffleTiles(4);
 		let first = inventory.peekNextPair();
 		let drawn = inventory.drawPair();
 
@@ -40,7 +40,7 @@ describe('FaceInventory', () => {
 	it('can be cleared after initialization', () => {
 		Random.randomize(999);
 
-		let inventory = new FaceInventory().initializeSimplePairs(4);
+		let inventory = new FaceInventory().shuffleTiles(4);
 		inventory.clear();
 
 		expect(inventory.getRemainingPairCount()).toBe(0);

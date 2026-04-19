@@ -64,3 +64,13 @@ export interface GenerateParameters {
 	difficulty: DifficultyLevel;
 	settingsOverrides?: Partial<DifficultySettings>;
 }
+
+export interface TileSuspensionInit {
+	tile?: TileKey;
+	faces?: Face[];
+	placedAt?: number;
+	placementCount?: number;
+	openCount?: number;
+	originalPair?: TileKey[];
+	faceGroup?: FaceGroup;
+}

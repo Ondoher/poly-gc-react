@@ -1,4 +1,17 @@
+import { makeSequentialArray } from 'utils/arrays.js';
 import Random from '../../src/gc/utils/random.js';
+
+
+/** @type {SuitSpec} */
+const SUITS = {
+	bamboo: [0, 35],
+	characters: [36, 71],
+	dots: [72, 107],
+	dragon: [108, 119],
+	wind: [120, 135],
+	flower: [136, 139],
+	season: [140, 143]
+}
 
 /**
  * Manage the pool of generated face pairs available for simple board
@@ -13,9 +26,47 @@ export default class FaceInventory {
 	 * Create an empty face inventory.
 	 */
 	constructor() {
-		/** @type {{ face1: Face, face2: Face, faceGroup: FaceGroup }[]} */
-		this.pairs = [];
+		/** @type {Map<number, FaceSet}  */
+		this.faceSets = new Map;
+
+		/** @type {{[face: Face]: Suit}} */
+		this.suits = {};
+		this.makeSuits();
+
+		/** @type {AssignedFacePair[]} */
+		this.assignedFacePairs = [];
 	}
+
+	makeSuits() {
+		let entries = Object.entries(SUITS);
+
+		for (let [suit, range] of entries) {
+			for (let idx = range[0]; idx <= range[1]; idx++) {
+				this.suits[idx] = suit;
+			}
+		}
+	}
+
+	/**
+	 * Given a face, find it's suit
+	 *
+	 * @param {face} face
+	 * @returns {Suit}
+	 */
+	getSuit(face) {
+		return this.suits[face];
+	}
+
+	/**
+	 *
+	 * @param {FaceGroup} faceGroup
+	 * @returns {Suit}
+	 */
+	getSuitFromFaceGroup(faceGroup) {
+		let face = faceGroup * 4;
+		return this.suits[face];
+	}
+
 
 	/**
 	 * Remove all tracked face pairs.
@@ -23,7 +74,7 @@ export default class FaceInventory {
 	 * @returns {void}
 	 */
 	clear() {
-		this.pairs = [];
+		this.faceSets = new Map();
 	}
 
 	/**
@@ -33,35 +84,33 @@ export default class FaceInventory {
 	 * @param {number} tileCount
 	 * @returns {FaceInventory}
 	 */
-	initializeSimplePairs(tileCount) {
-		let fullSetCount = Math.floor(tileCount / 4);
+	shuffleTiles(tileCount) {
+		let fullSetList = engine.makeSequentialArray(0, 144 / 4);
 		let leftover = tileCount % 4;
-		let faceGroups = Array.from({ length: 36 }, function(_value, index) {
-			return index;
-		});
-		let pairGroups = [];
+		let faceCount = Math.floor(tileCount / 4);
+		this.faceSets = new Map();
 
-		this.clear();
-
-		for (let index = 0; index < fullSetCount; index++) {
-			let faceGroup = Random.pickOne(faceGroups);
-
-			pairGroups.push(faceGroup, faceGroup);
+		for (let idx = 0; idx < faceCount; idx++) {
+			let id = Random.pickOne(fullSetList);
+			let faces = makeSequentialArray(id * 4, 4);
+			let suit = this.getSuit(faces[0]);
+			this.faceSets.set(id, {
+				id,
+				suit,
+				faces
+			});
 		}
 
-		if (leftover >= 2) {
-			pairGroups.push(Random.pickOne(faceGroups));
+		if (leftover) {
+			let id = Random.pickOne(fullSetList);
+			let faces = makeSequentialArray(id * 4, 2);
+			let suit = this.getSuit(faces[0]);
+			this.faceSets.set(id, {
+				id,
+				suit,
+				faces
+			});
 		}
-
-		this.pairs = pairGroups.map((faceGroup) => {
-			return {
-				face1: faceGroup * 4,
-				face2: faceGroup * 4 + 1,
-				faceGroup,
-			};
-		});
-
-		return this;
 	}
 
 	/**
@@ -70,7 +119,13 @@ export default class FaceInventory {
 	 * @returns {number}
 	 */
 	getRemainingPairCount() {
-		return this.pairs.length;
+		let count = 0;
+
+		for (let faceSet of this.faceSets.values()) {
+			count += faceSet.faces.length;
+		}
+
+		return count;
 	}
 
 	/**
@@ -83,24 +138,6 @@ export default class FaceInventory {
 	}
 
 	/**
-	 * Return the next face pair without consuming it.
-	 *
-	 * @returns {{ face1: Face, face2: Face, faceGroup: FaceGroup } | null}
-	 */
-	peekNextPair() {
-		return this.pairs[0] || null;
-	}
-
-	/**
-	 * Consume and return the next face pair.
-	 *
-	 * @returns {{ face1: Face, face2: Face, faceGroup: FaceGroup } | null}
-	 */
-	drawPair() {
-		return this.pairs.shift() || null;
-	}
-
-	/**
 	 * Return the stable face-group id for a concrete face.
 	 *
 	 * @param {Face} face
@@ -109,4 +146,32 @@ export default class FaceInventory {
 	getFaceGroup(face) {
 		return Math.floor(face / 4);
 	}
+
+	/**
+	 *
+	 * @param {FaceGroup} group
+	 */
+	getFaceSet(group) {
+		return this.faceSets.get(group);
+	}
+
+	/**
+	 * Return the most recent assignment index for each face group that has
+	 * already been used during generation.
+	 *
+	 *
+	 * @returns {Map<FaceGroup, number>}
+	 */
+	getAssignedFaceGroupIndexes() {
+		let indexes = new Map();
+
+		this.assignedFacePairs.forEach((pair, index) => {
+			indexes.set(pair.faceGroup, index);
+		});
+
+		return indexes;
+	}
+
+
+
 }

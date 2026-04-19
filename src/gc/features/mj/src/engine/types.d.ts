@@ -305,6 +305,12 @@ type ToRelease = {
 	tile: number | false;
 }
 
+
+type DifficultyOptions = {
+	difficulty: number;
+}
+
+
 /**
  * This event is fired when the state of the game has changed
  *

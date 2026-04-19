@@ -45,71 +45,6 @@ export default class TilePicker {
 	}
 
 	/**
-	 * Collapse generator settings, per-call overrides, and default picker values
-	 * into one resolved options object.
-	 *
-	 * @param {object} [options={}]
-	 * @returns {{
-	 * 	difficulty: number,
-	 * 	minWindowRatio: number,
-	 * 	highestZOrder: number,
-	 * 	horizontalMultiplier: number,
-	 * 	depthMultiplier: number,
-	 * 	openPressureMultiplier: number,
-	 * 	maxFreedPressure: number,
-	 * 	balancePressureMultiplier: number,
-	 * 	maxBalanceMargin: number,
-	 * 	shortHorizonProbeMoves: number,
-	 * 	shortHorizonPressureMultiplier: number,
-	 * 	pendingRemovedTileKeys: TileKey[],
-	 * }}
-	 */
-	collapseOptions(options = {}) {
-		let tilePickerRules = this.settings?.tilePickerRules || {};
-		let difficulty = options.difficulty
-			?? this.settings?.generationDifficulty
-			?? 0.5;
-		let resolved = {
-			...tilePickerRules,
-			...options,
-			difficulty,
-			minWindowRatio: options.minWindowRatio ?? 0.25,
-			highestZOrder: options.highestZOrder
-				?? tilePickerRules.highestZOrder
-				?? this.gameState.getGridHeight(),
-			horizontalMultiplier: options.horizontalMultiplier
-				?? tilePickerRules.horizontalMultiplier
-				?? 2,
-			depthMultiplier: options.depthMultiplier
-				?? options.verticalMultiplier
-				?? tilePickerRules.depthMultiplier
-				?? tilePickerRules.verticalMultiplier
-				?? 4,
-			openPressureMultiplier: options.openPressureMultiplier
-				?? tilePickerRules.openPressureMultiplier
-				?? Math.max(0, (difficulty - 0.5) * 2),
-			maxFreedPressure: options.maxFreedPressure
-				?? tilePickerRules.maxFreedPressure
-				?? 6,
-			balancePressureMultiplier: options.balancePressureMultiplier
-				?? tilePickerRules.balancePressureMultiplier
-				?? Math.max(0, (difficulty - 0.5) * 2),
-			maxBalanceMargin: options.maxBalanceMargin
-				?? tilePickerRules.maxBalanceMargin
-				?? 8,
-			shortHorizonProbeMoves: options.shortHorizonProbeMoves
-				?? tilePickerRules.shortHorizonProbeMoves
-				?? 0,
-			shortHorizonPressureMultiplier: options.shortHorizonPressureMultiplier
-				?? tilePickerRules.shortHorizonPressureMultiplier
-				?? 0,
-			pendingRemovedTileKeys: options.pendingRemovedTileKeys || [],
-		};
-
-		return resolved;
-	}
-
-	/**
 	 * Calculate the z-index factor for one tile key.
 	 *
 	 * Lower tiles receive a larger factor than higher tiles.
@@ -119,7 +54,7 @@ export default class TilePicker {
 	 * @returns {number}
 	 */
 	getZIndexFactor(tileKey, options = {}) {
-		let { highestZOrder } = this.collapseOptions(options);
+		let { highestZOrder } = this.state.collapseOptions(options);
 		let position = this.gameState.getPosition(tileKey);
 
 		if (!position) {
@@ -141,7 +76,7 @@ export default class TilePicker {
 	 * @returns {number}
 	 */
 	getSpatialRelationshipFactor(tileKey, referenceTileKeys = [], options = {}) {
-		let { horizontalMultiplier, depthMultiplier } = this.collapseOptions(options);
+		let { horizontalMultiplier, depthMultiplier } = this.state.collapseOptions(options);
 		let horizontalIntersections = this.gameState.countHorizontalIntersections(
 			referenceTileKeys,
 			tileKey
@@ -170,7 +105,7 @@ export default class TilePicker {
 			openPressureMultiplier,
 			maxFreedPressure,
 			pendingRemovedTileKeys,
-		} = this.collapseOptions(options);
+		} = this.state.collapseOptions(options);
 		let freedCount = this.analyzer.countTilesFreedByRemoving([
 			...pendingRemovedTileKeys,
 			tileKey,
@@ -207,7 +142,7 @@ export default class TilePicker {
 			balancePressureMultiplier,
 			maxBalanceMargin,
 			pendingRemovedTileKeys,
-		} = this.collapseOptions(options);
+		} = this.state.collapseOptions(options);
 		let balance = this.analyzer.getStackBalanceAfterRemoving([
 			...pendingRemovedTileKeys,
 			tileKey,
@@ -253,7 +188,7 @@ export default class TilePicker {
 			shortHorizonProbeMoves,
 			shortHorizonPressureMultiplier,
 			pendingRemovedTileKeys,
-		} = this.collapseOptions(options);
+		} = this.state.collapseOptions(options);
 		let shortHorizon = this.analyzer.runShortHorizonProbe(
 			[
 				...pendingRemovedTileKeys,
@@ -336,7 +271,7 @@ export default class TilePicker {
 	 * @returns {{tileKey: TileKey, weight: number}[]}
 	 */
 	scoreOpenTiles(referenceTileKeys = [], options = {}) {
-		let resolvedOptions = this.collapseOptions(options);
+		let resolvedOptions = this.state.collapseOptions(options);
 		let referenceTileKeySet = new Set(referenceTileKeys);
 
 		return this.rules.getOpenTiles(this.gameState)
@@ -405,7 +340,7 @@ export default class TilePicker {
 	 * @returns {{window: {tileKey: TileKey, weight: number}[], start: number, end: number, size: number, count: number, difficulty: number}}
 	 */
 	getDifficultyWindowDetails(scoredTiles, options = {}) {
-		let { difficulty, minWindowRatio } = this.collapseOptions(options);
+		let { difficulty, minWindowRatio } = this.state.collapseOptions(options);
 		difficulty = Math.max(0, Math.min(1, difficulty));
 		minWindowRatio = Math.max(0, Math.min(1, minWindowRatio));
 		let count = scoredTiles.length;

@@ -3,17 +3,6 @@ import Random from 'utils/random.js'
 import NumberSet from 'utils/NumberSet.js';
 import GameGenerator from './GameGenerator.js';
 
-/** @type {SuitSpec} */
-const SUITS = {
-	bamboo: [0, 35],
-	characters: [36, 71],
-	dots: [72, 107],
-	dragon: [108, 119],
-	wind: [120, 135],
-	flower: [136, 139],
-	season: [140, 143]
-}
-
 /**
  * This is the engine for the Mah Jongg solitaire game. It keeps the game state
  * and provides methods to manipulate it.
@@ -720,9 +709,6 @@ export default class Engine {
 				continue;
 			}
 
-			/** @type {Suit[]} */
-			let suit = this.getSuit(faces[0]);
-
 			let baseFactor = 1;
 			let pairCountFactor = faces.length === 4 ? 2 : 1;
 
@@ -739,21 +725,6 @@ export default class Engine {
 			distanceFactor = this.getAdjustedDistanceFactor(distanceFactor);
 
 			let dups = this.getFaceGroupDuplicateCount(distance, searchPairs.length, {}) - 1;
-//			if (distance !== -1) console.log({distance, distanceFactor, searchPairs, dups, faceGroup, weightPenalty})
-
-			// Find the distance between the face group I'm ranking and the last time the
-			// same suit was assigned
-
-			let suitDistance = searchPairs.findIndex((pair) => this.getSuitFromFaceGroup(pair.faceGroup) === suit);
-			// let suitDistanceFactor = suitDistance === -1 ?
-			// 	searchPairs.length :
-			// 	suitDistance + 1;
-
-			let normalized = suitDistance === -1 ?
-				1 :
-				(suitDistance + 1) / Math.max(1, searchPairs.length);
-			let min = 1
-			let max = 2;
 
 			let suitDistanceFactor = min + (max - min) * normalized;
 

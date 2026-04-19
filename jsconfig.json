@@ -6,5 +6,6 @@
 		"paths": {
 			"*": ["*", "gc/features/*", "types/*"]
 		}
-	}
+	},
+	"exclude": ["node_modules", "dist"]
 }

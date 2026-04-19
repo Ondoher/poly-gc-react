@@ -53,7 +53,7 @@ describe('GameGenerator', () => {
         generator.pairs = [{ tile1: 0, tile2: 1 }];
         generator.suspended = [{ tile: 2 }];
         generator.solution = [0, 1];
-        generator.faceInventory.initializeSimplePairs(4);
+        generator.faceInventory.shuffleTiles(4);
 
         generator.initializeState(gameState, settings);
 
@@ -125,7 +125,7 @@ describe('GameGenerator', () => {
         let generator = new GameGenerator();
         let gameState = createGeneratorState(generator, 400);
 
-        generator.faceInventory.initializeSimplePairs(4);
+        generator.faceInventory.shuffleTiles(4);
         generator.pairs = [
             { tile1: 0, tile2: 1 },
             { tile1: 2, tile2: 3 },

@@ -3,6 +3,7 @@ import Grid from './Grid.js';
 import GameState from './GameState.js';
 import GameRules from './GameRules.js';
 import FaceInventory from './FaceInventory.js';
+import TileSuspension from './TileSuspension.js';
 import TilePicker from './TilePicker.js';
 import { DIFFICULTY_LEVELS, resolveDifficultySettings } from './difficulty-settings.js';
 
@@ -88,7 +89,7 @@ export default class GameGenerator {
 		 * property is kept here because it is part of the intended end-state
 		 * generator model.
 		 *
-		 * @type {Suspended[]}
+		 * @type {TileSuspension[]}
 		 */
 		this.suspended = [];
 
@@ -162,6 +163,9 @@ export default class GameGenerator {
 		this.faceInventory.clear();
 		this.tilePicker = new TilePicker(this.rules, this.gameState, this.settings);
 		this.pairs = [];
+		// Suspension flow is not implemented yet, but keep the collection typed
+		// to the intended domain class now so later work can build on a stable
+		// shape instead of plain objects.
 		this.suspended = [];
 		this.solution = [];
 	}
@@ -180,7 +184,7 @@ export default class GameGenerator {
 	 * @returns {void}
 	 */
 	shuffleTiles() {
-		this.faceInventory.initializeSimplePairs(this.gameState.getBoardCount());
+		this.faceInventory.shuffleTiles(this.gameState.getBoardCount());
 	}
 
 	/**
@@ -252,6 +256,50 @@ export default class GameGenerator {
 
 		this.occupyAllTiles();
 	}
+
+
+	/**
+	 * Choose the difficulty-dependent slice of an array.
+	 *
+	 * Medium difficulty keeps the whole list. Easy and hard shrink the window
+	 * toward opposite ends: easy toward lower scores, hard toward higher scores.
+	 *
+	 * @param {unknown[]} rankings
+	 * @param {DifficultyOptions} options
+	 * @returns {{window: unknown[], start: number, end: number, size: number, count: number, difficulty: number}}
+	 */
+	getRankedWindow(rankings, options = {}) {
+		let difficulty = Math.max(0, Math.min(1, options.difficulty ?? this.difficulty));
+		let minWindowRatio = Math.max(0, Math.min(1, options.minWindowRatio ?? 0.25));
+		let count = rankings.length;
+
+		if (count === 0) {
+			return {
+				window: [],
+				start: 0,
+				end: 0,
+				size: 0,
+				count,
+				difficulty,
+			};
+		}
+
+		let edgePressure = Math.abs(difficulty - 0.5) * 2;
+		let windowRatio = 1 - edgePressure * (1 - minWindowRatio);
+		let windowSize = Math.max(1, Math.ceil(count * windowRatio));
+		let start = Math.round((count - windowSize) * difficulty);
+
+		return {
+			window: rankings.slice(start, start + windowSize),
+			start,
+			end: start + windowSize,
+			size: windowSize,
+			count,
+			difficulty,
+		};
+	}
+
+
 
 	/**
 	 * Generate a new game payload.
