@@ -35,7 +35,7 @@ export default class HelpDialog extends React.Component {
 		return (
 			<ModalDialog
 				open={this.props.open}
-				className="mj-help-dialog"
+				className="mj-help-dialog is-spacious"
 				panelClassName="mj-help-dialog-panel"
 				bodyClassName="mj-help-dialog-body"
 				title="Help"

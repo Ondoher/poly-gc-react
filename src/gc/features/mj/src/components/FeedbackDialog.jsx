@@ -144,7 +144,7 @@ export default class FeedbackDialog extends React.Component {
 		return (
 			<ModalDialog
 				open={this.props.open}
-				className="mj-feedback-dialog"
+				className="mj-feedback-dialog is-spacious"
 				panelClassName="mj-feedback-dialog-panel"
 				bodyClassName={
 					isFirstStep

@@ -89,7 +89,7 @@ export default class MultiUndoDialog extends React.Component {
 		return (
 			<ModalDialog
 				open={this.props.open}
-				className="mj-multi-undo-dialog"
+				className="mj-multi-undo-dialog is-spacious"
 				panelClassName="mj-multi-undo-dialog-panel"
 				bodyClassName={className}
 				title="Move History"

@@ -30,6 +30,15 @@ const DEFAULT_TILESET = {
 	css: '',
 	class: 'ivory normal-size'
 };
+
+function shouldAlwaysShowStartupConsent() {
+	if (typeof window === "undefined" || !window.location) {
+		return false;
+	}
+
+	return window.location.hostname === "localhost";
+}
+
 export default class Board extends React.Component {
 	constructor (props) {
 		super(props);
@@ -64,7 +73,7 @@ export default class Board extends React.Component {
 			message: '',
 			shortMessage: '',
 			shortMessageKey: 0,
-			startupConsentOpen: !persistedPreferences.hasViewedStartupConsent,
+			startupConsentOpen: shouldAlwaysShowStartupConsent() || !persistedPreferences.hasViewedStartupConsent,
 			telemetryConsent: persistedPreferences.telemetryConsent,
 			settingsOpen: false,
 			helpOpen: false,
@@ -544,16 +553,16 @@ export default class Board extends React.Component {
 	}
 
 	getCanvasScaleConfig() {
-		var visibleTiles = this.getVisibleTiles();
-
 		return {
-			positions: visibleTiles.map(function(tile) {
-				return {
-					x: tile.x,
-					y: tile.y,
-					z: tile.z,
-				};
-			}),
+			positions: Array.isArray(this.state.tiles)
+				? this.state.tiles.map(function(tile) {
+					return {
+						x: tile.x,
+						y: tile.y,
+						z: tile.z,
+					};
+				})
+				: [],
 			sizeNames: Array.isArray(this.state.allowedTilesizes) && this.state.allowedTilesizes.length > 0
 				? this.state.allowedTilesizes
 				: Object.keys(this.props.tilesizes || {}),
@@ -691,20 +700,6 @@ export default class Board extends React.Component {
 		}
 
 		return style;
-	}
-
-	getVisibleTiles() {
-		if (!Array.isArray(this.state.tiles)) {
-			return [];
-		}
-
-		if (!this.state.placed || typeof this.state.placed.has !== "function") {
-			return this.state.tiles;
-		}
-
-		return this.state.tiles.filter(function(tile) {
-			return this.state.placed.has(tile.id);
-		}, this);
 	}
 
 	onWindowKeyDown(evt) {

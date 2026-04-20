@@ -243,7 +243,7 @@ export default class SolveDialog extends React.Component {
 		return (
 			<ModalDialog
 				open={this.props.open}
-				className="mj-solve-dialog"
+				className="mj-solve-dialog is-spacious"
 				panelClassName="mj-solve-dialog-panel"
 				bodyClassName="mj-solve-dialog-body"
 				closeLabel="Close solve dialog"

@@ -211,7 +211,7 @@ export default class SettingsDialog extends React.Component {
 		return (
 			<ModalDialog
 				open={this.props.open}
-				className="mj-settings-dialog"
+				className="mj-settings-dialog is-spacious"
 				panelClassName="mj-settings-dialog-panel"
 				bodyClassName="mj-settings-dialog-body"
 				title="Settings"
