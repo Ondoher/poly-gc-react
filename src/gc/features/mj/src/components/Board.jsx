@@ -1,4 +1,5 @@
 import { registry } from "@polylith/core";
+import { Fireworks } from "@fireworks-js/react";
 import React from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import Canvas from "./Canvas.jsx";
@@ -15,6 +16,7 @@ import SettingsDialog from "./SettingsDialog.jsx";
 import SolveDialog from "./SolveDialog.jsx";
 import StartupConsentDialog from "./StartupConsentDialog.jsx";
 import Toast from "./Toast.jsx";
+import { debounce } from "../../../../common/utils.js";
 import {
 	readMjPreferencesCookie,
 	writeMjPreferencesCookie,
@@ -84,12 +86,31 @@ export default class Board extends React.Component {
 			shellToastOpen: false,
 			isShellPortrait: this.getIsShellPortrait(),
 			boardNbr: this.props.boardNbr,
+			autoMetricSetId: persistedPreferences.tilesizeKey || this.props.tilesize || "tiny",
+			autoCanvasWidth: null,
+			autoCanvasHeight: null,
+			autoCanvasScale: null,
+			autoBoardCanvasWidth: null,
+			autoBoardCanvasHeight: null,
+			autoBoardCanvasOffsetX: null,
+			autoBoardCanvasOffsetY: null,
 		}
 		this.persistedPreferences = persistedPreferences;
 		this.trackingModel = null;
 		this.feedbackModel = null;
+		this.layoutScaling = null;
 		this.tiles = [];
 		this.hasStartedGame = false;
+		this.playfieldViewportRef = React.createRef();
+		this.playfieldRef = React.createRef();
+		this.isUnmounted = false;
+		this.runAutoRescaleDebounced = debounce(function(reason) {
+			if (this.isUnmounted) {
+				return;
+			}
+
+			this.runAutoRescale(reason);
+		}.bind(this), 80, 300);
 		this.onWindowKeyDown = this.onWindowKeyDown.bind(this);
 		this.onShellViewportChange = this.onShellViewportChange.bind(this);
 		this.fireworksTimer = null;
@@ -251,7 +272,9 @@ export default class Board extends React.Component {
 			return {
 				isExpanded: !prevState.isExpanded,
 			};
-		});
+		}, function() {
+			this.scheduleAutoRescale("toggle-expanded");
+		}.bind(this));
 	}
 
 	onShellPlayfieldClick(evt) {
@@ -262,7 +285,9 @@ export default class Board extends React.Component {
 		if (this.state.isExpanded) {
 			this.setState({
 				isExpanded: false,
-			});
+			}, function() {
+				this.scheduleAutoRescale("toggle-expanded");
+			}.bind(this));
 		}
 	}
 
@@ -455,6 +480,9 @@ export default class Board extends React.Component {
 
 	onShellViewportChange() {
 		var isShellPortrait = this.getIsShellPortrait();
+		var reason = this.state.isShellPortrait === isShellPortrait
+			? "resize"
+			: (isShellPortrait ? "switch-portrait-mode" : "switch-landscape-mode");
 
 		this.setState(function(prevState) {
 			if (prevState.isShellPortrait === isShellPortrait) {
@@ -465,7 +493,181 @@ export default class Board extends React.Component {
 				isShellPortrait: isShellPortrait,
 				isExpanded: isShellPortrait ? false : prevState.isExpanded,
 			};
+		}, function() {
+			this.scheduleAutoRescale(reason);
+		}.bind(this));
+	}
+
+	getAvailableCanvasSpace() {
+		let viewport = this.playfieldViewportRef?.current;
+
+		if (!viewport) {
+			return {
+				width: 0,
+				height: 0,
+			};
+		}
+
+		return {
+			width: viewport.clientWidth || 0,
+			height: viewport.clientHeight || 0,
+		};
+	}
+
+	getCanvasScalePadding() {
+		let playfield = this.playfieldRef?.current;
+
+		if (!playfield || typeof window === "undefined" || typeof window.getComputedStyle !== "function") {
+			return {
+				left: 0,
+				right: 0,
+				top: 0,
+				bottom: 0,
+			};
+		}
+
+		let styles = window.getComputedStyle(playfield);
+		let sidePadding = parseFloat(styles.getPropertyValue("--mj-shell-canvas-min-side-padding")) || 0;
+		let topPadding = parseFloat(styles.getPropertyValue("--mj-shell-canvas-min-top-padding")) || 0;
+		let bottomPadding = parseFloat(styles.getPropertyValue("--mj-shell-canvas-min-bottom-padding")) || 0;
+
+		return {
+			left: sidePadding,
+			right: sidePadding,
+			top: topPadding,
+			bottom: bottomPadding,
+		};
+	}
+
+	getCanvasScaleConfig() {
+		return {
+			positions: Array.isArray(this.state.tiles)
+				? this.state.tiles.map(function(tile) {
+					return {
+						x: tile.x,
+						y: tile.y,
+						z: tile.z,
+					};
+				})
+				: [],
+			sizeNames: Array.isArray(this.state.allowedTilesizes) && this.state.allowedTilesizes.length > 0
+				? this.state.allowedTilesizes
+				: Object.keys(this.props.tilesizes || {}),
+			availableSpace: this.getAvailableCanvasSpace(),
+			padding: this.getCanvasScalePadding(),
+		};
+	}
+
+	runAutoRescale(reason) {
+		if (!this.layoutScaling || typeof this.layoutScaling.getDebugState !== "function") {
+			return;
+		}
+
+		let config = this.getCanvasScaleConfig();
+		let result = this.layoutScaling.getDebugState(config);
+		let nextMetricSetId = result?.selectedFit?.metricSetId || this.state.autoMetricSetId || "tiny";
+		let nextLayoutPixelSize = result?.layoutPixelSize || null;
+		let nextTileMetrics = result?.selectedFit?.tileMetrics || null;
+		let nextBoardPixelCenter = result?.selectedFit?.boardPixelCenter || null;
+		let nextLayoutWidth = Number.isFinite(nextLayoutPixelSize?.width)
+			? nextLayoutPixelSize.width
+			: this.state.autoCanvasWidth;
+		let nextLayoutHeight = Number.isFinite(nextLayoutPixelSize?.height)
+			? nextLayoutPixelSize.height
+			: this.state.autoCanvasHeight;
+		let nextCanvasWidth = nextLayoutWidth;
+		let nextCanvasHeight = nextLayoutHeight;
+		let nextCanvasScale = Number.isFinite(result?.scale)
+			? result.scale
+			: this.state.autoCanvasScale;
+		let nextBoardCanvasWidth = Number.isFinite(nextTileMetrics?.canvasWidth)
+			? nextTileMetrics.canvasWidth
+			: nextCanvasWidth;
+		let nextBoardCanvasHeight = Number.isFinite(nextTileMetrics?.canvasHeight)
+			? nextTileMetrics.canvasHeight
+			: nextCanvasHeight;
+		let fallbackBoardCanvasOffsetX =
+			Number.isFinite(nextCanvasWidth) && Number.isFinite(nextBoardCanvasWidth)
+				? (nextCanvasWidth - nextBoardCanvasWidth) / 2
+				: this.state.autoBoardCanvasOffsetX;
+		let fallbackBoardCanvasOffsetY =
+			Number.isFinite(nextCanvasHeight) && Number.isFinite(nextBoardCanvasHeight)
+				? (nextCanvasHeight - nextBoardCanvasHeight) / 2
+				: this.state.autoBoardCanvasOffsetY;
+		let nextBoardCanvasOffsetX =
+			Number.isFinite(nextCanvasWidth) && Number.isFinite(nextBoardPixelCenter?.x)
+				? (nextCanvasWidth / 2) - nextBoardPixelCenter.x
+				: fallbackBoardCanvasOffsetX;
+		let nextBoardCanvasOffsetY =
+			Number.isFinite(nextCanvasHeight) && Number.isFinite(nextBoardPixelCenter?.y)
+				? (nextCanvasHeight / 2) - nextBoardPixelCenter.y
+				: fallbackBoardCanvasOffsetY;
+
+		if (
+			nextMetricSetId !== this.state.autoMetricSetId ||
+			nextCanvasWidth !== this.state.autoCanvasWidth ||
+			nextCanvasHeight !== this.state.autoCanvasHeight ||
+			nextCanvasScale !== this.state.autoCanvasScale ||
+			nextBoardCanvasWidth !== this.state.autoBoardCanvasWidth ||
+			nextBoardCanvasHeight !== this.state.autoBoardCanvasHeight ||
+			nextBoardCanvasOffsetX !== this.state.autoBoardCanvasOffsetX ||
+			nextBoardCanvasOffsetY !== this.state.autoBoardCanvasOffsetY
+		) {
+			this.setState({
+				autoMetricSetId: nextMetricSetId,
+				autoCanvasWidth: nextCanvasWidth,
+				autoCanvasHeight: nextCanvasHeight,
+				autoCanvasScale: nextCanvasScale,
+				autoBoardCanvasWidth: nextBoardCanvasWidth,
+				autoBoardCanvasHeight: nextBoardCanvasHeight,
+				autoBoardCanvasOffsetX: nextBoardCanvasOffsetX,
+				autoBoardCanvasOffsetY: nextBoardCanvasOffsetY,
+			});
+		}
+
+		console.info("mj:auto-rescale", {
+			reason,
+			config,
+			result,
 		});
+	}
+
+	scheduleAutoRescale(reason) {
+		this.runAutoRescaleDebounced(reason);
+	}
+
+	getShellCanvasStyle() {
+		let style = {};
+
+		if (Number.isFinite(this.state.autoCanvasWidth) && this.state.autoCanvasWidth > 0) {
+			style["--mj-shell-canvas-width"] = `${this.state.autoCanvasWidth}px`;
+		}
+
+		if (Number.isFinite(this.state.autoCanvasHeight) && this.state.autoCanvasHeight > 0) {
+			style["--mj-shell-canvas-height"] = `${this.state.autoCanvasHeight}px`;
+		}
+
+		if (Number.isFinite(this.state.autoCanvasScale) && this.state.autoCanvasScale > 0) {
+			style["--mj-shell-canvas-scale"] = `${this.state.autoCanvasScale}`;
+		}
+
+		if (Number.isFinite(this.state.autoBoardCanvasWidth) && this.state.autoBoardCanvasWidth > 0) {
+			style["--mj-shell-board-canvas-width"] = `${this.state.autoBoardCanvasWidth}px`;
+		}
+
+		if (Number.isFinite(this.state.autoBoardCanvasHeight) && this.state.autoBoardCanvasHeight > 0) {
+			style["--mj-shell-board-canvas-height"] = `${this.state.autoBoardCanvasHeight}px`;
+		}
+
+		if (Number.isFinite(this.state.autoBoardCanvasOffsetX)) {
+			style["--mj-shell-board-canvas-offset-x"] = `${this.state.autoBoardCanvasOffsetX}px`;
+		}
+
+		if (Number.isFinite(this.state.autoBoardCanvasOffsetY)) {
+			style["--mj-shell-board-canvas-offset-y"] = `${this.state.autoBoardCanvasOffsetY}px`;
+		}
+
+		return style;
 	}
 
 	onWindowKeyDown(evt) {
@@ -705,8 +907,10 @@ export default class Board extends React.Component {
 	}
 
 	componentDidMount() {
+		this.isUnmounted = false;
 		this.trackingModel = registry.subscribe("mj:tracking-model");
 		this.feedbackModel = registry.subscribe("mj:feedback-model");
+		this.layoutScaling = registry.subscribe("mj:layout-scaling");
 
 		window.addEventListener('keydown', this.onWindowKeyDown);
 		window.addEventListener('resize', this.onShellViewportChange);
@@ -729,9 +933,13 @@ export default class Board extends React.Component {
 			this.hasStartedGame = true;
 			this.initialized();
 		}
+
+		this.scheduleAutoRescale("start");
 	}
 
 	componentWillUnmount() {
+		this.isUnmounted = true;
+
 		if (this.fireworksTimer) {
 			clearTimeout(this.fireworksTimer);
 			this.fireworksTimer = null;
@@ -757,6 +965,7 @@ export default class Board extends React.Component {
 	componentDidUpdate(prevProps, prevState) {
 		if (prevState.instance !== this.state.instance && this.state.instance !== -1) {
 			this.startGenerateAnimation();
+			this.scheduleAutoRescale("generate-game");
 		}
 
 		if (!prevState.lost && this.state.lost) {
@@ -809,7 +1018,14 @@ export default class Board extends React.Component {
 	}
 
 	renderFireworks() {
-		return null;
+		if (!this.state.showFireworks || this.state.celebrationDismissed) return;
+
+		return (
+			<Fireworks
+				className="mj-gameover"
+				autostart={true}
+			/>
+		);
 	}
 
 	renderWinAction() {
@@ -831,6 +1047,7 @@ export default class Board extends React.Component {
 		var playfieldClassName = "mj-shell-box mj-shell-playfield";
 		var expandButtonClassName = "mj-playfield-expand-button mj-shell-expand-box";
 		var expandIconClassName = "mj-playfield-expand-button-icon";
+		var shellCanvasStyle = this.getShellCanvasStyle();
 
 		if (this.state.isExpanded) {
 			playfieldWrapClassName += " is-expanded";
@@ -844,7 +1061,7 @@ export default class Board extends React.Component {
 
 		return (
 			<div className={playfieldWrapClassName}>
-				<div className="mj-playfield-viewport">
+				<div className="mj-playfield-viewport" ref={this.playfieldViewportRef}>
 					<CssRect
 						className="mj-shell-playfield-frame-box"
 						size="large"
@@ -854,6 +1071,8 @@ export default class Board extends React.Component {
 					/>
 					<div
 						className={playfieldClassName}
+						ref={this.playfieldRef}
+						style={shellCanvasStyle}
 						onClick={this.onShellPlayfieldClick.bind(this)}
 					>
 						{this.renderShellCanvas()}
@@ -875,7 +1094,9 @@ export default class Board extends React.Component {
 	}
 
 	renderShellCanvasContent() {
-		var boardClassName = `${this.state.tileset.class}-tiny tiny-face tiny-size mj-shell-canvas-box`;
+		var tilesetClassName = this.state.tileset?.class || "ivory";
+		var metricSetId = this.state.autoMetricSetId || "tiny";
+		var boardClassName = `${tilesetClassName}-${metricSetId} ${metricSetId}-face ${metricSetId}-size mj-shell-canvas-box`;
 
 		if (this.state.isGenerating) {
 			boardClassName += " is-generating";
@@ -891,14 +1112,18 @@ export default class Board extends React.Component {
 
 		return (
 			<div className="mj-shell-canvas-scale-box">
-				<Canvas
-					className={boardClassName}
-					delegator={this.props.delegator}
-					tiles={this.state.tiles}
-					timings={this.props.timings.tile}
-					onClick={this.onClickTile.bind(this)}
-					onCanvasClick={this.onClickCanvas.bind(this)}
-				/>
+				<div className="mj-shell-layout-viewport">
+					<div className="mj-shell-board-canvas-offset">
+						<Canvas
+							className={boardClassName}
+							delegator={this.props.delegator}
+							tiles={this.state.tiles}
+							timings={this.props.timings.tile}
+							onClick={this.onClickTile.bind(this)}
+							onCanvasClick={this.onClickCanvas.bind(this)}
+						/>
+					</div>
+				</div>
 			</div>
 		);
 	}
@@ -913,29 +1138,40 @@ export default class Board extends React.Component {
 
 	renderShellCanvas() {
 		var enableGestureCanvas = this.state.isExpanded || this.state.isShellPortrait;
+		var transformResetKey = [
+			this.state.isExpanded ? "expanded" : "normal",
+			this.state.isShellPortrait ? "portrait" : "landscape",
+			this.state.autoMetricSetId || "unknown",
+			Number.isFinite(this.state.autoCanvasWidth) ? this.state.autoCanvasWidth.toFixed(3) : "auto-width",
+			Number.isFinite(this.state.autoCanvasHeight) ? this.state.autoCanvasHeight.toFixed(3) : "auto-height",
+			Number.isFinite(this.state.autoCanvasScale) ? this.state.autoCanvasScale.toFixed(6) : "auto-scale",
+		].join(":");
+
+		if (!enableGestureCanvas) {
+			return (
+				<div className="mj-shell-canvas-fit-box">
+					{this.renderShellCanvasContent()}
+				</div>
+			);
+		}
 
 		return (
 			<div className="mj-shell-canvas-fit-box">
 				<TransformWrapper
-					disabled={!enableGestureCanvas}
+					key={transformResetKey}
 					initialScale={1}
+					initialPositionX={0}
+					initialPositionY={0}
 					minScale={1}
 					maxScale={2.5}
-					centerOnInit={true}
+					centerOnInit={false}
 					limitToBounds={true}
 					smooth={false}
 					doubleClick={{
 						disabled: true,
 					}}
 					wheel={{
-						disabled: !enableGestureCanvas,
 						step: 0.12,
-					}}
-					panning={{
-						disabled: !enableGestureCanvas,
-					}}
-					pinch={{
-						disabled: !enableGestureCanvas,
 					}}
 				>
 					<TransformComponent

@@ -134,6 +134,7 @@
         column-gap: 14px;
         align-items: start;
         justify-items: stretch;
+        margin-bottom: 40px;
     }
 
     .mj-shell-mode .mj-left-hud-meta-group {

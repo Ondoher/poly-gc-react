@@ -231,13 +231,30 @@
 .mj-shell-canvas-gesture-surface {
     display: grid;
     justify-items: center;
-    align-items: start;
+    align-items: center;
 }
 
 .mj-shell-canvas-scale-box {
     width: var(--mj-shell-canvas-width);
     height: var(--mj-shell-canvas-height);
     zoom: var(--mj-shell-canvas-scale);
+}
+
+.mj-shell-layout-viewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.mj-shell-board-canvas-offset {
+    position: relative;
+    width: var(--mj-shell-board-canvas-width, 100%);
+    height: var(--mj-shell-board-canvas-height, 100%);
+    transform: translate(
+        var(--mj-shell-board-canvas-offset-x, 0px),
+        var(--mj-shell-board-canvas-offset-y, 0px)
+    );
 }
 
 .mj-shell-expand-box {
@@ -586,7 +603,13 @@ button.mj-shell-expand-box {
     opacity: 0;
     transform: translateY(160px) scale(0.96);
     transform-origin: center bottom;
-    animation: mj-fireworks-arrive 560ms cubic-bezier(0.16, 0.78, 0.28, 1) var(--mj-motion-fireworks-delay) forwards;
+    animation: mj-fireworks-arrive 560ms cubic-bezier(0.16, 0.78, 0.28, 1) forwards;
+}
+
+.mj-gameover canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 .board-canvas .tile.played {
@@ -1445,11 +1468,17 @@ button.mj-shell-expand-box {
 
 
 @media screen and (orientation: portrait) and (max-width: 900px) {
-    .mj-shell-mode .mj-left-hud,
     .mj-shell-mode .mj-right-hud {
         justify-self: stretch;
         align-self: start;
         width: 100%;
+    }
+
+    .mj-shell-mode .mj-left-hud {
+        justify-self: stretch;
+        align-self: end;
+        width: 100%;
+        padding-bottom: 8px;
     }
 
     .page.mj-shell-mode:not(.is-expanded) .mj-right-hud {
@@ -1458,16 +1487,16 @@ button.mj-shell-expand-box {
 
     .mj-shell-mode .mj-game-area {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto auto;
+        grid-template-rows: auto minmax(0, 1fr) auto;
         grid-template-areas:
             "right"
             "play"
             "left";
         row-gap: 4px;
         column-gap: 0;
-        height: auto;
+        height: 100%;
         min-height: 0;
-        align-content: start;
+        align-content: stretch;
     }
 
     .mj-shell-mode .mj-game-area.is-expanded {
@@ -1485,7 +1514,7 @@ button.mj-shell-expand-box {
     .mj-shell-mode .mj-playfield-wrap,
     .mj-shell-mode .mj-playfield-viewport {
         min-height: 0;
-        align-self: start;
+        align-self: stretch;
     }
 
     .mj-shell-mode .mj-shell-box.mj-shell-playfield {
@@ -1520,7 +1549,7 @@ button.mj-shell-expand-box {
             var(--mj-shell-canvas-min-top-padding) +
             var(--mj-shell-canvas-min-bottom-padding)
         );
-        height: auto;
+        height: 100%;
     }
 
     .mj-shell-mode .mj-shell-playfield-frame-box {

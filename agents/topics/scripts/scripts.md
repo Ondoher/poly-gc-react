@@ -2,28 +2,35 @@
 
 ## Purpose
 
-Capture guidance about the repository's script usage, especially generation and conversion tools that support feature work.
+Capture guidance about repository scripts, especially generation and conversion
+tools that support feature work.
 
-## Script Note
+## Current Status
 
-The current top-level `scripts` folder is mostly a personal working area for one-off conversion and generation tasks that were used during development, especially for Mahjongg layout conversion and CSS generation.
+The top-level [scripts](/c:/dev/poly-gc-react/scripts) folder is still mostly a
+working area for generation and conversion helpers that were created during
+development.
 
-Most of that folder is not intended to be checked in as core repository infrastructure.
+Most of it should still be treated as:
 
-The scripts that appear to have the best chance of ongoing reuse are the ones that adapt external assets or data into repository formats, for example:
+- useful repository tooling
+- checked-in when it supports current work
+- not automatically equivalent to stable runtime infrastructure
+
+The strongest candidates for ongoing reuse are the scripts that adapt external
+assets or source data into repository-owned formats, especially:
 
 - tile-size CSS generation
 - tile-face CSS generation
-- layout conversion from outside sources into repo layout JSON
+- tile face/body asset generation
+- layout conversion into repository JSON
 
-If the repo later formalizes a shared scripts area, those are the strongest candidates to promote into that more permanent repository-level tooling layer.
-
-One exception now exists:
+One intentional exception already exists:
 
 - [scripts/deploy/production-deploy.sh](/c:/dev/poly-gc-react/scripts/deploy/production-deploy.sh)
 
-That script is an intentionally reusable operational helper for the current
-server deploy flow. It is not a one-off content-generation tool.
+That file is a reusable operational helper for the live deployment flow rather
+than a one-off generation script.
 
 ## Deployment Script
 
@@ -44,24 +51,54 @@ The exact live runbook and environment assumptions are documented in:
 
 - [Production Deploy Runbook](/c:/dev/poly-gc-react/agents/topics/deployment/production-deploy-runbook.md)
 
-## Tile CSS Generators
+## Tile CSS Pipeline
 
-The Mahjongg tile CSS generators now live together under:
+The Mahjongg tile CSS and raster generation scripts now live together under:
 
 - [scripts/tile-css](/c:/dev/poly-gc-react/scripts/tile-css)
 
-That folder currently contains:
+Current folder contents that matter for active work:
 
-- [tilesize.js](/c:/dev/poly-gc-react/scripts/tile-css/tilesize.js)
-- [tileface.js](/c:/dev/poly-gc-react/scripts/tile-css/tileface.js)
-- [generate-tile-assets.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-tile-assets.js)
-- [tile-sizes.json](/c:/dev/poly-gc-react/scripts/tile-css/tile-sizes.json)
-- [assets/generate-runtime-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-runtime-assets.json)
-- [assets/generate-tiny-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-tiny-assets.json)
-- shared helper modules used by those generators
+- generators:
+  - [tilesize.js](/c:/dev/poly-gc-react/scripts/tile-css/tilesize.js)
+  - [tileface.js](/c:/dev/poly-gc-react/scripts/tile-css/tileface.js)
+  - [generate-layouts.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-layouts.js)
+  - [generate-tile-assets.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-tile-assets.js)
+- shared support:
+  - [metrics.js](/c:/dev/poly-gc-react/scripts/tile-css/metrics.js)
+  - [tile-sizes.json](/c:/dev/poly-gc-react/scripts/tile-css/tile-sizes.json)
+  - [options.js](/c:/dev/poly-gc-react/scripts/tile-css/options.js)
+  - [table-size.js](/c:/dev/poly-gc-react/scripts/tile-css/table-size.js)
+  - [utils.js](/c:/dev/poly-gc-react/scripts/tile-css/utils.js)
+- local notes and usage files:
+  - [tileface-rewrite-prompt.md](/c:/dev/poly-gc-react/scripts/tile-css/tileface-rewrite-prompt.md)
+  - [ts-instructions.txt](/c:/dev/poly-gc-react/scripts/tile-css/ts-instructions.txt)
+- checked-in config entry points:
+  - [assets/generate-runtime-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-runtime-assets.json)
+  - [assets/generate-tiny-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-tiny-assets.json)
+  - [test-assets/generate-test-config.json](/c:/dev/poly-gc-react/scripts/tile-css/test-assets/generate-test-config.json)
 
-Older top-level script paths still exist during the transition, but the
-tile CSS generator folder above is the canonical location for current work.
+Older top-level script paths may still exist during the transition, but the
+folder above is the canonical location for current Mahjongg tile-generation
+work.
+
+### Current Pipeline Shape
+
+The current tile pipeline is split into four related pieces:
+
+1. `tilesize.js`
+   Generates board-geometry CSS such as canvas dimensions and `pos-x-y-z`
+   placement rules.
+2. `tileface.js`
+   Generates face-to-index CSS mapping for the tile faces.
+3. `generate-layouts.js`
+   Generates the shared layout-metric CSS surface in `layouts.css` from the
+   canonical size JSON.
+4. `generate-tile-assets.js`
+   Generates size-specific face and body PNG assets used by the runtime CSS.
+
+Those pieces now share supporting config and helpers in the same folder rather
+than being treated as isolated standalone scripts.
 
 ## `tilesize.js`
 
@@ -73,11 +110,18 @@ Its current purpose is to generate Mahjongg tile-layout CSS files under:
 
 - [src/gc/features/mj/assets/css/tile-layout](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-layout)
 
-Those generated files define:
+Those generated files currently define:
 
 - the rendered `.board-canvas` width and height for a tile size
 - base tile and face dimensions for that size
 - the absolute `pos-x-y-z` placement rules for every board coordinate
+
+The script now derives its geometry through:
+
+- [metrics.js](/c:/dev/poly-gc-react/scripts/tile-css/metrics.js)
+
+That shared module owns the reusable size lookup and layout-math helpers used
+by the tile CSS pipeline.
 
 Current generated targets are:
 
@@ -86,7 +130,8 @@ Current generated targets are:
 - [small-size.css](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-layout/small-size.css)
 - [tiny-size.css](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-layout/tiny-size.css)
 
-The script is intended to be run from the repository root. Current regeneration commands are:
+The script is intended to be run from the repository root. Current regeneration
+commands are:
 
 ```powershell
 node .\scripts\tile-css\tilesize.js normal-size .\src\gc\features\mj\assets\css\tile-layout\normal-size.css -w 56 -h 77 -x 8 -y 7 -r 9 -b 9
@@ -95,23 +140,70 @@ node .\scripts\tile-css\tilesize.js small-size .\src\gc\features\mj\assets\css\t
 node .\scripts\tile-css\tilesize.js tiny-size .\src\gc\features\mj\assets\css\tile-layout\tiny-size.css -w 32 -h 44 -x 5 -y 4 -r 6 -b 6
 ```
 
-The script now loads its default size definitions from:
+Current implementation notes:
+
+- the script already loads default size data from
+  [tile-sizes.json](/c:/dev/poly-gc-react/scripts/tile-css/tile-sizes.json)
+- `tile-sizes.json` is therefore already part of the real current
+  implementation, not just future cleanup direction
+- the reusable size and geometry math now lives in
+  [metrics.js](/c:/dev/poly-gc-react/scripts/tile-css/metrics.js)
+- the generated canvas selector now uses `.size-name.board-canvas`
+- that matches the current MJ rendering model, where size/style classes are
+  applied directly to `Canvas`
+
+Current cleanup direction:
+
+- the explicit CLI sizing overrides are still supported
+- but the long-term direction is to rely more directly on the JSON-driven size
+  data in [tile-sizes.json](/c:/dev/poly-gc-react/scripts/tile-css/tile-sizes.json)
+
+## `generate-layouts.js`
+
+The layout-metric CSS generator lives at:
+
+- [scripts/tile-css/generate-layouts.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-layouts.js)
+
+Its current purpose is to generate:
+
+- [layouts.css](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-layout/layouts.css)
+
+That generated file currently exports one shared `:root` block with:
+
+- `--mj-css-ready`
+- per-size metric-family vars such as:
+  - `--normal-tileWidth`
+  - `--normal-faceWidth`
+  - `--normal-cellWidth`
+  - `--normal-depthX`
+  - `--normal-canvasWidth`
+
+Those vars are shaped to match the runtime metric reader used by:
+
+- [layout-scaling.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/services/layout-scaling.js)
+- [css-vars.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/services/css-vars.js)
+
+The script reads:
 
 - [tile-sizes.json](/c:/dev/poly-gc-react/scripts/tile-css/tile-sizes.json)
 
-You can point it at an alternate config file with `--config` or `-c`.
+and derives the metric families through:
 
-One recent behavior change is important:
+- [metrics.js](/c:/dev/poly-gc-react/scripts/tile-css/metrics.js)
 
-- the generated canvas-size selector now uses `.size-name.board-canvas`
-- that matches the current MJ rendering model, where tile size/style classes are applied directly to `Canvas`
-- earlier generated output used a descendant selector like `.size-name .board-canvas`, which no longer matches the current component structure
+Current live generation command is:
 
-Future cleanup note:
+```powershell
+node .\scripts\tile-css\generate-layouts.js --output .\src\gc\features\mj\assets\css\tile-layout\layouts.css
+```
 
-- the current script still relies on explicit command-line sizing arguments for each generated size
-- later, this should be replaced or supplemented with a JSON configuration file that contains the tile sizing parameters
-- that file should become the single source of truth for size-related generation inputs such as width, height, depth offsets, and padding values
+Current intent:
+
+- keep the filename broad enough for future layout-level CSS, not only vars
+- use the shared size JSON as the single source of truth for generated layout
+  metrics
+- keep this generator separate from the PNG asset pipeline even though both
+  share the same size data
 
 ## `tileface.js`
 
@@ -134,11 +226,13 @@ Current generated targets are:
 Current behavior:
 
 - preserves the canonical Mahjongg face ordering used by the runtime
-- emits a base `.face` rule with `background-repeat: no-repeat` and
-  `background-position: 0 0`
+- emits a base `.face` rule with:
+  - `background-repeat: no-repeat`
+  - `background-position: 0 0`
 - emits one `background-image` rule for each face index
-- supports plain `url(...)` output or retina-aware `image-set(...)` output via
-  `--image-set`
+- supports plain `url(...)` output
+- supports retina-aware `image-set(...)` output via `--image-set`
+- still appends the existing `.highlight:after` rule
 
 Current regeneration commands are:
 
@@ -151,10 +245,37 @@ node .\scripts\tile-css\tileface.js tiny-face .\src\gc\features\mj\assets\css\ti
 
 Important current assumption:
 
-- the generated face image files are now face-only PNGs sized to the face area,
-  not full tile PNGs
+- the generated face image files are now face-only PNGs sized to the face area
+- they are no longer full-tile images in the runtime asset folders
 - because of that, the generated CSS must keep the non-repeating top-left face
   placement rule
+
+### Local Note Accuracy
+
+This folder also contains:
+
+- [tileface-rewrite-prompt.md](/c:/dev/poly-gc-react/scripts/tile-css/tileface-rewrite-prompt.md)
+
+That file is currently best treated as:
+
+- a working note for `tileface.js` and the tile image pipeline
+- broadly accurate against the current code
+- not a formal spec for the entire `scripts/tile-css` folder
+
+Current accuracy summary:
+
+- it correctly describes the current `tileface.js` behavior
+- it correctly describes the current face/body asset model
+- it correctly describes the current `generate-tile-assets.js` role
+- its regeneration flow is still broadly correct for the current face/body
+  pipeline
+- it is narrower than the full folder state, especially around `tilesize.js`
+
+One local rough edge is:
+
+- [ts-instructions.txt](/c:/dev/poly-gc-react/scripts/tile-css/ts-instructions.txt)
+  is currently shared by both `tileface.js` and `tilesize.js`
+- but its content now primarily documents `tileface.js`
 
 ## `generate-tile-assets.js`
 
@@ -184,6 +305,12 @@ Current model:
   - `1x`
   - `@2x`
 
+The asset generator still has a narrower concern than the layout generators:
+
+- it consumes the shared size data for raster output sizing
+- but it does not own the generated layout-metric CSS surface
+- that separation now lives in `generate-layouts.js`
+
 The generator now ignores existing `@2x` files when scanning a source
 directory, so reruns do not accidentally treat derived assets as source
 material.
@@ -194,6 +321,8 @@ Current checked-in config entry points are:
   - generate all runtime sizes
 - [generate-tiny-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-tiny-assets.json)
   - generate only the tiny runtime size
+- [test-assets/generate-test-config.json](/c:/dev/poly-gc-react/scripts/tile-css/test-assets/generate-test-config.json)
+  - generate a smaller local output tree for script-side testing
 
 The script can also generate optional composite test images when a config
 includes a `composite` section, but that is no longer part of the normal asset
@@ -217,8 +346,8 @@ Current MJ tile imagery now uses retina-aware CSS for all four runtime sizes:
   - `small`
   - `tiny`
 
-The tile layout CSS under `tile-layout/` is intentionally unchanged by this
-work because runtime geometry still uses `1x` CSS pixel dimensions.
+Within the current face/body pipeline, the tile layout CSS under `tile-layout/`
+remains unchanged because that pipeline still works in `1x` CSS pixel geometry.
 
 ## Mahjongg Difficulty Scripts
 

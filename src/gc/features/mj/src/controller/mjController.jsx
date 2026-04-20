@@ -199,11 +199,11 @@ export default class MJController extends Service {
 	}
 
 	onSizeChanged(size) {
-		var allowedTileSizes = this.getAllowedTileSizesForViewport(size, this.maxTileSize);
+		var allowedTileSizes = TILE_SIZE_ORDER.slice();
 		var maxTileSize = allowedTileSizes.length
 			? allowedTileSizes[allowedTileSizes.length - 1]
 			: null;
-		var isBelowMinimum = allowedTileSizes.length === 0;
+		var isBelowMinimum = false;
 
 		this.allowedTileSizes = allowedTileSizes;
 		this.maxTileSize = maxTileSize;

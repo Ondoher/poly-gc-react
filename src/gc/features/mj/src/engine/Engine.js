@@ -3,6 +3,18 @@ import Random from 'utils/random.js'
 import NumberSet from 'utils/NumberSet.js';
 import GameGenerator from './GameGenerator.js';
 
+
+/** @type {SuitSpec} */
+const SUITS = {
+	bamboo: [0, 35],
+	characters: [36, 71],
+	dots: [72, 107],
+	dragon: [108, 119],
+	wind: [120, 135],
+	flower: [136, 139],
+	season: [140, 143]
+}
+
 /**
  * This is the engine for the Mah Jongg solitaire game. It keeps the game state
  * and provides methods to manipulate it.
@@ -726,10 +738,6 @@ export default class Engine {
 
 			let dups = this.getFaceGroupDuplicateCount(distance, searchPairs.length, {}) - 1;
 
-			let suitDistanceFactor = min + (max - min) * normalized;
-
-			suitDistanceFactor = 1;
-
 			let preferredFactor =  preferredFaceGroup === faceGroup ?
 				this.faceAssignmentRules.preferredMultiplier ?? 0.5 :
 				1;
@@ -737,7 +745,6 @@ export default class Engine {
 			let finalFactor = baseFactor *
 				pairCountFactor *
 				distanceFactor *
-				suitDistanceFactor *
 				preferredFactor;
 
 			if (weightFactor !== 0 && distance === -1) {

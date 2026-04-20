@@ -141,6 +141,64 @@ That shared area can hold things like:
 This keeps shared browser test support out of feature folders while still
 helping feature-local UI tests.
 
+## Service Testing Guidance
+
+Service implementations in this repo export their classes, which means browser
+specs can instantiate them directly for narrow unit tests.
+
+Useful pattern:
+
+- create a test-specific `Registry`
+- instantiate the service class directly with that registry
+- register mock services into that registry as needed
+- call the public service methods directly
+
+This is useful for focused unit tests where the goal is to validate one
+service's public API without depending on full app startup.
+
+For example:
+
+- import `Registry` from `@polylith/core`
+- construct `new Registry()`
+- instantiate the service with `new MyService(registry)`
+- register test doubles with `registry.makeService(...)` when the service
+  depends on other services
+
+There is also a lifecycle-aware option.
+
+`Registry` provides an asynchronous `start(prefix)` method that runs the real
+Polylith service lifecycle:
+
+1. call each matching service's `start()`
+2. wait for async `start()` work to settle
+3. call each matching service's `ready()`
+
+That means service tests can choose between:
+
+- direct method calls for tight unit tests
+- `await registry.start('<prefix>')` for tests that need to validate real
+  lifecycle behavior such as cross-service subscription in `ready()`
+
+Practical rule:
+
+- use direct class instantiation plus direct method calls when testing behavior
+  in isolation
+- use `registry.start(...)` when the test specifically cares about lifecycle
+  sequencing or dependency wiring
+
+Future note:
+
+- if service mocks start recurring across multiple specs, promote them into a
+  shared testing area rather than copying them between feature tests
+- a future shared location such as `src/gc/testing/services` or
+  `src/gc/testing/mocks` would be a good home for reusable service-mock
+  builders
+- if a consistent cross-spec mock environment emerges, create a shared
+  "universe" helper or class that populates a `Registry` with the standard set
+  of mocks for that testing scenario
+- that kind of helper should update the registry in one place so individual
+  specs only override the parts that are specific to the test
+
 ## Recommended Takeaway For This Workspace
 
 The intended UI/browser lane for this repo should look like this:
@@ -154,4 +212,3 @@ The intended UI/browser lane for this repo should look like this:
 
 This keeps the browser test architecture aligned with the existing Polylith
 build model instead of introducing a completely separate UI test pipeline.
-

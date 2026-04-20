@@ -212,17 +212,18 @@ Reintroduced in structural/prototype form:
 - centered settings dialog with tabbed selector structure
 - transient short-message toast overlay
 - bottom-center win-dismiss pill/button
-- a first-pass preview pipeline that mounts a live board source render and captures a preview bitmap from it
+- a settings preview pipeline that mounts a live board canvas and scales it
+  through the runtime layout-scaling service
 
 Current implementation note:
 
 - the original image-cut ornamental rectangle system is still present in the codebase, but the live MJ feature currently renders its rectangles through `CssRect`
 - the CSS-based rectangle path is being tuned because it is proving easier to iterate against the PSD for borders, transparency, and join behavior
-- the settings dialog preview now uses a first-pass `PreviewGenerator` implementation that:
-  - mounts a live preview render through `PreviewWrapper` and `Canvas`
+- the settings dialog preview now uses `SettingsPreview` directly:
+  - mounts a live preview render through `Canvas`
   - creates board data through a local `Engine` instance
-  - captures a bitmap with `html-to-image`
-  - currently anchors the preview to a temporary fixed maximum tile size of `normal` until the real responsive size-selection rules are implemented
+  - chooses metric family and scale through `mj:layout-scaling`
+  - avoids the older bitmap-capture preview path
 - the current right HUD should now be read as the gameplay rail:
   - `Pause`
   - `Restart`

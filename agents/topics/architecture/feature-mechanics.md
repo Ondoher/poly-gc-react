@@ -90,6 +90,8 @@ Current working rules are:
 - lifecycle methods such as `start` and `ready` are called directly by Polylith and do not need to be documented in the service `.d.ts` interface
 - service interfaces should include JSDoc comments
 - when the service implementation already has JSDoc, copy that documentation into the service interface where it still applies
+- when organizing class methods, place lower-level dependency methods before the methods that call them
+- in practice, helper methods and leaf operations should appear before composed internal methods, and public methods should usually appear last
 - service `start()` should do local initialization only
 - local initialization in `start()` should leave the service internally usable once dependencies become available
 - service `start()` should not call methods on other services or assume those services are ready yet

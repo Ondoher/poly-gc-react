@@ -16,6 +16,7 @@ Current topic areas under this folder:
 - [MVP](/c:/dev/poly-gc-react/agents/topics/mvp/README.md)
 - [Progressive Web App](/c:/dev/poly-gc-react/agents/topics/progressive-web-app/README.md)
 - [Real 3D Rendering](/c:/dev/poly-gc-react/agents/topics/real-3d-rendering/README.md)
+- [Scaling](/c:/dev/poly-gc-react/agents/topics/scaling/README.md)
 - [Scripts](/c:/dev/poly-gc-react/agents/topics/scripts/README.md)
 - [Testing](/c:/dev/poly-gc-react/agents/topics/testing/README.md)
 - [Telemetry Analysis](/c:/dev/poly-gc-react/agents/topics/telemetry-analysis/README.md)
@@ -96,6 +97,14 @@ Script topic entry points:
 
 - [Scripts Topic Index](/c:/dev/poly-gc-react/agents/topics/scripts/README.md)
 - [Scripts Overview](/c:/dev/poly-gc-react/agents/topics/scripts/scripts.md)
+
+## Scaling
+
+Scaling topic entry points:
+
+- [Scaling Topic Index](/c:/dev/poly-gc-react/agents/topics/scaling/README.md)
+- [Scaling Status](/c:/dev/poly-gc-react/agents/topics/scaling/status.md)
+- [Tile Size Scaling](/c:/dev/poly-gc-react/agents/topics/scaling/tile-size-scaling.md)
 
 ## Testing
 

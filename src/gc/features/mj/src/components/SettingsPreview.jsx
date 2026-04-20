@@ -1,156 +1,322 @@
+import { registry } from "@polylith/core";
 import React from "react";
-import PreviewGenerator from "../utils/PreviewGenerator.js";
+import { debounce } from "../../../../common/utils.js";
+import Canvas from "./Canvas.jsx";
+import layouts from "../data/layouts.js";
+import { TILE_SETS, TILE_SIZES } from "../data/tilesets.js";
+import Engine from "../engine/Engine.js";
+import { applyDifficultyPreset } from "../engine/difficultyPresets.js";
+
+class SettingsPreviewDelegator {
+	delegateInbound() {}
+	freeDelegator() {}
+}
+
+class SettingsPreviewDelegatorFactory {
+	newDelegator() {
+		return new SettingsPreviewDelegator();
+	}
+}
 
 export default class SettingsPreview extends React.Component {
 	constructor(props) {
 		super(props);
 
 		this.state = {
-			imageUrl: null,
-			canvasSize: null,
-			pending: false,
+			tiles: [],
+			metricSetId: props.tilesize || "tiny",
+			canvasWidth: null,
+			canvasHeight: null,
+			canvasScale: null,
+			boardCanvasWidth: null,
+			boardCanvasHeight: null,
+			boardCanvasOffsetX: null,
+			boardCanvasOffsetY: null,
 		};
 
-		this.sourceHostRef = React.createRef();
-		this.pendingTimer = null;
-		this.onRenderComplete = this.onRenderComplete.bind(this);
+		this.delegator = new SettingsPreviewDelegatorFactory();
+		this.surfaceRef = React.createRef();
+		this.layoutScaling = null;
+		this.resizeObserver = null;
+		this.isUnmounted = false;
+		this.runPreviewFitDebounced = debounce(function() {
+			if (this.isUnmounted) {
+				return;
+			}
+
+			this.runPreviewFit();
+		}.bind(this), 80, 300);
 	}
 
 	componentDidMount() {
-		this.ensurePreviewGenerator();
+		this.isUnmounted = false;
+		this.layoutScaling = registry.subscribe("mj:layout-scaling");
+		this.buildPreviewTiles();
+		this.observePreviewSurface();
+		this.schedulePreviewFit();
 	}
 
 	componentDidUpdate(prevProps) {
 		if (
 			prevProps.layout !== this.props.layout ||
-			prevProps.difficulty !== this.props.difficulty ||
+			prevProps.difficulty !== this.props.difficulty
+		) {
+			this.buildPreviewTiles();
+			return;
+		}
+
+		if (
 			prevProps.tileset !== this.props.tileset ||
 			prevProps.tilesize !== this.props.tilesize ||
 			prevProps.maxTileSize !== this.props.maxTileSize
 		) {
-			this.syncPreviewGenerator();
+			this.schedulePreviewFit();
 		}
 	}
 
 	componentWillUnmount() {
-		this.clearPendingTimer();
-		this.destroyPreviewGenerator();
+		this.isUnmounted = true;
+
+		if (this.resizeObserver) {
+			this.resizeObserver.disconnect();
+			this.resizeObserver = null;
+		}
 	}
 
-	ensurePreviewGenerator() {
-		if (this.previewGenerator) {
+	getLayoutDefinition() {
+		if (!this.props.layout) {
+			return null;
+		}
+
+		if (typeof this.props.layout === "string") {
+			return layouts[this.props.layout] || null;
+		}
+
+		return this.props.layout;
+	}
+
+	buildPreviewTiles() {
+		let layout = this.getLayoutDefinition();
+
+		if (!layout) {
+			this.setState({
+				tiles: [],
+			}, this.schedulePreviewFit.bind(this));
 			return;
 		}
 
-		var host = this.sourceHostRef.current;
-		if (!host) {
-			return;
-		}
+		let engine = new Engine();
+		engine.setLayout(layout);
+		applyDifficultyPreset(engine, this.props.difficulty);
+		engine.generateGame(1);
 
-		this.previewGenerator = new PreviewGenerator(host, {
-			onRenderComplete: this.onRenderComplete,
-		});
-		this.syncPreviewGenerator();
-	}
+		let tiles = Array.isArray(engine.board?.pieces)
+			? engine.board.pieces.map(function(piece, idx) {
+				let {x, y, z} = piece.pos;
 
-	destroyPreviewGenerator() {
-		if (!this.previewGenerator) {
-			return;
-		}
+				return {
+					id: idx,
+					x,
+					y,
+					z,
+					face: piece.face,
+				};
+			})
+			: [];
 
-		this.previewGenerator.destroy();
-		this.previewGenerator = null;
-	}
-
-	syncPreviewGenerator() {
-		this.ensurePreviewGenerator();
-
-		if (!this.previewGenerator) {
-			return;
-		}
-
-		var maxTileSize = this.props.maxTileSize || this.props.tilesize || "tiny";
-		var tileSize = this.props.tilesize || maxTileSize;
-
-		this.previewGenerator.setMaxTileSize(maxTileSize);
-		this.previewGenerator.setTileSize(tileSize);
-		this.previewGenerator.setTileStyle(this.props.tileset);
-		this.previewGenerator.setLayout(this.props.layout);
-		this.previewGenerator.setDifficulty(this.props.difficulty);
-		this.schedulePendingState(!this.state.imageUrl);
-		this.previewGenerator.renderNow();
-	}
-
-	onRenderComplete(result) {
-		this.clearPendingTimer();
 		this.setState({
-			imageUrl: result.imageUrl,
-			canvasSize: result.canvasSize,
-			pending: false,
-		});
+			tiles,
+		}, this.schedulePreviewFit.bind(this));
 	}
 
-	schedulePendingState(immediate = false) {
-		this.clearPendingTimer();
-
-		if (immediate) {
-			this.setState({
-				pending: true,
-			});
+	observePreviewSurface() {
+		if (
+			typeof ResizeObserver === "undefined" ||
+			!this.surfaceRef.current
+		) {
 			return;
 		}
 
-		this.pendingTimer = window.setTimeout(function() {
-			this.pendingTimer = null;
-			this.setState({
-				pending: true,
-			});
-		}.bind(this), 500);
+		this.resizeObserver = new ResizeObserver(function() {
+			this.schedulePreviewFit();
+		}.bind(this));
+		this.resizeObserver.observe(this.surfaceRef.current);
 	}
 
-	clearPendingTimer() {
-		if (this.pendingTimer === null) {
+	getAvailableSpace() {
+		let surface = this.surfaceRef.current;
+
+		if (!surface) {
+			return {
+				width: 0,
+				height: 0,
+			};
+		}
+
+		return {
+			width: surface.clientWidth || 0,
+			height: surface.clientHeight || 0,
+		};
+	}
+
+	getScaleConfig() {
+		return {
+			positions: this.state.tiles.map(function(tile) {
+				return {
+					x: tile.x,
+					y: tile.y,
+					z: tile.z,
+				};
+			}),
+			sizeNames: Object.keys(TILE_SIZES),
+			availableSpace: this.getAvailableSpace(),
+		};
+	}
+
+	runPreviewFit() {
+		if (!this.layoutScaling || typeof this.layoutScaling.getDebugState !== "function") {
 			return;
 		}
 
-		window.clearTimeout(this.pendingTimer);
-		this.pendingTimer = null;
+		let result = this.layoutScaling.getDebugState(this.getScaleConfig());
+		let metricSetId = result?.selectedFit?.metricSetId || this.props.tilesize || "tiny";
+		let layoutPixelSize = result?.layoutPixelSize || null;
+		let tileMetrics = result?.selectedFit?.tileMetrics || null;
+		let boardPixelCenter = result?.selectedFit?.boardPixelCenter || null;
+		let canvasWidth = Number.isFinite(layoutPixelSize?.width)
+			? layoutPixelSize.width
+			: this.state.canvasWidth;
+		let canvasHeight = Number.isFinite(layoutPixelSize?.height)
+			? layoutPixelSize.height
+			: this.state.canvasHeight;
+		let canvasScale = Number.isFinite(result?.scale)
+			? result.scale
+			: this.state.canvasScale;
+		let boardCanvasWidth = Number.isFinite(tileMetrics?.canvasWidth)
+			? tileMetrics.canvasWidth
+			: canvasWidth;
+		let boardCanvasHeight = Number.isFinite(tileMetrics?.canvasHeight)
+			? tileMetrics.canvasHeight
+			: canvasHeight;
+		let fallbackBoardCanvasOffsetX =
+			Number.isFinite(canvasWidth) && Number.isFinite(boardCanvasWidth)
+				? (canvasWidth - boardCanvasWidth) / 2
+				: this.state.boardCanvasOffsetX;
+		let fallbackBoardCanvasOffsetY =
+			Number.isFinite(canvasHeight) && Number.isFinite(boardCanvasHeight)
+				? (canvasHeight - boardCanvasHeight) / 2
+				: this.state.boardCanvasOffsetY;
+		let boardCanvasOffsetX =
+			Number.isFinite(canvasWidth) && Number.isFinite(boardPixelCenter?.x)
+				? (canvasWidth / 2) - boardPixelCenter.x
+				: fallbackBoardCanvasOffsetX;
+		let boardCanvasOffsetY =
+			Number.isFinite(canvasHeight) && Number.isFinite(boardPixelCenter?.y)
+				? (canvasHeight / 2) - boardPixelCenter.y
+				: fallbackBoardCanvasOffsetY;
+
+		if (
+			metricSetId !== this.state.metricSetId ||
+			canvasWidth !== this.state.canvasWidth ||
+			canvasHeight !== this.state.canvasHeight ||
+			canvasScale !== this.state.canvasScale ||
+			boardCanvasWidth !== this.state.boardCanvasWidth ||
+			boardCanvasHeight !== this.state.boardCanvasHeight ||
+			boardCanvasOffsetX !== this.state.boardCanvasOffsetX ||
+			boardCanvasOffsetY !== this.state.boardCanvasOffsetY
+		) {
+			this.setState({
+				metricSetId,
+				canvasWidth,
+				canvasHeight,
+				canvasScale,
+				boardCanvasWidth,
+				boardCanvasHeight,
+				boardCanvasOffsetX,
+				boardCanvasOffsetY,
+			});
+		}
+	}
+
+	schedulePreviewFit() {
+		this.runPreviewFitDebounced();
+	}
+
+	getTilesetClass() {
+		let tileset = TILE_SETS[this.props.tileset];
+		return tileset?.class || "ivory";
+	}
+
+	getCanvasClassName() {
+		let metricSetId = this.state.metricSetId || this.props.tilesize || "tiny";
+
+		return [
+			`${this.getTilesetClass()}-${metricSetId}`,
+			`${metricSetId}-face`,
+			`${metricSetId}-size`,
+			"mj-settings-dialog-preview-canvas",
+		].join(" ");
+	}
+
+	getPreviewStyle() {
+		let style = {};
+
+		if (Number.isFinite(this.state.canvasWidth) && this.state.canvasWidth > 0) {
+			style["--mj-settings-preview-canvas-width"] = `${this.state.canvasWidth}px`;
+		}
+
+		if (Number.isFinite(this.state.canvasHeight) && this.state.canvasHeight > 0) {
+			style["--mj-settings-preview-canvas-height"] = `${this.state.canvasHeight}px`;
+		}
+
+		if (Number.isFinite(this.state.canvasScale) && this.state.canvasScale > 0) {
+			style["--mj-settings-preview-canvas-scale"] = `${this.state.canvasScale}`;
+		}
+
+		if (Number.isFinite(this.state.boardCanvasWidth) && this.state.boardCanvasWidth > 0) {
+			style["--mj-settings-preview-board-canvas-width"] = `${this.state.boardCanvasWidth}px`;
+		}
+
+		if (Number.isFinite(this.state.boardCanvasHeight) && this.state.boardCanvasHeight > 0) {
+			style["--mj-settings-preview-board-canvas-height"] = `${this.state.boardCanvasHeight}px`;
+		}
+
+		if (Number.isFinite(this.state.boardCanvasOffsetX)) {
+			style["--mj-settings-preview-board-canvas-offset-x"] = `${this.state.boardCanvasOffsetX}px`;
+		}
+
+		if (Number.isFinite(this.state.boardCanvasOffsetY)) {
+			style["--mj-settings-preview-board-canvas-offset-y"] = `${this.state.boardCanvasOffsetY}px`;
+		}
+
+		return style;
 	}
 
 	render() {
-		var showPlaceholder = !this.state.imageUrl && !this.state.pending;
+		let hasPreview = this.state.tiles.length > 0;
 
 		return (
-			<>
-				<div className="mj-settings-dialog-preview">
-					<div className="mj-settings-dialog-preview-surface">
-						{this.state.imageUrl ? (
-							<img
-								className="mj-settings-dialog-preview-image"
-								src={this.state.imageUrl}
-								alt="Layout preview"
-							/>
-						) : showPlaceholder ? (
-							<div className="mj-settings-dialog-placeholder">
-								Layout preview
-							</div>
-						) : null}
-						{this.state.pending ? (
-							<div className="mj-settings-dialog-preview-loading" aria-live="polite">
-								<div className="mj-settings-dialog-preview-spinner" aria-hidden="true"></div>
-								<div className="mj-settings-dialog-preview-loading-label">
-									Rendering preview
+			<div className="mj-settings-dialog-preview" style={this.getPreviewStyle()}>
+				<div className="mj-settings-dialog-preview-surface" ref={this.surfaceRef}>
+					{hasPreview ? (
+						<div className="mj-settings-dialog-preview-scale-box">
+							<div className="mj-settings-dialog-preview-viewport">
+								<div className="mj-settings-dialog-preview-board-offset">
+									<Canvas
+										className={this.getCanvasClassName()}
+										delegator={this.delegator}
+										tiles={this.state.tiles}
+									/>
 								</div>
 							</div>
-						) : null}
-					</div>
+						</div>
+					) : (
+						<div className="mj-settings-dialog-placeholder">
+							Layout preview
+						</div>
+					)}
 				</div>
-				<div
-					ref={this.sourceHostRef}
-					className="mj-settings-dialog-preview-source-host"
-					aria-hidden="true"
-				></div>
-			</>
+			</div>
 		);
 	}
 }
