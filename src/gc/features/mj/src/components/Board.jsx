@@ -111,6 +111,7 @@ export default class Board extends React.Component {
 
 			this.runAutoRescale(reason);
 		}.bind(this), 80, 300);
+		this.autoRescaleSettledTimer = null;
 		this.onWindowKeyDown = this.onWindowKeyDown.bind(this);
 		this.onShellViewportChange = this.onShellViewportChange.bind(this);
 		this.fireworksTimer = null;
@@ -268,12 +269,14 @@ export default class Board extends React.Component {
 	}
 
 	onToggleExpanded() {
+		var nextIsExpanded = !this.state.isExpanded;
+
 		this.setState(function(prevState) {
 			return {
 				isExpanded: !prevState.isExpanded,
 			};
 		}, function() {
-			this.scheduleAutoRescale("toggle-expanded");
+			this.scheduleSettledAutoRescale(nextIsExpanded ? "toggle-expanded" : "toggle-contracted");
 		}.bind(this));
 	}
 
@@ -286,7 +289,7 @@ export default class Board extends React.Component {
 			this.setState({
 				isExpanded: false,
 			}, function() {
-				this.scheduleAutoRescale("toggle-expanded");
+				this.scheduleSettledAutoRescale("toggle-contracted");
 			}.bind(this));
 		}
 	}
@@ -494,7 +497,7 @@ export default class Board extends React.Component {
 				isExpanded: isShellPortrait ? false : prevState.isExpanded,
 			};
 		}, function() {
-			this.scheduleAutoRescale(reason);
+			this.scheduleSettledAutoRescale(reason);
 		}.bind(this));
 	}
 
@@ -634,6 +637,25 @@ export default class Board extends React.Component {
 
 	scheduleAutoRescale(reason) {
 		this.runAutoRescaleDebounced(reason);
+	}
+
+	scheduleSettledAutoRescale(reason) {
+		this.scheduleAutoRescale(reason);
+
+		if (this.autoRescaleSettledTimer) {
+			clearTimeout(this.autoRescaleSettledTimer);
+			this.autoRescaleSettledTimer = null;
+		}
+
+		this.autoRescaleSettledTimer = setTimeout(function() {
+			this.autoRescaleSettledTimer = null;
+
+			if (this.isUnmounted) {
+				return;
+			}
+
+			this.runAutoRescale(`${reason}:settled`);
+		}.bind(this), 220);
 	}
 
 	getShellCanvasStyle() {
@@ -943,6 +965,11 @@ export default class Board extends React.Component {
 		if (this.fireworksTimer) {
 			clearTimeout(this.fireworksTimer);
 			this.fireworksTimer = null;
+		}
+
+		if (this.autoRescaleSettledTimer) {
+			clearTimeout(this.autoRescaleSettledTimer);
+			this.autoRescaleSettledTimer = null;
 		}
 
 		this.clearFailureAnimationTimer();
