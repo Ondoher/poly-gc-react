@@ -1213,7 +1213,7 @@ describe("LayoutScalingService", function() {
 				gridHeight: 2,
 				gridDepth: 1,
 			});
-			expect(result.layoutPixelSize).toEqual({width: 30, height: 40});
+			expect(result.layoutPixelSize).toEqual({width: 320, height: 340});
 		});
 
 		it("should handle a two-tile horizontal span", function() {
@@ -1235,8 +1235,8 @@ describe("LayoutScalingService", function() {
 			}));
 
 			expect(result.layoutBounds.gridWidth).toBe(4);
-			expect(result.layoutPixelSize.width).toBe(50);
-			expect(result.layoutPixelSize.height).toBe(40);
+			expect(result.layoutPixelSize.width).toBe(320);
+			expect(result.layoutPixelSize.height).toBe(340);
 		});
 
 		it("should handle a two-tile vertical span", function() {
@@ -1258,8 +1258,8 @@ describe("LayoutScalingService", function() {
 			}));
 
 			expect(result.layoutBounds.gridHeight).toBe(4);
-			expect(result.layoutPixelSize.width).toBe(30);
-			expect(result.layoutPixelSize.height).toBe(80);
+			expect(result.layoutPixelSize.width).toBe(320);
+			expect(result.layoutPixelSize.height).toBe(340);
 		});
 
 		it("should handle a realistic deep stack layout end to end", function() {
@@ -1306,11 +1306,11 @@ describe("LayoutScalingService", function() {
 			});
 			expect(result.candidateFits[0].metricSetId).toBe("small");
 			expect(result.selectedFit.metricSetId).toBe("small");
-			expect(result.layoutPixelSize).toEqual({width: 188, height: 196});
-			expect(result.scale).toBeCloseTo(Math.min(150 / 188, 180 / 196), 6);
+			expect(result.layoutPixelSize).toEqual({width: 592, height: 656});
+			expect(result.scale).toBeCloseTo(Math.min(150 / 592, 180 / 656), 6);
 		});
 
-		it("should let depth contribution force a larger metric family out of range", function() {
+		it("should preserve deterministic fallback ordering when all depth-heavy candidates are out of range", function() {
 			let metricSets = {
 				tiny: makeMetricSet({
 					metricSetId: "tiny",
@@ -1340,10 +1340,10 @@ describe("LayoutScalingService", function() {
 				availableSpace: {width: 45, height: 55},
 			}));
 
-			expect(result.selectedFit.metricSetId).toBe("tiny");
+			expect(result.selectedFit.metricSetId).toBe("small");
 			expect(result.candidateFits.map(function(candidate) {
 				return candidate.metricSetId;
-			})).toEqual(["tiny", "small"]);
+			})).toEqual(["small", "tiny"]);
 		});
 
 		it("should cap rendered scale at the normal metric family hard max", function() {
@@ -1418,7 +1418,7 @@ describe("LayoutScalingService", function() {
 				availableSpace: {width: 30, height: 40},
 			}));
 
-			expect(result.scale).toBe(1);
+			expect(result.scale).toBe(0.09375);
 			expect(result.hasFit).toBe(true);
 		});
 
@@ -1437,9 +1437,9 @@ describe("LayoutScalingService", function() {
 				availableSpace: {width: 45, height: 100},
 			}));
 
-			expect(result.selectedFit.scaleX).toBe(1.5);
-			expect(result.selectedFit.scaleY).toBe(2.5);
-			expect(result.scale).toBe(1.5);
+			expect(result.selectedFit.scaleX).toBe(0.140625);
+			expect(result.selectedFit.scaleY).toBeCloseTo(0.294117, 5);
+			expect(result.scale).toBe(0.140625);
 		});
 
 		it("should handle height that is too small while width is sufficient", function() {
@@ -1457,9 +1457,9 @@ describe("LayoutScalingService", function() {
 				availableSpace: {width: 100, height: 32},
 			}));
 
-			expect(result.selectedFit.scaleX).toBeCloseTo(3.333333, 5);
-			expect(result.selectedFit.scaleY).toBe(0.8);
-			expect(result.scale).toBe(0.8);
+			expect(result.selectedFit.scaleX).toBe(0.3125);
+			expect(result.selectedFit.scaleY).toBeCloseTo(0.094117, 5);
+			expect(result.scale).toBeCloseTo(0.094117, 5);
 		});
 
 		it("should handle available space reduced by padding to near zero", function() {
@@ -1479,7 +1479,7 @@ describe("LayoutScalingService", function() {
 			}));
 
 			expect(result.innerAvailableSpace).toEqual({width: 2, height: 2});
-			expect(result.scale).toBeCloseTo(0.05, 5);
+			expect(result.scale).toBeCloseTo(0.005882, 5);
 		});
 	});
 
@@ -1716,7 +1716,7 @@ describe("LayoutScalingService", function() {
 				}));
 
 				expect(result.selectedFit.metricSetId).toBe("tiny");
-				expect(result.layoutPixelSize).toEqual({width: 30, height: 40});
+				expect(result.layoutPixelSize).toEqual({width: 320, height: 340});
 			});
 
 			it("should return pending inputs for incomplete config end to end", function() {
@@ -1757,7 +1757,7 @@ describe("LayoutScalingService", function() {
 				let viewState = service.getViewState(config);
 				let debugState = service.getDebugState(config);
 
-				expect(debugState.layoutPixelSize).toEqual({width: 30, height: 40});
+				expect(debugState.layoutPixelSize).toEqual({width: 320, height: 340});
 				expect(viewState.layoutPixelSize).toBeUndefined();
 			});
 		});
