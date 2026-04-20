@@ -30,7 +30,7 @@ export default class Tile extends React.Component {
 		super(props);
 
 		this.state = {
-			show: true,
+			show: props.visible !== false,
 			highlight: false
 		}
 
@@ -44,6 +44,29 @@ export default class Tile extends React.Component {
 			this.props.delegator.delegateInbound(this, [
 				'showTile', 'hintTile', 'highlightTile'
 			]);
+		}
+	}
+
+	componentDidUpdate(prevProps) {
+		if (prevProps.visible === this.props.visible) {
+			return;
+		}
+
+		if (this.props.visible === true) {
+			this.clearHideTimer();
+			this.setState({
+				show: true,
+				highlight: false
+			});
+			return;
+		}
+
+		if (this.props.visible === false && !this.hideTimer) {
+			this.clearHighlightTimerHandle();
+			this.setState({
+				show: false,
+				highlight: false
+			});
 		}
 	}
 

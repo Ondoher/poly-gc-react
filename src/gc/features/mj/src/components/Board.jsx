@@ -60,6 +60,7 @@ export default class Board extends React.Component {
 			isBelowMinimum: Boolean(this.props.isBelowMinimum),
 			instance: -1,
 			tiles: [],
+			placed: null,
 			message: '',
 			shortMessage: '',
 			shortMessageKey: 0,
@@ -543,16 +544,16 @@ export default class Board extends React.Component {
 	}
 
 	getCanvasScaleConfig() {
+		var visibleTiles = this.getVisibleTiles();
+
 		return {
-			positions: Array.isArray(this.state.tiles)
-				? this.state.tiles.map(function(tile) {
-					return {
-						x: tile.x,
-						y: tile.y,
-						z: tile.z,
-					};
-				})
-				: [],
+			positions: visibleTiles.map(function(tile) {
+				return {
+					x: tile.x,
+					y: tile.y,
+					z: tile.z,
+				};
+			}),
 			sizeNames: Array.isArray(this.state.allowedTilesizes) && this.state.allowedTilesizes.length > 0
 				? this.state.allowedTilesizes
 				: Object.keys(this.props.tilesizes || {}),
@@ -690,6 +691,20 @@ export default class Board extends React.Component {
 		}
 
 		return style;
+	}
+
+	getVisibleTiles() {
+		if (!Array.isArray(this.state.tiles)) {
+			return [];
+		}
+
+		if (!this.state.placed || typeof this.state.placed.has !== "function") {
+			return this.state.tiles;
+		}
+
+		return this.state.tiles.filter(function(tile) {
+			return this.state.placed.has(tile.id);
+		}, this);
 	}
 
 	onWindowKeyDown(evt) {
@@ -895,7 +910,8 @@ export default class Board extends React.Component {
 	setTiles (instance, tiles) {
 		this.setState({
 			instance: instance,
-			tiles: tiles
+			tiles: tiles,
+			placed: null
 		});
 	}
 
@@ -1145,6 +1161,7 @@ export default class Board extends React.Component {
 							className={boardClassName}
 							delegator={this.props.delegator}
 							tiles={this.state.tiles}
+							placed={this.state.placed}
 							timings={this.props.timings.tile}
 							onClick={this.onClickTile.bind(this)}
 							onCanvasClick={this.onClickCanvas.bind(this)}

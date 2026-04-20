@@ -23,6 +23,7 @@ export default class Canvas extends Component {
 			var onClick = this.props.onClick
 				? this.onClickTileEvent.bind(this, tile.id)
 				: undefined;
+			var visible = !this.props.placed || this.props.placed.has(tile.id);
 
 			return (
 				<Tile
@@ -34,6 +35,7 @@ export default class Canvas extends Component {
 					z={tile.z}
 					face={tile.face}
 					highlight={tile.highlight === true}
+					visible={visible}
 					timings={this.props.timings}
 					onClick={onClick}
 				/>

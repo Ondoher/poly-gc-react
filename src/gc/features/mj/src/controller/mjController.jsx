@@ -437,6 +437,7 @@ export default class MJController extends Service {
 			remaining: state.remaining,
 			canUndo: state.canUndo,
 			canRedo: state.canRedo,
+			placed: state.placed,
 			multiUndoHistory: state.multiUndoHistory,
 			isPeeking: this.peeking,
 			isPaused: Boolean(this.paused > 0),
