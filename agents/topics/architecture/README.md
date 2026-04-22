@@ -6,6 +6,7 @@ Use this file as the entry point for the topic.
 
 ## Main Documents
 
+- [Architecture Overview](/c:/dev/poly-gc-react/agents/topics/architecture/architecture-overview.md)
 - [REMVC Architecture](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md)
 - [Feature Mechanics](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md)
 - [Build And Asset Flow](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md)
@@ -44,10 +45,11 @@ Randomness:
 
 ## Suggested Reading Order
 
-1. Start with [REMVC Architecture](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md) for the application model.
-2. Then read [Feature Mechanics](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md) for feature ownership, runtime activation, naming, and placement.
-3. Use [Build And Asset Flow](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md) when a task involves build inclusion, copied assets, `dist`, or runtime asset paths.
-4. Use [Handling Randomness](/c:/dev/poly-gc-react/agents/topics/architecture/handling-randomness.md) when code needs seeded, reproducible, or array-based random behavior.
+1. Start with [Architecture Overview](/c:/dev/poly-gc-react/agents/topics/architecture/architecture-overview.md) for a small context card.
+2. Open [REMVC Architecture](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md) when the application model matters.
+3. Open [Feature Mechanics](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md) for feature ownership, runtime activation, naming, and placement.
+4. Use [Build And Asset Flow](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md) when a task involves build inclusion, copied assets, `dist`, or runtime asset paths.
+5. Use [Handling Randomness](/c:/dev/poly-gc-react/agents/topics/architecture/handling-randomness.md) when code needs seeded, reproducible, or array-based random behavior.
 
 ## Which Doc?
 

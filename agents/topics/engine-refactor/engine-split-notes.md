@@ -256,7 +256,8 @@ Current experimental handoff shape:
 - `board`
 - `solution`
 
-That shape is represented by `GeneratedBoardPayload` in `engine.d.ts`.
+That shape is currently represented by `GeneratorPayload` in the experimental
+engine `types.d.ts` file.
 
 Conceptually:
 

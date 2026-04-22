@@ -74,12 +74,28 @@ The runtime state machine for a generated board.
 
 The construction flow that creates a fresh generated `GameState`.
 
-`GameGenerator` owns:
+`GameGenerator` coordinates:
 
 - generation orchestration
-- temporary generation state
 - difficulty-driven generation behavior
 - final handoff of generated game state
+
+Generation-only working data should live in `GeneratorState` or in a domain
+orchestrator such as `Tiles`, `Faces`, or future `Suspensions`, not directly on
+`GameGenerator` unless it is truly local to the orchestration step.
+
+## `GeneratorState`
+
+The generator-side extension of `GameState`.
+
+`GeneratorState` owns shared generation-run data such as:
+
+- resolved settings and rule bundles
+- prepared pairs
+- active suspended records
+- shared access to face inventory registered by `Faces`
+
+It is the preferred shared state path for generator collaborators.
 
 ## Board Terms
 
@@ -109,12 +125,18 @@ After generation, the board is intended to be treated as immutable.
 
 ## `tile`
 
-A tile id, usually an index into the board's `pieces` array.
+The conceptual Mahjongg tile or board piece.
 
-Use `tile` when referring to:
+Use `tile` when referring to the game concept rather than the numeric handle
+used in code.
 
-- a specific Mahjongg piece slot on the board
-- a tile id passed between state, rules, and engine methods
+## `tileKey`
+
+The board-local numeric handle used to refer to a tile in code.
+
+Use `tileKey` when discussing implementation details. It is currently backed
+by board-piece indexing, but callers should treat it as an opaque board-local
+key owned by `GameState`.
 
 ## `face`
 
@@ -138,10 +160,13 @@ generation.
 
 ## `face inventory`
 
-The generation-time pool of available face pairs or face sets.
+The face-domain-owned pool of available face pairs or face sets.
 
 Face inventory is mutable generation state.
 It is not runtime board state.
+
+In the experimental engine, `Faces` owns `FaceInventory` and registers it on
+`GeneratorState` for helpers that need shared face access.
 
 ## Generation Terms
 
@@ -210,4 +235,5 @@ When in doubt:
 - use `Grid` terms for points, boxes, and intersections
 - use `GameState` terms for tiles, faces, positions, and adjacency
 - use `GameRules` terms for open, playable, won, and lost
-- use `GameGenerator` terms for difficulty, settings, solution, and generation flow
+- use `GeneratorState` terms for shared generation-run data
+- use `GameGenerator` terms for orchestration, handoff, and generation flow

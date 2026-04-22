@@ -134,6 +134,6 @@ export default class GameRules {
 	 * @returns {boolean}
 	 */
 	isLost(gameState) {
-		return !this.isWon(gameState) && !this.hasPlayablePairs(gameState);
+		return Boolean(gameState) && !this.isWon(gameState) && !this.hasPlayablePairs(gameState);
 	}
 }

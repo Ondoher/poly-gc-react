@@ -54,6 +54,14 @@ describe('GameRules', () => {
         expect(rules.isTileOpen(gameState, 0)).toBe(false);
     });
 
+    it('treats missing state and unknown tiles as not open', () => {
+        let rules = new GameRules();
+        let gameState = createGameState(createPlayableLayout());
+
+        expect(rules.isTileOpen(null, 0)).toBe(false);
+        expect(rules.isTileOpen(gameState, 99)).toBe(false);
+    });
+
     it('treats a tile with one free side and no tile above as open', () => {
         let rules = new GameRules();
         let gameState = createGameState(createPlayableLayout());
@@ -132,6 +140,20 @@ describe('GameRules', () => {
         expect(rules.isPlayablePair(gameState, 0, 0)).toBe(false);
     });
 
+    it('rejects playable-pair checks when state or tile keys are missing', () => {
+        let rules = new GameRules();
+        let gameState = createGameState(createPlayableLayout());
+
+        gameState.setFace(0, 8);
+        gameState.setFace(1, 8);
+        gameState.placeTile(0);
+        gameState.placeTile(1);
+
+        expect(rules.isPlayablePair(null, 0, 1)).toBe(false);
+        expect(rules.isPlayablePair(gameState, 0, 99)).toBe(false);
+        expect(rules.isPlayablePair(gameState, 99, 1)).toBe(false);
+    });
+
     it('returns all currently open tiles', () => {
         let rules = new GameRules();
         let gameState = createGameState(createBlockedLayout());
@@ -142,6 +164,14 @@ describe('GameRules', () => {
         gameState.placeTile(3);
 
         expect(rules.getOpenTiles(gameState)).toEqual([1, 2, 3]);
+    });
+
+    it('returns empty collections when no state is available', () => {
+        let rules = new GameRules();
+
+        expect(rules.getOpenTiles(null)).toEqual([]);
+        expect(rules.getPlayablePairs(null)).toEqual([]);
+        expect(rules.hasPlayablePairs(null)).toBe(false);
     });
 
     it('returns all playable pairs on the board', () => {
@@ -217,6 +247,13 @@ describe('GameRules', () => {
         let gameState = createGameState(createPlayableLayout());
 
         expect(rules.isWon(gameState)).toBe(true);
+    });
+
+    it('does not treat missing state as won or lost', () => {
+        let rules = new GameRules();
+
+        expect(rules.isWon(null)).toBe(false);
+        expect(rules.isLost(null)).toBe(false);
     });
 
     it('treats a non-empty board with a playable pair as not lost', () => {

@@ -1,4 +1,4 @@
-import { makeSequentialArray } from 'utils/arrays.js';
+import { makeSequentialArray } from '../../src/gc/utils/arrays.js';
 import Random from '../../src/gc/utils/random.js';
 
 
@@ -7,19 +7,18 @@ const SUITS = {
 	bamboo: [0, 35],
 	characters: [36, 71],
 	dots: [72, 107],
-	dragon: [108, 119],
-	wind: [120, 135],
-	flower: [136, 139],
-	season: [140, 143]
+	dragons: [108, 119],
+	winds: [120, 135],
+	flowers: [136, 139],
+	seasons: [140, 143]
 }
 
 /**
- * Manage the pool of generated face pairs available for simple board
- * assignment.
+ * Manage generated face sets and the concrete face pairs selected from them.
  *
  * This utility is intentionally minimal for the first generator pass. It
- * tracks a queue of matching face pairs and exposes small query/draw methods
- * that generation can build on later.
+ * tracks remaining faces by face set, selects matching face pairs from those
+ * sets, and records which tile pairs received each selected face group.
  */
 export default class FaceInventory {
 	/**
@@ -29,11 +28,11 @@ export default class FaceInventory {
 		/** @type {Map<number, FaceSet}  */
 		this.faceSets = new Map;
 
-		/** @type {{[face: Face]: Suit}} */
+		/** @type {FaceSuitMap} */
 		this.suits = {};
 		this.makeSuits();
 
-		/** @type {AssignedFacePair[]} */
+		/** @type {FacePair[]} */
 		this.assignedFacePairs = [];
 	}
 
@@ -50,7 +49,7 @@ export default class FaceInventory {
 	/**
 	 * Given a face, find it's suit
 	 *
-	 * @param {face} face
+	 * @param {Face} face
 	 * @returns {Suit}
 	 */
 	getSuit(face) {
@@ -69,7 +68,7 @@ export default class FaceInventory {
 
 
 	/**
-	 * Remove all tracked face pairs.
+	 * Remove all tracked face sets and therefore all available face pairs.
 	 *
 	 * @returns {void}
 	 */
@@ -78,14 +77,29 @@ export default class FaceInventory {
 	}
 
 	/**
-	 * Populate the inventory with a simple set of matching face pairs sized for
-	 * the given board.
+	 * Populate the inventory with face sets sized for the given board.
+	 *
+	 * Each full face set contains four matching faces, enough for two face pairs.
+	 * A partial leftover set contains one face pair.
+	 *
+	 * @param {number} tileCount
+	 * @returns {FaceInventory}
+	 */
+	initialize(tileCount) {
+		return this.shuffleTiles(tileCount);
+	}
+
+	/**
+	 * Populate the inventory with face sets sized for the given board.
+	 *
+	 * Each full face set contains four matching faces, enough for two face pairs.
+	 * A partial leftover set contains one face pair.
 	 *
 	 * @param {number} tileCount
 	 * @returns {FaceInventory}
 	 */
 	shuffleTiles(tileCount) {
-		let fullSetList = engine.makeSequentialArray(0, 144 / 4);
+		let fullSetList = makeSequentialArray(0, 144 / 4);
 		let leftover = tileCount % 4;
 		let faceCount = Math.floor(tileCount / 4);
 		this.faceSets = new Map();
@@ -111,6 +125,8 @@ export default class FaceInventory {
 				faces
 			});
 		}
+
+		return this;
 	}
 
 	/**
@@ -122,7 +138,7 @@ export default class FaceInventory {
 		let count = 0;
 
 		for (let faceSet of this.faceSets.values()) {
-			count += faceSet.faces.length;
+			count += Math.floor(faceSet.faces.length / 2);
 		}
 
 		return count;
@@ -165,13 +181,144 @@ export default class FaceInventory {
 	getAssignedFaceGroupIndexes() {
 		let indexes = new Map();
 
-		this.assignedFacePairs.forEach((pair, index) => {
-			indexes.set(pair.faceGroup, index);
+		this.assignedFacePairs.forEach((facePair, index) => {
+			indexes.set(facePair.faceGroup, index);
 		});
 
 		return indexes;
 	}
 
+	/**
+	 * Record that a tile pair received a face pair from one face group.
+	 *
+	 * @param {TileKey} tile1
+	 * @param {TileKey} tile2
+	 * @param {FaceGroup} faceGroup
+	 * @returns {FaceInventory}
+	 */
+	recordAssignedPair(tile1, tile2, faceGroup) {
+		this.assignedFacePairs.push({
+			tile1,
+			tile2,
+			faceGroup,
+		});
+
+		return this;
+	}
+
+	/**
+	 * Check whether a face group has enough remaining faces to be selected.
+	 *
+	 * @param {FaceGroup} faceGroup
+	 * @param {number} [requiredFaces=2]
+	 * @returns {boolean}
+	 */
+	canSelectFromGroup(faceGroup, requiredFaces = 2) {
+		let faceSet = this.faceSets.get(faceGroup);
+
+		return faceSet !== undefined && faceSet.faces.length >= requiredFaces;
+	}
+
+	/**
+	 * Check whether a face group has one complete four-face set available.
+	 *
+	 * @param {FaceGroup} faceGroup
+	 * @returns {boolean}
+	 */
+	canSelectFullFaceSet(faceGroup) {
+		let faceSet = this.faceSets.get(faceGroup);
+
+		return faceSet !== undefined && faceSet.faces.length === 4;
+	}
+
+	/**
+	 * Return the next available face pair without removing it.
+	 *
+	 * @returns {FacePair | null}
+	 */
+	peekNextPair() {
+		for (let faceSet of this.faceSets.values()) {
+			if (faceSet.faces.length >= 2) {
+				return {
+					faceGroup: faceSet.id,
+					face1: faceSet.faces[0],
+					face2: faceSet.faces[1],
+				};
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Draw and remove the next available matching face pair.
+	 *
+	 * @returns {FacePair | null}
+	 */
+	drawPair() {
+		for (let faceSet of this.faceSets.values()) {
+			if (faceSet.faces.length >= 2) {
+				let face1 = faceSet.faces.shift();
+				let face2 = faceSet.faces.shift();
+
+				return {
+					faceGroup: faceSet.id,
+					face1,
+					face2,
+				};
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Select and remove one matching face pair from a selected face group.
+	 *
+	 * @param {FaceGroup} faceGroup
+	 * @returns {FacePair | null}
+	 */
+	selectPairFromGroup(faceGroup) {
+		if (!this.canSelectFromGroup(faceGroup, 2)) {
+			return null;
+		}
+
+		let faceSet = this.faceSets.get(faceGroup);
+		let face1 = faceSet.faces.shift();
+		let face2 = faceSet.faces.shift();
+
+		if (faceSet.faces.length === 0) {
+			this.faceSets.delete(faceGroup);
+		}
+
+		return {
+			faceGroup,
+			face1,
+			face2,
+		};
+	}
+
+	/**
+	 * Select and remove one complete four-face set from a selected face group.
+	 *
+	 * @param {FaceGroup} faceGroup
+	 * @returns {FullFaceSet | null}
+	 */
+	selectFullFaceSet(faceGroup) {
+		if (!this.canSelectFullFaceSet(faceGroup)) {
+			return null;
+		}
+
+		let faceSet = this.faceSets.get(faceGroup);
+		let faces = faceSet.faces.splice(0, 4);
+
+		this.faceSets.delete(faceGroup);
+
+		return {
+			faceGroup,
+			faces,
+		};
+	}
 
 
 }

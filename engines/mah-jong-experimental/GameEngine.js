@@ -26,7 +26,7 @@ export default class GameEngine {
 	 * Return the active game state from a runtime state snapshot.
 	 *
 	 * @param {MjRuntimeState} [state=this.initialState]
-	 * @returns {MjGameState | null}
+	 * @returns {GameState | null}
 	 */
 	getGameState(state = this.initialState) {
 		return state.gameState;
@@ -89,7 +89,7 @@ export default class GameEngine {
 	/**
 	 * Load a generated game state into the runtime engine.
 	 *
-	 * @param {MjGameState} gameState
+	 * @param {GameState} gameState
 	 * @returns {MjRuntimeState}
 	 */
 	load(gameState) {

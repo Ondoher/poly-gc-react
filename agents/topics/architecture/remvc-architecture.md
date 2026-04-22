@@ -50,7 +50,33 @@ That preference appears deliberate rather than accidental. The local reasoning i
 
 In practice, this often means classes declare their dependencies by calling `this.registry.subscribe(...)` where the dependency is used, instead of receiving every dependency from an external injector.
 
+The philosophy is not that service location is always good or dependency
+injection is always bad. The core rule is that dependency knowledge should live
+inside the conceptual owner. If a dependency belongs to an app-facing service,
+the service should usually locate or declare it through the registry close to
+where it is used. If a complex internal unit is split into helper classes, that
+unit may inject its own helper dependencies because the knowledge has not leaked
+outside the owning concept.
+
 So in practical terms, the repo behaves more like a registry-centered architecture containing multiple scoped MVC groupings than a single monolithic MVC stack.
+
+Clarification for structural helper clusters:
+
+- When a complex internal interface is split into multiple helper classes for
+  structural reasons, the helper collection can still be treated as one
+  conceptual unit.
+- Each helper should remain separately testable.
+- Options-object dependency injection is acceptable inside that tight unit when
+  it improves testability or keeps boundaries clear.
+- Method parameters are part of the runtime API. Do not add parameters whose
+  only purpose is to steer internals for tests.
+- Except for passing mocks or stubs through construction seams, prefer stubbing
+  or mocking the owning state/collaborator over adding extra method parameters
+  solely to assist tests.
+- If a test needs to influence an internal decision, that influence should come
+  through the same state or collaborator the production code would use.
+- This is not the same thing as app-level service/plugin architecture. Use the
+  registry for app-facing services and independently located dependencies.
 
 There is also an important lifecycle rule for registry-backed services:
 

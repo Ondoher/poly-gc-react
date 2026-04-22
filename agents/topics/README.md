@@ -1,16 +1,29 @@
 # Topics Index
 
-Start here when you need repo topic guidance.
+Use this file as a routing table for repo topic guidance.
+
+Bootstrap rule:
+
+- Read this index first when topic guidance may be useful.
+- It is safe to also load the small [Architecture Overview](/c:/dev/poly-gc-react/agents/topics/architecture/architecture-overview.md)
+  as general repo context when architecture, placement, feature boundaries, or
+  service lifecycle may matter.
+- Do not open linked topic documents until the user's task clearly matches that
+  topic, the user explicitly asks to switch to that topic, or local code context
+  is not enough to proceed safely.
+- Prefer the most specific matching topic. Avoid loading neighboring topics
+  just because they are related.
+- Archived documents are historical context only. Open them only when the user
+  explicitly asks for history or comparison.
 
 ## Topic Areas
 
-Current topic areas under this folder:
-
-- [Architecture](/c:/dev/poly-gc-react/agents/topics/architecture/README.md)
+- [Architecture Overview](/c:/dev/poly-gc-react/agents/topics/architecture/architecture-overview.md)
+- [Architecture Topic](/c:/dev/poly-gc-react/agents/topics/architecture/README.md)
 - [Components](/c:/dev/poly-gc-react/agents/topics/components/porting-guidance.md)
 - [CSS Animations](/c:/dev/poly-gc-react/agents/topics/css-animations/README.md)
-- [Difficulty](/c:/dev/poly-gc-react/agents/topics/difficulty/README.md)
 - [Deployment](/c:/dev/poly-gc-react/agents/topics/deployment/README.md)
+- [Difficulty](/c:/dev/poly-gc-react/agents/topics/difficulty/README.md)
 - [Engine Refactor](/c:/dev/poly-gc-react/agents/topics/engine-refactor/README.md)
 - [MJ](/c:/dev/poly-gc-react/agents/topics/mj/README.md)
 - [MVP](/c:/dev/poly-gc-react/agents/topics/mvp/README.md)
@@ -18,116 +31,28 @@ Current topic areas under this folder:
 - [Real 3D Rendering](/c:/dev/poly-gc-react/agents/topics/real-3d-rendering/README.md)
 - [Scaling](/c:/dev/poly-gc-react/agents/topics/scaling/README.md)
 - [Scripts](/c:/dev/poly-gc-react/agents/topics/scripts/README.md)
-- [Testing](/c:/dev/poly-gc-react/agents/topics/testing/README.md)
 - [Telemetry Analysis](/c:/dev/poly-gc-react/agents/topics/telemetry-analysis/README.md)
+- [Testing](/c:/dev/poly-gc-react/agents/topics/testing/README.md)
 
-## Architecture
+## Quick Routing
 
-Start with the architecture index:
-
-- [Architecture README](/c:/dev/poly-gc-react/agents/topics/architecture/README.md)
-
-Primary topic entry points:
-
-- [REMVC Architecture](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md)
-- [Feature Mechanics](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md)
-- [Build And Asset Flow](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md)
-- [Handling Randomness](/c:/dev/poly-gc-react/agents/topics/architecture/handling-randomness.md)
-
-Fast path for common questions:
-
-- architecture model: [Core Framing](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md#core-framing)
-- registry and dependency location: [Registry](/c:/dev/poly-gc-react/agents/topics/architecture/remvc-architecture.md#registry)
-- file naming and where files belong: [Naming And Placement Conventions](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md#naming-and-placement-conventions)
-- feature ownership: [Feature Ownership And Structure](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md#feature-ownership-and-structure)
-- build inclusion and copied assets: [Core Build Model](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md#core-build-model)
-- runtime asset paths: [Runtime Asset Path Derivation](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md#runtime-asset-path-derivation)
-
-## MJ
-
-MJ topic entry points:
-
-- [MJ Topic Index](/c:/dev/poly-gc-react/agents/topics/mj/README.md)
-- [Engine Refactor](/c:/dev/poly-gc-react/agents/topics/mj/engine-refactor/README.md)
-
-## MVP
-
-MVP topic entry points:
-
-- [MVP README](/c:/dev/poly-gc-react/agents/topics/mvp/README.md)
-
-## Components
-
-Component-related topic entry points:
-
-- [Porting Guidance](/c:/dev/poly-gc-react/agents/topics/components/porting-guidance.md)
-- [ModMod Generic Components](/c:/dev/poly-gc-react/agents/topics/components/modmod-generic-components.md)
-- [ModMod Context Support](/c:/dev/poly-gc-react/agents/topics/components/modmod-context-support.md)
-- [ModMod File Inventory](/c:/dev/poly-gc-react/agents/topics/components/modmod-file-inventory.md)
-- [ModMod Text Input Dependencies](/c:/dev/poly-gc-react/agents/topics/components/modmod-text-input-dependencies.md)
-
-## CSS Animations
-
-CSS animation topic entry points:
-
-- [CSS Animations README](/c:/dev/poly-gc-react/agents/topics/css-animations/README.md)
-
-## Difficulty
-
-Difficulty topic entry points:
-
-- [Difficulty Topic Index](/c:/dev/poly-gc-react/agents/topics/difficulty/README.md)
-
-## Deployment
-
-Deployment topic entry points:
-
-- [Deployment README](/c:/dev/poly-gc-react/agents/topics/deployment/README.md)
-
-## Engine Refactor
-
-Top-level engine refactor topic entry points:
-
-- [Engine Refactor README](/c:/dev/poly-gc-react/agents/topics/engine-refactor/README.md)
-- [Engine Split Notes](/c:/dev/poly-gc-react/agents/topics/engine-refactor/engine-split-notes.md)
-
-## Scripts
-
-Script topic entry points:
-
-- [Scripts Topic Index](/c:/dev/poly-gc-react/agents/topics/scripts/README.md)
-- [Scripts Overview](/c:/dev/poly-gc-react/agents/topics/scripts/scripts.md)
-
-## Scaling
-
-Scaling topic entry points:
-
-- [Scaling Topic Index](/c:/dev/poly-gc-react/agents/topics/scaling/README.md)
-- [Scaling Status](/c:/dev/poly-gc-react/agents/topics/scaling/status.md)
-- [Tile Size Scaling](/c:/dev/poly-gc-react/agents/topics/scaling/tile-size-scaling.md)
-
-## Testing
-
-Testing topic entry points:
-
-- [Testing Topic Index](/c:/dev/poly-gc-react/agents/topics/testing/README.md)
-- [Testing](/c:/dev/poly-gc-react/agents/topics/testing/testing.md)
-- [Testing Implementation Plan](/c:/dev/poly-gc-react/agents/topics/testing/testing-implementation-plan.md)
-
-## Telemetry Analysis
-
-Telemetry analysis topic entry points:
-
-- [Telemetry Analysis README](/c:/dev/poly-gc-react/agents/topics/telemetry-analysis/README.md)
-
-## Progressive Web App
-
-PWA topic entry points:
-
-- [Progressive Web App README](/c:/dev/poly-gc-react/agents/topics/progressive-web-app/README.md)
-
-## Real 3D Rendering
-
-3D rendering topic entry points:
-
-- [Real 3D Rendering README](/c:/dev/poly-gc-react/agents/topics/real-3d-rendering/README.md)
+- Use `architecture` for REMVC, feature boundaries, build/assets, path
+  conventions, naming, and placement rules.
+- Use `components` for shared component inventory, porting, context support, and
+  common UI component dependencies.
+- Use `css-animations` for animation notes and MJ play/win animation behavior.
+- Use `deployment` for build, deploy, hosting, and release-check guidance.
+- Use `difficulty` for MJ difficulty tuning, generation presets, and related
+  board-generation behavior.
+- Use `engine-refactor` for the UI-less Mahjongg engine experiment and live to
+  experimental engine mapping.
+- Use `mj` for general Mahjongg feature notes that are not specifically engine
+  refactor, scaling, difficulty, or animation work.
+- Use `mvp` for MVP scope and product-tracking notes.
+- Use `progressive-web-app` for PWA install/offline/app-shell behavior.
+- Use `real-3d-rendering` for 3D rendering exploration.
+- Use `scaling` for tile-size generation, layout scaling, canvas sizing, and
+  related tests.
+- Use `scripts` for repo utility scripts and generated asset/script workflows.
+- Use `telemetry-analysis` for telemetry capture, interpretation, and analysis.
+- Use `testing` for test strategy, test commands, and test implementation plans.

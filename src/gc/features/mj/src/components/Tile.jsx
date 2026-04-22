@@ -245,7 +245,7 @@ export default class Tile extends React.Component {
 	render() {
 		var {x, y, z, face, onClick} = this.props;
 		var {show, highlight} = this.state;
-		var highlightType = highlight || (this.props.highlight === true ? 'highlight' : false);
+		var highlightType = highlight || normalizeHighlightType(this.props.highlight, 'highlight');
 		var bodyClass = 'tile pos-' + x + '-' + y + '-' + z;
 		var faceClass = 'face face-' + face;
 		var highlightClasses = getHighlightClasses(highlightType);

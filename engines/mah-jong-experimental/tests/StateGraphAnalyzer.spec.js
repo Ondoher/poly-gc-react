@@ -328,6 +328,32 @@ describe('StateGraphAnalyzer', () => {
 		});
 	});
 
+	it('does not treat a cleared board as short-horizon collapse', () => {
+		let gameState = createGameState({
+			id: 'cleared-probe-layout',
+			tiles: 2,
+			positions: [
+				{x: 1, y: 1, z: 1},
+				{x: 4, y: 1, z: 1},
+			],
+		});
+		let analyzer = new StateGraphAnalyzer(new GameRules(), gameState);
+
+		gameState.placeTile(0);
+		gameState.placeTile(1);
+
+		expect(analyzer.runShortHorizonProbe([0, 1], {
+			shortHorizonProbeMoves: 3,
+			shortHorizonPressureMultiplier: 1,
+		})).toEqual({
+			enabled: true,
+			collapsed: false,
+			moves: 0,
+			remainingTiles: 0,
+			pressure: 1,
+		});
+	});
+
 	it('returns a neutral result when the short-horizon probe does not collapse', () => {
 		let gameState = createGameState({
 			id: 'stable-probe-layout',

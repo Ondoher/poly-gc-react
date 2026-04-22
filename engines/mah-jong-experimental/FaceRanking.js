@@ -1,22 +1,41 @@
-import FaceAvoidance from "./FaceAvoidance";
-import FaceInventory from "./FaceInventory";
-import { GenerateState } from "./GeneratorState";
+import FaceAvoidance from "./FaceAvoidance.js";
+import {
+	getRankedWindow,
+	selectRankedCandidate,
+} from './ranked-window.js';
 
 export class FaceRanking {
 
 	/**
+	 * Create a face-ranking helper over the generator state and its shared
+	 * face inventory.
 	 *
-	 * @param {GenerateState} state
+	 * @param {GeneratorState} state
+	 * @param {{ inventory?: FaceInventory, avoidance?: FaceAvoidance }} collaborators
 	 */
-	constructor(state) {
+	constructor(state, collaborators = {}) {
+		/** @type {GeneratorState} */
 		this.state = state;
+
 		/** @type {FaceInventory} */
-		this.inventory = state.faceInventory()
-		this.avoidance = new FaceAvoidance();
+		this.inventory = collaborators.inventory ?? state.faceInventory;
+
+		/** @type {FaceAvoidance} */
+		this.avoidance = collaborators.avoidance ?? new FaceAvoidance(state);
 	}
 
+	/**
+	 * Apply the configured preferred-face-group multiplier to a rank factor.
+	 *
+	 * Lower rank factors are selected earlier, so preferred groups reduce the
+	 * factor while non-preferred groups keep their original value.
+	 *
+	 * @param {number} baseSortValue
+	 * @param {boolean} [preferred=false]
+	 * @returns {number}
+	 */
 	getAdjustedDistanceFactor(baseSortValue, preferred = false) {
-		let multiplier = this.state.faceAssignmentRules.preferredMultiplier ?? 0.5;
+		let multiplier = this.state.faceAssignmentRules?.preferredMultiplier ?? 0.5;
 
 		return preferred ? baseSortValue * multiplier : baseSortValue;
 	}
@@ -33,7 +52,7 @@ export class FaceRanking {
 	 */
 	getAvoidancePenalty(faceGroup, tiles) {
 		let faceSet = this.inventory.getFaceSet(faceGroup);
-		let faceSetId = this.getFaceSetId(faceSet);
+		let faceSetId = faceSet.id;
 
 		return tiles.reduce((penalty, tile) => {
 			return penalty + this.avoidance.getPenalty(tile, faceSetId);
@@ -41,15 +60,20 @@ export class FaceRanking {
 	}
 
 	/**
+	 * Return how many times a reused face group should be duplicated in the
+	 * ranking candidate list.
+	 *
+	 * This is an easy-side tuning hook: easier difficulties can duplicate
+	 * recently reused groups so they appear more often in the selected window.
+	 * A return value of `1` means the group appears only once.
 	 *
 	 * @param {number} reusedIndex
 	 * @param {number} reusedCount
-	 * @param {DifficultyOptions} options
-	 * @returns
+	 * @returns {number}
 	 */
-	getFaceGroupDuplicateCount(reusedIndex, reusedCount, options = {}) {
+	getFaceGroupDuplicateCount(reusedIndex, reusedCount) {
 		let state = this.state;
-		let difficulty = Math.max(0, Math.min(1, state.difficulty(options)));
+		let difficulty = Math.max(0, Math.min(1, state.difficulty()));
 		let easeStrength = Math.max(0, (0.5 - difficulty) * 2);
 		let duplicateScale = state.faceAssignmentRules.easyReuseDuplicateScale ?? 0;
 
@@ -79,12 +103,13 @@ export class FaceRanking {
 	 *
 	 *
 	 * @param {number} requiredFaces
-	 * @param {GeneratedPairRecord} pending
+	 * @param {GeneratedPair} preparedPair Prepared tile pair awaiting face assignment.
 	 * @returns {FaceGroup[]}
 	 */
-	rankFaceGroups(requiredFaces = 2, pending = null) {
-		let {faceAssignmentRules} = state
-		let preferredFaceGroup = pending?.preferredFaceGroup;
+	rankFaceGroups(requiredFaces = 2, preparedPair = null) {
+		let {faceAssignmentRules} = this.state;
+		let preferredFaceGroup = preparedPair?.preferredFaceGroup;
+		let tiles = preparedPair?.tiles ?? [];
 		let candidates = [];
 
 		for (let [faceGroup, faceSet] of this.inventory.faceSets) {
@@ -96,24 +121,18 @@ export class FaceRanking {
 
 			let baseFactor = 1;
 			let pairCountFactor = faces.length === 4 ? 2 : 1;
+			let assignedFacePairs = this.inventory.assignedFacePairs.slice().reverse();
+			let distance = assignedFacePairs.findIndex((facePair) => facePair.faceGroup === faceGroup);
+			let distanceFactor = distance === -1 ? assignedFacePairs.length : distance + 1;
+			let dups = this.getFaceGroupDuplicateCount(distance, assignedFacePairs.length) - 1;
 
-			let weightFactor = this.getAvoidancePenalty(faceGroup, pending.tiles);
+			let weightFactor = this.getAvoidancePenalty(faceGroup, tiles);
 			if (weightFactor !== 0)  {
 				weightFactor = 1 / weightFactor;
 			}
 
-			// find the distance between the face group I'm ranking, and the last time it
-			// was assigned. Lower values will be ranked towards easy
-			let searchPairs = this.inventory.assignedFacePairs.slice().reverse();
-			let distance = searchPairs.findIndex((pair) => pair.faceGroup === faceGroup);
-			let distanceFactor = distance === -1 ? searchPairs.length : distance + 1;
+			// Lower assignment-history distance values rank toward easier selection.
 			distanceFactor = this.getAdjustedDistanceFactor(distanceFactor);
-
-			let dups = this.getFaceGroupDuplicateCount(distance, searchPairs.length, {}) - 1;
-
-			let suitDistanceFactor = min + (max - min) * normalized;
-
-			suitDistanceFactor = 1;
 
 			let preferredFactor =  preferredFaceGroup === faceGroup ?
 				faceAssignmentRules.preferredMultiplier ?? 0.5 :
@@ -122,7 +141,6 @@ export class FaceRanking {
 			let finalFactor = baseFactor *
 				pairCountFactor *
 				distanceFactor *
-				suitDistanceFactor *
 				preferredFactor;
 
 			if (weightFactor !== 0 && distance === -1) {
@@ -153,6 +171,38 @@ export class FaceRanking {
 		})
 
 		return expanded.map((candidate) => candidate.faceGroup);
+	}
+
+	/**
+	 * Return difficulty-window details for ranked face-group candidates.
+	 *
+	 * @param {number} requiredFaces
+	 * @param {GeneratedPair} preparedPair Prepared tile pair awaiting face assignment.
+	 * @returns {RankedWindow<FaceGroup>}
+	 */
+	getRankedFaceGroupWindow(requiredFaces = 2, preparedPair = null) {
+		let rankedGroups = this.rankFaceGroups(requiredFaces, preparedPair);
+
+		return getRankedWindow(rankedGroups, {
+			difficulty: this.state.difficulty(),
+			minWindowRatio: this.state.getMinWindowRatio(),
+		});
+	}
+
+	/**
+	 * Select one face group from the difficulty-shaped ranked window.
+	 *
+	 * @param {number} requiredFaces
+	 * @param {GeneratedPair} preparedPair Prepared tile pair awaiting face assignment.
+	 * @returns {FaceGroup | null}
+	 */
+	selectRankedFaceGroup(requiredFaces = 2, preparedPair = null) {
+		let rankedGroups = this.rankFaceGroups(requiredFaces, preparedPair);
+
+		return selectRankedCandidate(rankedGroups, {
+			difficulty: this.state.difficulty(),
+			minWindowRatio: this.state.getMinWindowRatio(),
+		});
 	}
 
 }

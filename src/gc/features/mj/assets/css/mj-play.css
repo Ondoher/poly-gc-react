@@ -645,6 +645,33 @@ button.mj-shell-expand-box {
     animation: mj-tile-hint-overlay calc(var(--mj-motion-tile-peek) * 3.4545) ease-in-out 3;
 }
 
+.board-canvas .tile.solve-hint {
+    animation:
+        mj-tile-solve-hint-tile
+        calc((var(--mj-motion-tile-peek) * 3.4545 * 1.5) + var(--mj-motion-tile-played))
+        ease-in
+        forwards;
+}
+
+.board-canvas .face.solve-hint {
+    filter: drop-shadow(0 0 0 rgba(255, 196, 118, 0));
+    animation:
+        mj-tile-solve-hint-face
+        calc((var(--mj-motion-tile-peek) * 3.4545 * 1.5) + var(--mj-motion-tile-played))
+        ease-in-out
+        forwards;
+}
+
+.board-canvas .face.solve-hint:after {
+    background-color: rgba(244, 148, 126, 0.34);
+    opacity: 1;
+    animation:
+        mj-tile-solve-hint-overlay
+        calc((var(--mj-motion-tile-peek) * 3.4545 * 1.5) + var(--mj-motion-tile-played))
+        ease-in-out
+        forwards;
+}
+
 .board-canvas .face.unselected:after {
     opacity: 1;
     animation: mj-tile-unselected-release var(--mj-motion-tile-unselected) ease-out forwards;
@@ -901,6 +928,58 @@ button.mj-shell-expand-box {
         box-shadow: 0 0 0 rgba(244, 148, 126, 0);
         opacity: 0.3;
         filter: brightness(1);
+    }
+}
+
+@keyframes mj-tile-solve-hint-tile {
+    0% {
+        opacity: 1;
+    }
+
+    27% {
+        opacity: 0.82;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes mj-tile-solve-hint-face {
+    0%,
+    100% {
+        transform: scale(1);
+        filter:
+            brightness(1)
+            drop-shadow(0 0 0 rgba(255, 196, 118, 0))
+            drop-shadow(0 0 0 rgba(255, 151, 92, 0));
+    }
+
+    27% {
+        transform: scale(1.04);
+        filter:
+            brightness(1.16)
+            drop-shadow(0 0 8px rgba(255, 196, 118, 0.52))
+            drop-shadow(0 0 16px rgba(255, 151, 92, 0.3));
+    }
+}
+
+@keyframes mj-tile-solve-hint-overlay {
+    0%,
+    100% {
+        background-color: rgba(244, 148, 126, 0.22);
+        box-shadow: 0 0 0 rgba(244, 148, 126, 0);
+        opacity: 0.3;
+        filter: brightness(1);
+    }
+
+    27% {
+        background-color: rgba(255, 173, 118, 0.66);
+        box-shadow:
+            0 0 14px rgba(255, 176, 118, 0.42),
+            0 0 26px rgba(244, 148, 126, 0.3);
+        opacity: 1;
+        filter: brightness(1.26);
     }
 }
 

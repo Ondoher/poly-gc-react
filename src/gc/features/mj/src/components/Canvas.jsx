@@ -34,7 +34,7 @@ export default class Canvas extends Component {
 					y={tile.y}
 					z={tile.z}
 					face={tile.face}
-					highlight={tile.highlight === true}
+					highlight={tile.highlight}
 					visible={visible}
 					timings={this.props.timings}
 					onClick={onClick}

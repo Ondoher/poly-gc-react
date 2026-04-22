@@ -20,21 +20,21 @@ export default class TileSuspension {
 		this.tile = options.tile ?? -1;
 
 		/**
-		 * The two reserved faces for the suspended tile and its later partner.
+		 * The reserved face pair for the suspended tile and its later partner.
 		 *
 		 * @type {Face[]}
 		 */
 		this.faces = options.faces ? options.faces.slice() : [];
 
 		/**
-		 * The number of already-authored pairs when this suspension was created.
+		 * The number of already-authored tile pairs when this suspension was created.
 		 *
 		 * @type {number}
 		 */
 		this.placedAt = options.placedAt ?? 0;
 
 		/**
-		 * The target number of additional authored pairs before release.
+		 * The target number of additional authored tile pairs before release.
 		 *
 		 * @type {number}
 		 */
@@ -48,7 +48,7 @@ export default class TileSuspension {
 		this.openCount = options.openCount ?? 0;
 
 		/**
-		 * The original pair that created this suspension.
+		 * The original tile pair that created this suspension.
 		 *
 		 * @type {TileKey[]}
 		 */

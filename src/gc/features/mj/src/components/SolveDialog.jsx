@@ -1,8 +1,10 @@
 import React from "react";
-import Canvas from "./Canvas.jsx";
+import CssRect from "./CssRect.jsx";
 import ModalDialog from "./ModalDialog.jsx";
+import ScalingCanvas from "./ScalingCanvas.jsx";
 import SettingsButton from "./SettingsButton.jsx";
 import layouts from "../data/layouts.js";
+import { TILE_SIZES } from "../data/tilesets.js";
 import Engine from "../engine/Engine.js";
 import {
 	applyDifficultyPreset,
@@ -23,22 +25,19 @@ export default class SolveDialog extends React.Component {
 
 		this.state = {
 			tiles: [],
-			boardScale: 1,
+			scaleTiles: [],
 			stepPairIndex: 0,
 			highlightedTileIds: [],
 			isAnimatingStep: false,
 		};
 
 		this.delegator = new SolveDialogDelegator();
-		this.boardStageRef = React.createRef();
-		this.syncBoardScale = this.syncBoardScale.bind(this);
 		this.onBackStep = this.onBackStep.bind(this);
 		this.onNextStep = this.onNextStep.bind(this);
 	}
 
 	componentDidMount() {
 		this.syncBoardFromProps();
-		this.attachBoardStageObserver();
 	}
 
 	componentDidUpdate(prevProps) {
@@ -51,13 +50,6 @@ export default class SolveDialog extends React.Component {
 			this.syncBoardFromProps();
 		}
 
-		if (!prevProps.open && this.props.open) {
-			this.syncBoardScale();
-		}
-	}
-
-	componentWillUnmount() {
-		this.detachBoardStageObserver();
 	}
 
 	createTilesFromBoard(board) {
@@ -72,7 +64,7 @@ export default class SolveDialog extends React.Component {
 		});
 	}
 
-	createVisibleTilesFromEngine(engine, highlightedTileIds = []) {
+	createVisibleTilesFromEngine(engine, highlightedTileIds = [], highlightType = 'highlight') {
 		if (!engine || !engine.board || !engine.board.pieces) {
 			return [];
 		}
@@ -90,16 +82,25 @@ export default class SolveDialog extends React.Component {
 				y: piece.pos.y,
 				z: piece.pos.z,
 				face: piece.face,
-				highlight: highlighted.has(idx),
+				highlight: highlighted.has(idx) ? highlightType : false,
 			});
 			return tiles;
 		}, []);
+	}
+
+	getSolutionHintAnimationMs() {
+		let peekMs = this.props.timings?.tile?.peek || 220;
+		let playedMs = this.props.timings?.tile?.played || 180;
+
+		// Match the solve-only CSS: full hint-style pulse sequence, then fade.
+		return Math.round((peekMs * 3.4545 * 1.5) + playedMs);
 	}
 
 	syncBoardFromProps() {
 		if (!this.props.boardNbr || !this.props.layout) {
 			this.setState({
 				tiles: [],
+				scaleTiles: [],
 				stepPairIndex: 0,
 				highlightedTileIds: [],
 				isAnimatingStep: false,
@@ -112,6 +113,7 @@ export default class SolveDialog extends React.Component {
 		if (!layout) {
 			this.setState({
 				tiles: [],
+				scaleTiles: [],
 				stepPairIndex: 0,
 				highlightedTileIds: [],
 				isAnimatingStep: false,
@@ -128,10 +130,11 @@ export default class SolveDialog extends React.Component {
 
 		this.setState({
 			tiles: this.createVisibleTilesFromEngine(engine),
+			scaleTiles: this.createTilesFromBoard(engine.board),
 			stepPairIndex: 0,
 			highlightedTileIds: [],
 			isAnimatingStep: false,
-		}, this.syncBoardScale);
+		});
 	}
 
 	onBackStep() {
@@ -142,7 +145,7 @@ export default class SolveDialog extends React.Component {
 			tiles: this.createVisibleTilesFromEngine(this.engine),
 			stepPairIndex: this.state.stepPairIndex - 1,
 			highlightedTileIds: [],
-		}, this.syncBoardScale);
+		});
 	}
 
 	async onNextStep() {
@@ -159,11 +162,11 @@ export default class SolveDialog extends React.Component {
 
 		await new Promise(function(resolve) {
 			this.setState({
-				tiles: this.createVisibleTilesFromEngine(this.engine, [tile1, tile2]),
+				tiles: this.createVisibleTilesFromEngine(this.engine, [tile1, tile2], 'solve-hint'),
 				highlightedTileIds: [tile1, tile2],
 				isAnimatingStep: true,
 			}, function() {
-				window.setTimeout(resolve, 500);
+				window.setTimeout(resolve, this.getSolutionHintAnimationMs());
 			});
 		}.bind(this));
 
@@ -173,72 +176,146 @@ export default class SolveDialog extends React.Component {
 			stepPairIndex: pairIndex + 1,
 			highlightedTileIds: [],
 			isAnimatingStep: false,
-		}, this.syncBoardScale);
-	}
-
-	attachBoardStageObserver() {
-		if (typeof ResizeObserver === "undefined") {
-			window.addEventListener("resize", this.syncBoardScale);
-			return;
-		}
-
-		this.boardStageObserver = new ResizeObserver(this.syncBoardScale);
-
-		if (this.boardStageRef.current) {
-			this.boardStageObserver.observe(this.boardStageRef.current);
-		}
-
-		window.addEventListener("resize", this.syncBoardScale);
-	}
-
-	detachBoardStageObserver() {
-		if (this.boardStageObserver) {
-			this.boardStageObserver.disconnect();
-			this.boardStageObserver = null;
-		}
-
-		window.removeEventListener("resize", this.syncBoardScale);
-	}
-
-	syncBoardScale() {
-		if (!this.boardStageRef.current) return;
-
-		let bounds = this.boardStageRef.current.getBoundingClientRect();
-		let availableWidth = Math.max(bounds.width - 52, 0);
-		let availableHeight = Math.max(bounds.height - 20, 0);
-		let scale = Math.min(availableWidth / 439, availableHeight / 353, 1);
-
-		if (!Number.isFinite(scale) || scale <= 0) {
-			scale = 1;
-		}
-
-		this.setState(function(prevState) {
-			if (Math.abs(prevState.boardScale - scale) < 0.01) {
-				return null;
-			}
-
-			return {
-				boardScale: scale,
-			};
 		});
+	}
+
+	getCanvasClassName(metricSetId) {
+		let tilesetClassName = this.props.tilesetClassName || "ivory";
+		let selectedMetricSetId = metricSetId || this.props.tilesize || "tiny";
+
+		return [
+			`${tilesetClassName}-${selectedMetricSetId}`,
+			`${selectedMetricSetId}-face`,
+			`${selectedMetricSetId}-size`,
+		].join(" ");
+	}
+
+	getTotalPairs() {
+		return Math.floor((this.solution || []).length / 2);
+	}
+
+	getStepButtonClassName(isEnabled) {
+		let className = "mj-solve-dialog-nav-button";
+
+		if (!isEnabled) {
+			className += " is-disabled";
+		}
+
+		return className;
+	}
+
+	canStepBack() {
+		return this.state.stepPairIndex > 0 && !this.state.isAnimatingStep;
+	}
+
+	canStepForward() {
+		return this.state.stepPairIndex < this.getTotalPairs() && !this.state.isAnimatingStep;
+	}
+
+	renderContextItem(label, value) {
+		return (
+			<div className="mj-solve-dialog-context-item">
+				<span className="mj-solve-dialog-context-label">{label}</span>
+				<span className="mj-solve-dialog-context-value">{value}</span>
+			</div>
+		);
+	}
+
+	renderSidebar() {
+		let totalPairs = this.getTotalPairs();
+
+		return (
+			<div className="mj-solve-dialog-sidebar">
+				<h3 className="mj-solve-dialog-heading">Solution playback</h3>
+				<div className="mj-solve-dialog-context">
+					{this.renderContextItem("Game number", this.props.boardNbr)}
+					{this.renderContextItem("Difficulty", this.props.difficultyLabel)}
+					{this.renderContextItem("Layout", this.props.layoutTitle)}
+					{this.renderContextItem("Step", `${this.state.stepPairIndex} / ${totalPairs}`)}
+				</div>
+			</div>
+		);
+	}
+
+	renderBackControl() {
+		let canStepBack = this.canStepBack();
+
+		return (
+			<div className="mj-solve-dialog-utility-column">
+				<div className="mj-solve-dialog-nav-slot">
+					<SettingsButton
+						className={this.getStepButtonClassName(canStepBack)}
+						onClick={canStepBack ? this.onBackStep : undefined}
+					>
+						&lt;
+					</SettingsButton>
+				</div>
+			</div>
+		);
+	}
+
+	renderBoard() {
+		return (
+			<div className="mj-solve-dialog-board-frame">
+				<CssRect
+					className="mj-solve-dialog-board-rect"
+					size="large"
+					variant="inset"
+				>
+					<ScalingCanvas
+						className="mj-solve-dialog-board-stage"
+						cssVarPrefix="mj-solve"
+						scaleBoxClassName="mj-solve-dialog-board-canvas-wrap"
+						viewportClassName="mj-solve-dialog-board-viewport"
+						offsetClassName="mj-solve-dialog-board-offset"
+						delegator={this.delegator}
+						tiles={this.state.tiles}
+						scaleTiles={this.state.scaleTiles}
+						sizeNames={
+							Array.isArray(this.props.allowedTilesizes) &&
+							this.props.allowedTilesizes.length > 0
+								? this.props.allowedTilesizes
+								: Object.keys(this.props.tilesizes || TILE_SIZES)
+						}
+						fallbackMetricSetId={this.props.tilesize || "tiny"}
+						getCanvasClassName={this.getCanvasClassName.bind(this)}
+						timings={this.props.timings?.tile}
+					/>
+				</CssRect>
+			</div>
+		);
+	}
+
+	renderNextControl() {
+		let canStepForward = this.canStepForward();
+
+		return (
+			<div className="mj-solve-dialog-utility-column">
+				<div className="mj-solve-dialog-nav-slot">
+					<SettingsButton
+						className={this.getStepButtonClassName(canStepForward)}
+						onClick={canStepForward ? this.onNextStep : undefined}
+					>
+						&gt;
+					</SettingsButton>
+				</div>
+			</div>
+		);
+	}
+
+	renderContent() {
+		return (
+			<div className="mj-solve-dialog-section">
+				{this.renderSidebar()}
+				{this.renderBackControl()}
+				{this.renderBoard()}
+				{this.renderNextControl()}
+			</div>
+		);
 	}
 
 	render() {
 		if (!this.props.open) return null;
-
-		let totalPairs = Math.floor((this.solution || []).length / 2);
-		let canStepBack = this.state.stepPairIndex > 0 && !this.state.isAnimatingStep;
-		let canStepForward = this.state.stepPairIndex < totalPairs && !this.state.isAnimatingStep;
-		let backClassName = "mj-solve-dialog-nav-button";
-		let nextClassName = "mj-solve-dialog-nav-button";
-
-		if (!canStepBack) {
-			backClassName += " is-disabled";
-		}
-
-		if (!canStepForward) {
-			nextClassName += " is-disabled";
-		}
 
 		return (
 			<ModalDialog
@@ -249,67 +326,7 @@ export default class SolveDialog extends React.Component {
 				closeLabel="Close solve dialog"
 				onClose={this.props.onClose}
 			>
-				<div className="mj-solve-dialog-section">
-					<div className="mj-solve-dialog-sidebar">
-						<h3 className="mj-solve-dialog-heading">Solution playback</h3>
-						<div className="mj-solve-dialog-context">
-							<div className="mj-solve-dialog-context-item">
-								<span className="mj-solve-dialog-context-label">Game number</span>
-								<span className="mj-solve-dialog-context-value">{this.props.boardNbr}</span>
-							</div>
-							<div className="mj-solve-dialog-context-item">
-								<span className="mj-solve-dialog-context-label">Difficulty</span>
-								<span className="mj-solve-dialog-context-value">{this.props.difficultyLabel}</span>
-							</div>
-							<div className="mj-solve-dialog-context-item">
-								<span className="mj-solve-dialog-context-label">Layout</span>
-								<span className="mj-solve-dialog-context-value">{this.props.layoutTitle}</span>
-							</div>
-							<div className="mj-solve-dialog-context-item">
-								<span className="mj-solve-dialog-context-label">Step</span>
-								<span className="mj-solve-dialog-context-value">
-									{this.state.stepPairIndex} / {totalPairs}
-								</span>
-							</div>
-						</div>
-					</div>
-					<div className="mj-solve-dialog-utility-column">
-						<div className="mj-solve-dialog-nav-slot">
-							<SettingsButton
-								className={backClassName}
-								onClick={canStepBack ? this.onBackStep : undefined}
-							>
-								&lt;
-							</SettingsButton>
-						</div>
-					</div>
-					<div className="mj-solve-dialog-board-frame mj-css-rect-separator-left">
-						<div className="mj-solve-dialog-board-stage" ref={this.boardStageRef}>
-							<div
-								className="mj-solve-dialog-board-canvas-wrap"
-								style={{
-									transform: `scale(${this.state.boardScale})`,
-								}}
-							>
-								<Canvas
-									className={this.props.boardClassName}
-									delegator={this.delegator}
-									tiles={this.state.tiles}
-								/>
-							</div>
-						</div>
-					</div>
-					<div className="mj-solve-dialog-utility-column mj-css-rect-separator-left">
-						<div className="mj-solve-dialog-nav-slot">
-							<SettingsButton
-								className={nextClassName}
-								onClick={canStepForward ? this.onNextStep : undefined}
-							>
-								&gt;
-							</SettingsButton>
-						</div>
-					</div>
-				</div>
+				{this.renderContent()}
 			</ModalDialog>
 		);
 	}

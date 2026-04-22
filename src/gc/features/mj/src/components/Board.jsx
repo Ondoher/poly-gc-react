@@ -1373,7 +1373,6 @@ export default class Board extends React.Component {
 	renderSolveDialog() {
 		var difficulty = this.props.difficulties[this.state.difficulty];
 		var layout = this.props.layouts[this.state.layout];
-		var boardClassName = `${this.state.tileset.class}-tiny tiny-face tiny-size`;
 
 		return (
 			<SolveDialog
@@ -1383,7 +1382,11 @@ export default class Board extends React.Component {
 				layoutTitle={layout ? layout.title : this.state.layout}
 				difficulty={this.state.difficulty}
 				difficultyLabel={difficulty ? difficulty.label : this.state.difficulty}
-				boardClassName={boardClassName}
+				tilesetClassName={this.state.tileset?.class || "ivory"}
+				tilesize={this.state.tilesizeKey}
+				tilesizes={this.props.tilesizes}
+				allowedTilesizes={this.state.allowedTilesizes}
+				timings={this.props.timings}
 				onClose={this.onCloseSolveDialog.bind(this)}
 			/>
 		);

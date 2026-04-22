@@ -106,7 +106,7 @@ export default class StateGraphAnalyzer {
 	}
 
 	/**
-	 * Pick the deterministic pair used for a short-horizon probe step.
+	 * Pick the deterministic tile pair used for a short-horizon probe step.
 	 *
 	 * Lower tiles are preferred first, with tile key as the tie-breaker.
 	 *
@@ -127,7 +127,7 @@ export default class StateGraphAnalyzer {
 	 *
 	 * @param {number} moves
 	 * @param {boolean} collapsed
-	 * @param {{shortHorizonProbeMoves?: number, shortHorizonPressureMultiplier?: number}} [options={}]
+	 * @param {ShortHorizonProbeOptions} [options={}]
 	 * @returns {number}
 	 */
 	getShortHorizonPressure(moves, collapsed, options = {}) {
@@ -148,8 +148,8 @@ export default class StateGraphAnalyzer {
 	 * removals. Early collapse increases hard-side pressure.
 	 *
 	 * @param {TileKey[]} [removedTileKeys=[]]
-	 * @param {{shortHorizonProbeMoves?: number, shortHorizonPressureMultiplier?: number}} [options={}]
-	 * @returns {{enabled: boolean, collapsed: boolean, moves: number, remainingTiles: number, pressure: number}}
+	 * @param {ShortHorizonProbeOptions} [options={}]
+	 * @returns {ShortHorizonProbeResult}
 	 */
 	runShortHorizonProbe(removedTileKeys = [], options = {}) {
 		let probeMoves = options.shortHorizonProbeMoves ?? 0;
@@ -167,6 +167,18 @@ export default class StateGraphAnalyzer {
 		let hypothetical = this.withRemovedTiles(removedTileKeys);
 
 		for (let move = 0; move < probeMoves; move++) {
+			let remainingTiles = hypothetical.getAnalyzedState().getPlacedTileCount();
+
+			if (remainingTiles === 0) {
+				return {
+					enabled: true,
+					collapsed: false,
+					moves: move,
+					remainingTiles,
+					pressure: 1,
+				};
+			}
+
 			let openTileKeys = hypothetical.getOpenTileKeys();
 
 			if (openTileKeys.length < 2) {
@@ -174,14 +186,14 @@ export default class StateGraphAnalyzer {
 					enabled: true,
 					collapsed: true,
 					moves: move,
-					remainingTiles: hypothetical.getAnalyzedState().getPlacedTileCount(),
+					remainingTiles,
 					pressure: hypothetical.getShortHorizonPressure(move, true, options),
 				};
 			}
 
-			let pair = hypothetical.pickShortHorizonProbePair(openTileKeys);
+			let tilePair = hypothetical.pickShortHorizonProbePair(openTileKeys);
 
-			hypothetical = hypothetical.withRemovedTiles(pair);
+			hypothetical = hypothetical.withRemovedTiles(tilePair);
 		}
 
 		return {
@@ -208,13 +220,7 @@ export default class StateGraphAnalyzer {
 	 * `balanceMargin` is other stack groups minus the tallest stack height. A
 	 * negative margin means the tallest stack dominates the remaining board.
 	 *
-	 * @returns {{
-	 * 	stackGroupCount: number,
-	 * 	maxStackHeight: number,
-	 * 	otherStackGroupCount: number,
-	 * 	balanceMargin: number,
-	 * 	createsDominantStack: boolean,
-	 * }}
+	 * @returns {StackBalanceSummary}
 	 */
 	getStackBalance() {
 		let stackCounts = {};
@@ -304,13 +310,7 @@ export default class StateGraphAnalyzer {
 	 * Return the stack-balance summary after hypothetical removals.
 	 *
 	 * @param {TileKey[]} [removedTileKeys=[]]
-	 * @returns {{
-	 * 	stackGroupCount: number,
-	 * 	maxStackHeight: number,
-	 * 	otherStackGroupCount: number,
-	 * 	balanceMargin: number,
-	 * 	createsDominantStack: boolean,
-	 * }}
+	 * @returns {StackBalanceSummary}
 	 */
 	getStackBalanceAfterRemoving(removedTileKeys = []) {
 		return this.withRemovedTiles(removedTileKeys).getStackBalance();

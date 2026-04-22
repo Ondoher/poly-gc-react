@@ -22,6 +22,8 @@ The following pieces now exist in live code:
   [generate-layouts.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-layouts.js)
 - runtime metric ingestion and candidate selection in
   [layout-scaling.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/services/layout-scaling.js)
+- shared scaled canvas hosting in
+  [ScalingCanvas.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/ScalingCanvas.jsx)
 - live shell-board consumption in
   [Board.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/Board.jsx)
 - expanded service coverage in
@@ -30,6 +32,8 @@ The following pieces now exist in live code:
   [SettingsDialog.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/SettingsDialog.jsx)
 - live settings preview fitting in
   [SettingsPreview.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/SettingsPreview.jsx)
+- solution playback dialog fitting in
+  [SolveDialog.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/SolveDialog.jsx)
 
 What that means in practice:
 
@@ -38,6 +42,8 @@ What that means in practice:
 - metric-family comparison and fit scoring are no longer just planning notes
 - shell-mode board render now receives selected `metricSetId`, fitted canvas
   size, board-canvas offset, and CSS `zoom` scale from `mj:layout-scaling`
+- settings preview and solution playback now delegate the repeated fit-state,
+  resize-observer, CSS-variable, and canvas-offset plumbing to `ScalingCanvas`
 - auto-fit is currently triggered on startup, game generation, layout-mode
   transitions, portrait/landscape transitions, and debounced resize
 - the `Tile Size` settings tab has been removed
@@ -87,6 +93,28 @@ If two notes disagree, the live code wins.
 2. decide when to remove persisted `tilesizeKey`
 3. simplify or retire controller-facing tile-size state now that shell board
    and settings preview no longer depend on user tile-size selection
+4. expand `ScalingCanvas` so the main shell board can opt into pan/zoom
+   hosting through props instead of keeping separate scaling plumbing
+
+## Upgrade Note: ScalingCanvas Pan/Zoom
+
+`ScalingCanvas` is currently used by settings preview and solution playback,
+where the scaled canvas is not manually panned or zoomed.
+
+The main game board still has its own scaling adapter code because it also
+wraps the fitted canvas in `react-zoom-pan-pinch` and uses a React `key` to
+reset transform state when expanded mode, portrait mode, or fitted geometry
+changes.
+
+Future work should make pan/zoom an opt-in capability of `ScalingCanvas`.
+The component should own the fit-derived pieces of the reset key
+(`metricSetId`, canvas width, canvas height, and scale), while callers provide
+contextual reset-key parts such as `expanded` versus `normal` and `portrait`
+versus `landscape`.
+
+That would let `Board` use the same scaled-canvas host as the settings preview
+and solution playback without leaking fit state back out just to reset the
+transform wrapper.
 
 ## Current Policy Note
 

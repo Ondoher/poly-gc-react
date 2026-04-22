@@ -1,16 +1,18 @@
-import Random from '../../src/gc/utils/random.js';
 import StateGraphAnalyzer from './StateGraphAnalyzer.js';
+import {
+	getRankedWindow,
+	selectRankedCandidate,
+} from './ranked-window.js';
 
 /**
- * Select open tile keys from a working game state during generation.
+ * Rank and select open tile keys from a working game state during generation.
  */
 export default class TilePicker {
 	/**
 	 * @param {GameRules} rules
-	 * @param {GameState} gameState
-	 * @param {DifficultySettings} settings
+	 * @param {GeneratorState} state
 	 */
-	constructor(rules, gameState, settings) {
+	constructor(rules, state) {
 		/**
 		 * Rules helper used to discover currently open tile keys.
 		 *
@@ -21,40 +23,38 @@ export default class TilePicker {
 		/**
 		 * Working game state used for open-tile queries.
 		 *
-		 * @type {GameState}
+		 * @type {GeneratorState}
 		 */
-		this.gameState = gameState;
+		this.gameState = state;
 
 		/**
-		 * Resolved generation settings for the current run.
+		 * Generator-facing state used for ranking settings.
 		 *
-		 * The current picker does not use these yet, but the constructor carries
-		 * them now so weighting logic can be introduced without changing the public
-		 * shape again.
-		 *
-		 * @type {DifficultySettings}
+		 * @type {GeneratorState}
 		 */
-		this.settings = settings;
+		this.state = state;
 
 		/**
 		 * Hypothetical-state analyzer used for graph-style factor questions.
 		 *
 		 * @type {StateGraphAnalyzer}
 		 */
-		this.analyzer = new StateGraphAnalyzer(rules, gameState);
+		this.analyzer = new StateGraphAnalyzer(rules, state);
 	}
 
 	/**
 	 * Calculate the z-index factor for one tile key.
 	 *
-	 * Lower tiles receive a larger factor than higher tiles.
+	 * During backward generation, this biases selection by stack height so the
+	 * picker can prefer or avoid exposing lower layers according to the current
+	 * difficulty settings. Higher `z` tiles produce less pressure because they
+	 * are already near the top of their stack.
 	 *
 	 * @param {TileKey} tileKey
-	 * @param {{highestZOrder?: number}} [options={}]
 	 * @returns {number}
 	 */
-	getZIndexFactor(tileKey, options = {}) {
-		let { highestZOrder } = this.state.collapseOptions(options);
+	getZIndexFactor(tileKey) {
+		let highestZOrder = this.state.getHighestZOrder();
 		let position = this.gameState.getPosition(tileKey);
 
 		if (!position) {
@@ -65,18 +65,21 @@ export default class TilePicker {
 	}
 
 	/**
-	 * Calculate the grouped spatial relationship factor for one tile key.
+	 * Calculate how strongly one candidate relates to the current reference
+	 * tiles.
 	 *
-	 * This starts as a neutral factor and will later absorb the horizontal and
-	 * depth-based reference spatial weighting rules.
+	 * When selecting the second tile in a generated tile pair, the first tile
+	 * becomes the reference. This factor lets the picker shape how much it cares
+	 * about candidates that overlap the same horizontal rows or depth lanes as
+	 * already selected tiles.
 	 *
 	 * @param {TileKey} tileKey
 	 * @param {TileKey[]} [referenceTileKeys=[]]
-	 * @param {object} [options={}]
 	 * @returns {number}
 	 */
-	getSpatialRelationshipFactor(tileKey, referenceTileKeys = [], options = {}) {
-		let { horizontalMultiplier, depthMultiplier } = this.state.collapseOptions(options);
+	getSpatialRelationshipFactor(tileKey, referenceTileKeys = []) {
+		let horizontalMultiplier = this.state.getHorizontalMultiplier();
+		let depthMultiplier = this.state.getDepthMultiplier();
 		let horizontalIntersections = this.gameState.countHorizontalIntersections(
 			referenceTileKeys,
 			tileKey
@@ -93,19 +96,18 @@ export default class TilePicker {
 	/**
 	 * Calculate the open-pressure factor for one tile key.
 	 *
-	 * Tiles that free fewer future opens receive a larger factor on harder
-	 * settings, matching the live generator's pressure direction.
+	 * This asks, "If we remove this candidate, how many additional tiles become
+	 * available?" Candidates that free fewer tiles can be weighted more heavily
+	 * on harder settings because they keep the generated solution path tighter
+	 * and leave fewer easy future choices.
 	 *
 	 * @param {TileKey} tileKey
-	 * @param {object} [options={}]
-	 * @returns {{freedCount: number, openPressureFactor: number}}
+	 * @param {TileKey[]} [pendingRemovedTileKeys=[]]
+	 * @returns {OpenPressureFactor}
 	 */
-	getOpenPressureFactor(tileKey, options = {}) {
-		let {
-			openPressureMultiplier,
-			maxFreedPressure,
-			pendingRemovedTileKeys,
-		} = this.state.collapseOptions(options);
+	getOpenPressureFactor(tileKey, pendingRemovedTileKeys = []) {
+		let openPressureMultiplier = this.state.getOpenPressureMultiplier();
+		let maxFreedPressure = this.state.getMaxFreedPressure();
 		let freedCount = this.analyzer.countTilesFreedByRemoving([
 			...pendingRemovedTileKeys,
 			tileKey,
@@ -130,19 +132,18 @@ export default class TilePicker {
 	/**
 	 * Calculate the stack-balance factor for one tile key.
 	 *
-	 * Tiles that would leave a less balanced stack landscape receive a larger
-	 * factor on harder settings.
+	 * This estimates whether removing the candidate would leave one stack group
+	 * dominating the remaining board. The factor captures that pressure so the
+	 * picker can either score the shape or, later, reject dangerous stack states
+	 * outright.
 	 *
 	 * @param {TileKey} tileKey
-	 * @param {object} [options={}]
-	 * @returns {{balanceMargin: number, balanceFactor: number, createsDominantStack: boolean}}
+	 * @param {TileKey[]} [pendingRemovedTileKeys=[]]
+	 * @returns {BalanceFactor}
 	 */
-	getBalanceFactor(tileKey, options = {}) {
-		let {
-			balancePressureMultiplier,
-			maxBalanceMargin,
-			pendingRemovedTileKeys,
-		} = this.state.collapseOptions(options);
+	getBalanceFactor(tileKey, pendingRemovedTileKeys = []) {
+		let balancePressureMultiplier = this.state.getBalancePressureMultiplier();
+		let maxBalanceMargin = this.state.getMaxBalanceMargin();
 		let balance = this.analyzer.getStackBalanceAfterRemoving([
 			...pendingRemovedTileKeys,
 			tileKey,
@@ -170,25 +171,18 @@ export default class TilePicker {
 	/**
 	 * Calculate the short-horizon factor for one tile key.
 	 *
-	 * Tiles that cause the near-future simulated state to collapse earlier
-	 * receive a larger factor on harder settings.
+	 * This performs a small hypothetical lookahead after removing the candidate.
+	 * If the near-future board runs out of playable pairs before it clears, the
+	 * candidate gets pressure metadata that can steer generation away from
+	 * fragile local choices.
 	 *
 	 * @param {TileKey} tileKey
-	 * @param {object} [options={}]
-	 * @returns {{
-	 * 	shortHorizonFactor: number,
-	 * 	shortHorizonMoves: number,
-	 * 	shortHorizonRemainingTiles: number,
-	 * 	shortHorizonEnabled: boolean,
-	 * 	shortHorizonCollapsed: boolean,
-	 * }}
+	 * @param {TileKey[]} [pendingRemovedTileKeys=[]]
+	 * @returns {ShortHorizonFactor}
 	 */
-	getShortHorizonFactor(tileKey, options = {}) {
-		let {
-			shortHorizonProbeMoves,
-			shortHorizonPressureMultiplier,
-			pendingRemovedTileKeys,
-		} = this.state.collapseOptions(options);
+	getShortHorizonFactor(tileKey, pendingRemovedTileKeys = []) {
+		let shortHorizonProbeMoves = this.state.getShortHorizonProbeMoves();
+		let shortHorizonPressureMultiplier = this.state.getShortHorizonPressureMultiplier();
 		let shortHorizon = this.analyzer.runShortHorizonProbe(
 			[
 				...pendingRemovedTileKeys,
@@ -210,31 +204,26 @@ export default class TilePicker {
 	}
 
 	/**
-	 * Calculate the grouped analyzer-backed factor for one tile key.
+	 * Calculate the combined risk/pressure score for one candidate.
 	 *
-	 * This groups factors that require hypothetical-state questions.
+	 * The analyzer-backed factors all need copied-board questions: what opens
+	 * after removal, how balanced the remaining stacks are, and whether a short
+	 * lookahead can keep making legal moves. This method gathers those related
+	 * signals and multiplies their factors into one contribution for the final
+	 * tile weight while preserving each sub-result for debugging and telemetry.
 	 *
 	 * @param {TileKey} tileKey
-	 * @param {object} [options={}]
-	 * @returns {{
-	 * 	freedCount: number,
-	 * 	analyzerFactor: number,
-	 * 	openPressureFactor: number,
-	 * 	balanceFactor: number,
-	 * 	balanceMargin: number,
-	 * 	createsDominantStack: boolean,
-	 * 	shortHorizonFactor: number,
-	 * 	shortHorizonMoves: number,
-	 * 	shortHorizonRemainingTiles: number,
-	 * 	shortHorizonEnabled: boolean,
-	 * 	shortHorizonCollapsed: boolean,
-	 * }}
+	 * @param {TileKey[]} [pendingRemovedTileKeys=[]]
+	 * @returns {AnalyzerFactor}
 	 */
-	getAnalyzerFactor(tileKey, options = {}) {
-		let { freedCount, openPressureFactor } = this.getOpenPressureFactor(tileKey, options);
+	getAnalyzerFactor(tileKey, pendingRemovedTileKeys = []) {
+		let { freedCount, openPressureFactor } = this.getOpenPressureFactor(
+			tileKey,
+			pendingRemovedTileKeys
+		);
 		let { balanceMargin, balanceFactor, createsDominantStack } = this.getBalanceFactor(
 			tileKey,
-			options
+			pendingRemovedTileKeys
 		);
 		let {
 			shortHorizonFactor,
@@ -242,7 +231,7 @@ export default class TilePicker {
 			shortHorizonRemainingTiles,
 			shortHorizonEnabled,
 			shortHorizonCollapsed,
-		} = this.getShortHorizonFactor(tileKey, options);
+		} = this.getShortHorizonFactor(tileKey, pendingRemovedTileKeys);
 
 		return {
 			freedCount,
@@ -260,28 +249,28 @@ export default class TilePicker {
 	}
 
 	/**
-	 * Score the currently open tile keys, excluding any reference tile keys.
+	 * Rank every eligible open tile for structural generation.
 	 *
-	 * This first pass is intentionally simple and assigns every eligible tile the
-	 * same weight. The method exists now so later weighting logic has a stable
-	 * seam to grow into.
+	 * The rank combines elevation, spatial relationship to any already selected
+	 * reference tiles, and analyzer-backed board-pressure signals. The result is
+	 * not a final decision by itself; it is the ordered candidate list consumed
+	 * by the difficulty window and random selection steps.
 	 *
 	 * @param {TileKey[]} [referenceTileKeys=[]]
-	 * @param {{difficulty?: number, minWindowRatio?: number}} [options={}]
-	 * @returns {{tileKey: TileKey, weight: number}[]}
+	 * @returns {RankedTileCandidate[]}
 	 */
-	scoreOpenTiles(referenceTileKeys = [], options = {}) {
-		let resolvedOptions = this.state.collapseOptions(options);
+	rankOpenTiles(referenceTileKeys = []) {
 		let referenceTileKeySet = new Set(referenceTileKeys);
+		let unavailableTileKeySet = new Set(this.state.unavailableTiles ?? []);
 
-		return this.rules.getOpenTiles(this.gameState)
+		let rankedTiles = this.rules.getOpenTiles(this.gameState)
 			.filter((tileKey) => !referenceTileKeySet.has(tileKey))
+			.filter((tileKey) => !unavailableTileKeySet.has(tileKey))
 			.map((tileKey) => {
-				let zIndexFactor = this.getZIndexFactor(tileKey, resolvedOptions);
+				let zIndexFactor = this.getZIndexFactor(tileKey);
 				let spatialRelationshipFactor = this.getSpatialRelationshipFactor(
 					tileKey,
-					referenceTileKeys,
-					resolvedOptions
+					referenceTileKeys
 				);
 				let {
 					freedCount,
@@ -297,7 +286,7 @@ export default class TilePicker {
 					shortHorizonCollapsed,
 				} = this.getAnalyzerFactor(
 					tileKey,
-					resolvedOptions
+					referenceTileKeys
 				);
 
 				return {
@@ -327,94 +316,121 @@ export default class TilePicker {
 					weight: zIndexFactor * spatialRelationshipFactor * analyzerFactor,
 				};
 			});
+
+		return rankedTiles.sort((left, right) => {
+			return left.weight - right.weight || left.tileKey - right.tileKey;
+		});
 	}
 
 	/**
-	 * Build the difficulty-shaped selection window for scored tiles.
-	 *
-	 * This mirrors the live engine shape, but remains intentionally lightweight
-	 * for now.
-	 *
-	 * @param {{tileKey: TileKey, weight: number}[]} scoredTiles
-	 * @param {{difficulty?: number, minWindowRatio?: number}} [options={}]
-	 * @returns {{window: {tileKey: TileKey, weight: number}[], start: number, end: number, size: number, count: number, difficulty: number}}
-	 */
-	getDifficultyWindowDetails(scoredTiles, options = {}) {
-		let { difficulty, minWindowRatio } = this.state.collapseOptions(options);
-		difficulty = Math.max(0, Math.min(1, difficulty));
-		minWindowRatio = Math.max(0, Math.min(1, minWindowRatio));
-		let count = scoredTiles.length;
-
-		if (count === 0) {
-			return {
-				window: [],
-				start: 0,
-				end: 0,
-				size: 0,
-				count,
-				difficulty,
-			};
-		}
-
-		let edgePressure = Math.abs(difficulty - 0.5) * 2;
-		let windowRatio = 1 - edgePressure * (1 - minWindowRatio);
-		let windowSize = Math.max(1, Math.ceil(count * windowRatio));
-		let start = Math.round((count - windowSize) * difficulty);
-
-		return {
-			window: scoredTiles.slice(start, start + windowSize),
-			start,
-			end: start + windowSize,
-			size: windowSize,
-			count,
-			difficulty,
-		};
-	}
-
-	/**
-	 * Pick one scored tile from the current difficulty window.
-	 *
-	 * @param {{tileKey: TileKey, weight: number}[]} scoredTiles
-	 * @param {{difficulty?: number, minWindowRatio?: number}} [options={}]
-	 * @returns {{tileKey: TileKey, weight: number} | false}
-	 */
-	pickWeightedTileFromScores(scoredTiles, options = {}) {
-		let windowDetails = this.getDifficultyWindowDetails(scoredTiles, options);
-		let window = windowDetails.window;
-
-		if (window.length === 0) {
-			return false;
-		}
-
-		return Random.chooseOne(window);
-	}
-
-	/**
-	 * Pick one scored tile from the currently open tile keys.
+	 * Backward-compatible alias for the older scoring-stage name.
 	 *
 	 * @param {TileKey[]} [referenceTileKeys=[]]
-	 * @param {{difficulty?: number, minWindowRatio?: number}} [options={}]
-	 * @returns {{tileKey: TileKey, weight: number} | false}
+	 * @returns {RankedTileCandidate[]}
 	 */
-	pickWeightedTile(referenceTileKeys = [], options = {}) {
-		let scoredTiles = this.scoreOpenTiles(referenceTileKeys, options);
-
-		return this.pickWeightedTileFromScores(scoredTiles, options);
+	scoreOpenTiles(referenceTileKeys = []) {
+		return this.rankOpenTiles(referenceTileKeys);
 	}
 
 	/**
-	 * Choose one open tile key, excluding any reference tile keys.
+	 * Build the difficulty-shaped selection window for ranked tiles.
+	 *
+	 * Ranked tiles are already sorted by selection pressure. This narrows the
+	 * eligible slice according to difficulty: middle difficulty keeps a broader
+	 * candidate set, while easier and harder settings bias toward opposite ends
+	 * of the ranked list.
+	 *
+	 * @param {RankedTileCandidate[]} rankedTiles
+	 * @returns {RankedWindow<RankedTileCandidate>}
+	 */
+	getDifficultyWindowDetails(rankedTiles) {
+		return getRankedWindow(rankedTiles, {
+			difficulty: this.state.difficulty(),
+			minWindowRatio: this.state.getMinWindowRatio(),
+		});
+	}
+
+	/**
+	 * Select one ranked tile from the difficulty-shaped candidate window.
+	 *
+	 * This is the final random choice after ranking and windowing have already
+	 * shaped which candidates are eligible.
+	 *
+	 * @param {RankedTileCandidate[]} rankedTiles
+	 * @returns {RankedTileCandidate | false}
+	 */
+	selectRankedTile(rankedTiles) {
+		return selectRankedCandidate(
+			rankedTiles,
+			{
+				difficulty: this.state.difficulty(),
+				minWindowRatio: this.state.getMinWindowRatio(),
+			}
+		) || false;
+	}
+
+	/**
+	 * Backward-compatible alias for the older scoring/weighted-pick name.
+	 *
+	 * @param {RankedTileCandidate[]} scoredTiles
+	 * @returns {RankedTileCandidate | false}
+	 */
+	pickWeightedTileFromScores(scoredTiles) {
+		return this.selectRankedTile(scoredTiles);
+	}
+
+	/**
+	 * Rank the currently open candidates and select one tile record.
+	 *
+	 * This method keeps the high-level selection path in one place: rank
+	 * candidates, apply the difficulty window, then randomly choose from that
+	 * window.
+	 *
+	 * @param {TileKey[]} [referenceTileKeys=[]]
+	 * @returns {RankedTileCandidate | false}
+	 */
+	selectWeightedTile(referenceTileKeys = []) {
+		let rankedTiles = this.rankOpenTiles(referenceTileKeys);
+
+		return this.selectRankedTile(rankedTiles);
+	}
+
+	/**
+	 * Backward-compatible alias for the older weighted-pick name.
+	 *
+	 * @param {TileKey[]} [referenceTileKeys=[]]
+	 * @returns {RankedTileCandidate | false}
+	 */
+	pickWeightedTile(referenceTileKeys = []) {
+		return this.selectWeightedTile(referenceTileKeys);
+	}
+
+	/**
+	 * Select one open tile key for generation.
+	 *
+	 * This is the key-only convenience wrapper used by `GameGenerator`. Callers
+	 * that need rank metadata should use `selectWeightedTile(...)` instead.
 	 *
 	 * @param {TileKey[]} [referenceTileKeys=[]]
 	 * @returns {TileKey}
 	 */
-	pickTile(referenceTileKeys = []) {
-		let selected = this.pickWeightedTile(referenceTileKeys);
+	selectTileKey(referenceTileKeys = []) {
+		let selected = this.selectWeightedTile(referenceTileKeys);
 
 		if (!selected) {
 			throw new Error('Unable to find an eligible open tile during generation');
 		}
 
 		return selected.tileKey;
+	}
+
+	/**
+	 * Backward-compatible alias for the older key-pick name.
+	 *
+	 * @param {TileKey[]} [referenceTileKeys=[]]
+	 * @returns {TileKey}
+	 */
+	pickTile(referenceTileKeys = []) {
+		return this.selectTileKey(referenceTileKeys);
 	}
 }
