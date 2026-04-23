@@ -5,18 +5,19 @@ export default class ScrollPane extends React.Component {
 		super(props);
 
 		this.state = {
-			thumbHeight: 0,
-			thumbTop: 0,
+			thumbSize: 0,
+			thumbOffset: 0,
 			showThumb: false,
 			isDraggingThumb: false,
 		};
 
 		this.scrollRef = React.createRef();
 		this.trackRef = React.createRef();
-		this.dragStartY = 0;
-		this.dragStartThumbTop = 0;
+		this.dragStartPoint = 0;
+		this.dragStartThumbOffset = 0;
 		this.updateScrollbar = this.updateScrollbar.bind(this);
 		this.onScroll = this.onScroll.bind(this);
+		this.onWheel = this.onWheel.bind(this);
 		this.onThumbPointerDown = this.onThumbPointerDown.bind(this);
 		this.onThumbPointerMove = this.onThumbPointerMove.bind(this);
 		this.onThumbPointerUp = this.onThumbPointerUp.bind(this);
@@ -36,51 +37,82 @@ export default class ScrollPane extends React.Component {
 		this.teardownDragListeners();
 	}
 
+	getOrientation() {
+		return this.props.orientation === "horizontal" ? "horizontal" : "vertical";
+	}
+
+	getAxis() {
+		if (this.getOrientation() === "horizontal") {
+			return {
+				clientSize: "clientWidth",
+				scrollSize: "scrollWidth",
+				scrollOffset: "scrollLeft",
+				clientPoint: "clientX",
+				trackSize: "clientWidth",
+				sizeStyle: "width",
+				transform: "translateX",
+			};
+		}
+
+		return {
+			clientSize: "clientHeight",
+			scrollSize: "scrollHeight",
+			scrollOffset: "scrollTop",
+			clientPoint: "clientY",
+			trackSize: "clientHeight",
+			sizeStyle: "height",
+			transform: "translateY",
+		};
+	}
+
 	updateScrollbar() {
 		window.requestAnimationFrame(function() {
 			var scrollEl = this.scrollRef.current;
 			var trackEl = this.trackRef.current;
+			var axis = this.getAxis();
 			var minThumbSize = this.props.minThumbSize || 24;
 
 			if (!scrollEl || !trackEl) {
 				return;
 			}
 
-			var clientHeight = scrollEl.clientHeight;
-			var scrollHeight = scrollEl.scrollHeight;
-			var scrollTop = scrollEl.scrollTop;
-			var trackHeight = trackEl.clientHeight;
+			var clientSize = scrollEl[axis.clientSize];
+			var scrollSize = scrollEl[axis.scrollSize];
+			var scrollOffset = scrollEl[axis.scrollOffset];
+			var trackSize = trackEl[axis.trackSize];
 
-			if (scrollHeight <= clientHeight || clientHeight <= 0 || trackHeight <= 0) {
+			if (scrollSize <= clientSize || clientSize <= 0 || trackSize <= 0) {
 				if (
-					this.state.thumbHeight !== 0 ||
-					this.state.thumbTop !== 0 ||
+					this.state.thumbSize !== 0 ||
+					this.state.thumbOffset !== 0 ||
 					this.state.showThumb !== false
 				) {
 					this.setState({
-						thumbHeight: 0,
-						thumbTop: 0,
+						thumbSize: 0,
+						thumbOffset: 0,
 						showThumb: false,
 					});
 				}
 				return;
 			}
 
-			var ratio = clientHeight / scrollHeight;
-			var thumbHeight = Math.max(minThumbSize, Math.round(trackHeight * ratio));
-			thumbHeight = Math.min(trackHeight, thumbHeight);
-			var trackTravel = trackHeight - thumbHeight;
-			var maxScroll = scrollHeight - clientHeight;
-			var thumbTop = maxScroll > 0 ? Math.round((scrollTop / maxScroll) * trackTravel) : 0;
+			var ratio = clientSize / scrollSize;
+			var thumbSize = Math.max(minThumbSize, Math.round(trackSize * ratio));
+			thumbSize = Math.min(trackSize, thumbSize);
+			var trackTravel = trackSize - thumbSize;
+			var maxScroll = scrollSize - clientSize;
+			var thumbOffset = maxScroll > 0
+				? Math.round((scrollOffset / maxScroll) * trackTravel)
+				: 0;
 
 			if (
-				this.state.thumbHeight !== thumbHeight ||
-				this.state.thumbTop !== thumbTop ||
+				this.state.thumbSize !== thumbSize ||
+				this.state.thumbOffset !== thumbOffset ||
 				this.state.showThumb !== true
 			) {
 				this.setState({
-					thumbHeight,
-					thumbTop,
+					thumbSize,
+					thumbOffset,
 					showThumb: true,
 				});
 			}
@@ -95,6 +127,33 @@ export default class ScrollPane extends React.Component {
 		}
 	}
 
+	onWheel(evt) {
+		var scrollEl = this.scrollRef.current;
+		var axis = this.getAxis();
+
+		if (this.getOrientation() !== "horizontal" || !scrollEl) {
+			return;
+		}
+
+		var maxScroll = scrollEl[axis.scrollSize] - scrollEl[axis.clientSize];
+		var delta = evt.deltaX + evt.deltaY;
+
+		if (maxScroll <= 0 || delta === 0) {
+			return;
+		}
+
+		var nextScrollOffset = Math.max(
+			0,
+			Math.min(maxScroll, scrollEl[axis.scrollOffset] + delta)
+		);
+
+		if (nextScrollOffset !== scrollEl[axis.scrollOffset]) {
+			scrollEl[axis.scrollOffset] = nextScrollOffset;
+			this.updateScrollbar();
+			evt.preventDefault();
+		}
+	}
+
 	teardownDragListeners() {
 		window.removeEventListener("pointermove", this.onThumbPointerMove);
 		window.removeEventListener("pointerup", this.onThumbPointerUp);
@@ -106,8 +165,10 @@ export default class ScrollPane extends React.Component {
 			return;
 		}
 
-		this.dragStartY = evt.clientY;
-		this.dragStartThumbTop = this.state.thumbTop;
+		var axis = this.getAxis();
+
+		this.dragStartPoint = evt[axis.clientPoint];
+		this.dragStartThumbOffset = this.state.thumbOffset;
 		window.addEventListener("pointermove", this.onThumbPointerMove);
 		window.addEventListener("pointerup", this.onThumbPointerUp);
 		window.addEventListener("pointercancel", this.onThumbPointerUp);
@@ -122,20 +183,26 @@ export default class ScrollPane extends React.Component {
 	onThumbPointerMove(evt) {
 		var scrollEl = this.scrollRef.current;
 		var trackEl = this.trackRef.current;
+		var axis = this.getAxis();
 
 		if (!scrollEl || !trackEl) {
 			return;
 		}
 
-		var trackHeight = trackEl.clientHeight;
-		var thumbHeight = this.state.thumbHeight;
-		var maxThumbTop = Math.max(0, trackHeight - thumbHeight);
-		var deltaY = evt.clientY - this.dragStartY;
-		var nextThumbTop = Math.max(0, Math.min(maxThumbTop, this.dragStartThumbTop + deltaY));
-		var maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
-		var nextScrollTop = maxThumbTop > 0 ? (nextThumbTop / maxThumbTop) * maxScroll : 0;
+		var trackSize = trackEl[axis.trackSize];
+		var thumbSize = this.state.thumbSize;
+		var maxThumbOffset = Math.max(0, trackSize - thumbSize);
+		var delta = evt[axis.clientPoint] - this.dragStartPoint;
+		var nextThumbOffset = Math.max(
+			0,
+			Math.min(maxThumbOffset, this.dragStartThumbOffset + delta)
+		);
+		var maxScroll = scrollEl[axis.scrollSize] - scrollEl[axis.clientSize];
+		var nextScrollOffset = maxThumbOffset > 0
+			? (nextThumbOffset / maxThumbOffset) * maxScroll
+			: 0;
 
-		scrollEl.scrollTop = nextScrollTop;
+		scrollEl[axis.scrollOffset] = nextScrollOffset;
 		this.updateScrollbar();
 		evt.preventDefault();
 	}
@@ -148,7 +215,9 @@ export default class ScrollPane extends React.Component {
 	}
 
 	render() {
-		var className = "mj-scroll-pane";
+		var orientation = this.getOrientation();
+		var axis = this.getAxis();
+		var className = `mj-scroll-pane is-${orientation}`;
 		var viewportClassName = "mj-scroll-pane-viewport";
 		var scrollClassName = "mj-scroll-pane-scroll";
 		var railClassName = "mj-scroll-pane-rail";
@@ -189,8 +258,8 @@ export default class ScrollPane extends React.Component {
 		}
 
 		var thumbStyle = {
-			height: `${this.state.thumbHeight}px`,
-			transform: `translateY(${this.state.thumbTop}px)`,
+			[axis.sizeStyle]: `${this.state.thumbSize}px`,
+			transform: `${axis.transform}(${this.state.thumbOffset}px)`,
 		};
 
 		return (
@@ -200,6 +269,7 @@ export default class ScrollPane extends React.Component {
 						ref={this.scrollRef}
 						className={scrollClassName}
 						onScroll={this.onScroll}
+						onWheel={this.onWheel}
 					>
 						{this.props.children}
 					</div>

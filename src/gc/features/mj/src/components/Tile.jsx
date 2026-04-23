@@ -54,9 +54,11 @@ export default class Tile extends React.Component {
 
 		if (this.props.visible === true) {
 			this.clearHideTimer();
-			this.setState({
-				show: true,
-				highlight: false
+			this.setState(function(prevState) {
+				return {
+					show: true,
+					highlight: prevState.highlight
+				};
 			});
 			return;
 		}

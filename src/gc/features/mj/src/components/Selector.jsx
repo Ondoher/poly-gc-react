@@ -1,9 +1,76 @@
 import React from "react";
+import GameCenterContext from "common/GameCenterContext.js";
 import CssRect from "./CssRect.jsx";
 import ScrollPane from "./ScrollPane.jsx";
 import SettingsButton from "./SettingsButton.jsx";
 
-export default class SettingsSelector extends React.Component {
+export default class Selector extends React.Component {
+	static contextType = GameCenterContext;
+
+	constructor(props) {
+		super(props);
+
+		this.state = {
+			viewportMode: null,
+		};
+
+		this.onViewportModeChanged = this.onViewportModeChanged.bind(this);
+	}
+
+	componentDidMount() {
+		if (!this.usesViewportOrientation()) {
+			return;
+		}
+
+		var registry = this.getRegistry();
+		this.sizeWatcher = registry?.subscribe("size-watcher");
+
+		if (!this.sizeWatcher) {
+			return;
+		}
+
+		this.setState({
+			viewportMode: this.sizeWatcher.getMode(),
+		});
+
+		this.modeChangedListener = this.sizeWatcher.listen(
+			"mode-changed",
+			this.onViewportModeChanged
+		);
+	}
+
+	componentWillUnmount() {
+		if (this.sizeWatcher && this.modeChangedListener) {
+			this.sizeWatcher.unlisten("mode-changed", this.modeChangedListener);
+		}
+	}
+
+	getRegistry() {
+		return this.context?.registry || null;
+	}
+
+	usesViewportOrientation() {
+		return Boolean(this.props.portraitOrientation || this.props.landscapeOrientation);
+	}
+
+	normalizeOrientation(orientation) {
+		return orientation === "horizontal" ? "horizontal" : "vertical";
+	}
+
+	getOrientation() {
+		if (this.state.viewportMode?.isPortrait) {
+			return this.normalizeOrientation(this.props.portraitOrientation);
+		}
+
+		return this.normalizeOrientation(this.props.landscapeOrientation);
+	}
+
+	onViewportModeChanged(viewportMode) {
+		this.setState({
+			viewportMode,
+		});
+	}
+
 	getDisplayOptions() {
 		var options = this.props.options || [];
 		var selectedValue = this.props.selectedValue;
@@ -94,8 +161,11 @@ export default class SettingsSelector extends React.Component {
 	}
 
 	renderOptionList() {
+		var orientation = this.getOrientation();
+
 		return (
 			<ScrollPane
+				orientation={orientation}
 				className="mj-settings-dialog-list-body"
 				viewportClassName="mj-settings-dialog-list-viewport"
 				scrollClassName="mj-settings-dialog-list-scroll"
@@ -109,9 +179,11 @@ export default class SettingsSelector extends React.Component {
 	}
 
 	render() {
+		var orientation = this.getOrientation();
+
 		return (
 			<CssRect
-				className={`mj-settings-dialog-selector${this.props.className ? ` ${this.props.className}` : ""}`}
+				className={`mj-settings-dialog-selector is-${orientation}${this.props.className ? ` ${this.props.className}` : ""}`}
 				size="medium"
 				variant="inset"
 			>

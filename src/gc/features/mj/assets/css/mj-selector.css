@@ -133,6 +133,69 @@
     cursor: grab;
 }
 
+.mj-settings-dialog-list-body.is-horizontal {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 16px;
+    height: clamp(64px, 13vh, 88px);
+    max-height: none;
+}
+
+.mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-viewport {
+    padding: 10px 10px 0 10px;
+}
+
+.mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-scroll {
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    grid-template-rows: minmax(0, 1fr);
+    max-width: 100%;
+    max-height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 0 2px 0;
+}
+
+.mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-option {
+    width: var(--mj-settings-selector-width);
+}
+
+.mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-separator {
+    width: 1px;
+    height: auto;
+    margin: 4px -2px 4px 0;
+}
+
+.mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-rail {
+    width: 100%;
+    height: 16px;
+}
+
+.mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-track {
+    top: 4px;
+    right: -1px;
+    bottom: 4px;
+    left: -1px;
+    background:
+        linear-gradient(90deg, rgba(112, 18, 16, 0.22), rgba(58, 10, 10, 0.68));
+    box-shadow:
+        inset 0 1px 0 rgba(231, 180, 60, 0.12),
+        inset 0 -1px 0 rgba(38, 4, 4, 0.4);
+}
+
+.mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-thumb {
+    top: 0;
+    bottom: 0;
+    right: auto;
+    min-width: 24px;
+    min-height: 0;
+}
+
+.mj-settings-dialog-selector.is-horizontal {
+    align-self: stretch;
+    height: auto;
+    max-height: none;
+}
+
 .mj-settings-dialog-list-thumb.is-visible {
     opacity: 1;
 }

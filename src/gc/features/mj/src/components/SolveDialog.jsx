@@ -92,8 +92,16 @@ export default class SolveDialog extends React.Component {
 		let peekMs = this.props.timings?.tile?.peek || 220;
 		let playedMs = this.props.timings?.tile?.played || 180;
 
-		// Match the solve-only CSS: full hint-style pulse sequence, then fade.
-		return Math.round((peekMs * 3.4545 * 1.5) + playedMs);
+		// Match the solve-only CSS: quick hint-style pulse sequence, then fade.
+		return Math.round((peekMs * 3.4545 * 0.9) + playedMs);
+	}
+
+	getSolutionBackAnimationMs() {
+		let peekMs = this.props.timings?.tile?.peek || 220;
+		let undoMs = this.props.timings?.tile?.undo || 240;
+
+		// Match the solve-back CSS: quick flash, then fade the restored tiles in.
+		return Math.round((peekMs * 3.4545 * 0.65) + undoMs);
 	}
 
 	syncBoardFromProps() {
@@ -137,14 +145,34 @@ export default class SolveDialog extends React.Component {
 		});
 	}
 
-	onBackStep() {
+	async onBackStep() {
 		if (!this.engine || this.state.stepPairIndex <= 0 || this.state.isAnimatingStep) return;
 
-		this.engine.undo();
+		let restoredPair = this.engine.undo();
+
+		if (!restoredPair) {
+			return;
+		}
+
+		await new Promise(function(resolve) {
+			this.setState({
+				tiles: this.createVisibleTilesFromEngine(
+					this.engine,
+					[restoredPair.tile1, restoredPair.tile2],
+					'solve-back'
+				),
+				stepPairIndex: this.state.stepPairIndex - 1,
+				highlightedTileIds: [restoredPair.tile1, restoredPair.tile2],
+				isAnimatingStep: true,
+			}, function() {
+				window.setTimeout(resolve, this.getSolutionBackAnimationMs());
+			});
+		}.bind(this));
+
 		this.setState({
 			tiles: this.createVisibleTilesFromEngine(this.engine),
-			stepPairIndex: this.state.stepPairIndex - 1,
 			highlightedTileIds: [],
+			isAnimatingStep: false,
 		});
 	}
 

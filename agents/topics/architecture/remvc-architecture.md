@@ -114,6 +114,16 @@ This should be treated as:
 - useful review heuristic
 - an incremental cleanup target where existing code still bypasses the service layer
 
+Future service documentation question:
+
+- investigate whether service-emitted events should be documented consistently
+  with standard JSDoc `@event`, `@fires`, and `@listens` tags across the repo
+- treat this as exploratory for now; do not convert existing service event
+  documentation mechanically until the pattern has been tested against the
+  generated docs and local IntelliSense behavior
+- useful candidates for review include services that call `this.fire(...)` and
+  service consumers that register listeners with `listen(...)`
+
 ## View And Presentation
 
 Another important distinction is between the view and the presentation layer.

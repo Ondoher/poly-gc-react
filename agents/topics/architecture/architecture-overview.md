@@ -57,6 +57,11 @@ Service lifecycle rule:
 - `ready()` is where cross-service subscriptions, listener wiring, and
   dependency-driven setup belong.
 
+Service documentation note:
+
+- the deeper service notes include an exploratory item to evaluate standard
+  JSDoc event tags for service-emitted events across the repo.
+
 Views and React components should prefer consuming services instead of reaching
 directly into models or unrelated feature internals.
 

@@ -648,7 +648,7 @@ button.mj-shell-expand-box {
 .board-canvas .tile.solve-hint {
     animation:
         mj-tile-solve-hint-tile
-        calc((var(--mj-motion-tile-peek) * 3.4545 * 1.5) + var(--mj-motion-tile-played))
+        calc((var(--mj-motion-tile-peek) * 3.4545 * 0.9) + var(--mj-motion-tile-played))
         ease-in
         forwards;
 }
@@ -657,7 +657,7 @@ button.mj-shell-expand-box {
     filter: drop-shadow(0 0 0 rgba(255, 196, 118, 0));
     animation:
         mj-tile-solve-hint-face
-        calc((var(--mj-motion-tile-peek) * 3.4545 * 1.5) + var(--mj-motion-tile-played))
+        calc((var(--mj-motion-tile-peek) * 3.4545 * 0.9) + var(--mj-motion-tile-played))
         ease-in-out
         forwards;
 }
@@ -667,8 +667,35 @@ button.mj-shell-expand-box {
     opacity: 1;
     animation:
         mj-tile-solve-hint-overlay
-        calc((var(--mj-motion-tile-peek) * 3.4545 * 1.5) + var(--mj-motion-tile-played))
+        calc((var(--mj-motion-tile-peek) * 3.4545 * 0.9) + var(--mj-motion-tile-played))
         ease-in-out
+        forwards;
+}
+
+.board-canvas .tile.solve-back {
+    animation:
+        mj-tile-solve-back-tile
+        calc((var(--mj-motion-tile-peek) * 3.4545 * 0.65) + var(--mj-motion-tile-undo))
+        ease-out
+        forwards;
+}
+
+.board-canvas .face.solve-back {
+    filter: drop-shadow(0 0 0 rgba(255, 196, 118, 0));
+    animation:
+        mj-tile-solve-back-face
+        calc((var(--mj-motion-tile-peek) * 3.4545 * 0.65) + var(--mj-motion-tile-undo))
+        ease-out
+        forwards;
+}
+
+.board-canvas .face.solve-back:after {
+    background-color: rgba(244, 148, 126, 0.34);
+    opacity: 0;
+    animation:
+        mj-tile-solve-back-overlay
+        calc((var(--mj-motion-tile-peek) * 3.4545 * 0.65) + var(--mj-motion-tile-undo))
+        ease-out
         forwards;
 }
 
@@ -696,6 +723,7 @@ button.mj-shell-expand-box {
 }
 
 .board-canvas .tile.undo {
+    pointer-events: none;
     animation: mj-tile-undo-tile var(--mj-motion-tile-undo) ease-out forwards;
 }
 
@@ -983,6 +1011,74 @@ button.mj-shell-expand-box {
     }
 }
 
+@keyframes mj-tile-solve-back-tile {
+    0% {
+        opacity: 0;
+        transform: scale(0.94);
+    }
+
+    34% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes mj-tile-solve-back-face {
+    0% {
+        transform: scale(0.98);
+        filter:
+            brightness(1.02)
+            drop-shadow(0 0 0 rgba(255, 196, 118, 0))
+            drop-shadow(0 0 0 rgba(255, 151, 92, 0));
+    }
+
+    34% {
+        transform: scale(1.04);
+        filter:
+            brightness(1.18)
+            drop-shadow(0 0 8px rgba(255, 196, 118, 0.52))
+            drop-shadow(0 0 16px rgba(255, 151, 92, 0.3));
+    }
+
+    100% {
+        transform: scale(1);
+        filter:
+            brightness(1)
+            drop-shadow(0 0 0 rgba(255, 196, 118, 0))
+            drop-shadow(0 0 0 rgba(255, 151, 92, 0));
+    }
+}
+
+@keyframes mj-tile-solve-back-overlay {
+    0% {
+        background-color: rgba(244, 148, 126, 0.22);
+        box-shadow: 0 0 0 rgba(244, 148, 126, 0);
+        opacity: 0;
+        filter: brightness(1);
+    }
+
+    34% {
+        background-color: rgba(255, 173, 118, 0.66);
+        box-shadow:
+            0 0 14px rgba(255, 176, 118, 0.42),
+            0 0 26px rgba(244, 148, 126, 0.3);
+        opacity: 1;
+        filter: brightness(1.26);
+    }
+
+    100% {
+        background-color: rgba(244, 148, 126, 0.22);
+        box-shadow: 0 0 0 rgba(244, 148, 126, 0);
+        opacity: 0;
+        filter: brightness(1);
+    }
+}
+
 @keyframes mj-tile-unselected-release {
     0% {
         opacity: 0.62;
@@ -1039,7 +1135,7 @@ button.mj-shell-expand-box {
         filter: brightness(0.92);
     }
 
-    55% {
+    60% {
         transform: scale(1.015);
         filter: brightness(1.06);
     }
@@ -1052,19 +1148,19 @@ button.mj-shell-expand-box {
 
 @keyframes mj-tile-undo-overlay {
     0% {
-        background-color: rgba(255, 214, 150, 0.16);
+        background-color: rgba(255, 214, 150, 0.12);
         opacity: 0;
         filter: brightness(1);
     }
 
-    34% {
+    68% {
         background-color: rgba(255, 214, 150, 0.82);
         opacity: 1;
         filter: brightness(1.24);
     }
 
     100% {
-        background-color: rgba(255, 214, 150, 0.12);
+        background-color: rgba(255, 214, 150, 0.16);
         opacity: 0;
         filter: brightness(1);
     }
@@ -1093,7 +1189,7 @@ button.mj-shell-expand-box {
         filter: brightness(1);
     }
 
-    45% {
+    60% {
         transform: scale(1.015);
         filter: brightness(1.06);
     }
@@ -1111,7 +1207,7 @@ button.mj-shell-expand-box {
         filter: brightness(1);
     }
 
-    32% {
+    68% {
         background-color: rgba(255, 214, 150, 0.82);
         opacity: 1;
         filter: brightness(1.24);
@@ -1130,7 +1226,7 @@ button.mj-shell-expand-box {
         transform: scale(1);
     }
 
-    40% {
+    60% {
         opacity: 1;
         transform: scale(1.02);
     }

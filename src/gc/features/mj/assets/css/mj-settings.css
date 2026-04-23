@@ -1,4 +1,4 @@
-@import url('./mj-settings-selector.css');
+@import url('./mj-selector.css');
 
 .mj-settings-dialog {
     --mj-modal-panel-pad-top: clamp(10px, 3.2vh, 22px);
@@ -1071,6 +1071,7 @@
         clamp(38px, 4.8vw, 52px);
     min-height: 0;
     height: 100%;
+    box-sizing: border-box;
 }
 
 .mj-solve-dialog-sidebar {
@@ -1218,11 +1219,7 @@
     height: 100%;
     min-height: 0;
     box-sizing: border-box;
-    padding:
-        clamp(10px, 1.4vh, 14px)
-        clamp(10px, 1.4vw, 14px)
-        clamp(10px, 1.4vh, 14px)
-        clamp(10px, 1.2vw, 14px);
+    padding: 0;
     border: 0;
     background: transparent;
     overflow: hidden;
@@ -1257,7 +1254,82 @@
 }
 
 
-@media screen and (orientation: portrait) and (max-width: 900px) {
+@media screen and (max-width: 900px) and (max-aspect-ratio: 20 / 21) {
+    .mj-settings-dialog-content {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .mj-settings-dialog-preview {
+        min-height: clamp(280px, 52vh, 520px);
+    }
+
+    .mj-solve-dialog-section {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        gap: clamp(8px, 1.3vh, 12px);
+        padding: clamp(12px, 2vh, 16px);
+    }
+
+    .mj-solve-dialog-sidebar {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        padding: 0;
+        background: transparent;
+    }
+
+    .mj-solve-dialog-heading {
+        text-align: center;
+    }
+
+    .mj-solve-dialog-context {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: clamp(6px, 1vh, 9px) clamp(10px, 2vw, 14px);
+        justify-self: stretch;
+        width: 100%;
+        max-width: none;
+        padding: 0 clamp(4px, 1vw, 8px);
+        box-sizing: border-box;
+    }
+
+    .mj-solve-dialog-context-item {
+        margin-right: 0;
+        padding-bottom: clamp(5px, 0.9vh, 8px);
+    }
+
+    .mj-solve-dialog-board-frame {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        height: 100%;
+    }
+
+    .mj-solve-dialog-board-rect {
+        padding: clamp(8px, 1.2vh, 12px);
+    }
+
+    .mj-solve-dialog-utility-column {
+        grid-row: 3;
+        min-height: clamp(48px, 8vh, 64px);
+    }
+
+    .mj-solve-dialog-utility-column:first-of-type {
+        grid-column: 1;
+    }
+
+    .mj-solve-dialog-utility-column:last-of-type {
+        grid-column: 2;
+    }
+
+    .mj-solve-dialog-nav-slot {
+        padding: 0;
+    }
+
+    .mj-solve-dialog-nav-button {
+        width: min(100%, 120px);
+        min-width: clamp(72px, 24vw, 120px);
+        min-height: clamp(38px, 7vh, 52px);
+    }
+
     .mj-feedback-dialog-context-comments {
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: auto auto;

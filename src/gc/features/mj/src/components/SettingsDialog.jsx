@@ -1,7 +1,7 @@
 import React from "react";
 import ModalDialog from "./ModalDialog.jsx";
 import SettingsButton from "./SettingsButton.jsx";
-import SettingsSelector from "./SettingsSelector.jsx";
+import Selector from "./Selector.jsx";
 import SettingsPreview from "./SettingsPreview.jsx";
 
 const TABS = [
@@ -232,14 +232,16 @@ export default class SettingsDialog extends React.Component {
 					{this.renderTabs()}
 				</div>
 				<div className="mj-settings-dialog-content">
-							<SettingsSelector
-								className="mj-settings-dialog-selector"
-								options={this.getActiveOptions()}
-								pinSelectedToTop={true}
-								pinSelectedMinimumOptions={6}
-								selectedValue={this.getSelectedValue()}
-								onSelect={this.onSelectOption.bind(this)}
-							/>
+					<Selector
+						className="mj-settings-dialog-selector"
+						options={this.getActiveOptions()}
+						pinSelectedToTop={true}
+						pinSelectedMinimumOptions={6}
+						portraitOrientation="horizontal"
+						landscapeOrientation="vertical"
+						selectedValue={this.getSelectedValue()}
+						onSelect={this.onSelectOption.bind(this)}
+					/>
 					<SettingsPreview
 						layout={this.state.draftLayout}
 						difficulty={this.state.draftDifficulty}
