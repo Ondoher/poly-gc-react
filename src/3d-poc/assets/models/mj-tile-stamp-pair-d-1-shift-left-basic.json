@@ -1,0 +1,48 @@
+{
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-1-shift-left-basic.glb",
+  "meshName": "tileStampPairMesh",
+  "width": 0.79,
+  "height": 0.5,
+  "topSurfaceY": 0.292,
+  "depth": 1.08,
+  "radius": 0.105,
+  "bevelSize": 0.032,
+  "bevelThickness": 0.042,
+  "bevelSegments": 5,
+  "experiment": {
+    "key": "shift-left",
+    "label": "Shift Left",
+    "cutterLift": -0.01,
+    "cutterDepthScale": 1,
+    "cutterRotationYDeg": 0,
+    "cutterFootprintScaleMultiplier": 1,
+    "cutterOffsetX": -0.045,
+    "cutterOffsetZ": 0
+  },
+  "canonicalPlacement": {
+    "footprintScale": 1,
+    "centerX": 0,
+    "centerZ": 0,
+    "stampBounds": {
+      "width": 0.5831761658191681,
+      "depth": 0.7726368010044098,
+      "centerX": -0.012003079056739807,
+      "centerZ": -0.08052749931812286
+    },
+    "targetRect": {
+      "width": 0.7464705882352941,
+      "depth": 1.08,
+      "centerX": 0,
+      "centerZ": 0
+    },
+    "referenceBounds": {
+      "referenceWidth": 94,
+      "referenceHeight": 136
+    },
+    "reason": "preprocessed-viewbox-already-in-face-space"
+  },
+  "notes": [
+    "Base tile for direct stamped-pair comparison.",
+    "Recreated from the same body geometry recipe for every experiment."
+  ]
+}

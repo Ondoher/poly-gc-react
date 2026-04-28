@@ -1,7 +1,7 @@
 import React from "react";
 import ScalingCanvas from "./ScalingCanvas.jsx";
 import layouts from "../data/layouts.js";
-import { TILE_SETS, TILE_SIZES } from "../data/tilesets.js";
+import { TILE_SETS } from "../data/tilesets.js";
 import Engine from "../engine/Engine.js";
 import { applyDifficultyPreset } from "../engine/difficultyPresets.js";
 
@@ -93,7 +93,7 @@ export default class SettingsPreview extends React.Component {
 	}
 
 	getCanvasClassName(metricSetId) {
-		let selectedMetricSetId = metricSetId || this.props.tilesize || "tiny";
+		let selectedMetricSetId = metricSetId || "tiny";
 
 		return [
 			`${this.getTilesetClass()}-${selectedMetricSetId}`,
@@ -114,8 +114,6 @@ export default class SettingsPreview extends React.Component {
 					offsetClassName="mj-settings-dialog-preview-board-offset"
 					delegator={this.delegator}
 					tiles={this.state.tiles}
-					sizeNames={Object.keys(TILE_SIZES)}
-					fallbackMetricSetId={this.props.tilesize || "tiny"}
 					getCanvasClassName={this.getCanvasClassName.bind(this)}
 					placeholder={
 						<div className="mj-settings-dialog-placeholder">

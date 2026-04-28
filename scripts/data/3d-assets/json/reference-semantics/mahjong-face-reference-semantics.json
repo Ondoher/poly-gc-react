@@ -1,0 +1,1432 @@
+{
+  "schemaVersion": 2,
+  "bootstrapId": "mahjong-face-reference-semantics",
+  "name": "Mahjong Face Reference Semantics",
+  "semanticCatalogVersion": 1,
+  "svgPipeline": {
+    "faces": {
+      "b-1": {
+        "faceShortCode": "b-1",
+        "family": "bamboo",
+        "value": 1,
+        "parts": {
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "b-1:mainArtwork",
+            "role": "main-artwork",
+            "paletteIndex": "bamboo-1",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "b-1:label",
+            "role": "suit-label",
+            "text": "1",
+            "contentKind": "label"
+          }
+        }
+      },
+      "b-2": {
+        "faceShortCode": "b-2",
+        "family": "bamboo",
+        "value": 2,
+        "parts": {
+          "bamboo.1": {
+            "partId": "bamboo.1",
+            "globalPartId": "b-2:bamboo.1",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.2": {
+            "partId": "bamboo.2",
+            "globalPartId": "b-2:bamboo.2",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "b-2:label",
+            "role": "suit-label",
+            "text": "2",
+            "contentKind": "label"
+          }
+        }
+      },
+      "b-3": {
+        "faceShortCode": "b-3",
+        "family": "bamboo",
+        "value": 3,
+        "parts": {
+          "bamboo.1": {
+            "partId": "bamboo.1",
+            "globalPartId": "b-3:bamboo.1",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.2": {
+            "partId": "bamboo.2",
+            "globalPartId": "b-3:bamboo.2",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.3": {
+            "partId": "bamboo.3",
+            "globalPartId": "b-3:bamboo.3",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "b-3:label",
+            "role": "suit-label",
+            "text": "3",
+            "contentKind": "label"
+          }
+        }
+      },
+      "b-4": {
+        "faceShortCode": "b-4",
+        "family": "bamboo",
+        "value": 4,
+        "parts": {
+          "bamboo.1": {
+            "partId": "bamboo.1",
+            "globalPartId": "b-4:bamboo.1",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.2": {
+            "partId": "bamboo.2",
+            "globalPartId": "b-4:bamboo.2",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.3": {
+            "partId": "bamboo.3",
+            "globalPartId": "b-4:bamboo.3",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.4": {
+            "partId": "bamboo.4",
+            "globalPartId": "b-4:bamboo.4",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "b-4:label",
+            "role": "suit-label",
+            "text": "4",
+            "contentKind": "label"
+          }
+        }
+      },
+      "b-5": {
+        "faceShortCode": "b-5",
+        "family": "bamboo",
+        "value": 5,
+        "parts": {
+          "bamboo.1": {
+            "partId": "bamboo.1",
+            "globalPartId": "b-5:bamboo.1",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.2": {
+            "partId": "bamboo.2",
+            "globalPartId": "b-5:bamboo.2",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.3": {
+            "partId": "bamboo.3",
+            "globalPartId": "b-5:bamboo.3",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.4": {
+            "partId": "bamboo.4",
+            "globalPartId": "b-5:bamboo.4",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.5": {
+            "partId": "bamboo.5",
+            "globalPartId": "b-5:bamboo.5",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "b-5:label",
+            "role": "suit-label",
+            "text": "5",
+            "contentKind": "label"
+          }
+        }
+      },
+      "b-6": {
+        "faceShortCode": "b-6",
+        "family": "bamboo",
+        "value": 6,
+        "parts": {
+          "bamboo.1": {
+            "partId": "bamboo.1",
+            "globalPartId": "b-6:bamboo.1",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.2": {
+            "partId": "bamboo.2",
+            "globalPartId": "b-6:bamboo.2",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.3": {
+            "partId": "bamboo.3",
+            "globalPartId": "b-6:bamboo.3",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.4": {
+            "partId": "bamboo.4",
+            "globalPartId": "b-6:bamboo.4",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.5": {
+            "partId": "bamboo.5",
+            "globalPartId": "b-6:bamboo.5",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.6": {
+            "partId": "bamboo.6",
+            "globalPartId": "b-6:bamboo.6",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "b-6:label",
+            "role": "suit-label",
+            "text": "6",
+            "contentKind": "label"
+          }
+        }
+      },
+      "b-7": {
+        "faceShortCode": "b-7",
+        "family": "bamboo",
+        "value": 7,
+        "parts": {
+          "bamboo.1": {
+            "partId": "bamboo.1",
+            "globalPartId": "b-7:bamboo.1",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.2": {
+            "partId": "bamboo.2",
+            "globalPartId": "b-7:bamboo.2",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.3": {
+            "partId": "bamboo.3",
+            "globalPartId": "b-7:bamboo.3",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.4": {
+            "partId": "bamboo.4",
+            "globalPartId": "b-7:bamboo.4",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.5": {
+            "partId": "bamboo.5",
+            "globalPartId": "b-7:bamboo.5",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.6": {
+            "partId": "bamboo.6",
+            "globalPartId": "b-7:bamboo.6",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.7": {
+            "partId": "bamboo.7",
+            "globalPartId": "b-7:bamboo.7",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "b-7:label",
+            "role": "suit-label",
+            "text": "7",
+            "contentKind": "label"
+          }
+        }
+      },
+      "b-8": {
+        "faceShortCode": "b-8",
+        "family": "bamboo",
+        "value": 8,
+        "parts": {
+          "bambooGroup.1": {
+            "partId": "bambooGroup.1",
+            "globalPartId": "b-8:bambooGroup.1",
+            "role": "bamboo-group",
+            "contentKind": "artwork"
+          },
+          "bambooGroup.2": {
+            "partId": "bambooGroup.2",
+            "globalPartId": "b-8:bambooGroup.2",
+            "role": "bamboo-group",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "b-8:label",
+            "role": "suit-label",
+            "text": "8",
+            "contentKind": "label"
+          }
+        }
+      },
+      "b-9": {
+        "faceShortCode": "b-9",
+        "family": "bamboo",
+        "value": 9,
+        "parts": {
+          "bamboo.1": {
+            "partId": "bamboo.1",
+            "globalPartId": "b-9:bamboo.1",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.2": {
+            "partId": "bamboo.2",
+            "globalPartId": "b-9:bamboo.2",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.3": {
+            "partId": "bamboo.3",
+            "globalPartId": "b-9:bamboo.3",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.4": {
+            "partId": "bamboo.4",
+            "globalPartId": "b-9:bamboo.4",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.5": {
+            "partId": "bamboo.5",
+            "globalPartId": "b-9:bamboo.5",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.6": {
+            "partId": "bamboo.6",
+            "globalPartId": "b-9:bamboo.6",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.7": {
+            "partId": "bamboo.7",
+            "globalPartId": "b-9:bamboo.7",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.8": {
+            "partId": "bamboo.8",
+            "globalPartId": "b-9:bamboo.8",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "bamboo.9": {
+            "partId": "bamboo.9",
+            "globalPartId": "b-9:bamboo.9",
+            "role": "bamboo-stick",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "b-9:label",
+            "role": "suit-label",
+            "text": "9",
+            "contentKind": "label"
+          }
+        }
+      },
+      "c-1": {
+        "faceShortCode": "c-1",
+        "family": "characters",
+        "value": 1,
+        "parts": {
+          "body": {
+            "partId": "body",
+            "globalPartId": "c-1:body",
+            "role": "character-body",
+            "text": "萬",
+            "contentKind": "glyph"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "c-1:glyph",
+            "role": "character-number-glyph",
+            "text": "一",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "c-1:label",
+            "role": "suit-label",
+            "text": "1",
+            "contentKind": "label"
+          }
+        }
+      },
+      "c-2": {
+        "faceShortCode": "c-2",
+        "family": "characters",
+        "value": 2,
+        "parts": {
+          "body": {
+            "partId": "body",
+            "globalPartId": "c-2:body",
+            "role": "character-body",
+            "text": "萬",
+            "contentKind": "glyph"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "c-2:glyph",
+            "role": "character-number-glyph",
+            "text": "二",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "c-2:label",
+            "role": "suit-label",
+            "text": "2",
+            "contentKind": "label"
+          }
+        }
+      },
+      "c-3": {
+        "faceShortCode": "c-3",
+        "family": "characters",
+        "value": 3,
+        "parts": {
+          "body": {
+            "partId": "body",
+            "globalPartId": "c-3:body",
+            "role": "character-body",
+            "text": "萬",
+            "contentKind": "glyph"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "c-3:glyph",
+            "role": "character-number-glyph",
+            "text": "三",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "c-3:label",
+            "role": "suit-label",
+            "text": "3",
+            "contentKind": "label"
+          }
+        }
+      },
+      "c-4": {
+        "faceShortCode": "c-4",
+        "family": "characters",
+        "value": 4,
+        "parts": {
+          "body": {
+            "partId": "body",
+            "globalPartId": "c-4:body",
+            "role": "character-body",
+            "text": "萬",
+            "contentKind": "glyph"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "c-4:glyph",
+            "role": "character-number-glyph",
+            "text": "四",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "c-4:label",
+            "role": "suit-label",
+            "text": "4",
+            "contentKind": "label"
+          }
+        }
+      },
+      "c-5": {
+        "faceShortCode": "c-5",
+        "family": "characters",
+        "value": 5,
+        "parts": {
+          "body": {
+            "partId": "body",
+            "globalPartId": "c-5:body",
+            "role": "character-body",
+            "text": "萬",
+            "contentKind": "glyph"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "c-5:glyph",
+            "role": "character-number-glyph",
+            "text": "五",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "c-5:label",
+            "role": "suit-label",
+            "text": "5",
+            "contentKind": "label"
+          }
+        }
+      },
+      "c-6": {
+        "faceShortCode": "c-6",
+        "family": "characters",
+        "value": 6,
+        "parts": {
+          "body": {
+            "partId": "body",
+            "globalPartId": "c-6:body",
+            "role": "character-body",
+            "text": "萬",
+            "contentKind": "glyph"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "c-6:glyph",
+            "role": "character-number-glyph",
+            "text": "六",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "c-6:label",
+            "role": "suit-label",
+            "text": "6",
+            "contentKind": "label"
+          }
+        }
+      },
+      "c-7": {
+        "faceShortCode": "c-7",
+        "family": "characters",
+        "value": 7,
+        "parts": {
+          "body": {
+            "partId": "body",
+            "globalPartId": "c-7:body",
+            "role": "character-body",
+            "text": "萬",
+            "contentKind": "glyph"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "c-7:glyph",
+            "role": "character-number-glyph",
+            "text": "七",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "c-7:label",
+            "role": "suit-label",
+            "text": "7",
+            "contentKind": "label"
+          }
+        }
+      },
+      "c-8": {
+        "faceShortCode": "c-8",
+        "family": "characters",
+        "value": 8,
+        "parts": {
+          "body": {
+            "partId": "body",
+            "globalPartId": "c-8:body",
+            "role": "character-body",
+            "text": "萬",
+            "contentKind": "glyph"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "c-8:glyph",
+            "role": "character-number-glyph",
+            "text": "八",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "c-8:label",
+            "role": "suit-label",
+            "text": "8",
+            "contentKind": "label"
+          }
+        }
+      },
+      "c-9": {
+        "faceShortCode": "c-9",
+        "family": "characters",
+        "value": 9,
+        "parts": {
+          "body": {
+            "partId": "body",
+            "globalPartId": "c-9:body",
+            "role": "character-body",
+            "text": "萬",
+            "contentKind": "glyph"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "c-9:glyph",
+            "role": "character-number-glyph",
+            "text": "九",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "c-9:label",
+            "role": "suit-label",
+            "text": "9",
+            "contentKind": "label"
+          }
+        }
+      },
+      "d-1": {
+        "faceShortCode": "d-1",
+        "family": "dots",
+        "value": 1,
+        "parts": {
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "d-1:mainArtwork",
+            "role": "main-artwork",
+            "paletteIndex": "dot-1",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "d-1:label",
+            "role": "suit-label",
+            "text": "1",
+            "contentKind": "label"
+          }
+        }
+      },
+      "d-2": {
+        "faceShortCode": "d-2",
+        "family": "dots",
+        "value": 2,
+        "parts": {
+          "dot.1": {
+            "partId": "dot.1",
+            "globalPartId": "d-2:dot.1",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.2": {
+            "partId": "dot.2",
+            "globalPartId": "d-2:dot.2",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "d-2:label",
+            "role": "suit-label",
+            "text": "2",
+            "contentKind": "label"
+          }
+        }
+      },
+      "d-3": {
+        "faceShortCode": "d-3",
+        "family": "dots",
+        "value": 3,
+        "parts": {
+          "dot.1": {
+            "partId": "dot.1",
+            "globalPartId": "d-3:dot.1",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.2": {
+            "partId": "dot.2",
+            "globalPartId": "d-3:dot.2",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.3": {
+            "partId": "dot.3",
+            "globalPartId": "d-3:dot.3",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "d-3:label",
+            "role": "suit-label",
+            "text": "3",
+            "contentKind": "label"
+          }
+        }
+      },
+      "d-4": {
+        "faceShortCode": "d-4",
+        "family": "dots",
+        "value": 4,
+        "parts": {
+          "dot.1": {
+            "partId": "dot.1",
+            "globalPartId": "d-4:dot.1",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.2": {
+            "partId": "dot.2",
+            "globalPartId": "d-4:dot.2",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.3": {
+            "partId": "dot.3",
+            "globalPartId": "d-4:dot.3",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.4": {
+            "partId": "dot.4",
+            "globalPartId": "d-4:dot.4",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "d-4:label",
+            "role": "suit-label",
+            "text": "4",
+            "contentKind": "label"
+          }
+        }
+      },
+      "d-5": {
+        "faceShortCode": "d-5",
+        "family": "dots",
+        "value": 5,
+        "parts": {
+          "dot.1": {
+            "partId": "dot.1",
+            "globalPartId": "d-5:dot.1",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.2": {
+            "partId": "dot.2",
+            "globalPartId": "d-5:dot.2",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.3": {
+            "partId": "dot.3",
+            "globalPartId": "d-5:dot.3",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.4": {
+            "partId": "dot.4",
+            "globalPartId": "d-5:dot.4",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.5": {
+            "partId": "dot.5",
+            "globalPartId": "d-5:dot.5",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "d-5:label",
+            "role": "suit-label",
+            "text": "5",
+            "contentKind": "label"
+          }
+        }
+      },
+      "d-6": {
+        "faceShortCode": "d-6",
+        "family": "dots",
+        "value": 6,
+        "parts": {
+          "dot.1": {
+            "partId": "dot.1",
+            "globalPartId": "d-6:dot.1",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.2": {
+            "partId": "dot.2",
+            "globalPartId": "d-6:dot.2",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.3": {
+            "partId": "dot.3",
+            "globalPartId": "d-6:dot.3",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.4": {
+            "partId": "dot.4",
+            "globalPartId": "d-6:dot.4",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.5": {
+            "partId": "dot.5",
+            "globalPartId": "d-6:dot.5",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.6": {
+            "partId": "dot.6",
+            "globalPartId": "d-6:dot.6",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "d-6:label",
+            "role": "suit-label",
+            "text": "6",
+            "contentKind": "label"
+          }
+        }
+      },
+      "d-7": {
+        "faceShortCode": "d-7",
+        "family": "dots",
+        "value": 7,
+        "parts": {
+          "dot.1": {
+            "partId": "dot.1",
+            "globalPartId": "d-7:dot.1",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.2": {
+            "partId": "dot.2",
+            "globalPartId": "d-7:dot.2",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.3": {
+            "partId": "dot.3",
+            "globalPartId": "d-7:dot.3",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.4": {
+            "partId": "dot.4",
+            "globalPartId": "d-7:dot.4",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.5": {
+            "partId": "dot.5",
+            "globalPartId": "d-7:dot.5",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.6": {
+            "partId": "dot.6",
+            "globalPartId": "d-7:dot.6",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.7": {
+            "partId": "dot.7",
+            "globalPartId": "d-7:dot.7",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "d-7:label",
+            "role": "suit-label",
+            "text": "7",
+            "contentKind": "label"
+          }
+        }
+      },
+      "d-8": {
+        "faceShortCode": "d-8",
+        "family": "dots",
+        "value": 8,
+        "parts": {
+          "dot.1": {
+            "partId": "dot.1",
+            "globalPartId": "d-8:dot.1",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.2": {
+            "partId": "dot.2",
+            "globalPartId": "d-8:dot.2",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.3": {
+            "partId": "dot.3",
+            "globalPartId": "d-8:dot.3",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.4": {
+            "partId": "dot.4",
+            "globalPartId": "d-8:dot.4",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.5": {
+            "partId": "dot.5",
+            "globalPartId": "d-8:dot.5",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.6": {
+            "partId": "dot.6",
+            "globalPartId": "d-8:dot.6",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.7": {
+            "partId": "dot.7",
+            "globalPartId": "d-8:dot.7",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.8": {
+            "partId": "dot.8",
+            "globalPartId": "d-8:dot.8",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "d-8:label",
+            "role": "suit-label",
+            "text": "8",
+            "contentKind": "label"
+          }
+        }
+      },
+      "d-9": {
+        "faceShortCode": "d-9",
+        "family": "dots",
+        "value": 9,
+        "parts": {
+          "dot.1": {
+            "partId": "dot.1",
+            "globalPartId": "d-9:dot.1",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.2": {
+            "partId": "dot.2",
+            "globalPartId": "d-9:dot.2",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.3": {
+            "partId": "dot.3",
+            "globalPartId": "d-9:dot.3",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.4": {
+            "partId": "dot.4",
+            "globalPartId": "d-9:dot.4",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.5": {
+            "partId": "dot.5",
+            "globalPartId": "d-9:dot.5",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.6": {
+            "partId": "dot.6",
+            "globalPartId": "d-9:dot.6",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.7": {
+            "partId": "dot.7",
+            "globalPartId": "d-9:dot.7",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.8": {
+            "partId": "dot.8",
+            "globalPartId": "d-9:dot.8",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "dot.9": {
+            "partId": "dot.9",
+            "globalPartId": "d-9:dot.9",
+            "role": "dot",
+            "contentKind": "artwork"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "d-9:label",
+            "role": "suit-label",
+            "text": "9",
+            "contentKind": "label"
+          }
+        }
+      },
+      "wind-e": {
+        "faceShortCode": "wind-e",
+        "family": "winds",
+        "parts": {
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "wind-e:glyph",
+            "role": "wind-character",
+            "text": "東",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "wind-e:label",
+            "role": "wind-label",
+            "text": "E",
+            "contentKind": "label"
+          }
+        }
+      },
+      "wind-s": {
+        "faceShortCode": "wind-s",
+        "family": "winds",
+        "parts": {
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "wind-s:glyph",
+            "role": "wind-character",
+            "text": "南",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "wind-s:label",
+            "role": "wind-label",
+            "text": "S",
+            "contentKind": "label"
+          }
+        }
+      },
+      "wind-w": {
+        "faceShortCode": "wind-w",
+        "family": "winds",
+        "parts": {
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "wind-w:glyph",
+            "role": "wind-character",
+            "text": "西",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "wind-w:label",
+            "role": "wind-label",
+            "text": "W",
+            "contentKind": "label"
+          }
+        }
+      },
+      "wind-n": {
+        "faceShortCode": "wind-n",
+        "family": "winds",
+        "parts": {
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "wind-n:glyph",
+            "role": "wind-character",
+            "text": "北",
+            "contentKind": "glyph"
+          },
+          "label": {
+            "partId": "label",
+            "globalPartId": "wind-n:label",
+            "role": "wind-label",
+            "text": "N",
+            "contentKind": "label"
+          }
+        }
+      },
+      "dragon-r": {
+        "faceShortCode": "dragon-r",
+        "family": "dragons",
+        "parts": {
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "dragon-r:mainArtwork",
+            "role": "dragon-artwork",
+            "paletteIndex": "dragon-red",
+            "contentKind": "artwork"
+          }
+        }
+      },
+      "dragon-g": {
+        "faceShortCode": "dragon-g",
+        "family": "dragons",
+        "parts": {
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "dragon-g:mainArtwork",
+            "role": "dragon-artwork",
+            "paletteIndex": "dragon-green",
+            "contentKind": "artwork"
+          }
+        }
+      },
+      "dragon-w": {
+        "faceShortCode": "dragon-w",
+        "family": "dragons",
+        "parts": {
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "dragon-w:mainArtwork",
+            "role": "dragon-artwork",
+            "paletteIndex": "dragon-white",
+            "contentKind": "artwork",
+            "allowEmpty": true
+          }
+        }
+      },
+      "flower-1": {
+        "faceShortCode": "flower-1",
+        "family": "flowers",
+        "value": 1,
+        "parts": {
+          "label": {
+            "partId": "label",
+            "globalPartId": "flower-1:label",
+            "role": "flower-label",
+            "text": "1",
+            "contentKind": "label"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "flower-1:glyph",
+            "role": "flower-character",
+            "text": "梅",
+            "contentKind": "glyph"
+          },
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "flower-1:mainArtwork",
+            "role": "main-artwork",
+            "paletteIndex": "flower-1",
+            "contentKind": "artwork"
+          }
+        }
+      },
+      "flower-2": {
+        "faceShortCode": "flower-2",
+        "family": "flowers",
+        "value": 2,
+        "parts": {
+          "label": {
+            "partId": "label",
+            "globalPartId": "flower-2:label",
+            "role": "flower-label",
+            "text": "2",
+            "contentKind": "label"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "flower-2:glyph",
+            "role": "flower-character",
+            "text": "蘭",
+            "contentKind": "glyph"
+          },
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "flower-2:mainArtwork",
+            "role": "main-artwork",
+            "paletteIndex": "flower-2",
+            "contentKind": "artwork"
+          }
+        }
+      },
+      "flower-3": {
+        "faceShortCode": "flower-3",
+        "family": "flowers",
+        "value": 3,
+        "parts": {
+          "label": {
+            "partId": "label",
+            "globalPartId": "flower-3:label",
+            "role": "flower-label",
+            "text": "3",
+            "contentKind": "label"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "flower-3:glyph",
+            "role": "flower-character",
+            "text": "菊",
+            "contentKind": "glyph"
+          },
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "flower-3:mainArtwork",
+            "role": "main-artwork",
+            "paletteIndex": "flower-3",
+            "contentKind": "artwork"
+          }
+        }
+      },
+      "flower-4": {
+        "faceShortCode": "flower-4",
+        "family": "flowers",
+        "value": 4,
+        "parts": {
+          "label": {
+            "partId": "label",
+            "globalPartId": "flower-4:label",
+            "role": "flower-label",
+            "text": "4",
+            "contentKind": "label"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "flower-4:glyph",
+            "role": "flower-character",
+            "text": "竹",
+            "contentKind": "glyph"
+          },
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "flower-4:mainArtwork",
+            "role": "main-artwork",
+            "paletteIndex": "flower-4",
+            "contentKind": "artwork"
+          }
+        }
+      },
+      "season-1": {
+        "faceShortCode": "season-1",
+        "family": "seasons",
+        "value": 1,
+        "parts": {
+          "label": {
+            "partId": "label",
+            "globalPartId": "season-1:label",
+            "role": "season-label",
+            "text": "1",
+            "contentKind": "label"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "season-1:glyph",
+            "role": "season-character",
+            "text": "春",
+            "contentKind": "glyph"
+          },
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "season-1:mainArtwork",
+            "role": "main-artwork",
+            "paletteIndex": "season-1",
+            "contentKind": "artwork"
+          }
+        }
+      },
+      "season-2": {
+        "faceShortCode": "season-2",
+        "family": "seasons",
+        "value": 2,
+        "parts": {
+          "label": {
+            "partId": "label",
+            "globalPartId": "season-2:label",
+            "role": "season-label",
+            "text": "2",
+            "contentKind": "label"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "season-2:glyph",
+            "role": "season-character",
+            "text": "夏",
+            "contentKind": "glyph"
+          },
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "season-2:mainArtwork",
+            "role": "main-artwork",
+            "paletteIndex": "season-2",
+            "contentKind": "artwork"
+          }
+        }
+      },
+      "season-3": {
+        "faceShortCode": "season-3",
+        "family": "seasons",
+        "value": 3,
+        "parts": {
+          "label": {
+            "partId": "label",
+            "globalPartId": "season-3:label",
+            "role": "season-label",
+            "text": "3",
+            "contentKind": "label"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "season-3:glyph",
+            "role": "season-character",
+            "text": "秋",
+            "contentKind": "glyph"
+          },
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "season-3:mainArtwork",
+            "role": "main-artwork",
+            "paletteIndex": "season-3",
+            "contentKind": "artwork"
+          }
+        }
+      },
+      "season-4": {
+        "faceShortCode": "season-4",
+        "family": "seasons",
+        "value": 4,
+        "parts": {
+          "label": {
+            "partId": "label",
+            "globalPartId": "season-4:label",
+            "role": "season-label",
+            "text": "4",
+            "contentKind": "label"
+          },
+          "glyph": {
+            "partId": "glyph",
+            "globalPartId": "season-4:glyph",
+            "role": "season-character",
+            "text": "冬",
+            "contentKind": "glyph"
+          },
+          "mainArtwork": {
+            "partId": "mainArtwork",
+            "globalPartId": "season-4:mainArtwork",
+            "role": "main-artwork",
+            "paletteIndex": "season-4",
+            "contentKind": "artwork"
+          }
+        }
+      }
+    },
+    "assignmentHints": {
+      "partId": {
+        "label": {
+          "position": "top-left",
+          "description": "Small Arabic number or NSEW direction marker."
+        },
+        "glyph": {
+          "position": "top-right",
+          "description": "Text-like glyph separate from the main body or artwork when present."
+        }
+      },
+      "familyPartId": {
+        "c.body": {
+          "position": "bottom",
+          "linkColor": true,
+          "description": "Main character-suit body glyph."
+        },
+        "c.glyph": {
+          "position": "top",
+          "linkColor": true,
+          "description": "Overhead Chinese number glyph on character-suit faces."
+        },
+        "wind.glyph": {
+          "region": "body",
+          "description": "Main Chinese wind glyph."
+        },
+        "flower.label": {
+          "position": "top-right",
+          "description": "Flower numeric label."
+        },
+        "flower.glyph": {
+          "position": "top-left",
+          "description": "Flower Chinese character glyph."
+        },
+        "season.glyph": {
+          "position": "top-right",
+          "description": "Season Chinese character glyph."
+        }
+      },
+      "partPattern": {
+        "bamboo.*": {
+          "patternType": "repeated-artwork",
+          "description": "Repeated bamboo artwork semantic parts."
+        },
+        "bambooGroup.*": {
+          "patternType": "grouped-repeated-artwork",
+          "description": "Grouped bamboo artwork semantic parts, such as b-8."
+        },
+        "dot.*": {
+          "patternType": "repeated-artwork",
+          "description": "Repeated dot artwork semantic parts."
+        }
+      },
+      "role": {
+        "dragon-artwork": {
+          "patternType": "free-form-artwork",
+          "description": "Single free-form dragon artwork part."
+        },
+        "main-artwork": {
+          "patternType": "free-form-artwork",
+          "description": "Single free-form main artwork part."
+        }
+      }
+    }
+  },
+  "assetPipeline": {
+    "schemaVersion": 1,
+    "faces": {}
+  }
+}

@@ -108,6 +108,28 @@ Expand when needed:
 The build and asset flow has separate rules from runtime feature ownership.
 Do not infer asset behavior from component placement alone.
 
+Browser apps are built and served through the repo's Polylith build
+definitions and npm scripts. Prefer the existing npm scripts when they match
+the task:
+
+- `npm run build` builds all configured apps through `polylith build --all`.
+- `npm start` serves configured apps through `polylith serve --all`.
+- `npm run dev` starts the repo's watch/server dev loop.
+- `npm run dev:watch` starts only the Polylith watch side.
+- `npm run dev:serve` starts only the server side.
+
+For a specific build that does not have an npm script, direct Polylith commands
+such as `npx polylith build 3d-poc` are acceptable, but check npm scripts
+first. Avoid starting ad hoc static servers as the default way to run or verify
+the app; use them only as explicit one-off artifact smoke tests.
+
+When generated or copied assets are changed while the user's watcher/server is
+already running, the watcher may not notice newly added asset files. In that
+case, either tell the user they may need to restart the watcher, or copy the
+changed asset files into the matching `dist` location as a temporary live-dev
+convenience. Let the normal builder reconcile those assets later. Keep this
+shortcut to assets only, not source or build configuration.
+
 Open the build topic when a task involves:
 
 - copied assets

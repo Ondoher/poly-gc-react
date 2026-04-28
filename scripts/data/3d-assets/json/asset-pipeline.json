@@ -1,0 +1,61 @@
+{
+  "description": "JSON-driven 3D asset pipeline jobs for preprocessed Mahjong face SVGs.",
+  "defaultJob": "wiki-season-2",
+  "poc": {
+    "manifestPath": "scripts/output/3d-assets/models/poc-models.json",
+    "syncDist": true,
+    "tiles": [
+      {
+        "type": "inlay",
+        "key": "d-7-baseline",
+        "position": [-1.68, 0.72, 0]
+      },
+      {
+        "type": "inlay",
+        "key": "baseline",
+        "position": [-0.84, 0.72, 0]
+      },
+      {
+        "type": "inlay",
+        "key": "wiki-season-2-baseline",
+        "position": [0, 0.72, 0]
+      },
+      {
+        "type": "inlay",
+        "key": "d-1-baseline",
+        "position": [0.84, 0.72, 0]
+      },
+      {
+        "type": "inlay",
+        "key": "wiki-b-8-baseline",
+        "position": [1.68, 0.72, 0]
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "id": "wiki-season-2",
+      "tilesetId": "wiki",
+      "faceKey": "season-2",
+      "metadata": "scripts/output/3d-assets/metadata-inference/tileset-glyphs.reviewed.json",
+      "stages": ["preprocess", "cutter", "stamped-pair", "inlay"],
+      "poc": {
+        "include": true,
+        "type": "inlay",
+        "key": "wiki-season-2-baseline"
+      }
+    },
+    {
+      "id": "wiki-b-8",
+      "tilesetId": "wiki",
+      "faceKey": "b-8",
+      "metadata": "scripts/output/3d-assets/metadata-inference/tileset-glyphs.reviewed.json",
+      "stages": ["preprocess", "cutter", "stamped-pair", "inlay"],
+      "poc": {
+        "include": true,
+        "type": "inlay",
+        "key": "wiki-b-8-baseline"
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "flower-1": {
+    "sourceType": "svg",
+    "svgPath": "scripts/data/3d-assets/other-source-svgs/Plum.svg",
+    "notes": "Vector-backed experiment using the Plum.svg glyph with bitmap-faithful palette."
+  }
+}

@@ -8,6 +8,71 @@ Because this repo uses Polylith, the browser test lane should follow the same
 Polylith-driven build pattern as other Polylith apps rather than inventing a
 separate ad hoc browser test pipeline.
 
+## Current Test Support
+
+The repo currently has two unit-test lanes:
+
+- UI/browser unit tests use Jasmine specs bundled by Polylith and run by Karma
+  in `ChromeHeadless`.
+- Non-UI engine unit tests use Jasmine directly through the engine-specific
+  Jasmine config.
+
+Current commands:
+
+- `npm run test:ui:gc` builds and runs the browser/UI test lane.
+- `npm test` currently delegates to `npm run test:ui:gc`.
+- `npm run karma` runs Karma against the already-built browser test output.
+- `npm run dev:tests:gc` runs the Polylith browser test build in watch mode.
+- `npm run test:engines` runs non-UI engine specs with Jasmine.
+- `npm run test:pipeline` runs non-browser pipeline specs with Jasmine.
+- `npm run test:scripts` runs all non-browser specs discovered under
+  `scripts`.
+
+There are now focused direct-Jasmine lanes for engines and SVG preprocessor
+pipeline tests, plus a broader scripts lane for tests that live near script
+code under `scripts`.
+
+The scripts lane now includes local specs for shared script helpers. Shared
+script code lives under `scripts/shared`, with specs placed nearby in
+`scripts/shared/_tests`.
+
+## Domain-Level Testing
+
+Unit tests should cover specific code behavior, but the suite should also
+include domain-level tests that read like product or pipeline promises. These
+tests are especially useful for script pipelines where a helper's real value is
+that it preserves facts required by later stages.
+
+The intended testing posture is test-following-development rather than strict
+TDD, even if day-to-day work sometimes varies. Design and implementation
+usually come first. Tests should then be written against the existing code and
+intended behavior so they consistently verify the quality and correctness
+promises that development has established and should preserve as work
+continues.
+
+For example, SVG preprocessor tests should not only assert individual helper
+return values. They should also cover scenarios such as:
+
+- tile chrome is identified as discardable while face artwork is preserved
+- white source paths remain available as cutout candidates without becoming
+  independent alignment artwork
+- source identity and ancestry survive decomposition and nested transforms
+- small top-corner labels or glyphs are discoverable before alignment
+- large body artwork is not mistaken for optional glyphs
+- cutouts attach to nearby, containing, or shared-group paint rather than
+  unrelated artwork
+- unsupported or degenerate SVG noise is ignored without crashing extraction
+- coordinate facts such as bounds, centers, and transforms remain stable in
+  source coordinate space
+- repeated artwork members remain separable where possible for later identity
+  resolution
+
+The practical guideline is to mix both styles:
+
+- code-level tests pin down small exported functions and edge cases
+- domain-level tests describe the pipeline contract in the language of the
+  stage, even when they exercise several helpers together
+
 ## Core UI Test Stack
 
 The intended browser/UI test lane should use:

@@ -1,0 +1,20 @@
+{
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-presentation-flower-1.glb",
+  "width": 0.79,
+  "height": 0.5,
+  "depth": 1.08,
+  "radius": 0.08,
+  "topColorPath": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\images\\generated\\top-maps\\flower-1\\top-color.png",
+  "maskPath": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\images\\generated\\top-maps\\flower-1\\top-mask.png",
+  "reliefPath": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\images\\generated\\top-maps\\flower-1\\top-relief.png",
+  "meshNames": {
+    "body": "tilePresentationBody",
+    "top": "tilePresentationTop"
+  },
+  "notes": [
+    "Presentation asset: same solid body baseline as the boolean experiment body, plus a carved top mesh.",
+    "The body geometry matches the boolean experiment target so silhouette and body shadow can be compared directly.",
+    "The top relief geometry is baked from top-mask/top-relief at export time.",
+    "The top color map is embedded into the GLB so the POC can render this asset directly without material overrides."
+  ]
+}

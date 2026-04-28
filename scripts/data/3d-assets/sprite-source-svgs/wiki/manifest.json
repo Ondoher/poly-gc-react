@@ -1,0 +1,209 @@
+{
+    "description":  "Per-face source SVGs migrated from the legacy wiki source folder into the standard sprite source layout.",
+    "sheetId":  "wiki",
+    "generatedAt":  "2026-04-29T17:30:42.0255499Z",
+    "outputDir":  "scripts/data/3d-assets/sprite-source-svgs/wiki",
+    "sourceSvgHints":  {
+                           "tileBackgroundElementIds":  [
+                                                            "rect4031",
+                                                            "rect3767",
+                                                            "rect3861",
+                                                            "rect3765",
+                                                            "rect3008",
+                                                            "path3932",
+                                                            "path3936",
+                                                            "path3882"
+                                                        ]
+                       },
+    "faces":  {
+                  "b-1":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/b-1.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/b-1.svg"
+                          },
+                  "b-2":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/b-2.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/b-2.svg"
+                          },
+                  "b-3":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/b-3.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/b-3.svg"
+                          },
+                  "b-4":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/b-4.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/b-4.svg"
+                          },
+                  "b-5":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/b-5.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/b-5.svg"
+                          },
+                  "b-6":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/b-6.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/b-6.svg"
+                          },
+                  "b-7":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/b-7.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/b-7.svg"
+                          },
+                  "b-8":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/b-8.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/b-8.svg"
+                          },
+                  "b-9":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/b-9.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/b-9.svg"
+                          },
+                  "c-1":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/c-1.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/c-1.svg"
+                          },
+                  "c-2":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/c-2.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/c-2.svg"
+                          },
+                  "c-3":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/c-3.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/c-3.svg"
+                          },
+                  "c-4":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/c-4.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/c-4.svg"
+                          },
+                  "c-5":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/c-5.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/c-5.svg"
+                          },
+                  "c-6":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/c-6.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/c-6.svg"
+                          },
+                  "c-7":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/c-7.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/c-7.svg"
+                          },
+                  "c-8":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/c-8.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/c-8.svg"
+                          },
+                  "c-9":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/c-9.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/c-9.svg"
+                          },
+                  "d-1":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/d-1.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/d-1.svg"
+                          },
+                  "d-2":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/d-2.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/d-2.svg"
+                          },
+                  "d-3":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/d-3.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/d-3.svg"
+                          },
+                  "d-4":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/d-4.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/d-4.svg"
+                          },
+                  "d-5":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/d-5.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/d-5.svg"
+                          },
+                  "d-6":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/d-6.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/d-6.svg"
+                          },
+                  "d-7":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/d-7.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/d-7.svg"
+                          },
+                  "d-8":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/d-8.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/d-8.svg"
+                          },
+                  "d-9":  {
+                              "source":  "scripts/data/3d-assets/wiki-source-svgs/d-9.svg",
+                              "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/d-9.svg"
+                          },
+                  "dragon-g":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/dragon-g.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/dragon-g.svg",
+                                   "sourceMetadata":  {
+                                                          "outputOptions":  {
+                                                                                "layout":  {
+                                                                                               "scaleMode":  "largest-containing-box"
+                                                                                           }
+                                                                            }
+                                                      }
+                               },
+                  "dragon-r":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/dragon-r.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/dragon-r.svg",
+                                   "sourceMetadata":  {
+                                                          "outputOptions":  {
+                                                                                "layout":  {
+                                                                                               "scaleMode":  "largest-containing-box"
+                                                                                           }
+                                                                            }
+                                                      }
+                               },
+                  "dragon-w":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/dragon-w.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/dragon-w.svg",
+                                   "sourceMetadata":  {
+                                                          "outputOptions":  {
+                                                                                "layout":  {
+                                                                                               "scaleMode":  "largest-containing-box"
+                                                                                           }
+                                                                            }
+                                                      }
+                               },
+                  "flower-1":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/flower-1.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/flower-1.svg"
+                               },
+                  "flower-2":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/flower-2.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/flower-2.svg"
+                               },
+                  "flower-3":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/flower-3.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/flower-3.svg"
+                               },
+                  "flower-4":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/flower-4.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/flower-4.svg"
+                               },
+                  "season-1":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/season-1.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/season-1.svg"
+                               },
+                  "season-2":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/season-2.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/season-2.svg"
+                               },
+                  "season-3":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/season-3.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/season-3.svg"
+                               },
+                  "season-4":  {
+                                   "source":  "scripts/data/3d-assets/wiki-source-svgs/season-4.svg",
+                                   "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/season-4.svg"
+                               },
+                  "wind-e":  {
+                                 "source":  "scripts/data/3d-assets/wiki-source-svgs/wind-e.svg",
+                                 "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/wind-e.svg"
+                             },
+                  "wind-n":  {
+                                 "source":  "scripts/data/3d-assets/wiki-source-svgs/wind-n.svg",
+                                 "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/wind-n.svg"
+                             },
+                  "wind-s":  {
+                                 "source":  "scripts/data/3d-assets/wiki-source-svgs/wind-s.svg",
+                                 "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/wind-s.svg"
+                             },
+                  "wind-w":  {
+                                 "source":  "scripts/data/3d-assets/wiki-source-svgs/wind-w.svg",
+                                 "output":  "scripts/data/3d-assets/sprite-source-svgs/wiki/wind-w.svg"
+                             }
+              }
+}

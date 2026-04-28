@@ -194,9 +194,9 @@ type LayoutCandidateFit = {
 }
 
 /**
- * Describe the full output of one layout-scaling calculation.
+ * Describe the full output of one tile-metrics calculation.
  */
-type LayoutScalingResult = {
+type TileMetricsResult = {
 	/** Occupied logical bounds for the active layout. */
 	layoutBounds: LayoutBounds | null;
 	/** Available space after any padding adjustments. */
@@ -222,7 +222,7 @@ type LayoutScalingResult = {
  * controller can translate `metricSetId` into geometry classes and apply the
  * numeric values as CSS custom properties or other view state.
  */
-type LayoutScalingViewState = {
+type TileMetricsViewState = {
 	/** Selected generated metric-family id for the current fit. */
 	metricSetId: LayoutMetricSetId | null;
 	/** Final chosen scale for the current fit. */
@@ -232,12 +232,12 @@ type LayoutScalingViewState = {
 }
 
 /**
- * Describe the app-facing inputs accepted by the layout-scaling service.
+ * Describe the app-facing inputs accepted by the tile-metrics model.
  *
  * This config is intended to be passed as one complete request to the
- * stateless layout-scaling service.
+ * stateless tile-metrics model.
  */
-type LayoutScalingConfig = {
+type TileMetricsConfig = {
 	/** Optional active layout object whose positions can be derived automatically. */
 	layout?: Layout | null;
 	/** Optional explicit tile positions when a full layout object is not supplied. */

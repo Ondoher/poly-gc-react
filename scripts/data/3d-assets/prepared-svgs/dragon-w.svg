@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 94 136">
+	<title>dragon-w generic-special dragon face</title>
+	<desc>
+		Special-case dragon preprocessing. Dragon artwork is artwork-only; no
+		number or letter is generated. Source white-dragon geometry defines the
+		family scale, fitted uniformly into the canonical or simulated
+		white-dragon reference box so source aspect ratio is preserved.
+	</desc>
+	<g id="dragon-art" data-match-status="matched-dragon-white-box">
+		<path fill="#0405C3" transform="matrix(0.502309 0 0 0.502309 97.943128 -152.887275)" id="dragon-art-part-1" data-special-role="dragon-art" data-dragon-calibration="source-white-box-family-transform" data-reference-color="#0505D1" data-source-id="" data-source-class="st7" d="M-59 356.7h-89.4c-12.8 0-19.2 4.7-19.2 14.1v141.3c0 9.4 6.4 14.1 19.2 14.1H-59c12.8 0 19.2-4.7 19.2-14.1V370.8c0-9.4-6.4-14.1-19.2-14.1zm9.8 155.4c0 6.2-3.3 9.3-9.8 9.3h-89.4c-6.5 0-9.8-3.1-9.8-9.3V370.8c0-6.2 3.3-9.3 9.8-9.3H-59c6.5 0 9.8 3.1 9.8 9.3v141.3z"/>
+		<path fill="#0405C3" transform="matrix(0.502309 0 0 0.502309 97.943128 -152.887275)" id="dragon-art-part-2" data-special-role="dragon-art" data-dragon-calibration="source-white-box-family-transform" data-reference-color="#0505D1" data-source-id="" data-source-class="st7" d="M-70.4 367.5H-137c-9.5 0-14.3 4.1-14.3 12.3v123.3c0 8.2 4.8 12.3 14.3 12.3h66.6c9.5 0 14.3-4.1 14.3-12.3V379.8c0-8.2-4.8-12.3-14.3-12.3zm-73.9 12.3c0-5.4 2.4-8.1 7.3-8.1h4.4v4.8c0 5.4-2.4 8.1-7.3 8.1h-4.4v-4.8zm11.7 131.4h-4.4c-4.8 0-7.3-2.7-7.3-8.1v-4.8h4.4c4.8 0 7.3 2.7 7.3 8.1v4.8zm69.4-8.1c0 5.4-2.4 8.1-7.3 8.1h-4.4v-4.8c0-5.4 2.4-8.1 7.3-8.1h4.4v4.8zm0-9.1h-4.4c-7.6 0-11.4 4.1-11.4 12.3v4.8h-49.4v-4.8c0-8.2-3.8-12.3-11.4-12.3h-4.4V388.8h4.4c7.6 0 11.4-4.1 11.4-12.3v-4.8H-79v4.8c0 8.2 3.8 12.3 11.4 12.3h4.4V494zm0-109.4h-4.4c-4.8 0-7.3-2.7-7.3-8.1v-4.8h4.4c4.8 0 7.3 2.7 7.3 8.1v4.8z"/>
+	</g>
+</svg>

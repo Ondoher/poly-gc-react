@@ -1,0 +1,2353 @@
+{
+    "generatedOn":  "2026-05-07T15:21:47.4902661Z",
+    "squareSize":  50,
+    "outputDirectory":  "scripts/data/3d-assets/label-ocr/templates",
+    "copiedExperimentTemplates":  [
+                                      {
+                                          "source":  "scripts/output/font-averages/average-1-serif-square-50x50.png",
+                                          "file":  "digit-1-serif.50.png",
+                                          "note":  "curated shape-family experiment template"
+                                      },
+                                      {
+                                          "source":  "scripts/output/font-averages/average-1-sans-baseless-square-50x50.png",
+                                          "file":  "digit-1-sans-baseless.50.png",
+                                          "note":  "curated shape-family experiment template"
+                                      }
+                                  ],
+    "generatedFrom100FontList":  [
+                                     {
+                                         "fontCount":  90,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               }
+                                                           ],
+                                         "glyph":  "2",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Diwani Letter",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "DecoType Naskh Extensions",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Diwani Simple Outline 2",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Italic Outline Art",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Monotype Koufi",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "Old Antic Decorative",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Simple Indust Shaded",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Simple Indust Outline",
+                                                       "Farsi Simple Bold",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol",
+                                                       "DecoType Naskh Swashes",
+                                                       "DecoType Naskh Special"
+                                                   ],
+                                         "excludedCount":  10,
+                                         "file":  "digit-2.50.png"
+                                     },
+                                     {
+                                         "fontCount":  90,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               }
+                                                           ],
+                                         "glyph":  "3",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Diwani Letter",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "DecoType Naskh Extensions",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Diwani Simple Outline 2",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Italic Outline Art",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Monotype Koufi",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "Old Antic Decorative",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Simple Indust Shaded",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Simple Indust Outline",
+                                                       "Farsi Simple Bold",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol",
+                                                       "DecoType Naskh Swashes",
+                                                       "DecoType Naskh Special"
+                                                   ],
+                                         "excludedCount":  10,
+                                         "file":  "digit-3.50.png"
+                                     },
+                                     {
+                                         "fontCount":  90,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               }
+                                                           ],
+                                         "glyph":  "4",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Diwani Letter",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "DecoType Naskh Extensions",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Diwani Simple Outline 2",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Italic Outline Art",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Monotype Koufi",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "Old Antic Decorative",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Simple Indust Shaded",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Simple Indust Outline",
+                                                       "Farsi Simple Bold",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol",
+                                                       "DecoType Naskh Swashes",
+                                                       "DecoType Naskh Special"
+                                                   ],
+                                         "excludedCount":  10,
+                                         "file":  "digit-4.50.png"
+                                     },
+                                     {
+                                         "fontCount":  90,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               }
+                                                           ],
+                                         "glyph":  "5",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Diwani Letter",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "DecoType Naskh Extensions",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Diwani Simple Outline 2",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Italic Outline Art",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Monotype Koufi",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "Old Antic Decorative",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Simple Indust Shaded",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Simple Indust Outline",
+                                                       "Farsi Simple Bold",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol",
+                                                       "DecoType Naskh Swashes",
+                                                       "DecoType Naskh Special"
+                                                   ],
+                                         "excludedCount":  10,
+                                         "file":  "digit-5.50.png"
+                                     },
+                                     {
+                                         "fontCount":  90,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               }
+                                                           ],
+                                         "glyph":  "6",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Diwani Letter",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "DecoType Naskh Extensions",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Diwani Simple Outline 2",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Italic Outline Art",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Monotype Koufi",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "Old Antic Decorative",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Simple Indust Shaded",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Simple Indust Outline",
+                                                       "Farsi Simple Bold",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol",
+                                                       "DecoType Naskh Swashes",
+                                                       "DecoType Naskh Special"
+                                                   ],
+                                         "excludedCount":  10,
+                                         "file":  "digit-6.50.png"
+                                     },
+                                     {
+                                         "fontCount":  90,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               }
+                                                           ],
+                                         "glyph":  "7",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Diwani Letter",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "DecoType Naskh Extensions",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Diwani Simple Outline 2",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Italic Outline Art",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Monotype Koufi",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "Old Antic Decorative",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Simple Indust Shaded",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Simple Indust Outline",
+                                                       "Farsi Simple Bold",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol",
+                                                       "DecoType Naskh Swashes",
+                                                       "DecoType Naskh Special"
+                                                   ],
+                                         "excludedCount":  10,
+                                         "file":  "digit-7.50.png"
+                                     },
+                                     {
+                                         "fontCount":  90,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               }
+                                                           ],
+                                         "glyph":  "8",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Diwani Letter",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "DecoType Naskh Extensions",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Diwani Simple Outline 2",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Italic Outline Art",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Monotype Koufi",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "Old Antic Decorative",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Simple Indust Shaded",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Simple Indust Outline",
+                                                       "Farsi Simple Bold",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol",
+                                                       "DecoType Naskh Swashes",
+                                                       "DecoType Naskh Special"
+                                                   ],
+                                         "excludedCount":  10,
+                                         "file":  "digit-8.50.png"
+                                     },
+                                     {
+                                         "fontCount":  90,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               }
+                                                           ],
+                                         "glyph":  "9",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Diwani Letter",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "DecoType Naskh Extensions",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Diwani Simple Outline 2",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Italic Outline Art",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Monotype Koufi",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "Old Antic Decorative",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Simple Indust Shaded",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Simple Indust Outline",
+                                                       "Farsi Simple Bold",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol",
+                                                       "DecoType Naskh Swashes",
+                                                       "DecoType Naskh Special"
+                                                   ],
+                                         "excludedCount":  10,
+                                         "file":  "digit-9.50.png"
+                                     },
+                                     {
+                                         "fontCount":  79,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Letter"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Extensions"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Simple Outline 2"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Italic Outline Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Monotype Koufi"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Old Antic Decorative"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Shaded"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Farsi Simple Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Swashes"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Special"
+                                                               }
+                                                           ],
+                                         "glyph":  "N",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol"
+                                                   ],
+                                         "excludedCount":  21,
+                                         "file":  "wind-n.50.png"
+                                     },
+                                     {
+                                         "fontCount":  79,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Letter"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Extensions"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Simple Outline 2"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Italic Outline Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Monotype Koufi"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Old Antic Decorative"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Shaded"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Farsi Simple Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Swashes"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Special"
+                                                               }
+                                                           ],
+                                         "glyph":  "S",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol"
+                                                   ],
+                                         "excludedCount":  21,
+                                         "file":  "wind-s.50.png"
+                                     },
+                                     {
+                                         "fontCount":  79,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Letter"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Extensions"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Simple Outline 2"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Italic Outline Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Monotype Koufi"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Old Antic Decorative"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Shaded"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Farsi Simple Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Swashes"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Special"
+                                                               }
+                                                           ],
+                                         "glyph":  "E",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol"
+                                                   ],
+                                         "excludedCount":  21,
+                                         "file":  "wind-e.50.png"
+                                     },
+                                     {
+                                         "fontCount":  79,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Letter"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Extensions"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Simple Outline 2"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Italic Outline Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Monotype Koufi"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Old Antic Decorative"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Shaded"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Farsi Simple Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Swashes"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Special"
+                                                               }
+                                                           ],
+                                         "glyph":  "W",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol"
+                                                   ],
+                                         "excludedCount":  21,
+                                         "file":  "wind-w.50.png"
+                                     },
+                                     {
+                                         "fontCount":  79,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Letter"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Extensions"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Simple Outline 2"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Italic Outline Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Monotype Koufi"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Old Antic Decorative"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Shaded"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Farsi Simple Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Swashes"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Special"
+                                                               }
+                                                           ],
+                                         "glyph":  "C",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol"
+                                                   ],
+                                         "excludedCount":  21,
+                                         "file":  "dragon-c.50.png"
+                                     },
+                                     {
+                                         "fontCount":  79,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Letter"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Extensions"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Simple Outline 2"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Italic Outline Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Monotype Koufi"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Old Antic Decorative"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Shaded"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Farsi Simple Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Swashes"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Special"
+                                                               }
+                                                           ],
+                                         "glyph":  "F",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol"
+                                                   ],
+                                         "excludedCount":  21,
+                                         "file":  "dragon-f.50.png"
+                                     },
+                                     {
+                                         "fontCount":  79,
+                                         "excludedFonts":  [
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Dusky"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Letter"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYGothic-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "PT Bold Mirror"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Extensions"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Diwani Simple Outline 2"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Kufi Extended Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Led Italic Font"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Italic Outline Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYShortSamul-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Monotype Koufi"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPMokGak-Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Old Antic Decorative"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Shaded"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYSinMyeongJo-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "HYPost-Medium"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Simple Indust Outline"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Farsi Simple Bold"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "Bold Italic Art"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Swashes"
+                                                               },
+                                                               {
+                                                                   "reason":  "missing-glyph",
+                                                                   "font":  "DecoType Naskh Special"
+                                                               }
+                                                           ],
+                                         "glyph":  "P",
+                                         "fonts":  [
+                                                       "Centaur",
+                                                       "Algerian",
+                                                       "Microsoft JhengHei UI Light",
+                                                       "NSimSun",
+                                                       "Leelawadee UI Semilight",
+                                                       "HYMyeongJo-Extra",
+                                                       "Yu Gothic UI Light",
+                                                       "HYGothic-Extra",
+                                                       "Arial",
+                                                       "Lucida Console",
+                                                       "Imprint MT Shadow",
+                                                       "Tahoma",
+                                                       "Tempus Sans ITC",
+                                                       "Yu Gothic UI Semilight",
+                                                       "HP Simplified",
+                                                       "Blackadder ITC",
+                                                       "Lucida Handwriting",
+                                                       "Sitka Display",
+                                                       "Franklin Gothic Demi Cond",
+                                                       "Perpetua",
+                                                       "Stencil",
+                                                       "Arial Narrow",
+                                                       "Bahnschrift Light",
+                                                       "Forte",
+                                                       "MS PGothic",
+                                                       "Courier New",
+                                                       "Corbel",
+                                                       "Segoe Script",
+                                                       "Tw Cen MT Condensed",
+                                                       "Myanmar Text",
+                                                       "Jokerman",
+                                                       "Bradley Hand ITC",
+                                                       "SimHei",
+                                                       "AGA Arabesque Desktop",
+                                                       "OCR A Extended",
+                                                       "Calisto MT",
+                                                       "Century Schoolbook",
+                                                       "Bahnschrift Condensed",
+                                                       "UD Digi Kyokasho N-B",
+                                                       "Microsoft Sans Serif",
+                                                       "STCaiyun",
+                                                       "Noto Sans JP DemiLight",
+                                                       "Yu Gothic Light",
+                                                       "Microsoft YaHei UI Light",
+                                                       "Franklin Gothic Heavy",
+                                                       "Georgia",
+                                                       "Cambria",
+                                                       "Leelawadee UI",
+                                                       "Century",
+                                                       "Parchment",
+                                                       "Comic Sans MS",
+                                                       "Microsoft New Tai Lue",
+                                                       "Microsoft PhagsPa",
+                                                       "Javanese Text",
+                                                       "Copperplate Gothic Light",
+                                                       "Segoe UI Semilight",
+                                                       "STXinwei",
+                                                       "Informal Roman",
+                                                       "Yet R",
+                                                       "Mongolian Baiti",
+                                                       "STFangsong",
+                                                       "Goudy Old Style",
+                                                       "Sitka Heading",
+                                                       "Old English Text MT",
+                                                       "Bell MT",
+                                                       "Californian FB",
+                                                       "Consolas",
+                                                       "MS UI Gothic",
+                                                       "Sitka Subheading",
+                                                       "High Tower Text",
+                                                       "UD Digi Kyokasho NP-R",
+                                                       "Yu Gothic UI Semibold",
+                                                       "Franklin Gothic Medium",
+                                                       "Lucida Sans",
+                                                       "Matura MT Script Capitals",
+                                                       "Bahnschrift SemiBold",
+                                                       "MS Mincho",
+                                                       "Magic R",
+                                                       "Symbol"
+                                                   ],
+                                         "excludedCount":  21,
+                                         "file":  "dragon-p.50.png"
+                                     }
+                                 ],
+    "sourceFontList":  "scripts/output/font-averages/average-2-100-random-fonts.txt",
+    "glyphAvailabilityCheck":  "WPF GlyphTypeface.CharacterToGlyphMap must contain the character before the font is rendered.",
+    "scoringModel":  "Pixel MAE over square-normalized darkness bitmaps; lower is better."
+}

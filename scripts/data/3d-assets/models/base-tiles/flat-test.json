@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "flat-test",
+  "label": "Flat Test",
+  "description": "Simpler flatter placeholder body for cutter diagnostics.",
+  "kind": "base-tile-glb",
+  "temporary": true,
+  "meshName": "baseTileBody",
+  "glb": "scripts/data/3d-assets/models/base-tiles/flat-test.glb",
+  "metadata": "scripts/data/3d-assets/models/base-tiles/flat-test.json",
+  "body": {
+    "width": 0.79,
+    "height": 0.46,
+    "depth": 1.08,
+    "radius": 0.07,
+    "bevelSize": 0.012,
+    "bevelThickness": 0.016,
+    "bevelSegments": 2,
+    "curveSegments": 10
+  },
+  "material": {
+    "color": "#eef1f4",
+    "opacity": 1
+  },
+  "notes": [
+    "Temporary generated placeholder for exercising base tile selection.",
+    "Replace with contracted production base tile GLBs when available."
+  ]
+}

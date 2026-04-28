@@ -5,7 +5,7 @@
 Mahjongg scaling is now in a partially integrated transition state.
 
 The repo already has real layout-metric generation and a real runtime
-`mj:layout-scaling` service. The shell board and settings preview now use that
+`mj:tile-metrics-model`. The shell board and settings preview now use that
 service for automatic metric-family selection and scaling, while persistence
 and controller state still carry some of the older preset-driven tile-size
 model.
@@ -21,13 +21,13 @@ The following pieces now exist in live code:
 - a dedicated layout CSS generator in
   [generate-layouts.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-layouts.js)
 - runtime metric ingestion and candidate selection in
-  [layout-scaling.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/services/layout-scaling.js)
+  [tile-metrics-model.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/models/tile-metrics-model.js)
 - shared scaled canvas hosting in
   [ScalingCanvas.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/ScalingCanvas.jsx)
 - live shell-board consumption in
   [Board.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/Board.jsx)
 - expanded service coverage in
-  [layout-scaling.spec.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/services/_tests/layout-scaling.spec.js)
+  [tile-metrics-model.spec.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/models/_tests/tile-metrics-model.spec.js)
 - settings tab cleanup in
   [SettingsDialog.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/SettingsDialog.jsx)
 - live settings preview fitting in
@@ -41,14 +41,14 @@ What that means in practice:
 - runtime code can already read full metric-family objects from CSS vars
 - metric-family comparison and fit scoring are no longer just planning notes
 - shell-mode board render now receives selected `metricSetId`, fitted canvas
-  size, board-canvas offset, and CSS `zoom` scale from `mj:layout-scaling`
+  size, board-canvas offset, and CSS `zoom` scale from `mj:tile-metrics-model`
 - settings preview and solution playback now delegate the repeated fit-state,
   resize-observer, CSS-variable, and canvas-offset plumbing to `ScalingCanvas`
 - auto-fit is currently triggered on startup, game generation, layout-mode
   transitions, portrait/landscape transitions, and debounced resize
 - the `Tile Size` settings tab has been removed
 - the settings preview now renders a mounted canvas and fits it through
-  `mj:layout-scaling` instead of generating a bitmap
+  `mj:tile-metrics-model` instead of generating a bitmap
 
 ## Still True In The Live MJ Flow
 
@@ -60,7 +60,7 @@ but these older pieces still exist:
 - viewport-threshold clamping has been deactivated, but the state shape has not
   been retired
 - `Board` still reads and persists `tilesizeKey` as legacy state
-- some layout-scaling tests still need expectation updates after the
+- some tile-metrics-model tests still need expectation updates after the
   board-center pixel extent change
 
 So the current system is neither purely old nor purely new:
@@ -76,11 +76,11 @@ When the scaling docs talk about the "current live flow," prefer this split:
 
 - current runtime substrate:
   - `layouts.css`
-  - `mj:layout-scaling`
+  - `mj:tile-metrics-model`
   - generated metric families
 - current live feature wiring:
-  - automatic shell-board fit via `mj:layout-scaling`
-  - mounted settings preview fit via `mj:layout-scaling`
+  - automatic shell-board fit via `mj:tile-metrics-model`
+  - mounted settings preview fit via `mj:tile-metrics-model`
   - legacy tile-size state retained around controller/persistence
   - persisted tile-size preference
 
@@ -88,7 +88,7 @@ If two notes disagree, the live code wins.
 
 ## Most Likely Next Steps
 
-1. refresh the stale layout-scaling tests for the board-center pixel extent
+1. refresh the stale tile-metrics-model tests for the board-center pixel extent
    model
 2. decide when to remove persisted `tilesizeKey`
 3. simplify or retire controller-facing tile-size state now that shell board

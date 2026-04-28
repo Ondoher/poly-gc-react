@@ -20,7 +20,7 @@ Target outcome:
 ## Current Status
 
 This work is now partially wired into the live MJ feature. The board and
-settings preview use the runtime scaling service for render size and
+settings preview use the tile metrics model for render size and
 metric-family choice, but persistence and controller state still carry some
 older tile-size assumptions.
 
@@ -32,7 +32,7 @@ older tile-size assumptions.
   - [metrics.js](/c:/dev/poly-gc-react/scripts/tile-css/metrics.js)
   - [generate-layouts.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-layouts.js)
 - the runtime now has a real
-  [layout-scaling service](/c:/dev/poly-gc-react/src/gc/features/mj/src/services/layout-scaling.js)
+  [tile metrics model](/c:/dev/poly-gc-react/src/gc/features/mj/src/models/tile-metrics-model.js)
   that:
   - reads metric-family objects from `mj:css-vars`
   - reads generated logical-grid dimensions from CSS vars
@@ -40,8 +40,8 @@ older tile-size assumptions.
   - scores candidate metric families
   - selects the best family and scale
 - the service now has broad direct coverage in
-  [layout-scaling.spec.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/services/_tests/layout-scaling.spec.js)
-- the shell board now consumes `mj:layout-scaling` from
+  [tile-metrics-model.spec.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/models/_tests/tile-metrics-model.spec.js)
+- the shell board now consumes `mj:tile-metrics-model` from
   [Board.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/Board.jsx)
   to select:
   - the generated metric family CSS class
@@ -51,7 +51,7 @@ older tile-size assumptions.
 - auto-fit currently runs on startup, game generation, expanded-mode changes,
   portrait/landscape switches, and debounced resize
 - the settings dialog no longer exposes user-selectable tile size
-- the settings preview now consumes `mj:layout-scaling` from
+- the settings preview now consumes `mj:tile-metrics-model` from
   [SettingsPreview.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/SettingsPreview.jsx)
   and renders a mounted `Canvas` instead of a generated bitmap
 - viewport-based allowed-size clamping in `mjController` has been deactivated
@@ -63,7 +63,7 @@ older tile-size assumptions.
   `maxTileSize`, even though viewport clamping is no longer the active sizing
   decision
 - `Board` still reads and persists `tilesizeKey` as legacy state
-- layout-scaling tests need another expectation pass after the move from
+- tile-metrics-model tests need another expectation pass after the move from
   occupied-bounds sizing to board-center pixel extents
 
 So the repo is in a transition state:
@@ -114,7 +114,7 @@ assuming a single incoming tile size.
 
 The current runtime metric-family contract is defined by
 `LAYOUT_METRIC_CSS_VAR_NAMES` in
-[layout-scaling.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/services/layout-scaling.js)
+[tile-metrics-model.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/models/tile-metrics-model.js)
 and by the generated values in
 [layouts.css](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-layout/layouts.css).
 
@@ -157,7 +157,7 @@ derive:
 
 ## Candidate Selection Rules
 
-The current chooser policy in `layout-scaling.js` is:
+The current chooser policy in `tile-metrics-model.js` is:
 
 1. prefer candidates inside the hard valid range
 2. where valid families overlap, prefer the larger base geometry
@@ -187,7 +187,7 @@ The remaining work is mostly integration work, not just design.
   does not receive injected transform offsets
 - decide whether `boardPixelCenter` should remain diagnostic-only or become
   part of the formal service return type
-- refresh stale layout-scaling spec expectations for the board-center pixel
+- refresh stale tile-metrics-model spec expectations for the board-center pixel
   extent model
 
 ### 2. Harden The Settings Preview Integration
@@ -209,21 +209,21 @@ The remaining work is mostly integration work, not just design.
 ## Tracking Checklist
 
 - [x] Shared generated layout metrics exist in `layouts.css`
-- [x] Runtime metric-family ingestion exists in `mj:layout-scaling`
+- [x] Runtime metric-family ingestion exists in `mj:tile-metrics-model`
 - [x] Candidate selection and fit scoring exist in live code
-- [x] Live shell board fit uses `mj:layout-scaling`
+- [x] Live shell board fit uses `mj:tile-metrics-model`
 - [x] Tile size removed from settings UI
 - [x] Preset viewport threshold logic deactivated for live board sizing
-- [x] Preview fit uses `mj:layout-scaling`
+- [x] Preview fit uses `mj:tile-metrics-model`
 - [ ] Tile size removed from persisted preferences
 - [ ] Controller tile-size state simplified or retired
-- [ ] Layout-scaling tests refreshed for board-center pixel extents
+- [ ] Tile-metrics-model tests refreshed for board-center pixel extents
 
 ## Immediate Next Step
 
 Next work session should:
 
-- update the remaining stale layout-scaling specs to match the board-center
+- update the remaining stale tile-metrics-model specs to match the board-center
   pixel extent model
 - decide whether to remove persisted `tilesizeKey` now or keep it temporarily
   for fallback/default metric selection

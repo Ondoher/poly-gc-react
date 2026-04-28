@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "referenceSetId": "default-large-faces",
+  "name": "Default Large Reference Faces",
+  "semanticBootstrap": {
+    "bootstrapId": "mahjong-face-reference-semantics",
+    "path": "scripts/data/3d-assets/json/reference-semantics/mahjong-face-reference-semantics.json",
+    "semanticCatalogVersion": 1
+  },
+  "source": {
+    "format": "png",
+    "path": "scripts/data/3d-assets/reference-faces/large-faces",
+    "filenamePattern": "{faceShortCode}.png"
+  },
+  "coordinateSpace": {
+    "imageSize": [164, 238],
+    "preparedViewBox": [0, 0, 94, 136]
+  },
+  "palette": {
+    "paletteId": "default-reference-artwork",
+    "description": "Palette used to segment visible artwork pixels from the current PNG reference faces.",
+    "colors": [
+      { "name": "yellow", "color": "#F6F610", "rgb": [246, 246, 16]},
+      { "name": "orange", "color": "#FF9900", "rgb": [255, 153, 0] },
+      { "name": "blue", "color": "#0505D1", "rgb": [5, 5, 209] },
+      { "name": "green", "color": "#2FC906", "rgb": [47, 201, 6] },
+      { "name": "red", "color": "#FC1D05", "rgb": [252, 29, 5]},
+      { "name": "black", "color": "#000000", "rgb": [0, 0, 0] }
+    ],
+    "segmentationDistanceThreshold": 12000
+  },
+  "provenance": {
+    "description": "Current large PNG reference face set used as the canonical structure source for SVG preprocessing."
+  }
+}

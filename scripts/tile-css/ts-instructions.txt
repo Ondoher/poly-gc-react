@@ -1,0 +1,30 @@
+Usage:
+
+node .\scripts\tile-css\tileface.js <size-name> [output-file] [--image-set]
+
+Examples:
+
+node .\scripts\tile-css\tileface.js tiny-face .\src\gc\features\mj\assets\css\tile-appearance\tiny-face.css --image-set
+node .\scripts\tile-css\tileface.js normal-face .\src\gc\features\mj\assets\css\tile-appearance\normal-face.css --image-set
+
+Notes:
+
+- `<size-name>` is one of:
+  - `normal-face`
+  - `medium-face`
+  - `small-face`
+  - `tiny-face`
+- `--image-set` makes the generator emit retina-aware CSS using:
+  - `file.png` for `1x`
+  - `file@2x.png` for `2x`
+- generated face images are face-only PNGs placed at the top left of the tile,
+  so the generated CSS also emits:
+  - `background-repeat: no-repeat`
+  - `background-position: 0 0`
+
+Related commands:
+
+- Generate runtime face/body assets:
+  `node .\scripts\tile-css\generate-tile-assets.js --config .\scripts\tile-css\assets\generate-runtime-assets.json`
+- Generate tiny-only face/body assets:
+  `node .\scripts\tile-css\generate-tile-assets.js --config .\scripts\tile-css\assets\generate-tiny-assets.json`

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 94 136">
+	<title>dragon-w generic-special dragon face</title>
+	<desc>
+		Special-case dragon preprocessing. Dragon artwork is artwork-only; no
+		number or letter is generated. Source white-dragon geometry defines the
+		family scale, fitted uniformly into the canonical or simulated
+		white-dragon reference box so source aspect ratio is preserved.
+	</desc>
+	<g id="dragon-art" data-match-status="matched-dragon-white-box">
+
+	</g>
+</svg>

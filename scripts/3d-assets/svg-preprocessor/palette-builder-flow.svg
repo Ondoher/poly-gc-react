@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">Palette builder and color picker flow</title>
+  <desc id="desc">A source bamboo part supplies absolute shade evidence. PaletteBuilder maps the part-local shade set into a fixed hue palette, and ColorPicker selects output colors from that palette.</desc>
+  <defs>
+    <linearGradient id="shade-scale" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#606f6a"/>
+    </marker>
+    <style>
+      .bg { fill: #f8faf8; }
+      .panel { fill: #ffffff; stroke: #c9d6d0; stroke-width: 1.5; rx: 8; }
+      .title { fill: #17231f; font: 700 19px Arial, sans-serif; }
+      .label { fill: #283833; font: 600 14px Arial, sans-serif; }
+      .small { fill: #53645f; font: 12px Arial, sans-serif; }
+      .tiny { fill: #53645f; font: 11px Arial, sans-serif; }
+      .arrow { stroke: #7a8a84; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .rule { stroke: #c6d4ce; stroke-width: 1; }
+      .scale-marker { stroke: #17231f; stroke-width: 2; }
+      .center-marker { stroke: #1d6f5f; stroke-width: 3; }
+      .swatch { stroke: #17231f; stroke-width: 1; }
+      .bamboo-stroke { stroke: #073900; stroke-width: 5; stroke-linejoin: round; }
+      .bamboo-body { fill: #2fc906; stroke: #073900; stroke-width: 3; }
+      .bamboo-detail { fill: none; stroke: #107602; stroke-width: 3; }
+      .bamboo-red-body { fill: #fc1d05; stroke: #7a0000; stroke-width: 3; }
+      .bamboo-red-detail { fill: none; stroke: #aa0000; stroke-width: 3; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1200" height="520"/>
+  <text class="title" x="40" y="45">Building and using a hue palette</text>
+  <text class="small" x="40" y="68">Shade is absolute lightness evidence. The part-local center only defines how those absolute shades map into palette entries.</text>
+
+  <rect class="panel" x="35" y="100" width="210" height="330"/>
+  <text class="label" x="55" y="130">1. Source part</text>
+  <text class="small" x="55" y="151">One accepted bamboo part</text>
+
+  <g transform="translate(92 180)">
+    <path class="bamboo-stroke" d="M 34 4 C 18 18 18 74 34 88 C 50 74 50 18 34 4 Z"/>
+    <path class="bamboo-body" d="M 34 4 C 18 18 18 74 34 88 C 50 74 50 18 34 4 Z"/>
+    <path class="bamboo-detail" d="M 22 29 C 30 34 38 34 46 29"/>
+    <path class="bamboo-detail" d="M 22 61 C 30 66 38 66 46 61"/>
+  </g>
+
+  <rect class="swatch" x="62" y="310" width="22" height="22" fill="#073900"/>
+  <text class="small" x="92" y="326">outline shade 0.15</text>
+  <rect class="swatch" x="62" y="342" width="22" height="22" fill="#2fc906"/>
+  <text class="small" x="92" y="358">body shade 0.50</text>
+  <rect class="swatch" x="62" y="374" width="22" height="22" fill="#73f246"/>
+  <text class="small" x="92" y="390">detail shade 0.72</text>
+
+  <path class="arrow" d="M 255 265 L 315 265"/>
+
+  <rect class="panel" x="325" y="100" width="280" height="330"/>
+  <text class="label" x="345" y="130">2. Absolute shade scale</text>
+  <text class="small" x="345" y="151">Measured between black and white</text>
+  <rect x="355" y="205" width="220" height="26" fill="url(#shade-scale)" stroke="#17231f" stroke-width="1"/>
+  <text class="tiny" x="355" y="247">black 0.0</text>
+  <text class="tiny" x="528" y="247">white 1.0</text>
+
+  <line class="scale-marker" x1="388" y1="195" x2="388" y2="239"/>
+  <circle cx="388" cy="192" r="6" fill="#073900" stroke="#17231f"/>
+  <text class="tiny" x="350" y="183">outline</text>
+
+  <line class="center-marker" x1="465" y1="189" x2="465" y2="242"/>
+  <circle cx="465" cy="186" r="7" fill="#2fc906" stroke="#17231f"/>
+  <text class="tiny" x="431" y="176">center/body</text>
+
+  <line class="scale-marker" x1="513" y1="195" x2="513" y2="239"/>
+  <circle cx="513" cy="192" r="6" fill="#73f246" stroke="#17231f"/>
+  <text class="tiny" x="491" y="183">detail</text>
+
+  <line class="rule" x1="465" y1="285" x2="388" y2="285"/>
+  <line class="rule" x1="465" y1="315" x2="513" y2="315"/>
+  <text class="small" x="355" y="292">dark delta: 0.35</text>
+  <text class="small" x="355" y="322">light delta: 0.22</text>
+  <text class="small" x="355" y="356">center is the observed shade</text>
+  <text class="small" x="355" y="375">closest to reference green</text>
+
+  <path class="arrow" d="M 615 265 L 675 265"/>
+
+  <rect class="panel" x="685" y="100" width="220" height="330"/>
+  <text class="label" x="705" y="130">3. PaletteBuilder</text>
+  <text class="small" x="705" y="151">Build fixed hue entries</text>
+  <text class="small" x="705" y="188">Green palette</text>
+  <rect class="swatch" x="710" y="205" width="48" height="48" fill="#107602"/>
+  <rect class="swatch" x="775" y="205" width="48" height="48" fill="#2fc906"/>
+  <rect class="swatch" x="840" y="205" width="48" height="48" fill="#73f246"/>
+  <text class="tiny" x="717" y="271">dark</text>
+  <text class="tiny" x="781" y="271">center</text>
+  <text class="tiny" x="848" y="271">light</text>
+
+  <text class="small" x="705" y="313">Red target can use</text>
+  <text class="small" x="705" y="332">the same shade mapping</text>
+  <rect class="swatch" x="710" y="352" width="48" height="48" fill="#aa0000"/>
+  <rect class="swatch" x="775" y="352" width="48" height="48" fill="#fc1d05"/>
+  <rect class="swatch" x="840" y="352" width="48" height="48" fill="#ffa2a2"/>
+
+  <path class="arrow" d="M 915 265 L 975 265"/>
+
+  <rect class="panel" x="985" y="100" width="180" height="330"/>
+  <text class="label" x="1005" y="130">4. ColorPicker</text>
+  <text class="small" x="1005" y="151">Pick from palette only</text>
+
+  <g transform="translate(1018 188)">
+    <path class="bamboo-stroke" d="M 34 4 C 18 18 18 74 34 88 C 50 74 50 18 34 4 Z"/>
+    <path class="bamboo-body" d="M 34 4 C 18 18 18 74 34 88 C 50 74 50 18 34 4 Z"/>
+    <path class="bamboo-detail" d="M 22 29 C 30 34 38 34 46 29"/>
+    <path class="bamboo-detail" d="M 22 61 C 30 66 38 66 46 61"/>
+  </g>
+  <text class="tiny" x="1016" y="292">green output</text>
+
+  <g transform="translate(1018 322)">
+    <path d="M 34 4 C 18 18 18 74 34 88 C 50 74 50 18 34 4 Z" fill="#7a0000" stroke="#7a0000" stroke-width="5" stroke-linejoin="round"/>
+    <path class="bamboo-red-body" d="M 34 4 C 18 18 18 74 34 88 C 50 74 50 18 34 4 Z"/>
+    <path class="bamboo-red-detail" d="M 22 29 C 30 34 38 34 46 29"/>
+    <path class="bamboo-red-detail" d="M 22 61 C 30 66 38 66 46 61"/>
+  </g>
+  <text class="tiny" x="1023" y="426">red output</text>
+
+  <text class="small" x="40" y="470">Contract: PaletteBuilder creates the fixed entries from evidence. ColorPicker maps each accepted component to one of those entries; it does not invent render-time colors.</text>
+</svg>

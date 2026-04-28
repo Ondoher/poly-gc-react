@@ -1,0 +1,154 @@
+{
+  "sourcePsd": "C:\\dev\\poly-gc-react\\Designs\\icons\\faces.psd",
+  "facePath": "Faces/Flowers/Wiki/Plum",
+  "bounds": {
+    "top": 9,
+    "left": 7,
+    "bottom": 125,
+    "right": 83,
+    "width": 76,
+    "height": 116
+  },
+  "hidden": true,
+  "opacity": 1,
+  "effects": {
+    "dropShadow": [
+      {
+        "size": {
+          "units": "Pixels",
+          "value": 2
+        },
+        "distance": {
+          "units": "Pixels",
+          "value": 1
+        },
+        "angle": 90,
+        "color": {
+          "r": 0,
+          "g": 0,
+          "b": 0
+        },
+        "blendMode": "multiply",
+        "enabled": false,
+        "useGlobalLight": true,
+        "opacity": 0.34901960784313724
+      }
+    ],
+    "innerShadow": [
+      {
+        "size": {
+          "units": "Pixels",
+          "value": 2
+        },
+        "distance": {
+          "units": "Pixels",
+          "value": 2
+        },
+        "angle": 120,
+        "color": {
+          "r": 0,
+          "g": 0,
+          "b": 0
+        },
+        "blendMode": "multiply",
+        "enabled": true,
+        "useGlobalLight": true,
+        "opacity": 0.8392156862745098
+      }
+    ],
+    "outerGlow": {
+      "size": {
+        "units": "Pixels",
+        "value": 2
+      },
+      "color": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      },
+      "blendMode": "screen",
+      "enabled": false,
+      "opacity": 0.34901960784313724
+    },
+    "innerGlow": {
+      "size": {
+        "units": "Pixels",
+        "value": 2
+      },
+      "color": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      },
+      "blendMode": "screen",
+      "enabled": false,
+      "opacity": 0.34901960784313724
+    },
+    "bevel": {
+      "size": {
+        "units": "Pixels",
+        "value": 1
+      },
+      "angle": 120,
+      "strength": 9.489990234375,
+      "highlightBlendMode": "screen",
+      "shadowBlendMode": "multiply",
+      "highlightColor": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      },
+      "shadowColor": {
+        "r": 0,
+        "g": 0,
+        "b": 0
+      },
+      "style": "emboss",
+      "highlightOpacity": 0.611764705882353,
+      "shadowOpacity": 0.7490196078431373,
+      "enabled": true,
+      "useGlobalLight": true,
+      "direction": "down"
+    },
+    "solidFill": [
+      {
+        "blendMode": "normal",
+        "color": {
+          "r": 129,
+          "g": 129,
+          "b": 129
+        },
+        "opacity": 1,
+        "enabled": false
+      }
+    ]
+  },
+  "generated": {
+    "profile": {
+      "baselineHeight": 128,
+      "interiorHeightDelta": -52,
+      "edgeHeightDelta": 30,
+      "edgeWidthPx": 5,
+      "cavityEdgeWidthPx": 5,
+      "cavityInteriorExponent": 0.72,
+      "cavityEdgeStrength": 0.92,
+      "cavityInteriorStrength": 1,
+      "normalStrength": 2.4,
+      "panelRoughness": 214,
+      "interiorRoughness": 158,
+      "edgeRoughnessBoost": -18
+    },
+    "bevelEnabled": true,
+    "bevelSizePx": 1,
+    "innerShadowEnabled": true,
+    "outputs": {
+      "symbolColor": "C:\\dev\\poly-gc-react\\scripts\\psd-maps\\out\\Faces-Flowers-Wiki-Plum\\face-color.png",
+      "fullColor": "C:\\dev\\poly-gc-react\\scripts\\psd-maps\\out\\Faces-Flowers-Wiki-Plum\\face-color-full.png",
+      "panelColor": "C:\\dev\\poly-gc-react\\scripts\\psd-maps\\out\\Faces-Flowers-Wiki-Plum\\face-color-panel.png",
+      "height": "C:\\dev\\poly-gc-react\\scripts\\psd-maps\\out\\Faces-Flowers-Wiki-Plum\\face-height.png",
+      "cavity": "C:\\dev\\poly-gc-react\\scripts\\psd-maps\\out\\Faces-Flowers-Wiki-Plum\\face-cavity.png",
+      "normal": "C:\\dev\\poly-gc-react\\scripts\\psd-maps\\out\\Faces-Flowers-Wiki-Plum\\face-normal.png",
+      "roughness": "C:\\dev\\poly-gc-react\\scripts\\psd-maps\\out\\Faces-Flowers-Wiki-Plum\\face-roughness.png"
+    }
+  }
+}

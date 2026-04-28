@@ -1,0 +1,14 @@
+{
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-stamped.glb",
+  "meshName": "tileStampPairMesh",
+  "sourceBaseGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-basic.glb",
+  "sourceCutterGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-cutter-flower-1.glb",
+  "width": 0.79,
+  "height": 0.5,
+  "depth": 1.08,
+  "radius": 0.08,
+  "notes": [
+    "Stamped tile derived from the exact same base body mesh as the comparison tile.",
+    "Only structural difference is boolean subtraction using the SVG-derived cutter."
+  ]
+}

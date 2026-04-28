@@ -1,0 +1,19 @@
+{
+	"css": [
+		{
+			"dest": "source-assignment/css",
+			"cwd": "assets/css",
+			"glob": "**/*.css",
+			"keepNest": true
+		}
+	],
+	"resources": [
+		{
+			"dest": "source-assignment/images",
+			"cwd": "assets/images",
+			"glob": "**/*.{png,jpg,gif,svg}",
+			"keepNest": true
+		}
+	],
+	"index": "index.js"
+}

@@ -11,8 +11,7 @@ dialog composition.
 
 ## Current Live Status
 
-The live preview now uses a mounted board canvas and the runtime scaling
-service.
+The live preview now uses a mounted board canvas and the tile metrics model.
 
 Current live behavior:
 
@@ -21,7 +20,7 @@ Current live behavior:
 - `SettingsPreview` builds preview tiles with the live engine and difficulty
   preset path
 - `SettingsPreview` measures its preview surface with `ResizeObserver`
-- `SettingsPreview` asks `mj:layout-scaling` for metric-family selection,
+- `SettingsPreview` asks `mj:tile-metrics-model` for metric-family selection,
   occupied layout size, board-canvas offset, and final CSS `zoom`
 - the preview renders a live
   [Canvas.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/Canvas.jsx)
@@ -59,7 +58,7 @@ The preview should continue to work like this:
 2. derive occupied layout bounds from the selected layout
 3. evaluate the generated metric families from `layouts.css`
 4. select the best metric family and final scale through
-   `mj:layout-scaling`
+   `mj:tile-metrics-model`
 5. render the preview from the same fit result the live board would use
 
 That does not require the preview to be architecturally identical to the live

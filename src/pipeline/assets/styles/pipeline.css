@@ -1,0 +1,177 @@
+:root {
+	color-scheme: light;
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	background: #f5f6f3;
+	color: #202421;
+}
+
+body {
+	margin: 0;
+}
+
+button,
+input,
+select {
+	font: inherit;
+}
+
+input,
+select {
+	width: 100%;
+	box-sizing: border-box;
+	border: 1px solid #c7cfca;
+	border-radius: 5px;
+	padding: 6px;
+	background: #ffffff;
+	color: #202421;
+}
+
+.pipeline-app {
+	min-height: 100vh;
+}
+
+.pipeline-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 34px;
+	box-sizing: border-box;
+	border: 1px solid #7b8580;
+	border-radius: 6px;
+	padding: 6px 10px;
+	background: #ffffff;
+	color: #202421;
+	font-weight: 600;
+	line-height: 1.1;
+	text-align: center;
+	cursor: pointer;
+}
+
+.pipeline-button:hover,
+.pipeline-button:focus-visible {
+	border-color: #245247;
+	color: #163b32;
+}
+
+.pipeline-button:focus-visible {
+	outline: 2px solid #245247;
+	outline-offset: 2px;
+}
+
+.pipeline-button-primary {
+	border-color: #245247;
+	background: #245247;
+	color: #ffffff;
+}
+
+.pipeline-button-accept {
+	border-color: #1f6f4a;
+	background: #1f6f4a;
+	color: #ffffff;
+	font-weight: 800;
+}
+
+.pipeline-button-active {
+	border-color: #245247;
+	background: #e4f4ef;
+	color: #163b32;
+}
+
+.pipeline-button:disabled {
+	opacity: 0.55;
+	cursor: progress;
+}
+
+.pipeline-view-selector {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 0;
+	align-items: center;
+	width: fit-content;
+	overflow: hidden;
+	border: 1px solid #b8c2bc;
+	border-radius: 7px;
+	background: #ffffff;
+}
+
+.pipeline-view-selector .pipeline-button {
+	min-height: 28px;
+	border: 0;
+	border-right: 1px solid #d4dad6;
+	border-radius: 0;
+	padding: 5px 9px;
+	font-size: 12px;
+}
+
+.pipeline-view-selector .pipeline-button:last-child {
+	border-right: 0;
+}
+
+.pipeline-view-selector .pipeline-button-active {
+	background: #245247;
+	color: #ffffff;
+}
+
+.pipeline-button-primary:hover,
+.pipeline-button-primary:focus-visible,
+.pipeline-button-accept:hover,
+.pipeline-button-accept:focus-visible {
+	color: #ffffff;
+}
+
+.pipeline-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	min-height: 24px;
+	border: 1px solid #d2d8d4;
+	border-radius: 999px;
+	padding: 0 8px;
+	background: #ffffff;
+	color: #4d5751;
+	font-size: 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+button.pipeline-pill {
+	font: inherit;
+}
+
+.pipeline-pill-clickable {
+	cursor: pointer;
+}
+
+.pipeline-pill-clickable:hover,
+.pipeline-pill-clickable:focus-visible {
+	border-color: #245247;
+	color: #163b32;
+}
+
+.pipeline-pill-clickable:focus-visible {
+	outline: 2px solid #245247;
+	outline-offset: 2px;
+}
+
+.pipeline-pill-extra {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.pipeline-pill-warning {
+	border-color: #b08900;
+	background: #fff8d8;
+	color: #5b4700;
+}
+
+.pipeline-pill-error {
+	border-color: #a51d2d;
+	background: #fff0f2;
+	color: #711320;
+}
+
+.pipeline-pill:disabled {
+	cursor: default;
+	opacity: 1;
+}

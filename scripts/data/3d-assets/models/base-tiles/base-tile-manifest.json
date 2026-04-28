@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "description": "Temporary fake base tile GLBs for exercising 3D asset-pipeline intake and selection.",
+  "variants": [
+    {
+      "id": "classic-soft",
+      "label": "Classic Soft",
+      "description": "Rounded placeholder body with a warm ivory material.",
+      "kind": "base-tile-glb",
+      "temporary": true,
+      "glb": "scripts/data/3d-assets/models/base-tiles/classic-soft.glb",
+      "metadata": "scripts/data/3d-assets/models/base-tiles/classic-soft.json",
+      "body": {
+        "width": 0.79,
+        "height": 0.5,
+        "depth": 1.08
+      }
+    },
+    {
+      "id": "flat-test",
+      "label": "Flat Test",
+      "description": "Simpler flatter placeholder body for cutter diagnostics.",
+      "kind": "base-tile-glb",
+      "temporary": true,
+      "glb": "scripts/data/3d-assets/models/base-tiles/flat-test.glb",
+      "metadata": "scripts/data/3d-assets/models/base-tiles/flat-test.json",
+      "body": {
+        "width": 0.79,
+        "height": 0.46,
+        "depth": 1.08
+      }
+    },
+    {
+      "id": "deep-resin",
+      "label": "Deep Resin",
+      "description": "Taller translucent placeholder body for future material review.",
+      "kind": "base-tile-glb",
+      "temporary": true,
+      "glb": "scripts/data/3d-assets/models/base-tiles/deep-resin.glb",
+      "metadata": "scripts/data/3d-assets/models/base-tiles/deep-resin.json",
+      "body": {
+        "width": 0.8,
+        "height": 0.56,
+        "depth": 1.1
+      }
+    }
+  ]
+}

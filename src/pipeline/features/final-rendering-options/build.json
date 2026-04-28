@@ -1,0 +1,19 @@
+{
+	"css": [
+		{
+			"dest": "final-rendering-options/css",
+			"cwd": "assets/css",
+			"glob": "**/*.css",
+			"keepNest": true
+		}
+	],
+	"resources": [
+		{
+			"dest": "final-rendering-options/images",
+			"cwd": "assets/images",
+			"glob": "**/*.{png,jpg,gif,svg}",
+			"keepNest": true
+		}
+	],
+	"index": "index.js"
+}

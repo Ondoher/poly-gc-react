@@ -1,0 +1,12 @@
+{
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-basic.glb",
+  "meshName": "tileStampPairMesh",
+  "width": 0.79,
+  "height": 0.5,
+  "depth": 1.08,
+  "radius": 0.08,
+  "notes": [
+    "Base tile for direct stamped-pair comparison.",
+    "Single-mesh solid rounded-rectangle body."
+  ]
+}

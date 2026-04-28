@@ -40,27 +40,3 @@ export const TILE_SETS = {
 		class: 'wood'
 	},
 }
-
-export const TILE_SIZES = {
-	normal : {
-		id: 'normal',
-		name: 'Normal',
-		class: 'normal'
-	},
-	medium : {
-		id: 'medium',
-		name: 'Medium',
-		class: 'medium'
-	},
-
-	small : {
-		id: 'small',
-		name: 'Small',
-		class: 'small'
-	},
-	tiny : {
-		id: 'tiny',
-		name: 'Tiny',
-		class: 'tiny'
-	},
-}

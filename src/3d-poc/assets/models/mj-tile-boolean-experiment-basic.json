@@ -1,0 +1,11 @@
+{
+  "key": "basic-flat-top",
+  "meshName": "tileBooleanTarget",
+  "width": 0.79,
+  "height": 0.5,
+  "depth": 1.08,
+  "radius": 0.08,
+  "segments": 8,
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-boolean-experiment-basic.glb",
+  "purpose": "Simple watertight boolean-carve target with a flat top and rounded outer corners."
+}

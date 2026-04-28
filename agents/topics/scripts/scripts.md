@@ -17,6 +17,16 @@ Most of it should still be treated as:
 - checked-in when it supports current work
 - not automatically equivalent to stable runtime infrastructure
 
+When script code grows beyond a thin command and stateless helpers, keep the
+repo's class preference in mind. Plain functions are still appropriate for
+utility modules that transform one input into one output without carrying
+state. A class becomes a better fit when the script domain has a well-defined
+object model plus persistent collections such as face entries, reports,
+warnings, generated artifacts, or pipeline state that are built up across
+multiple operations. In that case, keep the CLI file as a small entry point and
+consider extracting a class-backed runner or processor with a filename that
+matches the class.
+
 The strongest candidates for ongoing reuse are the scripts that adapt external
 assets or source data into repository-owned formats, especially:
 

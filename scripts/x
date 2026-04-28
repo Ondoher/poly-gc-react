@@ -1,0 +1,1487 @@
+export const IPIECE_ROTATION = [
+    {
+        "space": {
+            "left": 0,
+            "right": 0
+        },
+        "kick": {
+            "left": 2,
+            "right": -1
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 1,
+                    "col": -1
+                }
+            ],
+            "down": [
+                {
+                    "row": 2,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 3
+                }
+            ],
+            "right": [
+                {
+                    "row": 1,
+                    "col": 4
+                }
+            ],
+            "up": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 0,
+                    "col": 2
+                },
+                {
+                    "row": 0,
+                    "col": 3
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                1,
+                1,
+                1,
+                1
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 2,
+            "right": 1
+        },
+        "kick": {
+            "left": 0,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 1,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 1
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                }
+            ],
+            "down": [
+                {
+                    "row": 4,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 0,
+                    "col": 3
+                },
+                {
+                    "row": 1,
+                    "col": 3
+                },
+                {
+                    "row": 2,
+                    "col": 3
+                },
+                {
+                    "row": 3,
+                    "col": 3
+                }
+            ],
+            "up": [
+                {
+                    "row": -1,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0
+            ]
+        ]
+    }
+]
+
+export const LPIECE_ROTATION = [
+    {
+        "space": {
+            "left": 0,
+            "right": 0
+        },
+        "kick": {
+            "left": 1,
+            "right": -1
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 1,
+                    "col": -1
+                },
+                {
+                    "row": 2,
+                    "col": -1
+                }
+            ],
+            "down": [
+                {
+                    "row": 3,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 1,
+                    "col": 3
+                },
+                {
+                    "row": 2,
+                    "col": 1
+                }
+            ],
+            "up": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 0,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                0
+            ],
+            [
+                3,
+                3,
+                3
+            ],
+            [
+                3,
+                0,
+                0
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 0,
+            "right": 1
+        },
+        "kick": {
+            "left": 0,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 0,
+                    "col": -1
+                },
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": 0
+                }
+            ],
+            "down": [
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                }
+            ],
+            "right": [
+                {
+                    "row": 0,
+                    "col": 2
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "up": [
+                {
+                    "row": -1,
+                    "col": 0
+                },
+                {
+                    "row": -1,
+                    "col": 1
+                }
+            ]
+        },
+        "shape": [
+            [
+                3,
+                3,
+                0
+            ],
+            [
+                0,
+                3,
+                0
+            ],
+            [
+                0,
+                3,
+                0
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 0,
+            "right": 0
+        },
+        "kick": {
+            "left": 1,
+            "right": -1
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 1,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": -1
+                }
+            ],
+            "down": [
+                {
+                    "row": 3,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                },
+                {
+                    "row": 3,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 1,
+                    "col": 3
+                },
+                {
+                    "row": 2,
+                    "col": 3
+                }
+            ],
+            "up": [
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 1,
+                    "col": 1
+                },
+                {
+                    "row": 0,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                3
+            ],
+            [
+                3,
+                3,
+                3
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 1,
+            "right": 0
+        },
+        "kick": {
+            "left": 0,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 1,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 1
+                }
+            ],
+            "down": [
+                {
+                    "row": 3,
+                    "col": 1
+                },
+                {
+                    "row": 3,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 0,
+                    "col": 2
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 3
+                }
+            ],
+            "up": [
+                {
+                    "row": -1,
+                    "col": 1
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                3,
+                0
+            ],
+            [
+                0,
+                3,
+                0
+            ],
+            [
+                0,
+                3,
+                3
+            ]
+        ]
+    }
+]
+
+export const JPIECE_ROTATION = [
+    {
+        "space": {
+            "left": 0,
+            "right": 0
+        },
+        "kick": {
+            "left": -1,
+            "right": 1
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 1,
+                    "col": -1
+                },
+                {
+                    "row": 2,
+                    "col": 1
+                }
+            ],
+            "down": [
+                {
+                    "row": 2,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": 1
+                },
+                {
+                    "row": 3,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 1,
+                    "col": 3
+                },
+                {
+                    "row": 2,
+                    "col": 3
+                }
+            ],
+            "up": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 0,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                0
+            ],
+            [
+                4,
+                4,
+                4
+            ],
+            [
+                0,
+                0,
+                4
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 0,
+            "right": 1
+        },
+        "kick": {
+            "left": 0,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": -1
+                }
+            ],
+            "down": [
+                {
+                    "row": 3,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                }
+            ],
+            "right": [
+                {
+                    "row": 0,
+                    "col": 2
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "up": [
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": -1,
+                    "col": 1
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                4,
+                0
+            ],
+            [
+                0,
+                4,
+                0
+            ],
+            [
+                4,
+                4,
+                0
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 0,
+            "right": 0
+        },
+        "kick": {
+            "left": 1,
+            "right": -1
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 1,
+                    "col": -1
+                },
+                {
+                    "row": 2,
+                    "col": -1
+                }
+            ],
+            "down": [
+                {
+                    "row": 3,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                },
+                {
+                    "row": 3,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 1,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 3
+                }
+            ],
+            "up": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 1,
+                    "col": 1
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                0
+            ],
+            [
+                4,
+                0,
+                0
+            ],
+            [
+                4,
+                4,
+                4
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 1,
+            "right": 0
+        },
+        "kick": {
+            "left": 0,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": 0
+                }
+            ],
+            "down": [
+                {
+                    "row": 3,
+                    "col": 1
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 0,
+                    "col": 2
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "up": [
+                {
+                    "row": -1,
+                    "col": 1
+                },
+                {
+                    "row": -1,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                4,
+                4
+            ],
+            [
+                0,
+                4,
+                0
+            ],
+            [
+                0,
+                4,
+                0
+            ]
+        ]
+    }
+]
+
+export const TPIECE_ROTATION = [
+    {
+        "space": {
+            "left": 0,
+            "right": 0
+        },
+        "kick": {
+            "left": 1,
+            "right": -1
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 1,
+                    "col": -1
+                },
+                {
+                    "row": 2,
+                    "col": 0
+                }
+            ],
+            "down": [
+                {
+                    "row": 2,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 1,
+                    "col": 3
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "up": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 0,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                0
+            ],
+            [
+                2,
+                2,
+                2
+            ],
+            [
+                0,
+                2,
+                0
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 0,
+            "right": 1
+        },
+        "kick": {
+            "left": 0,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 1,
+                    "col": -1
+                },
+                {
+                    "row": 2,
+                    "col": 0
+                }
+            ],
+            "down": [
+                {
+                    "row": 2,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                }
+            ],
+            "right": [
+                {
+                    "row": 0,
+                    "col": 2
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "up": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": -1,
+                    "col": 1
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                2,
+                0
+            ],
+            [
+                2,
+                2,
+                0
+            ],
+            [
+                0,
+                2,
+                0
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 0,
+            "right": 0
+        },
+        "kick": {
+            "left": 1,
+            "right": -1
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": -1
+                }
+            ],
+            "down": [
+                {
+                    "row": 3,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                },
+                {
+                    "row": 3,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 1,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 3
+                }
+            ],
+            "up": [
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                2,
+                0
+            ],
+            [
+                2,
+                2,
+                2
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 1,
+            "right": 0
+        },
+        "kick": {
+            "left": 0,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": 0
+                }
+            ],
+            "down": [
+                {
+                    "row": 3,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 0,
+                    "col": 2
+                },
+                {
+                    "row": 1,
+                    "col": 3
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "up": [
+                {
+                    "row": -1,
+                    "col": 1
+                },
+                {
+                    "row": 0,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                2,
+                0
+            ],
+            [
+                0,
+                2,
+                2
+            ],
+            [
+                0,
+                2,
+                0
+            ]
+        ]
+    }
+]
+
+export const ZPIECE_ROTATION = [
+    {
+        "space": {
+            "left": 0,
+            "right": 0
+        },
+        "kick": {
+            "left": 1,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 1,
+                    "col": -1
+                },
+                {
+                    "row": 2,
+                    "col": 0
+                }
+            ],
+            "down": [
+                {
+                    "row": 2,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                },
+                {
+                    "row": 3,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 1,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 3
+                }
+            ],
+            "up": [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                0
+            ],
+            [
+                6,
+                6,
+                0
+            ],
+            [
+                0,
+                6,
+                6
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 1,
+            "right": 0
+        },
+        "kick": {
+            "left": 0,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": 0
+                }
+            ],
+            "down": [
+                {
+                    "row": 3,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 0,
+                    "col": 2
+                },
+                {
+                    "row": 1,
+                    "col": 3
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "up": [
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": -1,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                6
+            ],
+            [
+                0,
+                6,
+                6
+            ],
+            [
+                0,
+                6,
+                0
+            ]
+        ]
+    }
+]
+
+export const SPIECE_ROTATION = [
+    {
+        "space": {
+            "left": 0,
+            "right": 0
+        },
+        "kick": {
+            "left": 0,
+            "right": -1
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": -1
+                }
+            ],
+            "down": [
+                {
+                    "row": 3,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "right": [
+                {
+                    "row": 1,
+                    "col": 3
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "up": [
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 0,
+                    "col": 2
+                }
+            ]
+        },
+        "shape": [
+            [
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                5,
+                5
+            ],
+            [
+                5,
+                5,
+                0
+            ]
+        ]
+    },
+    {
+        "space": {
+            "left": 0,
+            "right": 1
+        },
+        "kick": {
+            "left": 0,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 0,
+                    "col": -1
+                },
+                {
+                    "row": 1,
+                    "col": -1
+                },
+                {
+                    "row": 2,
+                    "col": 0
+                }
+            ],
+            "down": [
+                {
+                    "row": 2,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                }
+            ],
+            "right": [
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                }
+            ],
+            "up": [
+                {
+                    "row": -1,
+                    "col": 1
+                },
+                {
+                    "row": 0,
+                    "col": 1
+                }
+            ]
+        },
+        "shape": [
+            [
+                5,
+                0,
+                0
+            ],
+            [
+                5,
+                5,
+                0
+            ],
+            [
+                0,
+                5,
+                0
+            ]
+        ]
+    }
+]
+
+export const OPIECE_ROTATION = [
+    {
+        "space": {
+            "left": 0,
+            "right": 0
+        },
+        "kick": {
+            "left": 0,
+            "right": 0
+        },
+        "collision": {
+            "left": [
+                {
+                    "row": 0,
+                    "col": -1
+                },
+                {
+                    "row": 1,
+                    "col": -1
+                }
+            ],
+            "down": [
+                {
+                    "row": 2,
+                    "col": 0
+                },
+                {
+                    "row": 2,
+                    "col": 1
+                }
+            ],
+            "right": [
+                {
+                    "row": 0,
+                    "col": 2
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                }
+            ],
+            "up": [
+                {
+                    "row": -1,
+                    "col": 0
+                },
+                {
+                    "row": -1,
+                    "col": 1
+                }
+            ]
+        },
+        "shape": [
+            [
+                7,
+                7
+            ],
+            [
+                7,
+                7
+            ]
+        ]
+    }
+]
+

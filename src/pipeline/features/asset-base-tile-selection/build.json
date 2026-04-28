@@ -1,0 +1,19 @@
+{
+	"css": [
+		{
+			"dest": "asset-base-tile-selection/css",
+			"cwd": "assets/css",
+			"glob": "**/*.css",
+			"keepNest": true
+		}
+	],
+	"resources": [
+		{
+			"dest": "asset-base-tile-selection/images",
+			"cwd": "assets/images",
+			"glob": "**/*.{png,jpg,gif,svg}",
+			"keepNest": true
+		}
+	],
+	"index": "index.js"
+}

@@ -1,0 +1,100 @@
+{
+  "faceKey": "d-7",
+  "body": {
+    "width": 0.79,
+    "height": 0.5,
+    "depth": 1.08,
+    "radius": 0.105,
+    "segments": 12,
+    "bevelSize": 0.032,
+    "bevelThickness": 0.042,
+    "bevelSegments": 5,
+    "bodyColor": "#f2ece2"
+  },
+  "stampEdgeSoftening": {
+    "enabled": false,
+    "shoulders": [
+      {
+        "footprintScaleMultiplier": 1.045,
+        "cutterDepthScale": 0.18,
+        "cutterLift": -0.0015
+      },
+      {
+        "footprintScaleMultiplier": 1.03,
+        "cutterDepthScale": 0.32,
+        "cutterLift": -0.003
+      },
+      {
+        "footprintScaleMultiplier": 1.016,
+        "cutterDepthScale": 0.5,
+        "cutterLift": -0.005
+      }
+    ]
+  },
+  "cutterGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-cutter-d-7.glb",
+  "cutterMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-cutter-d-7.json",
+  "canonicalPlacement": {
+    "footprintScale": 1,
+    "centerX": 0,
+    "centerZ": 0,
+    "stampBounds": {
+      "width": 0.5853654742240906,
+      "depth": 0.8807394504547119,
+      "centerX": -0.028934895992279053,
+      "centerZ": -0.017447054386138916
+    },
+    "targetRect": {
+      "width": 0.7464705882352941,
+      "depth": 1.08,
+      "centerX": 0,
+      "centerZ": 0
+    },
+    "referenceBounds": {
+      "referenceWidth": 94,
+      "referenceHeight": 136
+    },
+    "reason": "preprocessed-viewbox-already-in-face-space"
+  },
+  "experiments": [
+    {
+      "key": "baseline",
+      "label": "Baseline",
+      "baseGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-baseline-basic.glb",
+      "baseMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-baseline-basic.json",
+      "stampedGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-baseline-stamped.glb",
+      "stampedMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-baseline-stamped.json"
+    },
+    {
+      "key": "smaller",
+      "label": "Smaller",
+      "baseGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-smaller-basic.glb",
+      "baseMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-smaller-basic.json",
+      "stampedGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-smaller-stamped.glb",
+      "stampedMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-smaller-stamped.json"
+    },
+    {
+      "key": "larger",
+      "label": "Larger",
+      "baseGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-larger-basic.glb",
+      "baseMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-larger-basic.json",
+      "stampedGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-larger-stamped.glb",
+      "stampedMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-larger-stamped.json"
+    },
+    {
+      "key": "shift-left",
+      "label": "Shift Left",
+      "baseGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-shift-left-basic.glb",
+      "baseMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-shift-left-basic.json",
+      "stampedGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-shift-left-stamped.glb",
+      "stampedMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-shift-left-stamped.json"
+    },
+    {
+      "key": "shift-up",
+      "label": "Shift Up",
+      "baseGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-shift-up-basic.glb",
+      "baseMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-shift-up-basic.json",
+      "stampedGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-shift-up-stamped.glb",
+      "stampedMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-shift-up-stamped.json"
+    }
+  ]
+}

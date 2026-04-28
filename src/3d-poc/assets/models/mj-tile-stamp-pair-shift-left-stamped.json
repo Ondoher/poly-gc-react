@@ -1,0 +1,93 @@
+{
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-shift-left-stamped.glb",
+  "meshName": "tileStampPairMesh",
+  "sourceBaseGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-shift-left-basic.glb",
+  "sourceCutterGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-cutter-flower-1.glb",
+  "width": 0.79,
+  "height": 0.5,
+  "topSurfaceY": 0.292,
+  "depth": 1.08,
+  "radius": 0.105,
+  "bevelSize": 0.032,
+  "bevelThickness": 0.042,
+  "bevelSegments": 5,
+  "stampEdgeSoftening": {
+    "enabled": false,
+    "shoulders": [
+      {
+        "footprintScaleMultiplier": 1.045,
+        "cutterDepthScale": 0.18,
+        "cutterLift": -0.0015
+      },
+      {
+        "footprintScaleMultiplier": 1.03,
+        "cutterDepthScale": 0.32,
+        "cutterLift": -0.003
+      },
+      {
+        "footprintScaleMultiplier": 1.016,
+        "cutterDepthScale": 0.5,
+        "cutterLift": -0.005
+      }
+    ]
+  },
+  "experiment": {
+    "key": "shift-left",
+    "label": "Shift Left",
+    "cutterLift": -0.01,
+    "cutterDepthScale": 1,
+    "cutterRotationYDeg": 0,
+    "cutterFootprintScaleMultiplier": 1,
+    "cutterOffsetX": -0.045,
+    "cutterOffsetZ": 0
+  },
+  "canonicalPlacement": {
+    "footprintScale": 1,
+    "centerX": 0,
+    "centerZ": 0,
+    "stampBounds": {
+      "width": 0.5859351754188538,
+      "depth": 0.9164055585861206,
+      "centerX": -0.02036479115486145,
+      "centerZ": -0.009137600660324097
+    },
+    "targetRect": {
+      "width": 0.7464705882352941,
+      "depth": 1.08,
+      "centerX": 0,
+      "centerZ": 0
+    },
+    "referenceBounds": {
+      "referenceWidth": 94,
+      "referenceHeight": 136
+    },
+    "reason": "preprocessed-viewbox-already-in-face-space"
+  },
+  "appliedPlacement": {
+    "footprintScale": 1,
+    "centerX": -0.045,
+    "centerZ": 0,
+    "stampBounds": {
+      "width": 0.5859351754188538,
+      "depth": 0.9164055585861206,
+      "centerX": -0.02036479115486145,
+      "centerZ": -0.009137600660324097
+    },
+    "targetRect": {
+      "width": 0.7464705882352941,
+      "depth": 1.08,
+      "centerX": 0,
+      "centerZ": 0
+    },
+    "referenceBounds": {
+      "referenceWidth": 94,
+      "referenceHeight": 136
+    },
+    "reason": "preprocessed-viewbox-already-in-face-space"
+  },
+  "notes": [
+    "Stamped tile derived from the exact same base body mesh as the paired basic tile.",
+    "Structural differences are boolean subtraction under the listed cutter application parameters plus the optional shallow shoulder pass.",
+    "Footprint and center are derived from face metadata and cutter bounds before per-experiment nudges are applied."
+  ]
+}

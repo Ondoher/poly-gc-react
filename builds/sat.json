@@ -1,0 +1,36 @@
+{
+	"name": "sat",
+	"dest": "dist/sat",
+	"source": "src/sat",
+	"index": "src/sat/index.js",
+	"template": {
+		"source": "src/sat/templates/index.html",
+		"destination": "dist/sat/index.html"
+	},
+	"resources": [
+		{
+			"dest": "docs",
+			"cwd": "../../agents/topics/sat-app",
+			"glob": "notes.md"
+		},
+		{
+			"dest": "images",
+			"cwd": "images",
+			"glob": "**/*.{png,jpg,gif,svg}",
+			"keepNest": true
+		}
+	],
+	"css": [
+		{
+			"dest": "assets/css",
+			"cwd": "assets/css",
+			"glob": "**/*.css",
+			"keepNest": true
+		},
+		{
+			"dest": "assets/css/katex",
+			"cwd": "../../node_modules/katex/dist",
+			"glob": "katex.min.css"
+		}
+	]
+}

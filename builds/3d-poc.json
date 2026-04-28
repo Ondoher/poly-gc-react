@@ -1,0 +1,31 @@
+{
+	"name": "3d-poc",
+	"dest": "dist/3d-poc",
+	"source": "src/3d-poc",
+	"index": "src/3d-poc/index.js",
+	"template": {
+		"source": "src/3d-poc/templates/index.html",
+		"destination": "dist/3d-poc/index.html"
+	},
+	"resources": [
+		{
+			"dest": "models",
+			"cwd": "../../../scripts/output/3d-assets/models",
+			"glob": "**/*.{glb,json}",
+			"keepNest": true
+		},
+		{
+			"dest": "images",
+			"cwd": "assets/images",
+			"glob": "**/*.{png,jpg,gif,svg,exr,json}",
+			"keepNest": true
+		}
+	],
+	"css": [
+		{
+			"dest": "css",
+			"cwd": "assets/css",
+			"glob": "**/*.css"
+		}
+	]
+}

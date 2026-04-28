@@ -1,0 +1,22 @@
+{
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-shallower-embed-stamped.glb",
+  "meshName": "tileStampPairMesh",
+  "sourceBaseGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-shallower-embed-basic.glb",
+  "sourceCutterGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-cutter-flower-1.glb",
+  "width": 0.79,
+  "height": 0.5,
+  "depth": 1.08,
+  "radius": 0.08,
+  "experiment": {
+    "key": "shallower-embed",
+    "label": "Shallower Embed",
+    "cutterLift": -0.01,
+    "cutterDepthScale": 1,
+    "cutterRotationYDeg": 0
+  },
+  "cutterFootprintScale": 0.74,
+  "notes": [
+    "Stamped tile derived from the exact same base body mesh as the paired basic tile.",
+    "Only structural difference should be boolean subtraction under the listed cutter application parameters."
+  ]
+}

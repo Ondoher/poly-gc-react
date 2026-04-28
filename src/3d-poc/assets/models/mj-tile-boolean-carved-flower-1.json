@@ -1,0 +1,37 @@
+{
+  "sourceTargetGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-boolean-experiment-basic.glb",
+  "sourceTargetMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-boolean-experiment-basic.json",
+  "sourceCutterGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-cutter-flower-1.glb",
+  "sourceCutterMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-cutter-flower-1.json",
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-boolean-carved-flower-1.glb",
+  "resultMeshName": "tileBooleanCarved",
+  "operation": "SUBTRACTION",
+  "targetMeshName": "tileBooleanTarget",
+  "cutterMeshName": "tileFaceCutter",
+  "targetBody": {
+    "width": 0.79,
+    "height": 0.5,
+    "depth": 1.08,
+    "radius": 0.08
+  },
+  "cutter": {
+    "targetWidth": 0.79,
+    "targetDepth": 1.08,
+    "cutterDepth": 0.08,
+    "placementContract": {
+      "topSurfacePlaneY": 0,
+      "extrusionDirection": "-Y",
+      "centeredOnTile": true
+    },
+    "worldPosition": {
+      "x": 0,
+      "y": 0.4998,
+      "z": 0
+    }
+  },
+  "notes": [
+    "Offline boolean subtraction result.",
+    "Cutter is placed on the top plane of the experimental target body and extrudes downward.",
+    "This output is meant to be loaded directly in the POC for visual inspection before any runtime integration work."
+  ]
+}

@@ -2,14 +2,13 @@ import { registry } from "@polylith/core";
 import React from "react";
 import { debounce } from "../../../../common/utils.js";
 import Canvas from "./Canvas.jsx";
-import { TILE_SIZES } from "../data/tilesets.js";
 
 export default class ScalingCanvas extends React.Component {
 	constructor(props) {
 		super(props);
 
 		this.state = {
-			metricSetId: props.fallbackMetricSetId || "tiny",
+			metricSetId: "tiny",
 			canvasWidth: null,
 			canvasHeight: null,
 			canvasScale: null,
@@ -20,7 +19,7 @@ export default class ScalingCanvas extends React.Component {
 		};
 
 		this.containerRef = React.createRef();
-		this.layoutScaling = null;
+		this.tileMetricsModel = null;
 		this.resizeObserver = null;
 		this.isUnmounted = false;
 		this.scheduleFit = this.scheduleFit.bind(this);
@@ -35,7 +34,7 @@ export default class ScalingCanvas extends React.Component {
 
 	componentDidMount() {
 		this.isUnmounted = false;
-		this.layoutScaling = registry.subscribe("mj:layout-scaling");
+		this.tileMetricsModel = registry.subscribe("mj:tile-metrics-model");
 		this.observeContainer();
 		this.scheduleFit();
 	}
@@ -43,9 +42,7 @@ export default class ScalingCanvas extends React.Component {
 	componentDidUpdate(prevProps) {
 		if (
 			prevProps.tiles !== this.props.tiles ||
-			prevProps.scaleTiles !== this.props.scaleTiles ||
-			prevProps.sizeNames !== this.props.sizeNames ||
-			prevProps.fallbackMetricSetId !== this.props.fallbackMetricSetId
+			prevProps.scaleTiles !== this.props.scaleTiles
 		) {
 			this.scheduleFit();
 		}
@@ -112,12 +109,6 @@ export default class ScalingCanvas extends React.Component {
 			: (Array.isArray(this.props.tiles) ? this.props.tiles : []);
 	}
 
-	getSizeNames() {
-		return Array.isArray(this.props.sizeNames) && this.props.sizeNames.length > 0
-			? this.props.sizeNames
-			: Object.keys(TILE_SIZES);
-	}
-
 	getScaleConfig() {
 		return {
 			positions: this.getScaleTiles().map(function(tile) {
@@ -127,19 +118,17 @@ export default class ScalingCanvas extends React.Component {
 					z: tile.z,
 				};
 			}),
-			sizeNames: this.getSizeNames(),
 			availableSpace: this.getAvailableSpace(),
 		};
 	}
 
 	runFit() {
-		if (!this.layoutScaling || typeof this.layoutScaling.getDebugState !== "function") {
+		if (!this.tileMetricsModel || typeof this.tileMetricsModel.getDebugState !== "function") {
 			return;
 		}
 
-		let result = this.layoutScaling.getDebugState(this.getScaleConfig());
+		let result = this.tileMetricsModel.getDebugState(this.getScaleConfig());
 		let metricSetId = result?.selectedFit?.metricSetId ||
-			this.props.fallbackMetricSetId ||
 			this.state.metricSetId ||
 			"tiny";
 		let layoutPixelSize = result?.layoutPixelSize || null;

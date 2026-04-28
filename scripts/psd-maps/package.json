@@ -1,0 +1,20 @@
+{
+  "name": "psd-maps-tools",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Local experiments for extracting raster faces and depth-intent maps from Photoshop PSD files.",
+  "type": "module",
+  "scripts": {
+    "inspect": "node inspect-psd.js",
+    "export-face": "node export-face.js",
+    "batch-export": "node batch-export-faces.js",
+    "generate-top-map": "node generate-top-map.js",
+    "generate-top-map-svg": "node generate-top-map-from-svg.js",
+    "generate-top-map-resource": "node generate-top-map-resource.js"
+  },
+  "dependencies": {
+    "@webtoon/psd": "^0.4.0",
+    "ag-psd": "^30.1.1",
+    "canvas": "^3.2.3"
+  }
+}

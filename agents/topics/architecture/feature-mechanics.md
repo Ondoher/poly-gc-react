@@ -130,26 +130,10 @@ This matters because broad stylesheets should act as shared foundation layers:
 
 They should not become a dumping ground for one-off component rules. When a style primarily exists to support one component, that style should usually move into a component-local stylesheet instead.
 
-There is also a preferred component-organization pattern for React view code.
-
-Current preferred pattern:
-
-- break larger component renders into small focused render methods when the component has several distinct semantic regions
-- use those render methods to express purposeful UI subregions such as control groups, metadata blocks, button stacks, and layout halves
-- create explicit wrapper elements for those subregions in JSX rather than relying on CSS to infer structure from a flat list of children
-- let the component own the markup and CSS classes for its internal organization
-- keep component-local visual and internal layout rules in the component's own stylesheet
-- keep parent-level placement, sizing, and region positioning rules in the parent region stylesheet
-- when a component needs materially different arrangements across modes such as landscape and portrait, prefer keeping the same semantic groups and changing how those groups are laid out rather than rewriting the child list for each mode
-- when a piece of UI content is conceptually separate from a control, such as a difficulty label versus a game-number entry control, make it a separate component region instead of burying it inside the control component
-
-The practical goal is to keep JSX readable and structural:
-
-- the component should describe what boxes exist
-- the component stylesheet should describe how that component behaves internally
-- the surrounding layout stylesheet should describe where that component sits in the larger feature layout
-
-This pattern makes later layout changes safer because the semantic grouping is already visible in the markup, and CSS changes do not need to reverse-engineer intent from an overly flat child structure.
+React-specific presentation guidance now lives in
+[React Code](/c:/dev/poly-gc-react/agents/topics/react-code/README.md).
+Use that topic for component shape, JSX organization, local component state,
+callbacks, and React/CSS boundaries.
 
 ## Runtime Feature Activation
 
@@ -158,6 +142,13 @@ Client feature activation depends on side-effect imports.
 If the files are not imported, the services are never instantiated and the feature does not exist.
 
 This is the feature/runtime side of activation.
+
+Polylith code should keep most cross-boundary imports at the owning `index.js`
+file. Feature, service, and shared model implementation files should usually be
+activated by side effect from an index file, then consumed through the registry.
+React components are the major exception: view services and component trees may
+directly import their concrete presentation components and feature-private
+presentation helpers.
 
 The complementary build-side questions are covered in [build-and-assets.md](/c:/dev/poly-gc-react/agents/topics/architecture/build-and-assets.md):
 

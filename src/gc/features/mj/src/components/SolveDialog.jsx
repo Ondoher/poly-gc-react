@@ -4,7 +4,6 @@ import ModalDialog from "./ModalDialog.jsx";
 import ScalingCanvas from "./ScalingCanvas.jsx";
 import SettingsButton from "./SettingsButton.jsx";
 import layouts from "../data/layouts.js";
-import { TILE_SIZES } from "../data/tilesets.js";
 import Engine from "../engine/Engine.js";
 import {
 	applyDifficultyPreset,
@@ -209,7 +208,7 @@ export default class SolveDialog extends React.Component {
 
 	getCanvasClassName(metricSetId) {
 		let tilesetClassName = this.props.tilesetClassName || "ivory";
-		let selectedMetricSetId = metricSetId || this.props.tilesize || "tiny";
+		let selectedMetricSetId = metricSetId || "tiny";
 
 		return [
 			`${tilesetClassName}-${selectedMetricSetId}`,
@@ -299,13 +298,6 @@ export default class SolveDialog extends React.Component {
 						delegator={this.delegator}
 						tiles={this.state.tiles}
 						scaleTiles={this.state.scaleTiles}
-						sizeNames={
-							Array.isArray(this.props.allowedTilesizes) &&
-							this.props.allowedTilesizes.length > 0
-								? this.props.allowedTilesizes
-								: Object.keys(this.props.tilesizes || TILE_SIZES)
-						}
-						fallbackMetricSetId={this.props.tilesize || "tiny"}
 						getCanvasClassName={this.getCanvasClassName.bind(this)}
 						timings={this.props.timings?.tile}
 					/>

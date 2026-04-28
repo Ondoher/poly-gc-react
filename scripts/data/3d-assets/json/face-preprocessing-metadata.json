@@ -1,0 +1,348 @@
+{
+  "b-1": {
+    "exporter": "generic-special",
+    "labelText": "1",
+    "labelColor": "#FC1D05"
+  },
+  "b-2": {
+    "exporter": "generic",
+    "labelText": "2",
+    "labelColor": "#2FC906"
+  },
+  "b-3": {
+    "exporter": "generic",
+    "labelText": "3",
+    "labelColor": "#2FC906"
+  },
+  "b-4": {
+    "exporter": "generic",
+    "labelText": "4",
+    "labelColor": "#2FC906"
+  },
+  "b-5": {
+    "exporter": "generic",
+    "labelText": "5",
+    "labelColor": "#2FC906"
+  },
+  "b-6": {
+    "exporter": "generic",
+    "labelText": "6",
+    "labelColor": "#2FC906"
+  },
+  "b-7": {
+    "exporter": "generic",
+    "labelText": "7",
+    "labelColor": "#FC1D05"
+  },
+  "b-8": {
+    "exporter": "generic",
+    "labelText": "8",
+    "labelColor": "#FC1D05",
+    "referenceGlyphs": {
+      "number": {
+        "present": true,
+        "location": "middle-center"
+      }
+    }
+  },
+  "b-9": {
+    "exporter": "generic",
+    "labelText": "9",
+    "labelColor": "#FC1D05",
+    "sourceContainsLabel": false
+  },
+  "c-1": {
+    "exporter": "generic",
+    "labelText": "1",
+    "labelColor": "#2FC906"
+  },
+  "c-2": {
+    "exporter": "generic",
+    "labelText": "2",
+    "labelColor": "#2FC906"
+  },
+  "c-3": {
+    "exporter": "generic",
+    "labelText": "3",
+    "labelColor": "#2FC906"
+  },
+  "c-4": {
+    "exporter": "generic",
+    "labelText": "4",
+    "labelColor": "#2FC906"
+  },
+  "c-5": {
+    "exporter": "generic",
+    "labelText": "5",
+    "labelColor": "#2FC906"
+  },
+  "c-6": {
+    "exporter": "generic",
+    "labelText": "6",
+    "labelColor": "#2FC906"
+  },
+  "c-7": {
+    "exporter": "generic",
+    "labelText": "7",
+    "labelColor": "#2FC906"
+  },
+  "c-8": {
+    "exporter": "generic",
+    "labelText": "8",
+    "labelColor": "#FC1D05"
+  },
+  "c-9": {
+    "exporter": "generic",
+    "labelText": "9",
+    "labelColor": "#2FC906"
+  },
+  "d-1": {
+    "exporter": "generic-special",
+    "labelText": "1",
+    "labelColor": "#FC1D05"
+  },
+  "d-2": {
+    "exporter": "generic",
+    "labelText": "2",
+    "labelColor": "#FC1D05"
+  },
+  "d-3": {
+    "exporter": "generic",
+    "labelText": "3",
+    "labelColor": "#FC1D05"
+  },
+  "d-4": {
+    "exporter": "generic",
+    "labelText": "4",
+    "labelColor": "#FC1D05"
+  },
+  "d-5": {
+    "exporter": "generic",
+    "labelText": "5",
+    "labelColor": "#FC1D05"
+  },
+  "d-6": {
+    "exporter": "generic",
+    "labelText": "6",
+    "labelColor": "#FC1D05"
+  },
+  "d-7": {
+    "exporter": "generic",
+    "labelText": "7",
+    "labelColor": "#FC1D05"
+  },
+  "d-8": {
+    "exporter": "generic",
+    "labelText": "8",
+    "labelColor": "#FC1D05"
+  },
+  "d-9": {
+    "exporter": "generic",
+    "labelText": "9",
+    "labelColor": "#FC1D05"
+  },
+  "dragon-g": {
+    "exporter": "generic-special",
+    "sourceContainsLabel": false
+  },
+  "dragon-r": {
+    "exporter": "generic-special",
+    "sourceContainsLabel": false
+  },
+  "dragon-w": {
+    "exporter": "generic-special",
+    "sourceContainsLabel": false
+  },
+  "flower-1": {
+    "exporter": "generic-special",
+    "labelText": "1",
+    "labelColor": "#FC1D05",
+    "characterText": "梅",
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topRight",
+        "referenceCorner": "topRight"
+      },
+      "character": {
+        "sourcePresent": false,
+        "referenceCorner": "topLeft"
+      }
+    }
+  },
+  "flower-2": {
+    "exporter": "generic-special",
+    "labelText": "2",
+    "labelColor": "#FC1D05",
+    "characterText": "蘭",
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topRight",
+        "referenceCorner": "topRight"
+      },
+      "character": {
+        "sourcePresent": false,
+        "referenceCorner": "topLeft"
+      }
+    }
+  },
+  "flower-3": {
+    "exporter": "generic-special",
+    "labelText": "3",
+    "labelColor": "#FC1D05",
+    "characterText": "菊",
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topRight",
+        "referenceCorner": "topRight"
+      },
+      "character": {
+        "sourcePresent": false,
+        "referenceCorner": "topLeft"
+      }
+    }
+  },
+  "flower-4": {
+    "exporter": "generic-special",
+    "labelText": "4",
+    "labelColor": "#FC1D05",
+    "characterText": "竹",
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topRight",
+        "referenceCorner": "topRight"
+      },
+      "character": {
+        "sourcePresent": false,
+        "referenceCorner": "topLeft"
+      }
+    }
+  },
+  "season-1": {
+    "exporter": "generic-special",
+    "labelText": "1",
+    "labelColor": "#FC1D05",
+    "characterText": "春",
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topLeft",
+        "referenceCorner": "topLeft"
+      },
+      "character": {
+        "sourcePresent": true,
+        "sourceCorner": "topRight",
+        "referenceCorner": "topRight"
+      }
+    }
+  },
+  "season-2": {
+    "exporter": "generic-special",
+    "labelText": "2",
+    "labelColor": "#FC1D05",
+    "characterText": "夏",
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topLeft",
+        "referenceCorner": "topLeft"
+      },
+      "character": {
+        "sourcePresent": true,
+        "sourceCorner": "topRight",
+        "referenceCorner": "topRight"
+      }
+    }
+  },
+  "season-3": {
+    "exporter": "generic-special",
+    "labelText": "3",
+    "labelColor": "#FC1D05",
+    "characterText": "秋",
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topLeft",
+        "referenceCorner": "topLeft"
+      },
+      "character": {
+        "sourcePresent": true,
+        "sourceCorner": "topRight",
+        "referenceCorner": "topRight"
+      }
+    }
+  },
+  "season-4": {
+    "exporter": "generic-special",
+    "labelText": "4",
+    "labelColor": "#FC1D05",
+    "characterText": "冬",
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topLeft",
+        "referenceCorner": "topLeft"
+      },
+      "character": {
+        "sourcePresent": true,
+        "sourceCorner": "topRight",
+        "referenceCorner": "topRight"
+      }
+    }
+  },
+  "wind-e": {
+    "exporter": "generic",
+    "labelText": "E",
+    "labelColor": "#FC1D05",
+    "sourceContainsLabel": true,
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topLeft",
+        "referenceCorner": "topLeft"
+      }
+    }
+  },
+  "wind-n": {
+    "exporter": "generic",
+    "labelText": "N",
+    "labelColor": "#FC1D05",
+    "sourceContainsLabel": true,
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topLeft",
+        "referenceCorner": "topLeft"
+      }
+    }
+  },
+  "wind-s": {
+    "exporter": "generic",
+    "labelText": "S",
+    "labelColor": "#FC1D05",
+    "sourceContainsLabel": true,
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topLeft",
+        "referenceCorner": "topLeft"
+      }
+    }
+  },
+  "wind-w": {
+    "exporter": "generic",
+    "labelText": "W",
+    "labelColor": "#FC1D05",
+    "sourceContainsLabel": true,
+    "glyphLayout": {
+      "number": {
+        "sourcePresent": true,
+        "sourceCorner": "topLeft",
+        "referenceCorner": "topLeft"
+      }
+    }
+  }
+}

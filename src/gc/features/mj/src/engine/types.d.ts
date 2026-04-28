@@ -145,8 +145,6 @@ type GameState = {
 	open: NumberSet;
 	placed: NumberSet;
 	multiUndoHistory?: MultiUndoHistoryEntry[];
-	allowedTilesizes?: String[];
-	maxTileSize?: String | null;
 	isBelowMinimum?: Boolean;
 }
 

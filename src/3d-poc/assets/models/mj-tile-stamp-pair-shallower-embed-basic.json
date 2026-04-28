@@ -1,0 +1,19 @@
+{
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-shallower-embed-basic.glb",
+  "meshName": "tileStampPairMesh",
+  "width": 0.79,
+  "height": 0.5,
+  "depth": 1.08,
+  "radius": 0.08,
+  "experiment": {
+    "key": "shallower-embed",
+    "label": "Shallower Embed",
+    "cutterLift": -0.01,
+    "cutterDepthScale": 1,
+    "cutterRotationYDeg": 0
+  },
+  "notes": [
+    "Base tile for direct stamped-pair comparison.",
+    "Recreated from the same body geometry recipe for every experiment."
+  ]
+}

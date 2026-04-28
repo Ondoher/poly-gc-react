@@ -1,0 +1,42 @@
+{
+  "faceKey": "flower-1",
+  "meshName": "tileFaceCutter",
+  "svgPath": "C:\\dev\\poly-gc-react\\scripts\\3d-assets\\preprocessed\\flower-1.svg",
+  "sourcePlacementMode": "viewBox",
+  "faceReferencePath": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\images\\generated\\faces\\flower-1\\face-color-full.png",
+  "targetWidth": 0.7464705882352941,
+  "targetDepth": 1.08,
+  "cutterDepth": 0.026,
+  "sourceViewBox": {
+    "minX": 0,
+    "minY": 0,
+    "width": 94,
+    "height": 136
+  },
+  "sourceGlyphBounds": {
+    "width": 94,
+    "depth": 136,
+    "centerX": 47,
+    "centerZ": 68
+  },
+  "referenceFaceWidth": 94,
+  "referenceFaceHeight": 136,
+  "targetRect": {
+    "width": 0.7464705882352941,
+    "depth": 1.08,
+    "centerX": 0,
+    "centerZ": 0
+  },
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-cutter-flower-1.glb",
+  "placementContract": {
+    "topSurfacePlaneY": 0,
+    "extrusionDirection": "-Y",
+    "centeredOnTile": false
+  },
+  "notes": [
+    "SVG glyph paths only; tile-body/background layers removed.",
+    "Geometry is normalized from the preprocessed SVG viewBox into the full tile face rectangle so preprocessed internal alignment is preserved.",
+    "Normalized path solids are unioned before export so downstream subtraction sees one cleaned cutter volume.",
+    "Designed as an offline boolean/CSG cutter input, not as a runtime visible asset."
+  ]
+}

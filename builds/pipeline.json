@@ -1,0 +1,28 @@
+{
+	"name": "pipeline",
+	"dest": "dist/pipeline",
+	"source": "src/pipeline",
+	"index": "src/pipeline/index.js",
+	"router": "server/pipeline/index.js",
+	"template": {
+		"source": "src/pipeline/templates/index.html",
+		"destination": "dist/pipeline/index.html"
+	},
+	"resources": [
+		{
+			"dest": "assets/images",
+			"cwd": "assets/images",
+			"glob": "**/*.{png,jpg,gif,svg}",
+			"keepNest": true
+		}
+	],
+	"css": [
+		{
+			"dest": "assets/styles",
+			"cwd": "assets/styles",
+			"glob": "**/*.css",
+			"keepNest": true
+		}
+	],
+	"features": ["features/app", "features/reference-approval", "features/optional-part-assignment", "features/source-assignment", "features/final-rendering-options", "features/asset-base-tile-selection", "features/asset-review"]
+}

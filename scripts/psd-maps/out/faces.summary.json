@@ -1,0 +1,4247 @@
+{
+  "parser": "ag-psd",
+  "file": {
+    "path": "C:\\dev\\poly-gc-react\\Designs\\icons\\faces.psd",
+    "name": "faces.psd"
+  },
+  "document": {
+    "width": 94,
+    "height": 136,
+    "children": [
+      {
+        "name": "Faces",
+        "top": 0,
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "hidden": false,
+        "opacity": 1,
+        "hasMask": false,
+        "hasText": false,
+        "hasVectorMask": false,
+        "hasEffects": false,
+        "effects": null,
+        "children": [
+          {
+            "name": "Dragons",
+            "top": 0,
+            "left": 0,
+            "bottom": 0,
+            "right": 0,
+            "hidden": false,
+            "opacity": 1,
+            "hasMask": false,
+            "hasText": false,
+            "hasVectorMask": false,
+            "hasEffects": false,
+            "effects": null,
+            "children": [
+              {
+                "name": "white",
+                "top": 14,
+                "left": 14,
+                "bottom": 124,
+                "right": 78,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "red",
+                "top": 46,
+                "left": 29,
+                "bottom": 106,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "green",
+                "top": 44,
+                "left": 23,
+                "bottom": 102,
+                "right": 76,
+                "hidden": false,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "Dots",
+            "top": 0,
+            "left": 0,
+            "bottom": 0,
+            "right": 0,
+            "hidden": false,
+            "opacity": 1,
+            "hasMask": false,
+            "hasText": false,
+            "hasVectorMask": false,
+            "hasEffects": false,
+            "effects": null,
+            "children": [
+              {
+                "name": "1",
+                "top": 9,
+                "left": 9,
+                "bottom": 107,
+                "right": 82,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "2",
+                "top": 10,
+                "left": 7,
+                "bottom": 118,
+                "right": 70,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "3",
+                "top": 10,
+                "left": 8,
+                "bottom": 128,
+                "right": 82,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "4",
+                "top": 10,
+                "left": 7,
+                "bottom": 107,
+                "right": 75,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "5",
+                "top": 10,
+                "left": 7,
+                "bottom": 110,
+                "right": 74,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "6",
+                "top": 9,
+                "left": 8,
+                "bottom": 109,
+                "right": 73,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "7",
+                "top": 10,
+                "left": 8,
+                "bottom": 122,
+                "right": 83,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "8",
+                "top": 9,
+                "left": 7,
+                "bottom": 127,
+                "right": 84,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "9",
+                "top": 11,
+                "left": 7,
+                "bottom": 109,
+                "right": 84,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "Characters",
+            "top": 0,
+            "left": 0,
+            "bottom": 0,
+            "right": 0,
+            "hidden": true,
+            "opacity": 1,
+            "hasMask": false,
+            "hasText": false,
+            "hasVectorMask": false,
+            "hasEffects": false,
+            "effects": null,
+            "children": [
+              {
+                "name": "1",
+                "top": 10,
+                "left": 8,
+                "bottom": 120,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "2",
+                "top": 10,
+                "left": 6,
+                "bottom": 120,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "3",
+                "top": 10,
+                "left": 7,
+                "bottom": 120,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "4",
+                "top": 10,
+                "left": 6,
+                "bottom": 120,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "5",
+                "top": 10,
+                "left": 6,
+                "bottom": 120,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "6",
+                "top": 9,
+                "left": 6,
+                "bottom": 119,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "7",
+                "top": 9,
+                "left": 6,
+                "bottom": 119,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "8",
+                "top": 9,
+                "left": 6,
+                "bottom": 118,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "9",
+                "top": 11,
+                "left": 8,
+                "bottom": 116,
+                "right": 67,
+                "hidden": false,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "Bamboo",
+            "top": 0,
+            "left": 0,
+            "bottom": 0,
+            "right": 0,
+            "hidden": true,
+            "opacity": 1,
+            "hasMask": false,
+            "hasText": false,
+            "hasVectorMask": false,
+            "hasEffects": false,
+            "effects": null,
+            "children": [
+              {
+                "name": "1-Alt",
+                "top": 11,
+                "left": 6,
+                "bottom": 128,
+                "right": 85,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "2",
+                "top": 10,
+                "left": 11,
+                "bottom": 127,
+                "right": 61,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "3",
+                "top": 10,
+                "left": 11,
+                "bottom": 128,
+                "right": 86,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "4",
+                "top": 11,
+                "left": 9,
+                "bottom": 128,
+                "right": 82,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "5",
+                "top": 11,
+                "left": 9,
+                "bottom": 127,
+                "right": 86,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "6",
+                "top": 10,
+                "left": 4,
+                "bottom": 126,
+                "right": 88,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "7",
+                "top": 9,
+                "left": 7,
+                "bottom": 129,
+                "right": 81,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "8",
+                "top": 14,
+                "left": 8,
+                "bottom": 125,
+                "right": 83,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "9",
+                "top": 13,
+                "left": 10,
+                "bottom": 128,
+                "right": 86,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "Flowers",
+            "top": 0,
+            "left": 0,
+            "bottom": 0,
+            "right": 0,
+            "hidden": true,
+            "opacity": 1,
+            "hasMask": false,
+            "hasText": false,
+            "hasVectorMask": false,
+            "hasEffects": false,
+            "effects": null,
+            "children": [
+              {
+                "name": "Wiki",
+                "top": 0,
+                "left": 0,
+                "bottom": 0,
+                "right": 0,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": false,
+                "effects": null,
+                "children": [
+                  {
+                    "name": "Plum",
+                    "top": 9,
+                    "left": 7,
+                    "bottom": 125,
+                    "right": 83,
+                    "hidden": true,
+                    "opacity": 1,
+                    "hasMask": false,
+                    "hasText": false,
+                    "hasVectorMask": false,
+                    "hasEffects": true,
+                    "effects": {
+                      "dropShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "outerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "bevel": {
+                        "enabled": true,
+                        "opacity": null,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 1
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": 120,
+                        "depth": null,
+                        "soften": null,
+                        "style": "emboss",
+                        "technique": null
+                      },
+                      "solidFill": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      }
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "Orchid",
+                    "top": 10,
+                    "left": 7,
+                    "bottom": 125,
+                    "right": 84,
+                    "hidden": true,
+                    "opacity": 1,
+                    "hasMask": false,
+                    "hasText": false,
+                    "hasVectorMask": false,
+                    "hasEffects": true,
+                    "effects": {
+                      "dropShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "outerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "bevel": {
+                        "enabled": true,
+                        "opacity": null,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 1
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": 120,
+                        "depth": null,
+                        "soften": null,
+                        "style": "emboss",
+                        "technique": null
+                      },
+                      "solidFill": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      }
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "Chrysanthemum",
+                    "top": 10,
+                    "left": 7,
+                    "bottom": 125,
+                    "right": 82,
+                    "hidden": true,
+                    "opacity": 1,
+                    "hasMask": false,
+                    "hasText": false,
+                    "hasVectorMask": false,
+                    "hasEffects": true,
+                    "effects": {
+                      "dropShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "outerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "bevel": {
+                        "enabled": true,
+                        "opacity": null,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 1
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": 120,
+                        "depth": null,
+                        "soften": null,
+                        "style": "emboss",
+                        "technique": null
+                      },
+                      "solidFill": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      }
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "Bamboo",
+                    "top": 10,
+                    "left": 7,
+                    "bottom": 125,
+                    "right": 81,
+                    "hidden": false,
+                    "opacity": 1,
+                    "hasMask": false,
+                    "hasText": false,
+                    "hasVectorMask": false,
+                    "hasEffects": true,
+                    "effects": {
+                      "dropShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "outerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "bevel": {
+                        "enabled": true,
+                        "opacity": null,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 1
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": 120,
+                        "depth": null,
+                        "soften": null,
+                        "style": "emboss",
+                        "technique": null
+                      },
+                      "solidFill": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      }
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Seasons",
+            "top": 0,
+            "left": 0,
+            "bottom": 0,
+            "right": 0,
+            "hidden": true,
+            "opacity": 1,
+            "hasMask": false,
+            "hasText": false,
+            "hasVectorMask": false,
+            "hasEffects": false,
+            "effects": null,
+            "children": [
+              {
+                "name": "Wiki",
+                "top": 0,
+                "left": 0,
+                "bottom": 0,
+                "right": 0,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": false,
+                "effects": null,
+                "children": [
+                  {
+                    "name": "Spring",
+                    "top": 11,
+                    "left": 7,
+                    "bottom": 128,
+                    "right": 85,
+                    "hidden": true,
+                    "opacity": 1,
+                    "hasMask": false,
+                    "hasText": false,
+                    "hasVectorMask": false,
+                    "hasEffects": true,
+                    "effects": {
+                      "dropShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "outerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "bevel": {
+                        "enabled": true,
+                        "opacity": null,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 1
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": 120,
+                        "depth": null,
+                        "soften": null,
+                        "style": "emboss",
+                        "technique": null
+                      },
+                      "solidFill": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      }
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "Summer",
+                    "top": 11,
+                    "left": 6,
+                    "bottom": 127,
+                    "right": 83,
+                    "hidden": true,
+                    "opacity": 1,
+                    "hasMask": false,
+                    "hasText": false,
+                    "hasVectorMask": false,
+                    "hasEffects": true,
+                    "effects": {
+                      "dropShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "outerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "bevel": {
+                        "enabled": true,
+                        "opacity": null,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 1
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": 120,
+                        "depth": null,
+                        "soften": null,
+                        "style": "emboss",
+                        "technique": null
+                      },
+                      "solidFill": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      }
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "Autumn",
+                    "top": 9,
+                    "left": 6,
+                    "bottom": 127,
+                    "right": 85,
+                    "hidden": true,
+                    "opacity": 1,
+                    "hasMask": false,
+                    "hasText": false,
+                    "hasVectorMask": false,
+                    "hasEffects": true,
+                    "effects": {
+                      "dropShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "outerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "bevel": {
+                        "enabled": true,
+                        "opacity": null,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 1
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": 120,
+                        "depth": null,
+                        "soften": null,
+                        "style": "emboss",
+                        "technique": null
+                      },
+                      "solidFill": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      }
+                    },
+                    "children": []
+                  },
+                  {
+                    "name": "Winter",
+                    "top": 10,
+                    "left": 6,
+                    "bottom": 121,
+                    "right": 85,
+                    "hidden": false,
+                    "opacity": 1,
+                    "hasMask": false,
+                    "hasText": false,
+                    "hasVectorMask": false,
+                    "hasEffects": true,
+                    "effects": {
+                      "dropShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerShadow": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "outerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "innerGlow": {
+                        "enabled": false,
+                        "opacity": 0.34901960784313724,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 2
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      },
+                      "bevel": {
+                        "enabled": true,
+                        "opacity": null,
+                        "size": {
+                          "units": "Pixels",
+                          "value": 1
+                        },
+                        "distance": null,
+                        "blur": null,
+                        "angle": 120,
+                        "depth": null,
+                        "soften": null,
+                        "style": "emboss",
+                        "technique": null
+                      },
+                      "solidFill": {
+                        "enabled": null,
+                        "opacity": null,
+                        "size": null,
+                        "distance": null,
+                        "blur": null,
+                        "angle": null,
+                        "depth": null,
+                        "soften": null,
+                        "style": null,
+                        "technique": null
+                      }
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Winds",
+            "top": 0,
+            "left": 0,
+            "bottom": 0,
+            "right": 0,
+            "hidden": true,
+            "opacity": 1,
+            "hasMask": false,
+            "hasText": false,
+            "hasVectorMask": false,
+            "hasEffects": false,
+            "effects": null,
+            "children": [
+              {
+                "name": "W",
+                "top": 11,
+                "left": 8,
+                "bottom": 98,
+                "right": 70,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "S",
+                "top": 11,
+                "left": 9,
+                "bottom": 102,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "N",
+                "top": 10,
+                "left": 9,
+                "bottom": 100,
+                "right": 69,
+                "hidden": true,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              },
+              {
+                "name": "E",
+                "top": 11,
+                "left": 10,
+                "bottom": 110,
+                "right": 70,
+                "hidden": false,
+                "opacity": 1,
+                "hasMask": false,
+                "hasText": false,
+                "hasVectorMask": false,
+                "hasEffects": true,
+                "effects": {
+                  "dropShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerShadow": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "outerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "innerGlow": {
+                    "enabled": false,
+                    "opacity": 0.34901960784313724,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 2
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  },
+                  "bevel": {
+                    "enabled": true,
+                    "opacity": null,
+                    "size": {
+                      "units": "Pixels",
+                      "value": 1
+                    },
+                    "distance": null,
+                    "blur": null,
+                    "angle": 120,
+                    "depth": null,
+                    "soften": null,
+                    "style": "emboss",
+                    "technique": null
+                  },
+                  "solidFill": {
+                    "enabled": null,
+                    "opacity": null,
+                    "size": null,
+                    "distance": null,
+                    "blur": null,
+                    "angle": null,
+                    "depth": null,
+                    "soften": null,
+                    "style": null,
+                    "technique": null
+                  }
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

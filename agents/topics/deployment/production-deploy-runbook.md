@@ -16,7 +16,35 @@ Important server-local files in the repo working tree:
 - `ecosystem.config.cjs`
 - `polylith.prod.json`
 
-Those files are untracked on the server and should remain there. Do not delete them during a deploy.
+Those files are untracked on the server and should remain there. Do not delete
+them during a deploy.
+
+Production uses `NODE_ENV=prod`, so Polylith shallow-overlays the server-local
+`polylith.prod.json` over `polylith.json`. The production `apps` list should
+intentionally be limited to `gc` and `sat`:
+
+```json
+{
+  "apps": [
+    {
+      "name": "gc",
+      "filename": "gc.json",
+      "code": false,
+      "default": false
+    },
+    {
+      "name": "sat",
+      "filename": "sat.json",
+      "code": false,
+      "default": true
+    }
+  ]
+}
+```
+
+The same server-local file may also hold production certificate configuration.
+Because the overlay is shallow, top-level keys such as `apps` and `https`
+replace the matching values from `polylith.json` completely.
 
 ## Login
 
@@ -91,6 +119,7 @@ Then smoke test the site in a browser:
 
 - load `https://apps.uber-geek.com/gc`
 - load the Mahjongg screen
+- load `https://apps.uber-geek.com/sat`
 - hard refresh if a browser cache is suspected after a JS/CSS bundle change
 - verify a fresh board starts
 - verify restart, undo, redo, hint, and feedback/help entry points still open

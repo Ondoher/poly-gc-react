@@ -47,13 +47,13 @@ export default class Board extends React.Component {
 		if (props.delegator) {
 			props.delegator.delegateInbound(this, [
 				'setWon', 'setLost', 'setGameState', 'setMessage',
-				'setShortMessage', 'setTiles', 'setTilesize', 'clearBoard',
-				'setTileset', 'setTilesize']
+				'setShortMessage', 'setTiles', 'clearBoard',
+				'setTileset']
 			);
 
 			props.delegator.delegateOutbound(this, [
 				'select', 'deselect', 'initialized', 'play', 'restart', 'solve', 'playHalfSolution', 'undo', 'redo', 'hint', 'pause', 'peek',
-				'selectLayout', 'selectTileset', 'selectTilesize', 'selectDifficulty'
+				'selectLayout', 'selectTileset', 'selectDifficulty'
 			]);
 		}
 
@@ -62,10 +62,6 @@ export default class Board extends React.Component {
 			difficulty: persistedPreferences.difficulty,
 			tileset: this.props.tilesets[persistedPreferences.tilesetKey],
 			tilesetKey: persistedPreferences.tilesetKey,
-			tilesize: this.props.tilesizes[persistedPreferences.tilesizeKey],
-			tilesizeKey: persistedPreferences.tilesizeKey,
-			allowedTilesizes: this.props.allowedTilesizes || Object.keys(this.props.tilesizes || {}),
-			maxTileSize: this.props.maxTileSize || this.props.tilesize,
 			isBelowMinimum: Boolean(this.props.isBelowMinimum),
 			instance: -1,
 			tiles: [],
@@ -96,7 +92,7 @@ export default class Board extends React.Component {
 			shellToastOpen: false,
 			isShellPortrait: this.getIsShellPortrait(),
 			boardNbr: this.props.boardNbr,
-			autoMetricSetId: persistedPreferences.tilesizeKey || this.props.tilesize || "tiny",
+			autoMetricSetId: "tiny",
 			autoCanvasWidth: null,
 			autoCanvasHeight: null,
 			autoCanvasScale: null,
@@ -108,7 +104,7 @@ export default class Board extends React.Component {
 		this.persistedPreferences = persistedPreferences;
 		this.trackingModel = null;
 		this.feedbackModel = null;
-		this.layoutScaling = null;
+		this.tileMetricsModel = null;
 		this.tiles = [];
 		this.hasStartedGame = false;
 		this.playfieldViewportRef = React.createRef();
@@ -140,11 +136,9 @@ export default class Board extends React.Component {
 
 	getPersistedPreferences(props) {
 		var persistedPreferences = readMjPreferencesCookie() || {};
-		var allowedTilesizes = props.allowedTilesizes || Object.keys(props.tilesizes || {});
 		var persistedLayout = persistedPreferences.layout;
 		var persistedDifficulty = persistedPreferences.difficulty;
 		var persistedTileset = persistedPreferences.tilesetKey;
-		var persistedTilesize = persistedPreferences.tilesizeKey;
 
 		if (!props.layouts || !props.layouts[persistedLayout]) {
 			persistedLayout = props.layout;
@@ -158,15 +152,10 @@ export default class Board extends React.Component {
 			persistedTileset = props.tileset;
 		}
 
-		if (!persistedTilesize || !allowedTilesizes.includes(persistedTilesize)) {
-			persistedTilesize = props.tilesize;
-		}
-
 		return {
 			layout: persistedLayout,
 			difficulty: persistedDifficulty,
 			tilesetKey: persistedTileset,
-			tilesizeKey: persistedTilesize,
 			telemetryConsent: persistedPreferences.telemetryConsent === true,
 			hasViewedStartupConsent: persistedPreferences.hasViewedStartupConsent === true,
 		};
@@ -194,12 +183,6 @@ export default class Board extends React.Component {
 			this.selectTileset(this.persistedPreferences.tilesetKey);
 		}
 
-		if (
-			this.persistedPreferences.tilesizeKey !== this.props.tilesize &&
-			this.selectTilesize
-		) {
-			this.selectTilesize(this.persistedPreferences.tilesizeKey);
-		}
 	}
 
 	writePersistedPreferences() {
@@ -209,7 +192,6 @@ export default class Board extends React.Component {
 			layout: this.state.layout,
 			difficulty: this.state.difficulty,
 			tilesetKey: this.state.tilesetKey,
-			tilesizeKey: this.state.tilesizeKey,
 		});
 	}
 
@@ -384,17 +366,6 @@ export default class Board extends React.Component {
 		});
 	}
 
-	onSelectTilesize(tilesize) {
-		if (this.selectTilesize) {
-			this.selectTilesize(tilesize);
-		}
-
-		this.setState({
-			tilesize: this.props.tilesizes[tilesize],
-			tilesizeKey: tilesize,
-		});
-	}
-
 	onSelectDifficulty(difficulty) {
 		if (this.selectDifficulty) {
 			this.selectDifficulty(difficulty);
@@ -563,21 +534,18 @@ export default class Board extends React.Component {
 					};
 				})
 				: [],
-			sizeNames: Array.isArray(this.state.allowedTilesizes) && this.state.allowedTilesizes.length > 0
-				? this.state.allowedTilesizes
-				: Object.keys(this.props.tilesizes || {}),
 			availableSpace: this.getAvailableCanvasSpace(),
 			padding: this.getCanvasScalePadding(),
 		};
 	}
 
 	runAutoRescale(reason) {
-		if (!this.layoutScaling || typeof this.layoutScaling.getDebugState !== "function") {
+		if (!this.tileMetricsModel || typeof this.tileMetricsModel.getDebugState !== "function") {
 			return;
 		}
 
 		let config = this.getCanvasScaleConfig();
-		let result = this.layoutScaling.getDebugState(config);
+		let result = this.tileMetricsModel.getDebugState(config);
 		let nextMetricSetId = result?.selectedFit?.metricSetId || this.state.autoMetricSetId || "tiny";
 		let nextLayoutPixelSize = result?.layoutPixelSize || null;
 		let nextTileMetrics = result?.selectedFit?.tileMetrics || null;
@@ -917,13 +885,6 @@ export default class Board extends React.Component {
 		});
 	}
 
-	setTilesize(tilesize) {
-		this.setState({
-			tilesize: this.props.tilesizes[tilesize],
-			tilesizeKey: tilesize,
-		});
-	}
-
 	clearBoard() {
 		this.setState({
 			tiles: {}
@@ -943,7 +904,7 @@ export default class Board extends React.Component {
 		this.isUnmounted = false;
 		this.trackingModel = registry.subscribe("mj:tracking-model");
 		this.feedbackModel = registry.subscribe("mj:feedback-model");
-		this.layoutScaling = registry.subscribe("mj:layout-scaling");
+		this.tileMetricsModel = registry.subscribe("mj:tile-metrics-model");
 
 		window.addEventListener('keydown', this.onWindowKeyDown);
 		window.addEventListener('resize', this.onShellViewportChange);
@@ -1037,8 +998,7 @@ export default class Board extends React.Component {
 			prevState.telemetryConsent !== this.state.telemetryConsent ||
 			prevState.layout !== this.state.layout ||
 			prevState.difficulty !== this.state.difficulty ||
-			prevState.tilesetKey !== this.state.tilesetKey ||
-			prevState.tilesizeKey !== this.state.tilesizeKey
+			prevState.tilesetKey !== this.state.tilesetKey
 		) {
 			this.writePersistedPreferences();
 		}
@@ -1323,15 +1283,10 @@ export default class Board extends React.Component {
 				difficulties={this.props.difficulties}
 				tileset={this.state.tilesetKey}
 				tilesets={this.props.tilesets}
-				tilesize={this.state.tilesizeKey}
-				tilesizes={this.props.tilesizes}
-				allowedTilesizes={this.state.allowedTilesizes}
-				maxTileSize={this.state.maxTileSize}
 				telemetryConsent={this.state.telemetryConsent}
 				onSelectLayout={this.onSelectLayout.bind(this)}
 				onSelectDifficulty={this.onSelectDifficulty.bind(this)}
 				onSelectTileset={this.onSelectTileset.bind(this)}
-				onSelectTilesize={this.onSelectTilesize.bind(this)}
 				onSetTelemetryConsent={this.onSetTelemetryConsent.bind(this)}
 				onPlay={this.onPlay.bind(this)}
 				onClose={this.onCloseSettingsDialog.bind(this)}
@@ -1383,9 +1338,6 @@ export default class Board extends React.Component {
 				difficulty={this.state.difficulty}
 				difficultyLabel={difficulty ? difficulty.label : this.state.difficulty}
 				tilesetClassName={this.state.tileset?.class || "ivory"}
-				tilesize={this.state.tilesizeKey}
-				tilesizes={this.props.tilesizes}
-				allowedTilesizes={this.state.allowedTilesizes}
 				timings={this.props.timings}
 				onClose={this.onCloseSolveDialog.bind(this)}
 			/>

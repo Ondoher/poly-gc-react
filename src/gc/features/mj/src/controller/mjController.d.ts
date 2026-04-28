@@ -102,13 +102,6 @@ export interface MJControllerService {
 	selectTileset(tileset: string): void;
 
 	/**
-	 * Called by tilesize selection when the current tilesize should change.
-	 *
-	 * @param tilesize - Specify the tilesize name to use.
-	 */
-	selectTilesize(tilesize: string): void;
-
-	/**
 	 * Called by the view when it has rendered and can now be used.
 	 */
 	initialized(): void;

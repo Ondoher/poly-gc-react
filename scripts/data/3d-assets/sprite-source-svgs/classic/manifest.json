@@ -1,0 +1,429 @@
+{
+  "description": "Per-face source SVGs extracted from a semantically grouped tileset sprite sheet.",
+  "source": "scripts/data/3d-assets/sprite-sheets/classic.svg",
+  "sheetId": "classic",
+  "generatedAt": "2026-05-07T22:52:17.763Z",
+  "outputDir": "scripts/data/3d-assets/sprite-source-svgs/classic",
+  "faces": {
+    "b-1": {
+      "sourceGroupId": "BAMBOO_1",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/b-1.svg",
+      "viewBox": {
+        "left": 0.25,
+        "top": 753.859,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "b-2": {
+      "sourceGroupId": "BAMBOO_2",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/b-2.svg",
+      "viewBox": {
+        "left": 68.945,
+        "top": 753.859,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "b-3": {
+      "sourceGroupId": "BAMBOO_3",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/b-3.svg",
+      "viewBox": {
+        "left": 137.64,
+        "top": 753.859,
+        "width": 68.194,
+        "height": 99.084
+      }
+    },
+    "b-4": {
+      "sourceGroupId": "BAMBOO_4",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/b-4.svg",
+      "viewBox": {
+        "left": 206.334,
+        "top": 753.859,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "b-5": {
+      "sourceGroupId": "BAMBOO_5",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/b-5.svg",
+      "viewBox": {
+        "left": 275.029,
+        "top": 753.859,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "b-6": {
+      "sourceGroupId": "BAMBOO_6",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/b-6.svg",
+      "viewBox": {
+        "left": 343.724,
+        "top": 753.859,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "b-7": {
+      "sourceGroupId": "BAMBOO_7",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/b-7.svg",
+      "viewBox": {
+        "left": 412.419,
+        "top": 753.859,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "b-8": {
+      "sourceGroupId": "BAMBOO_8",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/b-8.svg",
+      "viewBox": {
+        "left": 481.114,
+        "top": 753.859,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "b-9": {
+      "sourceGroupId": "BAMBOO_9",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/b-9.svg",
+      "viewBox": {
+        "left": 549.808,
+        "top": 753.859,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "c-1": {
+      "sourceGroupId": "CHARACTER_1",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/c-1.svg",
+      "viewBox": {
+        "left": 0.25,
+        "top": 554.69,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "c-2": {
+      "sourceGroupId": "CHARACTER_2",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/c-2.svg",
+      "viewBox": {
+        "left": 68.945,
+        "top": 554.69,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "c-3": {
+      "sourceGroupId": "CHARACTER_3",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/c-3.svg",
+      "viewBox": {
+        "left": 137.64,
+        "top": 554.69,
+        "width": 68.194,
+        "height": 99.084
+      }
+    },
+    "c-4": {
+      "sourceGroupId": "CHARACTER_4",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/c-4.svg",
+      "viewBox": {
+        "left": 206.334,
+        "top": 554.69,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "c-5": {
+      "sourceGroupId": "CHARACTER_5",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/c-5.svg",
+      "viewBox": {
+        "left": 275.029,
+        "top": 554.69,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "c-6": {
+      "sourceGroupId": "CHARACTER_6",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/c-6.svg",
+      "viewBox": {
+        "left": 343.724,
+        "top": 554.69,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "c-7": {
+      "sourceGroupId": "CHARACTER_7",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/c-7.svg",
+      "viewBox": {
+        "left": 412.419,
+        "top": 554.69,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "c-8": {
+      "sourceGroupId": "CHARACTER_8",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/c-8.svg",
+      "viewBox": {
+        "left": 481.114,
+        "top": 554.69,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "c-9": {
+      "sourceGroupId": "CHARACTER_9",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/c-9.svg",
+      "viewBox": {
+        "left": 549.808,
+        "top": 554.69,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "d-1": {
+      "sourceGroupId": "ROD_1",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/d-1.svg",
+      "viewBox": {
+        "left": 0.25,
+        "top": 654.274,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "d-2": {
+      "sourceGroupId": "ROD_2",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/d-2.svg",
+      "viewBox": {
+        "left": 68.945,
+        "top": 654.274,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "d-3": {
+      "sourceGroupId": "ROD_3",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/d-3.svg",
+      "viewBox": {
+        "left": 137.64,
+        "top": 654.274,
+        "width": 68.194,
+        "height": 99.085
+      }
+    },
+    "d-4": {
+      "sourceGroupId": "ROD_4",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/d-4.svg",
+      "viewBox": {
+        "left": 206.334,
+        "top": 654.274,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "d-5": {
+      "sourceGroupId": "ROD_5",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/d-5.svg",
+      "viewBox": {
+        "left": 275.029,
+        "top": 654.274,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "d-6": {
+      "sourceGroupId": "ROD_6",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/d-6.svg",
+      "viewBox": {
+        "left": 343.724,
+        "top": 654.274,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "d-7": {
+      "sourceGroupId": "ROD_7",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/d-7.svg",
+      "viewBox": {
+        "left": 412.419,
+        "top": 654.274,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "d-8": {
+      "sourceGroupId": "ROD_8",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/d-8.svg",
+      "viewBox": {
+        "left": 481.114,
+        "top": 654.274,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "d-9": {
+      "sourceGroupId": "ROD_9",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/d-9.svg",
+      "viewBox": {
+        "left": 549.808,
+        "top": 654.274,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "dragon-g": {
+      "sourceGroupId": "DRAGON_2",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/dragon-g.svg",
+      "viewBox": {
+        "left": 137.64,
+        "top": 853.443,
+        "width": 68.194,
+        "height": 99.085
+      }
+    },
+    "dragon-r": {
+      "sourceGroupId": "DRAGON_3",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/dragon-r.svg",
+      "viewBox": {
+        "left": 206.334,
+        "top": 853.443,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "dragon-w": {
+      "sourceGroupId": "DRAGON_1",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/dragon-w.svg",
+      "viewBox": {
+        "left": 275.029,
+        "top": 853.443,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "flower-1": {
+      "sourceGroupId": "FLOWER_1",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/flower-1.svg",
+      "viewBox": {
+        "left": 412.419,
+        "top": 853.443,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "flower-2": {
+      "sourceGroupId": "FLOWER_2",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/flower-2.svg",
+      "viewBox": {
+        "left": 481.114,
+        "top": 853.443,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "flower-3": {
+      "sourceGroupId": "FLOWER_3",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/flower-3.svg",
+      "viewBox": {
+        "left": 549.808,
+        "top": 853.443,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "flower-4": {
+      "sourceGroupId": "FLOWER_4",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/flower-4.svg",
+      "viewBox": {
+        "left": 343.724,
+        "top": 853.443,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "season-1": {
+      "sourceGroupId": "SEASON_1",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/season-1.svg",
+      "viewBox": {
+        "left": 0.25,
+        "top": 953.028,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "season-2": {
+      "sourceGroupId": "SEASON_2",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/season-2.svg",
+      "viewBox": {
+        "left": 0.25,
+        "top": 853.443,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "season-3": {
+      "sourceGroupId": "SEASON_3",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/season-3.svg",
+      "viewBox": {
+        "left": 68.945,
+        "top": 953.028,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "season-4": {
+      "sourceGroupId": "SEASON_4",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/season-4.svg",
+      "viewBox": {
+        "left": 68.945,
+        "top": 853.443,
+        "width": 68.195,
+        "height": 99.085
+      }
+    },
+    "wind-e": {
+      "sourceGroupId": "WIND_3",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/wind-e.svg",
+      "viewBox": {
+        "left": 206.334,
+        "top": 953.028,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "wind-n": {
+      "sourceGroupId": "WIND_1",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/wind-n.svg",
+      "viewBox": {
+        "left": 137.64,
+        "top": 953.028,
+        "width": 68.194,
+        "height": 99.084
+      }
+    },
+    "wind-s": {
+      "sourceGroupId": "WIND_2",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/wind-s.svg",
+      "viewBox": {
+        "left": 275.029,
+        "top": 953.028,
+        "width": 68.195,
+        "height": 99.084
+      }
+    },
+    "wind-w": {
+      "sourceGroupId": "WIND_4",
+      "output": "scripts/data/3d-assets/sprite-source-svgs/classic/wind-w.svg",
+      "viewBox": {
+        "left": 343.724,
+        "top": 953.028,
+        "width": 68.195,
+        "height": 99.084
+      }
+    }
+  }
+}

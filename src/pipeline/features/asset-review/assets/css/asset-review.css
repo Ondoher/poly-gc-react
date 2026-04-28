@@ -1,0 +1,308 @@
+.asset-review-page {
+	min-height: 100%;
+	background: #f6f8f7;
+	color: #1d2a24;
+}
+
+.asset-review-header {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 16px;
+	align-items: start;
+	padding: 16px 20px;
+	background: #fff;
+	border-bottom: 1px solid #d9e0dc;
+	box-shadow: 0 1px 3px rgba(20, 32, 26, 0.08);
+}
+
+.asset-review-title {
+	display: grid;
+	gap: 10px;
+	min-width: 0;
+}
+
+.asset-review-title h1 {
+	margin: 0;
+	font-size: 22px;
+	line-height: 1.2;
+}
+
+.asset-review-summary {
+	justify-content: start;
+}
+
+.asset-review-actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.asset-review-content {
+	padding: 20px;
+}
+
+.asset-review-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	gap: 14px;
+}
+
+.asset-review-card {
+	display: grid;
+	gap: 12px;
+	padding: 14px;
+	background: #fff;
+	border: 1px solid #cfd8d4;
+	border-radius: 8px;
+	box-shadow: 0 1px 2px rgba(24, 34, 29, 0.06);
+}
+
+.asset-review-card-stale {
+	border-color: #c9982d;
+}
+
+.asset-review-card-building {
+	border-color: #1f7a5f;
+	box-shadow: 0 0 0 2px rgba(31, 122, 95, 0.14);
+}
+
+.asset-review-card-queued {
+	border-color: #b7c3bd;
+}
+
+.asset-review-card-failed {
+	border-color: #b9443f;
+}
+
+.asset-review-card-unavailable {
+	border-color: #d2d8d5;
+	background: #fbfcfb;
+}
+
+.asset-review-card > header {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 10px;
+	align-items: start;
+}
+
+.asset-review-card > header div {
+	display: grid;
+	gap: 2px;
+	min-width: 0;
+}
+
+.asset-review-card strong {
+	font-size: 16px;
+	line-height: 1.2;
+}
+
+.asset-review-status-icon {
+	display: inline-grid;
+	place-items: center;
+	width: 24px;
+	height: 24px;
+	box-sizing: border-box;
+	border: 1px solid #cfd8d4;
+	border-radius: 999px;
+	background: #f6f8f7;
+	color: #4d5751;
+}
+
+.asset-review-status-icon-button {
+	padding: 0;
+	cursor: pointer;
+}
+
+.asset-review-status-icon-button:hover {
+	box-shadow: 0 0 0 2px rgba(31, 122, 95, 0.18);
+}
+
+.asset-review-status-icon-button:focus-visible {
+	outline: 2px solid #1f7a5f;
+	outline-offset: 2px;
+}
+
+.asset-review-status-icon-button:disabled {
+	cursor: default;
+	opacity: 0.6;
+}
+
+.asset-review-status-icon img {
+	display: block;
+	width: 16px;
+	height: 16px;
+}
+
+.asset-review-status-icon-ready {
+	border-color: #71a98d;
+	background: #eaf6f0;
+}
+
+.asset-review-status-icon-building {
+	border-color: #1f7a5f;
+	background: #e6f4ef;
+}
+
+.asset-review-status-icon-building img {
+	animation: asset-review-spin 900ms linear infinite;
+}
+
+.asset-review-status-icon-queued {
+	border-color: #b08900;
+	background: #fff8d8;
+}
+
+.asset-review-status-icon-stale {
+	border-color: #c9982d;
+	background: #fff5df;
+}
+
+.asset-review-status-icon-failed {
+	border-color: #a51d2d;
+	background: #fff0f2;
+}
+
+.asset-review-status-icon-unavailable {
+	border-color: #d2d8d5;
+	background: #f6f8f7;
+}
+
+.asset-review-card small,
+.asset-review-card-footer,
+.asset-review-card-footer span {
+	color: #64736d;
+	font-size: 12px;
+}
+
+.asset-review-preview-frame,
+.asset-review-preview,
+.asset-review-unavailable {
+	position: relative;
+	width: 100%;
+	box-sizing: border-box;
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+	background: #050706;
+	border: 1px solid #24352f;
+	border-radius: 6px;
+}
+
+.asset-review-preview-frame .asset-review-preview,
+.asset-review-preview-frame .asset-review-preview-button {
+	border: 0;
+	border-radius: 0;
+}
+
+.asset-review-preview-button {
+	display: block;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	margin: 0;
+	border: 0;
+	background: #050706;
+	cursor: zoom-in;
+}
+
+.asset-review-preview-button img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.asset-review-preview canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+	cursor: grab;
+}
+
+.asset-review-preview canvas:active {
+	cursor: grabbing;
+}
+
+.asset-review-preview-fallback,
+.asset-review-preview-loading,
+.asset-review-preview-pending,
+.asset-review-unavailable {
+	display: grid;
+	place-items: center;
+	padding: 12px;
+	color: #8b9993;
+	font-size: 13px;
+	text-align: center;
+}
+
+.asset-review-preview-pending {
+	position: absolute;
+	inset: 0;
+}
+
+.asset-review-preview-loading {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	background: rgba(5, 7, 6, 0.78);
+	gap: 8px;
+}
+
+.asset-review-preview-spinner {
+	width: 28px;
+	height: 28px;
+	border: 3px solid rgba(235, 245, 241, 0.35);
+	border-top-color: #dce9e3;
+	border-radius: 999px;
+	animation: asset-review-spin 900ms linear infinite;
+}
+
+@keyframes asset-review-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.asset-review-card-footer {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 12px;
+	align-items: center;
+	min-height: 18px;
+}
+
+.asset-review-card-footer a {
+	color: #174f40;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.asset-review-card-footer a:hover {
+	text-decoration: underline;
+}
+
+.asset-review-viewer-dialog {
+	width: min(860px, calc(100vw - 48px));
+}
+
+.asset-review-viewer {
+	aspect-ratio: 4 / 3;
+	background: #050706;
+	border: 1px solid #24352f;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.asset-review-viewer .asset-review-preview {
+	height: 100%;
+}
+
+@media (max-width: 720px) {
+	.asset-review-header {
+		grid-template-columns: 1fr;
+	}
+
+	.asset-review-actions {
+		justify-content: flex-start;
+	}
+}

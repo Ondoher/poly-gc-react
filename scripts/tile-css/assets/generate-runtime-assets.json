@@ -1,0 +1,13 @@
+{
+  "faceOutputRoot": "src/gc/features/mj/assets/images/tile-faces",
+  "bodyOutputRoot": "src/gc/features/mj/assets/images/tile-bodies",
+  "face": {
+    "sourceDir": "scripts/data/3d-assets/reference-faces/faces",
+    "sourceKind": "face-only",
+    "outputSizes": ["normal", "medium", "small", "tiny"]
+  },
+  "body": {
+    "sourceDir": "src/gc/features/mj/assets/images/tile-bodies/normal",
+    "outputSizes": ["normal", "medium", "small", "tiny"]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "classic-soft",
+  "label": "Classic Soft",
+  "description": "Rounded placeholder body with a warm ivory material.",
+  "kind": "base-tile-glb",
+  "temporary": true,
+  "meshName": "baseTileBody",
+  "glb": "scripts/data/3d-assets/models/base-tiles/classic-soft.glb",
+  "metadata": "scripts/data/3d-assets/models/base-tiles/classic-soft.json",
+  "body": {
+    "width": 0.79,
+    "height": 0.5,
+    "depth": 1.08,
+    "radius": 0.105,
+    "bevelSize": 0.028,
+    "bevelThickness": 0.038,
+    "bevelSegments": 4,
+    "curveSegments": 16
+  },
+  "material": {
+    "color": "#f2ece2",
+    "opacity": 1
+  },
+  "notes": [
+    "Temporary generated placeholder for exercising base tile selection.",
+    "Replace with contracted production base tile GLBs when available."
+  ]
+}

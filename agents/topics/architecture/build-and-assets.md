@@ -99,6 +99,17 @@ Layout image convention:
 - prefer using CSS background images for decorative or layout-affecting assets such as frames, corners, borders, and chrome
 - prefer `<img>` tags for content images where intrinsic image semantics matter
 
+Example from `builds/pipeline.json`:
+
+- app-wide pipeline images under `src/pipeline/assets/images/**` are emitted to
+  `dist/pipeline/assets/images/**`
+- app-wide pipeline CSS under `src/pipeline/assets/styles/**` is emitted to
+  `dist/pipeline/assets/styles/**`
+
+So an app-wide pipeline status icon such as
+`src/pipeline/assets/images/circle-check.svg` should be referenced at runtime
+as `assets/images/circle-check.svg`.
+
 Example from `src/gc/features/mj/build.json`:
 
 - `assets/images/**` is emitted to `mj/images/**`

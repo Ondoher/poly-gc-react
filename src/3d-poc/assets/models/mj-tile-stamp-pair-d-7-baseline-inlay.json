@@ -1,0 +1,41 @@
+{
+  "outputGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-baseline-inlay.glb",
+  "sceneName": "MahjongTileStampPairBaselineInlay",
+  "faceKey": "d-7",
+  "sourceStampedGlb": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-baseline-stamped.glb",
+  "sourceStampedMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-stamp-pair-d-7-baseline-stamped.json",
+  "sourceSvg": "C:\\dev\\poly-gc-react\\scripts\\3d-assets\\preprocessed\\d-7.svg",
+  "sourceCutterMetadata": "C:\\dev\\poly-gc-react\\src\\3d-poc\\assets\\models\\mj-tile-cutter-d-7.json",
+  "tileMeshName": "tileStampPairMesh",
+  "inlayMeshNamePrefix": "tileFaceInlay",
+  "inlayClasses": {
+    "st7": "#fc1d05",
+    "st8": "#0505d1",
+    "st9": "#fc1d05",
+    "st10": "#2fc906",
+    "black": "#000000",
+    "tileBody": "#f2ece2"
+  },
+  "inlayThickness": 0.0014,
+  "inlayFloorLift": 0.006,
+  "inlayLayerStep": 0.00008,
+  "recessFloorY": 0.27599999999999997,
+  "targetRect": {
+    "width": 0.7464705882352941,
+    "depth": 1.08,
+    "centerX": 0,
+    "centerZ": 0
+  },
+  "sourceGlyphBounds": {
+    "width": 94,
+    "depth": 136,
+    "centerX": 47,
+    "centerZ": 68
+  },
+  "meshCount": 15,
+  "notes": [
+    "Offline experiment that keeps the carved baseline tile body and adds real colored SVG-derived inlay meshes.",
+    "Inlay placement uses the same preprocessed-SVG viewBox-to-full-face-rectangle normalization as the cutter branch.",
+    "This tests color as owned geometry inside the recess instead of a runtime decal or underlay plane."
+  ]
+}

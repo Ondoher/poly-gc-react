@@ -245,8 +245,6 @@ export default class SettingsDialog extends React.Component {
 					<SettingsPreview
 						layout={this.state.draftLayout}
 						difficulty={this.state.draftDifficulty}
-						maxTileSize={this.props.maxTileSize}
-						tilesize={this.props.tilesize}
 						tileset={this.state.draftTileset}
 					/>
 				</div>
