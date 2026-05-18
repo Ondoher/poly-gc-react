@@ -1,52 +1,78 @@
 # Mathematical Justification & References
 
-This document provides the theoretical frameworks, mathematical proofs, and authoritative reference citations for the geospatial scripts utilized in this tracking project.
+This document explains the coordinate transforms and reference geometry used by
+the satellite pointing calculator.
 
 ---
 
 ## 1. WGS84 Geodetic to ECEF Coordinate Transformation
 
-The algorithm maps a tracking station's spherical Latitude ($\phi$) and Longitude ($\lambda$) onto a 3D Earth-Centered, Earth-Fixed (ECEF) Cartesian coordinate grid using closed-form conversion formulas:
+The app maps an observer's latitude ($\phi$), longitude ($\lambda$), and height
+($h$) onto an Earth-Centered, Earth-Fixed (ECEF) Cartesian coordinate grid using
+the WGS84 ellipsoid.
 
 $$\begin{cases} X = (N(\phi) + h) \cos(\phi) \cos(\lambda) \\ Y = (N(\phi) + h) \cos(\phi) \sin(\lambda) \\ Z = (N(\phi)(1 - e^2) + h) \sin(\phi) \end{cases}$$
 
-Where the radius of curvature in the prime vertical is defined as:
+The prime vertical radius of curvature is:
+
 $$N(\phi) = \frac{a}{\sqrt{1 - e^2 \sin^2(\phi)}}$$
 
 ### Verification References
-* **Institutional Standard:** This geometric mapping profile is managed globally by the National Geospatial-Intelligence Agency (NGA). Detailed derivations and constants are available in the [National Imagery and Mapping Agency Technical Report (TR8350.2)](https://gis-lab.info).
-* **Code Implementation Reference:** Standard validation models for this code structure can be cross-examined via public open-source implementations such as the [GitHub Gist WGS-84 Coordinate Transformation](https://github.com).
+
+* **Institutional Standard:** WGS84 is maintained by the National Geospatial-Intelligence Agency (NGA). NGA describes WGS84 as the targeting and navigation grid used for GPS positioning in its [GPS and Earth Orientation Products](https://www.nga.mil/resources/GPS_and_Earth_Orientation_Products.html) resource page.
+* **Current WGS84 Reference Frame:** NGA publishes the current terrestrial reference frame details in [WGS 84 (G2296) Terrestrial Reference Frame](https://earth-info.nga.mil/php/download.php?file=WGS+84%28G2296%29.pdf).
 
 ---
 
 ## 2. Topocentric Horizon to ECEF Vector Transformation
 
-To transform raw ground observations—Azimuth ($\alpha$) and Elevation ($e$)—into absolute 3D pointing vectors aligned with the global ECEF grid, a local tangent rotation matrix is applied:
+To transform a satellite line-of-sight vector into local dish-pointing values,
+the app rotates the ECEF delta vector into the observer's local East, North, Up
+(ENU) frame:
 
-$$\begin{bmatrix} X \\ Y \\ Z \end{bmatrix} = \begin{bmatrix} -\sin(\lambda) & -\sin(\phi)\cos(\lambda) & \cos(\phi)\cos(\lambda) \\ \cos(\lambda) & -\sin(\phi)\sin(\lambda) & \cos(\phi)\sin(\lambda) \\ 0 & \cos(\phi) & \sin(\phi) \end{bmatrix} \begin{bmatrix} \cos(e)\sin(\alpha) \\ \cos(e)\cos(\alpha) \\ \sin(e) \end{bmatrix}$$
+$$\begin{bmatrix} E \\ N \\ U \end{bmatrix} = \begin{bmatrix} -\sin(\lambda) & \cos(\lambda) & 0 \\ -\sin(\phi)\cos(\lambda) & -\sin(\phi)\sin(\lambda) & \cos(\phi) \\ \cos(\phi)\cos(\lambda) & \cos(\phi)\sin(\lambda) & \sin(\phi) \end{bmatrix} \begin{bmatrix} \Delta X \\ \Delta Y \\ \Delta Z \end{bmatrix}$$
+
+The local slant range ($\rho$), azimuth ($A$), and elevation ($e$) are then:
+
+$$\rho = \sqrt{E^2 + N^2 + U^2}$$
+
+$$A = \operatorname{atan2}(E, N)$$
+
+$$e = \sin^{-1}\left(\frac{U}{\rho}\right)$$
 
 ### Verification References
-* **Academic Proof:** The linear algebra tracking how local horizon reference frames tilt relative to the Earth's absolute center is derived in the [Ohio State University Department of Geodetic Science Lecture Notes](https://ohio-state.edu).
-* **Institutional Guide:** For an engineering manual on deploying these specific rotation matrices in aerospace tracking systems, see the [European Space Agency (ESA) Navipedia Reference Systems Manual](https://esa.int).
+
+* **Coordinate Frame Derivation:** ESA Navipedia's [Transformations between ECEF and ENU coordinates](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates) gives the East/North/Up basis vectors, the ECEF-to-ENU rotation matrix, and the azimuth/elevation formulas used by the app.
+* **Implementation Cross-Check:** Fixposition's [Converting from ECEF to ENU](https://docs.fixposition.com/fd/converting-from-ecef-to-enu-local-frame) summarizes the same ECEF/local-frame conversion pattern used in GNSS tooling.
 
 ---
 
 ## 3. Multi-Line N-Dimensional Least-Squares Intersection
 
-When parsing look-angle measurements from more than two ground stations, measurement noise means the paths will rarely intersect perfectly. The batch script builds an overdetermined system to locate the optimal spatial coordinate ($\mathbf{p}_{\text{opt}}$) that minimizes the orthogonal distance to all rays simultaneously using projection matrices:
+This inverse mode is not part of the current interactive app, but the prototype
+script includes it as a possible future mode. When parsing look-angle
+measurements from more than two ground stations, measurement noise means the
+paths will rarely intersect perfectly. The batch script builds an
+overdetermined system to locate the optimal spatial coordinate
+($\mathbf{p}_{\text{opt}}$) that minimizes the orthogonal distance to all rays
+simultaneously using projection matrices:
 
 $$\mathbf{p}_{\text{opt}} = \left( \sum_{i=1}^N (\mathbf{I} - \mathbf{u}_i\mathbf{u}_i^T) \right)^{-1} \sum_{i=1}^N (\mathbf{I} - \mathbf{u}_i\mathbf{u}_i^T)\mathbf{p}_i$$
 
 ### Verification References
-* **Mathematical Reference:** This closed-form linear solution is fully documented in the landmark computer vision paper *Intersection of Lines in 3D Space* published via the [Microsoft Research Technical Portal](https://microsoft.com).
-* **Geometric Reference:** For the baseline 2-station edge-case parametric calculation utilizing Cramer's rule determinants for spatial ray intersection, refer to the [CK-12 Foundation Mathematics Library](https://ck12.org).
+
+* **Least-Squares Form:** The [Least-Squares Intersection of Lines](https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Least-Squares_Intersection_of_Lines) section of the line-line intersection reference derives the projection-matrix form for the point closest to many lines.
+* **Implementation Reference:** MATLAB Central's [Line-Line Intersection (N lines, D space)](https://www.mathworks.com/matlabcentral/fileexchange/59805-line-line-intersection-n-lines-d-space) documents the same "nearest to all lines by minimum sum of squared distances" problem in implementation form.
 
 ---
 
-## 4. Keplerian Orbital Dynamics & Validation Metrics
+## 4. Geosynchronous Orbit Altitude & ASTRA Validation
 
-The orbital altitude baseline of $\approx 35,786 \text{ km}$ above the equator is verified using classical gravitational-centrifugal equilibrium models (Kepler's Third Law).
+The app uses the standard geosynchronous altitude baseline of about
+$35,786 \text{ km}$ above Earth's equator. For the ASTRA meme-check page, the
+reference slot is ASTRA 2E/2F/2G at 28.2 degrees East.
 
 ### Verification References
-* **Physical Mechanics:** The underlying orbital physics and equations governing geostationary requirements can be audited through the [NASA Glenn Research Center Orbital Mechanics Guide](https://nasa.gov).
-* **Operational Telemetry:** Real-world coordinates and active orbital positions for the targets processed by this engine are listed in the [SES Space & Satellite Fleet Directory](https://ses.com).
+
+* **GEO Altitude:** NASA describes geosynchronous equatorial orbit as a circular orbit [22,236 miles above Earth](https://www.nasa.gov/science-research/tech-research/groundbreaking-technology-may-add-years-to-earth-orbiting-satellites/), the same altitude scale as the app's 35,786 km GEO assumption.
+* **Operational Satellite Neighborhood:** SES lists [ASTRA 2E/2F/2G at 28.2 degrees East](https://www.ses.com/v2/solutions/media-broadcasters/reach-neighborhoods) in its media reach and orbital-neighborhood material.

@@ -104,6 +104,9 @@ General repo architecture still applies:
   navigation.
 - `npx polylith build sat` passed after adding the meme image to the counter
   page and copying `src/sat/assets/images` into the SAT dist.
+- `npx polylith build sat` passed after replacing placeholder reference links
+  in `notes.md` with specific WGS84, ECEF/ENU, GEO altitude, and ASTRA
+  neighborhood sources.
 - Production SAT deploy passed on 2026-05-18 with `NODE_ENV=prod` and
   `NODE_OPTIONS=--max-old-space-size=4096`, using `npx polylith build sat`.
   Smoke checks returned 200 for `/sat/` and `/gc/`, and 404 for `/pipeline`
