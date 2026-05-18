@@ -30,13 +30,13 @@ intentionally be limited to `gc` and `sat`:
       "name": "gc",
       "filename": "gc.json",
       "code": false,
-      "default": false
+      "default": true
     },
     {
       "name": "sat",
       "filename": "sat.json",
       "code": false,
-      "default": true
+      "default": false
     }
   ]
 }
@@ -75,7 +75,10 @@ cd ~/poly-gc-react
 git status -sb
 git pull
 npm install
-npm run build
+export NODE_ENV=prod
+export NODE_OPTIONS=--max-old-space-size=4096
+rm -rf dist/pipeline dist/3d-poc
+npx polylith build sat
 pm2 restart poly-gc --update-env
 ```
 
@@ -88,7 +91,16 @@ bash ./scripts/deploy/production-deploy.sh
 Notes:
 
 - `npm install` is included so deploys stay safe when dependencies change.
-- `npm run build` is required before restart because production serves the built bundles under `dist/`.
+- Production should build with `NODE_ENV=prod` so the server-local
+  `polylith.prod.json` app list is active.
+- The current SAT bundle needs `NODE_OPTIONS=--max-old-space-size=4096` on the
+  server because `cities.json` and KaTeX can OOM the default V8 heap.
+- `npx polylith build sat` is the current deploy build path for SAT changes;
+  it leaves the existing `gc` bundle in place and avoids rebuilding unrelated
+  apps.
+- Remove stale `dist/pipeline` and `dist/3d-poc` before restart if any
+  non-prod build was accidentally run on the server. The server serves `dist`
+  statically, so excluded app folders should not remain there.
 - `pm2 restart poly-gc --update-env` matches the live process name and refreshes environment usage.
 - The deploy helper script assumes:
   - app name: `poly-gc`
@@ -120,6 +132,8 @@ Then smoke test the site in a browser:
 - load `https://apps.uber-geek.com/gc`
 - load the Mahjongg screen
 - load `https://apps.uber-geek.com/sat`
+- verify `https://apps.uber-geek.com/pipeline` returns 404
+- verify `https://apps.uber-geek.com/3d-poc` returns 404
 - hard refresh if a browser cache is suspected after a JS/CSS bundle change
 - verify a fresh board starts
 - verify restart, undo, redo, hint, and feedback/help entry points still open

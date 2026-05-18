@@ -12,6 +12,11 @@ The app is now a quick ASTRA geosynchronous satellite pointing calculator:
 - `src/sat/main/App.jsx` renders the calculator, a single city typeahead,
   calculated pointing values, step-by-step math, and the Markdown reference
   panel.
+- `src/sat/main/App.jsx` also provides a hash-routed meme counter page at
+  `#/meme-check`. It compares Bristol and London against ASTRA 28.2E using the
+  same WGS84/ECEF calculation path, shows the correct slant ranges, and
+  explains why the flat-triangle meme geometry is invalid. The page references
+  the copied meme image at `src/sat/assets/images/meme.jpg`.
 - The step-by-step math uses the same `react-markdown`/`remark-math`/
   `rehype-katex` path as the reference panel, so formulas render as formatted
   KaTeX blocks.
@@ -95,6 +100,14 @@ General repo architecture still applies:
 - `npx polylith build sat` passed after adding the positive-elevation
   visibility gate.
 - `npx polylith build sat` passed after adding previous-result switching.
+- `npx polylith build sat` passed after adding the meme-counter page and top
+  navigation.
+- `npx polylith build sat` passed after adding the meme image to the counter
+  page and copying `src/sat/assets/images` into the SAT dist.
+- Production SAT deploy passed on 2026-05-18 with `NODE_ENV=prod` and
+  `NODE_OPTIONS=--max-old-space-size=4096`, using `npx polylith build sat`.
+  Smoke checks returned 200 for `/sat/` and `/gc/`, and 404 for `/pipeline`
+  and `/3d-poc`.
 
 ## Polylith Serving Notes
 
@@ -113,10 +126,15 @@ The root `polylith.json` `apps` list is the selection table. Each entry needs
   dev:serve`, whose nodemon config executes `npm start`.
 - The server-local untracked `polylith.prod.json` intentionally replaces the
   root `apps` list when `NODE_ENV=prod`; production should be limited to `gc`
-  and `sat`, with `sat` marked as the default app.
+  and `sat`, with `gc` marked as the default app.
 - That same server-local production override may also hold certificate
   configuration. Polylith merges top-level config shallowly, so `apps` and
   `https` each replace the root value entirely when present.
+- The SAT production build currently needs a larger Node heap because the
+  bundled `cities.json` data set and KaTeX dependencies are large enough to
+  OOM the default V8 heap on the server. Use
+  `NODE_OPTIONS=--max-old-space-size=4096` for the SAT build unless the city
+  lookup is later split out or reduced.
 
 Server routing then uses each selected app's `routerRoot` from its build config
 or defaults to `/<app-name>`. The SAT app therefore serves under `/sat` when it

@@ -25,12 +25,44 @@ select {
 	min-height: 100vh;
 }
 
+.sat-app-single {
+	display: block;
+}
+
 .sat-workspace {
 	display: grid;
 	grid-template-rows: auto auto 1fr;
 	gap: 18px;
 	padding: 24px;
 	overflow: hidden;
+}
+
+.sat-top-nav {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.sat-top-nav a,
+.sat-action-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid #bfcbc4;
+	border-radius: 6px;
+	background: #eef3ef;
+	color: #17221d;
+	text-decoration: none;
+	font-weight: 650;
+	min-height: 36px;
+	padding: 8px 12px;
+}
+
+.sat-top-nav a:hover,
+.sat-action-link:hover,
+.sat-top-nav a.is-active {
+	background: #dfe9e2;
+	border-color: #8ea99b;
 }
 
 .sat-header {
@@ -57,6 +89,18 @@ select {
 	color: #5b6761;
 	margin-top: 6px;
 	max-width: 740px;
+}
+
+.sat-title-link {
+	display: inline-block;
+	margin-top: 10px;
+	color: #23664a;
+	font-weight: 650;
+	text-decoration: none;
+}
+
+.sat-title-link:hover {
+	text-decoration: underline;
 }
 
 .sat-summary {
@@ -431,6 +475,100 @@ select {
 	margin-top: 10px;
 }
 
+.sat-counter-page {
+	grid-template-rows: auto auto auto auto auto;
+	max-width: 1180px;
+	margin: 0 auto;
+	overflow: visible;
+}
+
+.sat-counter-hero {
+	align-items: start;
+}
+
+.sat-counter-results {
+	display: grid;
+	gap: 12px;
+}
+
+.sat-meme-reference {
+	display: grid;
+	grid-template-columns: minmax(260px, 0.75fr) minmax(320px, 1.25fr);
+	gap: 16px;
+	align-items: start;
+}
+
+.sat-meme-reference h2,
+.sat-meme-reference p {
+	margin: 0;
+}
+
+.sat-meme-reference p {
+	margin-top: 8px;
+	color: #46534c;
+	line-height: 1.5;
+}
+
+.sat-meme-reference img {
+	display: block;
+	width: 100%;
+	height: auto;
+	border: 1px solid #d8ded7;
+	border-radius: 8px;
+	background: #f3f6f4;
+}
+
+.sat-counter-city-grid,
+.sat-counter-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.sat-counter-city {
+	border: 1px solid #d8ded7;
+	background: #fbfcfb;
+	border-radius: 8px;
+	padding: 14px;
+}
+
+.sat-counter-city h3 {
+	margin: 0 0 12px;
+	font-size: 16px;
+}
+
+.sat-callout-list {
+	display: grid;
+	gap: 12px;
+}
+
+.sat-callout-list div {
+	border-left: 3px solid #4d7f67;
+	background: #fbfcfb;
+	padding: 10px 12px;
+}
+
+.sat-callout-list strong {
+	display: block;
+	margin-bottom: 4px;
+}
+
+.sat-callout-list p,
+.sat-counter-applicability p {
+	margin: 0;
+	color: #46534c;
+	line-height: 1.5;
+}
+
+.sat-counter-applicability {
+	display: grid;
+	gap: 12px;
+}
+
+.sat-counter-applicability .sat-action-link {
+	justify-self: start;
+}
+
 .sat-reference {
 	border-left: 1px solid #d8ded7;
 	background: #ffffff;
@@ -490,7 +628,10 @@ select {
 @media (max-width: 1120px) {
 	.sat-app,
 	.sat-controls,
-	.sat-main-grid {
+	.sat-main-grid,
+	.sat-meme-reference,
+	.sat-counter-city-grid,
+	.sat-counter-grid {
 		grid-template-columns: 1fr;
 	}
 

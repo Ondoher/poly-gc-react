@@ -45,6 +45,23 @@ const ASTRA_NEIGHBORHOODS = Object.freeze([
 ]);
 const ASTRA_SPACECRAFT_COUNT = ASTRA_NEIGHBORHOODS
 	.reduce((count, neighborhood) => count + neighborhood.spacecraft.length, 0);
+const MEME_COUNTER_SATELLITE_ID = 'astra-28-2e';
+const MEME_COUNTER_CITIES = Object.freeze([
+	{
+		name: 'Bristol',
+		country: 'GB',
+		lat: 51.4545,
+		lon: -2.5879,
+	},
+	{
+		name: 'London',
+		country: 'GB',
+		lat: 51.5074,
+		lon: -0.1278,
+	},
+]);
+const MEME_CLAIMED_RANGE_MILES = 1397.59;
+const KM_TO_MILES = 0.621371;
 
 const CITY_RECORDS = citiesDatabase
 	.map((record, index) => {
@@ -88,6 +105,10 @@ function formatNumber(value, digits = 2) {
 	});
 }
 
+function formatMiles(kilometers, digits = 1) {
+	return `${formatNumber(kilometers * KM_TO_MILES, digits)} mi`;
+}
+
 function formatVector(vector) {
 	return `X ${formatNumber(vector.x, 3)}, Y ${formatNumber(vector.y, 3)}, Z ${formatNumber(vector.z, 3)} km`;
 }
@@ -104,6 +125,10 @@ function findCityRecord(name, country) {
 		record.name.toLowerCase() === lowerName &&
 		record.country === upperCountry
 	);
+}
+
+function findAstraNeighborhood(id) {
+	return ASTRA_NEIGHBORHOODS.find((neighborhood) => neighborhood.id === id);
 }
 
 function cityMatches(query) {
@@ -309,7 +334,25 @@ export default class App extends React.Component {
 			typeaheadOpen: false,
 			history: [],
 			activeHistoryId: '',
+			page: this.getPageFromHash(),
 		};
+		this.handleHashChange = this.handleHashChange.bind(this);
+	}
+
+	componentDidMount() {
+		window.addEventListener('hashchange', this.handleHashChange);
+	}
+
+	componentWillUnmount() {
+		window.removeEventListener('hashchange', this.handleHashChange);
+	}
+
+	getPageFromHash() {
+		return window.location.hash === '#/meme-check' ? 'meme-check' : 'calculator';
+	}
+
+	handleHashChange() {
+		this.setState({ page: this.getPageFromHash() });
 	}
 
 	getSatellite() {
@@ -441,12 +484,26 @@ export default class App extends React.Component {
 		}
 	}
 
+	renderTopNav() {
+		const onMemePage = this.state.page === 'meme-check';
+
+		return (
+			<nav className="sat-top-nav" aria-label="SAT app sections">
+				<a className={!onMemePage ? 'is-active' : ''} href="#/calculator">Calculator</a>
+				<a className={onMemePage ? 'is-active' : ''} href="#/meme-check">Meme check</a>
+			</nav>
+		);
+	}
+
 	renderHeader(result, recommendation) {
 		return (
 			<header className="sat-header">
 				<div className="sat-title-block">
 					<h1>ASTRA Satellite Pointing Calculator</h1>
 					<p>Pick a city and the app selects the best ASTRA orbital neighborhood by elevation, then calculates WGS84 station coordinates, look vector, azimuth, elevation, and slant range.</p>
+					<a className="sat-title-link" href="#/meme-check">
+						Check the 1,397 mile satellite meme with the same 3D geometry.
+					</a>
 				</div>
 				<div className="sat-summary">
 					<div className="sat-metric">
@@ -763,7 +820,112 @@ export default class App extends React.Component {
 		);
 	}
 
-	render() {
+	renderMemeCounterPage() {
+		const neighborhood = findAstraNeighborhood(MEME_COUNTER_SATELLITE_ID);
+		const satellite = satelliteEcef(neighborhood.longitude, neighborhood.altitude);
+		const cityResults = MEME_COUNTER_CITIES.map((city) => calculateCityResult(city, satellite));
+		const averageRangeMiles = cityResults
+			.reduce((sum, result) => sum + result.range * KM_TO_MILES, 0) / cityResults.length;
+		const errorFactor = averageRangeMiles / MEME_CLAIMED_RANGE_MILES;
+
+		return (
+			<div className="sat-app sat-app-single">
+				<main className="sat-workspace sat-counter-page">
+					{this.renderTopNav()}
+					<header className="sat-header sat-counter-hero">
+						<div className="sat-title-block">
+							<h1>The 1,397 mile satellite meme uses the wrong geometry</h1>
+							<p>The image turns local dish bearings into a flat triangle between Bristol, London, and ASTRA 28.2E. The real calculation is Earth-centered 3D geometry with a separate local horizon at each city.</p>
+						</div>
+						<div className="sat-summary">
+							<div className="sat-metric">
+								<span>Meme claim</span>
+								<strong>{formatNumber(MEME_CLAIMED_RANGE_MILES, 2)} mi</strong>
+							</div>
+							<div className="sat-metric">
+								<span>Correct range</span>
+								<strong>{formatNumber(averageRangeMiles, 0)} mi</strong>
+							</div>
+							<div className="sat-metric">
+								<span>Error factor</span>
+								<strong>{formatNumber(errorFactor, 1)}x</strong>
+							</div>
+						</div>
+					</header>
+					<section className="sat-panel sat-meme-reference">
+						<div>
+							<h2>The claim being checked</h2>
+							<p>The meme compares dish-pointing directions from Bristol and London, then treats them as one flat triangle. The numbers below recalculate the same ASTRA neighborhood with the app's 3D Earth-centered method.</p>
+						</div>
+						<img
+							src="assets/images/meme.jpg"
+							alt="Meme claiming satellites are not 22,000 miles away and deriving a 1,397.59 mile distance from Bristol and London dish angles."
+						/>
+					</section>
+					<section className="sat-panel sat-counter-results">
+						<h2>Same cities, same ASTRA slot, correct 3D calculation</h2>
+						<div className="sat-counter-city-grid">
+							{cityResults.map((result) => (
+								<div className="sat-counter-city" key={result.name}>
+									<h3>{result.label}</h3>
+									<div className="sat-result-values">
+										<div><span>Azimuth</span><strong>{formatNumber(result.azimuth, 2)} deg</strong></div>
+										<div><span>Elevation</span><strong>{formatNumber(result.elevation, 2)} deg</strong></div>
+										<div><span>Slant range</span><strong>{formatNumber(result.range, 1)} km</strong></div>
+										<div><span>Slant range</span><strong>{formatMiles(result.range, 1)}</strong></div>
+									</div>
+								</div>
+							))}
+						</div>
+						<p className="sat-note">These values use ASTRA 2E/2F/2G at 28.2 deg east, the same orbital neighborhood shown in the image.</p>
+					</section>
+					<div className="sat-counter-grid">
+						<section className="sat-panel">
+							<h2>What the meme gets wrong</h2>
+							<div className="sat-callout-list">
+								<div>
+									<strong>It flattens the Earth.</strong>
+									<p>Bristol and London do not share one horizon line. Each city has its own tangent plane, and each local vertical points away from Earth at a different angle.</p>
+								</div>
+								<div>
+									<strong>It misuses azimuth bearings.</strong>
+									<p>The DishPointer values around 142.7 deg and 145.5 deg are compass directions. Turning their offsets into one planar triangle does not solve the satellite distance.</p>
+								</div>
+								<div>
+									<strong>It ignores the satellite's 3D position.</strong>
+									<p>A geostationary satellite sits over the equator at a fixed longitude. The line of sight from each city has east, north, and up components, not just a flat map angle.</p>
+								</div>
+							</div>
+						</section>
+						<section className="sat-panel">
+							<h2>How this app answers it</h2>
+							<div className="sat-callout-list">
+								<div>
+									<strong>Convert each city to WGS84 ECEF.</strong>
+									<p>The app places Bristol, London, or any selected city in an Earth-centered coordinate system using the WGS84 ellipsoid.</p>
+								</div>
+								<div>
+									<strong>Place ASTRA on the GEO ring.</strong>
+									<p>ASTRA 28.2E is modeled above the equator at 35,786 km altitude, giving a real satellite position in the same coordinate frame.</p>
+								</div>
+								<div>
+									<strong>Compute the actual look vector.</strong>
+									<p>The app subtracts city position from satellite position, rotates the vector into the city's local east/north/up frame, and derives azimuth, elevation, and slant range.</p>
+								</div>
+							</div>
+						</section>
+					</div>
+					<section className="sat-panel sat-counter-applicability">
+						<h2>What the rest of the app is for</h2>
+						<p>The main calculator applies this same geometry to any city in the city dataset or any manually entered latitude and longitude. It checks the modeled ASTRA orbital neighborhoods, rejects slots below the local horizon, and recommends the visible slot with the highest elevation.</p>
+						<a className="sat-action-link" href="#/calculator">Back to the general ASTRA calculator</a>
+					</section>
+				</main>
+			</div>
+		);
+	}
+
+	renderCalculatorPage() {
 		const recommendation = this.getRecommendation();
 		const satellite = recommendation?.satellite || this.getSatellite();
 		const result = recommendation?.noVisibleAstra ? null : recommendation?.result || null;
@@ -771,6 +933,7 @@ export default class App extends React.Component {
 		return (
 			<div className="sat-app">
 				<main className="sat-workspace">
+					{this.renderTopNav()}
 					{this.renderHeader(result, recommendation)}
 					<div className="sat-controls">
 						{this.renderCityPanel()}
@@ -785,5 +948,11 @@ export default class App extends React.Component {
 				{this.renderReference()}
 			</div>
 		);
+	}
+
+	render() {
+		return this.state.page === 'meme-check'
+			? this.renderMemeCounterPage()
+			: this.renderCalculatorPage();
 	}
 }
