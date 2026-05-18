@@ -1,5 +1,4 @@
 import React from 'react';
-import citiesDatabase from 'cities.json';
 import ReactMarkdown from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
@@ -63,29 +62,6 @@ const MEME_COUNTER_CITIES = Object.freeze([
 const MEME_CLAIMED_RANGE_MILES = 1397.59;
 const KM_TO_MILES = 0.621371;
 
-const CITY_RECORDS = citiesDatabase
-	.map((record, index) => {
-		const lat = Number(record.lat);
-		const lon = Number(record.lng);
-		const country = String(record.country || '').toUpperCase();
-		const name = String(record.name || '').trim();
-		const admin1 = String(record.admin1 || '').trim();
-		const admin2 = String(record.admin2 || '').trim();
-
-		return {
-			id: `${name.toLowerCase()}|${country}|${admin1}|${admin2}|${index}`,
-			label: [name, admin1, country].filter(Boolean).join(', '),
-			name,
-			country,
-			admin1,
-			admin2,
-			lat,
-			lon,
-			searchText: [name, admin1, admin2, country].join(' ').toLowerCase(),
-		};
-	})
-	.filter((record) => record.name && record.country && Number.isFinite(record.lat) && Number.isFinite(record.lon));
-const CITY_RECORDS_BY_ID = new Map(CITY_RECORDS.map((record) => [record.id, record]));
 function degreesToRadians(value) {
 	return value * Math.PI / 180;
 }
@@ -117,50 +93,26 @@ function cityLabel(city) {
 	return city.country ? `${city.name}, ${city.country}` : city.name;
 }
 
-function findCityRecord(name, country) {
-	const lowerName = name.toLowerCase();
-	const upperCountry = country.toUpperCase();
-
-	return CITY_RECORDS.find((record) =>
-		record.name.toLowerCase() === lowerName &&
-		record.country === upperCountry
-	);
-}
-
 function findAstraNeighborhood(id) {
 	return ASTRA_NEIGHBORHOODS.find((neighborhood) => neighborhood.id === id);
 }
 
-function cityMatches(query) {
-	const normalizedQuery = String(query || '').trim().toLowerCase();
-	if (!normalizedQuery) {
-		return [];
-	}
+function makeCityRecord(record, index) {
+	const name = String(record.n || '').trim();
+	const country = String(record.c || '').toUpperCase();
+	const admin1 = String(record.a || '').trim();
+	const lat = Number(record.lat);
+	const lon = Number(record.lon);
 
-	const terms = normalizedQuery.split(/\s+/).filter(Boolean);
-	const exactMatches = [];
-	const prefixMatches = [];
-	const looseMatches = [];
-
-	for (const record of CITY_RECORDS) {
-		if (!terms.every((term) => record.searchText.includes(term))) {
-			continue;
-		}
-
-		if (record.name.toLowerCase() === normalizedQuery) {
-			exactMatches.push(record);
-		} else if (record.name.toLowerCase().startsWith(normalizedQuery)) {
-			prefixMatches.push(record);
-		} else {
-			looseMatches.push(record);
-		}
-
-		if (exactMatches.length + prefixMatches.length + looseMatches.length >= 80) {
-			break;
-		}
-	}
-
-	return [...exactMatches, ...prefixMatches, ...looseMatches].slice(0, 18);
+	return {
+		id: String(index),
+		label: [name, admin1, country].filter(Boolean).join(', '),
+		name,
+		country,
+		admin1,
+		lat,
+		lon,
+	};
 }
 
 function makeEmptyCitySelection() {
@@ -335,12 +287,16 @@ export default class App extends React.Component {
 			history: [],
 			activeHistoryId: '',
 			page: this.getPageFromHash(),
+			cityIndex: [],
+			cityLoadState: 'loading',
+			cityLoadError: '',
 		};
 		this.handleHashChange = this.handleHashChange.bind(this);
 	}
 
 	componentDidMount() {
 		window.addEventListener('hashchange', this.handleHashChange);
+		this.loadCityRecords();
 	}
 
 	componentWillUnmount() {
@@ -353,6 +309,68 @@ export default class App extends React.Component {
 
 	handleHashChange() {
 		this.setState({ page: this.getPageFromHash() });
+	}
+
+	async loadCityRecords() {
+		try {
+			const response = await fetch('assets/data/cities.json');
+			if (!response.ok) {
+				throw new Error(`Unable to load city index (${response.status}).`);
+			}
+
+			const rawRecords = await response.json();
+
+			this.setState({
+				cityIndex: rawRecords,
+				cityLoadState: 'loaded',
+				cityLoadError: '',
+			});
+		} catch (error) {
+			this.setState({
+				cityLoadState: 'error',
+				cityLoadError: error.message,
+			});
+		}
+	}
+
+	cityMatches(query) {
+		const normalizedQuery = String(query || '').trim().toLowerCase();
+		if (!normalizedQuery || this.state.cityLoadState !== 'loaded') {
+			return [];
+		}
+
+		const terms = normalizedQuery.split(/\s+/).filter(Boolean);
+		const exactMatches = [];
+		const prefixMatches = [];
+		const looseMatches = [];
+
+		for (let index = 0; index < this.state.cityIndex.length; index += 1) {
+			const rawRecord = this.state.cityIndex[index];
+			const name = String(rawRecord.n || '').trim();
+			const country = String(rawRecord.c || '').toUpperCase();
+			const admin1 = String(rawRecord.a || '').trim();
+			const searchText = [name, admin1, country].join(' ').toLowerCase();
+
+			if (!terms.every((term) => searchText.includes(term))) {
+				continue;
+			}
+
+			const record = makeCityRecord(rawRecord, index);
+
+			if (record.name.toLowerCase() === normalizedQuery) {
+				exactMatches.push(record);
+			} else if (record.name.toLowerCase().startsWith(normalizedQuery)) {
+				prefixMatches.push(record);
+			} else {
+				looseMatches.push(record);
+			}
+
+			if (exactMatches.length + prefixMatches.length + looseMatches.length >= 80) {
+				break;
+			}
+		}
+
+		return [...exactMatches, ...prefixMatches, ...looseMatches].slice(0, 18);
 	}
 
 	getSatellite() {
@@ -378,7 +396,7 @@ export default class App extends React.Component {
 	}
 
 	componentDidUpdate(previousProps, previousState) {
-		if (!CITY_RECORDS_BY_ID.has(this.state.city.cityId)) {
+		if (!this.state.cityIndex[Number(this.state.city.cityId)]) {
 			return;
 		}
 
@@ -446,10 +464,11 @@ export default class App extends React.Component {
 	}
 
 	selectCity(cityId) {
-		const city = CITY_RECORDS_BY_ID.get(cityId);
-		if (!city) {
+		const rawCity = this.state.cityIndex[Number(cityId)];
+		if (!rawCity) {
 			return;
 		}
+		const city = makeCityRecord(rawCity, Number(cityId));
 
 		this.setState({
 			city: {
@@ -560,8 +579,13 @@ export default class App extends React.Component {
 
 	renderCityPanel() {
 		const city = this.state.city;
-		const matches = cityMatches(city.query);
+		const matches = this.cityMatches(city.query);
 		const showMatches = this.state.typeaheadOpen && matches.length > 0;
+		const cityLoadMessage = this.state.cityLoadState === 'loading'
+			? 'Loading city index...'
+			: this.state.cityLoadState === 'error'
+				? `City search unavailable: ${this.state.cityLoadError}`
+				: 'City search uses a trimmed local index generated from the npm `cities.json` dataset. Type a city name to see matches, or enter latitude and longitude manually.';
 
 		return (
 			<section className="sat-panel">
@@ -572,8 +596,9 @@ export default class App extends React.Component {
 						<input
 							id="city-query"
 							value={city.query}
-							placeholder="Start typing a city..."
+							placeholder={this.state.cityLoadState === 'loaded' ? 'Start typing a city...' : 'Loading cities...'}
 							autoComplete="off"
+							disabled={this.state.cityLoadState !== 'loaded'}
 							onFocus={() => this.setState({ typeaheadOpen: true })}
 							onBlur={() => window.setTimeout(() => this.setState({ typeaheadOpen: false }), 120)}
 							onChange={(event) => this.updateCityQuery(event.target.value)}
@@ -618,7 +643,7 @@ export default class App extends React.Component {
 						</div>
 					</div>
 				</div>
-				<p className="sat-note">City search uses the npm `cities.json` dataset. Type a city name to see matches, or enter latitude and longitude manually.</p>
+				<p className="sat-note">{cityLoadMessage}</p>
 			</section>
 		);
 	}

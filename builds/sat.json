@@ -24,6 +24,12 @@
 			"cwd": "assets/images",
 			"glob": "**/*.{png,jpg,gif,svg}",
 			"keepNest": true
+		},
+		{
+			"dest": "assets/data",
+			"cwd": "assets/data",
+			"glob": "**/*.json",
+			"keepNest": true
 		}
 	],
 	"css": [

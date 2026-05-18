@@ -60,6 +60,7 @@
     "dev:tests:gc": "polylith test gc -w",
     "dev:watch": "polylith watch --all -v false",
     "dev:serve": "nodemon",
+    "build:sat-cities": "node scripts/sat/build-city-index.js",
     "build": "polylith build --all",
     "start": "polylith serve --all"
   },

@@ -32,8 +32,12 @@ The app is now a quick ASTRA geosynchronous satellite pointing calculator:
 - KaTeX CSS is copied from `node_modules/katex/dist/katex.min.css` into
   `dist/sat/assets/css/katex/katex.min.css` by `builds/sat.json`.
 - City lookup uses the npm `cities.json` package. The app imports its
-  `name`, `country`, `lat`, and `lng` records, then filters matches into a
-  typeahead dropdown.
+  data through a generated trimmed index at
+  `src/sat/assets/data/cities.json`, then fetches that JSON at runtime instead
+  of bundling the full npm package into the SAT JavaScript.
+- `scripts/sat/build-city-index.js` regenerates the trimmed city index from
+  `node_modules/cities.json/cities.json`. The generated records keep only
+  `name`, `country`, `admin1`, `lat`, and `lon` using compact JSON keys.
 - The app starts without a seeded city. Typeahead matches appear only after
   the user enters a city query, or the user can enter latitude/longitude
   manually.
@@ -107,6 +111,11 @@ General repo architecture still applies:
 - `npx polylith build sat` passed after replacing placeholder reference links
   in `notes.md` with specific WGS84, ECEF/ENU, GEO altitude, and ASTRA
   neighborhood sources.
+- `npm run build:sat-cities` generated the trimmed city index, and
+  `npx polylith build sat` passed after switching the app to fetch
+  `assets/data/cities.json` at runtime. The active SAT vendor chunk dropped
+  from roughly 20 MB to roughly 2.3 MB uncompressed. The app keeps the compact
+  city index in memory and expands only typeahead matches.
 - Production SAT deploy passed on 2026-05-18 with `NODE_ENV=prod` and
   `NODE_OPTIONS=--max-old-space-size=4096`, using `npx polylith build sat`.
   Smoke checks returned 200 for `/sat/` and `/gc/`, and 404 for `/pipeline`
