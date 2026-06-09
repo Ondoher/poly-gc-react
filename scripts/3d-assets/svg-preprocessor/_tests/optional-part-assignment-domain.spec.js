@@ -12,7 +12,6 @@ describe('optional part assignment domain behavior', function() {
 		}));
 
 		expect(artifact.status).toBe('ready');
-		expect(artifact.optionalParts.label.expected).toBe(true);
 		expect(artifact.optionalParts.label.sourceState).toBe('needs-review');
 		expect(artifact.optionalParts.label.suggestedComponentIds).toEqual([]);
 		expect(artifact.bindingSuggestions).toEqual([]);
@@ -40,7 +39,6 @@ describe('optional part assignment domain behavior', function() {
 		}));
 
 		expect(artifact.status).toBe('ready');
-		expect(artifact.optionalParts.label.expected).toBe(false);
 		expect(artifact.optionalParts.label.sourceState).toBe('source-absent');
 		expect(artifact.optionalParts.label.candidates).toEqual([]);
 		expect(artifact.bindingSuggestions).toEqual([]);
@@ -82,7 +80,6 @@ describe('optional part assignment domain behavior', function() {
 		}));
 
 		expect(artifact.status).toBe('ready');
-		expect(artifact.optionalParts.label.expected).toBe(true);
 		expect(artifact.optionalParts.label.sourceState).toBe('candidate-found');
 		expect(bindingSuggestionForPart(artifact, 'label').componentIds).toEqual(['top-left-stroke']);
 		expect(artifact.optionalParts.label.hint.region).toBe('top-left');
@@ -110,7 +107,6 @@ describe('optional part assignment domain behavior', function() {
 		}));
 
 		expect(artifact.status).toBe('ready');
-		expect(artifact.optionalParts.label.expected).toBe(false);
 		expect(artifact.optionalParts.label.sourceState).toBe('source-absent');
 		expect(artifact.optionalParts.label.candidates).toEqual([]);
 		expect(artifact.optionalParts.label.suggestedComponentIds).toEqual([]);
@@ -168,7 +164,6 @@ describe('optional part assignment domain behavior', function() {
 			},
 		}));
 
-		expect(artifact.optionalParts.label.expected).toBe(true);
 		expect(artifact.optionalParts.label.hint.region).toBe('top-left');
 		expect(artifact.optionalParts.label.sourceState).toBe('candidate-found');
 		expect(bindingSuggestionForPart(artifact, 'label').componentIds).toEqual(['top-left-label']);
@@ -363,7 +358,6 @@ describe('optional part assignment domain behavior', function() {
 		expect(artifact.status).toBe('ready');
 		expect(artifact.optionalParts.label).toEqual(jasmine.objectContaining({
 			role: 'dragon-label',
-			expected: true,
 			sourceState: 'candidate-found',
 		}));
 		expect(artifact.optionalParts.label.hint.region).toBe('top-right');

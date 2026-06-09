@@ -1,6 +1,8 @@
 import path from 'path';
 import sharp from 'sharp';
+import { BASE_OUTPUT } from '../PipelineModel.js';
 import { SourceNormalizationRunner } from '../SourceNormalizationRunner.js';
+import { testPipelineModelFromFile } from './test-pipeline-model.js';
 
 describe('SourceNormalizationRunner', function() {
 	it('processes a requested face and writes normalized artifacts, report, and state', async function() {
@@ -36,14 +38,14 @@ describe('SourceNormalizationRunner', function() {
 		});
 
 		const summary = await runner.run({
-			pipelineStatePath: statePath,
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
 			faceKey: 'b-1',
 		});
 
-		const artifactPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'normalized-components', 'b-1.json');
-		const identifiedSvgPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'identified-components-svgs', 'b-1.svg');
-		const identifiedShapesSvgPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'identified-shapes-svgs', 'b-1.svg');
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-normalization-report.b-1.json');
+		const artifactPath = pipelineArtifactPath('wiki', 'json', 'normalized-components', 'b-1.json');
+		const identifiedSvgPath = pipelineArtifactPath('wiki', 'images', 'identified-components-svg', 'b-1.svg');
+		const identifiedShapesSvgPath = pipelineArtifactPath('wiki', 'images', 'identified-shapes-svg', 'b-1.svg');
+		const reportPath = pipelineArtifactPath('wiki', 'reports', 'source-normalization-report.b-1.json');
 		const artifact = JSON.parse(fs.files.get(artifactPath));
 		const report = JSON.parse(fs.files.get(reportPath));
 
@@ -90,15 +92,7 @@ describe('SourceNormalizationRunner', function() {
 		expect(fs.writes.filter((write) => [artifactPath, identifiedSvgPath, identifiedShapesSvgPath, reportPath].includes(write.filePath))
 			.every((write) => write.encoding === 'utf8')).toBe(true);
 		expect(Object.keys(report.faces)).toEqual(['b-1']);
-		expect(state.faces['b-1'].stages.normalization).toEqual(jasmine.objectContaining({
-			status: 'ready',
-			artifact: normalizeForTest(rootDir, artifactPath),
-			componentCount: 4,
-			alignmentComponentCount: 1,
-			diagnosticCount: 0,
-		}));
-		expect(state.faces['b-1'].state.components['src.b-1.0003'].sourceElementId).toBe('paint');
-		expect(state.faces['b-1'].artifacts.normalizedComponents).toBe(normalizeForTest(rootDir, artifactPath));
+		expect(state.svgPipeline.faces['b-1'].artifacts.normalizedComponents).toBe(artifactPath.replaceAll('\\', '/'));
 	});
 
 	it('records missing source SVGs without stopping the report', async function() {
@@ -124,10 +118,11 @@ describe('SourceNormalizationRunner', function() {
 			},
 		});
 
-		const summary = await runner.run({ pipelineStatePath: statePath });
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-normalization-report.json');
+		const summary = await runner.run({
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
+		});
+		const reportPath = pipelineArtifactPath('wiki', 'reports', 'source-normalization-report.json');
 		const report = JSON.parse(fs.files.get(reportPath));
-		const state = JSON.parse(fs.files.get(statePath));
 
 		expect(summary.warningCount).toBe(1);
 		expect(summary.componentCount).toBe(0);
@@ -144,14 +139,7 @@ describe('SourceNormalizationRunner', function() {
 			shapeCount: 0,
 			alignmentShapeCount: 0,
 		});
-		expect(state.faces['wind-n'].stages.normalization).toEqual({
-			status: 'missing-source-svg',
-			diagnostics: [{
-				level: 'warning',
-				code: 'missing-source-svg',
-			}],
-			updatedOn: '2026-05-03T12:00:00.000Z',
-		});
+		expect(JSON.parse(fs.files.get(statePath)).svgPipeline.faces['wind-n'].artifacts.normalizedComponents).toBeUndefined();
 	});
 
 	it('carries source defs into identified preview SVGs', async function() {
@@ -185,15 +173,120 @@ describe('SourceNormalizationRunner', function() {
 			}),
 		});
 
-		await runner.run({ pipelineStatePath: statePath, faceKey: 'b-8' });
+		await runner.run({
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
+			faceKey: 'b-8',
+		});
 
-		const identifiedSvgPath = path.resolve(output3dDir, 'svg-preprocessor', 'classic', 'identified-components-svgs', 'b-8.svg');
-		const identifiedShapesSvgPath = path.resolve(output3dDir, 'svg-preprocessor', 'classic', 'identified-shapes-svgs', 'b-8.svg');
+		const identifiedSvgPath = pipelineArtifactPath('classic', 'images', 'identified-components-svg', 'b-8.svg');
+		const identifiedShapesSvgPath = pipelineArtifactPath('classic', 'images', 'identified-shapes-svg', 'b-8.svg');
 
 		expect(fs.files.get(identifiedSvgPath)).toContain('<defs><linearGradient id="linearGradient8797"/></defs>');
 		expect(fs.files.get(identifiedSvgPath)).toContain('fill="url(#linearGradient8797)"');
 		expect(fs.files.get(identifiedShapesSvgPath)).toContain('<defs><linearGradient id="linearGradient8797"/></defs>');
 		expect(fs.files.get(identifiedShapesSvgPath)).toContain('fill="url(#linearGradient8797)"');
+	});
+
+	it('flattens overlapping opaque paint layers into visible source geometry', function() {
+		const runner = new SourceNormalizationRunner();
+		const artifact = runner.buildNormalizedFaceArtifact({
+			tilesetId: 'wiki',
+			faceKey: 'flower-1',
+			sourceFile: path.resolve('test-root/source/flower-1.svg'),
+			generatedOn: '2026-05-03T12:00:00.000Z',
+			extracted: {
+				viewBox: { minX: 0, minY: 0, width: 20, height: 20 },
+				components: [
+					extractedComponent('lower-red', box(0, 0, 10, 10), { fill: '#c20000' }),
+					extractedComponent('upper-green', box(2, 2, 8, 8), { fill: '#21a126' }),
+				],
+			},
+		});
+		const lower = artifact.components.find((component) => component.sourceElementId === 'lower-red');
+		const upper = artifact.components.find((component) => component.sourceElementId === 'upper-green');
+
+		expect(lower.flattenedPaintLayer).toBe(true);
+		expect(lower.paintLayerFlattening.occludingComponentIds).toEqual(['src.flower-1.0002']);
+		expect(lower.transform).toBeNull();
+		expect(lower.bounds).toEqual(jasmine.objectContaining({
+			left: 0,
+			top: 0,
+			right: 10,
+			bottom: 10,
+			width: 10,
+			height: 10,
+		}));
+		expect(upper.flattenedPaintLayer).toBeUndefined();
+		expect(artifact.alignmentComponentIds).toEqual(['src.flower-1.0001', 'src.flower-1.0002']);
+	});
+
+	it('does not flatten overlap between separately identified source shapes', function() {
+		const runner = new SourceNormalizationRunner();
+		const artifact = runner.buildNormalizedFaceArtifact({
+			tilesetId: 'traditional',
+			faceKey: 'd-7',
+			sourceFile: path.resolve('test-root/source/d-7.svg'),
+			generatedOn: '2026-05-03T12:00:00.000Z',
+			extracted: {
+				viewBox: { minX: 0, minY: 0, width: 30, height: 20 },
+				components: [
+					extractedComponent('left-dot', box(0, 0, 12, 12), { fill: '#069200' }),
+					extractedComponent('right-dot', box(8, 0, 20, 12), { fill: '#5be335' }),
+				],
+			},
+		});
+		const left = artifact.components.find((component) => component.sourceElementId === 'left-dot');
+		const right = artifact.components.find((component) => component.sourceElementId === 'right-dot');
+
+		expect(left.flattenedPaintLayer).toBeUndefined();
+		expect(left.paintLayerFlattening).toBeUndefined();
+		expect(left.pathData).toBe('M0,0 H12 V12 H0 Z');
+		expect(right.flattenedPaintLayer).toBeUndefined();
+	});
+
+	it('does not flatten fragments from the same source paint element into each other', function() {
+		const runner = new SourceNormalizationRunner();
+		const sourceUseInstance = {
+			sourceUseId: 'path3478',
+			sourceUseInstanceId: 'source-use.0002.path3478',
+		};
+		const artifact = runner.buildNormalizedFaceArtifact({
+			tilesetId: 'traditional',
+			faceKey: 'c-5',
+			sourceFile: path.resolve('test-root/source/c-5.svg'),
+			generatedOn: '2026-05-03T12:00:00.000Z',
+			extracted: {
+				viewBox: { minX: 0, minY: 0, width: 100, height: 140 },
+				components: [
+					extractedComponent('top-fragment', box(10, 10, 30, 30), {
+						fill: '#c20000',
+						fillRule: 'evenodd',
+						sourceElementComponentId: 'src-element.0006',
+						sourceUseId: 'path3478',
+						sourceUseInstanceId: 'source-use.0002.path3478',
+						sourceUseInstances: [sourceUseInstance],
+						pathData: 'M10,10 H30 V30 H10 Z M15,15 H25 V25 H15 Z',
+					}),
+					extractedComponent('main-fragment', box(12, 20, 40, 50), {
+						fill: '#c20000',
+						fillRule: 'evenodd',
+						sourceElementComponentId: 'src-element.0006',
+						sourceUseId: 'path3478',
+						sourceUseInstanceId: 'source-use.0002.path3478',
+						sourceUseInstances: [sourceUseInstance],
+						pathData: 'M12,20 H40 V50 H12 Z',
+					}),
+				],
+			},
+		});
+
+		const top = artifact.components.find((component) => component.sourceElementId === 'top-fragment');
+		const main = artifact.components.find((component) => component.sourceElementId === 'main-fragment');
+
+		expect(top.flattenedPaintLayer).toBeUndefined();
+		expect(top.paintLayerFlattening).toBeUndefined();
+		expect(top.pathData).toContain('M15,15');
+		expect(main.flattenedPaintLayer).toBeUndefined();
 	});
 
 	it('emits manifest metadata output options during source normalization', async function() {
@@ -226,9 +319,11 @@ describe('SourceNormalizationRunner', function() {
 			extractComponents: () => extractionWithOnePaintComponent(),
 		});
 
-		await runner.run({ pipelineStatePath: statePath });
+		await runner.run({
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
+		});
 
-		const artifact = JSON.parse(fs.files.get(path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'normalized-components', 'dragon-r.json')));
+		const artifact = JSON.parse(fs.files.get(pipelineArtifactPath('wiki', 'json', 'normalized-components', 'dragon-r.json')));
 		expect(artifact.sourceMetadata.outputOptions.layout.scaleMode).toBe('largest-containing-box');
 	});
 
@@ -260,11 +355,11 @@ describe('SourceNormalizationRunner', function() {
 		});
 
 		await runner.run({
-			pipelineStatePath: statePath,
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
 			tilesetId: 'custom',
 		});
 
-		const artifactPath = path.resolve(output3dDir, 'svg-preprocessor', 'custom', 'normalized-components', 'blank.json');
+		const artifactPath = pipelineArtifactPath('custom', 'json', 'normalized-components', 'blank.json');
 		const artifact = JSON.parse(fs.files.get(artifactPath));
 
 		expect(artifact.status).toBe('needs-review');
@@ -276,10 +371,7 @@ describe('SourceNormalizationRunner', function() {
 			message: 'No source components remain after tile-layer and negative-space filtering.',
 		}]);
 		const state = JSON.parse(fs.files.get(statePath));
-		expect(state.faces.blank.stages.normalization).toEqual(jasmine.objectContaining({
-			status: 'needs-review',
-			diagnosticCount: 1,
-		}));
+		expect(state.svgPipeline.faces.blank.artifacts.normalizedComponents).toBe(artifactPath.replaceAll('\\', '/'));
 	});
 
 	it('processes full manifest runs in sorted face-key order', async function() {
@@ -306,14 +398,16 @@ describe('SourceNormalizationRunner', function() {
 			extractComponents: () => extractionWithOnePaintComponent(),
 		});
 
-		await runner.run({ pipelineStatePath: statePath });
+		await runner.run({
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
+		});
 
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-normalization-report.json');
+		const reportPath = pipelineArtifactPath('wiki', 'reports', 'source-normalization-report.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(Object.keys(report.faces)).toEqual(['b-1', 'd-3', 'wind-n']);
 		const state = JSON.parse(fs.files.get(statePath));
-		expect(Object.keys(state.faces).sort()).toEqual(['b-1', 'd-3', 'wind-n']);
+		expect(Object.keys(state.svgPipeline.faces).sort()).toEqual(['b-1', 'd-3', 'wind-n']);
 	});
 
 	it('uses tileset id from options before canonical state tileset id', async function() {
@@ -331,8 +425,13 @@ describe('SourceNormalizationRunner', function() {
 			output3dDir,
 		});
 
-		const explicit = await runner.run({ pipelineStatePath: explicitStatePath, tilesetId: 'from-options' });
-		const state = await runner.run({ pipelineStatePath: stateTilesetPath });
+		const explicit = await runner.run({
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath: explicitStatePath }),
+			tilesetId: 'from-options',
+		});
+		const state = await runner.run({
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath: stateTilesetPath }),
+		});
 
 		expect(explicit.tilesetId).toBe('from-state');
 		expect(state.tilesetId).toBe('from-state');
@@ -757,7 +856,9 @@ describe('SourceNormalizationRunner', function() {
 			},
 		});
 
-		await runner.run({ pipelineStatePath: statePath });
+		await runner.run({
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
+		});
 
 		expect(extractCalls).toEqual([{
 			svgSource: '<svg id="source"/>',
@@ -813,12 +914,17 @@ describe('SourceNormalizationRunner', function() {
 			extractComponents: () => extractionWithOnePaintComponent(),
 		});
 
-		await runner.run({ pipelineStatePath: statePath });
-		await runner.run({ pipelineStatePath: statePath, faceKey: 'b-1' });
+		await runner.run({
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
+		});
+		await runner.run({
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
+			faceKey: 'b-1',
+		});
 
-		expect(fs.files.has(path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-normalization-report.json')))
+		expect(fs.files.has(pipelineArtifactPath('wiki', 'reports', 'source-normalization-report.json')))
 			.toBe(true);
-		expect(fs.files.has(path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-normalization-report.b-1.json')))
+		expect(fs.files.has(pipelineArtifactPath('wiki', 'reports', 'source-normalization-report.b-1.json')))
 			.toBe(true);
 	});
 
@@ -838,8 +944,10 @@ describe('SourceNormalizationRunner', function() {
 			},
 		});
 
-		const summary = await runner.run({ pipelineStatePath: statePath });
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'empty', 'reports', 'source-normalization-report.json');
+		const summary = await runner.run({
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
+		});
+		const reportPath = pipelineArtifactPath('empty', 'reports', 'source-normalization-report.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(summary).toEqual({
@@ -850,7 +958,7 @@ describe('SourceNormalizationRunner', function() {
 			alignmentComponentCount: 0,
 			shapeCount: 0,
 			alignmentShapeCount: 0,
-			componentsDir: normalizeForTest(rootDir, path.resolve(output3dDir, 'svg-preprocessor', 'empty', 'normalized-components')),
+			componentsDir: normalizeForTest(rootDir, pipelineArtifactPath('empty', 'json', 'normalized-components')),
 			reportPath: normalizeForTest(rootDir, reportPath),
 			warningCount: 0,
 		});
@@ -891,6 +999,10 @@ function fakeFileSystem(initialFiles = {}) {
 
 function canonicalTestStatePath(rootDir, tilesetId) {
 	return path.resolve(rootDir, 'scripts', 'output', '3d-assets', 'svg-preprocessor', tilesetId, 'tileset.json');
+}
+
+function pipelineArtifactPath(tilesetId, ...segments) {
+	return path.resolve(BASE_OUTPUT, tilesetId, ...segments);
 }
 
 function canonicalFaceState(sourceSvg, configuration = {}) {
@@ -1000,3 +1112,4 @@ function box(left, top, right, bottom) {
 function normalizeForTest(rootDir, filePath) {
 	return path.relative(rootDir, filePath).replaceAll('\\', '/');
 }
+

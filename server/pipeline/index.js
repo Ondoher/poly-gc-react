@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import { execFile } from "child_process";
 import { access, mkdir, readFile, writeFile } from "fs/promises";
-import { promisify } from "util";
 import {
 	BASE_TILE_MODELS_DIR,
 	LARGE_FACES_DIR,
@@ -20,7 +19,6 @@ import { renderGeneratedAssetPreview } from "../../scripts/3d-assets/asset-pipel
 import { getAssetPipelineStream } from "./asset-pipeline-stream.js";
 import { initializePipelineStream } from "./stream.js";
 
-const execFileAsync = promisify(execFile);
 const INFERENCE_DIR = path.resolve(OUTPUT_3D_DIR, "metadata-inference");
 const DEFAULT_REFERENCE_STRUCTURE_ID = "default-large-faces";
 const DEFAULT_REFERENCE_STRUCTURE_DIR = path.resolve(OUTPUT_3D_DIR, "reference-structure", DEFAULT_REFERENCE_STRUCTURE_ID);
@@ -74,6 +72,8 @@ export default function pipelineRouter(express, router, app) {
 	router.get("/api/pipeline/base-tile-selection", getBaseTileSelection);
 	router.post("/api/pipeline/base-tile-selection", saveBaseTileSelection);
 	router.post("/api/pipeline/asset-generation/start", startAssetGeneration);
+	router.post("/api/pipeline/asset-generation/cancel", cancelAssetGeneration);
+	router.post("/api/pipeline/asset-generation/reset", resetAssetGeneration);
 	router.get("/api/pipeline/asset-review", getAssetReview);
 	router.get("/api/pipeline/reference/:fileName", sendReferenceImage);
 	router.get("/api/pipeline/asset", sendAsset);
@@ -432,31 +432,55 @@ async function acceptSourceAssignment(req, res) {
 		const model = await loadPipelineModel(tilesetId);
 		const currencyDate = req.body?.currencyDate || req.body?.sourceStateUpdatedOn || "";
 		const actionsByFace = normalizeBindingActionRequest(req.body, { allowEmpty: true });
-		const faces = [];
 
 		assertPipelineCurrencyDate(model, currencyDate);
-		applyBindingActionsByFace(model, actionsByFace);
+		const updatedFaceKeys = applyBindingActionsByFace(model, actionsByFace);
+		let semanticRefresh = null;
 
-		for (const [faceKey] of model.getFaceEntries()) {
-			model.acceptSourceAssignment(faceKey);
+		if (updatedFaceKeys.length > 0) {
+			await model.save();
+			semanticRefresh = await runAlignmentAndSemanticAssignment(tilesetId);
+
+			if (!semanticRefresh.ok) {
+				return res.json({
+					ok: false,
+					tilesetId,
+					currencyDate: model.getCurrencyDate(),
+					sourceStateUpdatedOn: model.getCurrencyDate(),
+					updatedFaceKeys,
+					stage: semanticRefresh.stage,
+					alignment: semanticRefresh.alignment,
+					semanticAssignment: semanticRefresh.semanticAssignment,
+				});
+			}
+		}
+
+		const acceptedModel = updatedFaceKeys.length > 0
+			? await loadPipelineModel(tilesetId)
+			: model;
+		const faces = [];
+
+		for (const [faceKey] of acceptedModel.getFaceEntries()) {
+			acceptedModel.acceptSourceAssignment(faceKey);
 			faces.push({
 				faceKey,
-				path: relativePath(model.pipelineFilename),
+				path: relativePath(acceptedModel.pipelineFilename),
 			});
 		}
 
-		await model.save();
+		await acceptedModel.save();
 		const finalRendering = await runFinalRenderingComposition(tilesetId);
 
 		if (!finalRendering.ok) {
 			return res.json({
 				ok: false,
 				tilesetId,
-				currencyDate: model.getCurrencyDate(),
-				sourceStateUpdatedOn: model.getCurrencyDate(),
+				currencyDate: acceptedModel.getCurrencyDate(),
+				sourceStateUpdatedOn: acceptedModel.getCurrencyDate(),
 				acceptedFaceCount: faces.length,
 				faces,
 				stage: "final-rendering",
+				semanticRefresh,
 				finalRendering,
 			});
 		}
@@ -464,11 +488,13 @@ async function acceptSourceAssignment(req, res) {
 		res.json({
 			ok: true,
 			tilesetId,
-			currencyDate: model.getCurrencyDate(),
-			sourceStateUpdatedOn: model.getCurrencyDate(),
+			currencyDate: acceptedModel.getCurrencyDate(),
+			sourceStateUpdatedOn: acceptedModel.getCurrencyDate(),
 			acceptedFaceCount: faces.length,
 			faces,
+			updatedFaceKeys,
 			nextPage: "final-rendering-options",
+			semanticRefresh,
 			finalRendering,
 		});
 	} catch (error) {
@@ -1027,14 +1053,21 @@ async function saveBaseTileSelection(req, res) {
 		}
 
 		const baseTileChanged = model.setSelectedBaseTileVariantId(variantId);
-		await model.save();
+		const activeRun = activeAssetGenerationRuns.get(tilesetId);
+		let plan = null;
 		if (baseTileChanged) {
 			await clearAssetGenerationQueue(model);
-			const activeRun = activeAssetGenerationRuns.get(tilesetId);
 			if (activeRun) {
 				activeRun.cancelled = true;
+			} else {
+				plan = model.planAssetGeneration();
+				await writeAssetGenerationQueue(model, {
+					baseTileVariantId: plan.baseTileVariantId,
+					faceKeys: plan.plannedFaces.map((face) => face.faceKey),
+				});
 			}
 		}
+		await model.save();
 
 		res.json({
 			ok: true,
@@ -1044,6 +1077,7 @@ async function saveBaseTileSelection(req, res) {
 			selectedVariantId: variantId,
 			selectedVariant: variant,
 			nextPage: "asset-review",
+			...(plan ? { plan } : {}),
 			assetPipeline: model.getAssetPipeline(),
 		});
 	} catch (error) {
@@ -1057,6 +1091,54 @@ async function startAssetGeneration(req, res) {
 		const requestedFaceKeys = req.body?.faceKeys || req.body?.faceKey;
 		const faceKeys = cleanQueueFaceKeys(requestedFaceKeys ? [].concat(requestedFaceKeys) : []);
 		res.json(await runAssetGenerationForTileset(tilesetId, { faceKeys }));
+	} catch (error) {
+		sendError(res, error);
+	}
+}
+
+async function cancelAssetGeneration(req, res) {
+	try {
+		const tilesetId = await requestedTilesetId(req);
+		const model = await cancelAssetGenerationQueue(tilesetId);
+		const assetPipeline = model.getAssetPipeline();
+
+		res.json({
+			ok: true,
+			tilesetId,
+			currencyDate: model.getCurrencyDate(),
+			summary: assetGenerationSummary(assetPipeline.faces || {}, model),
+			assetPipeline,
+		});
+	} catch (error) {
+		sendError(res, error);
+	}
+}
+
+async function resetAssetGeneration(req, res) {
+	try {
+		const tilesetId = await requestedTilesetId(req);
+		const model = await cancelAssetGenerationQueue(tilesetId);
+		const deletedPaths = (await model.clearGeneratedAssetArtifacts()).map(relativePath);
+		model.resetAssetGenerationState();
+		await model.save();
+
+		const assetPipeline = model.getAssetPipeline();
+		getAssetPipelineStream().emitProgress(tilesetId, "assetGenerationComplete", {
+			stage: "asset-generation",
+			completed: 0,
+			total: 0,
+			percent: 100,
+			message: "Generated asset state reset.",
+		});
+
+		res.json({
+			ok: true,
+			tilesetId,
+			currencyDate: model.getCurrencyDate(),
+			deletedPaths,
+			summary: assetGenerationSummary(assetPipeline.faces || {}, model),
+			assetPipeline,
+		});
 	} catch (error) {
 		sendError(res, error);
 	}
@@ -1086,6 +1168,7 @@ async function runAssetGenerationForTileset(tilesetId, { faceKeys = [] } = {}) {
 	activeAssetGenerationRuns.set(safeTilesetId, {
 		baseTileVariantId,
 		cancelled: false,
+		childProcesses: new Set(),
 		promise: run,
 	});
 	return run;
@@ -1485,7 +1568,7 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 		};
 	} catch (error) {
 		const tilesetId = activeTilesetId;
-		if (isAssetGenerationBaseTileChangedError(error)) {
+		if (isAssetGenerationBaseTileChangedError(error) || isAssetGenerationCancelledError(error)) {
 			if (tilesetId) {
 				try {
 					const model = await loadPipelineModel(tilesetId);
@@ -1496,12 +1579,28 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 					console.warn("Failed to clear generated asset queue after base tile change.", saveError);
 				}
 			}
-			getAssetPipelineStream().emitProgress(tilesetId, "assetGenerationCancelled", {
+			getAssetPipelineStream().clearQueueState(tilesetId);
+			getAssetPipelineStream().emitProgress(tilesetId, "assetGenerationComplete", {
 				stage: failedStepId || "asset-generation",
 				faceKey: failedFaceKey || null,
 				status: "cancelled",
+				completed: 0,
+				total: 0,
+				percent: 100,
 				message: error.message,
 			});
+			if (isAssetGenerationCancelledError(error)) {
+				const model = await loadPipelineModel(tilesetId);
+				const assetPipeline = model.getAssetPipeline();
+				return {
+					ok: true,
+					tilesetId,
+					cancelled: true,
+					currencyDate: model.getCurrencyDate(),
+					summary: assetGenerationSummary(assetPipeline.faces || {}, model),
+					assetPipeline,
+				};
+			}
 			throw error;
 		}
 		if (tilesetId && failedFaceKey) {
@@ -1556,6 +1655,7 @@ async function getAssetReview(req, res) {
 }
 
 async function runSvgCutterGeneration({ tilesetId, faceKey }) {
+	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const result = await runNodeCommand([
 		SVG_CUTTER_SCRIPT,
 		"--tileset-id",
@@ -1563,8 +1663,10 @@ async function runSvgCutterGeneration({ tilesetId, faceKey }) {
 		"--face-key",
 		faceKey,
 	], {
+		activeRun,
 		maxBuffer: 20 * 1024 * 1024,
 	});
+	throwIfAssetGenerationCancelled(activeRun);
 
 	if (result.status !== 0) {
 		const details = [result.stderr, result.stdout, result.error]
@@ -1580,6 +1682,7 @@ async function runSvgCutterGeneration({ tilesetId, faceKey }) {
 }
 
 async function runStampedBodyGeneration({ tilesetId, faceKey }) {
+	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const result = await runNodeCommand([
 		STAMPED_BODY_SCRIPT,
 		"--tileset-id",
@@ -1587,8 +1690,10 @@ async function runStampedBodyGeneration({ tilesetId, faceKey }) {
 		"--face-key",
 		faceKey,
 	], {
+		activeRun,
 		maxBuffer: 20 * 1024 * 1024,
 	});
+	throwIfAssetGenerationCancelled(activeRun);
 
 	if (result.status !== 0) {
 		const details = [result.stderr, result.stdout, result.error]
@@ -1604,6 +1709,7 @@ async function runStampedBodyGeneration({ tilesetId, faceKey }) {
 }
 
 async function runColoredInlayGeneration({ tilesetId, faceKey }) {
+	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const result = await runNodeCommand([
 		COLORED_INLAY_SCRIPT,
 		"--tileset-id",
@@ -1611,8 +1717,10 @@ async function runColoredInlayGeneration({ tilesetId, faceKey }) {
 		"--face-key",
 		faceKey,
 	], {
+		activeRun,
 		maxBuffer: 20 * 1024 * 1024,
 	});
+	throwIfAssetGenerationCancelled(activeRun);
 
 	if (result.status !== 0) {
 		const details = [result.stderr, result.stdout, result.error]
@@ -2429,6 +2537,11 @@ function optionalPreviewComponents(normalized, assignment, faceState = null) {
 		className: component.className,
 		fill: component.fill,
 		stroke: component.stroke,
+		strokeWidth: component.strokeWidth,
+		fillRule: component.fillRule || null,
+		clipRule: component.clipRule || null,
+		pathData: component.pathData,
+		transform: component.transform || null,
 		bounds: component.bounds,
 		center: component.center,
 		area: component.area,
@@ -2998,27 +3111,37 @@ async function fileExists(filename) {
 }
 
 async function runNodeCommand(command, options = {}) {
-	try {
-		const result = await execFileAsync(process.execPath, command, {
+	const activeRun = options.activeRun || null;
+	return new Promise((resolve) => {
+		const child = execFile(process.execPath, command, {
 			cwd: process.cwd(),
 			env: options.env || process.env,
 			maxBuffer: options.maxBuffer || 10 * 1024 * 1024,
+		}, (error, stdout, stderr) => {
+			activeRun?.childProcesses?.delete(child);
+			if (!error) {
+				resolve({
+					status: 0,
+					error: null,
+					stdout,
+					stderr,
+				});
+				return;
+			}
+
+			resolve({
+				status: typeof error.code === "number" ? error.code : 1,
+				error: error.message,
+				stdout: error.stdout || stdout || "",
+				stderr: error.stderr || stderr || "",
+			});
 		});
 
-		return {
-			status: 0,
-			error: null,
-			stdout: result.stdout,
-			stderr: result.stderr,
-		};
-	} catch (error) {
-		return {
-			status: typeof error.code === "number" ? error.code : 1,
-			error: error.message,
-			stdout: error.stdout || "",
-			stderr: error.stderr || "",
-		};
-	}
+		activeRun?.childProcesses?.add(child);
+		if (activeRun?.cancelled) {
+			child.kill();
+		}
+	});
 }
 
 function canonicalSourceSemanticStrength(strength) {
@@ -3227,6 +3350,35 @@ async function removeAssetGenerationQueueFace(model, faceKey) {
 	});
 }
 
+async function cancelAssetGenerationQueue(tilesetId) {
+	const safeTilesetId = sanitizeOutputScope(tilesetId);
+	if (!safeTilesetId) {
+		throw new Error("A valid tileset id is required.");
+	}
+
+	const activeRun = activeAssetGenerationRuns.get(safeTilesetId);
+	if (activeRun) {
+		activeRun.cancelled = true;
+		for (const child of activeRun.childProcesses || []) {
+			child.kill();
+		}
+	}
+
+	const model = await loadPipelineModel(safeTilesetId);
+	model.clearAssetGenerationRuntimeState();
+	await model.save();
+	await clearAssetGenerationQueue(model);
+	getAssetPipelineStream().clearQueueState(safeTilesetId);
+	getAssetPipelineStream().emitProgress(safeTilesetId, "assetGenerationComplete", {
+		stage: "asset-generation",
+		completed: 0,
+		total: 0,
+		percent: 100,
+		message: "Asset generation queue canceled.",
+	});
+	return model;
+}
+
 async function clearAssetGenerationQueue(model) {
 	const filename = assetGenerationQueuePath(model);
 	try {
@@ -3259,7 +3411,12 @@ async function assertAssetGenerationBaseTileCurrent(tilesetId, expectedBaseTileV
 	const model = await loadPipelineModel(tilesetId);
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const selectedBaseTileVariantId = model.getSelectedBaseTileVariantId();
-	if (activeRun?.cancelled || selectedBaseTileVariantId !== expectedBaseTileVariantId) {
+	if (activeRun?.cancelled) {
+		const error = new Error("Asset generation was canceled.");
+		error.code = "ASSET_GENERATION_CANCELLED";
+		throw error;
+	}
+	if (selectedBaseTileVariantId !== expectedBaseTileVariantId) {
 		const error = new Error(`Asset generation stopped because the selected base tile changed from ${expectedBaseTileVariantId} to ${selectedBaseTileVariantId || "(none)"}.`);
 		error.code = "ASSET_GENERATION_BASE_TILE_CHANGED";
 		throw error;
@@ -3267,8 +3424,22 @@ async function assertAssetGenerationBaseTileCurrent(tilesetId, expectedBaseTileV
 	return model;
 }
 
+function throwIfAssetGenerationCancelled(activeRun) {
+	if (!activeRun?.cancelled) {
+		return;
+	}
+
+	const error = new Error("Asset generation was canceled.");
+	error.code = "ASSET_GENERATION_CANCELLED";
+	throw error;
+}
+
 function isAssetGenerationBaseTileChangedError(error) {
 	return error?.code === "ASSET_GENERATION_BASE_TILE_CHANGED";
+}
+
+function isAssetGenerationCancelledError(error) {
+	return error?.code === "ASSET_GENERATION_CANCELLED";
 }
 
 async function resumePendingAssetGenerationQueues() {

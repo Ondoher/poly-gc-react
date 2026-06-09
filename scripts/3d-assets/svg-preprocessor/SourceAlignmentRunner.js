@@ -11,6 +11,7 @@ import {
 	targetPixelsToViewBoxBounds,
 	unionBounds,
 } from './visual-component-alignment.js';
+import { tilesetJsonDir, tilesetOutputRoot } from './pipeline-output-paths.js';
 
 export const DEFAULT_SOURCE_ALIGNMENT_TILESET_ID = 'wiki';
 const BOUNDED_PIXEL_FIT_MAX_ASPECT_CHANGE = 1.6;
@@ -91,6 +92,12 @@ export class SourceAlignmentRunner {
 			});
 		}
 
+		const reportPath = this.path.resolve(
+			tilesetOutputRoot(tilesetId),
+			'reports',
+			`source-alignment-report${requestedFaceKey ? `.${requestedFaceKey}` : ''}.json`,
+		);
+		await this.writeJson(reportPath, report);
 		await pipelineModel.save();
 
 		return {
@@ -100,6 +107,7 @@ export class SourceAlignmentRunner {
 			alignmentGroupCount: report.alignmentGroupCount,
 			candidateCount: report.candidateCount,
 			warningCount: report.warnings.length,
+			reportPath: this.normalizePath(reportPath),
 		};
 	}
 
@@ -163,6 +171,14 @@ export class SourceAlignmentRunner {
 				path: normalizedPath ? this.normalizePath(normalizedPath) : null,
 			});
 			pipelineModel.clearAlignmentMatches(faceKey);
+			this.recordStateUpdate({
+				tilesetId,
+				faceKey,
+				stage: {
+					status: 'missing-normalized-components',
+					diagnosticCount: 1,
+				},
+			});
 			return;
 		}
 
@@ -194,6 +210,8 @@ export class SourceAlignmentRunner {
 			faceMetadata,
 		});
 
+		const alignmentMapPath = this.path.resolve(tilesetJsonDir(tilesetId, 'source-alignment'), `${faceKey}.json`);
+		await this.writeJson(alignmentMapPath, alignmentMap);
 		pipelineModel.setAlignmentMatches(faceKey, compactAlignmentMatchesFromAlignmentMap(alignmentMap));
 		pipelineModel.applyAlignmentPlacement(faceKey, alignmentPlacementsFromAlignmentMap(alignmentMap));
 
@@ -205,6 +223,30 @@ export class SourceAlignmentRunner {
 			candidateCount: alignmentMap.candidates.length,
 			diagnostics: alignmentMap.diagnostics,
 		};
+		this.recordStateUpdate({
+			tilesetId,
+			faceKey,
+			stage: {
+				status: alignmentMap.status,
+				artifact: this.normalizePath(alignmentMapPath),
+				alignmentGroupCount: alignmentMap.alignmentGroups.length,
+				candidateCount: alignmentMap.candidates.length,
+				diagnosticCount: alignmentMap.diagnostics.length,
+			},
+		});
+	}
+
+	recordStateUpdate({ tilesetId, faceKey, stage }) {
+		if (!this.updateState) {
+			return;
+		}
+		this.updateState({
+			tilesetId,
+			faceKey,
+			stages: {
+				alignment: stage,
+			},
+		});
 	}
 
 	/**
@@ -215,6 +257,11 @@ export class SourceAlignmentRunner {
 	 */
 	async readJson(filePath) {
 		return JSON.parse(await this.fs.readFile(filePath, 'utf8'));
+	}
+
+	async writeJson(outputPath, content) {
+		await this.fs.mkdir(this.path.dirname(outputPath), { recursive: true });
+		await this.fs.writeFile(outputPath, `${JSON.stringify(content, null, 2)}\n`, 'utf8');
 	}
 
 	/**
@@ -250,12 +297,6 @@ export class SourceAlignmentRunner {
 		return this.path.isAbsolute(artifactPath)
 			? artifactPath
 			: this.path.resolve(this.rootDir, artifactPath);
-	}
-
-	recordStateUpdate(update) {
-		if (typeof this.updateState === 'function') {
-			this.updateState(update);
-		}
 	}
 }
 
@@ -297,7 +338,7 @@ export function alignFace({
 			code: 'missing-optional-part-assignment',
 			message: 'Alignment expected an optional part assignment artifact before source/reference matching.',
 		});
-	} else if (optionalAssignment.status && optionalAssignment.status !== 'ready') {
+	} else if (optionalAssignment.status && optionalAssignment.status !== 'ready' && optionalAssignment.status !== 'canonical') {
 		diagnostics.push({
 			level: 'warning',
 			code: 'optional-part-assignment-not-ready',
@@ -1066,7 +1107,11 @@ function selectSourceComponentsForReferenceGroup({ group, sourceComponents, refe
 
 	const optionalComponents = selectOptionalSourceComponentsForGroup(group, sourceComponents, optionalContext);
 
-	if (optionalComponents) {
+	if (optionalComponents && (
+		optionalComponents.length > 0
+		|| hasReviewedOptionalAbsenceForGroup(group, optionalContext)
+		|| !glyphMetadataForGroup(group, faceMetadata)?.sourcePresent
+	)) {
 		return optionalComponents;
 	}
 
@@ -1281,6 +1326,12 @@ function selectOptionalSourceComponentsForGroup(group, sourceComponents, optiona
 
 function isReviewedOptionalAbsence(reviewStatus) {
 	return ['accepted', 'reviewed'].includes(reviewStatus);
+}
+
+function hasReviewedOptionalAbsenceForGroup(group, optionalContext) {
+	const matchingPart = optionalPartForGroup(group, optionalContext);
+	return isOptionalSourceAbsence(matchingPart)
+		&& isReviewedOptionalAbsence(matchingPart.reviewStatus);
 }
 
 function isOptionalSourceAbsence(part) {

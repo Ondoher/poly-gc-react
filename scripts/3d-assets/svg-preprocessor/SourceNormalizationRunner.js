@@ -1,9 +1,10 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import paper from 'paper';
 import sharp from 'sharp';
 import { OUTPUT_3D_DIR, ROOT_DIR } from '../shared/asset-paths.js';
 import { getComponentUnionBounds } from './normalized-face-components.js';
-import { tilesetImageDir, tilesetJsonDir } from './pipeline-output-paths.js';
+import { tilesetImageDir, tilesetJsonDir, tilesetOutputRoot } from './pipeline-output-paths.js';
 import { extractSourceSvgComponents } from './source-svg-components.js';
 
 export const DEFAULT_TILESET_ID = 'wiki';
@@ -12,6 +13,7 @@ const LABEL_OCR_PIXEL_MAE_THRESHOLD = 0.3;
 const LABEL_OCR_MASS_CROP_TAIL_RATIO = 0.02;
 const LABEL_OCR_MASS_CROP_DARKNESS_FLOOR = 0.04;
 const STRUCTURAL_SOURCE_USE_IDS = new Set(['facesize', 'rect2236']);
+const PAINT_LAYER_FLATTENING_MIN_VISIBLE_AREA = 0.001;
 const IDENTIFIED_SVG_NAMESPACE_ATTRIBUTES = [
 	'xmlns="http://www.w3.org/2000/svg"',
 	'xmlns:xlink="http://www.w3.org/1999/xlink"',
@@ -130,6 +132,12 @@ export class SourceNormalizationRunner {
 			});
 		}
 
+		const reportPath = this.path.resolve(
+			tilesetOutputRoot(activeTilesetId),
+			'reports',
+			`source-normalization-report${requestedFaceKey ? `.${requestedFaceKey}` : ''}.json`,
+		);
+		await this.writeJson(reportPath, report);
 		await pipelineModel.save();
 
 		return {
@@ -141,6 +149,7 @@ export class SourceNormalizationRunner {
 			shapeCount: report.shapeCount,
 			alignmentShapeCount: report.alignmentShapeCount,
 			componentsDir: this.normalizePath(componentsDir),
+			reportPath: this.normalizePath(reportPath),
 			warningCount: report.warnings.length,
 		};
 	}
@@ -295,12 +304,15 @@ export class SourceNormalizationRunner {
 	 * @returns {SourceNormalizedFaceArtifact} Normalized face artifact.
 	 */
 	buildNormalizedFaceArtifact({ tilesetId, faceKey, sourceFile, generatedOn, extracted, faceState = null }) {
-		const components = extracted.components.map((component, index) => this.formatSourceComponent(faceKey, component, index));
+		const formattedComponents = extracted.components.map((component, index) => this.formatSourceComponent(faceKey, component, index));
+		const initialSourceShapes = this.deriveSourceShapes(faceKey, formattedComponents.filter((component) => component.pathData && component.bounds));
+		const components = flattenVisiblePaintLayers(annotateSourceShapeIds(formattedComponents, initialSourceShapes));
 		const alignmentComponents = components
+			.filter((component) => component.pathData && component.bounds)
 			.filter((component) => !component.classification.tileLayerCandidate)
 			.filter((component) => !component.classification.negativeSpaceCandidate)
 			.filter((component) => hasVisiblePaint(component));
-		const sourceShapes = this.deriveSourceShapes(faceKey, components);
+		const sourceShapes = this.deriveSourceShapes(faceKey, components.filter((component) => component.pathData && component.bounds));
 		const alignmentComponentIds = new Set(alignmentComponents.map((component) => component.componentId));
 		const alignmentShapeIds = sourceShapes
 			.filter((shape) => shape.componentIds.some((componentId) => alignmentComponentIds.has(componentId)))
@@ -1314,6 +1326,217 @@ function uniqueValues(values) {
 
 function hasVisiblePaint(component) {
 	return isVisiblePaint(component.fill) || isVisiblePaint(component.stroke);
+}
+
+function flattenVisiblePaintLayers(components) {
+	const flattenedComponents = components.map((component) => ({ ...component }));
+
+	for (let index = 0; index < flattenedComponents.length; index += 1) {
+		const component = flattenedComponents[index];
+		if (!shouldFlattenPaintLayer(component)) {
+			continue;
+		}
+
+		const occludingComponents = flattenedComponents
+			.slice(index + 1)
+			.filter(shouldFlattenPaintLayer)
+			.filter((candidate) => boundsOverlap(component.bounds, candidate.bounds))
+			.filter((candidate) => boundsContainCenter(component.bounds, candidate.center || candidate.bounds?.center))
+			.filter((candidate) => !sameSourcePaintElement(component, candidate))
+			.filter((candidate) => sameSourceShape(component, candidate))
+			.filter((candidate) => !boundsContain(candidate.bounds, component.bounds));
+
+		if (occludingComponents.length === 0) {
+			continue;
+		}
+
+		const flattened = subtractPaintLayerOcclusions(component, occludingComponents);
+		if (!flattened.changed) {
+			continue;
+		}
+
+		flattenedComponents[index] = {
+			...component,
+			...flattened.component,
+			paintLayerFlattening: {
+				source: 'source-normalization',
+				occludingComponentIds: occludingComponents.map((candidate) => candidate.componentId),
+			},
+		};
+	}
+
+	return flattenedComponents;
+}
+
+function shouldFlattenPaintLayer(component) {
+	return Boolean(component?.pathData)
+		&& isVisiblePaint(component.fill)
+		&& !isVisiblePaint(component.stroke)
+		&& !component.classification?.tileLayerCandidate
+		&& !component.classification?.negativeSpaceCandidate
+		&& (component.opacity == null || Number(component.opacity) >= 1)
+		&& (component.fillOpacity == null || Number(component.fillOpacity) >= 1);
+}
+
+function annotateSourceShapeIds(components, sourceShapes) {
+	const shapeIdByComponentId = new Map();
+	for (const shape of sourceShapes || []) {
+		for (const componentId of shape.componentIds || []) {
+			shapeIdByComponentId.set(componentId, shape.shapeId);
+		}
+	}
+
+	return components.map((component) => ({
+		...component,
+		...(shapeIdByComponentId.has(component.componentId)
+			? { sourceShapeId: shapeIdByComponentId.get(component.componentId) }
+			: {}),
+	}));
+}
+
+function sameSourceShape(left, right) {
+	return Boolean(left?.sourceShapeId && right?.sourceShapeId)
+		&& left.sourceShapeId === right.sourceShapeId;
+}
+
+function sameSourcePaintElement(left, right) {
+	const leftKey = sourcePaintElementKey(left);
+	return Boolean(leftKey) && leftKey === sourcePaintElementKey(right);
+}
+
+function sourcePaintElementKey(component) {
+	return component?.sourceUseInstanceId
+		|| component?.sourceElementComponentId
+		|| null;
+}
+
+function subtractPaintLayerOcclusions(component, occludingComponents) {
+	let result = null;
+
+	try {
+		result = makeTransformedCompoundPath(component);
+		let changed = false;
+
+		for (const occludingComponent of occludingComponents) {
+			const occluder = makeTransformedCompoundPath(occludingComponent);
+			const next = result.subtract(occluder, { insert: false });
+
+			result.remove();
+			occluder.remove();
+			result = next;
+			changed = true;
+
+			if (!result || result.isEmpty()) {
+				break;
+			}
+		}
+
+		if (!changed || !result || result.isEmpty()) {
+			result?.remove?.();
+			return {
+				changed,
+				component: {
+					pathData: null,
+					bounds: null,
+					center: null,
+					area: 0,
+					transform: null,
+					hiddenByPaintLayerFlattening: true,
+				},
+			};
+		}
+
+		const bounds = sourceBoundsFromPaperBounds(result.bounds);
+		if (bounds.area <= PAINT_LAYER_FLATTENING_MIN_VISIBLE_AREA) {
+			result.remove();
+			return {
+				changed: true,
+				component: {
+					pathData: null,
+					bounds: null,
+					center: null,
+					area: 0,
+					transform: null,
+					hiddenByPaintLayerFlattening: true,
+				},
+			};
+		}
+
+		const pathData = result.pathData;
+		result.remove();
+
+		return {
+			changed: true,
+			component: {
+				pathData,
+				bounds,
+				center: bounds.center,
+				area: bounds.area,
+				transform: null,
+				flattenedPaintLayer: true,
+			},
+		};
+	} catch {
+		result?.remove?.();
+		return { changed: false, component };
+	}
+}
+
+function makeTransformedCompoundPath(component) {
+	const item = new paper.CompoundPath(component.pathData);
+	const transform = component.transform || { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+	item.transform(new paper.Matrix(
+		transform.a ?? 1,
+		transform.b ?? 0,
+		transform.c ?? 0,
+		transform.d ?? 1,
+		transform.e ?? 0,
+		transform.f ?? 0,
+	));
+	return item;
+}
+
+function sourceBoundsFromPaperBounds(bounds) {
+	const left = round(bounds.left);
+	const top = round(bounds.top);
+	const right = round(bounds.right);
+	const bottom = round(bounds.bottom);
+	const width = round(bounds.width);
+	const height = round(bounds.height);
+
+	return {
+		left,
+		top,
+		right,
+		bottom,
+		width,
+		height,
+		area: round(width * height),
+		center: {
+			x: round(bounds.center.x),
+			y: round(bounds.center.y),
+		},
+	};
+}
+
+function round(value) {
+	return Number(Number(value || 0).toFixed(3));
+}
+
+function boundsOverlap(left, right) {
+	return Boolean(left && right)
+		&& left.right >= right.left
+		&& left.left <= right.right
+		&& left.bottom >= right.top
+		&& left.top <= right.bottom;
+}
+
+function boundsContainCenter(bounds, center) {
+	return Boolean(bounds && center)
+		&& center.x >= bounds.left
+		&& center.x <= bounds.right
+		&& center.y >= bounds.top
+		&& center.y <= bounds.bottom;
 }
 
 function sourceUseShapeInstance(component) {

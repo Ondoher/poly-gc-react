@@ -43,6 +43,7 @@ export default class AssetReviewPage extends React.Component {
 
 	renderHeader() {
 		const { generationRunning, processing, summary } = this.state;
+		const hasQueuedWork = Boolean(generationRunning || summary?.buildingCount || summary?.queuedCount);
 
 		return (
 			<header className="asset-review-header">
@@ -60,6 +61,8 @@ export default class AssetReviewPage extends React.Component {
 				</div>
 				<div className="asset-review-actions">
 					<Button onClick={() => this.props.pageView.startGeneration()} disabled={processing || generationRunning}>Generate</Button>
+					<Button onClick={() => this.props.pageView.cancelGeneration()} disabled={processing || !hasQueuedWork}>Cancel</Button>
+					<Button onClick={() => this.props.pageView.resetGeneration()} disabled={processing}>Reset</Button>
 					<Button onClick={() => this.props.pageView.load({ force: true })} disabled={processing}>Reload</Button>
 				</div>
 			</header>

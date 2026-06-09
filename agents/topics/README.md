@@ -33,6 +33,7 @@ Bootstrap rule:
 - [Deployment](/c:/dev/poly-gc-react/agents/topics/deployment/README.md)
 - [Difficulty](/c:/dev/poly-gc-react/agents/topics/difficulty/README.md)
 - [Engine Refactor](/c:/dev/poly-gc-react/agents/topics/engine-refactor/README.md)
+- [Flat](/c:/dev/poly-gc-react/agents/topics/flat/README.md)
 - [MJ](/c:/dev/poly-gc-react/agents/topics/mj/README.md)
 - [MVP](/c:/dev/poly-gc-react/agents/topics/mvp/README.md)
 - [Pipeline App](/c:/dev/poly-gc-react/agents/topics/pipeline-app/README.md)
@@ -59,6 +60,9 @@ Bootstrap rule:
   board-generation behavior.
 - Use `engine-refactor` for the UI-less Mahjongg engine experiment and live to
   experimental engine mapping.
+- Use `flat` for the new project currently in discovery, including product
+  notes, app shape, architecture decisions, deployment placement, and eventual
+  implementation status.
 - Use `mj` for general Mahjongg feature notes that are not specifically engine
   refactor, scaling, difficulty, or animation work.
 - Use `mvp` for MVP scope and product-tracking notes.

@@ -7,9 +7,14 @@ import { ASSET_FONTS_DIR, OUTPUT_3D_DIR, ROOT_DIR } from '../shared/asset-paths.
 import { ColorPicker } from './ColorPicker.js';
 import { Colors } from './ColorPalette.js';
 import { PaletteBuilder } from './PaletteBuilder.js';
-import { isRelatedKnockout, makePaintPathWithKnockouts } from './normalized-face-components.js';
+import {
+	getComponentUnionBounds,
+	isRelatedKnockout,
+	makePaintPathWithKnockouts,
+	transformComponentPath,
+} from './normalized-face-components.js';
 import { BASE_REFERENCE } from './PipelineModel.js';
-import { tilesetImageDir, tilesetOutputRoot } from './pipeline-output-paths.js';
+import { tilesetImageDir, tilesetJsonDir, tilesetOutputRoot } from './pipeline-output-paths.js';
 
 export const DEFAULT_FINAL_RENDERING_TILESET_ID = 'wiki';
 export const DEFAULT_HOUSE_LABEL_FONT_PATH = path.resolve(ASSET_FONTS_DIR, 'gluten-800.ttf');
@@ -97,6 +102,12 @@ export class FinalRenderingCompositionRunner {
 			});
 		}
 		tilesetState.currencyDate = generatedOn;
+		const reportPath = this.path.resolve(
+			tilesetOutputRoot(tilesetId),
+			'reports',
+			`final-rendering-composition-report${requestedFaceKey ? `.${requestedFaceKey}` : ''}.json`,
+		);
+		await this.writeJson(reportPath, report);
 		await this.writeJson(pipelineStatePath, tilesetState);
 
 		return {
@@ -110,6 +121,7 @@ export class FinalRenderingCompositionRunner {
 			unresolvedRenderCount: report.unresolvedRenderCount,
 			diagnosticCount: report.diagnosticCount,
 			warningCount: report.warnings.length,
+			reportPath: this.normalizePath(reportPath),
 		};
 	}
 
@@ -248,8 +260,11 @@ export class FinalRenderingCompositionRunner {
 		if (colorReviewPng) {
 			artifact.steps.color.png = this.normalizePath(colorReviewPngPath);
 		}
+		const artifactPath = this.path.resolve(tilesetJsonDir(tilesetId, 'final-rendering-map'), `${faceKey}.json`);
+		await this.writeJson(artifactPath, artifact);
 		faceState.artifacts = {
 			...(faceState.artifacts || {}),
+			finalRenderingMap: this.normalizePath(artifactPath),
 			finalRenderingColorSvg: this.normalizePath(colorSvgPath),
 			...(colorReviewPng ? {
 				finalRenderingColorReviewPng: this.normalizePath(colorReviewPngPath),
@@ -813,6 +828,7 @@ export function buildLayoutStep({
 			layoutTransform,
 		});
 		const renderedComponentIds = [];
+		const sourceRenderEntries = [];
 		for (const componentId of renderOrderedComponentIds(assignment.sourceComponentIds, componentsById)) {
 			const component = componentsById.get(componentId);
 			if (!component?.pathData) {
@@ -826,17 +842,24 @@ export function buildLayoutStep({
 				continue;
 			}
 
-			const renderedTransform = applyArtworkMirrorToTransform(layoutTransform.matrix, artworkMirror);
+			const componentLayoutTransform = layoutTransformForSourceComponent({
+				componentId,
+				assignment,
+				assignmentCandidates,
+				fallbackTransform: layoutTransform,
+			});
+			const renderedTransform = applyArtworkMirrorToTransform(componentLayoutTransform.matrix, artworkMirror);
 			renderedComponentIds.push(componentId);
-			sourcePaths.push(layoutSourceComponentPath({
+			sourceRenderEntries.push({
 				component,
 				partId,
 				transform: renderedTransform,
-				layoutSource: layoutTransform.source,
+				layoutSource: componentLayoutTransform.source,
 				negativeSpaceComponents,
 				extraAttributes: artworkMirror ? { 'data-artwork-mirror': 'x' } : {},
-			}));
+			});
 		}
+		sourcePaths.push(...renderSourceComponentEntries(sourceRenderEntries));
 
 		parts[partId] = layoutPartRecord({
 			partId,
@@ -1176,6 +1199,7 @@ export function buildColorStep({
 		});
 		const componentRecords = {};
 		const renderedComponentIds = [];
+		const sourceRenderEntries = [];
 
 		if (!layoutTransform?.matrix) {
 			diagnostics.push({
@@ -1224,7 +1248,7 @@ export function buildColorStep({
 			});
 			renderedComponentIds.push(componentId);
 			componentRecords[componentId] = colorDecision;
-			sourcePaths.push(layoutSourceComponentPath({
+			sourceRenderEntries.push({
 				component,
 				partId,
 				transform: renderedTransform,
@@ -1240,8 +1264,9 @@ export function buildColorStep({
 					'data-target-paint': colorDecision.targetPaint,
 					...(artworkMirror ? { 'data-artwork-mirror': 'x' } : {}),
 				},
-			}));
+			});
 		}
+		sourcePaths.push(...renderSourceComponentEntries(sourceRenderEntries));
 
 		parts[partId] = colorPartRecord({
 			partId,
@@ -1778,6 +1803,92 @@ function layoutSourceComponentPath({
 	});
 }
 
+function renderSourceComponentEntries(entries) {
+	return sourceComponentRenderGroups(entries)
+		.map((entry) => layoutSourceComponentPath(entry));
+}
+
+function sourceComponentRenderGroups(entries) {
+	const groups = [];
+
+	for (const entry of entries) {
+		const currentGroup = groups[groups.length - 1];
+		if (currentGroup && canMergeSourceComponentEntry(currentGroup[0], entry)) {
+			currentGroup.push(entry);
+		} else {
+			groups.push([entry]);
+		}
+	}
+
+	return groups.map((group) => group.length === 1
+		? group[0]
+		: mergeSourceComponentEntries(group));
+}
+
+function canMergeSourceComponentEntry(left, right) {
+	return originalSourceElementKey(left.component)
+		&& originalSourceElementKey(left.component) === originalSourceElementKey(right.component)
+		&& left.partId === right.partId
+		&& left.layoutSource === right.layoutSource
+		&& left.color === right.color
+		&& paintKey(left.component) === paintKey(right.component)
+		&& matrixKey(left.transform) === matrixKey(right.transform)
+		&& attributesKey(left.extraAttributes) === attributesKey(right.extraAttributes);
+}
+
+function mergeSourceComponentEntries(entries) {
+	const first = entries[0];
+	const components = entries.map((entry) => normalizeNegativeSpaceComponent(entry.component));
+	const componentIds = components.map((component) => component.componentId || component.id).filter(Boolean);
+	const bakedPathData = components
+		.map((component) => transformComponentPath(component))
+		.join(' ');
+
+	return {
+		...first,
+		component: {
+			...first.component,
+			componentId: componentIds.join(' '),
+			id: componentIds.join(' '),
+			pathData: bakedPathData,
+			transform: null,
+			bounds: getComponentUnionBounds(components),
+		},
+		extraAttributes: {
+			...(first.extraAttributes || {}),
+			'data-component-id': componentIds.join(' '),
+			'data-geometry-normalized': 'source-element-recombined',
+			'data-geometry-fragment-count': String(entries.length),
+		},
+	};
+}
+
+function originalSourceElementKey(component) {
+	return component.sourceElementId
+		? `${component.sourceIndex ?? ''}:${component.sourceElementId}`
+		: null;
+}
+
+function paintKey(component) {
+	return [
+		component.fill || '',
+		component.stroke || '',
+		component.strokeWidth || '',
+		component.fillRule || '',
+	].join('|');
+}
+
+function matrixKey(matrix) {
+	const value = matrixObject(matrix);
+	return [value.a, value.b, value.c, value.d, value.e, value.f]
+		.map((part) => Number((part ?? 0).toFixed(6)).toString())
+		.join(' ');
+}
+
+function attributesKey(attributes = {}) {
+	return JSON.stringify(Object.entries(attributes || {}).sort(([left], [right]) => left.localeCompare(right)));
+}
+
 function candidatesForSourceAssignment(assignment, candidates) {
 	const assignmentComponentIds = new Set(assignment.sourceComponentIds || []);
 	const partId = assignment.referencePartId || assignment.sourcePartId;
@@ -2293,6 +2404,16 @@ function layoutTransformForSourceAssignment({
 			};
 		}
 
+		const wholePartTransform = wholePartAlignmentTransform({
+			assignment,
+			artifact,
+			componentsById,
+			referenceStructure,
+		});
+		if (wholePartTransform) {
+			return wholePartTransform;
+		}
+
 		return {
 			matrix: candidate?.transform?.matrix || null,
 			source: 'alignment-map',
@@ -2345,6 +2466,63 @@ function layoutTransformForSourceAssignment({
 		scaleMode: 'largest-containing-box',
 		targetBounds,
 		alignedBounds: transformBounds(sourceBounds, matrixObject(matrix)),
+	};
+}
+
+function wholePartAlignmentTransform({
+	assignment,
+	artifact,
+	componentsById,
+	referenceStructure,
+}) {
+	if ((assignment.sourceComponentIds || []).length < 2 || (assignment.referenceComponentIds || []).length < 2) {
+		return null;
+	}
+
+	const sourceBounds = sourceBoundsForAssignment(assignment, componentsById);
+	const referenceComponents = referenceStructure?.faces?.[artifact.faceKey]?.components || [];
+	const targetBounds = unionBounds((assignment.referenceComponentIds || [])
+		.map((componentId) => referenceComponents.find((component) => component.componentId === componentId)?.bounds)
+		.filter(Boolean));
+
+	if (!sourceBounds || !targetBounds) {
+		return null;
+	}
+
+	const matrix = matrixFromBounds(sourceBounds, targetBounds);
+	return {
+		matrix,
+		source: 'whole-part-alignment',
+		targetBounds,
+		alignedBounds: transformBounds(sourceBounds, matrixObject(matrix)),
+	};
+}
+
+function layoutTransformForSourceComponent({
+	componentId,
+	assignment,
+	assignmentCandidates,
+	fallbackTransform,
+}) {
+	if ((assignment.referenceComponentIds || []).length > 0) {
+		return fallbackTransform;
+	}
+
+	const componentCandidate = (assignmentCandidates || []).find((candidate) => (
+		(candidate.sourceComponentIds || []).length === 1
+		&& candidate.sourceComponentIds[0] === componentId
+		&& candidate.transform?.matrix
+	));
+
+	if (!componentCandidate) {
+		return fallbackTransform;
+	}
+
+	return {
+		matrix: componentCandidate.transform.matrix,
+		source: 'alignment-map',
+		targetBounds: componentCandidate.targetBounds || null,
+		alignedBounds: componentCandidate.alignedBounds || null,
 	};
 }
 

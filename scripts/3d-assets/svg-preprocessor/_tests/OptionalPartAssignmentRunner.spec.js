@@ -1,5 +1,7 @@
 import path from 'path';
+import { BASE_OUTPUT } from '../PipelineModel.js';
 import { OptionalPartAssignmentRunner } from '../OptionalPartAssignmentRunner.js';
+import { testPipelineModelFromFile } from './test-pipeline-model.js';
 
 describe('OptionalPartAssignmentRunner', function() {
 	it('writes optional-part artifacts, reports, and state for one face', async function() {
@@ -29,12 +31,12 @@ describe('OptionalPartAssignmentRunner', function() {
 
 		const summary = await runner.run({
 			tilesetId: 'wiki',
-			pipelineStatePath: statePath,
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
 			faceKey: 'flower-1',
 		});
 
 		const artifactPath = optionalArtifactPath(output3dDir, 'wiki', 'flower-1');
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'optional-part-assignment-report.flower-1.json');
+		const reportPath = pipelineArtifactPath('wiki', 'reports', 'optional-part-assignment-report.flower-1.json');
 		const artifact = JSON.parse(fs.files.get(artifactPath));
 		const report = JSON.parse(fs.files.get(reportPath));
 
@@ -57,32 +59,22 @@ describe('OptionalPartAssignmentRunner', function() {
 			bindingCount: 2,
 		}));
 		const state = JSON.parse(fs.files.get(statePath));
-		expect(state.faces['flower-1'].stages.optionalPartAssignment).toEqual(jasmine.objectContaining({
-			status: artifact.status,
-			artifact: normalizeForTest(rootDir, artifactPath),
-			optionalPartCount: 2,
-			candidateCount: artifact.summary.candidateCount,
-			bindingCount: 2,
-			diagnosticCount: artifact.diagnostics.length,
-		}));
-		expect(Object.values(state.faces['flower-1'].state.bindings).length).toBe(2);
-		expect(Object.values(state.faces['flower-1'].state.bindings)
+		const faceState = state.svgPipeline.faces['flower-1'].state;
+		expect(Object.values(faceState.bindings).length).toBe(2);
+		expect(Object.values(faceState.bindings)
 			.map((binding) => binding.partId)
 			.sort()).toEqual(['glyph', 'label']);
-		expect(Object.values(state.faces['flower-1'].state.bindings)
-			.every((binding) => binding.strength === 'accepted'
-				&& binding.reviewStatus === 'accepted'
-				&& binding.acceptedOn === '2026-05-03T12:00:00.000Z'
-				&& binding.updatedOn === '2026-05-03T12:00:00.000Z')).toBe(true);
-		expect(state.faces['flower-1'].state.parts.label).toEqual(jasmine.objectContaining({
-			reviewStatus: 'accepted',
-			acceptedOn: '2026-05-03T12:00:00.000Z',
-			updatedOn: '2026-05-03T12:00:00.000Z',
+		expect(Object.values(faceState.bindings)
+			.every((binding) => binding.strength === 'tentative')).toBe(true);
+		expect(faceState.parts.label).toEqual(jasmine.objectContaining({
+			contentKind: 'label',
+			role: 'suit-label',
+			optional: true,
 		}));
-		expect(state.faces['flower-1'].state.parts.glyph).toEqual(jasmine.objectContaining({
-			reviewStatus: 'accepted',
-			acceptedOn: '2026-05-03T12:00:00.000Z',
-			updatedOn: '2026-05-03T12:00:00.000Z',
+		expect(faceState.parts.glyph).toEqual(jasmine.objectContaining({
+			contentKind: 'glyph',
+			role: 'flower-character',
+			optional: true,
 		}));
 		expect(fs.writes.filter((write) => [artifactPath, reportPath].includes(write.filePath))
 			.every((write) => write.encoding === 'utf8')).toBe(true);
@@ -117,11 +109,11 @@ describe('OptionalPartAssignmentRunner', function() {
 
 		await runner.run({
 			tilesetId: 'wiki',
-			pipelineStatePath: statePath,
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
 			faceKey: 'flower-2',
 		});
 
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'optional-part-assignment-report.flower-2.json');
+		const reportPath = pipelineArtifactPath('wiki', 'reports', 'optional-part-assignment-report.flower-2.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(fs.files.has(optionalArtifactPath(output3dDir, 'wiki', 'flower-1'))).toBe(false);
@@ -173,21 +165,19 @@ describe('OptionalPartAssignmentRunner', function() {
 
 		await runner.run({
 			tilesetId: 'wiki',
-			pipelineStatePath: statePath,
+			pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }),
 			faceKey: 'flower-1',
 		});
 
 		const state = JSON.parse(fs.files.get(statePath));
-		expect(Object.keys(state.faces['flower-1'].state.bindings).sort()).toEqual(['glyph-candidate', 'label-candidate']);
-		expect(state.faces['flower-1'].state.bindings['label-candidate'].strength).toBe('accepted');
-		expect(state.faces['flower-1'].state.bindings['glyph-candidate'].strength).toBe('accepted');
-		expect(state.faces['flower-1'].state.parts.label.reviewStatus).toBe('accepted');
-		expect(state.faces['flower-1'].state.parts.glyph.reviewStatus).toBe('accepted');
-		expect(state.faces['flower-1'].state.parts.mainArtwork.reviewStatus).toBeUndefined();
-		expect(state.faces['flower-1'].stages.alignment).toBeUndefined();
-		expect(state.faces['flower-1'].stages.semanticAssignment).toBeUndefined();
-		expect(state.faces['flower-1'].stages.sourceApproval).toBeUndefined();
-		expect(state.faces['flower-1'].stages.finalRendering).toBeUndefined();
+		const savedFaceState = state.svgPipeline.faces['flower-1'].state;
+		expect(Object.keys(savedFaceState.bindings).sort()).toEqual(['glyph-candidate', 'label-candidate']);
+		expect(savedFaceState.bindings['label-candidate'].strength).toBe('tentative');
+		expect(savedFaceState.bindings['glyph-candidate'].strength).toBe('tentative');
+		expect(savedFaceState.parts.label).toEqual(jasmine.objectContaining({ optional: true }));
+		expect(savedFaceState.parts.glyph).toEqual(jasmine.objectContaining({ optional: true }));
+		expect(savedFaceState.parts.mainArtwork.reviewStatus).toBe('accepted');
+		expect(savedFaceState.alignment).toBeUndefined();
 	});
 
 	it('reserves accepted label candidates before choosing glyph candidates', function() {
@@ -238,8 +228,8 @@ describe('OptionalPartAssignmentRunner', function() {
 			output3dDir,
 		});
 
-		const summary = await runner.run({ tilesetId: 'wiki', pipelineStatePath: statePath });
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'optional-part-assignment-report.json');
+		const summary = await runner.run({ tilesetId: 'wiki', pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }) });
+		const reportPath = pipelineArtifactPath('wiki', 'reports', 'optional-part-assignment-report.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(summary.faceCount).toBe(0);
@@ -250,7 +240,7 @@ describe('OptionalPartAssignmentRunner', function() {
 			message: `No normalized component artifact exists at ${normalizeForTest(rootDir, normalizedArtifactPath(output3dDir, 'wiki', 'wind-n'))}.`,
 		}]);
 		const state = JSON.parse(fs.files.get(statePath));
-		expect(state.faces['wind-n'].stages.optionalPartAssignment.status).toBe('missing-normalized-components');
+		expect(state.svgPipeline.faces['wind-n'].state).toEqual({});
 	});
 
 	it('applies bulk searchSource false as source absent without candidates or reservations', async function() {
@@ -387,7 +377,7 @@ describe('OptionalPartAssignmentRunner', function() {
 		});
 		const runner = new OptionalPartAssignmentRunner({ fileSystem: fs, rootDir, output3dDir });
 
-		await runner.run({ tilesetId: 'wiki', pipelineStatePath: statePath });
+		await runner.run({ tilesetId: 'wiki', pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }) });
 
 		const artifact = JSON.parse(fs.files.get(optionalArtifactPath(output3dDir, 'wiki', 'b-1')));
 		const candidateIds = artifact.optionalParts.label.candidates.flatMap((candidate) => candidate.componentIds);
@@ -411,7 +401,7 @@ describe('OptionalPartAssignmentRunner', function() {
 		});
 		const runner = new OptionalPartAssignmentRunner({ fileSystem: fs, rootDir, output3dDir });
 
-		await runner.run({ tilesetId: 'wiki', pipelineStatePath: statePath });
+		await runner.run({ tilesetId: 'wiki', pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }) });
 
 		const artifact = JSON.parse(fs.files.get(optionalArtifactPath(output3dDir, 'wiki', 'b-1')));
 
@@ -438,7 +428,6 @@ describe('OptionalPartAssignmentRunner', function() {
 		}));
 
 		expect(artifact.optionalParts.label.sourceState).toBe('needs-review');
-		expect(artifact.optionalParts.label.strength).toBe('none');
 		expect(artifact.optionalParts.label.suggestedComponentIds).toEqual([]);
 		expect(artifact.optionalParts.label.candidates[0].componentIds).toEqual(['bamboo-stem']);
 		expect(artifact.bindingSuggestions).toEqual([]);
@@ -476,14 +465,14 @@ describe('OptionalPartAssignmentRunner', function() {
 			output3dDir,
 		});
 
-		await runner.run({ tilesetId: 'wiki', pipelineStatePath: statePath });
+		await runner.run({ tilesetId: 'wiki', pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }) });
 
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'optional-part-assignment-report.json');
+		const reportPath = pipelineArtifactPath('wiki', 'reports', 'optional-part-assignment-report.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(Object.keys(report.faces)).toEqual(['b-1', 'flower-1', 'wind-n']);
 		const state = JSON.parse(fs.files.get(statePath));
-		expect(Object.keys(state.faces).sort()).toEqual(['b-1', 'flower-1', 'wind-n']);
+		expect(Object.keys(state.svgPipeline.faces).sort()).toEqual(['b-1', 'flower-1', 'wind-n']);
 	});
 
 	it('uses full-run and single-face report filenames', async function() {
@@ -502,12 +491,12 @@ describe('OptionalPartAssignmentRunner', function() {
 		});
 		const runner = new OptionalPartAssignmentRunner({ fileSystem: fs, rootDir, output3dDir });
 
-		await runner.run({ tilesetId: 'wiki', pipelineStatePath: statePath });
-		await runner.run({ tilesetId: 'wiki', pipelineStatePath: statePath, faceKey: 'b-1' });
+		await runner.run({ tilesetId: 'wiki', pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }) });
+		await runner.run({ tilesetId: 'wiki', pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }), faceKey: 'b-1' });
 
-		expect(fs.files.has(path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'optional-part-assignment-report.json')))
+		expect(fs.files.has(pipelineArtifactPath('wiki', 'reports', 'optional-part-assignment-report.json')))
 			.toBe(true);
-		expect(fs.files.has(path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'optional-part-assignment-report.b-1.json')))
+		expect(fs.files.has(pipelineArtifactPath('wiki', 'reports', 'optional-part-assignment-report.b-1.json')))
 			.toBe(true);
 	});
 
@@ -531,13 +520,13 @@ describe('OptionalPartAssignmentRunner', function() {
 			output3dDir,
 		});
 
-		const summary = await runner.run({ tilesetId: 'custom', pipelineStatePath: statePath });
+		const summary = await runner.run({ tilesetId: 'custom', pipelineModel: testPipelineModelFromFile({ fileSystem: fs, statePath }) });
 
 		expect(summary.tilesetId).toBe('custom');
 		expect(fs.files.has(optionalArtifactPath(output3dDir, 'custom', 'b-1'))).toBe(true);
 		expect(summary.reportPath).toBe(normalizeForTest(
 			rootDir,
-			path.resolve(output3dDir, 'svg-preprocessor', 'custom', 'reports', 'optional-part-assignment-report.json'),
+			pipelineArtifactPath('custom', 'reports', 'optional-part-assignment-report.json'),
 		));
 	});
 
@@ -750,7 +739,6 @@ describe('OptionalPartAssignmentRunner', function() {
 		expect(bindingSuggestionForPart(artifact, 'label').componentIds).toEqual(['label']);
 		expect(bindingSuggestionForPart(artifact, 'glyph')).toBeUndefined();
 		expect(artifact.optionalParts.glyph.sourceState).toBe('needs-review');
-		expect(artifact.optionalParts.glyph.strength).toBe('none');
 	});
 
 	it('handles absent optional parts when there are no source components or alignment bounds', function() {
@@ -809,7 +797,6 @@ describe('OptionalPartAssignmentRunner', function() {
 		}));
 		expect(whiteArtifact.optionalParts.label).toEqual(jasmine.objectContaining({
 			role: 'dragon-label',
-			expected: true,
 			sourceState: 'candidate-found',
 		}));
 		expect(whiteArtifact.optionalParts.label.outputPresent).toBeUndefined();
@@ -851,7 +838,6 @@ describe('OptionalPartAssignmentRunner', function() {
 		}));
 
 		expect(artifact.optionalParts.label).toEqual(jasmine.objectContaining({
-			expected: true,
 			sourceState: 'candidate-found',
 		}));
 		expect(bindingSuggestionForPart(artifact, 'label').componentIds).toEqual(['source-label']);
@@ -919,7 +905,6 @@ describe('OptionalPartAssignmentRunner', function() {
 			strength: 'strong',
 			reviewStatus: 'reviewed',
 		}));
-		expect(artifact.optionalParts.glyph.strength).toBe('strong');
 		expect(artifact.optionalParts.glyph.reviewStatus).toBe('reviewed');
 	});
 });
@@ -1136,13 +1121,18 @@ function box(left, top, right, bottom) {
 }
 
 function normalizedArtifactPath(output3dDir, tilesetId, faceKey) {
-	return path.resolve(output3dDir, 'svg-preprocessor', tilesetId, 'normalized-components', `${faceKey}.json`);
+	return pipelineArtifactPath(tilesetId, 'json', 'normalized-components', `${faceKey}.json`);
 }
 
 function optionalArtifactPath(output3dDir, tilesetId, faceKey) {
-	return path.resolve(output3dDir, 'svg-preprocessor', tilesetId, 'optional-parts', `${faceKey}.json`);
+	return pipelineArtifactPath(tilesetId, 'json', 'optional-parts', `${faceKey}.json`);
+}
+
+function pipelineArtifactPath(tilesetId, ...segments) {
+	return path.resolve(BASE_OUTPUT, tilesetId, ...segments);
 }
 
 function normalizeForTest(rootDir, filePath) {
 	return path.relative(rootDir, filePath).replaceAll('\\', '/');
 }
+

@@ -249,7 +249,43 @@ describe('normalized face components', function() {
 		expect(output).toContain('d="M0,0 H10 V10 H0 Z"');
 	});
 
-	it('renders stroke-only paint paths with stroke attributes', function() {
+	it('prunes degenerate evenodd subpaths without removing fill-rule semantics', function() {
+		const output = makePaintPathWithKnockouts({
+			component: component('compound', {
+				className: 'paint-green',
+				fill: '#080',
+				fillRule: 'evenodd',
+				pathData: 'M0,0 H20 V20 H0 Z M5,5 H15 V15 H5 Z M30,30 Z',
+			}),
+			color: '#00aa00',
+		});
+
+		expect(output.match(/<path/g).length).toBe(1);
+		expect(output).toContain('data-geometry-normalized="degenerate-subpath-pruned"');
+		expect(output).toContain('fill-rule="evenodd"');
+		expect(output).toContain('fill="#00aa00"');
+		expect(output).toContain('data-source-id="compound"');
+		expect(output).not.toContain('M30,30');
+	});
+
+	it('merges existing geometry normalization markers with degenerate subpath pruning', function() {
+		const output = makePaintPathWithKnockouts({
+			component: component('compound', {
+				fill: '#080',
+				fillRule: 'evenodd',
+				pathData: 'M0,0 H20 V20 H0 Z M5,5 H15 V15 H5 Z M30,30 Z',
+			}),
+			color: '#00aa00',
+			attributes: {
+				'data-geometry-normalized': 'source-element-recombined',
+			},
+		});
+
+		expect(output.match(/data-geometry-normalized=/g).length).toBe(1);
+		expect(output).toContain('data-geometry-normalized="source-element-recombined degenerate-subpath-pruned"');
+	});
+
+	it('normalizes stroke-only paint paths into filled geometry', function() {
 		const output = makePaintPathWithKnockouts({
 			component: component('outline', {
 				fill: 'none',
@@ -260,9 +296,44 @@ describe('normalized face components', function() {
 			color: '#222222',
 		});
 
-		expect(output).toContain('fill="none"');
-		expect(output).toContain('stroke="#222222"');
-		expect(output).toContain('stroke-width="3"');
+		expect(output).toContain('fill="#222222"');
+		expect(output).toContain('fill-rule="evenodd"');
+		expect(output).toContain('data-geometry-normalized="stroke-to-fill"');
+		expect(output).not.toContain('stroke=');
+		expect(output).not.toContain('stroke-width=');
+		expect(output).toContain('M');
+		expect(output).toContain('L');
+		expect(output).toContain('Z');
+	});
+
+	it('keeps separate stroke subpaths as separate filled paths', function() {
+		const output = makePaintPathWithKnockouts({
+			component: component('outline', {
+				fill: 'none',
+				stroke: '#111',
+				strokeWidth: 2,
+				pathData: 'M0,0 H10 M0,5 H10',
+			}),
+			color: '#222222',
+		});
+
+		expect(output.match(/<path/g).length).toBe(2);
+		expect(output.match(/data-geometry-normalized="stroke-to-fill"/g).length).toBe(2);
+		expect(output).not.toContain('stroke=');
+	});
+
+	it('omits zero-width stroke-only paint paths', function() {
+		const output = makePaintPathWithKnockouts({
+			component: component('invisible-outline', {
+				fill: 'none',
+				stroke: '#111',
+				strokeWidth: '0',
+				pathData: 'M0,0 H10 V10 H0 Z',
+			}),
+			color: '#222222',
+		});
+
+		expect(output).toBe('');
 	});
 
 	it('subtracts knockout paths from paint paths', function() {

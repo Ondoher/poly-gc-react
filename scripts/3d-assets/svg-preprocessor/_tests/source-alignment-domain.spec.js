@@ -73,6 +73,57 @@ describe('source alignment domain behavior', function() {
 		expect(labelGroup.matchStatus).toBe('matched');
 	});
 
+	it('does not reopen accepted-absent flower optional parts from source metadata', function() {
+		const alignmentMap = alignTestFace({
+			faceKey: 'flower-1',
+			referenceParts: {
+				label: referencePart('suit-label', 'label', ['ref-label'], box(5, 5, 12, 18)),
+				glyph: referencePart('flower-character', 'glyph', ['ref-glyph'], box(78, 5, 96, 28)),
+				mainArtwork: referencePart('main-artwork', 'artwork', ['ref-art'], box(30, 40, 70, 110)),
+			},
+			referenceComponents: [
+				referenceComponent('ref-label', box(5, 5, 12, 18)),
+				referenceComponent('ref-glyph', box(78, 5, 96, 28)),
+				referenceComponent('ref-art', box(30, 40, 70, 110)),
+			],
+			normalizedComponents: [
+				component('looks-like-label', box(4, 4, 14, 20)),
+				component('looks-like-glyph', box(80, 4, 94, 24)),
+				component('art-source', box(25, 45, 85, 125)),
+			],
+			faceMetadata: {
+				glyphLayout: {
+					label: {
+						sourcePresent: true,
+						sourceBounds: box(4, 4, 14, 20),
+					},
+					character: {
+						sourcePresent: true,
+						sourceBounds: box(80, 4, 94, 24),
+					},
+				},
+			},
+			optionalAssignment: optionalAssignment({
+				faceKey: 'flower-1',
+				parts: {
+					label: [],
+					glyph: [],
+				},
+				reviewStatus: 'accepted',
+			}),
+		});
+
+		const labelGroup = findGroup(alignmentMap, 'label');
+		const glyphGroup = findGroup(alignmentMap, 'glyph');
+		const artworkGroup = findGroup(alignmentMap, 'mainArtwork');
+
+		expect(labelGroup.sourceComponentIds).toEqual([]);
+		expect(labelGroup.matchStatus).toBe('skipped');
+		expect(glyphGroup.sourceComponentIds).toEqual([]);
+		expect(glyphGroup.matchStatus).toBe('skipped');
+		expect(artworkGroup.sourceComponentIds).toEqual(['looks-like-label', 'looks-like-glyph', 'art-source']);
+	});
+
 	it('keeps generated label candidates as source label parts without matching them as artwork', function() {
 		const alignmentMap = alignTestFace({
 			faceKey: 'b-2',
@@ -892,7 +943,7 @@ function layeredDot(componentId, left, top) {
 	];
 }
 
-function optionalAssignment({ faceKey, parts, outputParts = {} }) {
+function optionalAssignment({ faceKey, parts, outputParts = {}, reviewStatus = 'inferred' }) {
 	const optionalParts = {};
 	const componentReservations = [];
 
@@ -902,13 +953,14 @@ function optionalAssignment({ faceKey, parts, outputParts = {} }) {
 			expected: componentIds.length > 0,
 			sourceState: componentIds.length > 0 ? 'candidate-found' : 'source-absent',
 			suggestedComponentIds: componentIds,
+			reviewStatus,
 		};
 
 		if (componentIds.length > 0) {
 			componentReservations.push({
 				partId,
 				componentIds,
-				reviewStatus: 'inferred',
+				reviewStatus,
 			});
 		}
 	}

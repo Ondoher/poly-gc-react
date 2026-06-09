@@ -38,6 +38,21 @@ Normalization owns non-semantic source decomposition:
 Normalization does not decide which source component is a Mahjong dot, glyph,
 label, or artwork part.
 
+Running normalization invalidates all downstream results derived from the
+previous normalized artifact for the normalized faces. Component and
+source-shape ids are internally unique opaque handles inside one artifact
+snapshot; they are not guaranteed deterministic from source input or stable
+across normalization runs. Optional assignment, alignment, source assignment,
+final rendering, generated asset state, fixtures, generated artifacts, hashes,
+and docs should be recreated from the new normalized output.
+
+Use the existing model/UI reset mechanics for that invalidation. Successful
+normalization records through `PipelineModel.recordNormalizationResult()`,
+which stores the new artifact pointer and prunes stale source bindings and
+alignment handoff state. Whole-tileset reset follows the UI path of source
+manifest intake, source normalization, then optional part assignment; do not
+create a parallel manual cleanup path.
+
 Review SVGs are written to:
 
 ```text
@@ -100,4 +115,3 @@ labels, omitted labels, layout options, generated asset state, or publication.
 The server synthesizes page view models from canonical state and durable
 artifacts. The UI may keep draft selections while the user edits a page, but
 server routes reconcile user actions back into `pipeline.json`.
-

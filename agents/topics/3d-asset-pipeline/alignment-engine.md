@@ -12,9 +12,11 @@ bridges those decomposition differences without making final review decisions.
 
 ## Non-Semantic Source IDs
 
-Source component ids are extraction ids, not semantic ids. They are stable
-enough for one normalized artifact and review pass, but the name itself should
-not imply dot, bamboo, label, glyph, or artwork meaning.
+Source component ids are extraction ids, not semantic ids. They are internally
+unique opaque handles inside one normalized artifact snapshot, and the name
+itself should not imply dot, bamboo, label, glyph, or artwork meaning. Running
+normalization invalidates alignment results derived from the previous
+normalized artifact.
 
 ## Reference Groups
 

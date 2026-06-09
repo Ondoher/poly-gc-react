@@ -8,6 +8,13 @@ This document owns unimplemented desired work for the 3D asset pipeline.
   face-code mapping, and gross source-file problems.
 - Add a normalization QA surface for component extraction and prepared SVG
   source material issues.
+- Decide whether unsupported but visually meaningful SVG features such as
+  masks, clip paths, filters, gradients, nested symbols, and unsupported
+  transforms should be expanded during intake/normalization or rejected for
+  focused source review.
+- Add diagnostics that make paint-layer flattening decisions visible,
+  especially source-shape id, occluding component ids, hidden residual layers,
+  and whether flattening cleared a component transform.
 - Improve correction routing when normalization changes invalidate source
   bindings.
 
@@ -47,6 +54,8 @@ This document owns unimplemented desired work for the 3D asset pipeline.
 - Add publication or sync behavior for reviewed generated assets.
 - Add stronger generated model validation before publication.
 - Improve queue recovery and cancellation reporting.
+- Fix generated asset preview PNG timeout/hang behavior so preview readiness
+  can catch up after successful cutter, stamped body, and colored inlay stages.
 - Decide where reviewed/published asset status should live once publication is
   implemented.
 

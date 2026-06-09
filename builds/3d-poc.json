@@ -10,7 +10,7 @@
 	"resources": [
 		{
 			"dest": "models",
-			"cwd": "../../../scripts/output/3d-assets/models",
+			"cwd": "assets/models",
 			"glob": "**/*.{glb,json}",
 			"keepNest": true
 		},

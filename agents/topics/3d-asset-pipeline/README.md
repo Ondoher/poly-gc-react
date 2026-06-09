@@ -32,6 +32,7 @@ reference setup
 -> source alignment
 -> source assignment
 -> final rendering
+-> cutter SVG simplification
 -> base tile selection
 -> asset generation
 -> asset review
@@ -42,10 +43,14 @@ file and copies per-face source SVGs. Normalization decomposes SVGs into
 non-semantic geometry. Optional Part Assignment reserves labels and glyphs
 before alignment. Alignment fits source geometry against reference structure.
 Source Assignment accepts or corrects source meaning. Final Rendering chooses
-output policy, layout, and color. Asset generation builds 3D outputs from the
-accepted rendered face and selected base tile.
+output policy, layout, and color. Cutter SVG Simplification is the planned
+handoff for cutter-facing geometry cleanup before generated assets consume the
+accepted face. Asset generation builds 3D outputs from the accepted rendered
+face and selected base tile.
 
 The exact stage contract lives in [Stage Contracts](stage-contracts.md).
+The per-stage SVG input/output contract lives in
+[SVG Stage Contracts](svg-stage-contracts.md).
 
 ## Hard Parts
 
@@ -116,6 +121,10 @@ Important source files:
 - Need the one-page facts? Read [Current Contracts](current-contracts.md).
 - Changing `pipeline.json` state? Read [State Contract](state-contract.md).
 - Changing stage order or gates? Read [Stage Contracts](stage-contracts.md).
+- Changing SVG geometry crossing stage boundaries? Read
+  [SVG Stage Contracts](svg-stage-contracts.md).
+- Rebuilding Stage 2 source normalization? Use
+  [Stage 2 Source Normalization Prompt](stage-2-source-normalization-prompt.md).
 - Changing source manifests? Read [Source Manifest Contract](source-manifest-contract.md).
 - Changing reference setup? Read [Reference Setup Contract](reference-setup-contract.md).
 - Changing optional/source review? Read [Source Review Contract](source-review-contract.md).

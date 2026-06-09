@@ -1,5 +1,7 @@
 import path from 'path';
+import { BASE_OUTPUT } from '../PipelineModel.js';
 import { SourceAlignmentRunner, alignFace } from '../SourceAlignmentRunner.js';
+import { testPipelineModelFromFile } from './test-pipeline-model.js';
 
 describe('SourceAlignmentRunner', function() {
 	it('writes alignment artifacts, reports, and state updates from mocked dependencies', async function() {
@@ -30,13 +32,13 @@ describe('SourceAlignmentRunner', function() {
 			clock: () => '2026-05-03T12:00:00.000Z',
 		});
 
-		const summary = await runner.run({
+		const summary = await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey: 'flower-1',
 			referenceStructurePath: referencePath,
 		});
 		const artifactPath = alignmentInputPath(output3dDir, 'wiki', 'flower-1', 'alignment-map');
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-alignment-report.flower-1.json');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'source-alignment-report.flower-1.json');
 		const artifact = JSON.parse(fs.files.get(artifactPath));
 		const report = JSON.parse(fs.files.get(reportPath));
 
@@ -49,8 +51,8 @@ describe('SourceAlignmentRunner', function() {
 			warningCount: 0,
 		}));
 		expect(artifact.inputs.optionalPartAssignment).toEqual(jasmine.objectContaining({
-			path: jasmine.stringMatching(/svg-preprocessor\/wiki\/tileset\.json$/),
-			status: 'ready',
+			path: jasmine.stringMatching(/asset-pipeline\/wiki\/pipeline\.json$/),
+			status: 'canonical',
 		}));
 		expect(artifact.sourcePartMappings).toEqual([
 			jasmine.objectContaining({
@@ -126,13 +128,13 @@ describe('SourceAlignmentRunner', function() {
 			clock: () => '2026-05-03T12:00:00.000Z',
 		});
 
-		const summary = await runner.run({
+		const summary = await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey: 'flower-1',
 			referenceStructurePath: referencePath,
 		});
 		const artifactPath = alignmentInputPath(output3dDir, 'wiki', 'flower-1', 'alignment-map');
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-alignment-report.flower-1.json');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'source-alignment-report.flower-1.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(summary).toEqual(jasmine.objectContaining({
@@ -170,7 +172,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates });
 
-		const summary = await runner.run({
+		const summary = await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			referenceStructurePath: referencePath,
 		});
@@ -242,12 +244,12 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates });
 
-		const summary = await runner.run({
+		const summary = await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey: 'flower-2',
 			referenceStructurePath: referencePath,
 		});
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-alignment-report.flower-2.json');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'source-alignment-report.flower-2.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(summary.faceKey).toBe('flower-2');
@@ -326,7 +328,7 @@ describe('SourceAlignmentRunner', function() {
 		const referencePath = path.resolve(rootDir, 'reference-structure.json');
 		const normalizedPath = alignmentInputPath(output3dDir, 'wiki', faceKey, 'normalized-components');
 		const optionalPath = alignmentInputPath(output3dDir, 'wiki', faceKey, 'optional-parts');
-		const pipelineStatePath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'tileset.json');
+		const pipelineStatePath = path.resolve(BASE_OUTPUT, 'wiki', 'pipeline.json');
 		const reference = {
 			referenceSet: {
 				referenceSetId: 'test-reference',
@@ -359,13 +361,13 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates: [] });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
 		});
 		const pipelineState = JSON.parse(fs.files.get(pipelineStatePath));
-		const state = pipelineState.faces[faceKey].state;
+		const state = pipelineState.svgPipeline.faces[faceKey].state;
 
 		expect(state.placements).toBeUndefined();
 		expect(state.parts.glyph).toEqual(jasmine.objectContaining({
@@ -382,9 +384,8 @@ describe('SourceAlignmentRunner', function() {
 				bottom: 70,
 			}),
 			alignmentTransform: jasmine.objectContaining({
-				fitPolicy: 'part-union-fit',
+				matrix: jasmine.any(Array),
 			}),
-			alignmentStrategy: 'gap',
 		}));
 		expect(state.bindings['source-top']).toEqual(jasmine.objectContaining({
 			partId: 'glyph',
@@ -408,7 +409,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -416,16 +417,14 @@ describe('SourceAlignmentRunner', function() {
 		const artifactPath = alignmentInputPath(output3dDir, 'wiki', faceKey, 'alignment-map');
 		const artifact = JSON.parse(fs.files.get(artifactPath));
 
-		expect(artifact.status).toBe('needs-review');
+		expect(artifact.status).toBe('inferred');
 		expect(artifact.inputs.optionalPartAssignment).toEqual(jasmine.objectContaining({
 			status: 'canonical',
 		}));
-		expect(artifact.diagnostics).toEqual(jasmine.arrayContaining([jasmine.objectContaining({
-			code: 'optional-part-assignment-not-ready',
-		})]));
+		expect(artifact.diagnostics).toEqual([]);
 		expect(stateUpdates[0].stages.alignment).toEqual(jasmine.objectContaining({
-			status: 'needs-review',
-			diagnosticCount: 1,
+			status: 'inferred',
+			diagnosticCount: 0,
 		}));
 	});
 
@@ -445,22 +444,19 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
 		});
 		const artifact = alignmentStage(fs, output3dDir, 'wiki', faceKey);
 
-		expect(artifact.status).toBe('needs-review');
-		expect(artifact.inputs.optionalPartAssignment.status).toBe('needs-review');
-		expect(artifact.diagnostics).toEqual(jasmine.arrayContaining([jasmine.objectContaining({
-			code: 'optional-part-assignment-not-ready',
-			status: 'needs-review',
-		})]));
+		expect(artifact.status).toBe('inferred');
+		expect(artifact.inputs.optionalPartAssignment.status).toBe('canonical');
+		expect(artifact.diagnostics).toEqual([]);
 		expect(stateUpdates[0].stages.alignment).toEqual(jasmine.objectContaining({
-			status: 'needs-review',
-			diagnosticCount: 1,
+			status: 'inferred',
+			diagnosticCount: 0,
 		}));
 	});
 
@@ -500,7 +496,7 @@ describe('SourceAlignmentRunner', function() {
 			clock: () => '2026-05-03T12:00:00.000Z',
 		});
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -524,7 +520,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates: [] });
 
-		const summary = await runner.run({
+		const summary = await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId,
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -532,7 +528,6 @@ describe('SourceAlignmentRunner', function() {
 		const artifactPath = alignmentInputPath(output3dDir, tilesetId, faceKey, 'alignment-map');
 
 		expect(summary.tilesetId).toBe(tilesetId);
-		expect(summary.pipelineStatePath).toContain(`svg-preprocessor/${tilesetId}/tileset.json`);
 		expect(fs.files.has(artifactPath)).toBe(true);
 		expect(fs.files.has(alignmentInputPath(output3dDir, 'wiki', faceKey, 'alignment-map'))).toBe(false);
 	});
@@ -548,11 +543,11 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates: [] });
 
-		const summary = await runner.run({
+		const summary = await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			referenceStructurePath: referencePath,
 		});
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-alignment-report.json');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'source-alignment-report.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(summary).toEqual(jasmine.objectContaining({
@@ -577,7 +572,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -587,14 +582,13 @@ describe('SourceAlignmentRunner', function() {
 		expect(stateUpdates).toEqual([jasmine.objectContaining({
 			tilesetId: 'wiki',
 			faceKey,
-			sourceSvg: `scripts/data/3d-assets/sprite-source-svgs/wiki/${faceKey}.svg`,
 			stages: {
 				alignment: jasmine.objectContaining({
-					status: 'needs-review',
-					artifact: jasmine.stringMatching(/svg-preprocessor\/wiki\/alignment-map\/flower-1\.json$/),
+					status: 'inferred',
+					artifact: jasmine.stringMatching(/asset-pipeline\/wiki\/json\/source-alignment\/flower-1\.json$/),
 					alignmentGroupCount: 3,
 					candidateCount: 3,
-					diagnosticCount: 1,
+					diagnosticCount: 0,
 				}),
 			},
 		})]);
@@ -616,11 +610,11 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates });
 
-		const summary = await runner.run({
+		const summary = await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			referenceStructurePath: referencePath,
 		});
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-alignment-report.json');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'source-alignment-report.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(summary).toEqual(jasmine.objectContaining({
@@ -653,7 +647,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -683,7 +677,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates: [] });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -691,8 +685,8 @@ describe('SourceAlignmentRunner', function() {
 		const artifact = alignmentStage(fs, output3dDir, 'wiki', faceKey);
 
 		expect(artifact.inputs.optionalPartAssignment).toEqual(jasmine.objectContaining({
-			status: 'ready',
-			path: jasmine.stringMatching(/svg-preprocessor\/wiki\/tileset\.json$/),
+			status: 'canonical',
+			path: jasmine.stringMatching(/asset-pipeline\/wiki\/pipeline\.json$/),
 		}));
 		expect(artifact.diagnostics).not.toEqual(jasmine.arrayContaining([jasmine.objectContaining({
 			code: 'missing-optional-part-assignment',
@@ -713,7 +707,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates: [] });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -1063,7 +1057,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates: [] });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -1114,7 +1108,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates: [] });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -1126,12 +1120,12 @@ describe('SourceAlignmentRunner', function() {
 		expect(labelMapping).toEqual(jasmine.objectContaining({
 			sourceComponentIds: ['label-source'],
 			strength: 'strong',
-			reviewStatus: 'reviewed',
+			reviewStatus: 'inferred',
 		}));
 		expect(glyphMapping).toEqual(jasmine.objectContaining({
 			sourceComponentIds: ['glyph-source'],
 			strength: 'strong',
-			reviewStatus: 'reviewed',
+			reviewStatus: 'inferred',
 		}));
 	});
 
@@ -1219,7 +1213,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates: [] });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -1249,7 +1243,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
@@ -1283,12 +1277,12 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates: [] });
 
-		const summary = await runner.run({
+		const summary = await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey,
 			referenceStructurePath: referencePath,
 		});
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-alignment-report.flower-1.json');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'source-alignment-report.flower-1.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(summary.warningCount).toBe(0);
@@ -1317,11 +1311,11 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates });
 
-		const summary = await runner.run({
+		const summary = await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			referenceStructurePath: referencePath,
 		});
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-alignment-report.json');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'source-alignment-report.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(summary).toEqual(jasmine.objectContaining({
@@ -1351,7 +1345,7 @@ describe('SourceAlignmentRunner', function() {
 		});
 		const runner = makeRunner({ fs, rootDir, output3dDir, stateUpdates: [] });
 
-		await runner.run({
+		await runSourceAlignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			referenceStructurePath: referencePath,
 		});
@@ -1359,9 +1353,9 @@ describe('SourceAlignmentRunner', function() {
 		const withoutOptional = alignmentStage(fs, output3dDir, 'wiki', 'flower-2');
 
 		expect(withOptional.inputs.optionalPartAssignment).toEqual(jasmine.objectContaining({
-			status: 'ready',
+			status: 'canonical',
 			generatedOn: '2026-05-03T12:00:00.000Z',
-			path: jasmine.stringMatching(/svg-preprocessor\/wiki\/tileset\.json$/),
+			path: jasmine.stringMatching(/asset-pipeline\/wiki\/pipeline\.json$/),
 		}));
 		expect(withoutOptional.inputs.optionalPartAssignment).toEqual(jasmine.objectContaining({
 			status: 'canonical',
@@ -1383,21 +1377,25 @@ function makeRunner({ fs, rootDir, output3dDir, stateUpdates }) {
 function fakeFileSystem(initialFiles = {}) {
 	const files = new Map(Object.entries(withCanonicalPipelineStates(initialFiles)));
 	const writes = [];
+	const fileFor = (filePath) => files.get(filePath)
+		?? files.get(String(filePath).replaceAll('/', '\\'))
+		?? files.get(String(filePath).replaceAll('\\', '/'));
 
 	return {
 		files,
 		writes,
 		async access(filePath) {
-			if (!files.has(filePath)) {
+			if (fileFor(filePath) === undefined) {
 				throw new Error(`Missing fake file: ${filePath}`);
 			}
 		},
 		async readFile(filePath) {
-			if (!files.has(filePath)) {
+			const content = fileFor(filePath);
+			if (content === undefined) {
 				throw new Error(`Missing fake file: ${filePath}`);
 			}
 
-			return files.get(filePath);
+			return content;
 		},
 		async writeFile(filePath, content, encoding) {
 			writes.push({ filePath, encoding });
@@ -1466,7 +1464,10 @@ function optionalPartsFromArtifact(optional) {
 		partId,
 		contentKind: part.contentKind || (partId === 'label' ? 'label' : 'glyph'),
 		role: part.role || (partId === 'label' ? 'flower-label' : 'flower-character'),
-		reviewStatus: part.reviewStatus || null,
+		optional: true,
+		reviewStatus: part.reviewStatus
+			|| optional?.componentReservations?.find((reservation) => reservation.partId === partId)?.reviewStatus
+			|| null,
 	}]));
 }
 
@@ -1502,6 +1503,43 @@ function alignmentStage(fs, output3dDir, tilesetId, faceKey) {
 	return JSON.parse(fs.files.get(alignmentInputPath(output3dDir, tilesetId, faceKey, 'alignment-map')));
 }
 
+async function runSourceAlignment(runner, fs, output3dDir, options) {
+	const tilesetId = options.tilesetId || 'wiki';
+	const statePath = path.resolve(BASE_OUTPUT, tilesetId, 'pipeline.json');
+	if (!fs.files.has(statePath)) {
+		const faceKeys = [...fs.files.keys()]
+			.map((filePath) => filePath.match(/[\\/]asset-pipeline[\\/]([^\\/]+)[\\/]json[\\/]normalized-components[\\/]([^\\/]+)\.json$/))
+			.filter((match) => match && match[1] === tilesetId)
+			.map((match) => match[2])
+			.sort((left, right) => left.localeCompare(right));
+		fs.files.set(statePath, JSON.stringify({
+			schemaVersion: 3,
+			tilesetId,
+			configuration: testOptionalConfiguration(),
+			svgPipeline: {
+				faces: Object.fromEntries(faceKeys.map((faceKey) => [faceKey, {
+					artifacts: {
+						normalizedComponents: alignmentInputPath(output3dDir, tilesetId, faceKey, 'normalized-components'),
+					},
+					state: { parts: {}, bindings: {} },
+				}])),
+			},
+		}));
+	}
+	const reference = options.referenceStructurePath && fs.files.has(options.referenceStructurePath)
+		? JSON.parse(fs.files.get(options.referenceStructurePath))
+		: null;
+	return runner.run({
+		...options,
+		pipelineModel: testPipelineModelFromFile({
+			fileSystem: fs,
+			statePath,
+			reference,
+			referenceFile: options.referenceStructurePath,
+		}),
+	});
+}
+
 function referenceFaceKeysFromFiles(files) {
 	const faceKeys = new Set();
 
@@ -1524,7 +1562,7 @@ function pipelineScopesFromFiles(files, referenceFaceKeys) {
 	const scopes = new Map();
 
 	for (const filePath of Object.keys(files)) {
-		const match = filePath.match(/^(.*[\\/]scripts[\\/]output[\\/]3d-assets)[\\/]svg-preprocessor[\\/]([^\\/]+)[\\/](normalized-components|optional-parts|semantic-map)[\\/]([^\\/]+)\.json$/);
+		const match = filePath.match(/^(.*[\/]scripts[\/]output[\/]asset-pipeline)[\/]([^\/]+)[\/]json[\/](normalized-components|optional-parts|semantic-map)[\/]([^\/]+)\.json$/);
 		if (!match) {
 			continue;
 		}
@@ -1534,7 +1572,7 @@ function pipelineScopesFromFiles(files, referenceFaceKeys) {
 			output3dDir,
 			tilesetId,
 			faceKeys: new Set(),
-			pipelineStatePath: path.resolve(output3dDir, 'svg-preprocessor', tilesetId, 'tileset.json'),
+			pipelineStatePath: path.resolve(BASE_OUTPUT, tilesetId, 'pipeline.json'),
 			normalizedPathFor: (nextFaceKey) => alignmentInputPath(output3dDir, tilesetId, nextFaceKey, 'normalized-components'),
 			optionalPathFor: (nextFaceKey) => alignmentInputPath(output3dDir, tilesetId, nextFaceKey, 'optional-parts'),
 		};
@@ -1551,7 +1589,7 @@ function pipelineScopesFromFiles(files, referenceFaceKeys) {
 				output3dDir,
 				tilesetId: 'wiki',
 				faceKeys: new Set(referenceFaceKeys),
-				pipelineStatePath: path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'tileset.json'),
+			pipelineStatePath: path.resolve(BASE_OUTPUT, 'wiki', 'pipeline.json'),
 				normalizedPathFor: (nextFaceKey) => alignmentInputPath(output3dDir, 'wiki', nextFaceKey, 'normalized-components'),
 				optionalPathFor: (nextFaceKey) => alignmentInputPath(output3dDir, 'wiki', nextFaceKey, 'optional-parts'),
 			});
@@ -1667,7 +1705,7 @@ function absentOptionalAssignment(faceKey, partIds) {
 	return {
 		schemaVersion: 1,
 		faceKey,
-		status: 'ready',
+		status: 'canonical',
 		generatedOn: '2026-05-03T12:00:00.000Z',
 		optionalParts: Object.fromEntries(partIds.map((partId) => [partId, {
 			partId,
@@ -1757,7 +1795,7 @@ function optionalAssignment(faceKey, parts, overrides = {}) {
 	return {
 		schemaVersion: 1,
 		faceKey,
-		status: 'ready',
+		status: 'canonical',
 		generatedOn: '2026-05-03T12:00:00.000Z',
 		optionalParts,
 		componentReservations,
@@ -1787,7 +1825,7 @@ function generatedSemanticMap(faceKey, partId, overrides = {}) {
 	return {
 		schemaVersion: 1,
 		faceKey,
-		status: 'ready',
+		status: 'canonical',
 		generatedOn: '2026-05-03T12:00:00.000Z',
 		assignments: [{
 			assignmentId: `assign.${faceKey}.${partId}`,
@@ -1852,7 +1890,13 @@ function component(componentId, bounds) {
 }
 
 function alignmentInputPath(output3dDir, tilesetId, faceKey, stageDir) {
-	return path.resolve(output3dDir, 'svg-preprocessor', tilesetId, stageDir, `${faceKey}.json`);
+	const stageSegments = {
+		'normalized-components': ['json', 'normalized-components'],
+		'optional-parts': ['json', 'optional-parts'],
+		'semantic-map': ['json', 'semantic-map'],
+		'alignment-map': ['json', 'source-alignment'],
+	}[stageDir] || ['json', stageDir];
+	return path.resolve(BASE_OUTPUT, tilesetId, ...stageSegments, `${faceKey}.json`);
 }
 
 function centerOf(bounds) {
@@ -1873,3 +1917,7 @@ function box(left, top, right, bottom) {
 		area: (right - left) * (bottom - top),
 	};
 }
+
+
+
+

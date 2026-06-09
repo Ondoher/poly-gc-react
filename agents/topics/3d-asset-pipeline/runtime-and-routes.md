@@ -57,6 +57,8 @@ The pipeline server exposes:
 - `GET /api/pipeline/base-tile-selection`
 - `POST /api/pipeline/base-tile-selection`
 - `POST /api/pipeline/asset-generation/start`
+- `POST /api/pipeline/asset-generation/cancel`
+- `POST /api/pipeline/asset-generation/reset`
 - `GET /api/pipeline/asset-review`
 - `GET /api/pipeline/reference/:fileName`
 - `GET /api/pipeline/asset`
@@ -77,11 +79,24 @@ tile variant and remaining face keys. Queue execution emits stream events on
 the asset pipeline stream and updates generated asset state through
 `PipelineModel`.
 
+Selecting a base tile stages missing or stale generated-asset faces into the
+persisted queue when no generation run is active. Asset Review then reports
+those faces as queued from the queue file plus canonical model state instead
+of treating them as unavailable.
+
 Only one active generation run is allowed per tileset. Changing the selected
-base tile clears the persisted queue and cancels an active run.
+base tile clears the persisted queue and cancels an active run. If a run is
+active, the selection route defers new queue staging so the cancelling run
+cannot race and remove the newly selected queue.
+
+Asset Review exposes Cancel and Reset controls. Cancel clears the persisted
+queue, live queue snapshot, and generated-asset runtime queue/build fields
+through `PipelineModel` without touching source SVG preprocessing state. Reset
+does the same cancellation work, then clears only generated 3D asset output
+folders and resets only `assetPipeline` face state to ungenerated while
+preserving the selected base tile variant.
 
 ## Asset Serving
 
 The server can serve reference files and generated assets for review. Asset
 paths are resolved under the repo root and must remain inside that root.
-

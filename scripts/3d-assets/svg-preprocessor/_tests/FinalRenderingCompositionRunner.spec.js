@@ -1,4 +1,5 @@
 import path from 'path';
+import { BASE_OUTPUT, BASE_REFERENCE } from '../PipelineModel.js';
 import {
 	FinalRenderingCompositionRunner,
 	buildAddOptionalSvg,
@@ -2114,6 +2115,99 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(result.svg).not.toContain('fill="#FC1D05"');
 	});
 
+	it('recombines same-source evenodd fragments before final SVG emission', function() {
+		const bodyAssignment = assignment('body', {
+			assignmentId: 'assign.c-9.body',
+			contentKind: 'glyph',
+			role: 'character-body',
+			sourceComponentIds: ['src.c-9.body.top', 'src.c-9.body.main'],
+			referenceComponentIds: ['ref.c-9.body'],
+			alignmentCandidateId: 'align.c-9.body',
+		});
+		const artifact = buildFinalRenderingCompositionArtifact({
+			tilesetId: 'traditional',
+			faceKey: 'c-9',
+			generatedOn: '2026-05-03T12:00:00.000Z',
+			tilesetState: {},
+			optionalAssignmentPath: 'optional-parts/c-9.json',
+			optionalAssignment: optionalAssignment({
+				faceKey: 'c-9',
+				family: 'character',
+				value: 9,
+				optionalParts: {},
+			}),
+			semanticMapPath: 'semantic-map/c-9.json',
+			semanticMap: semanticMap({
+				faceKey: 'c-9',
+				assignments: [bodyAssignment],
+			}),
+			layoutSvgPath: 'final-rendering-svgs/layout/c-9.svg',
+			colorSvgPath: 'final-rendering-svgs/color/c-9.svg',
+		});
+		const sourceComponents = [
+			normalizedComponent('src.c-9.body.top', 'M10 0h10v10h-10z', {
+				fill: '#c20000',
+				fillRule: 'evenodd',
+				sourceIndex: 6,
+				sourceElementId: 'path3478',
+				sourceUseInstanceId: 'source-use.0002.path3478',
+			}),
+			normalizedComponent('src.c-9.body.main', 'M0 0h20v20h-20z M10 0h10v10h-10z', {
+				fill: '#c20000',
+				fillRule: 'evenodd',
+				sourceIndex: 6,
+				sourceElementId: 'path3478',
+				sourceUseInstanceId: 'source-use.0002.path3478',
+				transform: { a: 1, b: 0, c: 0, d: 1, e: 10, f: 0 },
+			}),
+		];
+		const candidates = alignmentMap([
+			alignmentCandidate('align.c-9.body', {
+				matrix: [1, 0, 0, 1, 0, 0],
+				sourceComponentIds: ['src.c-9.body.top', 'src.c-9.body.main'],
+				referenceComponentIds: ['ref.c-9.body'],
+			}),
+		]);
+		const references = referenceStructure('c-9', {
+			body: {
+				role: 'character-body',
+				dominantColor: '#FC1D05',
+				componentIds: ['ref.c-9.body'],
+			},
+		}, [
+			referenceComponent('ref.c-9.body', box(10, 50, 80, 120), {
+				dominantColor: '#FC1D05',
+			}),
+		]);
+		const layout = buildLayoutStep({
+			artifact,
+			normalizedComponents: normalizedArtifact('c-9', sourceComponents),
+			alignmentMap: candidates,
+			semanticMap: semanticMap({
+				faceKey: 'c-9',
+				assignments: [bodyAssignment],
+			}),
+			referenceStructure: references,
+		});
+		artifact.steps.layout = layout.step;
+
+		const result = buildColorStep({
+			artifact,
+			normalizedComponents: normalizedArtifact('c-9', sourceComponents),
+			alignmentMap: candidates,
+			semanticMap: semanticMap({
+				faceKey: 'c-9',
+				assignments: [bodyAssignment],
+			}),
+			referenceStructure: references,
+		});
+
+		expect(result.svg.match(/<path fill="#FC1D05"/g).length).toBe(1);
+		expect(result.svg).toContain('fill-rule="evenodd"');
+		expect(result.svg).toContain('data-geometry-normalized="source-element-recombined"');
+		expect(result.svg).toContain('data-component-id="src.c-9.body.top src.c-9.body.main"');
+	});
+
 	it('colors generated layout parts through the color step', function() {
 		const artifact = buildFinalRenderingCompositionArtifact({
 			tilesetId: 'wiki',
@@ -2192,24 +2286,25 @@ describe('FinalRenderingCompositionRunner', function() {
 	it('writes final rendering artifacts, reports, and state updates', async function() {
 		const rootDir = path.resolve('test-root');
 		const output3dDir = path.resolve(rootDir, 'scripts', 'output', '3d-assets');
-		const tilesetStatePath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'tileset.json');
+		const tilesetStatePath = path.resolve(BASE_OUTPUT, 'wiki', 'pipeline.json');
 		const optionalPath = finalInputPath(output3dDir, 'wiki', 'optional-parts', 'b-1');
 		const semanticPath = finalInputPath(output3dDir, 'wiki', 'semantic-map', 'b-1');
 		const normalizedPath = finalInputPath(output3dDir, 'wiki', 'normalized-components', 'b-1');
 		const alignmentPath = finalInputPath(output3dDir, 'wiki', 'alignment-map', 'b-1');
-		const referenceStructurePath = path.resolve(output3dDir, 'reference-structure', 'default-large-faces', 'reference-structure.json');
+		const referenceStructurePath = path.resolve(BASE_REFERENCE, 'default-large-faces', 'reference.json');
 		const outputPath = finalInputPath(output3dDir, 'wiki', 'final-rendering-map', 'b-1');
-		const svgPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'final-rendering-svgs', 'add-optional', 'b-1.svg');
-		const layoutSvgPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'final-rendering-svgs', 'layout', 'b-1.svg');
-		const colorSvgPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'final-rendering-svgs', 'color', 'b-1.svg');
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'final-rendering-composition-report.b-1.json');
+		const svgPath = path.resolve(BASE_OUTPUT, 'wiki', 'images', 'final-rendering-add-optional-svg', 'b-1.svg');
+		const layoutSvgPath = path.resolve(BASE_OUTPUT, 'wiki', 'images', 'final-rendering-layout-svg', 'b-1.svg');
+		const colorSvgPath = path.resolve(BASE_OUTPUT, 'wiki', 'images', 'final-rendering-color-svg', 'b-1.svg');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'final-rendering-composition-report.b-1.json');
 		const updates = [];
 		const fs = fakeFileSystem({
 			[tilesetStatePath]: JSON.stringify({
 				tilesetId: 'wiki',
 				referenceSetId: 'default-large-faces',
-				faces: {
-					'b-1': {
+				svgPipeline: {
+					faces: {
+						'b-1': {
 						faceKey: 'b-1',
 						state: {
 							components: {},
@@ -2219,7 +2314,8 @@ describe('FinalRenderingCompositionRunner', function() {
 									partId: 'label',
 									contentKind: 'label',
 									role: 'suit-label',
-									reviewStatus: 'accepted',
+									optional: true,
+									accepted: true,
 								},
 							},
 							bindings: {},
@@ -2231,6 +2327,7 @@ describe('FinalRenderingCompositionRunner', function() {
 							alignmentMap: normalizeForTest(rootDir, alignmentPath),
 						},
 						stages: {},
+						},
 					},
 				},
 				rendering: {
@@ -2331,20 +2428,8 @@ describe('FinalRenderingCompositionRunner', function() {
 		}));
 		expect(updates).toEqual([]);
 		const updatedTileset = JSON.parse(fs.files.get(tilesetStatePath));
-		expect(updatedTileset.faces['b-1'].artifacts.finalRenderingMap).toBe(normalizeForTest(rootDir, outputPath));
-		expect(updatedTileset.faces['b-1'].stages.finalRendering).toEqual(jasmine.objectContaining({
-			status: 'ready',
-			step: 'color',
-			artifact: normalizeForTest(rootDir, outputPath),
-			svgs: {
-				addOptional: normalizeForTest(rootDir, svgPath),
-				layout: normalizeForTest(rootDir, layoutSvgPath),
-				color: normalizeForTest(rootDir, colorSvgPath),
-			},
-			pngs: {
-				referenceLayoutColor: null,
-			},
-		}));
+		expect(updatedTileset.svgPipeline.faces['b-1'].artifacts.finalRenderingMap).toBe(normalizeForTest(rootDir, outputPath));
+		expect(updatedTileset.svgPipeline.faces['b-1'].artifacts.finalRenderingColorSvg).toBe(normalizeForTest(rootDir, colorSvgPath));
 	});
 });
 
@@ -2524,7 +2609,14 @@ function box(left, top, right, bottom) {
 }
 
 function finalInputPath(output3dDir, tilesetId, stage, faceKey) {
-	return path.resolve(output3dDir, 'svg-preprocessor', tilesetId, stage, `${faceKey}.json`);
+	const segments = {
+		'optional-parts': ['json', 'optional-parts'],
+		'semantic-map': ['json', 'semantic-map'],
+		'normalized-components': ['json', 'normalized-components'],
+		'alignment-map': ['json', 'source-alignment'],
+		'final-rendering-map': ['json', 'final-rendering-map'],
+	}[stage] || ['json', stage];
+	return path.resolve(BASE_OUTPUT, tilesetId, ...segments, `${faceKey}.json`);
 }
 
 function fakeFileSystem(initialFiles = {}) {

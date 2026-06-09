@@ -30,6 +30,8 @@ export default class ServerModel extends Service {
 			'loadBaseTileSelection',
 			'saveBaseTileSelection',
 			'startAssetGeneration',
+			'cancelAssetGeneration',
+			'resetAssetGeneration',
 			'loadAssetReview',
 			'saveMetadata',
 			'saveReferenceStructure',
@@ -291,6 +293,24 @@ export default class ServerModel extends Service {
 			method: 'POST',
 			body: { tilesetId, faceKeys },
 			fallbackMessage: 'Unable to start asset generation.',
+		});
+	}
+
+	async cancelAssetGeneration({ tilesetId = '' } = {}) {
+		return this.requestJson({
+			url: `${API_BASE}/asset-generation/cancel?tilesetId=${encodeURIComponent(tilesetId)}`,
+			method: 'POST',
+			body: { tilesetId },
+			fallbackMessage: 'Unable to cancel asset generation.',
+		});
+	}
+
+	async resetAssetGeneration({ tilesetId = '' } = {}) {
+		return this.requestJson({
+			url: `${API_BASE}/asset-generation/reset?tilesetId=${encodeURIComponent(tilesetId)}`,
+			method: 'POST',
+			body: { tilesetId },
+			fallbackMessage: 'Unable to reset generated assets.',
 		});
 	}
 

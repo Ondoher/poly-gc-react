@@ -11,6 +11,8 @@ export default class AssetReviewController extends Service {
 			'assetUrl',
 			'load',
 			'startGeneration',
+			'cancelGeneration',
+			'resetGeneration',
 			'retryFace',
 			'dismissMessageDialog',
 		]);
@@ -150,7 +152,9 @@ export default class AssetReviewController extends Service {
 		}).then(async (result) => {
 			this.setState({
 				generationRunning: false,
-				status: result.summary
+				status: result.cancelled
+					? 'Asset generation queue canceled.'
+					: result.summary
 					? `${result.summary.readyCount || 0} generated tile assets ready`
 					: 'Asset generation completed.',
 			});
@@ -169,6 +173,81 @@ export default class AssetReviewController extends Service {
 		});
 
 		return this.generationPromise;
+	}
+
+	async cancelGeneration() {
+		if (!this.state.tilesetId) {
+			this.setState({ status: 'No tileset selected for asset generation.' });
+			return null;
+		}
+
+		this.setState({
+			processing: true,
+			processingLabel: 'Canceling asset generation',
+			status: 'Canceling asset generation...',
+			messageDialog: null,
+		});
+
+		try {
+			const result = await this.pipeline.cancelAssetGeneration({
+				tilesetId: this.state.tilesetId,
+			});
+			this.setState({
+				generationRunning: false,
+				status: 'Asset generation queue canceled.',
+			});
+			await this.load({ force: true, quiet: true });
+			return result;
+		} catch (error) {
+			this.setState({
+				status: `Asset generation cancel failed: ${error.message}`,
+				messageDialog: {
+					title: 'Asset Generation',
+					message: error.message,
+				},
+			});
+			return null;
+		} finally {
+			this.setState({ processing: false, processingLabel: '' });
+		}
+	}
+
+	async resetGeneration() {
+		if (!this.state.tilesetId) {
+			this.setState({ status: 'No tileset selected for asset generation.' });
+			return null;
+		}
+
+		this.setState({
+			processing: true,
+			processingLabel: 'Resetting generated assets',
+			status: 'Resetting generated assets...',
+			messageDialog: null,
+			viewerFace: null,
+		});
+
+		try {
+			const result = await this.pipeline.resetAssetGeneration({
+				tilesetId: this.state.tilesetId,
+			});
+			this.setState({
+				generationRunning: false,
+				status: 'Generated assets reset to ungenerated.',
+			});
+			await this.load({ force: true, quiet: true });
+			return result;
+		} catch (error) {
+			this.setState({
+				status: `Generated asset reset failed: ${error.message}`,
+				messageDialog: {
+					title: 'Asset Generation',
+					message: error.message,
+				},
+			});
+			return null;
+		} finally {
+			this.setState({ processing: false, processingLabel: '' });
+		}
 	}
 
 	retryFace(faceKey) {

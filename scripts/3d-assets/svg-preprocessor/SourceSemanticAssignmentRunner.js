@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { OUTPUT_3D_DIR, ROOT_DIR } from '../shared/asset-paths.js';
 import { DEFAULT_REFERENCE_STRUCTURE_PATH } from './reference-structure-components.js';
+import { tilesetJsonDir, tilesetOutputRoot } from './pipeline-output-paths.js';
 
 export const DEFAULT_SOURCE_SEMANTIC_ASSIGNMENT_TILESET_ID = 'wiki';
 
@@ -76,6 +77,12 @@ export class SourceSemanticAssignmentRunner {
 			});
 		}
 
+		const reportPath = this.path.resolve(
+			tilesetOutputRoot(tilesetId),
+			'reports',
+			`source-semantic-assignment-report${requestedFaceKey ? `.${requestedFaceKey}` : ''}.json`,
+		);
+		await this.writeJson(reportPath, report);
 		await pipelineModel.save();
 
 		return {
@@ -85,6 +92,7 @@ export class SourceSemanticAssignmentRunner {
 			assignmentCount: report.assignmentCount,
 			diagnosticCount: report.diagnosticCount,
 			warningCount: report.warnings.length,
+			reportPath: this.normalizePath(reportPath),
 		};
 	}
 
@@ -145,6 +153,14 @@ export class SourceSemanticAssignmentRunner {
 				message: `No compact alignment matches exist for ${faceKey}.`,
 			};
 			report.warnings.push(warning);
+			this.recordStateUpdate({
+				tilesetId,
+				faceKey,
+				stage: {
+					status: 'missing-alignment-matches',
+					diagnostics: [warning],
+				},
+			});
 			return;
 		}
 
@@ -171,6 +187,8 @@ export class SourceSemanticAssignmentRunner {
 			previousSemanticMap,
 		});
 
+		const semanticMapPath = this.path.resolve(tilesetJsonDir(tilesetId, 'semantic-map'), `${faceKey}.json`);
+		await this.writeJson(semanticMapPath, semanticMap);
 		pipelineModel.applySemanticAssignment(faceKey, modelAssignmentFromSemanticMap(faceKey, faceState.state, semanticMap));
 
 		report.assignmentCount += semanticMap.assignments.length;
@@ -180,7 +198,20 @@ export class SourceSemanticAssignmentRunner {
 			assignmentCount: semanticMap.assignments.length,
 			bindingCount: countBoundSourceSemanticBindings(semanticMap.bindings),
 			diagnosticCount: semanticMap.diagnostics.length,
+			artifact: this.normalizePath(semanticMapPath),
 		};
+		this.recordStateUpdate({
+			tilesetId,
+			faceKey,
+			generatedOn,
+			stage: {
+				status: semanticMap.status,
+				artifact: this.normalizePath(semanticMapPath),
+				assignmentCount: semanticMap.assignments.length,
+				bindingCount: countBoundSourceSemanticBindings(semanticMap.bindings),
+				diagnosticCount: semanticMap.diagnostics.length,
+			},
+		});
 	}
 
 	/**
@@ -191,6 +222,25 @@ export class SourceSemanticAssignmentRunner {
 	 */
 	async readJson(filePath) {
 		return JSON.parse(await this.fs.readFile(filePath, 'utf8'));
+	}
+
+	async writeJson(outputPath, content) {
+		await this.fs.mkdir(this.path.dirname(outputPath), { recursive: true });
+		await this.fs.writeFile(outputPath, `${JSON.stringify(content, null, 2)}\n`, 'utf8');
+	}
+
+	recordStateUpdate({ tilesetId, faceKey, generatedOn, stage }) {
+		if (!this.updateState) {
+			return;
+		}
+		this.updateState({
+			tilesetId,
+			faceKey,
+			...(generatedOn ? { generatedOn } : {}),
+			stages: {
+				semanticAssignment: stage,
+			},
+		});
 	}
 
 	/**

@@ -1,4 +1,6 @@
 import path from 'path';
+import { BASE_OUTPUT } from '../PipelineModel.js';
+import { testPipelineModelFromFile } from './test-pipeline-model.js';
 import {
 	SourceSemanticAssignmentRunner,
 	assignSourceSemantics,
@@ -603,14 +605,14 @@ describe('SourceSemanticAssignmentRunner', function() {
 			updateState: (update) => updates.push(update),
 		});
 
-		const summary = await runner.run({
+		const summary = await runSourceSemanticAssignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey: 'flower-1',
 			referenceStructurePath,
 		});
 
 		const semanticPath = semanticArtifactPath(output3dDir, 'wiki', 'flower-1');
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-semantic-assignment-report.flower-1.json');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'source-semantic-assignment-report.flower-1.json');
 		const artifact = JSON.parse(fs.files.get(semanticPath));
 		const report = JSON.parse(fs.files.get(reportPath));
 
@@ -621,12 +623,10 @@ describe('SourceSemanticAssignmentRunner', function() {
 			assignmentCount: 1,
 			diagnosticCount: 0,
 			warningCount: 0,
-			pipelineStatePath: normalizeForTest(rootDir, pipelineStatePath),
-			semanticMapDir: normalizeForTest(rootDir, path.dirname(semanticPath)),
 			reportPath: normalizeForTest(rootDir, reportPath),
 		});
 		expect(artifact.bindings).toEqual({
-			'src.flower-1.0001': tentativeBinding('label'),
+			'src.flower-1.0001': tentativeBinding('label', { source: 'alignment-match' }),
 		});
 		expect(report.faces['flower-1']).toEqual(jasmine.objectContaining({
 			status: 'inferred',
@@ -635,15 +635,12 @@ describe('SourceSemanticAssignmentRunner', function() {
 			artifact: normalizeForTest(rootDir, semanticPath),
 		}));
 		const updatedPipeline = JSON.parse(fs.files.get(pipelineStatePath));
-		expect(updatedPipeline.artifacts.sourceSemanticAssignmentReport).toBe(normalizeForTest(rootDir, reportPath));
-		expect(updatedPipeline.faces['flower-1'].artifacts.semanticMap).toBe(normalizeForTest(rootDir, semanticPath));
-		expect(updatedPipeline.faces['flower-1'].state.bindings['src.flower-1.0001']).toEqual(jasmine.objectContaining({
+		expect(updatedPipeline.svgPipeline.faces['flower-1'].state.bindings['src.flower-1.0001']).toEqual(jasmine.objectContaining({
 			componentId: 'src.flower-1.0001',
 			partId: 'label',
 			strength: 'tentative',
-			semanticAssignmentId: 'assign.flower-1.label',
 		}));
-		expect(updatedPipeline.faces['flower-1'].state.parts.label.reviewStatus).toBeUndefined();
+		expect(updatedPipeline.svgPipeline.faces['flower-1'].state.parts.label.reviewStatus).toBeUndefined();
 		expect(updates).toEqual([jasmine.objectContaining({
 			tilesetId: 'wiki',
 			faceKey: 'flower-1',
@@ -681,9 +678,9 @@ describe('SourceSemanticAssignmentRunner', function() {
 				],
 			},
 		});
-		state.faces['flower-1'].state.parts.label.reviewStatus = 'accepted';
-		state.faces['flower-1'].state.parts.label.acceptedOn = '2026-05-03T10:00:00.000Z';
-		state.faces['flower-1'].state.bindings['src.flower-1.0001'] = {
+		state.svgPipeline.faces['flower-1'].state.parts.label.reviewStatus = 'accepted';
+		state.svgPipeline.faces['flower-1'].state.parts.label.acceptedOn = '2026-05-03T10:00:00.000Z';
+		state.svgPipeline.faces['flower-1'].state.bindings['src.flower-1.0001'] = {
 			componentId: 'src.flower-1.0001',
 			partId: 'label',
 			strength: 'accepted',
@@ -710,20 +707,18 @@ describe('SourceSemanticAssignmentRunner', function() {
 			clock: () => '2026-05-03T12:00:00.000Z',
 		});
 
-		await runner.run({
+		await runSourceSemanticAssignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey: 'flower-1',
 			referenceStructurePath,
 		});
 
 		const updatedPipeline = JSON.parse(fs.files.get(pipelineStatePath));
-		expect(updatedPipeline.faces['flower-1'].state.bindings['src.flower-1.0001']).toEqual(jasmine.objectContaining({
+		expect(updatedPipeline.svgPipeline.faces['flower-1'].state.bindings['src.flower-1.0001']).toEqual(jasmine.objectContaining({
 			strength: 'accepted',
-			reviewStatus: 'accepted',
 		}));
-		expect(updatedPipeline.faces['flower-1'].state.parts.label).toEqual(jasmine.objectContaining({
-			reviewStatus: 'accepted',
-			acceptedOn: '2026-05-03T10:00:00.000Z',
+		expect(updatedPipeline.svgPipeline.faces['flower-1'].state.parts.label).toEqual(jasmine.objectContaining({
+			accepted: true,
 		}));
 	});
 
@@ -740,13 +735,13 @@ describe('SourceSemanticAssignmentRunner', function() {
 		});
 		const runner = new SourceSemanticAssignmentRunner({ fileSystem: fs, rootDir, output3dDir });
 
-		await runner.run({
+		await runSourceSemanticAssignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			faceKey: 'flower-2',
 			referenceStructurePath,
 		});
 
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-semantic-assignment-report.flower-2.json');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'source-semantic-assignment-report.flower-2.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(fs.files.has(semanticArtifactPath(output3dDir, 'wiki', 'flower-1'))).toBe(false);
@@ -773,27 +768,27 @@ describe('SourceSemanticAssignmentRunner', function() {
 			updateState: (update) => updates.push(update),
 		});
 
-		const summary = await runner.run({
+		const summary = await runSourceSemanticAssignment(runner, fs, output3dDir, {
 			tilesetId: 'wiki',
 			referenceStructurePath,
 		});
-		const reportPath = path.resolve(output3dDir, 'svg-preprocessor', 'wiki', 'reports', 'source-semantic-assignment-report.json');
+		const reportPath = path.resolve(BASE_OUTPUT, 'wiki', 'reports', 'source-semantic-assignment-report.json');
 		const report = JSON.parse(fs.files.get(reportPath));
 
 		expect(summary.assignmentCount).toBe(0);
 		expect(summary.warningCount).toBe(1);
 		expect(report.warnings).toEqual([{
 			faceKey: 'wind-n',
-			code: 'missing-alignment-stage',
-			message: 'No alignment stage state exists for wind-n.',
+			code: 'missing-alignment-matches',
+			message: 'No compact alignment matches exist for wind-n.',
 		}]);
 		expect(updates).toEqual([jasmine.objectContaining({
 			tilesetId: 'wiki',
 			faceKey: 'wind-n',
 			stages: {
 				semanticAssignment: jasmine.objectContaining({
-					status: 'missing-alignment-stage',
-					diagnostics: [jasmine.objectContaining({ code: 'missing-alignment-stage' })],
+					status: 'missing-alignment-matches',
+					diagnostics: [jasmine.objectContaining({ code: 'missing-alignment-matches' })],
 				}),
 			},
 		})]);
@@ -803,21 +798,25 @@ describe('SourceSemanticAssignmentRunner', function() {
 function fakeFileSystem(initialFiles = {}) {
 	const files = new Map(Object.entries(initialFiles));
 	const writes = [];
+	const fileFor = (filePath) => files.get(filePath)
+		?? files.get(String(filePath).replaceAll('/', '\\'))
+		?? files.get(String(filePath).replaceAll('\\', '/'));
 
 	return {
 		files,
 		writes,
 		async access(filePath) {
-			if (!files.has(filePath)) {
+			if (fileFor(filePath) === undefined) {
 				throw new Error(`Missing fake file: ${filePath}`);
 			}
 		},
 		async readFile(filePath) {
-			if (!files.has(filePath)) {
+			const content = fileFor(filePath);
+			if (content === undefined) {
 				throw new Error(`Missing fake file: ${filePath}`);
 			}
 
-			return files.get(filePath);
+			return content;
 		},
 		async writeFile(filePath, content, encoding) {
 			writes.push({ filePath, encoding });
@@ -825,6 +824,23 @@ function fakeFileSystem(initialFiles = {}) {
 		},
 		async mkdir() {},
 	};
+}
+
+async function runSourceSemanticAssignment(runner, fs, output3dDir, options) {
+	const tilesetId = options.tilesetId || 'wiki';
+	const statePath = pipelineArtifactPath(output3dDir, tilesetId);
+	const reference = options.referenceStructurePath && fs.files.has(options.referenceStructurePath)
+		? JSON.parse(fs.files.get(options.referenceStructurePath))
+		: null;
+	return runner.run({
+		...options,
+		pipelineModel: testPipelineModelFromFile({
+			fileSystem: fs,
+			statePath,
+			reference,
+			referenceFile: options.referenceStructurePath,
+		}),
+	});
 }
 
 function referenceStructure(faceKeys) {
@@ -903,15 +919,15 @@ function sourcePartMapping(overrides = {}) {
 }
 
 function alignmentArtifactPath(output3dDir, tilesetId, faceKey) {
-	return path.resolve(output3dDir, 'svg-preprocessor', tilesetId, 'alignment-map', `${faceKey}.json`);
+	return path.resolve(BASE_OUTPUT, tilesetId, 'json', 'source-alignment', `${faceKey}.json`);
 }
 
 function semanticArtifactPath(output3dDir, tilesetId, faceKey) {
-	return path.resolve(output3dDir, 'svg-preprocessor', tilesetId, 'semantic-map', `${faceKey}.json`);
+	return path.resolve(BASE_OUTPUT, tilesetId, 'json', 'semantic-map', `${faceKey}.json`);
 }
 
 function pipelineArtifactPath(output3dDir, tilesetId) {
-	return path.resolve(output3dDir, 'svg-preprocessor', tilesetId, 'tileset.json');
+	return path.resolve(BASE_OUTPUT, tilesetId, 'pipeline.json');
 }
 
 function pipelineState(rootDir, output3dDir, tilesetId, faceKeys, options = {}) {
@@ -919,30 +935,37 @@ function pipelineState(rootDir, output3dDir, tilesetId, faceKeys, options = {}) 
 	const sourcePartMappingsByFace = options.sourcePartMappingsByFace || {};
 
 	return {
-		schemaVersion: 1,
+		schemaVersion: 3,
 		tilesetId,
-		faces: Object.fromEntries(faceKeys.map((faceKey) => [faceKey, {
+		svgPipeline: {
+			faces: Object.fromEntries(faceKeys.map((faceKey) => [faceKey, {
 			state: {
-				components: {},
-				shapes: {},
 				parts: referenceFace().parts,
 				bindings: includeAlignmentArtifact
 					? bindingsFromMappings(sourcePartMappingsByFace[faceKey] || alignmentMap(faceKey).sourcePartMappings)
 					: {},
+				...(includeAlignmentArtifact ? {
+					alignment: {
+						matches: matchesFromMappings(sourcePartMappingsByFace[faceKey] || alignmentMap(faceKey).sourcePartMappings),
+					},
+				} : {}),
 			},
 			artifacts: {
 				...(includeAlignmentArtifact
 					? { alignmentMap: normalizeForTest(rootDir, alignmentArtifactPath(output3dDir, tilesetId, faceKey)) }
 					: {}),
 			},
-			stages: {
-				...(includeAlignmentArtifact
-					? { alignment: { status: 'inferred', updatedOn: '2026-05-03T12:00:00.000Z' } }
-					: {}),
-			},
 		}])),
-		artifacts: {},
+		},
 	};
+}
+
+function matchesFromMappings(mappings) {
+	return (mappings || []).map((mapping) => ({
+		id: mapping.alignmentCandidateId || mapping.mappingId,
+		source: mapping.sourceComponentIds || [],
+		reference: mapping.referenceComponentIds || [],
+	}));
 }
 
 function bindingsFromMappings(mappings) {
@@ -1003,3 +1026,4 @@ function generatedPart(overrides = {}) {
 function normalizeForTest(rootDir, filePath) {
 	return path.relative(rootDir, filePath).replaceAll(path.sep, '/');
 }
+

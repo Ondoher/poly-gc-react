@@ -1,7 +1,27 @@
 {
   "schemaVersion": 1,
-  "description": "Temporary fake base tile GLBs for exercising 3D asset-pipeline intake and selection.",
+  "description": "Reusable base tile GLBs for generated 3D asset pipeline intake and selection.",
   "variants": [
+    {
+      "id": "mark-ii",
+      "label": "Mark II",
+      "description": "Production two-piece tile with ivory front and bamboo locking insert.",
+      "kind": "base-tile-glb",
+      "temporary": false,
+      "glb": "scripts/data/3d-assets/models/base-tiles/mark-ii.glb",
+      "metadata": "scripts/data/3d-assets/models/base-tiles/mark-ii.json",
+      "meshName": "BaseTileBody_Ivory",
+      "carvingMeshName": "BaseTileBody_Ivory",
+      "supportMeshNames": [
+        "baseTileBody_wood"
+      ],
+      "body": {
+        "width": 0.79,
+        "height": 0.5,
+        "depth": 1.08,
+        "bevelThickness": 0
+      }
+    },
     {
       "id": "classic-soft",
       "label": "Classic Soft",

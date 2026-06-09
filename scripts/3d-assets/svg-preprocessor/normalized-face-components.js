@@ -1,8 +1,13 @@
 import paper from 'paper';
+import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
+import { parse as parseSvgAst } from 'svg-parser';
 import { composeMatrices, parseTransform } from './source-svg-components.js';
 import { transformPathData } from './svg-path-geometry.js';
 
 const IDENTITY = Object.freeze({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
+const STROKE_OUTLINE_CURVE_SEGMENTS = 10;
+
+installSvgDomParser();
 
 export function getPaintComponents(components, classNames) {
 	const classSet = new Set(classNames);
@@ -16,6 +21,31 @@ export function makePaintPathWithKnockouts({
 	transform = IDENTITY,
 	attributes = {},
 }) {
+	const outputTransform = composeMatrices(normalizeMatrix(transform), component.transform || IDENTITY);
+
+	if (isStrokeOnly(component)) {
+		const strokeWidth = visibleStrokeWidth(component);
+		if (strokeWidth <= 0) {
+			return '';
+		}
+
+		const strokePathDataList = strokeOnlyComponentToFilledPathDataList(component, outputTransform, strokeWidth);
+		const pathAttributes = mergedPaintPathAttributes({
+			...attributes,
+			'data-geometry-normalized': [
+				attributes?.['data-geometry-normalized'],
+				'stroke-to-fill',
+			].filter(Boolean).join(' '),
+		}, false);
+		const customAttributes = Object.entries(pathAttributes)
+			.map(([name, value]) => value == null ? '' : ` ${name}="${escapeAttribute(String(value))}"`)
+			.join('');
+
+		return strokePathDataList
+			.map((strokePathData) => `<path fill="${escapeAttribute(color)}" fill-rule="evenodd"${customAttributes} data-source-id="${escapeAttribute(component.id || '')}" data-source-class="${escapeAttribute(component.className || '')}" d="${escapeAttribute(strokePathData)}"/>`)
+			.join('\n');
+	}
+
 	const knockoutPathData = pruneNestedKnockouts(knockouts)
 		.map((knockout) => transformComponentPath(knockout, transform));
 	const hasKnockouts = knockoutPathData.length > 0;
@@ -27,16 +57,35 @@ export function makePaintPathWithKnockouts({
 		: pathData;
 	const transformAttribute = hasKnockouts
 		? ''
-		: makeTransformAttribute(composeMatrices(normalizeMatrix(transform), component.transform || IDENTITY));
+		: makeTransformAttribute(outputTransform);
 	const knockoutAttributes = knockoutPathData.length > 0
 		? ` data-negative-space="paper-subtract" data-knockout-count="${knockoutPathData.length}"`
 		: '';
-	const customAttributes = Object.entries(attributes)
+	const safePathData = safeFilledPathData(component, bakedPathData);
+	const pathAttributes = mergedPaintPathAttributes(attributes, safePathData !== bakedPathData);
+	const customAttributes = Object.entries(pathAttributes)
 		.map(([name, value]) => value == null ? '' : ` ${name}="${escapeAttribute(String(value))}"`)
 		.join('');
 	const paintAttributes = makePaintAttributes(component, color);
 
-	return `<path${paintAttributes}${transformAttribute}${knockoutAttributes}${customAttributes} data-source-id="${escapeAttribute(component.id || '')}" data-source-class="${escapeAttribute(component.className || '')}" d="${escapeAttribute(bakedPathData)}"/>`;
+	return `<path${paintAttributes}${transformAttribute}${knockoutAttributes}${customAttributes} data-source-id="${escapeAttribute(component.id || '')}" data-source-class="${escapeAttribute(component.className || '')}" d="${escapeAttribute(safePathData)}"/>`;
+}
+
+function mergedPaintPathAttributes(attributes, degenerateSubpathPruned) {
+	const nextAttributes = { ...(attributes || {}) };
+	const geometryNormalizations = [
+		nextAttributes['data-geometry-normalized'],
+		degenerateSubpathPruned ? 'degenerate-subpath-pruned' : null,
+	]
+		.filter(Boolean)
+		.flatMap((value) => String(value).split(/\s+/))
+		.filter(Boolean);
+
+	if (geometryNormalizations.length > 0) {
+		nextAttributes['data-geometry-normalized'] = [...new Set(geometryNormalizations)].join(' ');
+	}
+
+	return nextAttributes;
 }
 
 export function selectKnockoutComponents(components, paintComponents, options = {}) {
@@ -269,21 +318,319 @@ function escapeAttribute(value) {
 }
 
 function makePaintAttributes(component, color) {
-	if (isStrokeOnly(component)) {
-		const strokeWidth = component.strokeWidth
-			? ` stroke-width="${escapeAttribute(String(component.strokeWidth))}"`
-			: '';
-		return ` fill="none" stroke="${escapeAttribute(color)}"${strokeWidth}`;
-	}
-
 	const fillRule = component.fillRule
 		? ` fill-rule="${escapeAttribute(component.fillRule)}"`
 		: '';
 	return ` fill="${escapeAttribute(color)}"${fillRule}`;
 }
 
+function strokeOnlyComponentToFilledPathDataList(component, transform, strokeWidth) {
+	const transformAttribute = makeTransformAttribute(transform);
+	const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1000 -1000 2000 2000"><path d="${escapeAttribute(component.pathData || '')}" fill="none" stroke="black" stroke-width="${escapeAttribute(String(strokeWidth))}"${transformAttribute}/></svg>`;
+	const svgData = new SVGLoader().parse(svg);
+	const pathDataList = [];
+
+	for (const svgPath of svgData.paths) {
+		const style = svgPath.userData?.style || {};
+
+		for (const subPath of svgPath.subPaths || []) {
+			const points = subPath.getPoints(STROKE_OUTLINE_CURVE_SEGMENTS);
+			const geometry = points.length >= 2
+				? SVGLoader.pointsToStroke(points, style, STROKE_OUTLINE_CURVE_SEGMENTS, 0.001)
+				: null;
+
+			if (!geometry) {
+				continue;
+			}
+
+			const boundaryPathData = geometryToBoundaryPathCommands(geometry).join(' ');
+			if (boundaryPathData) {
+				pathDataList.push(boundaryPathData);
+			}
+			geometry.dispose();
+		}
+	}
+
+	if (pathDataList.length === 0) {
+		throw new Error(`Stroke-only component ${component.id || component.componentId || '(unknown)'} did not produce filled stroke geometry.`);
+	}
+
+	return pathDataList;
+}
+
+function geometryToBoundaryPathCommands(geometry) {
+	const nonIndexed = geometry.index ? geometry.toNonIndexed() : geometry;
+	const positions = nonIndexed.attributes.position;
+	const edges = new Map();
+
+	for (let index = 0; index + 2 < positions.count; index += 3) {
+		const points = [
+			{ x: positions.getX(index), y: positions.getY(index) },
+			{ x: positions.getX(index + 1), y: positions.getY(index + 1) },
+			{ x: positions.getX(index + 2), y: positions.getY(index + 2) },
+		];
+
+		if (triangleArea(points) <= 0.000001) {
+			continue;
+		}
+
+		addBoundaryEdge(edges, points[0], points[1]);
+		addBoundaryEdge(edges, points[1], points[2]);
+		addBoundaryEdge(edges, points[2], points[0]);
+	}
+
+	if (nonIndexed !== geometry) {
+		nonIndexed.dispose();
+	}
+
+	return boundaryEdgesToPathCommands([...edges.values()]);
+}
+
+function addBoundaryEdge(edges, start, end) {
+	const startKey = pointKey(start);
+	const endKey = pointKey(end);
+	const edgeKey = startKey < endKey
+		? `${startKey}|${endKey}`
+		: `${endKey}|${startKey}`;
+
+	if (edges.has(edgeKey)) {
+		edges.delete(edgeKey);
+		return;
+	}
+
+	edges.set(edgeKey, {
+		start: { ...start, key: startKey },
+		end: { ...end, key: endKey },
+	});
+}
+
+function boundaryEdgesToPathCommands(edges) {
+	const unused = new Set(edges.keys());
+	const adjacency = new Map();
+
+	for (const index of unused) {
+		const edge = edges[index];
+		appendAdjacency(adjacency, edge.start.key, { index, point: edge.end });
+		appendAdjacency(adjacency, edge.end.key, { index, point: edge.start });
+	}
+
+	const commands = [];
+
+	while (unused.size > 0) {
+		const firstIndex = unused.values().next().value;
+		const firstEdge = edges[firstIndex];
+		const loop = [firstEdge.start, firstEdge.end];
+		unused.delete(firstIndex);
+
+		let previousKey = firstEdge.start.key;
+		let currentKey = firstEdge.end.key;
+
+		while (currentKey !== loop[0].key) {
+			const next = (adjacency.get(currentKey) || [])
+				.find((candidate) => unused.has(candidate.index) && candidate.point.key !== previousKey)
+				|| (adjacency.get(currentKey) || [])
+					.find((candidate) => unused.has(candidate.index));
+
+			if (!next) {
+				break;
+			}
+
+			unused.delete(next.index);
+			previousKey = currentKey;
+			currentKey = next.point.key;
+
+			if (currentKey !== loop[0].key) {
+				loop.push(next.point);
+			}
+		}
+
+		if (loop.length >= 3) {
+			commands.push(pathCommandForLoop(loop));
+		}
+	}
+
+	return commands;
+}
+
+function appendAdjacency(adjacency, key, entry) {
+	if (!adjacency.has(key)) {
+		adjacency.set(key, []);
+	}
+
+	adjacency.get(key).push(entry);
+}
+
+function pathCommandForLoop(loop) {
+	const [first, ...rest] = loop;
+	return `M${format(first.x)},${format(first.y)} ${rest.map((point) => `L${format(point.x)},${format(point.y)}`).join(' ')} Z`;
+}
+
+function pointKey(point) {
+	return `${format(point.x)},${format(point.y)}`;
+}
+
+function triangleArea(points) {
+	return Math.abs(
+		((points[1].x - points[0].x) * (points[2].y - points[0].y))
+		- ((points[2].x - points[0].x) * (points[1].y - points[0].y)),
+	) / 2;
+}
+
+function installSvgDomParser() {
+	if (typeof globalThis.DOMParser !== 'undefined') {
+		return;
+	}
+
+	globalThis.DOMParser = class {
+		parseFromString(source) {
+			const ast = parseSvgAst(source);
+			const svgRoot = ast.children.find((node) => node.type === 'element');
+			const idMap = new Map();
+			const document = {
+				documentElement: null,
+				getElementById(id) {
+					return idMap.get(id) ?? null;
+				},
+			};
+			const documentElement = wrapSvgAstNode(svgRoot, document, idMap);
+			document.documentElement = documentElement;
+			assignViewportElement(documentElement, document);
+			return document;
+		}
+	};
+}
+
+function wrapSvgAstNode(node, document, idMap) {
+	const properties = node?.properties ?? {};
+	const domNode = {
+		nodeType: 1,
+		nodeName: node.tagName,
+		childNodes: [],
+		style: parseInlineStyle(properties.style),
+		viewportElement: null,
+		getAttribute(name) {
+			const value = readSvgProperty(properties, name);
+			return value == null ? null : String(value);
+		},
+		getAttributeNS(namespace, name) {
+			if (namespace === 'http://www.w3.org/1999/xlink') {
+				const xlinkValue = readSvgProperty(properties, `xlink:${name}`) ?? readSvgProperty(properties, `xlink${capitalize(name)}`);
+				return xlinkValue == null ? null : String(xlinkValue);
+			}
+
+			const value = readSvgProperty(properties, name);
+			return value == null ? null : String(value);
+		},
+		hasAttribute(name) {
+			return readSvgProperty(properties, name) != null;
+		},
+	};
+
+	if (properties.id) {
+		idMap.set(String(properties.id), domNode);
+	}
+
+	domNode.childNodes = (node.children || [])
+		.filter((child) => child?.type === 'element')
+		.map((child) => wrapSvgAstNode(child, document, idMap));
+
+	return domNode;
+}
+
+function assignViewportElement(node, document) {
+	node.viewportElement = document;
+	for (const child of node.childNodes) {
+		assignViewportElement(child, document);
+	}
+}
+
+function parseInlineStyle(styleText) {
+	const styleValues = !styleText
+		? {}
+		: String(styleText)
+			.split(';')
+			.map((entry) => entry.trim())
+			.filter(Boolean)
+			.reduce((result, entry) => {
+				const separator = entry.indexOf(':');
+
+				if (separator < 0) {
+					return result;
+				}
+
+				result[entry.slice(0, separator).trim()] = entry.slice(separator + 1).trim();
+				return result;
+			}, {});
+
+	return new Proxy(styleValues, {
+		get(target, property) {
+			if (typeof property !== 'string') {
+				return target[property];
+			}
+
+			return property in target ? target[property] : '';
+		},
+	});
+}
+
+function readSvgProperty(properties, name) {
+	if (Object.hasOwn(properties, name)) {
+		return properties[name];
+	}
+
+	const camelCaseName = name.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+	if (Object.hasOwn(properties, camelCaseName)) {
+		return properties[camelCaseName];
+	}
+
+	return null;
+}
+
+function capitalize(value) {
+	return value.slice(0, 1).toUpperCase() + value.slice(1);
+}
+
+function safeFilledPathData(component, pathData) {
+	if (isStrokeOnly(component) || !isEvenOddFill(component) || !pathData) {
+		return pathData;
+	}
+
+	const compoundPath = new paper.CompoundPath(pathData);
+	const children = compoundPath.children || [];
+
+	if (children.length <= 1) {
+		compoundPath.remove();
+		return pathData;
+	}
+
+	const keptPathData = children
+		.filter((child) => child.pathData && Math.abs(child.area || 0) > 0.000001)
+		.map((child) => child.pathData);
+
+	compoundPath.remove();
+
+	return keptPathData.length > 0 && keptPathData.length !== children.length
+		? keptPathData.join(' ')
+		: pathData;
+}
+
+function isEvenOddFill(component) {
+	return String(component.fillRule || '').toLowerCase() === 'evenodd';
+}
+
 function isStrokeOnly(component) {
 	return !isPaint(component.fill) && isPaint(component.stroke);
+}
+
+function visibleStrokeWidth(component) {
+	const value = component.strokeWidth;
+
+	if (value == null || value === '') {
+		return 1;
+	}
+
+	const width = Number.parseFloat(String(value));
+	return Number.isFinite(width) ? width : 1;
 }
 
 function isPaint(value) {

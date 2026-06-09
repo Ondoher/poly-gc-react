@@ -3,6 +3,7 @@ import path from 'path';
 import { OUTPUT_3D_DIR, ROOT_DIR } from '../shared/asset-paths.js';
 import { groupAnalogComponents } from './analog-component-matcher.js';
 import { getComponentUnionBounds } from './normalized-face-components.js';
+import { tilesetJsonDir, tilesetOutputRoot } from './pipeline-output-paths.js';
 
 export const DEFAULT_OPTIONAL_PART_TILESET_ID = 'wiki';
 
@@ -49,6 +50,7 @@ export class OptionalPartAssignmentRunner {
 		const optionalPartConfig = pipelineModel.getOptionalPartAssignmentConfig();
 		const bulkOptions = optionalPartConfig.bulkOptions || null;
 		const manualAssignments = optionalPartConfig.manualAssignments || null;
+		const optionalPartsDir = tilesetJsonDir(activeTilesetId, 'optional-parts');
 		const generatedOn = this.clock();
 		const faceEntries = pipelineModel.getFaceEntries()
 			.filter(([faceKey]) => !requestedFaceKey || faceKey === requestedFaceKey)
@@ -62,6 +64,7 @@ export class OptionalPartAssignmentRunner {
 				faceState,
 				pipelineState,
 				pipelineModel,
+				optionalPartsDir,
 				generatedOn,
 				report,
 				bulkOptions,
@@ -69,6 +72,12 @@ export class OptionalPartAssignmentRunner {
 			});
 		}
 
+		const reportPath = this.path.resolve(
+			tilesetOutputRoot(activeTilesetId),
+			'reports',
+			`optional-part-assignment-report${requestedFaceKey ? `.${requestedFaceKey}` : ''}.json`,
+		);
+		await this.writeJson(reportPath, report);
 		await pipelineModel.save();
 
 		return {
@@ -77,6 +86,8 @@ export class OptionalPartAssignmentRunner {
 			optionalPartCount: report.optionalPartCount,
 			candidateCount: report.candidateCount,
 			diagnosticCount: report.diagnosticCount,
+			optionalPartsDir: this.normalizePath(optionalPartsDir),
+			reportPath: this.normalizePath(reportPath),
 			warningCount: report.warningCount + report.warnings.length,
 		};
 	}
@@ -114,6 +125,7 @@ export class OptionalPartAssignmentRunner {
 		faceState,
 		pipelineState,
 		pipelineModel,
+		optionalPartsDir,
 		generatedOn,
 		report,
 		bulkOptions,
@@ -145,6 +157,8 @@ export class OptionalPartAssignmentRunner {
 		});
 
 		pipelineModel.applyOptionalPartAssignment(faceKey, this.modelAssignmentFromArtifact(artifact));
+		const artifactPath = this.path.resolve(optionalPartsDir, `${faceKey}.json`);
+		await this.writeJson(artifactPath, artifact);
 
 		report.faceCount += 1;
 		report.optionalPartCount += Object.keys(artifact.optionalParts).length;
@@ -1516,6 +1530,11 @@ export class OptionalPartAssignmentRunner {
 	 */
 	async readJson(filePath) {
 		return JSON.parse(await this.fs.readFile(filePath, 'utf8'));
+	}
+
+	async writeJson(outputPath, content) {
+		await this.fs.mkdir(this.path.dirname(outputPath), { recursive: true });
+		await this.fs.writeFile(outputPath, `${JSON.stringify(content, null, 2)}\n`, 'utf8');
 	}
 
 	/**

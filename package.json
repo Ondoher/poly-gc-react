@@ -53,6 +53,7 @@
     "test:scripts": "jasmine --config=spec/support/jasmine-scripts.json",
     "test": "npm run test:ui:gc",
     "test:ui:gc": "polylith test gc && karma start --browsers ChromeHeadless karma.conf.cjs",
+    "test:ui:flat": "polylith test flat && karma start --browsers ChromeHeadless karma.flat.conf.cjs",
     "dev": "start polylith watch --all -v false&start npm run dev:serve",
     "karma": "karma start --browsers ChromeHeadless karma.conf.cjs",
     "karma:gc": "karma start --browsers ChromeHeadless karma.conf.cjs",

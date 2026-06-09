@@ -129,6 +129,26 @@ export class AssetPipelineStream {
 	}
 
 	/**
+	 * Clear the runtime-only queue snapshot for a tileset.
+	 *
+	 * @param {string} tilesetId
+	 * @returns {void}
+	 */
+	clearQueueState(tilesetId) {
+		const safeTilesetId = sanitizeTilesetId(tilesetId);
+		if (!safeTilesetId) {
+			return;
+		}
+
+		this.queueStateByTileset[safeTilesetId] = {
+			activeFaceKey: "",
+			queuedFaceKeys: new Set(),
+			currentStep: "",
+			stageLabel: "",
+		};
+	}
+
+	/**
 	 * Update the runtime-only queue snapshot from one progress event.
 	 *
 	 * @param {string} tilesetId

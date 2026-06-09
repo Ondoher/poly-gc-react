@@ -178,7 +178,21 @@ interface ServerModelService {
 	 *
 	 * @param options - Tileset id for the generated asset run.
 	 */
-	startAssetGeneration(options?: { tilesetId?: string }): Promise<object>;
+	startAssetGeneration(options?: { tilesetId?: string; faceKeys?: string[] }): Promise<object>;
+
+	/**
+	 * Cancel pending generated asset pipeline work for a tileset.
+	 *
+	 * @param options - Tileset id for the generated asset run.
+	 */
+	cancelAssetGeneration(options?: { tilesetId?: string }): Promise<object>;
+
+	/**
+	 * Clear generated assets and reset generated asset state for a tileset.
+	 *
+	 * @param options - Tileset id for the generated asset run.
+	 */
+	resetAssetGeneration(options?: { tilesetId?: string }): Promise<object>;
 
 	/**
 	 * Load generated final tile asset review data.

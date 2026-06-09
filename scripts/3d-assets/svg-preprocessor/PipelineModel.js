@@ -669,6 +669,50 @@ export class PipelineModel {
 	}
 
 	/**
+	 * Clears generated asset face state while preserving the selected base tile.
+	 *
+	 * @returns {void}
+	 */
+	resetAssetGenerationState() {
+		const state = this.requireState();
+		const baseTileSelection = cleanBaseTileSelection(state.assetPipeline?.baseTileSelection);
+		state.assetPipeline = cleanAssetPipeline({
+			...(baseTileSelection ? { baseTileSelection } : {}),
+			faces: {},
+		});
+	}
+
+	/**
+	 * Clears generated 3D asset artifacts for this tileset only.
+	 *
+	 * Source SVG, review, rendering, and non-generated pipeline artifacts remain untouched.
+	 *
+	 * @returns {Promise<string[]>} Cleared generated asset directories.
+	 */
+	async clearGeneratedAssetArtifacts() {
+		const directories = [
+			path.join(this.pipelineDir, "models", "svg-cutter"),
+			path.join(this.pipelineDir, "models", "stamped-body"),
+			path.join(this.pipelineDir, "models", "colored-inlay"),
+			path.join(this.pipelineDir, "json", "svg-cutter"),
+			path.join(this.pipelineDir, "json", "stamped-body"),
+			path.join(this.pipelineDir, "json", "colored-inlay"),
+			path.join(this.pipelineDir, "images", "generated-asset-preview-png"),
+		];
+
+		for (const directory of directories) {
+			if (!isInsideDirectory(directory, this.pipelineDir)) {
+				throw new Error(`Refusing to clear generated assets outside the tileset output directory: ${directory}`);
+			}
+
+			await fs.rm(directory, { recursive: true, force: true });
+			await fs.mkdir(directory, { recursive: true });
+		}
+
+		return directories;
+	}
+
+	/**
 	 * Plans generated asset work for the selected reusable base tile.
 	 *
 	 * @param {object} options - Planning options.
@@ -1603,6 +1647,11 @@ function cleanAssetPipeline(assetPipeline) {
 function isEmptyAssetPipeline(assetPipeline) {
 	return !assetPipeline?.baseTileSelection
 		&& Object.keys(assetPipeline?.faces || {}).length === 0;
+}
+
+function isInsideDirectory(filename, directory) {
+	const relative = path.relative(directory, filename);
+	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
 
 /**

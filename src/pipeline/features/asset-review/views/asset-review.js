@@ -12,6 +12,8 @@ export default class AssetReviewView extends Service {
 			'assetUrl',
 			'load',
 			'startGeneration',
+			'cancelGeneration',
+			'resetGeneration',
 			'retryFace',
 			'dismissMessageDialog',
 		]);
@@ -44,6 +46,14 @@ export default class AssetReviewView extends Service {
 
 	startGeneration(options) {
 		return this.controller.startGeneration(options);
+	}
+
+	cancelGeneration() {
+		return this.controller.cancelGeneration();
+	}
+
+	resetGeneration() {
+		return this.controller.resetGeneration();
 	}
 
 	retryFace(faceKey) {

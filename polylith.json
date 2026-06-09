@@ -23,6 +23,12 @@
             "filename": "sat.json",
             "code": false,
             "default": false
+        },
+        {
+            "name": "flat",
+            "filename": "flat.json",
+            "code": false,
+            "default": false
         }
     ],
     "builds": "builds",

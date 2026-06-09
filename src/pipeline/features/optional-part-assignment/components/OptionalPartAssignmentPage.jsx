@@ -742,19 +742,31 @@ class OptionalFaceCard extends React.Component {
 		}
 	}
 
-	componentClipStyle(bounds, canvas) {
-		if (!bounds || !canvas?.width || !canvas?.height) {
-			return {};
+	renderOptionalPartComponent(component, canvas) {
+		const fill = component.fill && component.fill !== 'none' ? component.fill : 'none';
+		const stroke = component.stroke && component.stroke !== 'none' ? component.stroke : 'none';
+
+		if (!component.pathData) {
+			return null;
 		}
 
-		const left = ((bounds.left - canvas.left) / canvas.width) * 100;
-		const top = ((bounds.top - canvas.top) / canvas.height) * 100;
-		const right = (((Number.isFinite(bounds.right) ? bounds.right : bounds.left + bounds.width) - canvas.left) / canvas.width) * 100;
-		const bottom = (((Number.isFinite(bounds.bottom) ? bounds.bottom : bounds.top + bounds.height) - canvas.top) / canvas.height) * 100;
-
-		return {
-			clipPath: `inset(${top}% ${100 - right}% ${100 - bottom}% ${left}%)`,
-		};
+		return (
+			<svg
+				className="optional-view-part-svg"
+				viewBox={`${canvas.left} ${canvas.top} ${canvas.width} ${canvas.height}`}
+				aria-hidden="true"
+			>
+				<path
+					d={component.pathData}
+					transform={componentTransformString(component)}
+					fill={fill}
+					stroke={stroke}
+					strokeWidth={component.strokeWidth || undefined}
+					fillRule={component.fillRule || undefined}
+					clipRule={component.clipRule || undefined}
+				/>
+			</svg>
+		);
 	}
 
 	renderPreview(parts, canvas) {
@@ -784,14 +796,8 @@ class OptionalFaceCard extends React.Component {
 
 						return (
 							<React.Fragment key={component.componentId}>
-								{viewMode === 'parts' && isOptionalPartComponent && previewPath ? (
-									<img
-										className="optional-view-part-image"
-										src={pageView.assetUrl(previewPath)}
-										alt=""
-										aria-hidden="true"
-										style={this.componentClipStyle(component.bounds, canvas)}
-									/>
+								{viewMode === 'parts' && isOptionalPartComponent ? (
+									this.renderOptionalPartComponent(component, canvas)
 								) : null}
 								<BoundsBox
 									bounds={component.bounds}
@@ -994,6 +1000,36 @@ function canvasFromFace(face) {
 		right: left + width,
 		bottom: top + height,
 	};
+}
+
+function componentTransformString(component) {
+	const transform = component?.transform;
+
+	if (!transform || isIdentityTransform(transform)) {
+		return undefined;
+	}
+
+	return `matrix(${[
+		transform.a ?? 1,
+		transform.b ?? 0,
+		transform.c ?? 0,
+		transform.d ?? 1,
+		transform.e ?? 0,
+		transform.f ?? 0,
+	].join(' ')})`;
+}
+
+function isIdentityTransform(transform) {
+	return nearlyEqual(transform.a ?? 1, 1)
+		&& nearlyEqual(transform.b ?? 0, 0)
+		&& nearlyEqual(transform.c ?? 0, 0)
+		&& nearlyEqual(transform.d ?? 1, 1)
+		&& nearlyEqual(transform.e ?? 0, 0)
+		&& nearlyEqual(transform.f ?? 0, 0);
+}
+
+function nearlyEqual(left, right) {
+	return Math.abs(left - right) < 0.000001;
 }
 
 function uniqueValues(values) {

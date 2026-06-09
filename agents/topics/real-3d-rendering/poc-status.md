@@ -149,6 +149,18 @@ Important current generated model assets under
 - `mj-tile-stamp-pair-d-7-experiments.json`
   - dot-7 manifest using the same generator path
 
+Important current board-POC model assets:
+
+- `scripts/output/asset-pipeline/traditional/models/colored-inlay/*.glb`
+  contains the generated traditional colored-inlay tiles currently available
+  for the board POC. As of 2026-05-19 this covers the full canonical
+  traditional face set: bamboos, characters, dots, dragons, winds, flowers,
+  and seasons: 42 GLBs.
+- `src/3d-poc/assets/models/colored-inlay/*.glb` mirrors those traditional
+  colored-inlay GLBs into the POC app's build-facing asset tree.
+- `dist/3d-poc/models/colored-inlay/*.glb` is populated by
+  `npx polylith build 3d-poc`.
+
 Important current POC face images under
 [scripts/data/3d-assets/generated-images/faces/flower-1](/c:/dev/poly-gc-react/scripts/data/3d-assets/generated-images/faces/flower-1):
 
@@ -239,17 +251,15 @@ The active POC scene in
 [App.jsx](/c:/dev/poly-gc-react/src/3d-poc/main/App.jsx)
 shows:
 
-- an opaque-body generated inlay diagnostic view
-- five opaque generated inlay tiles laid out side by side on the bottom layer
-- a dark diagonal-lined floor to make transparency/refraction easier to judge
-- the current lineup comes from `poc-models.json`: `d-7`, `flower-1`,
-  `wiki-season-2`, `d-1`, and `wiki-b-8`
-- the center spacing is `0.84`, a little wider than the nominal `0.79` body
-  width to keep the softened bevels from visually merging while still reading
-  as butted together
+- a seeded `turtle` Mahjongg board generated with the existing MJ engine
+- generated traditional colored-inlay GLBs for every engine-assigned
+  canonical face key
+- a dark diagonal-lined floor to keep the material and depth read diagnostic
+- a small HUD showing the game number, layout, generated-asset count, and
+  placeholder count
 
-The current viewer is deliberately material-diagnostic, not a final game-board
-layout.
+The current viewer is deliberately a board-shaped renderer diagnostic, not a
+final playable 3D game surface.
 
 The full sweep assets still exist for reference:
 
@@ -263,6 +273,60 @@ But the viewer is no longer presenting the full sweep as the main working view.
 
 What changed recently:
 
+- the POC now generates a board from the existing Mahjongg engine instead of
+  loading the old `poc-models.json` lineup; current seed is `314159` and the
+  layout is `turtle`
+- `src/3d-poc/main/App.jsx` maps engine face ids to generated face keys using
+  the same face ordering as the existing 2D tile CSS
+- the board layer step now matches the generated colored-inlay GLB height
+  (`0.576`) so turtle-layout stacks sit on top of each other instead of
+  intersecting vertically
+- `builds/3d-poc.json` now copies POC model resources from
+  `src/3d-poc/assets/models`, including the mirrored traditional
+  `colored-inlay` GLBs
+- the full 42-GLB traditional colored-inlay set has been mirrored from
+  `scripts/output/asset-pipeline/traditional/models/colored-inlay` into the
+  POC asset tree, and `GENERATED_TRADITIONAL_FACE_KEYS` now includes winds,
+  flowers, and seasons
+- `dragon-w` exposed a 3D export gap: final rendering preserved its black
+  stroke-only frame path, but colored-inlay export only generated meshes from
+  filled paths. `export-stamped-tile-inlay.js` now emits visible SVG strokes
+  as colored inlay meshes too; regenerated traditional `dragon-w` now contains
+  four red fill meshes plus one black stroke mesh. The same fixed exporter was
+  also rerun for the other traditional final SVGs with visible stroke-only
+  geometry, `b-1` and `d-1`.
+- The first stroke fix only added black inlay meshes; it did not cut matching
+  recesses into the stamped body. `export-svg-cutter.js` now converts visible
+  SVG strokes into solid cutter volumes as well, so stroke-only line grids are
+  carved before colored inlay placement. Traditional `dragon-w`, `b-1`, and
+  `d-1` were regenerated through cutter, stamped-body, and colored-inlay stages
+  and mirrored back into the POC assets.
+- Reset-regenerated `dragon-w` showed that exporter-level stroke handling was
+  still too late: final rendering continued to emit its white-dragon frame as
+  `fill="none"` stroke artwork. `makePaintPathWithKnockouts` now canonicalizes
+  stroke-only source components into filled path geometry tagged
+  `data-geometry-normalized="stroke-to-fill"`, so regenerated final SVGs are
+  directly consumable by cutter/inlay generation. `dragon-w` was rerun through
+  final rendering, cutter, stamped-body, and colored-inlay generation, then the
+  refreshed GLB was mirrored into the POC asset tree.
+- The first stroke-to-fill pass emitted one filled triangle subpath per stroke
+  triangle, which made `dragon-w` visibly reveal carved seam walls anywhere
+  the small pieces met. Stroke canonicalization now emits continuous outline
+  loops with `fill-rule="evenodd"`, and the cutter exporter unions bounded
+  touching/overlapping path solids even when their bounds-overlap ratio is
+  high. The overlap ratio remains diagnostic only; geometry count and triangle
+  count are the hard fallback limits.
+- The next `dragon-w` review showed the inner white-dragon rectangle distorted
+  because multiple expanded stroke subpaths were packed into one evenodd SVG
+  path. Stroke canonicalization now emits one filled path per original stroke
+  subpath so evenodd fill is local to each stroked mark and separate grid/frame
+  lines do not cancel each other in 2D review.
+- Traditional source acceptance then exposed `b-1` component
+  `src.b-1.0011`, a stroke-only source path with explicit
+  `stroke-width="0"`. Final rendering now treats non-positive-width
+  stroke-only components as invisible and omits them instead of trying to
+  generate filled stroke geometry. Full traditional final rendering now
+  completes all 42 faces.
 - cutter framing was corrected upstream in the cutter exporter
 - full-SVG `viewBox` centering was replaced by glyph-bounds normalization into
   the authored face rectangle
@@ -492,6 +556,21 @@ Important recent result to remember:
   Generic matching now uses geometry first and anchors output color to the
   selected reference object, so the right-hand traditional bamboos inherit
   reference green instead of staying black.
+- the board POC now consumes the full generated traditional colored-inlay set
+  by canonical face key. Neutral placeholder loading remains only as a
+  diagnostic fallback for missing or unmapped future assets.
+- colored-inlay export now treats visible SVG strokes as renderable inlay
+  geometry, not just filled paths. This fixed the traditional `dragon-w`
+  white-dragon tile losing its black frame lines in the board POC.
+- traditional `b-8`/`b-9` did build their model artifacts, but preview PNG
+  export exposed a Puppeteer timeout/hang problem. The preview renderer has
+  longer ready/close guards, but a direct `b-8` preview probe still hung on
+  2026-05-19; preview export remains unresolved.
+- ornamental traditional faces exposed a separate upstream source issue:
+  layered opaque SVG paint paths can create overlapping final-rendering solids
+  that make downstream cutter CSG pathological. Source normalization now
+  flattens partially overlapping opaque fill layers into visible, non-overlap
+  component geometry without using face-key-specific rules.
 
 Important failed or partial experiments to remember:
 
@@ -521,6 +600,9 @@ Important failed or partial experiments to remember:
 
 The immediate next step is:
 
+- inspect the generated board in-browser for tile spacing, z stacking, camera
+  framing, shadow acne, and whether 144 GLB instances are acceptable for this
+  POC
 - review and correct metadata for any remaining faces, then regenerate the
   prepared SVGs and validation images through the metadata-driven pipeline
 - resolve or explicitly accept the remaining default `flower-4` generated
