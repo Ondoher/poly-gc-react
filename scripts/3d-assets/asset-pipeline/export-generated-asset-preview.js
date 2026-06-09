@@ -13,6 +13,7 @@ function readOptions() {
 	const tilesetId = readArgument('--tileset-id') || process.env.PIPELINE_TILESET_ID;
 	const faceKey = readArgument('--face-key') || readPositionalArguments()[0];
 	const referenceName = readArgument('--reference-name') || 'default-large-faces';
+	const outputPng = readArgument('--output-png') || '';
 
 	if (!tilesetId) {
 		throw new Error('Missing --tileset-id.');
@@ -26,6 +27,7 @@ function readOptions() {
 		tilesetId,
 		faceKey,
 		referenceName,
+		outputPng,
 	};
 }
 
@@ -40,6 +42,7 @@ function readPositionalArguments() {
 		'--tileset-id',
 		'--face-key',
 		'--reference-name',
+		'--output-png',
 	]);
 
 	for (let index = 2; index < process.argv.length; index += 1) {

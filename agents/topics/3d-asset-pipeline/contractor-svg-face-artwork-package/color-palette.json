@@ -1,0 +1,37 @@
+{
+  "paletteId": "default-reference-artwork",
+  "description": "Palette used to segment visible artwork pixels from the current PNG reference faces.",
+  "colors": [
+    {
+      "name": "yellow",
+      "color": "#F6F610",
+      "rgb": [246, 246, 16]
+    },
+    {
+      "name": "orange",
+      "color": "#FF9900",
+      "rgb": [255, 153, 0]
+    },
+    {
+      "name": "blue",
+      "color": "#0505D1",
+      "rgb": [5, 5, 209]
+    },
+    {
+      "name": "green",
+      "color": "#2FC906",
+      "rgb": [47, 201, 6]
+    },
+    {
+      "name": "red",
+      "color": "#FC1D05",
+      "rgb": [252, 29, 5]
+    },
+    {
+      "name": "black",
+      "color": "#000000",
+      "rgb": [0, 0, 0]
+    }
+  ],
+  "source": "scripts/data/asset-pipeline/references/default-large-faces/reference.json"
+}

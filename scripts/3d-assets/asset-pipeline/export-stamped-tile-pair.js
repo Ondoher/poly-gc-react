@@ -92,8 +92,8 @@ function buildStampedBodyVariant({ model, options }) {
 	const baseTileVariant = readBaseTileVariant(selectedBaseTileVariantId);
 	const body = baseTileVariant.body || {};
 	const modelFaceKey = `${options.tilesetId}-${options.faceKey}`;
-	const outputGlb = path.join(model.pipelineDir, 'models', 'stamped-body', `${options.faceKey}.glb`);
-	const outputMetadata = path.join(model.pipelineDir, 'json', 'stamped-body', `${options.faceKey}.json`);
+	const outputGlb = resolveRepoPath(options.outputGlb || path.join(model.pipelineDir, 'models', 'stamped-body', `${options.faceKey}.glb`));
+	const outputMetadata = resolveRepoPath(options.outputMetadata || path.join(model.pipelineDir, 'json', 'stamped-body', `${options.faceKey}.json`));
 
 	if (!cutterMetadataPath) {
 		throw new Error(`Missing cutter metadata artifact for ${options.tilesetId}/${options.faceKey}.`);
@@ -409,6 +409,8 @@ function readOptions() {
 	const cutterLift = numberArgument('--cutter-lift');
 	const cutterDepthScale = numberArgument('--cutter-depth-scale');
 	const cutterFootprintScale = numberArgument('--cutter-footprint-scale');
+	const outputGlb = readArgument('--output-glb') || '';
+	const outputMetadata = readArgument('--output-metadata') || '';
 
 	if (!tilesetId) {
 		throw new Error('Missing --tileset-id.');
@@ -426,6 +428,8 @@ function readOptions() {
 		cutterLift,
 		cutterDepthScale,
 		cutterFootprintScale,
+		outputGlb,
+		outputMetadata,
 	};
 }
 
@@ -449,6 +453,8 @@ function readPositionalArguments() {
 		'--cutter-lift',
 		'--cutter-depth-scale',
 		'--cutter-footprint-scale',
+		'--output-glb',
+		'--output-metadata',
 	]);
 
 	for (let index = 2; index < process.argv.length; index += 1) {

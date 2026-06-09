@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "id": "mark-ii",
+  "label": "Mark II",
+  "description": "Production two-piece tile with ivory front and bamboo locking insert.",
+  "kind": "base-tile-glb",
+  "temporary": false,
+  "meshName": "BaseTileBody_Ivory",
+  "carvingMeshName": "BaseTileBody_Ivory",
+  "supportMeshNames": [
+    "baseTileBody_wood"
+  ],
+  "glb": "scripts/data/3d-assets/models/base-tiles/mark-ii.glb",
+  "metadata": "scripts/data/3d-assets/models/base-tiles/mark-ii.json",
+  "body": {
+    "width": 0.79,
+    "height": 0.5,
+    "depth": 1.08,
+    "bevelThickness": 0,
+    "safeCarveDepthMin": 0.025,
+    "safeCarveDepthMax": 0.035,
+    "defaultCarveDepth": 0.025
+  },
+  "material": {
+    "ivory": {
+      "meshName": "BaseTileBody_Ivory",
+      "sourceMaterial": "Bone Texture",
+      "color": "#f2ece2",
+      "role": "carving-target"
+    },
+    "bamboo": {
+      "meshName": "baseTileBody_wood",
+      "sourceMaterial": "Wood 124",
+      "color": "#b58143",
+      "role": "preserved-insert"
+    }
+  },
+  "source": {
+    "archive": "Designs/3d-assets/Base Tile_mark_II.zip",
+    "sourceGlb": "Base Tile/BaseTileBody NEW.glb",
+    "axisReference": "Designs/3d-assets/contractor/Master tile.jpg",
+    "notes": [
+      "Artist delivery uses Blender dimensions X=0.79, Y=0.50, Z=1.08.",
+      "Pipeline GLB is normalized to Three.js generated-asset coordinates: X width, Y carving thickness, Z face depth."
+    ]
+  },
+  "carving": {
+    "targetMeshName": "BaseTileBody_Ivory",
+    "preserveMeshNames": [
+      "baseTileBody_wood"
+    ],
+    "direction": "-Y",
+    "cutterLift": -0.002,
+    "frontFacePlane": "+Y",
+    "safeDepthRange": [
+      0.025,
+      0.035
+    ],
+    "clipToIvoryFace": true,
+    "preserveVisibleLockingSeam": true
+  },
+  "notes": [
+    "Carving subtracts only from the ivory/front mesh.",
+    "The bamboo/back insert is carried through unchanged into stamped and final generated models.",
+    "Embedded source textures establish final look, but the pipeline copy uses solid material colors for generation."
+  ]
+}

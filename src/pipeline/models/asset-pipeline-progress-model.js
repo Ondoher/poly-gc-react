@@ -90,11 +90,13 @@ export default class AssetPipelineProgressModel extends Service {
 			queue: {
 				...(face.queue || {}),
 				status: state,
-				currentStep: event.stage || face.queue?.currentStep || '',
+				currentStep: event.stageLabel || event.stage || face.queue?.currentStep || '',
+				stageProgress: event.stageProgress || face.queue?.stageProgress || null,
 			},
 			build: {
 				...(face.build || {}),
-				currentStep: event.stage || face.build?.currentStep || '',
+				currentStep: event.stageLabel || event.stage || face.build?.currentStep || '',
+				stageProgress: event.stageProgress || face.build?.stageProgress || null,
 			},
 		};
 	}

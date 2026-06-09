@@ -1,0 +1,55 @@
+export const POC_CONSTELLATIONS = Object.freeze([
+	Object.freeze({
+		id: 'big-dipper',
+		name: 'Big Dipper',
+		color: '#ff3030',
+		segments: Object.freeze([
+			Object.freeze(['Dubhe', 'Merak']),
+			Object.freeze(['Merak', 'Phecda']),
+			Object.freeze(['Phecda', 'Megrez']),
+			Object.freeze(['Megrez', 'Dubhe']),
+			Object.freeze(['Megrez', 'Alioth']),
+			Object.freeze(['Alioth', 'Mizar']),
+			Object.freeze(['Mizar', 'Alkaid']),
+		]),
+	}),
+	Object.freeze({
+		id: 'little-dipper',
+		name: 'Little Dipper',
+		color: '#ff3030',
+		segments: Object.freeze([
+			Object.freeze(['Polaris', 'Yildun']),
+			Object.freeze(['Yildun', 'Epsilon Ursae Minoris']),
+			Object.freeze(['Epsilon Ursae Minoris', 'Zeta Ursae Minoris']),
+			Object.freeze(['Zeta Ursae Minoris', 'Kochab']),
+			Object.freeze(['Kochab', 'Pherkad']),
+			Object.freeze(['Pherkad', 'Eta Ursae Minoris']),
+			Object.freeze(['Eta Ursae Minoris', 'Zeta Ursae Minoris']),
+		]),
+	}),
+	Object.freeze({
+		id: 'orion',
+		name: 'Orion',
+		color: '#ff3030',
+		segments: Object.freeze([
+			Object.freeze(['Betelgeuse', 'Bellatrix']),
+			Object.freeze(['Betelgeuse', 'Alnitak']),
+			Object.freeze(['Alnitak', 'Alnilam']),
+			Object.freeze(['Alnilam', 'Mintaka']),
+			Object.freeze(['Mintaka', 'Bellatrix']),
+			Object.freeze(['Alnitak', 'Saiph']),
+			Object.freeze(['Saiph', 'Rigel']),
+			Object.freeze(['Rigel', 'Mintaka']),
+		]),
+	}),
+	Object.freeze({
+		id: 'southern-cross',
+		name: 'Southern Cross',
+		color: '#ff3030',
+		segments: Object.freeze([
+			Object.freeze(['Gacrux', 'Acrux']),
+			Object.freeze(['Mimosa', 'Imai']),
+			Object.freeze(['Acrux', 'Ginan']),
+		]),
+	}),
+]);

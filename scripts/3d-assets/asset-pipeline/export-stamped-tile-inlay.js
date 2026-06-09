@@ -118,8 +118,8 @@ function buildInlayVariant({ model, options }) {
 	const stampedMetadata = resolveRepoPath(faceState?.artifacts?.stampedMetadata || '');
 	const cutterMetadata = resolveRepoPath(faceState?.artifacts?.cutterMetadata || '');
 	const modelFaceKey = `${options.tilesetId}-${options.faceKey}`;
-	const outputGlb = path.join(model.pipelineDir, 'models', 'colored-inlay', `${options.faceKey}.glb`);
-	const outputMetadata = path.join(model.pipelineDir, 'json', 'colored-inlay', `${options.faceKey}.json`);
+	const outputGlb = resolveRepoPath(options.outputGlb || path.join(model.pipelineDir, 'models', 'colored-inlay', `${options.faceKey}.glb`));
+	const outputMetadata = resolveRepoPath(options.outputMetadata || path.join(model.pipelineDir, 'json', 'colored-inlay', `${options.faceKey}.json`));
 
 	if (!renderedSvg) {
 		throw new Error(`Missing rendered SVG artifact for ${options.tilesetId}/${options.faceKey}.`);
@@ -506,6 +506,8 @@ function readOptions() {
 	const tilesetId = readArgument('--tileset-id') || process.env.PIPELINE_TILESET_ID;
 	const faceKey = readArgument('--face-key') || readPositionalArguments()[0];
 	const referenceName = readArgument('--reference-name') || 'default-large-faces';
+	const outputGlb = readArgument('--output-glb') || '';
+	const outputMetadata = readArgument('--output-metadata') || '';
 
 	if (!tilesetId) {
 		throw new Error('Missing --tileset-id.');
@@ -519,6 +521,8 @@ function readOptions() {
 		tilesetId,
 		faceKey,
 		referenceName,
+		outputGlb,
+		outputMetadata,
 	};
 }
 
@@ -533,6 +537,8 @@ function readPositionalArguments() {
 		'--tileset-id',
 		'--face-key',
 		'--reference-name',
+		'--output-glb',
+		'--output-metadata',
 	]);
 
 	for (let index = 2; index < process.argv.length; index += 1) {

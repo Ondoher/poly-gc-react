@@ -169,7 +169,7 @@ Current scripts:
   - defaults to `flower-1`; pass a face key such as `d-7` to generate that
     face
   - uses the path-only preprocessed face SVG at
-    `scripts/data/3d-assets/prepared-svgs/<tileset-id>/<face-key>.svg`
+    `scripts/output/3d-assets/prepared-svgs/<tileset-id>/<face-key>.svg`
   - normalizes the preprocessed SVG `viewBox` into an aspect-matched full face
     rectangle so the preprocessed internal label/art alignment is preserved
   - skips white SVG paths for cutter geometry; white paths are visual negative
@@ -193,7 +193,7 @@ Current scripts:
 - `export-stamped-tile-inlay.js`
   - loads the baseline stamped tile
   - generates ordered per-path colored inlay meshes from
-    `scripts/data/3d-assets/prepared-svgs/<tileset-id>/<face-key>.svg`
+    `scripts/output/3d-assets/prepared-svgs/<tileset-id>/<face-key>.svg`
   - defaults to `flower-1`; pass a face key such as `d-7` to generate prefixed
     outputs for that face
   - emits material colors directly from the prepared SVG, including standard
@@ -220,7 +220,7 @@ Current scripts:
   - adds a path-backed upper-left red number marker generated from the local
     Gluten font asset
   - writes one-off overlays under `scripts/output/3d-assets/overlays`
-    and `scripts/data/3d-assets/prepared-svgs/d-7.svg`
+    and `scripts/output/3d-assets/prepared-svgs/d-7.svg`
   - use `run-preprocessed-face-pipeline.js` for current prepared SVG generation
 Standard preprocessed face color families:
 
@@ -251,7 +251,7 @@ Current preprocessing status:
   It is the active override used during the current default tileset
   experiments.
 - Output artifacts for prepared SVGs and validation are tileset-scoped:
-  prepared SVGs live under `scripts/data/3d-assets/prepared-svgs/<tileset-id>`;
+  prepared SVGs live under `scripts/output/3d-assets/prepared-svgs/<tileset-id>`;
   validation artifacts live under
   `scripts/output/3d-assets/preprocessed/validation/<tileset-id>`.
 - The color pipeline now classifies perceived families in OKLCH-like space
@@ -337,11 +337,11 @@ Checked-in input asset convention:
 - `scripts/data/3d-assets/sprite-source-svgs`
   - per-face source SVGs extracted from structured sprite sheets
   - these are source candidates, not canonical prepared SVGs
-- `scripts/data/3d-assets/prepared-svgs`
+- `scripts/output/3d-assets/prepared-svgs`
   - canonical path-only prepared face SVGs consumed by cutter and inlay
     exporters
   - current prepared SVGs are stored by tileset id, for example
-    `scripts/data/3d-assets/prepared-svgs/default/b-1.svg`
+    `scripts/output/3d-assets/prepared-svgs/default/b-1.svg`
 - `scripts/data/3d-assets/generated-images`
   - checked-in generated face reference data used by current scripts
   - currently expected face files are `face-color-full.png`,

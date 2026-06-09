@@ -72,10 +72,30 @@ input.
 
 `cutter-svg-simplification` is planned and not yet the active generated-asset
 input. It will produce the cutter-facing SVG geometry handoff once promoted.
+It should receive the selected generated-asset build profile so fast/review
+and full-quality runs can make different SVG-side union, flattening,
+simplification, and export-precision choices intentionally.
 
 `svg-cutter` reads the cutter-simplified SVG once that stage is promoted.
 Until then, it reads the final rendered color SVG and selected base tile, then
 writes cutter GLB and metadata artifacts.
+
+While running, `svg-cutter` reports runtime-only progress on stdout as
+newline-delimited JSON records with `event: "assetStageProgress"`. Current
+phases are `parse`, `extrude`, `normalize`, `union`, and `export`. The queue
+runner forwards these records to Asset Review as `stageProgress`; they are a
+live progress signal only and are not persisted as readiness state.
+
+For focused cutter-shape experiments, `svg-cutter` can consume an explicit SVG
+path and skip the 3D CSG union step, merging already simplified cutter solids
+instead. This is an experiment path for validating SVG-side union/simplify
+work; normal queued generation continues to use the canonical rendered SVG and
+stage output folders unless the CLI is invoked with explicit overrides.
+
+When build profiles are promoted, the selected profile must participate in
+`finalHash` and relevant stage hashes. The same final-rendering SVG and base
+tile can produce both fast/review artifacts and full-quality artifacts, and
+those outputs are not interchangeable readiness facts.
 
 `stamped-body` reads cutter artifacts and the selected base tile, then writes
 the stamped body GLB and metadata.

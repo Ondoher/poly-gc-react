@@ -120,3 +120,6 @@ package-lock.json
 /config
 /tmp
 /src/pipeline_original
+generated-images
+prepared-svgs
+colored-inlay

@@ -1,0 +1,102 @@
+.flat-app,
+.app-shell {
+	min-height: 100vh;
+}
+
+.app-shell {
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr);
+	height: 100vh;
+	overflow: hidden;
+	background: #0b0d12;
+	color: #f4f7fb;
+}
+
+.app-shell-header {
+	display: grid;
+	grid-template-columns: minmax(120px, auto) minmax(0, 1fr);
+	gap: 18px;
+	align-items: center;
+	min-height: 56px;
+	padding: 0 18px;
+	border-bottom: 1px solid #252b38;
+	background: #111722;
+}
+
+.app-shell-title {
+	margin: 0;
+	font-size: 19px;
+	line-height: 1.2;
+}
+
+.app-shell-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+	min-width: 0;
+}
+
+.app-shell-tabs a {
+	display: inline-flex;
+	align-items: center;
+	min-height: 34px;
+	box-sizing: border-box;
+	border-bottom: 2px solid transparent;
+	padding: 0 8px;
+	color: #b8c2d2;
+	font-size: 14px;
+	font-weight: 650;
+	text-decoration: none;
+}
+
+.app-shell-tabs a:hover,
+.app-shell-tabs a:focus-visible {
+	color: #ffffff;
+	outline: 2px solid #69a8ff;
+	outline-offset: 2px;
+}
+
+.app-shell-tabs a.active {
+	border-color: #69a8ff;
+	color: #ffffff;
+}
+
+.app-shell-tabs-empty {
+	color: #8995a7;
+	font-size: 13px;
+}
+
+.app-shell-body {
+	box-sizing: border-box;
+	min-height: 0;
+	overflow: auto;
+	padding: 18px;
+}
+
+.flat-empty-shell {
+	display: grid;
+	gap: 6px;
+	max-width: 640px;
+	border: 1px solid #252b38;
+	border-radius: 8px;
+	padding: 18px;
+	background: #151c28;
+}
+
+.flat-empty-shell h2,
+.flat-empty-shell p {
+	margin: 0;
+}
+
+.flat-empty-shell p {
+	color: #b8c2d2;
+}
+
+@media (max-width: 760px) {
+	.app-shell-header {
+		grid-template-columns: 1fr;
+		gap: 8px;
+		padding: 10px 12px;
+	}
+}

@@ -22,16 +22,17 @@ let browserPromise = null;
  * @param {string} options.tilesetId - Source tileset id.
  * @param {string} options.faceKey - Face key to render.
  * @param {string} [options.referenceName="default-large-faces"] - Reference set id.
+ * @param {string} [options.outputPng] - Optional output PNG override.
  * @returns {Promise<{outputPng: string}>} Rendered preview path.
  */
-export async function renderGeneratedAssetPreview({ tilesetId, faceKey, referenceName = 'default-large-faces' }) {
+export async function renderGeneratedAssetPreview({ tilesetId, faceKey, referenceName = 'default-large-faces', outputPng = '' }) {
 	const model = new PipelineModel({
 		referenceName,
 		tileSetName: tilesetId,
 	});
 	await model.start();
 
-	const variant = buildPreviewVariant({ model, tilesetId, faceKey });
+	const variant = buildPreviewVariant({ model, tilesetId, faceKey, outputPng });
 	const faceHash = model.hashAssetPipelineFaceInput(faceKey);
 	const stageHash = model.hashAssetGenerationStageInput(faceKey, 'preview-png');
 	fs.mkdirSync(path.dirname(variant.outputPng), { recursive: true });
@@ -73,11 +74,13 @@ export async function closeGeneratedAssetPreviewRenderer() {
 	await browser.close();
 }
 
-function buildPreviewVariant({ model, tilesetId, faceKey }) {
+function buildPreviewVariant({ model, tilesetId, faceKey, outputPng }) {
 	const assetPipeline = model.getAssetPipeline();
 	const faceState = assetPipeline.faces?.[faceKey];
 	const finalGlb = resolveRepoPath(faceState?.artifacts?.inlayModel || '');
-	const outputPng = path.join(model.pipelineDir, 'images', 'generated-asset-preview-png', `${faceKey}.png`);
+	const resolvedOutputPng = outputPng
+		? resolveRepoPath(outputPng)
+		: path.join(model.pipelineDir, 'images', 'generated-asset-preview-png', `${faceKey}.png`);
 
 	if (!finalGlb) {
 		throw new Error(`Missing final generated GLB artifact for ${tilesetId}/${faceKey}.`);
@@ -90,7 +93,7 @@ function buildPreviewVariant({ model, tilesetId, faceKey }) {
 		faceKey,
 		tilesetId,
 		finalGlb,
-		outputPng,
+		outputPng: resolvedOutputPng,
 	});
 }
 

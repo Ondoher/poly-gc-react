@@ -36,7 +36,7 @@ assetPipeline.faces[faceKey].artifacts.previewPng
 | Artifact | Role | Owner |
 | --- | --- | --- |
 | `scripts/data/asset-pipeline/manifests/<tilesetId>.json` | source input | Tileset intake |
-| `scripts/data/asset-pipeline/source-svgs/<tilesetId>/<faceKey>.svg` | source input | Tileset intake |
+| `scripts/output/asset-pipeline/source-svgs/<tilesetId>/<faceKey>.svg` | generated source copy | Tileset intake |
 | `scripts/output/asset-pipeline/<tilesetId>/pipeline.json` | canonical state | `PipelineModel` |
 | `scripts/output/asset-pipeline/tilesets.json` | routing manifest | Tileset selection |
 | `scripts/output/asset-pipeline/<tilesetId>/json/normalized-components/<faceKey>.json` | durable fact artifact | Source normalization |
@@ -46,7 +46,7 @@ assetPipeline.faces[faceKey].artifacts.previewPng
 | `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-layout-svg/<faceKey>.svg` | human review output | Final rendering |
 | `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-color-svg/<faceKey>.svg` | generated/review output | Final rendering |
 | `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-color-review-png/<faceKey>.png` | human review output | Final rendering |
-| `scripts/data/asset-pipeline/prepared-svgs/<tilesetId>/<faceKey>.svg` | generated output | Prepared SVG export |
+| `scripts/output/asset-pipeline/prepared-svgs/<tilesetId>/<faceKey>.svg` | generated output | Prepared SVG export |
 | `scripts/output/asset-pipeline/<tilesetId>/models/svg-cutter/<faceKey>.glb` | generated output | SVG cutter |
 | `scripts/output/asset-pipeline/<tilesetId>/json/svg-cutter/<faceKey>.json` | generated output | SVG cutter |
 | `scripts/output/asset-pipeline/<tilesetId>/models/stamped-body/<faceKey>.glb` | generated output | Stamped body |
@@ -67,4 +67,3 @@ state.
 Review SVGs and PNGs help humans inspect stage output. They can be regenerated
 from canonical state and durable facts. They should not be used as the source
 of a current binding, status, route, or output decision.
-

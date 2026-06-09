@@ -189,6 +189,18 @@ describe('source SVG components', function() {
 		expect(component.tileLayerCandidate).toBe(false);
 	});
 
+	it('marks near-white neutral paint as negative space', function() {
+		const source = `<svg viewBox="0 0 100 100">
+	<path id="ivory-body" fill="#f6f6f6" d="M10,10 H40 V40 H10 Z"/>
+	<path id="pale-red-mark" fill="#f5b1b1" d="M50,10 H80 V40 H50 Z"/>
+</svg>`;
+
+		const components = extractSourceSvgComponents(source).components;
+
+		expect(findComponent(components, 'ivory-body').negativeSpaceCandidate).toBe(true);
+		expect(findComponent(components, 'pale-red-mark').negativeSpaceCandidate).toBe(false);
+	});
+
 	it('marks components under an intake tile-background hint as tile layer candidates', function() {
 		const source = `<svg viewBox="0 0 100 140">
 	<defs>

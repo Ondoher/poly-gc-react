@@ -12,10 +12,10 @@ Deeper details live in the linked domain docs.
   `scripts/output/asset-pipeline/tilesets.json`.
 - Source SVG manifests live in
   `scripts/data/asset-pipeline/manifests/<tilesetId>.json`.
-- Intaken source SVGs live in
-  `scripts/data/asset-pipeline/source-svgs/<tilesetId>/<faceKey>.svg`.
+- Intaken source SVG copies live in
+  `scripts/output/asset-pipeline/source-svgs/<tilesetId>/<faceKey>.svg`.
 - Prepared source SVGs, when produced, live in
-  `scripts/data/asset-pipeline/prepared-svgs/<tilesetId>/<faceKey>.svg`.
+  `scripts/output/asset-pipeline/prepared-svgs/<tilesetId>/<faceKey>.svg`.
 - Stage outputs live under `scripts/output/asset-pipeline/<tilesetId>/`.
 
 ## State Ownership
@@ -97,8 +97,8 @@ As of 2026-06-09:
 - The current normalizer is intentionally not a full browser SVG engine. It
   handles supported geometry/text tags, group inheritance, simple class paint,
   limited transforms, compound-path island/band splitting, source-use grouping,
-  tile/background filtering, negative-space filtering, and bounded opaque
-  paint-layer flattening.
+  tile/background filtering, literal-white and near-white neutral
+  negative-space filtering, and bounded opaque paint-layer flattening.
 - Generated asset stages currently use final-rendering color SVGs, not prepared
   SVGs. Prepared SVG export remains future work behind visual approval.
 - Mark II base tile assets remain promoted in
@@ -125,6 +125,16 @@ As of 2026-06-09:
   cancel work, clears only generated 3D asset folders, and resets only
   `assetPipeline` generated face state to ungenerated while preserving the
   selected base tile variant and all SVG preprocessing state.
+- `svg-cutter` now emits structured stdout progress for parse, extrude,
+  normalize, union, and export phases. The queue runner streams those records
+  into Asset Review as live `stageProgress` so long cutter runs show active
+  phase/count/percent without changing generated geometry or persisted
+  readiness contracts.
+- A focused Paper.js SVG-side union experiment is available for generated
+  asset validation. The `default/season-1` face has been pointed at
+  `paper-united-all` experiment artifacts generated with `svg-cutter
+  --skip-union`, with stamped body, colored inlay, and preview outputs written
+  under `scripts/output/asset-pipeline/default/experiments/paper-flatten/`.
 - Known unresolved risk: generated asset preview PNG rendering can still time
   out independently of successful cutter, stamped body, and colored inlay
   generation.

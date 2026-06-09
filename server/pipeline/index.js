@@ -1293,7 +1293,12 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						message: `${step.label}: ${face.faceKey}`,
 					});
 					try {
-						await runSvgCutterGeneration({ tilesetId, faceKey: face.faceKey });
+						await runSvgCutterGeneration({
+							tilesetId,
+							faceKey: face.faceKey,
+							completed,
+							total,
+						});
 						model = await assertAssetGenerationBaseTileCurrent(tilesetId, plan.baseTileVariantId);
 					} catch (error) {
 						if (isAssetGenerationBaseTileChangedError(error)) {
@@ -1654,8 +1659,9 @@ async function getAssetReview(req, res) {
 	}
 }
 
-async function runSvgCutterGeneration({ tilesetId, faceKey }) {
+async function runSvgCutterGeneration({ tilesetId, faceKey, completed = 0, total = 0 }) {
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
+	const stream = getAssetPipelineStream();
 	const result = await runNodeCommand([
 		SVG_CUTTER_SCRIPT,
 		"--tileset-id",
@@ -1665,11 +1671,29 @@ async function runSvgCutterGeneration({ tilesetId, faceKey }) {
 	], {
 		activeRun,
 		maxBuffer: 20 * 1024 * 1024,
+		onStdoutLine: (line) => {
+			const progress = parseAssetStageProgressLine(line);
+			if (!progress || progress.stage !== "svg-cutter") {
+				return;
+			}
+
+			stream.emitProgress(tilesetId, "assetGenerationProgress", {
+				stage: "svg-cutter",
+				stageLabel: "Preparing SVG Cutter",
+				faceKey,
+				status: "building",
+				completed,
+				total,
+				percent: total ? Math.round((completed / total) * 100) : 100,
+				stageProgress: progress,
+				message: cutterProgressMessage(progress, faceKey),
+			});
+		},
 	});
 	throwIfAssetGenerationCancelled(activeRun);
 
 	if (result.status !== 0) {
-		const details = [result.stderr, result.stdout, result.error]
+		const details = [result.stderr, filterAssetStageProgressOutput(result.stdout), result.error]
 			.filter(Boolean)
 			.join("\n")
 			.trim();
@@ -3113,12 +3137,15 @@ async function fileExists(filename) {
 async function runNodeCommand(command, options = {}) {
 	const activeRun = options.activeRun || null;
 	return new Promise((resolve) => {
+		let pendingStdoutLine = "";
 		const child = execFile(process.execPath, command, {
 			cwd: process.cwd(),
 			env: options.env || process.env,
 			maxBuffer: options.maxBuffer || 10 * 1024 * 1024,
 		}, (error, stdout, stderr) => {
 			activeRun?.childProcesses?.delete(child);
+			flushCommandStdoutLine(options, pendingStdoutLine);
+			pendingStdoutLine = "";
 			if (!error) {
 				resolve({
 					status: 0,
@@ -3137,11 +3164,92 @@ async function runNodeCommand(command, options = {}) {
 			});
 		});
 
+		child.stdout?.setEncoding("utf8");
+		child.stdout?.on("data", (chunk) => {
+			pendingStdoutLine = dispatchCommandStdoutLines(options, pendingStdoutLine, String(chunk));
+		});
 		activeRun?.childProcesses?.add(child);
 		if (activeRun?.cancelled) {
 			child.kill();
 		}
 	});
+}
+
+function dispatchCommandStdoutLines(options, pendingLine, chunk) {
+	const lines = `${pendingLine}${chunk}`.split(/\r?\n/);
+	const nextPendingLine = lines.pop() || "";
+	for (const line of lines) {
+		flushCommandStdoutLine(options, line);
+	}
+	return nextPendingLine;
+}
+
+function flushCommandStdoutLine(options, line) {
+	const cleanLine = String(line || "").trim();
+	if (!cleanLine) {
+		return;
+	}
+	options.onStdoutLine?.(cleanLine);
+}
+
+function parseAssetStageProgressLine(line) {
+	try {
+		const progress = JSON.parse(line);
+		if (progress?.event !== "assetStageProgress") {
+			return null;
+		}
+		const total = Number(progress.total);
+		const current = Number(progress.current);
+		return {
+			stage: String(progress.stage || ""),
+			phase: String(progress.phase || ""),
+			current: Number.isFinite(current) ? current : 0,
+			total: Number.isFinite(total) ? total : 0,
+			percent: Number.isFinite(progress.percent)
+				? progress.percent
+				: total > 0
+					? Math.round((current / total) * 100)
+					: 0,
+			message: String(progress.message || ""),
+		};
+	} catch {
+		return null;
+	}
+}
+
+function filterAssetStageProgressOutput(output) {
+	return String(output || "")
+		.split(/\r?\n/)
+		.filter((line) => !parseAssetStageProgressLine(line))
+		.join("\n")
+		.trim();
+}
+
+function cutterProgressMessage(progress, faceKey) {
+	const label = cutterProgressPhaseLabel(progress.phase);
+	if (!progress.total) {
+		return `${faceKey} ${label}`;
+	}
+	return `${faceKey} ${label} ${progress.current}/${progress.total}`;
+}
+
+function cutterProgressPhaseLabel(phase) {
+	if (phase === "parse") {
+		return "parsing SVG";
+	}
+	if (phase === "extrude") {
+		return "extruding SVG paths";
+	}
+	if (phase === "normalize") {
+		return "normalizing cutter solids";
+	}
+	if (phase === "union") {
+		return "unioning cutter solids";
+	}
+	if (phase === "export") {
+		return "exporting cutter GLB";
+	}
+	return "preparing SVG cutter";
 }
 
 function canonicalSourceSemanticStrength(strength) {
@@ -3553,6 +3661,7 @@ async function assetReviewFaces(model, faces, queueState = {}) {
 				? {
 					status: "building",
 					currentStep: queueState.stageLabel || queueState.currentStep || "",
+					stageProgress: queueState.stageProgress || null,
 				}
 				: queued
 					? {
@@ -3562,6 +3671,7 @@ async function assetReviewFaces(model, faces, queueState = {}) {
 			const liveBuild = building
 				? {
 					currentStep: queueState.stageLabel || queueState.currentStep || "",
+					stageProgress: queueState.stageProgress || null,
 				}
 				: null;
 

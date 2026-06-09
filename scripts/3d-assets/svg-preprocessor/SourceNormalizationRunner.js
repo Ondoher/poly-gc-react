@@ -1072,14 +1072,21 @@ ${outline}
 	 * @returns {string} SVG path element source.
 	 */
 	componentToSvgPath(component) {
+		const isNegativeSpace = Boolean(component.classification?.negativeSpaceCandidate);
 		const attrs = [
 			`data-component-id="${this.escapeAttribute(component.componentId)}"`,
+			isNegativeSpace ? 'data-negative-space-candidate="true"' : null,
 			component.className ? `class="${this.escapeAttribute(component.className)}"` : null,
 			`d="${this.escapeAttribute(component.pathData)}"`,
 			this.componentTransformAttribute(component),
-			`fill="${this.escapeAttribute(component.fill && component.fill !== 'none' ? component.fill : 'none')}"`,
-			component.stroke && component.stroke !== 'none' ? `stroke="${this.escapeAttribute(component.stroke)}"` : null,
-			component.strokeWidth ? `stroke-width="${this.escapeAttribute(component.strokeWidth)}"` : null,
+			`fill="${isNegativeSpace ? 'none' : this.escapeAttribute(component.fill && component.fill !== 'none' ? component.fill : 'none')}"`,
+			isNegativeSpace
+				? 'stroke="#777777"'
+				: component.stroke && component.stroke !== 'none' ? `stroke="${this.escapeAttribute(component.stroke)}"` : null,
+			isNegativeSpace
+				? 'stroke-width="0.75"'
+				: component.strokeWidth ? `stroke-width="${this.escapeAttribute(component.strokeWidth)}"` : null,
+			isNegativeSpace ? 'stroke-dasharray="2 2"' : null,
 			component.fillRule ? `fill-rule="${this.escapeAttribute(component.fillRule)}"` : null,
 			component.clipRule ? `clip-rule="${this.escapeAttribute(component.clipRule)}"` : null,
 			component.opacity != null ? `opacity="${this.escapeAttribute(component.opacity)}"` : null,

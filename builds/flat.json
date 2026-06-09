@@ -1,0 +1,30 @@
+{
+	"name": "flat",
+	"dest": "dist/flat",
+	"source": "src/flat",
+	"index": "src/flat/index.js",
+	"spec": "src/flat/test.js",
+	"testDest": "tests/",
+	"router": "server/flat/index.js",
+	"template": {
+		"source": "src/flat/templates/index.html",
+		"destination": "dist/flat/index.html"
+	},
+	"resources": [
+		{
+			"dest": "assets/images",
+			"cwd": "assets/images",
+			"glob": "**/*.{png,jpg,gif,svg}",
+			"keepNest": true
+		}
+	],
+	"css": [
+		{
+			"dest": "assets/styles",
+			"cwd": "assets/styles",
+			"glob": "**/*.css",
+			"keepNest": true
+		}
+	],
+	"features": ["features/app", "features/false-simulation"]
+}

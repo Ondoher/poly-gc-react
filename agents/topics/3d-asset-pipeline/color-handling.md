@@ -72,7 +72,7 @@ visible.
   </tr>
   <tr>
     <td><img src="../../../scripts/data/asset-pipeline/references/default-large-faces/faces/d-9.png" alt="Reference d-9" width="180"></td>
-    <td><img src="../../../scripts/data/asset-pipeline/source-svgs/traditional/d-9.svg" alt="Traditional source d-9" width="180"></td>
+    <td><img src="../../../scripts/output/asset-pipeline/source-svgs/traditional/d-9.svg" alt="Traditional source d-9" width="180"></td>
     <td><img src="../../../scripts/output/asset-pipeline/traditional/images/final-rendering-color-svg/d-9.svg" alt="Traditional final color d-9" width="180"></td>
   </tr>
 </table>

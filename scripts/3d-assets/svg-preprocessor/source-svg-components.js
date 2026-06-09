@@ -1118,7 +1118,20 @@ function nearlyEqual(left, right) {
 
 function isWhitePaint(value) {
 	const normalized = normalizePaint(value);
-	return normalized === '#fff' || normalized === '#ffffff' || normalized === 'white';
+
+	if (normalized === 'white') {
+		return true;
+	}
+
+	const color = parseRgbPaint(normalized);
+	if (!color) {
+		return false;
+	}
+
+	const darkestChannel = Math.min(color.r, color.g, color.b);
+	const lightestChannel = Math.max(color.r, color.g, color.b);
+
+	return darkestChannel >= 240 && lightestChannel - darkestChannel <= 16;
 }
 
 function normalizePaint(value) {
@@ -1138,6 +1151,29 @@ function normalizePaint(value) {
 	}
 
 	return normalized;
+}
+
+function parseRgbPaint(value) {
+	const hex = /^#([0-9a-f]{6})$/i.exec(value || '');
+	if (hex) {
+		return {
+			r: Number.parseInt(hex[1].slice(0, 2), 16),
+			g: Number.parseInt(hex[1].slice(2, 4), 16),
+			b: Number.parseInt(hex[1].slice(4, 6), 16),
+		};
+	}
+
+	const rgb = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i.exec(value || '');
+	if (!rgb) {
+		return null;
+	}
+
+	const [r, g, b] = rgb.slice(1).map((channel) => Number.parseInt(channel, 10));
+	if ([r, g, b].some((channel) => !Number.isFinite(channel) || channel < 0 || channel > 255)) {
+		return null;
+	}
+
+	return { r, g, b };
 }
 
 function readNumber(value, fallback = NaN) {

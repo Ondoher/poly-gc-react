@@ -206,7 +206,7 @@ Important current checked-in 3D input assets:
 - [reference-faces](/c:/dev/poly-gc-react/scripts/data/3d-assets/reference-faces)
 - [wiki-source-svgs](/c:/dev/poly-gc-react/scripts/data/3d-assets/wiki-source-svgs)
 - [other-source-svgs](/c:/dev/poly-gc-react/scripts/data/3d-assets/other-source-svgs)
-- [prepared-svgs](/c:/dev/poly-gc-react/scripts/data/3d-assets/prepared-svgs)
+- [prepared-svgs](/c:/dev/poly-gc-react/scripts/output/3d-assets/prepared-svgs)
 - [generated-images](/c:/dev/poly-gc-react/scripts/data/3d-assets/generated-images)
 - [fonts](/c:/dev/poly-gc-react/scripts/data/3d-assets/fonts)
 
@@ -356,7 +356,7 @@ What changed recently:
   flower/stem art, and the number is styled like the rest of the tile set
   rather than treated as an authoritative source-SVG label.
 - the cutter and inlay exporters now consume path-only prepared SVGs under
-  `scripts/data/3d-assets/prepared-svgs`; generated Gluten numbers are converted to
+  `scripts/output/3d-assets/prepared-svgs`; generated Gluten numbers are converted to
   SVG paths before export so geometry generation does not depend on browser
   text support
 - the preprocessing loop now uses two active exporters:
@@ -514,7 +514,7 @@ Important recent result to remember:
   `scripts/data/3d-assets/other-source-svgs`, and the identical protected
   `flower-1.svg` source also exists under
   `scripts/data/3d-assets/wiki-source-svgs`; cutter/color scripts should consume
-  only the generated path-only files under `scripts/data/3d-assets/prepared-svgs`
+  only the generated path-only files under `scripts/output/3d-assets/prepared-svgs`
 - current additional preprocessed/validated examples include ordinary
   bamboos, characters, dots, winds, dragons, flowers/seasons, `d-1`, and
   `b-1`; most remain `needs-review` validation artifacts rather than

@@ -44,7 +44,7 @@ path. Face-level `sourceSvgHints` merge over manifest-level hints.
 Manifest intake copies and annotates each face SVG to:
 
 ```text
-scripts/data/asset-pipeline/source-svgs/<tilesetId>/<faceKey>.svg
+scripts/output/asset-pipeline/source-svgs/<tilesetId>/<faceKey>.svg
 ```
 
 Then it builds `scripts/output/asset-pipeline/<tilesetId>/pipeline.json` from
@@ -82,4 +82,3 @@ Shape:
 
 It is routing-only. It must not store progress, source paths, generated asset
 state, or face counts.
-

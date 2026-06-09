@@ -91,32 +91,34 @@ async function main() {
 		disposeTileAsset(cutterAsset.group);
 	}
 
-	model.updateAssetGenerationFace(options.faceKey, {
-		status: null,
-		inputHash: faceHash,
-		stageHashes: {
-			'svg-cutter': stageHash,
-		},
-		artifacts: {
-			...(cutterAsset.group ? { cutterModel: relativePath(variant.outputGlb) } : {}),
-			cutterMetadata: relativePath(variant.outputMetadata),
-		},
-		queue: null,
-		build: null,
-		failure: null,
-	});
-	await model.save();
+	if (!options.noPipelineState) {
+		model.updateAssetGenerationFace(options.faceKey, {
+			status: null,
+			inputHash: faceHash,
+			stageHashes: {
+				'svg-cutter': stageHash,
+			},
+			artifacts: {
+				...(cutterAsset.group ? { cutterModel: relativePath(variant.outputGlb) } : {}),
+				cutterMetadata: relativePath(variant.outputMetadata),
+			},
+			queue: null,
+			build: null,
+			failure: null,
+		});
+		await model.save();
+	}
 }
 
 function buildCutterVariant({ model, options }) {
-	const renderedSvg = resolveRepoPath(model.getFinalRenderingColorSvgPath(options.faceKey) || '');
+	const renderedSvg = resolveRepoPath(options.svgPath || model.getFinalRenderingColorSvgPath(options.faceKey) || '');
 	const baseTileVariantId = model.getSelectedBaseTileVariantId();
 	const selectedBaseTileVariantId = baseTileVariantId || options.baseTileVariantId;
 	const baseTileVariant = readBaseTileVariant(selectedBaseTileVariantId);
 	const body = baseTileVariant.body || {};
 	const modelFaceKey = `${options.tilesetId}-${options.faceKey}`;
-	const outputGlb = path.join(model.pipelineDir, 'models', 'svg-cutter', `${options.faceKey}.glb`);
-	const outputMetadata = path.join(model.pipelineDir, 'json', 'svg-cutter', `${options.faceKey}.json`);
+	const outputGlb = resolveRepoPath(options.outputGlb || path.join(model.pipelineDir, 'models', 'svg-cutter', `${options.faceKey}.glb`));
+	const outputMetadata = resolveRepoPath(options.outputMetadata || path.join(model.pipelineDir, 'json', 'svg-cutter', `${options.faceKey}.json`));
 
 	if (!renderedSvg) {
 		throw new Error(`Missing rendered SVG artifact for ${options.tilesetId}/${options.faceKey}.`);
@@ -134,6 +136,7 @@ function buildCutterVariant({ model, options }) {
 		targetDepth: Number.isFinite(body.depth) ? body.depth : 1.08,
 		cutterDepth: Number.isFinite(options.cutterDepth) ? options.cutterDepth : 0.026,
 		curveSegments: Number.isFinite(options.curveSegments) ? options.curveSegments : 10,
+		skipUnion: Boolean(options.skipUnion),
 		baseTileVariantId: selectedBaseTileVariantId,
 		baseTileVariant,
 		outputGlb,
@@ -147,12 +150,31 @@ async function buildSvgCutterAsset(variant) {
 	}
 
 	const sanitizedSvg = sanitizeSvgForCutter(fs.readFileSync(variant.svgPath, 'utf8'));
+	emitCutterProgress({
+		phase: 'parse',
+		current: 0,
+		total: 1,
+		message: `Parsing SVG for ${variant.faceKey}`,
+	});
 	const svgData = svgLoader.parse(sanitizedSvg);
 	const viewBox = parseViewBox(sanitizedSvg);
 	const geometries = [];
+	emitCutterProgress({
+		phase: 'parse',
+		current: 1,
+		total: 1,
+		message: `Parsed ${svgData.paths.length} SVG paths for ${variant.faceKey}`,
+	});
 
-	for (const svgPath of svgData.paths) {
+	for (let pathIndex = 0; pathIndex < svgData.paths.length; pathIndex += 1) {
+		const svgPath = svgData.paths[pathIndex];
 		if (isTileBodyColorPath(svgPath)) {
+			emitCutterProgress({
+				phase: 'extrude',
+				current: pathIndex + 1,
+				total: svgData.paths.length,
+				message: `Skipped tile-body path ${pathIndex + 1} of ${svgData.paths.length}`,
+			});
 			continue;
 		}
 
@@ -166,6 +188,12 @@ async function buildSvgCutterAsset(variant) {
 			});
 			geometries.push(geometry.index ? geometry.toNonIndexed() : geometry);
 		}
+		emitCutterProgress({
+			phase: 'extrude',
+			current: pathIndex + 1,
+			total: svgData.paths.length,
+			message: `Extruded SVG path ${pathIndex + 1} of ${svgData.paths.length}`,
+		});
 	}
 
 	if (geometries.length === 0) {
@@ -198,18 +226,26 @@ async function buildSvgCutterAsset(variant) {
 	const scaleX = targetRect.width / Math.max(glyphBounds.width, 0.000001);
 	const scaleZ = targetRect.depth / Math.max(glyphBounds.depth, 0.000001);
 
-	const normalizedGeometries = geometries.map((geometry) => {
+	const normalizedGeometries = geometries.map((geometry, geometryIndex) => {
 		const normalizedGeometry = geometry.clone();
 		normalizedGeometry.rotateX(Math.PI / 2);
 		normalizedGeometry.translate(-glyphBounds.centerX, 0, -glyphBounds.centerZ);
 		normalizedGeometry.scale(scaleX, variant.cutterDepth, scaleZ);
 		normalizedGeometry.translate(targetRect.centerX, 0, targetRect.centerZ);
 		normalizedGeometry.computeVertexNormals();
+		emitCutterProgress({
+			phase: 'normalize',
+			current: geometryIndex + 1,
+			total: geometries.length,
+			message: `Normalized cutter solid ${geometryIndex + 1} of ${geometries.length}`,
+		});
 		return normalizedGeometry;
 	});
 	geometries.forEach((geometry) => geometry.dispose());
 
-	const cutterGeometry = buildUnionedCutterGeometry(normalizedGeometries);
+	const cutterGeometry = variant.skipUnion
+		? buildMergedCutterGeometry(normalizedGeometries)
+		: buildUnionedCutterGeometry(normalizedGeometries);
 	normalizedGeometries.forEach((geometry) => geometry.dispose());
 	assignProjectedTopUv(cutterGeometry, variant.targetWidth, variant.targetDepth);
 	cutterGeometry.computeVertexNormals();
@@ -221,6 +257,12 @@ async function buildSvgCutterAsset(variant) {
 	cutterMesh.name = variant.meshName;
 	group.add(cutterMesh);
 	group.updateMatrixWorld(true);
+	emitCutterProgress({
+		phase: 'export',
+		current: 0,
+		total: 1,
+		message: `Exporting cutter GLB for ${variant.faceKey}`,
+	});
 
 	return {
 		group,
@@ -242,6 +284,7 @@ async function buildSvgCutterAsset(variant) {
 			targetWidth: variant.targetWidth,
 			targetDepth: variant.targetDepth,
 			cutterDepth: variant.cutterDepth,
+			skipUnion: variant.skipUnion,
 			sourceViewBox: viewBox,
 			sourceGlyphBounds: glyphBounds,
 			targetRect,
@@ -256,7 +299,9 @@ async function buildSvgCutterAsset(variant) {
 				variant.sourcePlacementMode === 'viewBox'
 					? 'Geometry is normalized from the preprocessed SVG viewBox into the full tile face rectangle so preprocessed internal alignment is preserved.'
 					: 'Geometry is normalized from glyph bounds into the authored face-content rectangle from face metadata.',
-				'Normalized path solids are unioned before export so downstream subtraction sees one cleaned cutter volume.',
+				variant.skipUnion
+					? 'Normalized path solids are merged without 3D boolean union because upstream SVG geometry is expected to be pre-unioned into non-overlapping cutter islands.'
+					: 'Normalized path solids are unioned before export so downstream subtraction sees one cleaned cutter volume.',
 				'Designed as an offline boolean/CSG cutter input, not as a runtime visible asset.',
 			],
 		},
@@ -284,6 +329,7 @@ function emptyCutterMetadata({ variant, viewBox, reason }) {
 		targetWidth: variant.targetWidth,
 		targetDepth: variant.targetDepth,
 		cutterDepth: variant.cutterDepth,
+		skipUnion: variant.skipUnion,
 		sourceViewBox: viewBox,
 		sourceGlyphBounds: null,
 		targetRect: createFullFaceTargetRect(variant.targetWidth, variant.targetDepth),
@@ -300,8 +346,32 @@ function emptyCutterMetadata({ variant, viewBox, reason }) {
 	};
 }
 
+function buildMergedCutterGeometry(geometries) {
+	emitCutterProgress({
+		phase: 'union',
+		current: 1,
+		total: 1,
+		message: `Skipped 3D union; merging ${geometries.length} pre-unioned cutter solids`,
+	});
+
+	const mergedGeometry = BufferGeometryUtils.mergeGeometries(
+		geometries.map((geometry) => geometry.index ? geometry.toNonIndexed() : geometry.clone()),
+		false
+	);
+	mergedGeometry.computeBoundingBox();
+	mergedGeometry.computeBoundingSphere();
+
+	return mergedGeometry.index ? mergedGeometry.toNonIndexed() : mergedGeometry;
+}
+
 function buildUnionedCutterGeometry(geometries) {
 	if (geometries.length === 1) {
+		emitCutterProgress({
+			phase: 'union',
+			current: 1,
+			total: 1,
+			message: 'Single cutter solid needs no union',
+		});
 		return geometries[0].clone();
 	}
 
@@ -322,6 +392,12 @@ function buildUnionedCutterGeometry(geometries) {
 		disposeMesh(unionBrush);
 		disposeMesh(nextBrush);
 		unionBrush = resultBrush;
+		emitCutterProgress({
+			phase: 'union',
+			current: index,
+			total: geometries.length - 1,
+			message: `Unioned cutter solid ${index + 1} of ${geometries.length}`,
+		});
 	}
 
 	const unionGeometry = unionBrush.geometry.clone();
@@ -507,12 +583,30 @@ async function exportSceneAsGlb(group, sceneName, outputPath) {
 
 	const glb = await exporter.parseAsync(scene, { binary: true });
 	fs.writeFileSync(outputPath, Buffer.from(glb));
+	emitCutterProgress({
+		phase: 'export',
+		current: 1,
+		total: 1,
+		message: `Exported cutter GLB for ${sceneName}`,
+	});
 	console.log(`Exported ${relativePath(outputPath)}`);
 }
 
 function writeJsonMetadata(outputPath, metadata) {
 	fs.writeFileSync(outputPath, JSON.stringify(metadata, null, 2));
 	console.log(`Wrote ${relativePath(outputPath)}`);
+}
+
+function emitCutterProgress({ phase, current, total, message }) {
+	console.log(JSON.stringify({
+		event: 'assetStageProgress',
+		stage: 'svg-cutter',
+		phase,
+		current,
+		total,
+		percent: total > 0 ? Math.round((current / total) * 100) : 0,
+		message,
+	}));
 }
 
 function pascal(value) {
@@ -570,6 +664,11 @@ function readOptions() {
 	const cutterDepth = numberArgument('--cutter-depth');
 	const curveSegments = numberArgument('--curve-segments');
 	const baseTileVariantId = readArgument('--base-tile-variant-id') || '';
+	const svgPath = readArgument('--svg-path') || '';
+	const outputGlb = readArgument('--output-glb') || '';
+	const outputMetadata = readArgument('--output-metadata') || '';
+	const noPipelineState = process.argv.includes('--no-pipeline-state');
+	const skipUnion = process.argv.includes('--skip-union');
 
 	if (!tilesetId) {
 		throw new Error('Missing --tileset-id.');
@@ -586,6 +685,11 @@ function readOptions() {
 		cutterDepth,
 		curveSegments,
 		baseTileVariantId,
+		svgPath,
+		outputGlb,
+		outputMetadata,
+		noPipelineState,
+		skipUnion,
 	};
 }
 
@@ -636,6 +740,9 @@ function readPositionalArguments() {
 		'--cutter-depth',
 		'--curve-segments',
 		'--base-tile-variant-id',
+		'--svg-path',
+		'--output-glb',
+		'--output-metadata',
 	]);
 
 	for (let index = 2; index < process.argv.length; index += 1) {

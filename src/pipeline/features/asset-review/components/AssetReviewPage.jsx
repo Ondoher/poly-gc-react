@@ -178,6 +178,7 @@ class AssetReviewFaceCard extends React.Component {
 					/>
 				</header>
 				{this.renderPreview(face, asset)}
+				{this.renderBuildProgress(face)}
 				<div className="asset-review-card-footer">
 					{asset?.glb ? <a href={this.assetUrl(asset.glb, asset.cacheKey)}>GLB</a> : null}
 					{asset?.metadata ? <a href={this.assetUrl(asset.metadata, asset.cacheKey)}>Metadata</a> : null}
@@ -189,7 +190,9 @@ class AssetReviewFaceCard extends React.Component {
 
 	renderSubtitle(face) {
 		if (face.building) {
-			return face.queue?.currentStep || face.build?.currentStep || "processing";
+			const progress = face.queue?.stageProgress || face.build?.stageProgress;
+			const currentStep = face.queue?.currentStep || face.build?.currentStep || "processing";
+			return progress ? `${currentStep} ${progress.percent || 0}%` : currentStep;
 		}
 		if (face.queued) {
 			return "queued";
@@ -233,6 +236,27 @@ class AssetReviewFaceCard extends React.Component {
 		}
 
 		return <div className="asset-review-unavailable">Not available</div>;
+	}
+
+	renderBuildProgress(face) {
+		const progress = face.queue?.stageProgress || face.build?.stageProgress;
+		if (!face.building || !progress) {
+			return null;
+		}
+
+		const percent = Math.max(0, Math.min(100, Number(progress.percent) || 0));
+		const label = progressLabel(progress);
+		return (
+			<div className="asset-review-stage-progress" aria-label={`${label}, ${percent}%`}>
+				<div className="asset-review-stage-progress-label">
+					<span>{label}</span>
+					<span>{percent}%</span>
+				</div>
+				<div className="asset-review-stage-progress-track">
+					<div className="asset-review-stage-progress-fill" style={{ width: `${percent}%` }} />
+				</div>
+			</div>
+		);
 	}
 
 	assetUrl(path, cacheKey = "") {
@@ -631,6 +655,33 @@ function iconNameForState(state) {
 		return "alert-circle";
 	}
 	return "circle-off";
+}
+
+function progressLabel(progress = {}) {
+	const phase = progress.phase ? cutterPhaseLabel(progress.phase) : "Working";
+	if (progress.total > 0) {
+		return `${phase} ${progress.current || 0}/${progress.total}`;
+	}
+	return phase;
+}
+
+function cutterPhaseLabel(phase) {
+	if (phase === "parse") {
+		return "Parsing SVG";
+	}
+	if (phase === "extrude") {
+		return "Extruding paths";
+	}
+	if (phase === "normalize") {
+		return "Normalizing solids";
+	}
+	if (phase === "union") {
+		return "Unioning solids";
+	}
+	if (phase === "export") {
+		return "Exporting GLB";
+	}
+	return "Preparing cutter";
 }
 
 function shortHash(hash) {

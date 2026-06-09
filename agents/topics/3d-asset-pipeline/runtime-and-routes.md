@@ -29,6 +29,12 @@ Important generated asset CLIs:
 
 Stage CLIs require explicit tileset arguments. Focused source-side and asset
 generation runners accept explicit face keys for targeted reruns.
+Generated asset CLIs also support focused experiment output overrides for
+single-face investigations: `export-svg-cutter.js` can read an explicit
+`--svg-path`, write explicit cutter outputs, and optionally use `--skip-union`;
+`export-stamped-tile-pair.js`, `export-stamped-tile-inlay.js`, and
+`export-generated-asset-preview.js` can write explicit output artifacts while
+updating the active face state through `PipelineModel`.
 
 ## Server Routes
 
@@ -78,6 +84,13 @@ The server resumes pending queues on startup. A queue records selected base
 tile variant and remaining face keys. Queue execution emits stream events on
 the asset pipeline stream and updates generated asset state through
 `PipelineModel`.
+
+During `svg-cutter`, the cutter child process emits newline-delimited JSON
+progress records on stdout. The server parses records with
+`event: "assetStageProgress"` and forwards them as `assetGenerationProgress`
+socket events with a `stageProgress` object. Asset Review treats this as
+runtime observability only: it shows cutter phase/count/percent for the active
+face, but durable readiness still comes from generated artifacts and hashes.
 
 Selecting a base tile stages missing or stale generated-asset faces into the
 persisted queue when no generation run is active. Asset Review then reports

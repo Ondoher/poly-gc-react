@@ -125,6 +125,7 @@ export class AssetPipelineStream {
 			queuedFaceKeys: Array.from(state.queuedFaceKeys || []),
 			currentStep: state.currentStep || "",
 			stageLabel: state.stageLabel || "",
+			stageProgress: cleanStageProgress(state.stageProgress),
 		};
 	}
 
@@ -145,6 +146,7 @@ export class AssetPipelineStream {
 			queuedFaceKeys: new Set(),
 			currentStep: "",
 			stageLabel: "",
+			stageProgress: null,
 		};
 	}
 
@@ -162,6 +164,7 @@ export class AssetPipelineStream {
 				queuedFaceKeys: new Set(),
 				currentStep: "",
 				stageLabel: "",
+				stageProgress: null,
 			};
 			return;
 		}
@@ -172,6 +175,7 @@ export class AssetPipelineStream {
 				queuedFaceKeys: new Set(event.plannedFaceKeys || []),
 				currentStep: "",
 				stageLabel: "",
+				stageProgress: null,
 			};
 			return;
 		}
@@ -181,6 +185,7 @@ export class AssetPipelineStream {
 			queuedFaceKeys: new Set(),
 			currentStep: "",
 			stageLabel: "",
+			stageProgress: null,
 		};
 		const faceKey = event.faceKey || "";
 
@@ -195,17 +200,20 @@ export class AssetPipelineStream {
 				state.activeFaceKey = "";
 				state.currentStep = "";
 				state.stageLabel = "";
+				state.stageProgress = null;
 			}
 		} else if (event.status === "building") {
 			state.queuedFaceKeys.delete(faceKey);
 			state.activeFaceKey = faceKey;
 			state.currentStep = event.stage || "";
 			state.stageLabel = event.stageLabel || event.stage || "";
+			state.stageProgress = cleanStageProgress(event.stageProgress);
 		} else if (event.status === "queued") {
 			if (state.activeFaceKey === faceKey) {
 				state.activeFaceKey = "";
 				state.currentStep = "";
 				state.stageLabel = "";
+				state.stageProgress = null;
 			}
 			state.queuedFaceKeys.add(faceKey);
 		} else if (event.status === "failed") {
@@ -214,6 +222,7 @@ export class AssetPipelineStream {
 				state.activeFaceKey = "";
 				state.currentStep = "";
 				state.stageLabel = "";
+				state.stageProgress = null;
 			}
 		}
 
@@ -229,6 +238,28 @@ function sanitizeTilesetId(tilesetId) {
 	return typeof tilesetId === "string" && /^[a-zA-Z0-9_-]+$/.test(tilesetId)
 		? tilesetId
 		: "";
+}
+
+function cleanStageProgress(progress) {
+	if (!progress || typeof progress !== "object") {
+		return null;
+	}
+
+	const current = Number(progress.current);
+	const total = Number(progress.total);
+	const percent = Number(progress.percent);
+	return {
+		stage: String(progress.stage || ""),
+		phase: String(progress.phase || ""),
+		current: Number.isFinite(current) ? current : 0,
+		total: Number.isFinite(total) ? total : 0,
+		percent: Number.isFinite(percent)
+			? Math.max(0, Math.min(100, Math.round(percent)))
+			: Number.isFinite(current) && Number.isFinite(total) && total > 0
+				? Math.round((current / total) * 100)
+				: 0,
+		message: String(progress.message || ""),
+	};
 }
 
 const assetPipelineStream = new AssetPipelineStream();

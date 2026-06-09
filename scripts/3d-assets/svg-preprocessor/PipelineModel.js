@@ -14,8 +14,8 @@ export const BASE_OUTPUT = path.join(here, "..", "..", "output", "asset-pipeline
 export const BASE_REFERENCE = path.join(BASE_DATA, "references");
 export const PIPELINE_BOOTSTRAP = path.join(BASE_DATA, "bootstrap");
 export const PIPELINE_MANIFESTS = path.join(BASE_DATA, "manifests");
-export const PIPELINE_SOURCE_SVGS = path.join(BASE_DATA, "source-svgs");
-export const PIPELINE_PREPARED_SVGS = path.join(BASE_DATA, "prepared-svgs");
+export const PIPELINE_SOURCE_SVGS = path.join(BASE_OUTPUT, "source-svgs");
+export const PIPELINE_PREPARED_SVGS = path.join(BASE_OUTPUT, "prepared-svgs");
 
 const SCHEMA_VERSION = 3;
 const VALID_BINDING_STRENGTHS = new Set(["none", "tentative", "strong", "accepted"]);

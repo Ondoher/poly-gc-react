@@ -235,6 +235,42 @@
 	text-align: center;
 }
 
+.asset-review-stage-progress {
+	display: grid;
+	gap: 6px;
+	min-width: 0;
+}
+
+.asset-review-stage-progress-label {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	color: #40524a;
+	font-size: 12px;
+	line-height: 1.25;
+}
+
+.asset-review-stage-progress-label span:first-child {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.asset-review-stage-progress-track {
+	height: 6px;
+	overflow: hidden;
+	background: #dde7e2;
+	border-radius: 999px;
+}
+
+.asset-review-stage-progress-fill {
+	height: 100%;
+	background: #1f7a5f;
+	border-radius: inherit;
+	transition: width 160ms ease;
+}
+
 .asset-review-preview-pending {
 	position: absolute;
 	inset: 0;

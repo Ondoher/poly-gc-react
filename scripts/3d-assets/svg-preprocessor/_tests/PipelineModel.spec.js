@@ -175,7 +175,7 @@ function pipelineFace(faceKey) {
 	return {
 		faceKey,
 		artifacts: {
-			sourceSvg: `scripts/data/asset-pipeline/source-svgs/test/${faceKey}.svg`,
+			sourceSvg: `scripts/output/asset-pipeline/source-svgs/test/${faceKey}.svg`,
 		},
 		state: {
 			parts: {},

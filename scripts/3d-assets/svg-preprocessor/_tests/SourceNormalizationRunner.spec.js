@@ -74,6 +74,8 @@ describe('SourceNormalizationRunner', function() {
 		expect(fs.files.get(identifiedSvgPath)).toContain('data-component-id="src.b-1.0003"');
 		expect(fs.files.get(identifiedSvgPath)).not.toContain('data-component-id="src.b-1.0001"');
 		expect(fs.files.get(identifiedSvgPath)).not.toContain('data-component-id="src.b-1.0002"');
+		expect(fs.files.get(identifiedSvgPath)).toContain('data-component-id="src.b-1.0004" data-negative-space-candidate="true"');
+		expect(fs.files.get(identifiedSvgPath)).toContain('data-negative-space-candidate="true" d="M30,30 H40 V40 H30 Z" fill="none" stroke="#777777" stroke-width="0.75" stroke-dasharray="2 2"');
 		expect(artifact.identifiedShapesSvg).toBe(normalizeForTest(rootDir, identifiedShapesSvgPath));
 		expect(fs.files.get(identifiedShapesSvgPath)).toContain('data-shape-id="shape.b-1.0003"');
 		expect(fs.files.get(identifiedShapesSvgPath)).toContain('data-shape-box="shape.b-1.0003"');
