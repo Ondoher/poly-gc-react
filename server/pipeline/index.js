@@ -24,8 +24,13 @@ const DEFAULT_REFERENCE_STRUCTURE_ID = "default-large-faces";
 const DEFAULT_REFERENCE_STRUCTURE_DIR = path.resolve(OUTPUT_3D_DIR, "reference-structure", DEFAULT_REFERENCE_STRUCTURE_ID);
 const REFERENCE_STRUCTURE_FILENAME = "reference-structure.json";
 const SVG_CUTTER_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-svg-cutter.js");
+const SVG_CUTTER_SIMPLIFICATION_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "experiment-paper-flatten-svg.js");
+const SVG_CUTTER_SIMPLIFICATION_FLATNESS = "0.10";
 const STAMPED_BODY_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-stamped-tile-pair.js");
 const COLORED_INLAY_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-stamped-tile-inlay.js");
+const GENERATED_ASSET_PREVIEW_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-generated-asset-preview.js");
+const CUTTER_SIMPLIFICATION_EXPERIMENT_FACE = "flower-3";
+const CUTTER_SIMPLIFICATION_EXPERIMENT_FLATNESS = Object.freeze([0.25, 0.15, 0.10, 0.075, 0.05]);
 const activeAssetGenerationRuns = new Map();
 const METADATA_KINDS = Object.freeze({
 	reference: {
@@ -75,6 +80,8 @@ export default function pipelineRouter(express, router, app) {
 	router.post("/api/pipeline/asset-generation/cancel", cancelAssetGeneration);
 	router.post("/api/pipeline/asset-generation/reset", resetAssetGeneration);
 	router.get("/api/pipeline/asset-review", getAssetReview);
+	router.get("/api/pipeline/experiments/cutter-simplification", getCutterSimplificationExperiment);
+	router.post("/api/pipeline/experiments/cutter-simplification/generate", generateCutterSimplificationExperiment);
 	router.get("/api/pipeline/reference/:fileName", sendReferenceImage);
 	router.get("/api/pipeline/asset", sendAsset);
 	router.get("*", function(_request, response) {
@@ -1010,10 +1017,10 @@ async function getBaseTileSelection(req, res) {
 		const model = await loadPipelineModel(tilesetId);
 		const manifest = await loadBaseTileManifest();
 		const selectedVariantId = model.getSelectedBaseTileVariantId();
-		const variants = manifest.variants.map((variant) => ({
-			...variant,
+		const variants = await Promise.all(manifest.variants.map(async (variant) => ({
+			...(await enrichBaseTileSelectionVariant(variant)),
 			selected: variant.id === selectedVariantId,
-		}));
+		})));
 
 		res.json({
 			ok: true,
@@ -1034,6 +1041,45 @@ async function getBaseTileSelection(req, res) {
 	}
 }
 
+async function enrichBaseTileSelectionVariant(variant) {
+	const metadata = await readBaseTileVariantMetadata(variant.metadata);
+	if (!metadata) {
+		return variant;
+	}
+
+	return {
+		...variant,
+		label: metadata.label || variant.label,
+		description: metadata.description || variant.description,
+		kind: metadata.kind || variant.kind,
+		temporary: Boolean(metadata.temporary ?? variant.temporary),
+		previewOnly: Boolean(metadata.previewOnly ?? variant.previewOnly),
+		previewMaterialSource: metadata.previewMaterialSource || variant.previewMaterialSource || "",
+		meshName: metadata.meshName || variant.meshName || "",
+		carvingMeshName: metadata.carvingMeshName || variant.carvingMeshName || metadata.carving?.targetMeshName || "",
+		supportMeshNames: [
+			...(Array.isArray(metadata.supportMeshNames) ? metadata.supportMeshNames : []),
+			...(Array.isArray(metadata.carving?.preserveMeshNames) ? metadata.carving.preserveMeshNames : []),
+		],
+		body: {
+			...(variant.body || {}),
+			...(metadata.body || {}),
+		},
+		material: metadata.material || null,
+		carving: metadata.carving || null,
+		source: metadata.source || null,
+	};
+}
+
+async function readBaseTileVariantMetadata(metadataPath) {
+	const filename = metadataPath ? path.resolve(process.cwd(), metadataPath) : "";
+	if (!filename || !isInsideDirectory(filename, BASE_TILE_MODELS_DIR) || !(await fileExists(filename))) {
+		return null;
+	}
+
+	return readJsonAsync(filename);
+}
+
 async function saveBaseTileSelection(req, res) {
 	try {
 		const tilesetId = await requestedTilesetId(req);
@@ -1049,6 +1095,13 @@ async function saveBaseTileSelection(req, res) {
 			return res.status(400).json({
 				ok: false,
 				message: `Unknown base tile variant: ${variantId || "(missing)"}.`,
+			});
+		}
+
+		if (variant.previewOnly) {
+			return res.status(400).json({
+				ok: false,
+				message: `${variant.label || variant.id} is preview-only and cannot be used for generated assets.`,
 			});
 		}
 
@@ -1659,15 +1712,62 @@ async function getAssetReview(req, res) {
 	}
 }
 
+async function getCutterSimplificationExperiment(req, res) {
+	try {
+		const tilesetId = await requestedTilesetId(req);
+		const model = await loadPipelineModel(tilesetId);
+
+		res.json({
+			ok: true,
+			tilesetId,
+			faceKey: CUTTER_SIMPLIFICATION_EXPERIMENT_FACE,
+			variants: await cutterSimplificationExperimentVariants(model),
+		});
+	} catch (error) {
+		sendError(res, error);
+	}
+}
+
+async function generateCutterSimplificationExperiment(req, res) {
+	try {
+		const tilesetId = await requestedTilesetId(req);
+		const model = await loadPipelineModel(tilesetId);
+		const generated = [];
+
+		for (const variant of cutterSimplificationExperimentDefinitions(model)) {
+			await generateCutterSimplificationExperimentVariant({
+				tilesetId,
+				faceKey: CUTTER_SIMPLIFICATION_EXPERIMENT_FACE,
+				variant,
+			});
+			generated.push(variant.id);
+		}
+
+		res.json({
+			ok: true,
+			tilesetId,
+			faceKey: CUTTER_SIMPLIFICATION_EXPERIMENT_FACE,
+			generated,
+			variants: await cutterSimplificationExperimentVariants(model),
+		});
+	} catch (error) {
+		sendError(res, error);
+	}
+}
+
 async function runSvgCutterGeneration({ tilesetId, faceKey, completed = 0, total = 0 }) {
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const stream = getAssetPipelineStream();
+	const simplifiedSvgPath = await runSvgCutterSimplification({ tilesetId, faceKey });
 	const result = await runNodeCommand([
 		SVG_CUTTER_SCRIPT,
 		"--tileset-id",
 		tilesetId,
 		"--face-key",
 		faceKey,
+		"--svg-path",
+		simplifiedSvgPath,
+		"--skip-union",
 	], {
 		activeRun,
 		maxBuffer: 20 * 1024 * 1024,
@@ -1703,6 +1803,46 @@ async function runSvgCutterGeneration({ tilesetId, faceKey, completed = 0, total
 	}
 
 	return result;
+}
+
+async function runSvgCutterSimplification({ tilesetId, faceKey }) {
+	const activeRun = activeAssetGenerationRuns.get(tilesetId);
+	const model = await loadPipelineModel(tilesetId);
+	const inputSvgPath = resolveRepoPath(model.getFinalRenderingColorSvgPath(faceKey) || "");
+	const outputSvgPath = path.resolve(model.pipelineDir, "images", "cutter-simplified-svg", `${faceKey}.svg`);
+
+	if (!inputSvgPath || !(await fileExists(inputSvgPath))) {
+		throw new Error(`Missing final-rendering SVG for cutter simplification: ${tilesetId}/${faceKey}.`);
+	}
+
+	await mkdir(path.dirname(outputSvgPath), { recursive: true });
+	const result = await runNodeCommand([
+		SVG_CUTTER_SIMPLIFICATION_SCRIPT,
+		"--input",
+		inputSvgPath,
+		"--output",
+		outputSvgPath,
+		"--mode",
+		"unite-all",
+		"--flatness",
+		SVG_CUTTER_SIMPLIFICATION_FLATNESS,
+	], {
+		activeRun,
+		maxBuffer: 10 * 1024 * 1024,
+	});
+	throwIfAssetGenerationCancelled(activeRun);
+
+	if (result.status !== 0) {
+		const details = [result.stderr, result.stdout, result.error]
+			.filter(Boolean)
+			.join("\n")
+			.trim();
+		const error = new Error(details || `SVG cutter simplification failed for ${tilesetId}/${faceKey}.`);
+		error.statusCode = 500;
+		throw error;
+	}
+
+	return outputSvgPath;
 }
 
 async function runStampedBodyGeneration({ tilesetId, faceKey }) {
@@ -1761,6 +1901,167 @@ async function runColoredInlayGeneration({ tilesetId, faceKey }) {
 
 async function runGeneratedAssetPreview({ tilesetId, faceKey }) {
 	return renderGeneratedAssetPreview({ tilesetId, faceKey });
+}
+
+function cutterSimplificationExperimentDefinitions(model) {
+	return CUTTER_SIMPLIFICATION_EXPERIMENT_FLATNESS.map((flatness) => {
+		const id = `flat-${String(flatness).replace(".", "p")}`;
+		const baseDir = path.join(model.pipelineDir, "experiments", "cutter-simplification", CUTTER_SIMPLIFICATION_EXPERIMENT_FACE, id);
+		return {
+			id,
+			label: `Flatness ${flatness}`,
+			flatness,
+			paths: {
+				simplifiedSvg: path.join(baseDir, `${CUTTER_SIMPLIFICATION_EXPERIMENT_FACE}.${id}.svg`),
+				cutterModel: path.join(baseDir, `${CUTTER_SIMPLIFICATION_EXPERIMENT_FACE}.${id}.cutter.glb`),
+				cutterMetadata: path.join(baseDir, `${CUTTER_SIMPLIFICATION_EXPERIMENT_FACE}.${id}.cutter.json`),
+				stampedModel: path.join(baseDir, `${CUTTER_SIMPLIFICATION_EXPERIMENT_FACE}.${id}.stamped.glb`),
+				stampedMetadata: path.join(baseDir, `${CUTTER_SIMPLIFICATION_EXPERIMENT_FACE}.${id}.stamped.json`),
+				inlayModel: path.join(baseDir, `${CUTTER_SIMPLIFICATION_EXPERIMENT_FACE}.${id}.inlay.glb`),
+				inlayMetadata: path.join(baseDir, `${CUTTER_SIMPLIFICATION_EXPERIMENT_FACE}.${id}.inlay.json`),
+				previewPng: path.join(baseDir, `${CUTTER_SIMPLIFICATION_EXPERIMENT_FACE}.${id}.png`),
+			},
+		};
+	});
+}
+
+async function cutterSimplificationExperimentVariants(model) {
+	const definitions = cutterSimplificationExperimentDefinitions(model);
+	return Promise.all(definitions.map(async (variant) => {
+		const artifacts = Object.fromEntries(await Promise.all(Object.entries(variant.paths).map(async ([key, filename]) => [
+			key,
+			(await fileExists(filename)) ? relativePath(filename) : "",
+		])));
+		const stats = artifacts.simplifiedSvg ? await cutterSimplificationSvgStats(resolveRepoPath(artifacts.simplifiedSvg)) : null;
+		return {
+			id: variant.id,
+			label: variant.label,
+			flatness: variant.flatness,
+			ready: Boolean(artifacts.previewPng && artifacts.inlayModel),
+			artifacts,
+			stats,
+		};
+	}));
+}
+
+async function generateCutterSimplificationExperimentVariant({ tilesetId, faceKey, variant }) {
+	const model = await loadPipelineModel(tilesetId);
+	const sourceSvg = resolveRepoPath(model.getFinalRenderingColorSvgPath(faceKey) || "");
+	if (!sourceSvg || !(await fileExists(sourceSvg))) {
+		throw new Error(`Missing final-rendering SVG for ${tilesetId}/${faceKey}.`);
+	}
+
+	for (const filename of Object.values(variant.paths)) {
+		await mkdir(path.dirname(filename), { recursive: true });
+	}
+
+	await runExperimentCommand([
+		SVG_CUTTER_SIMPLIFICATION_SCRIPT,
+		"--input",
+		sourceSvg,
+		"--output",
+		variant.paths.simplifiedSvg,
+		"--mode",
+		"unite-all",
+		"--flatness",
+		String(variant.flatness),
+	], `SVG simplification failed for ${variant.id}.`);
+
+	await runExperimentCommand([
+		SVG_CUTTER_SCRIPT,
+		"--tileset-id",
+		tilesetId,
+		"--face-key",
+		faceKey,
+		"--svg-path",
+		variant.paths.simplifiedSvg,
+		"--output-glb",
+		variant.paths.cutterModel,
+		"--output-metadata",
+		variant.paths.cutterMetadata,
+		"--skip-union",
+		"--no-pipeline-state",
+	], `SVG cutter failed for ${variant.id}.`, { maxBuffer: 20 * 1024 * 1024 });
+
+	await runExperimentCommand([
+		STAMPED_BODY_SCRIPT,
+		"--tileset-id",
+		tilesetId,
+		"--face-key",
+		faceKey,
+		"--cutter-model",
+		variant.paths.cutterModel,
+		"--cutter-metadata",
+		variant.paths.cutterMetadata,
+		"--output-glb",
+		variant.paths.stampedModel,
+		"--output-metadata",
+		variant.paths.stampedMetadata,
+		"--no-pipeline-state",
+	], `Stamped body failed for ${variant.id}.`, { maxBuffer: 20 * 1024 * 1024 });
+
+	await runExperimentCommand([
+		COLORED_INLAY_SCRIPT,
+		"--tileset-id",
+		tilesetId,
+		"--face-key",
+		faceKey,
+		"--rendered-svg",
+		sourceSvg,
+		"--stamped-model",
+		variant.paths.stampedModel,
+		"--stamped-metadata",
+		variant.paths.stampedMetadata,
+		"--cutter-metadata",
+		variant.paths.cutterMetadata,
+		"--output-glb",
+		variant.paths.inlayModel,
+		"--output-metadata",
+		variant.paths.inlayMetadata,
+		"--no-pipeline-state",
+	], `Colored inlay failed for ${variant.id}.`, { maxBuffer: 20 * 1024 * 1024 });
+
+	await runExperimentCommand([
+		GENERATED_ASSET_PREVIEW_SCRIPT,
+		"--tileset-id",
+		tilesetId,
+		"--face-key",
+		faceKey,
+		"--input-glb",
+		variant.paths.inlayModel,
+		"--output-png",
+		variant.paths.previewPng,
+		"--no-pipeline-state",
+	], `Preview PNG failed for ${variant.id}.`, { maxBuffer: 20 * 1024 * 1024 });
+}
+
+async function runExperimentCommand(command, fallbackMessage, options = {}) {
+	const result = await runNodeCommand(command, {
+		maxBuffer: options.maxBuffer || 10 * 1024 * 1024,
+	});
+	if (result.status === 0) {
+		return result;
+	}
+
+	const details = [result.stderr, filterAssetStageProgressOutput(result.stdout), result.error]
+		.filter(Boolean)
+		.join("\n")
+		.trim();
+	const error = new Error(details || fallbackMessage);
+	error.statusCode = 500;
+	throw error;
+}
+
+async function cutterSimplificationSvgStats(filename) {
+	const source = await readFile(filename, "utf8");
+	const pathMatch = source.match(/\sd="([^"]+)"/);
+	const pathData = pathMatch?.[1] || "";
+	return {
+		bytes: Buffer.byteLength(source),
+		pathChars: pathData.length,
+		commands: (pathData.match(/[A-Za-z]/g) || []).length,
+		lineSegments: (pathData.match(/l/g) || []).length,
+	};
 }
 
 function assetGenerationFailureMessage(error) {
@@ -3110,6 +3411,8 @@ async function loadBaseTileManifest() {
 				description: variant.description || "",
 				kind: variant.kind || "base-tile-glb",
 				temporary: Boolean(variant.temporary),
+				previewOnly: Boolean(variant.previewOnly),
+				previewMaterialSource: variant.previewMaterialSource || "",
 				glb: normalizeRepoAssetPath(variant.glb),
 				metadata: normalizeRepoAssetPath(variant.metadata),
 				body: variant.body || {},
@@ -3211,6 +3514,10 @@ function parseAssetStageProgressLine(line) {
 					? Math.round((current / total) * 100)
 					: 0,
 			message: String(progress.message || ""),
+			activity: String(progress.activity || ""),
+			active: Boolean(progress.active),
+			ping: Boolean(progress.ping),
+			timestamp: String(progress.timestamp || ""),
 		};
 	} catch {
 		return null;

@@ -4,7 +4,20 @@
 	"source": "src/gc",
 	"index": "src/gc/index.js",
 	"spec": "src/gc/test.js",
-	"testDest": "tests/",
+	"testDest": "tests/gc/",
+	"testGroups": {
+		"default": {
+			"name": "Browser UI Specs",
+			"description": "Browser-based Jasmine specs for shared Game Center app code.",
+			"root": "src/gc",
+			"specs": [
+				"common/_tests/*Spec.js",
+				"common/_tests/*.spec.js",
+				"utils/_tests/*Spec.js",
+				"utils/_tests/*.spec.js"
+			]
+		}
+	},
 	"router": "server/gc/index.js",
 	"template": {
 		"source": "src/gc/templates/main.html",

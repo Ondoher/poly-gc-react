@@ -20,6 +20,8 @@ The repo currently has two unit-test lanes:
 Current commands:
 
 - `npm run test:ui:gc` builds and runs the browser/UI test lane.
+- `npm run test:ui:flat` builds and runs the Flat browser/UI test lane.
+- `npm run test:ui:pipeline` builds and runs the Pipeline browser/UI test lane.
 - `npm test` currently delegates to `npm run test:ui:gc`.
 - `npm run karma` runs Karma against the already-built browser test output.
 - `npm run dev:tests:gc` runs the Polylith browser test build in watch mode.
@@ -80,7 +82,8 @@ The intended browser/UI test lane should use:
 - Jasmine for test definitions and assertions
 - Karma as the browser test runner
 - `ChromeHeadless` as the default browser target
-- a Polylith test build step that emits the browser test bundle into `tests/`
+- a Polylith test build step that emits each browser test bundle into an
+  app-scoped folder under `tests/<app>/`
 
 This is not a direct source-file execution setup. The tests are first bundled,
 then served to Karma from the built output.
@@ -100,7 +103,7 @@ The intended script shape is:
 The intended flow is:
 
 1. `polylith test <app>` builds the browser test bundle
-2. the build output lands under `tests/`
+2. the build output lands under `tests/<app>/`
 3. Karma serves and runs that built output in headless Chrome
 
 For sustained UI test development, the preferred live loop is:
@@ -108,16 +111,16 @@ For sustained UI test development, the preferred live loop is:
 1. run `npm run dev:tests`
 2. run `npm run karma`
 
-The watch-mode build keeps rebuilding the test bundle into `tests/`, while
-Karma reruns against that rebuilt output.
+The watch-mode build keeps rebuilding the test bundle into the app-scoped
+`tests/<app>/` output, while Karma reruns against that rebuilt output.
 
 ## Karma Configuration Shape
 
 The expected `karma.conf.cjs` shape is:
 
 - `frameworks: ['jasmine']`
-- test files from `tests/**/*.js` loaded as ES modules
-- CSS assets from `tests/**/*.css`
+- test files from the active app's `tests/<app>/**/*.js` loaded as ES modules
+- CSS assets from the active app's `tests/<app>/**/*.css`
 - browser:
   - `ChromeHeadless`
 - `singleRun: true`
@@ -132,9 +135,11 @@ The key architectural point is:
 - source-side UI specs are bundled into a browser-ready test artifact
 - Karma runs against that artifact rather than the raw source tree
 
-The intended destination for that built output is:
+The intended destinations for built browser test output are:
 
-- `tests/`
+- `tests/gc/`
+- `tests/flat/`
+- `tests/pipeline/`
 
 ## How Specs Enter The Test Build
 
@@ -144,34 +149,35 @@ discovered directly by Karma.
 Instead, the app build should define an explicit browser test entry, typically
 with fields like:
 
-- `spec: 'src/spec.js'`
-- `testDest: 'tests'`
+- `spec: 'src/<app>/test.js'`
+- `testDest: 'tests/<app>'`
+- `testGroups`
 
-That means `polylith test <app>` starts at `src/spec.js` and builds the
-browser test bundle into `tests/`.
+That means `polylith test <app>` starts at the app test entry and builds the
+browser test bundle into that app's generated test output.
 
-The root `src/spec.js` should then pull in test code through explicit imports,
-for example:
+The app test entry should import the synthetic Polylith test module:
 
-- `import '@polylith/features';`
-- `import './common/spec.js';`
-- `import './components/spec.js';`
+```js
+import '@polylith/tests';
+```
 
-This creates a layered inclusion model:
+Polylith fills that synthetic module from the selected app and feature
+`testGroups`. This creates a glob-based inclusion model:
 
-- the app build points the test lane at `src/spec.js`
-- `src/spec.js` aggregates shared spec entrypoints
-- `@polylith/features` pulls feature-owned `spec.js` entrypoints into the
-  bundle
-- each area-level `spec.js` imports the actual `*Spec.js` files
+- the app build points the test lane at `src/<app>/test.js`
+- `src/<app>/test.js` imports `@polylith/tests`
+- app-level `testGroups.default` globs include shared/non-feature specs
+- feature-local `test.json` files contribute feature-owned specs
+- `polylith test <app> -f <feature>` can build one feature's browser specs
 
 So the practical rule is:
 
-- individual `*Spec.js` files become part of the test build because some
-  `spec.js` entrypoint imports them
+- individual `*Spec.js` and `*.spec.js` files become part of the test build
+  because they match an app-level or feature-level `testGroups` glob
 - Karma does not perform source-side spec discovery on its own
 - if a spec is not appearing in the test run, first check whether it is
-  reachable through the `spec.js` aggregation chain
+  matched by the app or feature `testGroups`
 
 ## Source Test Placement
 
@@ -179,14 +185,15 @@ The intended browser-spec placement model is:
 
 - source specs live near the code they exercise
 - browser specs can live in nearby `_tests` folders
-- nearby `spec.js` files act as local aggregators
-- the root `src/spec.js` remains structural rather than manually listing every
-  spec in the app
+- feature-owned browser specs are enabled by the feature's local `test.json`
+- app-owned shared specs are enabled by the app build's `testGroups`
+- the root app `test.js` remains structural and imports only
+  `@polylith/tests`
 
 So the practical model is:
 
 - source specs live near the code
-- source specs are grouped by nearby `spec.js` aggregators
+- source specs are grouped by app and feature `testGroups` globs
 - Polylith assembles the browser test bundle
 - Karma runs the built browser test bundle
 
@@ -270,7 +277,8 @@ The intended UI/browser lane for this repo should look like this:
 
 - use Jasmine for browser specs
 - use Karma to run the built browser bundle in `ChromeHeadless`
-- use a Polylith test build step to emit browser test artifacts into `tests/`
+- use a Polylith test build step to emit browser test artifacts into
+  `tests/<app>/`
 - prefer a two-process dev loop:
   - one process to rebuild browser test output
   - one process to rerun Karma

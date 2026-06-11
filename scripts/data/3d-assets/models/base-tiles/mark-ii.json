@@ -25,12 +25,14 @@
     "ivory": {
       "meshName": "BaseTileBody_Ivory",
       "sourceMaterial": "Bone Texture",
+      "textureMap": "scripts/data/3d-assets/models/base-tiles/mark-ii-textures/bone-texture-preview.png",
       "color": "#f2ece2",
       "role": "carving-target"
     },
     "bamboo": {
       "meshName": "baseTileBody_wood",
       "sourceMaterial": "Wood 124",
+      "textureMap": "scripts/data/3d-assets/models/base-tiles/mark-ii-textures/bamboo-wood-preview.png",
       "color": "#b58143",
       "role": "preserved-insert"
     }
@@ -62,6 +64,6 @@
   "notes": [
     "Carving subtracts only from the ivory/front mesh.",
     "The bamboo/back insert is carried through unchanged into stamped and final generated models.",
-    "Embedded source textures establish final look, but the pipeline copy uses solid material colors for generation."
+    "Material preview texture maps are applied during generated-asset export and embedded into stamped/final GLBs."
   ]
 }

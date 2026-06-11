@@ -3,6 +3,7 @@ import path from 'path';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { installNodeGltfExportShim } from './node-gltf-export-shim.js';
 
 class NodeFileReader {
 	constructor() {
@@ -31,6 +32,8 @@ if (typeof globalThis.FileReader === 'undefined') {
 	globalThis.FileReader = NodeFileReader;
 }
 
+installNodeGltfExportShim();
+
 const DEFAULT_TOLERANCE = 0.025;
 
 await main();
@@ -51,6 +54,7 @@ async function validateBaseTile(options) {
 	const glbPath = path.resolve(options.glbPath || metadata?.glb || '');
 	const meshName = options.meshName || metadata?.meshName || 'baseTileBody';
 	const body = metadata?.body || {};
+	const supportMeshNames = supportMeshNamesForMetadata(metadata);
 
 	if (!metadata) {
 		return { ok: false, errors, warnings, info };
@@ -77,11 +81,15 @@ async function validateBaseTile(options) {
 
 	scene.updateMatrixWorld(true);
 	targetMesh.updateMatrixWorld(true);
-	const box = new THREE.Box3().setFromObject(targetMesh);
+	const boundsTarget = supportMeshNames.length > 0 ? scene : targetMesh;
+	const box = new THREE.Box3().setFromObject(boundsTarget);
 	const size = box.getSize(new THREE.Vector3());
 	const center = box.getCenter(new THREE.Vector3());
 
 	info.push(`Validated mesh: ${meshName}`);
+	if (boundsTarget === scene) {
+		info.push(`Measured assembly bounds using support meshes: ${supportMeshNames.join(', ')}`);
+	}
 	info.push(`Measured bounds: width X=${format(size.x)}, height Y=${format(size.y)}, depth Z=${format(size.z)}`);
 	info.push(`Measured center: X=${format(center.x)}, Y=${format(center.y)}, Z=${format(center.z)}`);
 
@@ -301,6 +309,13 @@ function validateMetadataShape(metadata, { glbPath, meshName, body, errors, warn
 		const topSurfaceY = (body.height / 2) + body.bevelThickness;
 		info.push(`Metadata topSurfaceY estimate: ${format(topSurfaceY)} = height / 2 + bevelThickness`);
 	}
+}
+
+function supportMeshNamesForMetadata(metadata) {
+	return [...new Set([
+		...(Array.isArray(metadata?.supportMeshNames) ? metadata.supportMeshNames : []),
+		...(Array.isArray(metadata?.carving?.preserveMeshNames) ? metadata.carving.preserveMeshNames : []),
+	].filter(Boolean))];
 }
 
 function validateBounds({ size, center, body, tolerance, errors, warnings }) {

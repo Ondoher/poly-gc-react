@@ -920,13 +920,20 @@ describe("TileMetricsModel", function() {
 				});
 			});
 
-			it("should not read metric sets when no size names are provided", function() {
+			it("should read registered metric sets when no size names are provided", function() {
 				let service = makeService();
+				spyOn(service, "readMetricSetIdsFromCssVars").and.callThrough();
 				spyOn(service, "readMetricSetsFromCssVars").and.callThrough();
 
 				let result = service.normalizeConfig({});
 
-				expect(service.readMetricSetsFromCssVars).not.toHaveBeenCalled();
+				expect(service.readMetricSetIdsFromCssVars).toHaveBeenCalled();
+				expect(service.readMetricSetsFromCssVars).toHaveBeenCalledWith([
+					"normal",
+					"medium",
+					"small",
+					"tiny",
+				]);
 				expect(result.tileMetricSets).toEqual([]);
 			});
 		});

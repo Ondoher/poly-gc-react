@@ -19,7 +19,9 @@ The pipeline joins those two sources:
 - review bindings connect source components to semantic reference parts
 - final rendering turns accepted source/reference facts into flat prepared
   SVG output
-- generated asset stages turn that prepared face into cutter, stamped body,
+- cutter SVG simplification reduces the accepted rendered face into
+  cutter-facing compound geometry
+- generated asset stages turn that simplified face into cutter, stamped body,
   colored inlay, and preview artifacts
 
 ## Core Flow
@@ -43,10 +45,10 @@ file and copies per-face source SVGs. Normalization decomposes SVGs into
 non-semantic geometry. Optional Part Assignment reserves labels and glyphs
 before alignment. Alignment fits source geometry against reference structure.
 Source Assignment accepts or corrects source meaning. Final Rendering chooses
-output policy, layout, and color. Cutter SVG Simplification is the planned
-handoff for cutter-facing geometry cleanup before generated assets consume the
-accepted face. Asset generation builds 3D outputs from the accepted rendered
-face and selected base tile.
+output policy, layout, and color. Cutter SVG Simplification performs an
+SVG-side union pass for cutter-facing geometry cleanup before generated assets
+consume the accepted face. Asset generation builds 3D outputs from the
+simplified rendered face and selected base tile.
 
 The exact stage contract lives in [Stage Contracts](stage-contracts.md).
 The per-stage SVG input/output contract lives in
@@ -96,6 +98,30 @@ scripts/output/asset-pipeline/tilesets.json
 
 The compact fact sheet is [Current Contracts](current-contracts.md). The full
 state shape is [State Contract](state-contract.md).
+
+## Current Status
+
+As of 2026-06-11, the latest Mark III base-tile delivery from the 3D artist is
+integrated as the selectable `mark-iii` generated-asset variant. The promoted
+pipeline GLB is normalized into generated-asset axes while preserving the
+artist material stack, including embedded texture maps that rely on secondary
+UV channels. Generated stamped-body and colored-inlay exports now preserve the
+textured support mesh, carve only the configured ivory/front carving mesh, bake
+authored mesh transforms into cloned geometry before boolean work, and retain
+the UV attributes needed for textured Mark III output.
+Asset Review's opened 3D viewer applies a slight warm ivory tint and modest
+gloss to matching ivory/bone tile-body materials as a preview-only treatment;
+it does not rewrite generated GLBs or change cutter/stamped/inlay artifacts.
+Cutter generation now runs the Paper.js SVG-side `unite-all` simplification
+with flatness `0.10` before cutter export, then invokes `svg-cutter` with the
+simplified SVG and `--skip-union` so complex faces do not stall in the 3D CSG
+union phase. A focused Experiments page exposes a `flower-3`
+cutter-simplification range for comparing flatness settings without mutating
+canonical face state; the current generated comparison set is for the active
+`wiki` tileset.
+Experiment result artifacts open in-app dialogs: PNG/SVG outputs render as
+images, and cutter/inlay GLBs render in the shared orbitable 3D scene rather
+than relying on browser download/navigation.
 
 ## Code Map
 

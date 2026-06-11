@@ -3,6 +3,27 @@
 	"dest": "dist/pipeline",
 	"source": "src/pipeline",
 	"index": "src/pipeline/index.js",
+	"spec": "src/pipeline/test.js",
+	"testDest": "tests/pipeline/",
+	"testGroups": {
+		"default": {
+			"name": "Browser UI Specs",
+			"description": "Browser-based Jasmine specs for shared asset pipeline app code.",
+			"root": "src/pipeline",
+			"specs": [
+				"_tests/*Spec.js",
+				"_tests/*.spec.js",
+				"components/_tests/*Spec.js",
+				"components/_tests/*.spec.js",
+				"main/_tests/*Spec.js",
+				"main/_tests/*.spec.js",
+				"models/_tests/*Spec.js",
+				"models/_tests/*.spec.js",
+				"services/_tests/*Spec.js",
+				"services/_tests/*.spec.js"
+			]
+		}
+	},
 	"router": "server/pipeline/index.js",
 	"template": {
 		"source": "src/pipeline/templates/index.html",
@@ -24,5 +45,5 @@
 			"keepNest": true
 		}
 	],
-	"features": ["features/app", "features/reference-approval", "features/optional-part-assignment", "features/source-assignment", "features/final-rendering-options", "features/asset-base-tile-selection", "features/asset-review"]
+	"features": ["features/app", "features/reference-approval", "features/optional-part-assignment", "features/source-assignment", "features/final-rendering-options", "features/asset-base-tile-selection", "features/asset-review", "features/experiments"]
 }

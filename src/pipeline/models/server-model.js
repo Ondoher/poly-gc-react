@@ -33,6 +33,8 @@ export default class ServerModel extends Service {
 			'cancelAssetGeneration',
 			'resetAssetGeneration',
 			'loadAssetReview',
+			'loadCutterSimplificationExperiment',
+			'generateCutterSimplificationExperiment',
 			'saveMetadata',
 			'saveReferenceStructure',
 		]);
@@ -318,6 +320,21 @@ export default class ServerModel extends Service {
 		return this.requestJson({
 			url: `${API_BASE}/asset-review?tilesetId=${encodeURIComponent(tilesetId)}`,
 			fallbackMessage: 'Unable to load generated asset review.',
+		});
+	}
+
+	async loadCutterSimplificationExperiment(tilesetId = '') {
+		return this.requestJson({
+			url: `${API_BASE}/experiments/cutter-simplification?tilesetId=${encodeURIComponent(tilesetId)}`,
+			fallbackMessage: 'Unable to load cutter simplification experiments.',
+		});
+	}
+
+	async generateCutterSimplificationExperiment(tilesetId = '') {
+		return this.requestJson({
+			url: `${API_BASE}/experiments/cutter-simplification/generate?tilesetId=${encodeURIComponent(tilesetId)}`,
+			method: 'POST',
+			fallbackMessage: 'Unable to generate cutter simplification experiments.',
 		});
 	}
 

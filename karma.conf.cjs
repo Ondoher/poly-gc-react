@@ -6,8 +6,8 @@ module.exports = function(config) {
 		basePath: '',
 		frameworks: ['jasmine'],
 		files: [
-			{pattern: 'tests/**/*.css', included: false},
-			{pattern: 'tests/**/*.js', type: 'module'}
+			{pattern: 'tests/gc/**/*.css', included: false},
+			{pattern: 'tests/gc/**/*.js', type: 'module'}
 		],
 		plugins: [
 			require('karma-jasmine'),

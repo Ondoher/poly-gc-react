@@ -23,6 +23,48 @@
       }
     },
     {
+      "id": "mark-iii",
+      "label": "Mark III",
+      "description": "Updated production two-piece tile with textured ivory front and bamboo locking insert.",
+      "kind": "base-tile-glb",
+      "temporary": false,
+      "previewMaterialSource": "embedded",
+      "glb": "scripts/data/3d-assets/models/base-tiles/mark-iii.glb",
+      "metadata": "scripts/data/3d-assets/models/base-tiles/mark-iii.json",
+      "meshName": "BaseTileBody_Ivory",
+      "carvingMeshName": "BaseTileBody_Ivory",
+      "supportMeshNames": [
+        "baseTileBody_wood"
+      ],
+      "body": {
+        "width": 0.79,
+        "height": 0.5,
+        "depth": 1.08,
+        "bevelThickness": 0
+      }
+    },
+    {
+      "id": "mark-iii-artist-delivery",
+      "label": "Mark III Artist Delivery",
+      "description": "Raw contractor-delivered GLB with embedded material wiring for visual comparison only.",
+      "kind": "artist-delivery-glb",
+      "temporary": true,
+      "previewOnly": true,
+      "glb": "scripts/data/3d-assets/models/base-tiles/mark-iii-artist-delivery.glb",
+      "metadata": "scripts/data/3d-assets/models/base-tiles/mark-iii-artist-delivery.json",
+      "meshName": "BaseTileBody_Ivory",
+      "carvingMeshName": "BaseTileBody_Ivory",
+      "supportMeshNames": [
+        "baseTileBody_wood"
+      ],
+      "body": {
+        "width": 0.79,
+        "height": 1.08,
+        "depth": 0.5,
+        "bevelThickness": 0
+      }
+    },
+    {
       "id": "classic-soft",
       "label": "Classic Soft",
       "description": "Rounded placeholder body with a warm ivory material.",

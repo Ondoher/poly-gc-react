@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
@@ -65,8 +66,15 @@ if (typeof globalThis.DOMParser === 'undefined') {
 
 const exporter = new GLTFExporter();
 const svgLoader = new SVGLoader();
+const CUTTER_ACTIVITY_PING_MS = 5000;
+const CUTTER_UNION_TIMEOUT_MS = 30000;
+let cutterActivity = null;
 
-await main();
+if (isMainThread) {
+	await main();
+} else {
+	runCutterWorker();
+}
 
 async function main() {
 	const options = readOptions();
@@ -179,15 +187,23 @@ async function buildSvgCutterAsset(variant) {
 		}
 
 		const shapes = SVGLoader.createShapes(svgPath);
-		for (const shape of shapes) {
-			const geometry = new THREE.ExtrudeGeometry(shape, {
-				depth: 1,
-				bevelEnabled: false,
-				curveSegments: variant.curveSegments,
-				steps: 1,
-			});
-			geometries.push(geometry.index ? geometry.toNonIndexed() : geometry);
-		}
+		withCutterActivityPing({
+			phase: 'extrude',
+			current: pathIndex + 1,
+			total: svgData.paths.length,
+			message: `Extruding SVG path ${pathIndex + 1} of ${svgData.paths.length}`,
+			activity: 'processing-solid',
+		}, () => {
+			for (const shape of shapes) {
+				const geometry = new THREE.ExtrudeGeometry(shape, {
+					depth: 1,
+					bevelEnabled: false,
+					curveSegments: variant.curveSegments,
+					steps: 1,
+				});
+				geometries.push(geometry.index ? geometry.toNonIndexed() : geometry);
+			}
+		});
 		emitCutterProgress({
 			phase: 'extrude',
 			current: pathIndex + 1,
@@ -227,12 +243,21 @@ async function buildSvgCutterAsset(variant) {
 	const scaleZ = targetRect.depth / Math.max(glyphBounds.depth, 0.000001);
 
 	const normalizedGeometries = geometries.map((geometry, geometryIndex) => {
-		const normalizedGeometry = geometry.clone();
-		normalizedGeometry.rotateX(Math.PI / 2);
-		normalizedGeometry.translate(-glyphBounds.centerX, 0, -glyphBounds.centerZ);
-		normalizedGeometry.scale(scaleX, variant.cutterDepth, scaleZ);
-		normalizedGeometry.translate(targetRect.centerX, 0, targetRect.centerZ);
-		normalizedGeometry.computeVertexNormals();
+		const normalizedGeometry = withCutterActivityPing({
+			phase: 'normalize',
+			current: geometryIndex + 1,
+			total: geometries.length,
+			message: `Normalizing cutter solid ${geometryIndex + 1} of ${geometries.length}`,
+			activity: 'processing-solid',
+		}, () => {
+			const nextGeometry = geometry.clone();
+			nextGeometry.rotateX(Math.PI / 2);
+			nextGeometry.translate(-glyphBounds.centerX, 0, -glyphBounds.centerZ);
+			nextGeometry.scale(scaleX, variant.cutterDepth, scaleZ);
+			nextGeometry.translate(targetRect.centerX, 0, targetRect.centerZ);
+			nextGeometry.computeVertexNormals();
+			return nextGeometry;
+		});
 		emitCutterProgress({
 			phase: 'normalize',
 			current: geometryIndex + 1,
@@ -245,7 +270,7 @@ async function buildSvgCutterAsset(variant) {
 
 	const cutterGeometry = variant.skipUnion
 		? buildMergedCutterGeometry(normalizedGeometries)
-		: buildUnionedCutterGeometry(normalizedGeometries);
+		: await buildUnionedCutterGeometry(normalizedGeometries);
 	normalizedGeometries.forEach((geometry) => geometry.dispose());
 	assignProjectedTopUv(cutterGeometry, variant.targetWidth, variant.targetDepth);
 	cutterGeometry.computeVertexNormals();
@@ -364,7 +389,7 @@ function buildMergedCutterGeometry(geometries) {
 	return mergedGeometry.index ? mergedGeometry.toNonIndexed() : mergedGeometry;
 }
 
-function buildUnionedCutterGeometry(geometries) {
+async function buildUnionedCutterGeometry(geometries) {
 	if (geometries.length === 1) {
 		emitCutterProgress({
 			phase: 'union',
@@ -375,6 +400,33 @@ function buildUnionedCutterGeometry(geometries) {
 		return geometries[0].clone();
 	}
 
+	const progress = {
+		phase: 'union',
+		current: 1,
+		total: geometries.length - 1,
+		message: `Unioning cutter solid 2 of ${geometries.length}`,
+		activity: 'processing-solid',
+	};
+	startCutterActivityPing(progress);
+	try {
+		return await runUnionWorker(geometries, progress);
+	} catch (error) {
+		if (error?.code !== 'CUTTER_UNION_TIMEOUT') {
+			throw error;
+		}
+		emitCutterProgress({
+			phase: 'union',
+			current: geometries.length,
+			total: geometries.length,
+			message: `3D union timed out after ${Math.round(CUTTER_UNION_TIMEOUT_MS / 1000)}s; merging ${geometries.length} cutter solids`,
+		});
+		return buildMergedCutterGeometry(geometries);
+	} finally {
+		stopCutterActivityPing();
+	}
+}
+
+function runUnionedCutterGeometryInWorker(geometries) {
 	const evaluator = new Evaluator();
 	evaluator.useGroups = false;
 	evaluator.consolidateGroups = true;
@@ -392,8 +444,8 @@ function buildUnionedCutterGeometry(geometries) {
 		disposeMesh(unionBrush);
 		disposeMesh(nextBrush);
 		unionBrush = resultBrush;
-		emitCutterProgress({
-			phase: 'union',
+		parentPort?.postMessage({
+			type: 'progress',
 			current: index,
 			total: geometries.length - 1,
 			message: `Unioned cutter solid ${index + 1} of ${geometries.length}`,
@@ -406,6 +458,153 @@ function buildUnionedCutterGeometry(geometries) {
 	disposeMesh(unionBrush);
 
 	return unionGeometry.index ? unionGeometry.toNonIndexed() : unionGeometry;
+}
+
+function runUnionWorker(geometries, progress) {
+	return new Promise((resolve, reject) => {
+		let settled = false;
+		let timeoutId = null;
+		const worker = new Worker(new URL(import.meta.url), {
+			workerData: {
+				job: 'union-geometries',
+				geometries: geometries.map((geometry) => serializeGeometry(geometry)),
+			},
+		});
+		const settle = (callback) => {
+			if (settled) {
+				return;
+			}
+			settled = true;
+			clearTimeout(timeoutId);
+			callback();
+		};
+		timeoutId = setTimeout(() => {
+			settle(() => {
+				const error = new Error(`Cutter union timed out after ${CUTTER_UNION_TIMEOUT_MS}ms.`);
+				error.code = 'CUTTER_UNION_TIMEOUT';
+				worker.terminate().catch(() => {});
+				reject(error);
+			});
+		}, CUTTER_UNION_TIMEOUT_MS);
+		timeoutId.unref?.();
+
+		worker.on('message', (message) => {
+			if (message?.type === 'progress') {
+				progress.current = message.current;
+				progress.total = message.total;
+				progress.message = message.message;
+				emitCutterProgress({
+					phase: 'union',
+					current: message.current,
+					total: message.total,
+					message: message.message,
+					activity: 'processing-solid',
+					active: true,
+				});
+				return;
+			}
+
+			if (message?.type === 'result') {
+				settle(() => resolve(deserializeGeometry(message.geometry)));
+				return;
+			}
+
+			if (message?.type === 'error') {
+				settle(() => reject(new Error(message.message || 'Cutter union worker failed.')));
+			}
+		});
+
+		worker.on('error', (error) => {
+			settle(() => reject(error));
+		});
+
+		worker.on('exit', (code) => {
+			if (settled) {
+				return;
+			}
+			if (code === 0) {
+				settle(() => reject(new Error('Cutter union worker exited without returning geometry.')));
+			} else {
+				settle(() => reject(new Error(`Cutter union worker exited with code ${code}.`)));
+			}
+		});
+	});
+}
+
+function runCutterWorker() {
+	if (workerData?.job !== 'union-geometries') {
+		parentPort?.postMessage({
+			type: 'error',
+			message: `Unknown cutter worker job: ${workerData?.job || '(missing)'}`,
+		});
+		return;
+	}
+
+	const geometries = (workerData.geometries || []).map((geometry) => deserializeGeometry(geometry));
+	try {
+		const unionGeometry = runUnionedCutterGeometryInWorker(geometries);
+		parentPort?.postMessage({
+			type: 'result',
+			geometry: serializeGeometry(unionGeometry),
+		});
+		unionGeometry.dispose();
+	} catch (error) {
+		parentPort?.postMessage({
+			type: 'error',
+			message: error?.stack || error?.message || String(error),
+		});
+	} finally {
+		geometries.forEach((geometry) => geometry.dispose());
+	}
+}
+
+function serializeGeometry(geometry) {
+	const attributes = {};
+	for (const [name, attribute] of Object.entries(geometry.attributes || {})) {
+		if (!attribute?.array) {
+			continue;
+		}
+
+		attributes[name] = {
+			array: attribute.array,
+			itemSize: attribute.itemSize,
+			normalized: Boolean(attribute.normalized),
+		};
+	}
+
+	return {
+		index: geometry.index ? {
+			array: geometry.index.array,
+			itemSize: geometry.index.itemSize,
+			normalized: Boolean(geometry.index.normalized),
+		} : null,
+		attributes,
+	};
+}
+
+function deserializeGeometry(data) {
+	const geometry = new THREE.BufferGeometry();
+	if (data?.index?.array) {
+		geometry.setIndex(new THREE.BufferAttribute(
+			data.index.array,
+			data.index.itemSize || 1,
+			Boolean(data.index.normalized),
+		));
+	}
+
+	for (const [name, attribute] of Object.entries(data?.attributes || {})) {
+		if (!attribute?.array) {
+			continue;
+		}
+
+		geometry.setAttribute(name, new THREE.BufferAttribute(
+			attribute.array,
+			attribute.itemSize,
+			Boolean(attribute.normalized),
+		));
+	}
+
+	return geometry;
 }
 
 function sanitizeSvgForCutter(svgSource) {
@@ -597,15 +796,56 @@ function writeJsonMetadata(outputPath, metadata) {
 	console.log(`Wrote ${relativePath(outputPath)}`);
 }
 
-function emitCutterProgress({ phase, current, total, message }) {
+function withCutterActivityPing(progress, callback) {
+	startCutterActivityPing(progress);
+	try {
+		return callback();
+	} finally {
+		stopCutterActivityPing();
+	}
+}
+
+function startCutterActivityPing(progress) {
+	stopCutterActivityPing();
+	emitCutterProgress({
+		...progress,
+		active: true,
+		ping: true,
+	});
+	cutterActivity = setInterval(() => {
+		emitCutterProgress({
+			...progress,
+			active: true,
+			ping: true,
+		});
+	}, CUTTER_ACTIVITY_PING_MS);
+	cutterActivity.unref?.();
+}
+
+function stopCutterActivityPing() {
+	if (!cutterActivity) {
+		return;
+	}
+
+	clearInterval(cutterActivity);
+	cutterActivity = null;
+}
+
+function emitCutterProgress({ phase, current, total, message, activity = '', active = false, ping = false }) {
+	const safeCurrent = Math.max(0, Number(current) || 0);
+	const safeTotal = Math.max(0, Number(total) || 0);
 	console.log(JSON.stringify({
 		event: 'assetStageProgress',
 		stage: 'svg-cutter',
 		phase,
-		current,
-		total,
-		percent: total > 0 ? Math.round((current / total) * 100) : 0,
+		current: safeCurrent,
+		total: safeTotal,
+		percent: safeTotal > 0 ? Math.round((Math.min(safeCurrent, safeTotal) / safeTotal) * 100) : 0,
 		message,
+		activity,
+		active,
+		ping,
+		timestamp: new Date().toISOString(),
 	}));
 }
 

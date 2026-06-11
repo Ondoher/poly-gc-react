@@ -5,6 +5,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { Button, Pill } from "../../../components/index.js";
 
 const MAX_ACTIVE_GLB_PREVIEWS = 4;
+const IVORY_REVIEW_TINT = new THREE.Color(0xfff8ef);
+const IVORY_REVIEW_ROUGHNESS = 0.26;
 const activeGlbPreviews = new Set();
 const waitingGlbPreviews = [];
 
@@ -246,6 +248,7 @@ class AssetReviewFaceCard extends React.Component {
 
 		const percent = Math.max(0, Math.min(100, Number(progress.percent) || 0));
 		const label = progressLabel(progress);
+		const heartbeatKey = progress.timestamp || `${progress.phase}-${progress.current}-${progress.total}-${progress.message}`;
 		return (
 			<div className="asset-review-stage-progress" aria-label={`${label}, ${percent}%`}>
 				<div className="asset-review-stage-progress-label">
@@ -255,6 +258,11 @@ class AssetReviewFaceCard extends React.Component {
 				<div className="asset-review-stage-progress-track">
 					<div className="asset-review-stage-progress-fill" style={{ width: `${percent}%` }} />
 				</div>
+				{progress.active ? (
+					<div className="asset-review-stage-activity-track" aria-hidden="true">
+						<div key={heartbeatKey} className="asset-review-stage-activity-fill" />
+					</div>
+				) : null}
 			</div>
 		);
 	}
@@ -298,7 +306,7 @@ function AssetReviewStatusIcon({ faceKey, state, onRetryFace, retryDisabled = fa
 	);
 }
 
-class AssetGlbPreview extends React.Component {
+export class AssetGlbPreview extends React.Component {
 	constructor(props) {
 		super(props);
 		this.containerRef = React.createRef();
@@ -481,6 +489,7 @@ class AssetGlbPreview extends React.Component {
 				}
 
 				this.sceneState.model = gltf.scene;
+				applyIvoryReviewMaterial(gltf.scene);
 				scene.add(gltf.scene);
 				fitCameraToObject(camera, controls, gltf.scene);
 				this.setState({ loading: false, loadFailed: false });
@@ -590,6 +599,63 @@ function fitCameraToObject(camera, controls, object) {
 	camera.far = distance * 10;
 	camera.updateProjectionMatrix();
 	controls.update();
+}
+
+function applyIvoryReviewMaterial(object) {
+	object.traverse((child) => {
+		if (!child.isMesh || !shouldTintIvoryPreviewMesh(child)) {
+			return;
+		}
+
+		child.material = cloneMaterialForPreviewTint(child.material);
+		const materials = Array.isArray(child.material) ? child.material : [child.material];
+		for (const material of materials) {
+			if (!material?.color || material.userData?.assetReviewIvoryTint) {
+				continue;
+			}
+
+			material.color.multiply(IVORY_REVIEW_TINT);
+			if ("roughness" in material) {
+				material.roughness = Math.min(material.roughness ?? 1, IVORY_REVIEW_ROUGHNESS);
+			}
+			if ("metalness" in material) {
+				material.metalness = 0;
+			}
+			material.userData = {
+				...(material.userData || {}),
+				assetReviewIvoryTint: true,
+			};
+			material.needsUpdate = true;
+		}
+	});
+}
+
+function shouldTintIvoryPreviewMesh(mesh) {
+	const meshName = String(mesh.name || "").toLowerCase();
+	const materialNames = materialList(mesh.material)
+		.map((material) => String(material?.name || "").toLowerCase())
+		.join(" ");
+	const evidence = `${meshName} ${materialNames}`;
+
+	if (/inlay|bamboo|wood|support|insert/.test(evidence)) {
+		return false;
+	}
+
+	return /ivory|bone|basetilebody_ivory|base tile body ivory/.test(evidence);
+}
+
+function cloneMaterialForPreviewTint(material) {
+	if (Array.isArray(material)) {
+		return material.map((entry) => entry?.clone?.() || entry);
+	}
+	return material?.clone?.() || material;
+}
+
+function materialList(material) {
+	if (!material) {
+		return [];
+	}
+	return Array.isArray(material) ? material : [material];
 }
 
 function disposeObject(object) {

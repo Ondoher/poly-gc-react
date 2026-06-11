@@ -4,16 +4,21 @@ await main();
 
 async function main() {
 	const options = readOptions();
-	const result = await renderGeneratedAssetPreview(options);
-	await closeGeneratedAssetPreviewRenderer();
-	console.log(`Wrote ${result.outputPng}`);
+	try {
+		const result = await renderGeneratedAssetPreview(options);
+		console.log(`Wrote ${result.outputPng}`);
+	} finally {
+		await closeGeneratedAssetPreviewRenderer();
+	}
 }
 
 function readOptions() {
 	const tilesetId = readArgument('--tileset-id') || process.env.PIPELINE_TILESET_ID;
 	const faceKey = readArgument('--face-key') || readPositionalArguments()[0];
 	const referenceName = readArgument('--reference-name') || 'default-large-faces';
+	const inputGlb = readArgument('--input-glb') || '';
 	const outputPng = readArgument('--output-png') || '';
+	const noPipelineState = process.argv.includes('--no-pipeline-state');
 
 	if (!tilesetId) {
 		throw new Error('Missing --tileset-id.');
@@ -27,7 +32,9 @@ function readOptions() {
 		tilesetId,
 		faceKey,
 		referenceName,
+		inputGlb,
 		outputPng,
+		noPipelineState,
 	};
 }
 
@@ -42,6 +49,7 @@ function readPositionalArguments() {
 		'--tileset-id',
 		'--face-key',
 		'--reference-name',
+		'--input-glb',
 		'--output-png',
 	]);
 

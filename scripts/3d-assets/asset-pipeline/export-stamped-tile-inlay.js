@@ -8,6 +8,7 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 import { parse as parseSvgAst } from 'svg-parser';
 import { ROOT_DIR } from '../shared/asset-paths.js';
 import { PipelineModel } from '../svg-preprocessor/PipelineModel.js';
+import { installNodeGltfExportShim } from './node-gltf-export-shim.js';
 
 class NodeFileReader {
 	constructor() {
@@ -39,6 +40,8 @@ class NodeFileReader {
 if (typeof globalThis.FileReader === 'undefined') {
 	globalThis.FileReader = NodeFileReader;
 }
+
+installNodeGltfExportShim();
 
 if (typeof globalThis.DOMParser === 'undefined') {
 	globalThis.DOMParser = class {
@@ -93,30 +96,32 @@ async function main() {
 	writeJsonMetadata(variant.outputMetadata, inlayAsset.metadata);
 	disposeGroup(inlayAsset.group);
 
-	model.updateAssetGenerationFace(options.faceKey, {
-		status: null,
-		inputHash: faceHash,
-		stageHashes: {
-			'colored-inlay': stageHash,
-		},
-		artifacts: {
-			inlayModel: relativePath(variant.outputGlb),
-			inlayMetadata: relativePath(variant.outputMetadata),
-		},
-		queue: null,
-		build: null,
-		failure: null,
-	});
-	await model.save();
+	if (!options.noPipelineState) {
+		model.updateAssetGenerationFace(options.faceKey, {
+			status: null,
+			inputHash: faceHash,
+			stageHashes: {
+				'colored-inlay': stageHash,
+			},
+			artifacts: {
+				inlayModel: relativePath(variant.outputGlb),
+				inlayMetadata: relativePath(variant.outputMetadata),
+			},
+			queue: null,
+			build: null,
+			failure: null,
+		});
+		await model.save();
+	}
 }
 
 function buildInlayVariant({ model, options }) {
 	const assetPipeline = model.getAssetPipeline();
 	const faceState = assetPipeline.faces?.[options.faceKey];
-	const renderedSvg = resolveRepoPath(model.getFinalRenderingColorSvgPath(options.faceKey) || '');
-	const stampedModel = resolveRepoPath(faceState?.artifacts?.stampedModel || '');
-	const stampedMetadata = resolveRepoPath(faceState?.artifacts?.stampedMetadata || '');
-	const cutterMetadata = resolveRepoPath(faceState?.artifacts?.cutterMetadata || '');
+	const renderedSvg = resolveRepoPath(options.renderedSvg || model.getFinalRenderingColorSvgPath(options.faceKey) || '');
+	const stampedModel = resolveRepoPath(options.stampedModel || faceState?.artifacts?.stampedModel || '');
+	const stampedMetadata = resolveRepoPath(options.stampedMetadata || faceState?.artifacts?.stampedMetadata || '');
+	const cutterMetadata = resolveRepoPath(options.cutterMetadata || faceState?.artifacts?.cutterMetadata || '');
 	const modelFaceKey = `${options.tilesetId}-${options.faceKey}`;
 	const outputGlb = resolveRepoPath(options.outputGlb || path.join(model.pipelineDir, 'models', 'colored-inlay', `${options.faceKey}.glb`));
 	const outputMetadata = resolveRepoPath(options.outputMetadata || path.join(model.pipelineDir, 'json', 'colored-inlay', `${options.faceKey}.json`));
@@ -160,9 +165,13 @@ async function buildInlayAsset(variant) {
 
 	stampedScene.updateMatrixWorld(true);
 	const tileClone = cloneMeshForExport(tileMesh, stampedMetadata.meshName || 'stampedTileBody');
+	const supportMeshes = cloneStampedSupportMeshesForExport(stampedScene, tileMesh);
 	const outputGroup = new THREE.Group();
 	outputGroup.name = variant.name;
 	outputGroup.add(tileClone);
+	for (const supportMesh of supportMeshes) {
+		outputGroup.add(supportMesh);
+	}
 
 	const svgSource = fs.readFileSync(variant.renderedSvg, 'utf8');
 	const inlayBuild = buildSvgInlayMeshes({
@@ -192,6 +201,7 @@ async function buildInlayAsset(variant) {
 			sourceCutterMetadata: relativePath(variant.cutterMetadata),
 			sourceSvg: relativePath(variant.renderedSvg),
 			tileMeshName: stampedMetadata.meshName,
+			supportMeshNames: supportMeshes.map((mesh) => mesh.name),
 			inlayMeshNamePrefix: INLAY.meshNamePrefix,
 			inlayThickness: INLAY.thickness,
 			inlayFloorLift: INLAY.floorLift,
@@ -476,6 +486,18 @@ function cloneMeshForExport(mesh, name) {
 	return clone;
 }
 
+function cloneStampedSupportMeshesForExport(root, tileMesh) {
+	const meshes = [];
+	root.traverse((object) => {
+		if (!object.isMesh || object === tileMesh) {
+			return;
+		}
+
+		meshes.push(cloneMeshForExport(object, object.name));
+	});
+	return meshes;
+}
+
 function cloneMaterial(material) {
 	if (Array.isArray(material)) {
 		return material.map((entry) => entry.clone());
@@ -508,6 +530,11 @@ function readOptions() {
 	const referenceName = readArgument('--reference-name') || 'default-large-faces';
 	const outputGlb = readArgument('--output-glb') || '';
 	const outputMetadata = readArgument('--output-metadata') || '';
+	const renderedSvg = readArgument('--rendered-svg') || '';
+	const stampedModel = readArgument('--stamped-model') || '';
+	const stampedMetadata = readArgument('--stamped-metadata') || '';
+	const cutterMetadata = readArgument('--cutter-metadata') || '';
+	const noPipelineState = process.argv.includes('--no-pipeline-state');
 
 	if (!tilesetId) {
 		throw new Error('Missing --tileset-id.');
@@ -523,6 +550,11 @@ function readOptions() {
 		referenceName,
 		outputGlb,
 		outputMetadata,
+		renderedSvg,
+		stampedModel,
+		stampedMetadata,
+		cutterMetadata,
+		noPipelineState,
 	};
 }
 
@@ -539,6 +571,10 @@ function readPositionalArguments() {
 		'--reference-name',
 		'--output-glb',
 		'--output-metadata',
+		'--rendered-svg',
+		'--stamped-model',
+		'--stamped-metadata',
+		'--cutter-metadata',
 	]);
 
 	for (let index = 2; index < process.argv.length; index += 1) {

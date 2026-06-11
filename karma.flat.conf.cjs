@@ -6,7 +6,8 @@ module.exports = function(config) {
 			config.set({
 				...options,
 				files: [
-					{ pattern: 'tests/flat.js', type: 'module' },
+					{ pattern: 'tests/flat/**/*.css', included: false },
+					{ pattern: 'tests/flat/**/*.js', type: 'module' },
 				],
 			});
 		},

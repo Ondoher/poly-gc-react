@@ -4,7 +4,18 @@
 	"source": "src/flat",
 	"index": "src/flat/index.js",
 	"spec": "src/flat/test.js",
-	"testDest": "tests/",
+	"testDest": "tests/flat/",
+	"testGroups": {
+		"default": {
+			"name": "Browser UI Specs",
+			"description": "Browser-based Jasmine specs for shared Flat Earth app code.",
+			"root": "src/flat",
+			"specs": [
+				"shared/_tests/*Spec.js",
+				"shared/_tests/*.spec.js"
+			]
+		}
+	},
 	"router": "server/flat/index.js",
 	"template": {
 		"source": "src/flat/templates/index.html",

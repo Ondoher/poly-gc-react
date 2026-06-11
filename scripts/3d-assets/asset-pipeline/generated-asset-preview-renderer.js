@@ -22,37 +22,41 @@ let browserPromise = null;
  * @param {string} options.tilesetId - Source tileset id.
  * @param {string} options.faceKey - Face key to render.
  * @param {string} [options.referenceName="default-large-faces"] - Reference set id.
+ * @param {string} [options.inputGlb] - Optional input GLB override.
  * @param {string} [options.outputPng] - Optional output PNG override.
+ * @param {boolean} [options.noPipelineState=false] - Skip canonical state updates.
  * @returns {Promise<{outputPng: string}>} Rendered preview path.
  */
-export async function renderGeneratedAssetPreview({ tilesetId, faceKey, referenceName = 'default-large-faces', outputPng = '' }) {
+export async function renderGeneratedAssetPreview({ tilesetId, faceKey, referenceName = 'default-large-faces', inputGlb = '', outputPng = '', noPipelineState = false }) {
 	const model = new PipelineModel({
 		referenceName,
 		tileSetName: tilesetId,
 	});
 	await model.start();
 
-	const variant = buildPreviewVariant({ model, tilesetId, faceKey, outputPng });
+	const variant = buildPreviewVariant({ model, tilesetId, faceKey, inputGlb, outputPng });
 	const faceHash = model.hashAssetPipelineFaceInput(faceKey);
 	const stageHash = model.hashAssetGenerationStageInput(faceKey, 'preview-png');
 	fs.mkdirSync(path.dirname(variant.outputPng), { recursive: true });
 
 	await renderGlbPreviewPng(variant);
 
-	model.updateAssetGenerationFace(faceKey, {
-		status: null,
-		inputHash: faceHash,
-		stageHashes: {
-			'preview-png': stageHash,
-		},
-		artifacts: {
-			previewPng: relativePath(variant.outputPng),
-		},
-		queue: null,
-		build: null,
-		failure: null,
-	});
-	await model.save();
+	if (!noPipelineState) {
+		model.updateAssetGenerationFace(faceKey, {
+			status: null,
+			inputHash: faceHash,
+			stageHashes: {
+				'preview-png': stageHash,
+			},
+			artifacts: {
+				previewPng: relativePath(variant.outputPng),
+			},
+			queue: null,
+			build: null,
+			failure: null,
+		});
+		await model.save();
+	}
 
 	return {
 		outputPng: relativePath(variant.outputPng),
@@ -71,13 +75,13 @@ export async function closeGeneratedAssetPreviewRenderer() {
 
 	const browser = await browserPromise;
 	browserPromise = null;
-	await browser.close();
+	await closeBrowser(browser);
 }
 
-function buildPreviewVariant({ model, tilesetId, faceKey, outputPng }) {
+function buildPreviewVariant({ model, tilesetId, faceKey, inputGlb, outputPng }) {
 	const assetPipeline = model.getAssetPipeline();
 	const faceState = assetPipeline.faces?.[faceKey];
-	const finalGlb = resolveRepoPath(faceState?.artifacts?.inlayModel || '');
+	const finalGlb = resolveRepoPath(inputGlb || faceState?.artifacts?.inlayModel || '');
 	const resolvedOutputPng = outputPng
 		? resolveRepoPath(outputPng)
 		: path.join(model.pipelineDir, 'images', 'generated-asset-preview-png', `${faceKey}.png`);
@@ -109,9 +113,12 @@ async function renderGlbPreviewPng(variant) {
 				console.warn(message.text());
 			}
 		});
-		fs.writeFileSync(tempHtml, previewHtml(readBase64(variant.finalGlb)));
-		await page.goto(pathToFileURL(tempHtml).href, { waitUntil: 'load' });
-		await page.waitForFunction(() => window.previewReady || window.previewError, { timeout: 30000 });
+		fs.writeFileSync(tempHtml, previewHtml(pathToFileURL(variant.finalGlb).href));
+		await page.goto(pathToFileURL(tempHtml).href, {
+			waitUntil: 'domcontentloaded',
+			timeout: 30000,
+		});
+		await page.waitForFunction(() => window.previewReady || window.previewError, { timeout: 60000 });
 		const error = await page.evaluate(() => window.previewError || '');
 		if (error) {
 			throw new Error(error);
@@ -121,7 +128,7 @@ async function renderGlbPreviewPng(variant) {
 		const png = dataUrl.replace(/^data:image\/png;base64,/, '');
 		fs.writeFileSync(variant.outputPng, Buffer.from(png, 'base64'));
 	} finally {
-		await page.close().catch(() => {});
+		closePage(page);
 		fs.rmSync(tempDir, { recursive: true, force: true });
 	}
 }
@@ -133,7 +140,7 @@ async function getBrowser() {
 
 	try {
 		const browser = await browserPromise;
-		if (browser.connected) {
+		if (isBrowserConnected(browser)) {
 			return browser;
 		}
 	} catch {
@@ -161,7 +168,50 @@ async function launchBrowser() {
 	});
 }
 
-function previewHtml(glbBase64) {
+function isBrowserConnected(browser) {
+	if (!browser) {
+		return false;
+	}
+	if (typeof browser.isConnected === 'function') {
+		return browser.isConnected();
+	}
+	if (typeof browser.connected === 'boolean') {
+		return browser.connected;
+	}
+	return true;
+}
+
+function closePage(page) {
+	page.close().catch(() => {});
+}
+
+async function closeBrowser(browser) {
+	const browserProcess = browser.process?.();
+	const closed = await withTimeout(browser.close(), 5000)
+		.then(() => true)
+		.catch(() => false);
+
+	if (!closed) {
+		browser.disconnect?.();
+		browserProcess?.kill?.();
+	}
+}
+
+async function withTimeout(promise, timeoutMs) {
+	let timeoutId = null;
+	try {
+		return await Promise.race([
+			promise,
+			new Promise((resolve, reject) => {
+				timeoutId = setTimeout(() => reject(new Error(`Timed out after ${timeoutMs}ms.`)), timeoutMs);
+			}),
+		]);
+	} finally {
+		clearTimeout(timeoutId);
+	}
+}
+
+function previewHtml(glbUrl) {
 	const threeUrl = pathToFileURL(path.join(ROOT_DIR, 'node_modules', 'three', 'build', 'three.module.js')).href;
 	const addonsUrl = `${pathToFileURL(path.join(ROOT_DIR, 'node_modules', 'three', 'examples', 'jsm')).href}/`;
 
@@ -227,14 +277,14 @@ function previewHtml(glbBase64) {
 	scene.add(ambient, key, fill);
 
 	try {
-		const bytes = Uint8Array.from(atob('${glbBase64}'), (char) => char.charCodeAt(0));
-		const gltf = await new GLTFLoader().parseAsync(bytes.buffer, '');
+		const gltf = await new GLTFLoader().loadAsync(${JSON.stringify(glbUrl)});
 		scene.add(gltf.scene);
 		fitCameraToObject(camera, gltf.scene);
 		renderer.render(scene, camera);
 		window.previewDataUrl = renderer.domElement.toDataURL('image/png');
 		window.previewReady = true;
 	} catch (error) {
+		console.error(error.message || String(error));
 		window.previewError = error.message || String(error);
 	}
 
@@ -255,10 +305,6 @@ function previewHtml(glbBase64) {
 </script>
 </body>
 </html>`;
-}
-
-function readBase64(filename) {
-	return fs.readFileSync(filename).toString('base64');
 }
 
 function resolveRepoPath(filename) {

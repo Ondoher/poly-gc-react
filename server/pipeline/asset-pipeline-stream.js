@@ -259,6 +259,10 @@ function cleanStageProgress(progress) {
 				? Math.round((current / total) * 100)
 				: 0,
 		message: String(progress.message || ""),
+		activity: String(progress.activity || ""),
+		active: Boolean(progress.active),
+		ping: Boolean(progress.ping),
+		timestamp: String(progress.timestamp || ""),
 	};
 }
 

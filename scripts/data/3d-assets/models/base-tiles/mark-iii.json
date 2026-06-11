@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "id": "mark-iii",
+  "label": "Mark III",
+  "description": "Updated production two-piece tile with textured ivory front and bamboo locking insert.",
+  "kind": "base-tile-glb",
+  "temporary": false,
+  "previewMaterialSource": "embedded",
+  "meshName": "BaseTileBody_Ivory",
+  "carvingMeshName": "BaseTileBody_Ivory",
+  "supportMeshNames": [
+    "baseTileBody_wood"
+  ],
+  "glb": "scripts/data/3d-assets/models/base-tiles/mark-iii.glb",
+  "metadata": "scripts/data/3d-assets/models/base-tiles/mark-iii.json",
+  "body": {
+    "width": 0.79,
+    "height": 0.5,
+    "depth": 1.08,
+    "bevelThickness": 0,
+    "safeCarveDepthMin": 0.025,
+    "safeCarveDepthMax": 0.035,
+    "defaultCarveDepth": 0.025
+  },
+  "material": {
+    "ivory": {
+      "meshName": "BaseTileBody_Ivory",
+      "sourceMaterial": "Bone Texture",
+      "textureMap": "scripts/data/3d-assets/models/base-tiles/mark-iii-textures/ivory-front-diffuse.png",
+      "color": "#f2ece2",
+      "role": "carving-target"
+    },
+    "bamboo": {
+      "meshName": "baseTileBody_wood",
+      "sourceMaterial": "Bamboo wood",
+      "textureMap": "scripts/data/3d-assets/models/base-tiles/mark-iii-textures/bamboo-wood-diffuse.png",
+      "color": "#b58143",
+      "role": "preserved-insert"
+    }
+  },
+  "source": {
+    "archive": "Designs/3d-assets/mark_iii.zip",
+    "textureArchive": "Designs/3d-assets/Textures.zip",
+    "sourceGlb": "Base Tile/BaseTileBody NEW.glb",
+    "notes": [
+      "Artist delivery uses Blender-style dimensions X=0.79, Y=1.08, Z=0.50.",
+      "Pipeline GLB is normalized to generated-asset coordinates: X width, Y carving thickness, Z face depth.",
+      "Standalone texture maps were promoted as 1024px PNG base-color maps for pipeline use."
+    ]
+  },
+  "carving": {
+    "targetMeshName": "BaseTileBody_Ivory",
+    "preserveMeshNames": [
+      "baseTileBody_wood"
+    ],
+    "direction": "-Y",
+    "cutterLift": -0.002,
+    "frontFacePlane": "+Y",
+    "safeDepthRange": [
+      0.025,
+      0.035
+    ],
+    "clipToIvoryFace": true,
+    "preserveVisibleLockingSeam": true
+  },
+  "notes": [
+    "Carving subtracts only from the ivory/front mesh.",
+    "The bamboo/back insert is carried through unchanged into stamped and final generated models.",
+    "Material diffuse texture maps are applied during generated-asset export and embedded into stamped/final GLBs."
+  ]
+}

@@ -1,0 +1,8 @@
+{
+	"testGroups": {
+		"default": [
+			"**/_tests/*Spec.js",
+			"**/_tests/*.spec.js"
+		]
+	}
+}

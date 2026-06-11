@@ -5,9 +5,9 @@
   "main": "index.js",
   "dependencies": {
     "@fireworks-js/react": "^2.5.1",
-    "@polylith/browser": "^0.1.0",
-    "@polylith/config-store": "^0.1.0",
-    "@polylith/core": "^0.1.10",
+    "@polylith/browser": "1.1.0",
+    "@polylith/config-store": "1.1.0",
+    "@polylith/core": "1.1.0",
     "@react-three/fiber": "^8.17.14",
     "cities.json": "^1.1.50",
     "katex": "^0.16.47",
@@ -25,8 +25,8 @@
     "three-bvh-csg": "^0.0.18"
   },
   "devDependencies": {
-    "@polylith/builder": "^1.0.5",
-    "@polylith/server": "^1.0.6",
+    "@polylith/builder": "1.1.0",
+    "@polylith/server": "1.1.0",
     "@types/jasmine": "^6.0.0",
     "jasmine": "^4.5.0",
     "jasmine-core": "^4.5.0",
@@ -35,7 +35,7 @@
     "karma-jasmine": "^5.1.0",
     "karma-jasmine-html-reporter": "^2.0.0",
     "karma-spec-reporter": "^0.0.36",
-    "polylith": "^1.0.7",
+    "polylith": "1.1.0",
     "puppeteer": "^19.4.1"
   },
   "nodemonConfig": {
@@ -54,6 +54,7 @@
     "test": "npm run test:ui:gc",
     "test:ui:gc": "polylith test gc && karma start --browsers ChromeHeadless karma.conf.cjs",
     "test:ui:flat": "polylith test flat && karma start --browsers ChromeHeadless karma.flat.conf.cjs",
+    "test:ui:pipeline": "polylith test pipeline && karma start --browsers ChromeHeadless karma.pipeline.conf.cjs",
     "dev": "start polylith watch --all -v false&start npm run dev:serve",
     "karma": "karma start --browsers ChromeHeadless karma.conf.cjs",
     "karma:gc": "karma start --browsers ChromeHeadless karma.conf.cjs",

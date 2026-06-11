@@ -102,6 +102,13 @@
 	border-radius: 6px;
 }
 
+.asset-base-tile-preview-large {
+	aspect-ratio: auto;
+	height: min(72vh, 680px);
+	min-height: 420px;
+	border-radius: 8px;
+}
+
 .asset-base-tile-preview canvas {
 	display: block;
 	width: 100%;
@@ -144,7 +151,9 @@
 
 .asset-base-tile-links {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 12px;
+	align-items: center;
 	font-size: 13px;
 }
 
@@ -158,6 +167,44 @@
 	text-decoration: underline;
 }
 
+.asset-base-tile-links .pipeline-button {
+	min-height: 28px;
+	padding: 4px 10px;
+	font-size: 12px;
+}
+
+.asset-base-tile-preview-dialog-overlay {
+	padding: 24px;
+}
+
+.asset-base-tile-preview-dialog {
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr);
+	gap: 12px;
+	width: min(1080px, calc(100vw - 48px));
+	max-width: none;
+	height: min(860px, calc(100vh - 48px));
+}
+
+.asset-base-tile-preview-dialog header {
+	display: flex;
+	justify-content: space-between;
+	gap: 16px;
+	align-items: start;
+}
+
+.asset-base-tile-preview-dialog h2 {
+	margin: 0;
+	font-size: 18px;
+	line-height: 1.25;
+}
+
+.asset-base-tile-preview-dialog p {
+	margin: 2px 0 0;
+	color: #64736d;
+	font-size: 12px;
+}
+
 @media (max-width: 720px) {
 	.asset-base-tile-selection-header {
 		grid-template-columns: 1fr;
@@ -165,5 +212,19 @@
 
 	.asset-base-tile-selection-actions {
 		justify-content: flex-start;
+	}
+
+	.asset-base-tile-preview-dialog-overlay {
+		padding: 12px;
+	}
+
+	.asset-base-tile-preview-dialog {
+		width: calc(100vw - 24px);
+		height: calc(100vh - 24px);
+	}
+
+	.asset-base-tile-preview-large {
+		min-height: 320px;
+		height: 100%;
 	}
 }

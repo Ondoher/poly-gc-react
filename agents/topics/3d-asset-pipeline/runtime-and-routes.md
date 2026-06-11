@@ -22,19 +22,23 @@ Important source-side CLIs:
 
 Important generated asset CLIs:
 
+- `experiment-paper-flatten-svg.js`
 - `export-svg-cutter.js`
 - `export-stamped-tile-pair.js`
 - `export-stamped-tile-inlay.js`
+- `export-generated-asset-preview.js`
 - `generated-asset-preview-renderer.js`
 
 Stage CLIs require explicit tileset arguments. Focused source-side and asset
 generation runners accept explicit face keys for targeted reruns.
 Generated asset CLIs also support focused experiment output overrides for
-single-face investigations: `export-svg-cutter.js` can read an explicit
+single-face investigations: `experiment-paper-flatten-svg.js` can write an
+explicit simplified SVG, `export-svg-cutter.js` can read an explicit
 `--svg-path`, write explicit cutter outputs, and optionally use `--skip-union`;
 `export-stamped-tile-pair.js`, `export-stamped-tile-inlay.js`, and
-`export-generated-asset-preview.js` can write explicit output artifacts while
-updating the active face state through `PipelineModel`.
+`export-generated-asset-preview.js` can read/write explicit artifacts. The
+experiment path passes `--no-pipeline-state` so those focused outputs do not
+mutate canonical generated face state.
 
 ## Server Routes
 
@@ -66,6 +70,8 @@ The pipeline server exposes:
 - `POST /api/pipeline/asset-generation/cancel`
 - `POST /api/pipeline/asset-generation/reset`
 - `GET /api/pipeline/asset-review`
+- `GET /api/pipeline/experiments/cutter-simplification`
+- `POST /api/pipeline/experiments/cutter-simplification/generate`
 - `GET /api/pipeline/reference/:fileName`
 - `GET /api/pipeline/asset`
 
@@ -108,6 +114,18 @@ through `PipelineModel` without touching source SVG preprocessing state. Reset
 does the same cancellation work, then clears only generated 3D asset output
 folders and resets only `assetPipeline` face state to ungenerated while
 preserving the selected base tile variant.
+
+Queued generated-asset work now runs a cutter SVG simplification step before
+`svg-cutter`: the server invokes `experiment-paper-flatten-svg.js` in
+`unite-all` mode at flatness `0.10`, stores the generated handoff under
+`images/cutter-simplified-svg/`, then invokes `svg-cutter` with `--svg-path`
+and `--skip-union`.
+
+The cutter-simplification experiment routes synthesize a view of local
+experiment artifacts and can generate the `flower-3` flatness range under
+`scripts/output/asset-pipeline/<tilesetId>/experiments/cutter-simplification/`.
+Those routes are investigation-only and do not publish readiness facts to
+`assetPipeline.faces`.
 
 ## Asset Serving
 

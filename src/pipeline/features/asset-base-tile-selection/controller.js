@@ -192,7 +192,7 @@ export default class AssetBaseTileSelectionController extends Service {
 }
 
 function firstVariantId(selection) {
-	return selection?.variants?.[0]?.id || '';
+	return selection?.variants?.find((variant) => !variant.previewOnly)?.id || '';
 }
 
 new AssetBaseTileSelectionController();

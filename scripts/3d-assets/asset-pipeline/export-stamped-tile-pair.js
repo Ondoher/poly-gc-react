@@ -9,6 +9,8 @@ import {
 	ROOT_DIR,
 } from '../shared/asset-paths.js';
 import { PipelineModel } from '../svg-preprocessor/PipelineModel.js';
+import { applyBaseTileTextureMaterials } from './base-tile-texture-materials.js';
+import { installNodeGltfExportShim } from './node-gltf-export-shim.js';
 
 class NodeFileReader {
 	constructor() {
@@ -41,6 +43,8 @@ if (typeof globalThis.FileReader === 'undefined') {
 	globalThis.FileReader = NodeFileReader;
 }
 
+installNodeGltfExportShim();
+
 const exporter = new GLTFExporter();
 const loader = new GLTFLoader();
 
@@ -65,28 +69,30 @@ async function main() {
 	writeJsonMetadata(variant.outputMetadata, stampedAsset.metadata);
 	disposeGroup(stampedAsset.group);
 
-	model.updateAssetGenerationFace(options.faceKey, {
-		status: null,
-		inputHash: faceHash,
-		stageHashes: {
-			'stamped-body': stageHash,
-		},
-		artifacts: {
-			stampedModel: relativePath(variant.outputGlb),
-			stampedMetadata: relativePath(variant.outputMetadata),
-		},
-		queue: null,
-		build: null,
-		failure: null,
-	});
-	await model.save();
+	if (!options.noPipelineState) {
+		model.updateAssetGenerationFace(options.faceKey, {
+			status: null,
+			inputHash: faceHash,
+			stageHashes: {
+				'stamped-body': stageHash,
+			},
+			artifacts: {
+				stampedModel: relativePath(variant.outputGlb),
+				stampedMetadata: relativePath(variant.outputMetadata),
+			},
+			queue: null,
+			build: null,
+			failure: null,
+		});
+		await model.save();
+	}
 }
 
 function buildStampedBodyVariant({ model, options }) {
 	const assetPipeline = model.getAssetPipeline();
 	const faceState = assetPipeline.faces?.[options.faceKey];
-	const cutterMetadataPath = resolveRepoPath(faceState?.artifacts?.cutterMetadata || '');
-	const cutterModelPath = resolveRepoPath(faceState?.artifacts?.cutterModel || '');
+	const cutterMetadataPath = resolveRepoPath(options.cutterMetadata || faceState?.artifacts?.cutterMetadata || '');
+	const cutterModelPath = resolveRepoPath(options.cutterModel || faceState?.artifacts?.cutterModel || '');
 	const baseTileVariantId = model.getSelectedBaseTileVariantId();
 	const selectedBaseTileVariantId = baseTileVariantId || options.baseTileVariantId;
 	const baseTileVariant = readBaseTileVariant(selectedBaseTileVariantId);
@@ -111,6 +117,7 @@ function buildStampedBodyVariant({ model, options }) {
 		baseTileVariant,
 		baseTileGlb: resolveRepoPath(baseTileVariant.glb || ''),
 		baseTileMeshName: baseTileVariant.meshName || 'baseTileBody',
+		supportMeshNames: supportMeshNamesForVariant(baseTileVariant),
 		tileBody: body,
 		cutterLift: Number.isFinite(options.cutterLift) ? options.cutterLift : -0.01,
 		cutterDepthScale: Number.isFinite(options.cutterDepthScale) ? options.cutterDepthScale : 1,
@@ -123,6 +130,7 @@ function buildStampedBodyVariant({ model, options }) {
 async function buildStampedBodyAsset(variant) {
 	const cutterMetadata = readJson(variant.cutterMetadataPath);
 	const baseScene = await loadGlbScene(variant.baseTileGlb);
+	const texturedMeshNames = await applyBaseTileTextureMaterials(baseScene, variant.baseTileVariant);
 	const baseMesh = findFirstMeshByName(baseScene, variant.baseTileMeshName);
 
 	if (!baseMesh) {
@@ -131,13 +139,14 @@ async function buildStampedBodyAsset(variant) {
 
 	baseScene.updateMatrixWorld(true);
 	const bodyMesh = cloneMeshForExport(baseMesh, variant.meshName);
-	const topSurfaceY = getTileTopSurfaceY({
-		...variant.tileBody,
-		...cutterMetadata.baseTileVariant?.body,
+	const supportMeshes = cloneSupportMeshesForExport(baseScene, {
+		targetMesh: baseMesh,
+		supportMeshNames: variant.supportMeshNames,
 	});
+	const topSurfaceY = getTileTopSurfaceY(variant.tileBody);
 
 	if (cutterMetadata.empty) {
-		const group = createGroup(variant.name, bodyMesh);
+		const group = createGroup(variant.name, [bodyMesh, ...supportMeshes]);
 		disposeGroup(baseScene);
 		return {
 			group,
@@ -147,6 +156,7 @@ async function buildStampedBodyAsset(variant) {
 				mode: 'blank-body',
 				topSurfaceY,
 				appliedPlacement: null,
+				texturedMeshNames,
 				notes: [
 					'Cutter metadata is empty; stamped output is the selected base tile body without carving.',
 				],
@@ -166,7 +176,10 @@ async function buildStampedBodyAsset(variant) {
 	}
 
 	cutterScene.updateMatrixWorld(true);
-	const baseBrush = new Brush(bodyMesh.geometry.clone(), cloneMaterial(bodyMesh.material));
+	const bodyMaterial = cloneMaterial(bodyMesh.material);
+	const evaluatorAttributes = csgAttributesForMaterial(bodyMaterial);
+	const baseGeometry = ensureGeometryAttributes(bodyMesh.geometry.clone(), evaluatorAttributes);
+	const baseBrush = new Brush(baseGeometry, bodyMaterial);
 	baseBrush.name = variant.meshName;
 	baseBrush.updateMatrixWorld(true);
 
@@ -175,9 +188,11 @@ async function buildStampedBodyAsset(variant) {
 		cutterMesh,
 		cutterMetadata,
 		placement: appliedPlacement,
+		evaluatorAttributes,
 	});
 
 	const evaluator = new Evaluator();
+	evaluator.attributes = evaluatorAttributes;
 	evaluator.useGroups = false;
 	evaluator.consolidateGroups = true;
 	evaluator.removeUnusedMaterials = true;
@@ -193,13 +208,14 @@ async function buildStampedBodyAsset(variant) {
 	stampedBrush.geometry.computeBoundingSphere();
 	stampedBrush.updateMatrixWorld(true);
 
-	const group = createGroup(variant.name, stampedBrush);
+	const group = createGroup(variant.name, [stampedBrush, ...supportMeshes]);
 	const metadata = stampedMetadata({
 		variant,
 		cutterMetadata,
 		mode: 'boolean-subtraction',
 		topSurfaceY,
 		appliedPlacement,
+		texturedMeshNames,
 		notes: [
 			'Stamped body is derived by subtracting the SVG cutter model from the selected reusable base tile body.',
 			'The cutter is already normalized to prepared tile-face space by SVG cutter generation.',
@@ -215,7 +231,7 @@ async function buildStampedBodyAsset(variant) {
 	return { group, metadata };
 }
 
-function stampedMetadata({ variant, cutterMetadata, mode, topSurfaceY, appliedPlacement, notes }) {
+function stampedMetadata({ variant, cutterMetadata, mode, topSurfaceY, appliedPlacement, texturedMeshNames, notes }) {
 	return {
 		faceKey: variant.faceKey,
 		tilesetId: variant.tilesetId,
@@ -226,6 +242,8 @@ function stampedMetadata({ variant, cutterMetadata, mode, topSurfaceY, appliedPl
 		sourceBaseTileGlb: relativePath(variant.baseTileGlb),
 		sourceCutterGlb: variant.cutterModelPath ? relativePath(variant.cutterModelPath) : null,
 		sourceCutterMetadata: relativePath(variant.cutterMetadataPath),
+		supportMeshNames: variant.supportMeshNames,
+		texturedMeshNames,
 		baseTileVariantId: variant.baseTileVariantId,
 		baseTileVariant: {
 			id: variant.baseTileVariant.id,
@@ -245,7 +263,12 @@ function stampedMetadata({ variant, cutterMetadata, mode, topSurfaceY, appliedPl
 			sourceGlyphBounds: cutterMetadata.sourceGlyphBounds ?? null,
 		},
 		appliedPlacement,
-		notes,
+		notes: [
+			...notes,
+			...(variant.supportMeshNames.length > 0
+				? [`Preserved support meshes unchanged: ${variant.supportMeshNames.join(', ')}.`]
+				: []),
+		],
 	};
 }
 
@@ -260,13 +283,14 @@ function cutterPlacement({ variant, cutterMetadata, topSurfaceY }) {
 	};
 }
 
-function createPlacedCutterBrush({ cutterMesh, cutterMetadata, placement }) {
+function createPlacedCutterBrush({ cutterMesh, cutterMetadata, placement, evaluatorAttributes }) {
 	const cutterGeometry = cutterMesh.geometry.clone();
 	cutterGeometry.scale(
 		placement.footprintScale,
 		placement.depthScale,
 		placement.footprintScale,
 	);
+	ensureGeometryAttributes(cutterGeometry, evaluatorAttributes);
 	cutterGeometry.computeVertexNormals();
 
 	const cutterBrush = new Brush(cutterGeometry, cloneMaterial(cutterMesh.material));
@@ -276,12 +300,55 @@ function createPlacedCutterBrush({ cutterMesh, cutterMetadata, placement }) {
 	return cutterBrush;
 }
 
+function csgAttributesForMaterial(material) {
+	const attributes = new Set(['position', 'uv', 'normal']);
+	for (const entry of materialList(material)) {
+		for (const map of materialTextureMaps(entry)) {
+			const channel = Number.isInteger(map?.channel) ? map.channel : 0;
+			if (channel > 0) {
+				attributes.add(`uv${channel}`);
+			}
+		}
+	}
+	return [...attributes];
+}
+
+function ensureGeometryAttributes(geometry, attributes) {
+	for (const attributeName of attributes) {
+		if (geometry.getAttribute(attributeName)) {
+			continue;
+		}
+
+		if (/^uv\d+$/.test(attributeName) && geometry.getAttribute('uv')) {
+			geometry.setAttribute(attributeName, geometry.getAttribute('uv').clone());
+		}
+	}
+	return geometry;
+}
+
+function materialTextureMaps(material) {
+	return [
+		material?.map,
+		material?.normalMap,
+		material?.roughnessMap,
+		material?.metalnessMap,
+		material?.aoMap,
+		material?.emissiveMap,
+		material?.specularMap,
+		material?.alphaMap,
+	].filter(Boolean);
+}
+
 function cloneMeshForExport(mesh, name) {
-	const clone = new THREE.Mesh(mesh.geometry.clone(), cloneMaterial(mesh.material));
 	mesh.updateMatrixWorld(true);
-	mesh.geometry.computeVertexNormals();
+	const geometry = mesh.geometry.clone();
+	geometry.applyMatrix4(mesh.matrixWorld);
+	geometry.computeVertexNormals();
+	geometry.computeBoundingBox();
+	geometry.computeBoundingSphere();
+
+	const clone = new THREE.Mesh(geometry, cloneMaterial(mesh.material));
 	clone.name = name;
-	clone.applyMatrix4(mesh.matrixWorld);
 	clone.position.set(0, 0, 0);
 	clone.quaternion.identity();
 	clone.scale.set(1, 1, 1);
@@ -289,10 +356,29 @@ function cloneMeshForExport(mesh, name) {
 	return clone;
 }
 
-function createGroup(name, mesh) {
+function cloneSupportMeshesForExport(root, { targetMesh, supportMeshNames }) {
+	if (supportMeshNames.length === 0) {
+		return [];
+	}
+
+	const names = new Set(supportMeshNames);
+	const meshes = [];
+	root.traverse((object) => {
+		if (!object.isMesh || object === targetMesh || !names.has(object.name)) {
+			return;
+		}
+
+		meshes.push(cloneMeshForExport(object, object.name));
+	});
+	return meshes;
+}
+
+function createGroup(name, meshes) {
 	const group = new THREE.Group();
 	group.name = name;
-	group.add(mesh);
+	for (const mesh of meshes) {
+		group.add(mesh);
+	}
 	group.updateMatrixWorld(true);
 	return group;
 }
@@ -368,6 +454,16 @@ function readBaseTileVariant(variantId) {
 	};
 }
 
+function supportMeshNamesForVariant(baseTileVariant) {
+	return [
+		...(baseTileVariant.supportMeshNames || []),
+		...(baseTileVariant.carving?.preserveMeshNames || []),
+	]
+		.filter((name) => typeof name === 'string' && name.trim())
+		.map((name) => name.trim())
+		.filter((name, index, names) => names.indexOf(name) === index);
+}
+
 function getTileTopSurfaceY(body) {
 	const height = Number.isFinite(body.height) ? body.height : 0.5;
 	const bevelThickness = Number.isFinite(body.bevelThickness) ? body.bevelThickness : 0;
@@ -385,10 +481,13 @@ function cloneMaterial(material) {
 	});
 }
 
+function materialList(material) {
+	return Array.isArray(material) ? material : [material];
+}
+
 function disposeMesh(mesh) {
 	mesh.geometry?.dispose?.();
-	const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-	materials.forEach((material) => material?.dispose?.());
+	materialList(mesh.material).forEach((material) => material?.dispose?.());
 }
 
 function disposeGroup(group) {
@@ -411,6 +510,9 @@ function readOptions() {
 	const cutterFootprintScale = numberArgument('--cutter-footprint-scale');
 	const outputGlb = readArgument('--output-glb') || '';
 	const outputMetadata = readArgument('--output-metadata') || '';
+	const cutterModel = readArgument('--cutter-model') || '';
+	const cutterMetadata = readArgument('--cutter-metadata') || '';
+	const noPipelineState = process.argv.includes('--no-pipeline-state');
 
 	if (!tilesetId) {
 		throw new Error('Missing --tileset-id.');
@@ -430,6 +532,9 @@ function readOptions() {
 		cutterFootprintScale,
 		outputGlb,
 		outputMetadata,
+		cutterModel,
+		cutterMetadata,
+		noPipelineState,
 	};
 }
 
@@ -455,6 +560,8 @@ function readPositionalArguments() {
 		'--cutter-footprint-scale',
 		'--output-glb',
 		'--output-metadata',
+		'--cutter-model',
+		'--cutter-metadata',
 	]);
 
 	for (let index = 2; index < process.argv.length; index += 1) {
