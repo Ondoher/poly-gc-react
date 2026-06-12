@@ -45,20 +45,21 @@ Valid strengths are `none`, `tentative`, `strong`, and `accepted`.
 ## Implemented Flow
 
 The pipeline app build includes Reference Approval, Optional Part Assignment,
-Source Assignment, Final Rendering Options, Asset Base Tile Selection, Asset
-Review, and Experiments.
+Source Assignment, Final Rendering Options, Asset Base Tile Selection, and
+Asset Review. The focused Experiments page is currently disabled in the app.
 
 The server route surface includes state loading, tileset selection, metadata
 recreation, source preprocessing, reference-structure load/save, optional
 parts, source assignment, final rendering, base tile selection, asset
-generation, asset review, and focused cutter-simplification experiments.
+generation, asset review, and focused cutter-simplification experiment
+endpoints retained for manual investigation.
 
 ## Generated Asset Facts
 
 Generated asset stages are:
 
 ```text
-preview-svg -> cutter-svg-simplification -> svg-cutter -> stamped-body -> colored-inlay -> preview-png
+preview-svg -> cutter-2d -> svg-cutter -> stamped-body -> colored-inlay -> preview-png
 ```
 
 Generation requires a selected base tile variant at
@@ -67,22 +68,19 @@ derived from the current face input hash, selected base tile, rendered SVG,
 required artifacts, and per-stage hashes.
 
 The generated stages start from the final-rendering color SVG. The queue runs
-a Paper.js SVG-side `unite-all` simplification at flatness `0.10`, writes the
-result under `images/cutter-simplified-svg/`, and feeds that simplified SVG to
-`svg-cutter` with `--skip-union`. The final-rendering SVG is still expected to
-preserve filled `fill-rule="evenodd"` semantics for visual holes while
-pruning degenerate evenodd subpaths that can break Three triangulation.
+a Paper.js SVG-side `unite-all` cutter-2D stage at flatness `0.05`, records the
+result as `assetPipeline.faces[faceKey].artifacts.cutterSvg` under
+`images/cutter-2d-svg/`, and feeds that SVG to `svg-cutter`. `colored-inlay`
+uses the final-rendering color SVG so material/color regions survive the
+cutter-2D union pass. `svg-cutter` runs with `--skip-union`. The
+final-rendering SVG is still expected to preserve filled `fill-rule="evenodd"`
+semantics for visual holes while pruning degenerate evenodd subpaths that can
+break Three triangulation.
 
-The Mark II base tile artist delivery has been promoted as base tile variant
-`mark-ii` at `scripts/data/3d-assets/models/base-tiles/mark-ii.glb` with
-metadata in `mark-ii.json`. It is a two-mesh GLB: `BaseTileBody_Ivory` is the
-ivory/front carving target, and `baseTileBody_wood` is the bamboo/back insert
-that is carried through unchanged. The promoted pipeline copy is normalized to
-generated-asset coordinates with X as width, Y as carving thickness, and Z as
-face depth. Combined bounds validate at width `0.79`, thickness `0.50`, and
-depth `1.08`, centered at origin. Carving remains inset on the ivory face,
-uses a straight projected `-Y` direction from the `+Y` front face, and keeps
-safe engraving depth between `0.025` and `0.035` units.
+The active selectable production base tile is variant `mark-iii`, shown in the
+app as "Ivory and Bamboo". Mark II and the raw Mark III artist delivery remain
+on disk for history/debugging, but they are no longer listed in
+`base-tile-manifest.json` and therefore are not Base Tile Selection options.
 
 ## Current Checkpoint
 
@@ -97,8 +95,9 @@ As of 2026-06-11:
   folders. The GLB keeps the same useful two-mesh split as Mark II:
   `BaseTileBody_Ivory` for the carving target and `baseTileBody_wood` for the
   preserved bamboo insert after GLTFLoader name sanitization.
-- Mark III has been promoted as base tile variant `mark-iii` with normalized
-  GLB `scripts/data/3d-assets/models/base-tiles/mark-iii.glb`, metadata
+- Mark III has been promoted as base tile variant `mark-iii`, labeled "Ivory
+  and Bamboo", with normalized GLB
+  `scripts/data/3d-assets/models/base-tiles/mark-iii.glb`, metadata
   `mark-iii.json`, and manifest entry in `base-tile-manifest.json`.
 - The delivered Mark III GLB was in artist axes, with measured scene bounds
   approximately X `0.79`, Y `1.08`, Z `0.50`. The promoted pipeline copy is
@@ -122,12 +121,10 @@ As of 2026-06-11:
   its GLB preview materials before falling back to procedural preview
   textures. This lets Mark III visually differ from Mark II in the selector
   even though their two-piece mesh structure is very similar.
-- The raw artist-delivered Mark III GLB has also been added as preview-only
-  variant `mark-iii-artist-delivery` at
-  `scripts/data/3d-assets/models/base-tiles/mark-iii-artist-delivery.glb`.
-  It preserves the artist axes and embedded material wiring for visual
-  comparison, is shown in Base Tile Selection, and is blocked from generated
-  asset selection/start.
+- The raw artist-delivered Mark III GLB remains available at
+  `scripts/data/3d-assets/models/base-tiles/mark-iii-artist-delivery.glb` for
+  visual comparison/debugging, but it is no longer shown in Base Tile
+  Selection.
 - Inspection showed the artist GLB looks better primarily because its bamboo
   material uses authored UV channel 1 with embedded diffuse, normal,
   roughness/metalness, and specular maps. The earlier normalized Mark III GLB

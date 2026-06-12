@@ -25,7 +25,7 @@ const DEFAULT_REFERENCE_STRUCTURE_DIR = path.resolve(OUTPUT_3D_DIR, "reference-s
 const REFERENCE_STRUCTURE_FILENAME = "reference-structure.json";
 const SVG_CUTTER_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-svg-cutter.js");
 const SVG_CUTTER_SIMPLIFICATION_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "experiment-paper-flatten-svg.js");
-const SVG_CUTTER_SIMPLIFICATION_FLATNESS = "0.10";
+const SVG_CUTTER_SIMPLIFICATION_FLATNESS = "0.05";
 const STAMPED_BODY_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-stamped-tile-pair.js");
 const COLORED_INLAY_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-stamped-tile-inlay.js");
 const GENERATED_ASSET_PREVIEW_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-generated-asset-preview.js");
@@ -1016,7 +1016,10 @@ async function getBaseTileSelection(req, res) {
 		const tilesetId = await requestedTilesetId(req);
 		const model = await loadPipelineModel(tilesetId);
 		const manifest = await loadBaseTileManifest();
-		const selectedVariantId = model.getSelectedBaseTileVariantId();
+		const persistedVariantId = model.getSelectedBaseTileVariantId();
+		const selectedVariantId = manifest.variants.some((variant) => variant.id === persistedVariantId && !variant.previewOnly)
+			? persistedVariantId
+			: manifest.variants.find((variant) => !variant.previewOnly)?.id || "";
 		const variants = await Promise.all(manifest.variants.map(async (variant) => ({
 			...(await enrichBaseTileSelectionVariant(variant)),
 			selected: variant.id === selectedVariantId,
@@ -1333,6 +1336,62 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						completedSteps: completedStepIds(plannedStepsByFace.get(face.faceKey), step.id),
 					},
 				});
+
+				if (step.id === "cutter-2d") {
+					stream.emitProgress(tilesetId, "assetGenerationProgress", {
+						stage: step.id,
+						stageLabel: step.label,
+						faceKey: face.faceKey,
+						status: step.status,
+						completed,
+						total,
+						percent: total ? Math.round((completed / total) * 100) : 100,
+						message: `${step.label}: ${face.faceKey}`,
+					});
+					try {
+						await runCutter2dGeneration({ tilesetId, faceKey: face.faceKey });
+						model = await assertAssetGenerationBaseTileCurrent(tilesetId, plan.baseTileVariantId);
+					} catch (error) {
+						if (isAssetGenerationBaseTileChangedError(error)) {
+							throw error;
+						}
+						const message = assetGenerationFailureMessage(error);
+						model = await loadPipelineModel(tilesetId);
+						model.updateAssetGenerationFace(face.faceKey, {
+							status: "failed",
+							inputHash: faceHashes.get(face.faceKey),
+							queue: {
+								status: "failed",
+								baseTileVariantId: plan.baseTileVariantId,
+								currentStep: step.id,
+							},
+							build: {
+								currentStep: step.id,
+								completedSteps: completedStepIds(plannedStepsByFace.get(face.faceKey), step.id),
+							},
+							failure: {
+								step: step.id,
+								message,
+							},
+						});
+						await model.save();
+						await removeAssetGenerationQueueFace(model, face.faceKey);
+
+						completed += assetGenerationRemainingPendingStepCount(plannedStepsByFace.get(face.faceKey), step.id);
+						stream.emitProgress(tilesetId, "assetGenerationProgress", {
+							stage: step.id,
+							stageLabel: step.label,
+							faceKey: face.faceKey,
+							status: "failed",
+							completed,
+							total,
+							percent: total ? Math.round((completed / total) * 100) : 100,
+							message: `${step.label} failed for ${face.faceKey}: ${message}`,
+						});
+						faceFailed = true;
+						break;
+					}
+				}
 
 				if (step.id === "svg-cutter") {
 					stream.emitProgress(tilesetId, "assetGenerationProgress", {
@@ -1758,7 +1817,11 @@ async function generateCutterSimplificationExperiment(req, res) {
 async function runSvgCutterGeneration({ tilesetId, faceKey, completed = 0, total = 0 }) {
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const stream = getAssetPipelineStream();
-	const simplifiedSvgPath = await runSvgCutterSimplification({ tilesetId, faceKey });
+	const model = await loadPipelineModel(tilesetId);
+	const cutterSvgPath = resolveRepoPath(model.getAssetPipeline().faces?.[faceKey]?.artifacts?.cutterSvg || "");
+	if (!cutterSvgPath || !(await fileExists(cutterSvgPath))) {
+		throw new Error(`Missing cutter-2D SVG artifact for ${tilesetId}/${faceKey}.`);
+	}
 	const result = await runNodeCommand([
 		SVG_CUTTER_SCRIPT,
 		"--tileset-id",
@@ -1766,7 +1829,7 @@ async function runSvgCutterGeneration({ tilesetId, faceKey, completed = 0, total
 		"--face-key",
 		faceKey,
 		"--svg-path",
-		simplifiedSvgPath,
+		cutterSvgPath,
 		"--skip-union",
 	], {
 		activeRun,
@@ -1805,14 +1868,14 @@ async function runSvgCutterGeneration({ tilesetId, faceKey, completed = 0, total
 	return result;
 }
 
-async function runSvgCutterSimplification({ tilesetId, faceKey }) {
+async function runCutter2dGeneration({ tilesetId, faceKey }) {
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const model = await loadPipelineModel(tilesetId);
 	const inputSvgPath = resolveRepoPath(model.getFinalRenderingColorSvgPath(faceKey) || "");
-	const outputSvgPath = path.resolve(model.pipelineDir, "images", "cutter-simplified-svg", `${faceKey}.svg`);
+	const outputSvgPath = path.resolve(model.pipelineDir, "images", "cutter-2d-svg", `${faceKey}.svg`);
 
 	if (!inputSvgPath || !(await fileExists(inputSvgPath))) {
-		throw new Error(`Missing final-rendering SVG for cutter simplification: ${tilesetId}/${faceKey}.`);
+		throw new Error(`Missing final-rendering SVG for cutter-2D generation: ${tilesetId}/${faceKey}.`);
 	}
 
 	await mkdir(path.dirname(outputSvgPath), { recursive: true });
@@ -1837,10 +1900,22 @@ async function runSvgCutterSimplification({ tilesetId, faceKey }) {
 			.filter(Boolean)
 			.join("\n")
 			.trim();
-		const error = new Error(details || `SVG cutter simplification failed for ${tilesetId}/${faceKey}.`);
+		const error = new Error(details || `Cutter-2D SVG generation failed for ${tilesetId}/${faceKey}.`);
 		error.statusCode = 500;
 		throw error;
 	}
+
+	model.updateAssetGenerationFace(faceKey, {
+		inputHash: model.hashAssetPipelineFaceInput(faceKey),
+		stageHashes: {
+			"cutter-2d": model.hashAssetGenerationStageInput(faceKey, "cutter-2d"),
+		},
+		artifacts: {
+			cutterSvg: relativePath(outputSvgPath),
+		},
+		failure: null,
+	});
+	await model.save();
 
 	return outputSvgPath;
 }
@@ -1874,12 +1949,19 @@ async function runStampedBodyGeneration({ tilesetId, faceKey }) {
 
 async function runColoredInlayGeneration({ tilesetId, faceKey }) {
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
+	const model = await loadPipelineModel(tilesetId);
+	const renderedSvgPath = resolveRepoPath(model.getFinalRenderingColorSvgPath(faceKey) || "");
+	if (!renderedSvgPath || !(await fileExists(renderedSvgPath))) {
+		throw new Error(`Missing final-rendering SVG artifact for colored inlay: ${tilesetId}/${faceKey}.`);
+	}
 	const result = await runNodeCommand([
 		COLORED_INLAY_SCRIPT,
 		"--tileset-id",
 		tilesetId,
 		"--face-key",
 		faceKey,
+		"--rendered-svg",
+		renderedSvgPath,
 	], {
 		activeRun,
 		maxBuffer: 20 * 1024 * 1024,
@@ -4037,6 +4119,13 @@ function assetGenerationBuildSteps() {
 			status: "building",
 			queueStatus: "building",
 			delayMs: 16,
+		},
+		{
+			id: "cutter-2d",
+			label: "Preparing cutter SVG",
+			status: "building",
+			queueStatus: "building",
+			delayMs: 20,
 		},
 		{
 			id: "svg-cutter",

@@ -45,9 +45,9 @@ file and copies per-face source SVGs. Normalization decomposes SVGs into
 non-semantic geometry. Optional Part Assignment reserves labels and glyphs
 before alignment. Alignment fits source geometry against reference structure.
 Source Assignment accepts or corrects source meaning. Final Rendering chooses
-output policy, layout, and color. Cutter SVG Simplification performs an
-SVG-side union pass for cutter-facing geometry cleanup before generated assets
-consume the accepted face. Asset generation builds 3D outputs from the
+output policy, layout, and color. Cutter-2D Preparation performs the SVG-side
+union/flattening pass for cutter-facing geometry cleanup before generated
+assets consume the accepted face. Asset generation builds 3D outputs from the
 simplified rendered face and selected base tile.
 
 The exact stage contract lives in [Stage Contracts](stage-contracts.md).
@@ -102,26 +102,27 @@ state shape is [State Contract](state-contract.md).
 ## Current Status
 
 As of 2026-06-11, the latest Mark III base-tile delivery from the 3D artist is
-integrated as the selectable `mark-iii` generated-asset variant. The promoted
-pipeline GLB is normalized into generated-asset axes while preserving the
-artist material stack, including embedded texture maps that rely on secondary
-UV channels. Generated stamped-body and colored-inlay exports now preserve the
-textured support mesh, carve only the configured ivory/front carving mesh, bake
-authored mesh transforms into cloned geometry before boolean work, and retain
-the UV attributes needed for textured Mark III output.
+integrated as the selectable `mark-iii` generated-asset variant and presented
+in the app as "Ivory and Bamboo". The promoted pipeline GLB is normalized into
+generated-asset axes while preserving the artist material stack, including
+embedded texture maps that rely on secondary UV channels. Generated
+stamped-body and colored-inlay exports now preserve the textured support mesh,
+carve only the configured ivory/front carving mesh, bake authored mesh
+transforms into cloned geometry before boolean work, and retain the UV
+attributes needed for textured output. The older Mark II and raw artist
+delivery GLBs remain on disk for history/debugging but are no longer listed in
+the Base Tile Selection manifest.
 Asset Review's opened 3D viewer applies a slight warm ivory tint and modest
 gloss to matching ivory/bone tile-body materials as a preview-only treatment;
 it does not rewrite generated GLBs or change cutter/stamped/inlay artifacts.
-Cutter generation now runs the Paper.js SVG-side `unite-all` simplification
-with flatness `0.10` before cutter export, then invokes `svg-cutter` with the
-simplified SVG and `--skip-union` so complex faces do not stall in the 3D CSG
-union phase. A focused Experiments page exposes a `flower-3`
-cutter-simplification range for comparing flatness settings without mutating
-canonical face state; the current generated comparison set is for the active
-`wiki` tileset.
-Experiment result artifacts open in-app dialogs: PNG/SVG outputs render as
-images, and cutter/inlay GLBs render in the shared orbitable 3D scene rather
-than relying on browser download/navigation.
+The opened viewer dialog preserves its local `viewerFace` state across live
+Asset Review updates so queue/progress polling does not close the dialog.
+Cutter generation now runs a dedicated `cutter-2d` stage using the Paper.js
+SVG-side `unite-all` simplification with flatness `0.05` before cutter export,
+then invokes `svg-cutter` with the cutter-2D SVG and `--skip-union` so complex
+faces do not stall in the 3D CSG union phase. The focused Experiments page is
+currently disabled in the app; the investigation code and local artifacts are
+kept for explicit/manual follow-up.
 
 ## Code Map
 
@@ -160,6 +161,8 @@ Important source files:
 - Changing rendering? Read [Rendering Contract](rendering-contract.md).
 - Changing color? Read [Color Handling](color-handling.md).
 - Changing generated assets? Read [Generated Asset Contract](generated-asset-contract.md).
+- Changing preview PNG rendering or Puppeteer lifecycle? Read
+  [Long-Running Chromium Preview Rendering](long-running-chromium.md).
 - Changing routes or queues? Read [Runtime And Routes](runtime-and-routes.md).
 - Need terms? Read [Glossary](glossary.md).
 - Looking for deferred work? Read [Future Work](future-work.md).

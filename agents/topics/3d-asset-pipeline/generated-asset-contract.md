@@ -17,11 +17,10 @@ Prepared SVG export remains a separate later stage and is not the canonical
 generated-asset input until that review/QA gate is implemented. The SVG review
 state remains under `svgPipeline`.
 
-Cutter SVG Simplification sits between accepted/rendered SVG output and SVG
-Cutter Generation. The server queue writes a cutter-simplified SVG with the
-Paper.js `unite-all` pass at flatness `0.10`, then cutter and colored-inlay
-generation consume that same SVG handoff so recess geometry and visible inlay
-agree.
+Cutter-2D generation sits between accepted/rendered SVG output and SVG Cutter
+Generation. The server queue writes a cutter-facing SVG with the Paper.js
+`unite-all` pass at flatness `0.05`, then cutter and colored-inlay generation
+consume that same SVG handoff so recess geometry and visible inlay agree.
 
 ## Hashes
 
@@ -58,22 +57,23 @@ bindings, rendering options, or source/final-rendering SVG artifacts.
 Current generated asset stages run in this order:
 
 ```text
-preview-svg -> cutter-svg-simplification -> svg-cutter -> stamped-body -> colored-inlay -> preview-png
+preview-svg -> cutter-2d -> svg-cutter -> stamped-body -> colored-inlay -> preview-png
 ```
 
 `preview-svg` records that the accepted rendered SVG is the current preview
 input.
 
-`cutter-svg-simplification` produces the cutter-facing SVG geometry handoff.
-The active queue uses Paper.js `unite-all` at flatness `0.10`, writes
-`images/cutter-simplified-svg/<faceKey>.svg`, and does not treat that file as
-a second source of truth; it is a generated artifact from the accepted
-final-rendering SVG. When build profiles are promoted, this stage should
-receive the selected generated-asset build profile so fast/review and
-full-quality runs can make different SVG-side union, flattening,
-simplification, and export-precision choices intentionally.
+`cutter-2d` produces the cutter-facing SVG geometry handoff. The active queue
+uses Paper.js `unite-all` at flatness `0.05`, writes
+`images/cutter-2d-svg/<faceKey>.svg`, and records that path as
+`assetPipeline.faces[faceKey].artifacts.cutterSvg`. The file is not a second
+source of truth; it is a generated artifact from the accepted final-rendering
+SVG. When build profiles are promoted, this stage should receive the selected
+generated-asset build profile so fast/review and full-quality runs can make
+different SVG-side union, flattening, simplification, and export-precision
+choices intentionally.
 
-`svg-cutter` reads the cutter-simplified SVG and selected base tile, then
+`svg-cutter` reads the cutter-2D SVG and selected base tile, then
 writes cutter GLB and metadata artifacts. Active queued generation invokes it
 with `--skip-union` because the SVG-side handoff has already combined the
 cutter solids enough for the downstream stamped-body boolean step.
@@ -106,8 +106,10 @@ those outputs are not interchangeable readiness facts.
 `stamped-body` reads cutter artifacts and the selected base tile, then writes
 the stamped body GLB and metadata.
 
-`colored-inlay` reads the same simplified SVG handoff used by `svg-cutter`
-plus stamped/cutter artifacts, then writes colored inlay GLB and metadata.
+`colored-inlay` reads the final-rendering color SVG for paint/material
+regions plus stamped/cutter artifacts, then writes colored inlay GLB and
+metadata. It does not use the cutter-2D SVG as its color source because the
+SVG-side union/flattening pass can collapse distinct colored regions.
 
 `preview-png` reads the inlay model and writes a generated asset review PNG.
 The renderer owns a shared Puppeteer browser per process so server queue runs
@@ -121,6 +123,7 @@ been written.
 Generated asset face artifacts include:
 
 - `renderedSvg`
+- `cutterSvg`
 - `cutterModel`
 - `cutterMetadata`
 - `stampedModel`
@@ -191,8 +194,8 @@ The promoted pipeline asset is:
 - `scripts/data/3d-assets/models/base-tiles/mark-ii-textures/`
 - manifest variant id `mark-ii`
 
-Mark III follows the same generated-asset contract and is promoted as a
-separate selectable variant rather than replacing Mark II in place:
+Mark III follows the same generated-asset contract and is promoted as the
+active selectable production variant, labeled "Ivory and Bamboo" in the app:
 
 - `scripts/data/3d-assets/models/base-tiles/mark-iii.glb`
 - `scripts/data/3d-assets/models/base-tiles/mark-iii.json`

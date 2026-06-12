@@ -84,16 +84,16 @@ svgPipeline.faces[faceKey].artifacts.finalRenderingColorSvg
 Prepared SVG export is a later stage and future review/QA promotion surface.
 It is not currently the canonical generated-asset input.
 
-A new Cutter SVG Simplification stage is the decided next handoff before
-cutter generation. It will own cutter-facing geometry cleanup so Source
-Normalization can remain evidence-rich and Final Rendering can remain focused
-on accepted visual output. Until that stage is implemented and promoted,
-generated assets still consume the final-rendering color SVG directly.
+Cutter-2D Preparation is the active handoff before cutter generation. It owns
+cutter-facing geometry cleanup so Source Normalization can remain
+evidence-rich and Final Rendering can remain focused on accepted visual
+output. Generated assets consume the prepared cutter-2D SVG recorded at
+`assetPipeline.faces[faceKey].artifacts.cutterSvg`.
 
 Generated stages:
 
 ```text
-preview-svg -> svg-cutter -> stamped-body -> colored-inlay -> preview-png
+preview-svg -> cutter-2d -> svg-cutter -> stamped-body -> colored-inlay -> preview-png
 ```
 
 Saving a base tile selection now stages all missing or stale generated-asset
@@ -235,10 +235,8 @@ Contractor handoff package:
 Important design clarification: Source Normalization is not required to output
 geometry that is already acceptable to the cutter. It may preserve complex SVG
 evidence that helps meaning, alignment, or color review. Cutter-friendly
-simplification is now assigned to the planned Cutter SVG Simplification stage.
-That stage is currently unimplemented and unspecified beyond its boundary; it
-is not part of the Stage 2 implementation prompt and should be defined later
-from cutter/inlay needs.
+simplification is assigned to Cutter-2D Preparation, not to the Stage 2
+normalizer.
 
 Important current implementation facts:
 
@@ -255,12 +253,12 @@ Important current implementation facts:
 - Final rendering is responsible for regenerated SVGs that are usable by 3D
   stages, including evenodd preservation, degenerate subpath pruning,
   same-source recombination, and stroke-to-fill conversion.
-- The largest current handoff gap is that the final-rendering color SVG is
-  both the visual review/composition output and the current generated-asset SVG
-  input. A visually correct SVG is not always cutter-ready SVG geometry.
-- The planned Cutter SVG Simplification stage will create an explicit
-  cutter-readiness handoff before `svg-cutter`, reducing pressure on the
-  normalizer and final renderer to solve 3D-specific geometry concerns.
+- The final-rendering color SVG is the visual review/composition output, while
+  the cutter-2D SVG is the generated-asset SVG input. A visually correct SVG is
+  not always cutter-ready SVG geometry.
+- Cutter-2D Preparation creates the explicit cutter-readiness handoff before
+  `svg-cutter`, reducing pressure on the normalizer and final renderer to
+  solve 3D-specific geometry concerns.
 - Multi-component cutter generation now avoids whole-face CSG union and uses
   merged path solids with internal side-wall cleanup for adjacent footprints.
 - Base tile selection stages missing/stale generated assets into the persisted

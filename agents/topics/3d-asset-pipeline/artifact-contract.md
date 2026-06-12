@@ -29,6 +29,7 @@ svgPipeline.faces[faceKey].artifacts.normalizedComponents
 svgPipeline.faces[faceKey].artifacts.finalRenderingColorSvg
 assetPipeline.faces[faceKey].artifacts.inlayModel
 assetPipeline.faces[faceKey].artifacts.previewPng
+assetPipeline.faces[faceKey].artifacts.cutterSvg
 ```
 
 ## Current Artifact Map
@@ -47,6 +48,7 @@ assetPipeline.faces[faceKey].artifacts.previewPng
 | `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-color-svg/<faceKey>.svg` | generated/review output | Final rendering |
 | `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-color-review-png/<faceKey>.png` | human review output | Final rendering |
 | `scripts/output/asset-pipeline/prepared-svgs/<tilesetId>/<faceKey>.svg` | generated output | Prepared SVG export |
+| `scripts/output/asset-pipeline/<tilesetId>/images/cutter-2d-svg/<faceKey>.svg` | generated output | Cutter-2D |
 | `scripts/output/asset-pipeline/<tilesetId>/models/svg-cutter/<faceKey>.glb` | generated output | SVG cutter |
 | `scripts/output/asset-pipeline/<tilesetId>/json/svg-cutter/<faceKey>.json` | generated output | SVG cutter |
 | `scripts/output/asset-pipeline/<tilesetId>/models/stamped-body/<faceKey>.glb` | generated output | Stamped body |

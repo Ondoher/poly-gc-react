@@ -130,7 +130,9 @@ assetPipeline.faces[faceKey]
 
 `assetPipeline.baseTileSelection.variantId` records the reusable base tile
 variant. Face asset state records `inputHash`, `finalHash`, `stageHashes`,
-`status`, `queue`, `build`, `failure`, and generated artifact pointers.
+`status`, `queue`, `build`, `failure`, and generated artifact pointers. The
+generated cutter-2D SVG handoff is recorded as
+`assetPipeline.faces[faceKey].artifacts.cutterSvg`.
 
 The SVG review state remains under `svgPipeline`; generated asset state stores
 build readiness and generated output references for the accepted rendered

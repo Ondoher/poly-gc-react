@@ -3,28 +3,8 @@
   "description": "Reusable base tile GLBs for generated 3D asset pipeline intake and selection.",
   "variants": [
     {
-      "id": "mark-ii",
-      "label": "Mark II",
-      "description": "Production two-piece tile with ivory front and bamboo locking insert.",
-      "kind": "base-tile-glb",
-      "temporary": false,
-      "glb": "scripts/data/3d-assets/models/base-tiles/mark-ii.glb",
-      "metadata": "scripts/data/3d-assets/models/base-tiles/mark-ii.json",
-      "meshName": "BaseTileBody_Ivory",
-      "carvingMeshName": "BaseTileBody_Ivory",
-      "supportMeshNames": [
-        "baseTileBody_wood"
-      ],
-      "body": {
-        "width": 0.79,
-        "height": 0.5,
-        "depth": 1.08,
-        "bevelThickness": 0
-      }
-    },
-    {
       "id": "mark-iii",
-      "label": "Mark III",
+      "label": "Ivory and Bamboo",
       "description": "Updated production two-piece tile with textured ivory front and bamboo locking insert.",
       "kind": "base-tile-glb",
       "temporary": false,
@@ -40,27 +20,6 @@
         "width": 0.79,
         "height": 0.5,
         "depth": 1.08,
-        "bevelThickness": 0
-      }
-    },
-    {
-      "id": "mark-iii-artist-delivery",
-      "label": "Mark III Artist Delivery",
-      "description": "Raw contractor-delivered GLB with embedded material wiring for visual comparison only.",
-      "kind": "artist-delivery-glb",
-      "temporary": true,
-      "previewOnly": true,
-      "glb": "scripts/data/3d-assets/models/base-tiles/mark-iii-artist-delivery.glb",
-      "metadata": "scripts/data/3d-assets/models/base-tiles/mark-iii-artist-delivery.json",
-      "meshName": "BaseTileBody_Ivory",
-      "carvingMeshName": "BaseTileBody_Ivory",
-      "supportMeshNames": [
-        "baseTileBody_wood"
-      ],
-      "body": {
-        "width": 0.79,
-        "height": 1.08,
-        "depth": 0.5,
         "bevelThickness": 0
       }
     },

@@ -70,10 +70,12 @@ The pipeline server exposes:
 - `POST /api/pipeline/asset-generation/cancel`
 - `POST /api/pipeline/asset-generation/reset`
 - `GET /api/pipeline/asset-review`
-- `GET /api/pipeline/experiments/cutter-simplification`
-- `POST /api/pipeline/experiments/cutter-simplification/generate`
 - `GET /api/pipeline/reference/:fileName`
 - `GET /api/pipeline/asset`
+
+The focused cutter-simplification experiment endpoints still exist in the
+server for manual investigation, but the Experiments app page is currently
+disabled and is not part of the active route/navigation surface.
 
 Routes synthesize UI-facing views from canonical state and durable artifacts.
 The synthesized response is not another source of truth.
@@ -115,16 +117,18 @@ does the same cancellation work, then clears only generated 3D asset output
 folders and resets only `assetPipeline` face state to ungenerated while
 preserving the selected base tile variant.
 
-Queued generated-asset work now runs a cutter SVG simplification step before
-`svg-cutter`: the server invokes `experiment-paper-flatten-svg.js` in
-`unite-all` mode at flatness `0.10`, stores the generated handoff under
-`images/cutter-simplified-svg/`, then invokes `svg-cutter` with `--svg-path`
-and `--skip-union`.
+Queued generated-asset work now runs a `cutter-2d` step before `svg-cutter`:
+the server invokes `experiment-paper-flatten-svg.js` in `unite-all` mode at
+flatness `0.05`, stores the generated handoff under `images/cutter-2d-svg/`,
+records it as `assetPipeline.faces[faceKey].artifacts.cutterSvg`, then invokes
+`svg-cutter` with `--svg-path` and `--skip-union`. Colored-inlay generation
+uses the final-rendering color SVG for paint/material regions while reusing
+the stamped body and cutter metadata produced from the cutter-2D SVG.
 
-The cutter-simplification experiment routes synthesize a view of local
+The cutter-simplification experiment endpoints synthesize a view of local
 experiment artifacts and can generate the `flower-3` flatness range under
 `scripts/output/asset-pipeline/<tilesetId>/experiments/cutter-simplification/`.
-Those routes are investigation-only and do not publish readiness facts to
+Those endpoints are investigation-only and do not publish readiness facts to
 `assetPipeline.faces`.
 
 ## Asset Serving

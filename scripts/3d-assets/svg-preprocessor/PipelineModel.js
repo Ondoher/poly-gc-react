@@ -20,14 +20,15 @@ export const PIPELINE_PREPARED_SVGS = path.join(BASE_OUTPUT, "prepared-svgs");
 const SCHEMA_VERSION = 3;
 const VALID_BINDING_STRENGTHS = new Set(["none", "tentative", "strong", "accepted"]);
 const DATE_FIELD_NAMES = new Set(["generatedOn", "updatedOn", "acceptedOn"]);
-const GENERATED_ASSET_STAGE_IDS = Object.freeze(["preview-svg", "svg-cutter", "stamped-body", "colored-inlay", "preview-png"]);
+const GENERATED_ASSET_STAGE_IDS = Object.freeze(["preview-svg", "cutter-2d", "svg-cutter", "stamped-body", "colored-inlay", "preview-png"]);
 const GENERATED_ASSET_STAGE_VERSIONS = Object.freeze({
-	"svg-cutter": 2,
-	"stamped-body": 2,
-	"colored-inlay": 3,
-	"preview-png": 3,
+	"cutter-2d": 2,
+	"svg-cutter": 3,
+	"stamped-body": 3,
+	"colored-inlay": 5,
+	"preview-png": 5,
 });
-const REQUIRED_GENERATED_ASSET_ARTIFACTS = Object.freeze(["cutterMetadata", "stampedModel", "stampedMetadata", "inlayModel", "inlayMetadata", "previewPng"]);
+const REQUIRED_GENERATED_ASSET_ARTIFACTS = Object.freeze(["cutterSvg", "cutterMetadata", "stampedModel", "stampedMetadata", "inlayModel", "inlayMetadata", "previewPng"]);
 
 /**
  * Constructor options for a tileset pipeline model.
@@ -697,6 +698,8 @@ export class PipelineModel {
 			path.join(this.pipelineDir, "json", "svg-cutter"),
 			path.join(this.pipelineDir, "json", "stamped-body"),
 			path.join(this.pipelineDir, "json", "colored-inlay"),
+			path.join(this.pipelineDir, "images", "cutter-2d-svg"),
+			path.join(this.pipelineDir, "images", "cutter-simplified-svg"),
 			path.join(this.pipelineDir, "images", "generated-asset-preview-png"),
 		];
 
@@ -1678,6 +1681,9 @@ function cleanAssetPipelineFace(face) {
 
 	const cleanFace = stripDateFields(face);
 	const artifacts = {};
+	if (cleanFace.artifacts?.cutterSvg) {
+		artifacts.cutterSvg = normalizePath(cleanFace.artifacts.cutterSvg);
+	}
 	if (cleanFace.artifacts?.cutterModel) {
 		artifacts.cutterModel = normalizePath(cleanFace.artifacts.cutterModel);
 	}
@@ -1752,6 +1758,9 @@ function requiredArtifactsForGeneratedAssetStage(stageId) {
 	if (stageId === "preview-svg") {
 		return [];
 	}
+	if (stageId === "cutter-2d") {
+		return ["cutterSvg"];
+	}
 	if (stageId === "svg-cutter") {
 		return ["cutterMetadata"];
 	}
@@ -1794,7 +1803,8 @@ function expectedGeneratedAssetStageHash(stageId, { inputHash, finalHash = "" })
  * @returns {boolean} Whether the stage uses final generated input.
  */
 function generatedAssetStageUsesFinalInput(stageId) {
-	return stageId === "stamped-body"
+	return stageId === "svg-cutter"
+		|| stageId === "stamped-body"
 		|| stageId === "colored-inlay"
 		|| stageId === "preview-png";
 }

@@ -94,11 +94,10 @@ as semantic meaning or on retained normalized geometry as cutter-ready.
 Do not make normalization decide Mahjong meaning, final output policy, final
 layout, final color, generated optional parts, base tile selection, GLB
 generation, or broad cutter-facing simplification. Cutter-friendly cleanup is
-owned by the planned Cutter SVG Simplification stage. That stage is currently
-unimplemented and intentionally unspecified here; its future contract must be
-inferred from cutter/inlay needs, not from Stage 2 implementation details.
-Stage 2 work should only keep enough evidence for later stages to make that
-future simplification traceable.
+owned by Cutter-2D Preparation. Its contract is inferred from cutter/inlay
+needs, not from Stage 2 implementation details. Stage 2 work should only keep
+enough evidence for later stages to make cutter-facing simplification
+traceable.
 
 ## Canonical Inputs And Outputs
 

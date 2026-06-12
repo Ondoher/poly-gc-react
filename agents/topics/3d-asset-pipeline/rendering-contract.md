@@ -105,12 +105,11 @@ exception. The generated asset stages may still keep defensive triangulation
 guards, but they should not be the primary place where known final-rendering
 SVG geometry is made usable.
 
-A planned Cutter SVG Simplification stage will own broad cutter-facing
-geometry cleanup after accepted/rendered output and before `svg-cutter`.
-Final Rendering should keep local SVG emission cleanup that is required for
-valid, reviewable visual output, but new 3D-specific simplification work
-belongs in that dedicated stage rather than in Source Normalization or Final
-Rendering.
+Cutter-2D Preparation owns broad cutter-facing geometry cleanup after
+accepted/rendered output and before `svg-cutter`. Final Rendering should keep
+local SVG emission cleanup that is required for valid, reviewable visual
+output, but new 3D-specific simplification work belongs in that dedicated
+stage rather than in Source Normalization or Final Rendering.
 
 For generated cutter geometry, multi-component faces use merged path solids
 with internal side-wall triangles removed where adjacent component footprints
@@ -142,13 +141,11 @@ The selected color SVG path is recorded on the face artifact pointer:
 svgPipeline.faces[faceKey].artifacts.finalRenderingColorSvg
 ```
 
-The current generated-asset path consumes this final-rendering color SVG
-directly. Prepared SVG export is a later stage and future review/QA promotion
-surface; until that gate is implemented, prepared SVGs should not be treated as
-the canonical input for cutter, stamped body, or colored inlay generation.
-The planned Cutter SVG Simplification stage will introduce a separate
-cutter-facing SVG input for generated asset stages; until then, the rendered
-color SVG remains the active generated-asset SVG handoff.
+The generated-asset path prepares this final-rendering color SVG into the
+cutter-2D SVG recorded at `assetPipeline.faces[faceKey].artifacts.cutterSvg`.
+Prepared SVG export is a later stage and future review/QA promotion surface;
+until that gate is implemented, prepared SVGs should not be treated as the
+canonical input for cutter, stamped body, or colored inlay generation.
 
 ## Layout Rules
 

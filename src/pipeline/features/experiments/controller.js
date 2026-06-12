@@ -1,5 +1,7 @@
 import { Service } from '@polylith/core';
 
+const EXPERIMENTS_PAGE_ENABLED = false;
+
 export default class ExperimentsController extends Service {
 	constructor(registry) {
 		super('experiments-controller', registry);
@@ -20,6 +22,10 @@ export default class ExperimentsController extends Service {
 		this.views = this.registry.subscribe('views');
 		this.pipeline = this.registry.subscribe('server-model');
 		this.state = this.initialState();
+
+		if (!EXPERIMENTS_PAGE_ENABLED) {
+			return;
+		}
 
 		this.pages.add({
 			id: 'experiments',

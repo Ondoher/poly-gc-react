@@ -119,7 +119,8 @@ async function main() {
 }
 
 function buildCutterVariant({ model, options }) {
-	const renderedSvg = resolveRepoPath(options.svgPath || model.getFinalRenderingColorSvgPath(options.faceKey) || '');
+	const faceState = model.getAssetPipeline().faces?.[options.faceKey];
+	const renderedSvg = resolveRepoPath(options.svgPath || faceState?.artifacts?.cutterSvg || model.getFinalRenderingColorSvgPath(options.faceKey) || '');
 	const baseTileVariantId = model.getSelectedBaseTileVariantId();
 	const selectedBaseTileVariantId = baseTileVariantId || options.baseTileVariantId;
 	const baseTileVariant = readBaseTileVariant(selectedBaseTileVariantId);

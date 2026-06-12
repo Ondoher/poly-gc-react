@@ -76,11 +76,9 @@ The SVG-shaped input/output boundary for each SVG-consuming stage lives in
   evidence preservation, and limited early geometry repair. Later stages may
   rely on named normalized artifact fields and source-shape evidence, but not
   on component ids as semantic meaning or on retained geometry as cutter-ready.
-- A new Stage 9 Cutter SVG Simplification stage is the planned owner of
-  cutter-facing geometry cleanup. This moves broad cutter-readiness pressure
-  out of Source Normalization and Final Rendering while keeping the current
-  final-rendering color SVG as the active generated-asset input until the new
-  stage is implemented and promoted.
+- Stage 9 Cutter-2D Preparation owns cutter-facing geometry cleanup. This
+  moves broad cutter-readiness pressure out of Source Normalization and Final
+  Rendering while giving generated assets a dedicated cutter SVG handoff.
 - Final rendering writes diagnostic final-rendering map and report artifacts
   while keeping durable render pointers in `svgPipeline.faces[*].artifacts`.
 - Final rendering now normalizes filled evenodd source paths for generated

@@ -58,7 +58,7 @@ make later stages depend on accidental behavior.
 - [Stage 6: Final Rendering Composition](#stage-6-final-rendering-composition)
 - [Stage 7: Visual Approval](#stage-7-visual-approval)
 - [Stage 8: Prepared SVG Export](#stage-8-prepared-svg-export)
-- [Stage 9: Cutter SVG Simplification](#stage-9-cutter-svg-simplification)
+- [Stage 9: Cutter-2D Preparation](#stage-9-cutter-2d-preparation)
 - [Stage 10: Base Tile Selection And Asset Planning](#stage-10-base-tile-selection-and-asset-planning)
 - [Stage 11: SVG Cutter Generation](#stage-11-svg-cutter-generation)
 - [Stage 12: Stamped Body Generation](#stage-12-stamped-body-generation)
@@ -77,14 +77,13 @@ make later stages depend on accidental behavior.
   actual artwork.
 - Review stages may show diagnostic SVGs, but mutable decisions live in
   `pipeline.json`.
-- Generated asset stages currently consume the final-rendering color SVG,
-  recorded at `svgPipeline.faces[faceKey].artifacts.finalRenderingColorSvg`.
+- Generated asset stages consume the cutter-2D SVG prepared from the
+  final-rendering color SVG and recorded at
+  `assetPipeline.faces[faceKey].artifacts.cutterSvg`.
 - Prepared SVG export is a future QA/promotion surface. It is not currently the
   generated-asset input.
-- Cutter SVG Simplification is the planned owner of cutter-friendly geometry
-  cleanup between accepted/rendered SVG output and SVG Cutter Generation.
-  Until that stage is implemented and promoted, generated asset stages continue
-  to consume the final-rendering color SVG.
+- Cutter-2D Preparation owns cutter-friendly geometry cleanup between
+  accepted/rendered SVG output and SVG Cutter Generation.
 - Stages should fail loudly when required geometry or artifacts are missing.
   Silent fallback SVGs create stale hidden contracts.
 - Rich review geometry and cutter-ready geometry are not the same artifact
@@ -155,36 +154,39 @@ source SVG
 -> add-optional diagnostic SVG
 -> layout diagnostic SVG
 -> final-rendering color SVG
--> generated SVG consumers
-```
-
-The planned cutter-facing SVG chain adds an explicit simplification handoff:
-
-```text
-final-rendering color SVG
--> cutter-simplified SVG
+-> cutter-2D SVG
 -> SVG Cutter Generation / Colored Inlay Generation
 ```
 
-Only the source SVG, normalized component artifact, and final-rendering color
-SVG are durable SVG-stage handoffs today:
+The active cutter-facing SVG chain has an explicit simplification handoff:
+
+```text
+final-rendering color SVG
+-> cutter-2D SVG
+-> SVG Cutter Generation / Colored Inlay Generation
+```
+
+The durable SVG-stage handoffs are:
 
 - `svgPipeline.faces[faceKey].artifacts.sourceSvg` points at the raw donor
   SVG copied or referenced by intake.
 - `svgPipeline.faces[faceKey].artifacts.normalizedComponents` points at the
   normalized source-geometry inventory JSON.
 - `svgPipeline.faces[faceKey].artifacts.finalRenderingColorSvg` points at the
-  current SVG consumed by cutter and colored-inlay generation.
+  rendered visual output.
+- `assetPipeline.faces[faceKey].artifacts.cutterSvg` points at
+  `images/cutter-2d-svg/<faceKey>.svg`, the cutter geometry SVG handoff.
 
 The add-optional and layout SVGs are diagnostic review surfaces. They help
 explain the final-rendering composition steps, but generated asset stages
 should not consume them as canonical input. Prepared SVGs are also not active
 generated-asset inputs yet.
 
-The cutter-simplified SVG is a planned artifact, not an active generated-asset
-input yet. Once promoted, cutter and colored-inlay generation should consume
-that same simplified SVG coordinate contract so recesses and inlay stay in
-agreement.
+Generated assets preserve two SVG handoffs: the cutter-2D SVG is the active
+cutter geometry input, while the final-rendering color SVG remains the
+colored-inlay paint/material input. Both live in prepared face coordinates so
+recesses and inlay stay aligned without forcing the inlay stage to consume the
+unioned cutter geometry.
 
 ## Known Handoff Gaps
 
@@ -255,13 +257,11 @@ future design work, not as permission to add hidden downstream patches.
   identify whether the cause was normalization, assignment, rendering, cutter
   cleanup, material placement, or preview runtime behavior.
 
-The main structural gap is the missing explicit cutter-readiness handoff.
-Today, Final Rendering carries both visual-review output and current
-generated-asset SVG input responsibilities. The decided direction is to add a
-dedicated Cutter SVG Simplification stage after source/rendering decisions and
-before cutter generation. That stage should separate 3D geometry cleanup from
-source normalization so fixes for 3D generation do not damage source evidence
-or review semantics.
+The main structural gap was the missing explicit cutter-readiness handoff.
+Final Rendering now owns the visual-review output, and Cutter-2D Preparation
+owns the generated-asset SVG input. That separation keeps 3D geometry cleanup
+out of source normalization so fixes for physical generation do not damage
+source evidence or review semantics.
 
 ## Normalization Weaknesses To Track
 
@@ -741,8 +741,8 @@ Classification and filtering details:
   such as contained opaque paint layers inside one identified source shape.
 - Normalization is not required to make every retained component directly
   cutter-ready. It can preserve complex or fragmented evidence for assignment,
-  alignment, and recoloring because Cutter SVG Simplification will own the
-  later cutter-facing SVG.
+  alignment, and recoloring because Cutter-2D Preparation owns the later
+  cutter-facing SVG.
 - Normalization is not the place to merge semantically separate motifs into one
   object. Cutter-facing simplification may clean geometry later, but it should
   not erase semantic distinctions needed by review stages.
@@ -931,7 +931,7 @@ Shaping rules:
   downstream stages to reinterpret.
 - Final rendering may perform local SVG emission cleanup needed for visual
   correctness and valid review output, but broad cutter-facing simplification
-  belongs to Cutter SVG Simplification rather than this stage.
+  belongs to Cutter-2D Preparation rather than this stage.
 
 Boundary:
 
@@ -939,11 +939,9 @@ Boundary:
   omitted optional parts; layout; color; and generated glyphs.
 - It should produce SVGs that are usable by the 3D pipeline, but it does not
   own cutter CSG behavior or GLB generation.
-- Current generated asset stages consume this color SVG directly, so any
-  cutter-facing simplification that happens before the new simplification
-  stage is implemented remains legacy/local cleanup. New broad simplification
-  work should target Cutter SVG Simplification instead of becoming an implicit
-  final-rendering side effect.
+- Generated asset stages consume the cutter-2D SVG prepared from this color
+  SVG. Broad cutter-facing simplification work should target Cutter-2D
+  Preparation instead of becoming an implicit final-rendering side effect.
 
 ## Stage 7: Visual Approval
 
@@ -995,7 +993,7 @@ Output SVG contract:
   deterministic element order where possible, valid XML, explicit paint, and no
   hidden dependency on source authoring quirks.
 - Prepared SVG export is not the owner of cutter-friendly simplification.
-  Cutter SVG Simplification owns that 3D-facing geometry handoff.
+  Cutter-2D Preparation owns that 3D-facing geometry handoff.
 
 Current boundary:
 
@@ -1006,13 +1004,13 @@ Current boundary:
   final-rendering color SVG is both the review/composition result and the SVG
   handoff consumed by generated asset stages.
 
-## Stage 9: Cutter SVG Simplification
+## Stage 9: Cutter-2D Preparation
 
 Description:
 
-Cutter SVG Simplification is the planned post-normalization, pre-cutter stage
-that turns accepted/rendered face artwork into geometry shaped for cutter and
-inlay generation. It exists to remove cutter-specific pressure from Source
+Cutter-2D Preparation is the active post-rendering, pre-cutter stage that turns
+accepted rendered face artwork into geometry shaped for cutter and inlay
+generation. It exists to remove cutter-specific pressure from Source
 Normalization and Final Rendering.
 
 Input SVG contract:
@@ -1027,23 +1025,25 @@ Input SVG contract:
 
 Output SVG contract:
 
-- Produces a cutter-simplified SVG artifact for generated asset stages.
-- The simplified SVG should be valid XML/SVG in the same prepared face
+- Produces `images/cutter-2d-svg/<faceKey>.svg` and records it as
+  `assetPipeline.faces[faceKey].artifacts.cutterSvg`.
+- The cutter-2D SVG should be valid XML/SVG in the same prepared face
   coordinate contract as final rendering.
 - Visible cutter/inlay geometry should be explicit filled paths with concrete
   paint and unambiguous holes. Stroke-only artwork should already be resolved
   or converted before cutter generation consumes it.
-- Simplification may recombine, simplify, prune, union, subtract, or otherwise
+- The current implementation runs the Paper.js `unite-all` flattening pass with
+  flatness `0.05`.
+- Preparation may recombine, simplify, prune, union, subtract, or otherwise
   reshape geometry when doing so preserves accepted visual meaning and improves
   cutter/inlay robustness.
-- Simplification should preserve diagnostics or provenance pointers sufficient
-  to explain which rendered/source evidence produced each simplified output
-  path.
+- Preparation should preserve diagnostics or provenance pointers sufficient to
+  explain which rendered/source evidence produced each simplified output path.
 
 Build profile notes:
 
-- Cutter SVG Simplification should accept an explicit generated-asset build
-  profile rather than hiding quality/speed choices in the cutter.
+- Cutter-2D Preparation should accept an explicit generated-asset build profile
+  rather than hiding quality/speed choices in the cutter.
 - A fast/review profile may union cutter-visible geometry at the SVG level,
   ignore color for the cutter footprint, use controlled curve flattening or
   simplification, and hand the cutter geometry that can skip expensive 3D CSG
@@ -1065,9 +1065,8 @@ Boundary:
 - It may simplify accepted rendered geometry for physical generation, but it
   must not change which Mahjong parts are present, where they are placed, or
   what visible color policy final rendering selected.
-- Once promoted, SVG Cutter Generation and Colored Inlay Generation should
-  consume the same cutter-simplified SVG. Until then, current generated asset
-  stages continue to consume the final-rendering color SVG directly.
+- SVG Cutter Generation and Colored Inlay Generation consume the same cutter-2D
+  SVG.
 
 ## Stage 10: Base Tile Selection And Asset Planning
 
@@ -1106,22 +1105,22 @@ Boundary:
 
 Description:
 
-SVG Cutter Generation turns the final-rendering SVG artwork into 3D cutter
-volumes. Its job is to produce subtractive geometry that can carve recesses in
-the selected base tile without preserving unwanted internal walls.
+SVG Cutter Generation turns the cutter-2D SVG artwork into 3D cutter volumes.
+Its job is to produce subtractive geometry that can carve recesses in the
+selected base tile without preserving unwanted internal walls.
 
 Input SVG contract:
 
-- Reads the cutter-simplified SVG once Stage 9 is promoted. Until then, it
-  reads the final-rendering color SVG path recorded on the face artifact.
+- Reads the cutter-2D SVG path recorded at
+  `assetPipeline.faces[faceKey].artifacts.cutterSvg`.
 - Expects visible artwork paths in prepared face SVG coordinates.
 - White tile body/background paths are ignored as non-cutter artwork.
 - Filled paths are the normal cutter source.
 - Defensive stroke handling can remain for older artifacts, but current final
   rendering should emit visible strokes as filled paths.
-- The current implementation parses the final SVG with `SVGLoader`, consumes
+- The current implementation parses the cutter-2D SVG with `SVGLoader`, consumes
   visible fill paths and defensively consumes visible stroke paths, ignores
-  tile-body white, and normalizes from the final SVG `viewBox` into the
+  tile-body white, and normalizes from the SVG `viewBox` into the
   selected base tile face rectangle.
 - Cutter generation treats SVG fills as area geometry for extrusion. Stroke
   support is defensive compatibility; the preferred semantic handoff is filled
@@ -1159,7 +1158,7 @@ Cutter limitations:
   excessive tiny triangles for CSG.
 - Cutter generation assumes the incoming SVG is already explicit enough to be
   parsed into paths and shapes. If it cannot consume the SVG without broad
-  repair, the missing work belongs in Cutter SVG Simplification rather than in
+  repair, the missing work belongs in Cutter-2D Preparation rather than in
   cutter generation.
 
 ## Stage 12: Stamped Body Generation
@@ -1201,16 +1200,15 @@ SVG boundary:
 Description:
 
 Colored Inlay Generation places colored geometry into the stamped recesses
-using the same SVG coordinate contract as cutter generation. Today that is the
-final-rendering SVG coordinate contract; once Stage 9 is promoted, it should be
-the cutter-simplified SVG coordinate contract. It produces the visible
-carved-and-inlaid tile asset.
+using the final-rendering color SVG for paint/material regions and the
+stamped/cutter artifacts produced from the cutter-2D SVG. It produces the
+visible carved-and-inlaid tile asset.
 
 Input SVG contract:
 
-- Reads the cutter-simplified SVG and the stamped body/cutter metadata once
-  Stage 9 is promoted. Until then, it reads the final-rendering color SVG.
-- Uses the same SVG viewBox-to-tile-face normalization as cutter generation.
+- Reads the final-rendering color SVG and the stamped body/cutter metadata.
+- Uses the same prepared-face SVG viewBox-to-tile-face normalization as cutter
+  generation.
 - Filled final-rendering paths are the normal source of colored inlay meshes.
 - Defensive stroke handling can remain for older artifacts, but current final
   SVGs should have converted visible stroke-only artwork to filled geometry.
@@ -1237,10 +1235,10 @@ Output contract:
 Boundary:
 
 - Inlay generation should visually agree with cutter placement because both
-  consume the same simplified SVG coordinate contract once Stage 9 is
-  promoted.
-- If the inlay and recess disagree, first check whether cutter and inlay used
-  the same SVG, viewBox, target rect, and stage hashes.
+  SVG inputs share the same prepared face coordinate contract.
+- If the inlay and recess disagree, first check whether the final-rendering SVG
+  and cutter-2D SVG used the same viewBox/coordinate contract, target rect, and
+  stage hashes.
 - Body-like colors such as tile white are ignored by the inlay SVG consumer.
   Visible white pigment needs an explicit rendering decision that distinguishes
   it from tile body/background or negative-space knockout behavior.

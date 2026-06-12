@@ -18,7 +18,10 @@ export default class AssetReviewPage extends React.Component {
 
 	componentDidMount() {
 		this.updateListener = this.props.pageView.listen("updated", (pageState) => {
-			this.setState(pageState);
+			this.setState((state) => ({
+				...pageState,
+				viewerFace: refreshViewerFace(state.viewerFace, pageState.assetReview?.faces),
+			}));
 		});
 		this.props.pageView.load({ quiet: true });
 	}
@@ -729,6 +732,14 @@ function progressLabel(progress = {}) {
 		return `${phase} ${progress.current || 0}/${progress.total}`;
 	}
 	return phase;
+}
+
+function refreshViewerFace(viewerFace, faces) {
+	if (!viewerFace || !Array.isArray(faces)) {
+		return viewerFace || null;
+	}
+
+	return faces.find((face) => face.faceKey === viewerFace.faceKey) || viewerFace;
 }
 
 function cutterPhaseLabel(phase) {
