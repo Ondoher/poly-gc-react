@@ -49,6 +49,7 @@ describe('NorthPoleAzimuthalEquidistantEarthProjection', () => {
 		expect(atNinety.projected.radius).toBeCloseTo(atZero.projected.radius, 8);
 		expect(atZero.projected.x).toBeCloseTo(0, 8);
 		expect(atZero.projected.y).toBeCloseTo(atZero.projected.radius, 8);
+		expect(atZero.position.z).toBeCloseTo(atZero.projected.y, 8);
 		expect(atNinety.projected.x).toBeCloseTo(atNinety.projected.radius, 8);
 		expect(atNinety.projected.y).toBeCloseTo(0, 8);
 	});

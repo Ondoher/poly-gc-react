@@ -40,7 +40,7 @@ describe('UpperHemisphereRadialLiftProjection', () => {
 		expect(result.visible).toBeTrue();
 		expect(result.position.x).toBeCloseTo(0, 8);
 		expect(result.position.y).toBeCloseTo(0, 8);
-		expect(result.position.z).toBeCloseTo(-DOME_RADIUS_KM, 8);
+		expect(result.position.z).toBeCloseTo(DOME_RADIUS_KM, 8);
 	});
 
 	// These expectations come from hemisphere geometry:

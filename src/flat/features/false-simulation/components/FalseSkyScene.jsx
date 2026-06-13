@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { DEFAULT_EARTH_FLOOR_TEXTURE } from '../models/consts.js';
+import { resolveAnimatedSun } from '../models/sun-animation.js';
+import FalseAtmosphereComposer from './FalseAtmosphereComposer.jsx';
 
 const OBSERVER_EYE_HEIGHT_KM = 0.0017;
 const LOOK_SENSITIVITY = 0.003;
@@ -9,54 +12,55 @@ const INITIAL_LOOK_HEIGHT_RATIO = 0.08;
 const SCALE_CUE_HEIGHT_KM = 0.01;
 const STAR_WORLD_SIZE_KM = 120;
 const DOME_LATITUDE_TUBE_RADIUS_KM = 18;
-const EARTH_TEXTURE_SIZE = 2048;
-const HAZE_VERTEX_SHADER = `
-	varying vec3 vWorldPosition;
+const LOCAL_FLOOR_SIZE_KM = 320;
+const LOCAL_FLOOR_Y_KM = 0;
+const EARTH_FLOOR_VERTEX_SHADER = `
+	varying vec2 vUv;
 
 	void main() {
-		vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-		vWorldPosition = worldPosition.xyz;
-		gl_Position = projectionMatrix * viewMatrix * worldPosition;
+		vUv = uv;
+		gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 	}
 `;
-const HAZE_FRAGMENT_SHADER = `
-	uniform vec3 hazeColor;
-	uniform float opacity;
-	uniform float fullOpacityDistanceKm;
-	uniform float seaLevelDensity;
-	uniform float atmosphereHeightKm;
-	varying vec3 vWorldPosition;
+const EARTH_FLOOR_FRAGMENT_SHADER = `
+	uniform sampler2D floorTexture;
+	uniform float textureRotationRad;
+	varying vec2 vUv;
 
 	void main() {
-		vec3 ray = vWorldPosition - cameraPosition;
-		float viewDistanceKm = length(ray);
-		vec3 viewDirection = normalize(ray);
-		float vertical = viewDirection.y;
-		float atmosphereHeight = max(atmosphereHeightKm, 0.0001);
-		float startAltitude = clamp(cameraPosition.y, 0.0, atmosphereHeight);
-		float opticalPathKm = viewDistanceKm;
+		vec2 centeredUv = vUv - vec2(0.5);
 
-		if (vertical > 0.0001) {
-			opticalPathKm = min(viewDistanceKm, max((atmosphereHeight - startAltitude) / vertical, 0.0));
+		if (length(centeredUv) > 0.5) {
+			discard;
 		}
 
-		float endAltitude = clamp(startAltitude + vertical * opticalPathKm, 0.0, atmosphereHeight);
-		float startDensity = seaLevelDensity * (1.0 - (startAltitude / atmosphereHeight));
-		float endDensity = seaLevelDensity * (1.0 - (endAltitude / atmosphereHeight));
-		float averageDensity = (startDensity + endDensity) * 0.5;
-		float opticalDepthKm = max(opticalPathKm * averageDensity, 0.0);
-		float alpha = clamp(opacity * (1.0 - exp(-opticalDepthKm / max(fullOpacityDistanceKm, 0.0001))), 0.0, 1.0);
+		float rotationCos = cos(textureRotationRad);
+		float rotationSin = sin(textureRotationRad);
+		vec2 rotatedUv = vec2(
+			centeredUv.x * rotationCos - centeredUv.y * rotationSin,
+			centeredUv.x * rotationSin + centeredUv.y * rotationCos
+		);
+		// Plane local-y maps to world -z; projection-y maps to world +z.
+		vec2 projectedRatio = vec2(rotatedUv.x * 2.0, -rotatedUv.y * 2.0);
+		float angularRatio = clamp(length(projectedRatio), 0.0, 1.0);
+		float longitudeRad = atan(projectedRatio.x, projectedRatio.y);
+		vec2 sampleUv = vec2(
+			fract((longitudeRad / (3.141592653589793 * 2.0)) + 0.5),
+			1.0 - angularRatio
+		);
+		vec4 textureColor = texture2D(floorTexture, sampleUv);
 
-		gl_FragColor = vec4(hazeColor, alpha);
+		gl_FragColor = vec4(textureColor.rgb, 1.0);
 	}
 `;
 
 function observerCameraPosition(observer) {
 	const position = observer?.position || {};
+	const viewAltitudeKm = Number(observer?.view?.altitudeKm);
 
 	return new THREE.Vector3(
 		position.x || 0,
-		(position.y || 0) + OBSERVER_EYE_HEIGHT_KM,
+		(position.y || 0) + (Number.isFinite(viewAltitudeKm) ? viewAltitudeKm : OBSERVER_EYE_HEIGHT_KM),
 		position.z || 0,
 	);
 }
@@ -100,128 +104,6 @@ function initialLookAngles(position, target) {
 
 function applyLookRotation(camera, lookState) {
 	camera.rotation.set(lookState.pitch, lookState.yaw, 0, 'YXZ');
-}
-
-function projectGeoToTexture(lat, lon, size) {
-	const radius = size / 2;
-	const angularDistanceRatio = (90 - lat) / 180;
-	const projectedRadius = angularDistanceRatio * radius;
-	const theta = lon * Math.PI / 180;
-
-	return {
-		x: radius + Math.sin(theta) * projectedRadius,
-		y: radius - Math.cos(theta) * projectedRadius,
-	};
-}
-
-function drawProjectedPolygon(context, points, size) {
-	context.beginPath();
-
-	points.forEach(([lat, lon], index) => {
-		const projected = projectGeoToTexture(lat, lon, size);
-
-		if (index === 0) {
-			context.moveTo(projected.x, projected.y);
-			return;
-		}
-
-		context.lineTo(projected.x, projected.y);
-	});
-
-	context.closePath();
-	context.fill();
-	context.stroke();
-}
-
-function createEarthProjectionTexture() {
-	const size = EARTH_TEXTURE_SIZE;
-	const radius = size / 2;
-	const center = radius;
-	const canvas = document.createElement('canvas');
-	const context = canvas.getContext('2d');
-
-	canvas.width = size;
-	canvas.height = size;
-
-	context.clearRect(0, 0, size, size);
-	context.save();
-	context.beginPath();
-	context.arc(center, center, radius - 2, 0, Math.PI * 2);
-	context.clip();
-
-	const oceanGradient = context.createRadialGradient(center, center, 0, center, center, radius);
-	oceanGradient.addColorStop(0, '#142332');
-	oceanGradient.addColorStop(0.55, '#0b1724');
-	oceanGradient.addColorStop(1, '#030914');
-	context.fillStyle = oceanGradient;
-	context.fillRect(0, 0, size, size);
-
-	context.fillStyle = '#d8d05a';
-	context.strokeStyle = 'rgba(255, 252, 185, 0.9)';
-	context.lineWidth = 7;
-
-	[
-		// Coarse hand-drawn land silhouettes for surface orientation only. A
-		// Natural Earth-style dataset should replace these once map data becomes
-		// part of the POC contract.
-		[[72, -168], [69, -132], [55, -122], [49, -95], [58, -62], [49, -52], [27, -80], [15, -96], [8, -80], [18, -105], [32, -118], [49, -125]],
-		[[13, -82], [8, -70], [-4, -78], [-18, -70], [-35, -60], [-55, -70], [-50, -45], [-24, -40], [-4, -35], [10, -60]],
-		[[71, -10], [65, 40], [72, 95], [62, 150], [43, 142], [24, 122], [8, 106], [22, 78], [7, 45], [30, 32], [37, 12], [52, -6]],
-		[[35, -17], [32, 33], [12, 44], [-10, 41], [-35, 22], [-35, 6], [-5, -16], [20, -17]],
-		[[23, 68], [8, 78], [7, 101], [-8, 118], [-35, 146], [-44, 120], [-20, 82]],
-		[[-11, 112], [-10, 154], [-39, 153], [-44, 116]],
-		[[84, -73], [79, -18], [67, -24], [61, -48], [70, -73]],
-	].forEach((polygon) => drawProjectedPolygon(context, polygon, size));
-
-	context.strokeStyle = 'rgba(226, 240, 255, 0.55)';
-	context.lineWidth = 3;
-
-	for (let lat = 80; lat >= -80; lat -= 10) {
-		const ringRadius = ((90 - lat) / 180) * radius;
-		context.beginPath();
-		context.arc(center, center, ringRadius, 0, Math.PI * 2);
-		context.stroke();
-	}
-
-	for (let lon = 0; lon < 360; lon += 15) {
-		const theta = lon * Math.PI / 180;
-		context.beginPath();
-		context.moveTo(center, center);
-		context.lineTo(center + Math.sin(theta) * radius, center - Math.cos(theta) * radius);
-		context.stroke();
-	}
-
-	context.strokeStyle = 'rgba(230, 246, 255, 0.96)';
-	context.lineWidth = 12;
-	context.beginPath();
-	context.arc(center, center, radius - 4, 0, Math.PI * 2);
-	context.stroke();
-
-	// Temporary calibration marks: if these are not visible, the rendered
-	// floor is not showing this generated texture clearly.
-	context.strokeStyle = '#ff00ff';
-	context.lineWidth = 18;
-	context.beginPath();
-	context.moveTo(center - radius * 0.92, center);
-	context.lineTo(center + radius * 0.92, center);
-	context.stroke();
-
-	context.strokeStyle = '#00ffff';
-	context.beginPath();
-	context.moveTo(center, center - radius * 0.92);
-	context.lineTo(center, center + radius * 0.92);
-	context.stroke();
-
-	context.restore();
-
-	const texture = new THREE.CanvasTexture(canvas);
-	texture.colorSpace = THREE.SRGBColorSpace;
-	texture.minFilter = THREE.LinearFilter;
-	texture.magFilter = THREE.LinearFilter;
-	texture.anisotropy = 8;
-	texture.needsUpdate = true;
-
-	return texture;
 }
 
 function ObserverLookCamera({ observer, domeRadius, sceneCamera }) {
@@ -344,24 +226,35 @@ function DebugOrthographicCamera({ sceneCamera }) {
 	return null;
 }
 
-function EarthDisc({ radius }) {
-	const texture = useMemo(() => createEarthProjectionTexture(), []);
+function EarthDisc({ radius, floorTexture }) {
+	const textureConfig = floorTexture || DEFAULT_EARTH_FLOOR_TEXTURE;
+	const texture = useLoader(THREE.TextureLoader, textureConfig.url);
+	const uniforms = useMemo(() => {
+		texture.colorSpace = THREE.SRGBColorSpace;
+		texture.generateMipmaps = false;
+		texture.minFilter = THREE.LinearFilter;
+		texture.magFilter = THREE.LinearFilter;
+		texture.anisotropy = 8;
+		texture.wrapS = THREE.RepeatWrapping;
+		texture.wrapT = THREE.ClampToEdgeWrapping;
+		texture.needsUpdate = true;
 
-	useEffect(() => {
-		return () => {
-			texture.dispose();
+		return {
+			floorTexture: { value: texture },
+			textureRotationRad: { value: textureConfig.textureRotationRad || 0 },
 		};
-	}, [texture]);
+	}, [texture, textureConfig]);
 
 	return (
 		<group>
 			<mesh rotation={[-Math.PI / 2, 0, 0]}>
 				<planeGeometry args={[radius * 2, radius * 2, 128, 128]} />
-				<meshBasicMaterial
-					map={texture}
-					transparent
-					alphaTest={0.01}
+				<shaderMaterial
+					vertexShader={EARTH_FLOOR_VERTEX_SHADER}
+					fragmentShader={EARTH_FLOOR_FRAGMENT_SHADER}
+					uniforms={uniforms}
 					depthWrite={false}
+					depthTest={false}
 					fog={false}
 					toneMapped={false}
 					side={THREE.DoubleSide}
@@ -372,6 +265,42 @@ function EarthDisc({ radius }) {
 				<meshBasicMaterial color="#69a8ff" transparent opacity={0.65} side={THREE.DoubleSide} />
 			</mesh>
 		</group>
+	);
+}
+
+/**
+ * Render a stable near-observer floor patch for the eye-height view.
+ *
+ * The projection-sized Earth disc is useful global context, but it is too
+ * large and too close to grazing incidence to act as the viewer's local floor
+ * in the first depth composer. This patch is intentionally local and
+ * depth-bearing until real local terrain replaces it.
+ *
+ * @param {{ observer: FalseSimulationScene["observer"] | null | undefined }} props - Carry the projected observer state.
+ * @returns {React.ReactNode}
+ */
+function LocalObserverFloor({ observer }) {
+	const position = observer?.position || { x: 0, y: 0, z: 0 };
+
+	return (
+		<mesh
+			position={[
+				position.x || 0,
+				LOCAL_FLOOR_Y_KM,
+				position.z || 0,
+			]}
+			rotation={[-Math.PI / 2, 0, 0]}
+			renderOrder={-100}
+		>
+			<planeGeometry args={[LOCAL_FLOOR_SIZE_KM, LOCAL_FLOOR_SIZE_KM, 1, 1]} />
+			<meshBasicMaterial
+				color="#7f985b"
+				depthWrite
+				depthTest
+				side={THREE.DoubleSide}
+				toneMapped={false}
+			/>
+		</mesh>
 	);
 }
 
@@ -480,35 +409,6 @@ function DomeCelestialLatitudeRings({ radius }) {
 				</mesh>
 			))}
 		</group>
-	);
-}
-
-function AltitudeHaze({ radius, atmosphere }) {
-	const uniforms = useMemo(() => ({
-		hazeColor: { value: new THREE.Color(atmosphere?.color || '#7fb2ff') },
-		opacity: { value: atmosphere?.opacity ?? 1 },
-		fullOpacityDistanceKm: { value: atmosphere?.fullOpacityDistanceKm || 482.8032 },
-		seaLevelDensity: { value: atmosphere?.seaLevelDensity ?? 1 },
-		atmosphereHeightKm: { value: atmosphere?.atmosphereHeightKm || 100 },
-	}), [atmosphere]);
-
-	if (atmosphere?.enabled === false) {
-		return null;
-	}
-
-	return (
-		<mesh>
-			<sphereGeometry args={[radius * 0.998, 96, 32, 0, Math.PI * 2, 0, Math.PI / 2]} />
-			<shaderMaterial
-				vertexShader={HAZE_VERTEX_SHADER}
-				fragmentShader={HAZE_FRAGMENT_SHADER}
-				uniforms={uniforms}
-				transparent
-				depthWrite={false}
-				side={THREE.BackSide}
-				blending={THREE.AdditiveBlending}
-			/>
-		</mesh>
 	);
 }
 
@@ -665,8 +565,35 @@ function StaticSphereObject({ object }) {
 	);
 }
 
+function StaticBoxObject({ object }) {
+	return (
+		<mesh
+			position={[
+				object.position.x,
+				object.position.y,
+				object.position.z,
+			]}
+			rotation={[0, object.rotationYRad || 0, 0]}
+		>
+			<boxGeometry args={[object.size.x, object.size.y, object.size.z]} />
+			<meshBasicMaterial color={object.style?.color || '#00ff00'} />
+		</mesh>
+	);
+}
+
+/**
+ * Render generic scene objects that are not owned by first-class scene fields.
+ *
+ * @param {{ objects: FalseSimulationProjectedObject[] }} props - Carry projected scene objects.
+ * @returns {React.ReactNode}
+ */
 function SceneObjects({ objects }) {
-	const visibleObjects = objects.filter((object) => object.visible && object.position && object.kind === 'sphere');
+	const visibleObjects = objects.filter((object) => (
+		object.role !== 'sun'
+		&& object.visible
+		&& object.position
+		&& (object.kind === 'sphere' || object.kind === 'box')
+	));
 
 	return (
 		<group>
@@ -675,21 +602,109 @@ function SceneObjects({ objects }) {
 					return <AnimatedFixedLatitudeObject key={object.id} object={object} />;
 				}
 
+				if (object.kind === 'box') {
+					return <StaticBoxObject key={object.id} object={object} />;
+				}
+
 				return <StaticSphereObject key={object.id} object={object} />;
 			})}
 		</group>
 	);
 }
 
-function FalseSkySceneContent({ scene }) {
-	const earthRadius = scene?.earth?.radiusKm || 20015.114442035923;
-	const domeRadius = scene?.dome?.radiusKm || 20015.114442035923;
+/**
+ * Render the first-class false-simulation sun body.
+ *
+ * The visible sun remains separate from the generic object loop because its
+ * position and apparent size are simulation evidence.
+ *
+ * @param {{ sun: FalseSimulationSunScene | null | undefined, observerPosition: FlatVector3 | undefined }} props - Carry the projected scene sun and observer position.
+ * @returns {React.ReactNode}
+ */
+function SunBody({ sun, observerPosition }) {
+	const meshRef = useRef(null);
+	const resolvedSun = resolveAnimatedSun(sun, 0, { observerPosition });
+	const object = resolvedSun?.object;
+
+	useFrame(({ clock }) => {
+		if (!meshRef.current || !sun) {
+			return;
+		}
+
+		const currentSun = resolveAnimatedSun(sun, clock.getElapsedTime(), {
+			observerPosition,
+		});
+		const currentPosition = currentSun?.object?.position;
+
+		if (!currentPosition) {
+			return;
+		}
+
+		meshRef.current.position.set(
+			currentPosition.x,
+			currentPosition.y,
+			currentPosition.z,
+		);
+	});
+
+	if (!sun?.rendering?.renderBody || !object?.visible || !object?.position || object.kind !== 'sphere') {
+		return null;
+	}
+
+	return (
+		<mesh
+			ref={meshRef}
+			position={[
+				object.position.x,
+				object.position.y,
+				object.position.z,
+			]}
+		>
+			<sphereGeometry args={[object.radiusKm, 32, 16]} />
+			<meshBasicMaterial color={object.style?.color || '#ff8a1f'} />
+		</mesh>
+	);
+}
+
+/**
+ * Render solid false-simulation contents that should be atmosphere-composited.
+ *
+ * @param {{ scene: FalseSimulationScene | null | undefined, earthRadius: number, domeRadius: number }} props - Carry scene state and scene dimensions.
+ * @returns {React.ReactNode}
+ */
+function FalseSkySolidScene({ scene, earthRadius, domeRadius }) {
+	const earth = scene?.earth || {};
 	const stars = scene?.stars || [];
 	const objects = scene?.objects || [];
 	const constellations = scene?.constellations || [];
-	const atmosphere = scene?.atmosphere;
-	const sceneCamera = scene?.camera;
 	const siderealAnimation = scene?.animation?.siderealDay;
+
+	return (
+		<React.Fragment>
+			<ambientLight intensity={0.85} />
+			<EarthDisc radius={earthRadius} floorTexture={earth.floorTexture} />
+			<LocalObserverFloor observer={scene?.observer} />
+			<SurfaceScaleCues observer={scene?.observer} radius={earthRadius} />
+			<DomeCelestialLatitudeRings radius={domeRadius} />
+			<StarField stars={stars} animation={siderealAnimation} />
+			<ConstellationLines constellations={constellations} animation={siderealAnimation} />
+			<SunBody sun={scene?.sun} observerPosition={scene?.observer?.position} />
+			<SceneObjects objects={objects} />
+		</React.Fragment>
+	);
+}
+
+/**
+ * Render the false-simulation scene contents inside the Three.js canvas.
+ *
+ * @param {{ scene: FalseSimulationScene | null | undefined }} props - Carry the scene view model.
+ * @returns {React.ReactNode}
+ */
+function FalseSkySceneContent({ scene }) {
+	const earth = scene?.earth || {};
+	const earthRadius = earth.radiusKm || 20015.114442035923;
+	const domeRadius = scene?.dome?.radiusKm || 20015.114442035923;
+	const sceneCamera = scene?.camera;
 	const isFloorInspection = sceneCamera?.projection === 'orthographic';
 
 	if (isFloorInspection) {
@@ -698,7 +713,7 @@ function FalseSkySceneContent({ scene }) {
 				<color attach="background" args={['#060912']} />
 				<ambientLight intensity={0.85} />
 				<DebugOrthographicCamera sceneCamera={sceneCamera} />
-				<EarthDisc radius={earthRadius} />
+				<EarthDisc radius={earthRadius} floorTexture={earth.floorTexture} />
 			</React.Fragment>
 		);
 	}
@@ -711,17 +726,19 @@ function FalseSkySceneContent({ scene }) {
 			{sceneCamera?.projection !== 'orthographic' && (
 				<ObserverLookCamera observer={scene?.observer} domeRadius={domeRadius} sceneCamera={sceneCamera} />
 			)}
-			<EarthDisc radius={earthRadius} />
-			<SurfaceScaleCues observer={scene?.observer} radius={earthRadius} />
-			<AltitudeHaze radius={domeRadius} atmosphere={atmosphere} />
-			<DomeCelestialLatitudeRings radius={domeRadius} />
-			<StarField stars={stars} animation={siderealAnimation} />
-			<ConstellationLines constellations={constellations} animation={siderealAnimation} />
-			<SceneObjects objects={objects} />
+			<FalseAtmosphereComposer scene={scene}>
+				<FalseSkySolidScene scene={scene} earthRadius={earthRadius} domeRadius={domeRadius} />
+			</FalseAtmosphereComposer>
 		</React.Fragment>
 	);
 }
 
+/**
+ * Render the false-simulation Three.js canvas.
+ *
+ * @param {{ scene: FalseSimulationScene | null | undefined }} props - Carry the scene view model.
+ * @returns {React.ReactNode}
+ */
 export default function FalseSkyScene({ scene }) {
 	const sceneCamera = scene?.camera || null;
 	const isOrthographic = sceneCamera?.projection === 'orthographic';

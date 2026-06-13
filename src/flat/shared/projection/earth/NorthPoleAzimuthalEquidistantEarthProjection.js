@@ -28,7 +28,7 @@ export default class NorthPoleAzimuthalEquidistantEarthProjection {
 			position: {
 				x,
 				y: finiteNumber(point.elevationMeters) / 1000,
-				z: -y,
+				z: y,
 			},
 			projected: {
 				x,

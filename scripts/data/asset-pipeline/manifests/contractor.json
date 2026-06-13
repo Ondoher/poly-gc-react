@@ -1,0 +1,135 @@
+{
+  "description": "Contractor-delivered 2-D Mahjong face artwork package received on 2026-06-12.",
+  "source": "Designs/3d-assets/2d-contractor",
+  "sheetId": "contractor",
+  "outputDir": "scripts/data/asset-pipeline/source-svgs/contractor",
+  "sourceSvgHints": {},
+  "faces": {
+    "b-1": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/b-1.svg"
+    },
+    "b-2": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/b-2.svg"
+    },
+    "b-3": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/b-3.svg"
+    },
+    "b-4": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/b-4.svg"
+    },
+    "b-5": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/b-5.svg"
+    },
+    "b-6": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/b-6.svg"
+    },
+    "b-7": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/b-7.svg"
+    },
+    "b-8": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/b-8.svg"
+    },
+    "b-9": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/b-9.svg"
+    },
+    "c-1": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/c-1.svg"
+    },
+    "c-2": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/c-2.svg"
+    },
+    "c-3": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/c-3.svg"
+    },
+    "c-4": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/c-4.svg"
+    },
+    "c-5": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/c-5.svg"
+    },
+    "c-6": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/c-6.svg"
+    },
+    "c-7": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/c-7.svg"
+    },
+    "c-8": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/c-8.svg"
+    },
+    "c-9": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/c-9.svg"
+    },
+    "d-1": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/d-1.svg"
+    },
+    "d-2": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/d-2.svg"
+    },
+    "d-3": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/d-3.svg"
+    },
+    "d-4": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/d-4.svg"
+    },
+    "d-5": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/d-5.svg"
+    },
+    "d-6": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/d-6.svg"
+    },
+    "d-7": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/d-7.svg"
+    },
+    "d-8": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/d-8.svg"
+    },
+    "d-9": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/d-9.svg"
+    },
+    "dragon-g": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/dragon-g.svg"
+    },
+    "dragon-r": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/dragon-r.svg"
+    },
+    "dragon-w": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/dragon-w.svg"
+    },
+    "flower-1": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/flower-1.svg"
+    },
+    "flower-2": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/flower-2.svg"
+    },
+    "flower-3": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/flower-3.svg"
+    },
+    "flower-4": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/flower-4.svg"
+    },
+    "season-1": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/season-1.svg"
+    },
+    "season-2": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/season-2.svg"
+    },
+    "season-3": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/season-3.svg"
+    },
+    "season-4": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/season-4.svg"
+    },
+    "wind-e": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/wind-e.svg"
+    },
+    "wind-n": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/wind-n.svg"
+    },
+    "wind-s": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/wind-s.svg"
+    },
+    "wind-w": {
+      "source": "scripts/data/asset-pipeline/source-svgs/contractor/wind-w.svg"
+    }
+  }
+}

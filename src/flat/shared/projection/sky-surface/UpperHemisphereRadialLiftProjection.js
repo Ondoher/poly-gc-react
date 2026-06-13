@@ -24,7 +24,7 @@ export default class UpperHemisphereRadialLiftProjection {
 		const domePolarAngle = ratio * Math.PI / 2;
 		const surfaceRadius = domeRadius * Math.sin(domePolarAngle);
 		const x = surfaceRadius * Math.sin(theta);
-		const z = -surfaceRadius * Math.cos(theta);
+		const z = surfaceRadius * Math.cos(theta);
 		const y = domeRadius * Math.cos(domePolarAngle);
 
 		return {

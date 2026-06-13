@@ -4,7 +4,7 @@ On bootstrap, read these lightweight shared context files:
 
 - [Active Topic](/c:/dev/poly-gc-react/agents/topics/active-topic.md)
 - [Topics Index](/c:/dev/poly-gc-react/agents/topics/README.md)
-- [Architecture Overview](/c:/dev/poly-gc-react/agents/topics/architecture/architecture-overview.md)
+- [Architecture Overview](/c:/dev/poly-gc-react/agents/topics/standards/architecture/overview.md)
 
 Use the active topic file as a session continuity hint. If it names an active
 topic, load that topic's README after the lightweight shared context. If it
@@ -53,4 +53,4 @@ Working conventions:
   unless the user explicitly asks. Running `npm run build` is still acceptable
   as a syntax/build smoke check, especially because JSX files are not covered
   by direct `node --check`.
-- For file naming, placement, and JSDoc style, consult [Naming And Placement Conventions](/c:/dev/poly-gc-react/agents/topics/architecture/feature-mechanics.md#naming-and-placement-conventions) when creating or moving files, or when naming/JSDoc style is relevant.
+- For file naming, placement, and JSDoc style, consult [Naming And Placement Conventions](/c:/dev/poly-gc-react/agents/topics/standards/architecture/feature-mechanics.md#naming-and-placement-conventions) when creating or moving files, or when naming/JSDoc style is relevant.
