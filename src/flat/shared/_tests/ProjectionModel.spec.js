@@ -37,7 +37,7 @@ function expectFiniteVector(vector) {
 }
 
 describe('ProjectionModel', () => {
-	it('registers the false-simulation projection roles', () => {
+	it('registers the flat-simulation projection roles', () => {
 		expect(ProjectionModel.projectionIds('earth')).toContain('north-pole-azimuthal-equidistant');
 		expect(ProjectionModel.projectionIds('celestial')).toContain('north-celestial-pole-azimuthal-equidistant');
 		expect(ProjectionModel.projectionIds('sky-surface')).toContain('upper-hemisphere-radial-lift');

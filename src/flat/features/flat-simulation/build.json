@@ -1,0 +1,11 @@
+{
+	"css": [
+		{
+			"dest": "flat-simulation/css",
+			"cwd": "assets/css",
+			"glob": "**/*.css",
+			"keepNest": true
+		}
+	],
+	"index": "index.js"
+}

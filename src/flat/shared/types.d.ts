@@ -22,6 +22,555 @@ type FlatVector3 = {
 }
 
 /**
+ * Describe a local observer-relative flat placement frame.
+ */
+type FlatObserverRelativeFlatFrame = {
+	/**
+	 * Identify the frame as a flat plane.
+	 */
+	kind: "flat-plane";
+
+	/**
+	 * Store the surface point under the observer.
+	 */
+	origin: FlatVector3;
+
+	/**
+	 * Store the local east axis.
+	 */
+	east: FlatVector3;
+
+	/**
+	 * Store the local north axis.
+	 */
+	north: FlatVector3;
+
+	/**
+	 * Store the local up axis.
+	 */
+	up: FlatVector3;
+}
+
+/**
+ * Describe a local observer-relative spherical placement frame.
+ */
+type FlatObserverRelativeSphericalFrame = {
+	/**
+	 * Identify the frame as a spherical surface.
+	 */
+	kind: "spherical-surface";
+
+	/**
+	 * Store the sphere radius in kilometers.
+	 */
+	planetRadiusKm: number;
+
+	/**
+	 * Store the local east axis at the observer.
+	 */
+	east: FlatVector3;
+
+	/**
+	 * Store the local north axis at the observer.
+	 */
+	north: FlatVector3;
+
+	/**
+	 * Store the local up axis at the observer.
+	 */
+	up: FlatVector3;
+}
+
+/**
+ * Describe any observer-relative placement frame.
+ */
+type FlatObserverRelativeFrame = FlatObserverRelativeFlatFrame | FlatObserverRelativeSphericalFrame;
+
+/**
+ * Configure observer-relative placement.
+ *
+ * Placement frames describe the active surface, not the observer eye position.
+ * Returned object centers are offset from that surface by half the requested
+ * height along the local surface normal, so placed objects contact the surface.
+ */
+type FlatObserverRelativePlacementConfig = {
+	/**
+	 * Store the placement frame.
+	 */
+	frame: FlatObserverRelativeFrame;
+
+	/**
+	 * Store clockwise bearing from local north in radians.
+	 */
+	bearingRad: number;
+
+	/**
+	 * Store requested distance from the observer in kilometers.
+	 */
+	distanceKm: number;
+
+	/**
+	 * Select whether distance refers to the center or nearest edge.
+	 */
+	distanceReference?: "center" | "near-edge";
+
+	/**
+	 * Store object depth in kilometers when near-edge placement is used.
+	 */
+	depthKm?: number;
+
+	/**
+	 * Store object height in kilometers.
+	 */
+	heightKm?: number;
+}
+
+/**
+ * Describe observer-relative placement output.
+ */
+type FlatObserverRelativePlacement = {
+	/**
+	 * Store the object center position.
+	 */
+	position: FlatVector3;
+
+	/**
+	 * Store local object axes in scene coordinates.
+	 */
+	orientation: {
+		/**
+		 * Store the local width axis.
+		 */
+		xAxis: FlatVector3;
+
+		/**
+		 * Store the local height/up axis.
+		 */
+		yAxis: FlatVector3;
+
+		/**
+		 * Store the local depth/bearing axis.
+		 */
+		zAxis: FlatVector3;
+	};
+
+	/**
+	 * Store resolved surface placement information.
+	 */
+	surface: {
+		/**
+		 * Store the surface point below the object center.
+		 */
+		centerKm: FlatVector3;
+
+		/**
+		 * Store the local surface normal.
+		 */
+		normal: FlatVector3;
+
+		/**
+		 * Store the local bearing direction.
+		 */
+		bearingDirection: FlatVector3;
+
+		/**
+		 * Store center distance along a flat placement plane.
+		 */
+		linearDistanceKm?: number;
+
+		/**
+		 * Store center distance along a spherical surface.
+		 */
+		geodesicDistanceKm?: number;
+
+		/**
+		 * Store the nearest-edge surface point.
+		 */
+		nearEdgeCenterKm: FlatVector3;
+
+		/**
+		 * Store the nearest-edge distance.
+		 */
+		nearEdgeDistanceKm: number;
+	};
+}
+
+/**
+ * Configure rigid object placement against a spherical surface.
+ */
+type FlatSphereObjectPlacementConfig = {
+	/**
+	 * Store the sphere center.
+	 */
+	sphereCenter?: FlatVector3;
+
+	/**
+	 * Store the sphere radius in kilometers.
+	 */
+	sphereRadiusKm: number;
+
+	/**
+	 * Store the radial surface normal where the object is placed.
+	 */
+	surfaceNormal: FlatVector3;
+
+	/**
+	 * Store the tangent reference direction for zero bearing.
+	 */
+	referenceDirection?: FlatVector3;
+
+	/**
+	 * Rotate the object around the radial surface normal.
+	 */
+	bearingRad?: number;
+
+	/**
+	 * Choose surface-mounted outward placement or fully inside placement.
+	 */
+	side?: "outside" | "inside";
+
+	/**
+	 * Store local object bounds in kilometers, or centered size.
+	 */
+	bounds?: {
+		/**
+		 * Store minimum local bounds.
+		 */
+		min?: FlatVector3;
+
+		/**
+		 * Store maximum local bounds.
+		 */
+		max?: FlatVector3;
+
+		/**
+		 * Store centered dimensions when min/max are omitted.
+		 */
+		size?: FlatVector3;
+	};
+}
+
+/**
+ * Describe a rigid object placement against a sphere.
+ */
+type FlatSphereObjectPlacement = {
+	/**
+	 * Store whether the object is outside or inside the sphere.
+	 */
+	side: "outside" | "inside";
+
+	/**
+	 * Store the object center in scene coordinates.
+	 */
+	position: FlatVector3;
+
+	/**
+	 * Store local object axes in scene coordinates.
+	 */
+	orientation: {
+		/**
+		 * Store the local width axis.
+		 */
+		xAxis: FlatVector3;
+
+		/**
+		 * Store the local height/radial axis.
+		 */
+		yAxis: FlatVector3;
+
+		/**
+		 * Store the local depth/bearing axis.
+		 */
+		zAxis: FlatVector3;
+	};
+
+	/**
+	 * Store sphere-relative placement details.
+	 */
+	sphere: {
+		/**
+		 * Store the sphere center.
+		 */
+		center: FlatVector3;
+
+		/**
+		 * Store the sphere radius in kilometers.
+		 */
+		radiusKm: number;
+
+		/**
+		 * Store the radial surface normal at the placement point.
+		 */
+		surfaceNormal: FlatVector3;
+
+		/**
+		 * Store the surface point selected by the normal.
+		 */
+		surfacePoint: FlatVector3;
+
+		/**
+		 * Store object-center distance from sphere center.
+		 */
+		centerRadiusKm: number;
+
+		/**
+		 * Store the largest local tangent offset used for inside placement.
+		 */
+		tangentRadiusKm: number;
+	};
+
+	/**
+	 * Store normalized local object bounds in kilometers.
+	 */
+	bounds: {
+		/**
+		 * Store minimum local bounds.
+		 */
+		min: FlatVector3;
+
+		/**
+		 * Store maximum local bounds.
+		 */
+		max: FlatVector3;
+	};
+}
+
+/**
+ * Describe geometry that can receive generic object placement.
+ */
+type FlatObjectPlacementGeometry = {
+	/**
+	 * Identify flat-plane placement geometry.
+	 */
+	kind: "flat-plane";
+
+	/**
+	 * Store a point on the flat surface.
+	 */
+	origin?: FlatVector3;
+
+	/**
+	 * Store the flat surface normal.
+	 */
+	normal?: FlatVector3;
+
+	/**
+	 * Store the flat surface up direction.
+	 */
+	up?: FlatVector3;
+} | {
+	/**
+	 * Identify spherical placement geometry.
+	 */
+	kind: "sphere" | "spherical-surface";
+
+	/**
+	 * Store the sphere center.
+	 */
+	center?: FlatVector3;
+
+	/**
+	 * Store the sphere center using atmosphere-style naming.
+	 */
+	planetCenter?: FlatVector3;
+
+	/**
+	 * Store the sphere radius in kilometers.
+	 */
+	radiusKm?: number;
+
+	/**
+	 * Store the sphere radius using atmosphere-style naming.
+	 */
+	planetRadiusKm?: number;
+};
+
+/**
+ * Describe the requested surface position for generic object placement.
+ */
+type FlatObjectPlacementPosition = FlatVector3 | {
+	/**
+	 * Store an explicit point on the target surface.
+	 */
+	point?: FlatVector3;
+
+	/**
+	 * Store an explicit point on the target surface.
+	 */
+	surfacePoint?: FlatVector3;
+
+	/**
+	 * Store an explicit surface normal.
+	 */
+	surfaceNormal?: FlatVector3;
+};
+
+/**
+ * Configure generic object placement against a known geometry.
+ */
+type FlatObjectPlacementConfig = {
+	/**
+	 * Store the geometry that decides the placement rule.
+	 */
+	geometry: FlatObjectPlacementGeometry;
+
+	/**
+	 * Store the selected surface position or normal.
+	 */
+	position: FlatObjectPlacementPosition;
+
+	/**
+	 * Store the tangent reference direction for zero bearing.
+	 */
+	referenceDirection?: FlatVector3;
+
+	/**
+	 * Rotate the object around the local surface normal.
+	 */
+	bearingRad?: number;
+
+	/**
+	 * Choose surface-mounted outward placement or fully inside placement.
+	 */
+	side?: "outside" | "inside";
+
+	/**
+	 * Store local object bounds in kilometers, or centered size.
+	 */
+	bounds?: FlatSphereObjectPlacementConfig["bounds"];
+}
+
+/**
+ * Describe generic flat-plane object placement output.
+ */
+type FlatGenericObjectPlacement = {
+	/**
+	 * Store the resolved geometry kind.
+	 */
+	geometryKind: "flat-plane";
+
+	/**
+	 * Store whether the object is outside or inside the surface.
+	 */
+	side: "outside" | "inside";
+
+	/**
+	 * Store the object center in scene coordinates.
+	 */
+	position: FlatVector3;
+
+	/**
+	 * Store local object axes in scene coordinates.
+	 */
+	orientation: FlatSphereObjectPlacement["orientation"];
+
+	/**
+	 * Store flat surface placement details.
+	 */
+	surface: {
+		/**
+		 * Store the selected surface point.
+		 */
+		point: FlatVector3;
+
+		/**
+		 * Store the selected surface normal.
+		 */
+		normal: FlatVector3;
+	};
+
+	/**
+	 * Store normalized local object bounds in kilometers.
+	 */
+	bounds: FlatSphereObjectPlacement["bounds"];
+}
+
+/**
+ * Describe a fake observer-relative terrain rectangle before scene projection.
+ */
+type FlatMountainSimulationRectangleSource = {
+	/**
+	 * Identify the local simulation terrain source kind.
+	 */
+	kind: "mountain-simulation-rectangle";
+
+	/**
+	 * Identify the rectangle.
+	 */
+	id: string;
+
+	/**
+	 * Store the display name.
+	 */
+	name: string;
+
+	/**
+	 * Store clockwise bearing from projected north in radians.
+	 */
+	bearingRad: number;
+
+	/**
+	 * Store horizontal distance from the observer in kilometers.
+	 */
+	distanceKm: number;
+
+	/**
+	 * Store rectangle width in kilometers.
+	 */
+	widthKm: number;
+
+	/**
+	 * Store rectangle depth in kilometers.
+	 */
+	depthKm: number;
+
+	/**
+	 * Store rectangle height in kilometers.
+	 */
+	heightKm: number;
+
+	/**
+	 * Store render rotation around the vertical axis in radians.
+	 */
+	rotationYRad: number;
+
+	/**
+	 * Store render styling.
+	 */
+	style: {
+		/**
+		 * Store the visible color as a CSS color string.
+		 */
+		color: string;
+	};
+
+	/**
+	 * Store human-unit source values used to generate the rectangle.
+	 */
+	source: {
+		/**
+		 * Store source height in feet.
+		 */
+		heightFeet: number;
+
+		/**
+		 * Store source distance from the observer in miles.
+		 */
+		distanceMiles: number;
+
+		/**
+		 * Store source bearing in degrees.
+		 */
+		bearingDeg: number;
+
+		/**
+		 * Store optional source role metadata.
+		 */
+		role?: string;
+	};
+}
+
+/**
  * Describe a linear RGB color or wavelength coefficient triplet.
  */
 type FlatRgbColor = {
@@ -45,6 +594,36 @@ type FlatRgbColor = {
  * Describe accepted RGB input forms for shared math helpers.
  */
 type FlatRgbColorInput = Partial<FlatRgbColor> | readonly [number, number, number];
+
+/**
+ * Describe supported radiometric-to-display tone mapping curves.
+ */
+type FlatRadiometricDisplayToneMapping = "linear-clamp" | "reinhard";
+
+/**
+ * Describe renderer/display settings for mapping radiometric values to display RGB.
+ */
+type FlatRadiometricDisplayConfig = {
+	/**
+	 * Identify the display mapping model.
+	 */
+	model: string;
+
+	/**
+	 * Convert radiometric or relative-radiometric values into scene-linear RGB.
+	 */
+	radiometricToSceneRgbScale: number;
+
+	/**
+	 * Scale scene-linear RGB for viewer/display exposure.
+	 */
+	exposure: number;
+
+	/**
+	 * Select the output tone-mapping curve.
+	 */
+	toneMapping: FlatRadiometricDisplayToneMapping;
+}
 
 /**
  * Describe the supported atmosphere density layers.
@@ -82,6 +661,21 @@ type FlatAtmosphereProfile = {
 	aerosolScaleHeightKm: number;
 
 	/**
+	 * Store aerosol optical depth at 550 nm for deriving Mie extinction.
+	 */
+	aerosolOpticalDepth550nm?: number;
+
+	/**
+	 * Store the fraction of aerosol extinction that scatters rather than absorbs.
+	 */
+	aerosolSingleScatteringAlbedo?: number;
+
+	/**
+	 * Store the Angstrom exponent for wavelength-dependent aerosol optical depth.
+	 */
+	aerosolAngstromExponent?: number;
+
+	/**
 	 * Store per-channel Rayleigh extinction coefficients per kilometer.
 	 */
 	rayleighBetaKm: FlatRgbColor;
@@ -95,6 +689,21 @@ type FlatAtmosphereProfile = {
 	 * Scale the aerosol/Mie contribution.
 	 */
 	mieStrength: number;
+
+	/**
+	 * Store per-channel Mie extinction coefficients per kilometer.
+	 */
+	mieExtinctionBetaKm?: FlatRgbColor;
+
+	/**
+	 * Store per-channel Mie scattering coefficients per kilometer.
+	 */
+	mieScatteringBetaKm?: FlatRgbColor;
+
+	/**
+	 * Store per-channel Mie absorption coefficients per kilometer.
+	 */
+	mieAbsorptionBetaKm?: FlatRgbColor;
 
 	/**
 	 * Store the Henyey-Greenstein anisotropy value for Mie scattering.
@@ -407,9 +1016,19 @@ type FlatAtmosphereShaderUniforms = {
 	atmosphereRayleighBetaKm: readonly [number, number, number];
 
 	/**
-	 * Store per-channel Mie extinction coefficients.
+	 * Store per-channel Mie scattering coefficients for compatibility.
 	 */
 	atmosphereMieBetaKm: readonly [number, number, number];
+
+	/**
+	 * Store per-channel Mie extinction coefficients.
+	 */
+	atmosphereMieExtinctionBetaKm: readonly [number, number, number];
+
+	/**
+	 * Store per-channel Mie scattering coefficients.
+	 */
+	atmosphereMieScatteringBetaKm: readonly [number, number, number];
 
 	/**
 	 * Store the Mie anisotropy value.
@@ -487,6 +1106,11 @@ type FlatSunConfig = {
 	intensity?: number;
 
 	/**
+	 * Scale incoming sunlight available for atmosphere scattering.
+	 */
+	solarIrradianceScale?: number;
+
+	/**
 	 * Store angular radius in radians for directional sunlight.
 	 */
 	angularRadiusRad?: number;
@@ -530,6 +1154,11 @@ type FlatSunState = {
 	 * Store light intensity multiplier.
 	 */
 	intensity: number;
+
+	/**
+	 * Store incoming sunlight scale for atmosphere scattering.
+	 */
+	solarIrradianceScale: number;
 
 	/**
 	 * Store angular radius in radians for directional sunlight.
@@ -600,6 +1229,11 @@ type FlatSunShaderUniforms = {
 	 * Store light intensity.
 	 */
 	sunIntensity: number;
+
+	/**
+	 * Store incoming sunlight scale for atmosphere scattering.
+	 */
+	sunSolarIrradianceScale: number;
 
 	/**
 	 * Store directional-sun angular radius in radians.

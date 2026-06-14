@@ -1,58 +1,78 @@
-# Flat Atmosphere Design
+# Atmosphere Design
 
-This note tracks the intended atmosphere model for the Flat app and future
-spherical/standard view. The implementation should stay reusable: atmosphere
-physics belongs in shared framework-free code, while the scene model resolves
-observer, projection, and light-source assumptions.
+This document describes the current shared atmosphere model for the flat app's
+atmosphere consumers, including `flat-simulation` and `globe-simulation`.
 
-## Current State
+Atmosphere physics lives in shared framework-free code. Scene features resolve
+observer, geometry, projection, and light-source assumptions into plain data.
+Renderers consume that data to compose solid scene color with atmospheric
+transmittance and in-scattered light.
 
-`src/flat/shared/Atmosphere.js` currently owns a standard Earth atmosphere
-profile, density falloff, flat-slab and spherical-shell altitude frames,
-optical-depth sampling, transmittance, atmosphere-exit sampling, and plain
-shader uniform output. It now also owns CPU-side single-scattering sampling
-against an explicit `Sun` instance/config: Rayleigh and Mie phase functions,
-sample-to-light transmittance, flat/spherical shadow checks, and accumulated
-RGB in-scattered light along a view ray.
+Rejected atmosphere approaches live in [Atmosphere Rejected Ideas](atmosphere-rejected.md).
 
-`src/flat/shared/Sun.js` owns resolved light-source state. It supports
-directional sunlight for distant sun behavior and point sunlight for the
-nearby false-model sun body. It also derives apparent angular size from the
-observer/sample position for point-light bodies. The initial anchor remains
-explicit and open.
+## Current Architecture
 
-`src/flat/shared/math-primitives.js` owns the stateless number, vector, and RGB
-helpers shared by `Atmosphere` and `Sun`. Atmosphere-specific helpers such as
-profile/frame normalization, empty sample creation, transmittance conversion,
-and spherical intersection solving are static `Atmosphere` methods rather than
-module-level utility functions.
+`src/flat/shared/Atmosphere.js` owns:
 
-`src/flat/shared/consts.js` owns atmosphere and sun constants used outside the
-class implementations. `Atmosphere.js` and `Sun.js` should export only their
-class implementations.
+- atmosphere profile normalization
+- flat-slab and spherical-shell altitude frames
+- altitude, density, and optical-depth sampling
+- transmittance conversion
+- atmosphere-exit sampling
+- Rayleigh and Mie scattering coefficients
+- Rayleigh and Henyey-Greenstein Mie phase functions
+- sample-to-light transmittance and shadow checks
+- CPU-side single-scattering sampling
+- shader-uniform-ready atmosphere data
 
-The old false-simulation `AltitudeHaze` shader shell has been removed. The
-default renderer now uses `FalseAtmosphereComposer`: a depth-aware composition
-pass that renders the solid false scene into color/depth textures, reconstructs
-per-pixel camera rays, and applies the shared atmosphere/sun uniform contract
-in a fullscreen shader.
+`src/flat/shared/Sun.js` owns:
+
+- directional and point light-source state
+- resolved direction or position
+- source color and intensity
+- `solarIrradianceScale` for flat-simulation and legacy compatibility paths
+- directional angular radius
+- point-source physical radius
+- apparent angular size from an observer or sample point
+- shader-uniform-ready sun data
+
+`src/flat/shared/math-primitives.js` owns the stateless vector, number, and
+RGB helpers shared by the atmosphere and sun models.
+
+`src/flat/shared/consts.js` owns shared atmosphere and sun constants. Shared
+classes should export behavior, not duplicate canonical constants.
+
+## Composition Contract
+
+The current atmosphere renderer uses the same composition rule for sky and
+solid scene pixels:
+
+```text
+finalPixel =
+  sceneColor * cameraToSceneTransmittance
+  + cameraRayInScattering
+```
+
+Solid pixels integrate atmosphere from the camera to the reconstructed depth.
+No-depth sky pixels integrate to a renderer-provided background atmosphere
+distance. Usage differences enter through named scene, frame, light, and
+renderer settings rather than hidden shader branches.
 
 ## Ownership
 
-Atmosphere should not decide where the sun is.
-
-Scene/light state should own:
+Scene and light state own:
 
 - selected time
 - selected observer location
-- false-model assumptions
+- geometry/model assumptions
 - initial sun anchor
 - sun motion model
-- sun latitude, elevation, and radius assumptions
+- sun latitude, elevation, radius, or directional pose assumptions
 - resolved sun direction or position
 - light color and intensity
+- source-radiance or source-irradiance assumptions
 
-Atmosphere should own:
+Atmosphere owns:
 
 - altitude and density by frame
 - extinction by wavelength
@@ -61,648 +81,545 @@ Atmosphere should own:
 - single-scattering integration along a view ray
 - shadow tests against the atmosphere frame
 
-Renderer should own:
+Renderer owns:
 
-- passing camera ray/depth/light uniforms to shaders
-- composing solid-world rendering and atmosphere/airlight
-- using the same scene-level light state for terrain, objects, and sky effects
+- solid scene color and depth inputs
+- per-pixel ray reconstruction
+- background/no-depth integration caps
+- sample-to-sun transmittance approximations used by real-time shaders
+- renderer unit bridges
+- display and material exposure controls
+- nonphysical guide-overlay visibility
 
-## Scene Light Contract
+## Current Consumers
 
-The scene model should expose a resolved light state. The control panel can
-later change the assumptions that produce this state without changing
-atmosphere integration code.
+`flat-simulation` uses `FlatAtmosphereComposer` as the active atmosphere
+renderer. It renders the solid false scene into color/depth textures,
+reconstructs camera rays, integrates Rayleigh/Mie in-scattering from
+`scene.lighting.atmosphereSun`, applies camera-ray transmittance, and composites
+the result with the solid scene.
 
-Directional light is the default physical shape for distant sunlight:
+`flat-simulation` links the rendered false sun, `scene.lighting.sun`, and
+`scene.lighting.atmosphereSun` to the same resolved `scene.sun` object. The
+solid-scene facet uses the local point sun for floor, mountain, and object
+lighting. The atmosphere facet uses the same resolved position, radius,
+apparent size, and motion, plus the sun body's atmosphere radiance fields.
+
+`globe-simulation` provides the spherical Three/R3F calibration scene. It
+exposes a San Jose observer, fixed solar-noon Sun/Earth positioning for
+`2026-06-13T13:07:44-07:00`, Earth axial tilt, date-derived sidereal rotation,
+a `spherical-shell` atmosphere frame, and a featureless matte green globe
+surface. The camera is at standing height above the San Jose `100 ft` surface
+point, starts looking toward the Sun, and supports pointer/touch look-around
+controls in the local San Jose frame. It reuses the
+shared synthetic red mountain marker source from the flat simulation, projects
+those markers by spherical bearing/distance on the San Jose surface, and
+renders them as radius-sampled curved red faces. The marker faces start
+`0.02 km` below the mathematical globe surface before rising through it; this
+is a contact/depth stabilization inset so the marker bottom edge does not fight
+the globe surface depth buffer. It also renders the 50 brightest
+northern-celestial-hemisphere stars from the shared POC star fixture as a
+daytime visibility calibration layer.
+
+`GlobeAtmosphereComposer` renders the globe solid scene into color/depth
+textures and applies the first spherical single-scattering composition pass.
+It reconstructs sky rays from the camera basis, integrates solid pixels to the
+depth hit, integrates no-depth sky pixels to the spherical atmosphere shell
+exit, computes altitude as
+`length(samplePosition - planetCenter) - planetRadiusKm`, and composes
+radiometric solid-scene color attenuated by view transmittance plus radiometric
+atmospheric in-scattering. The current shader is an initial real-time
+calibration pass with 32 view samples and an air-mass-style sample-to-sun
+transmittance approximation, not final photometric calibration. The combined
+radiometric result then passes through the shared radiometric display bridge.
+Runtime captures after Phase 4.4 show the star probe pixels sampling sky color,
+but the sky remains muted blue-gray, the horizon can appear brown, and red
+marker faces can become pink where atmosphere airlight overlays their surface
+radiance. Those are the current calibration targets.
+
+Shared observer-relative object placement lives in
+`src/flat/shared/observer-relative-placement.js`. Placement frames describe the
+active surface, not the observer eye position; returned object centers are
+offset from the resolved surface point by half their height so placed objects
+contact the flat or spherical surface.
+
+## Parameter Catalog
+
+This catalog lists current atmosphere, light, and renderer parameters. Some are
+physical inputs. Some are explicit renderer or geometry abstractions. Some are
+calibration bridges that should remain named honestly until replaced by a more
+physical source model.
+
+Atmosphere profile parameters:
+
+- `id`: profile identifier.
+- `topAltitudeKm`: atmosphere integration ceiling.
+- `seaLevelDensityKgM3`: density normalization at ground level.
+- `rayleighScaleHeightKm`: molecular density falloff height.
+- `aerosolScaleHeightKm`: aerosol/Mie density falloff height.
+- `aerosolOpticalDepth550nm`: aerosol optical depth at `550 nm`.
+- `aerosolSingleScatteringAlbedo`: aerosol scattering fraction versus
+  absorption.
+- `aerosolAngstromExponent`: aerosol wavelength dependence.
+- `rayleighBetaKm`: per-channel Rayleigh scattering coefficient.
+- `mieBetaKm`: current/compatibility per-channel Mie coefficient.
+- `mieStrength`: legacy Mie contribution scale.
+- `mieExtinctionBetaKm`: derived or explicit per-channel aerosol extinction.
+- `mieScatteringBetaKm`: derived or explicit aerosol scattering component.
+- `mieAbsorptionBetaKm`: derived aerosol absorption component.
+- `mieAnisotropy`: Henyey-Greenstein forward-scattering parameter.
+- `airlightColor`: legacy/display-oriented atmosphere color hint.
+- `maxAirlight`: legacy/display-oriented airlight clamp.
+- `integrationSteps`: default CPU/profile integration step count.
+
+Atmosphere frame parameters:
+
+- `frame.kind`: `flat-slab` or `spherical-shell`.
+- `frame.origin`: flat-slab origin.
+- `frame.up`: flat-slab vertical direction.
+- `frame.planetCenter`: spherical-shell planet center.
+- `frame.planetRadiusKm`: spherical-shell ground radius.
+
+Sampling and integration parameters:
+
+- `steps`: per-call view-ray optical-depth/scattering sample count.
+- `lightSteps`: per-call sample-to-light transmittance sample count.
+- `maxLightDistanceKm`: per-call cap for sample-to-light integration.
+- `light`: explicit scattering light override.
+- `sun`: legacy name for the scattering light override.
+
+Sun and light-source parameters:
+
+- `kind`: `directional` or `point`.
+- `direction`: world-space direction for directional sunlight.
+- `position`: world-space position for point sunlight.
+- `radiusKm`: physical/source radius.
+- `distanceKm`: observer/sample-to-source distance where resolved.
+- `angularRadiusRad`: fixed apparent angular radius for directional sources.
+- `apparentAngularRadiusRad`: resolved point-source apparent angular radius.
+- `apparentAngularDiameterRad`: resolved point-source apparent angular diameter.
+- `color`: RGB source color.
+- `intensity`: generic scene-light strength.
+- `solarIrradianceScale`: flat-simulation and compatibility atmosphere
+  source-strength bridge.
+- `anchor`: assumption/status record for the chosen source.
+
+Current globe solar-source note fields:
+
+- `source.model`: currently `approximate-real-solar-system`.
+- `source.totalSolarIrradianceWm2`: total solar irradiance at one astronomical
+  unit.
+- `source.colorTemperatureK`: blackbody/color-temperature approximation.
+- `source.targetDirectNormalIrradianceWm2AtReferencePoint`: reference daylight
+  target for comparison.
+- `source.astronomicalUnitKm`: reference distance for total solar irradiance.
+- `source.diffuseSkyIrradianceLossFraction`: first approximation for how much
+  removed direct irradiance is treated as diffuse sky irradiance.
+- `source.rendererIrradianceReferenceWm2`: temporary renderer bridge reference
+  that now seeds the globe display scale as
+  `1 / rendererIrradianceReferenceWm2`.
+- `source.rendererBridge`: names the temporary bridge and marks it for removal
+  after the display and surface-lighting pipeline is fully radiometric.
+
+Current globe solar irradiance probes:
+
+- `sun.irradiance.topOfAtmosphereIrradianceWm2`: distance-adjusted solar
+  irradiance at the top of the atmosphere.
+- `sun.irradiance.directNormalIrradianceAtObserverWm2`: direct irradiance at the
+  observer after current atmosphere transmittance.
+- `sun.irradiance.directHorizontalIrradianceAtObserverWm2`: direct irradiance on
+  a horizontal surface at the observer.
+- `sun.irradiance.estimatedDiffuseSkyIrradianceWm2`: first diffuse-sky
+  irradiance estimate.
+- `sun.irradiance.relativeAirMass`: Kasten-Young relative air mass estimate.
+- `sun.irradiance.visibleTransmittance`: luminance-weighted direct-sun
+  transmittance.
+- `sun.irradiance.transmittance`: per-channel direct-sun transmittance.
+- `sun.irradiance.opticalDepth`: per-channel direct-sun optical depth.
+- `sun.irradiance.renderer.atmosphereSourceScale`: legacy compatibility probe
+  equal to
+  `topOfAtmosphereIrradianceWm2 / rendererIrradianceReferenceWm2`. The globe
+  composer no longer consumes it as the atmosphere source term.
+
+Current globe display settings:
+
+- `display.model`: currently `radiometric-display-v1`.
+- `display.radiometricToSceneRgbScale`: converts atmosphere radiometric output
+  into scene-linear display RGB. The current globe default is
+  `1 / source.rendererIrradianceReferenceWm2`.
+- `display.exposure`: display/viewer exposure multiplier.
+- `display.toneMapping`: display curve, currently `reinhard` for the globe
+  calibration scene.
+
+Current flat local-sun radiance bridge:
+
+- `falseSunRadiance.model`: currently `point-inverse-square-reference`.
+- `falseSunRadiance.referenceDistanceKm`: distance where local point-source
+  intensity is interpreted as the configured radiance reference value.
+- `falseSunRadiance.distanceFalloff`: whether inverse-square falloff is applied.
+
+Current renderer and composition parameters:
+
+- `enabled`: atmosphere composition toggle.
+- `model`: atmosphere renderer/model contract name.
+- `rendering.status`: current renderer status label.
+- `rendering.target`: intended composition target.
+- `debugMode`: `none`, `ray-length`, `optical-depth`, `scattering`, or
+  `phase-angle`.
+- `backgroundAtmosphereViewDistanceKm`: no-depth sky integration cap.
+- `flatSlabHorizonViewDistanceFactor`: flat-slab near-horizon path-length
+  taper.
+- `sampleToSunTransmittanceModel`: `none`, `light-march`, or `air-mass`.
+- `sampleToSunTransmittanceSteps`: light-march step count.
+- `threeLightUnitScale`: bridge into Three.js light units.
+- `skyDiffuseIrradianceScale`: current diffuse-sky illumination approximation
+  for lit solid materials.
+- `starExposure`: renderer/material exposure for star points before atmosphere
+  composition.
+- `constellationOverlayExposure`: nonphysical guide-overlay visibility.
+
+Surface and terrain lighting inputs:
+
+- `floorAlbedo`: local floor reflectance.
+- map or terrain texture albedo: content-derived surface reflectance.
+- surface normal: direct-light incidence direction.
+- direct irradiance terms: sunlight reaching the surface from the resolved
+  source and transmittance.
+- diffuse sky irradiance terms: currently approximated by
+  `skyDiffuseIrradianceScale`.
+
+## Current Defaults
+
+`STANDARD_EARTH_ATMOSPHERE`:
 
 ```js
-scene.lighting.sun = {
+{
+	id: 'earth-standard',
+	topAltitudeKm: 100,
+	seaLevelDensityKgM3: 1.225,
+	rayleighScaleHeightKm: 8.5,
+	aerosolScaleHeightKm: 1.2,
+	aerosolOpticalDepth550nm: 0.12,
+	aerosolSingleScatteringAlbedo: 0.95,
+	aerosolAngstromExponent: 1.3,
+	rayleighBetaKm: { r: 0.005802, g: 0.013558, b: 0.0331 },
+	mieBetaKm: { r: 0.003996, g: 0.003996, b: 0.003996 },
+	mieStrength: 0.35,
+	mieAnisotropy: 0.8,
+	airlightColor: '#9fc7ff',
+	maxAirlight: 0.85,
+	integrationSteps: 16,
+}
+```
+
+`CLEAR_DAY_EARTH_ATMOSPHERE` is the active flat/globe calibration profile. It
+inherits the standard profile and currently overrides:
+
+```js
+{
+	id: 'earth-clear-day',
+	rayleighScaleHeightKm: 8.0,
+	aerosolOpticalDepth550nm: 0.08,
+	aerosolSingleScatteringAlbedo: 0.95,
+	aerosolAngstromExponent: 1.3,
+}
+```
+
+`STANDARD_SUN`:
+
+```js
+{
 	kind: 'directional',
 	direction: { x: 0, y: 1, z: 0 },
 	color: { r: 1, g: 0.96, b: 0.88 },
 	intensity: 1,
+	solarIrradianceScale: 1,
 	angularRadiusRad: 0.00465,
-	anchor: {
-		kind: 'known-value',
-		status: 'open',
-	},
-};
+	radiusKm: 696340,
+	anchor: { kind: 'known-value', status: 'open' },
+}
 ```
 
-Point light should also be supported for the false model if the sun becomes a
-nearby configurable body:
+`flat-simulation` atmosphere rendering:
 
 ```js
-scene.lighting.sun = {
-	kind: 'point',
-	position: { x: 0, y: 4800, z: 0 },
-	radiusKm: 25.75,
-	distanceKm: 6000,
-	apparentAngularRadiusRad: 0.00429,
-	apparentAngularDiameterRad: 0.00858,
-	color: { r: 1, g: 0.96, b: 0.88 },
-	intensity: 1,
-	anchor: {
-		kind: 'known-value',
-		status: 'open',
+{
+	enabled: true,
+	model: 'shared-atmosphere',
+	frame: FLAT_ATMOSPHERE_FRAME,
+	profile: CLEAR_DAY_EARTH_ATMOSPHERE,
+	rendering: {
+		status: 'depth-aware-composer-clear-day-atmosphere',
+		target: 'depth-aware-composition',
+		debugMode: 'none',
+		falseSunRadiance: {
+			model: 'point-inverse-square-reference',
+			referenceDistanceKm: 4800,
+			distanceFalloff: true,
+		},
+		threeLightUnitScale: 0.04,
+		skyDiffuseIrradianceScale: 0.35,
+		sampleToSunTransmittanceModel: 'air-mass',
+		sampleToSunTransmittanceSteps: 4,
+		backgroundAtmosphereViewDistanceKm: 100,
+		flatSlabHorizonViewDistanceFactor: 0.25,
+		starExposure: 0.02,
+		constellationOverlayExposure: 0.04,
 	},
-};
+}
 ```
 
-The initial sun anchor remains deliberately open. It should eventually be a
-known user-visible assumption rather than a hidden constant.
-
-The false simulation already has a visible sun body. Its canonical source is
-`DEFAULT_FALSE_SIMULATION_SUN` in
-`src/flat/features/false-simulation/models/consts.js`. The scene model derives
-both `scene.sun` for the visible/orbital body and `scene.lighting.sun` for the
-point-light state consumed by atmosphere work. The renderable sphere in
-`scene.objects` is a compatibility view derived from `scene.sun.object`, not
-the owning sun definition. The sun body must remain rendered because its
-position and apparent size are user-facing simulation evidence, not decorative
-debug geometry. The physical `radiusKm` and observer-to-sun distance define
-the apparent angular radius/diameter exposed on `scene.sun.apparent` and
-`scene.lighting.sun`. The first planned control-panel assumptions for this
-body are sun latitude, elevation above the projected floor, and physical
-radius; the scene model already accepts those through `config.sun.lat`,
-`config.sun.altitudeKm`, and `config.sun.radiusKm`.
-
-The first local-sun brightness assumption is now explicit:
-`FALSE_SUN_LIGHT_INTENSITY = 64`. This keeps the false sun as a nearby point
-light so local-sun implications remain visible, but gives the atmosphere enough
-source light to produce noticeable scattering. This is a scene/light
-assumption, not a compositor exposure multiplier, and should eventually become
-a control-panel setting alongside position and size.
-
-## Single-Scattering Model
-
-The atmosphere should add a method shaped like:
+`flat-simulation` false sun:
 
 ```js
-sampleSingleScatteringRay(origin, viewDirection, distanceKm, {
-	light,
-	steps: 24,
-	lightSteps: 8,
-});
+{
+	id: 'false-sun',
+	kind: 'surface-altitude-sun',
+	lat: 24,
+	lon: 58.1137,
+	altitudeKm: 3000 * KM_PER_MILE,
+	radiusKm: (32 * KM_PER_MILE) / 2,
+	light: {
+		kind: 'point',
+		color: { r: 1, g: 0.82, b: 0.55 },
+		intensity: 64,
+	},
+	atmosphere: {
+		color: { r: 1, g: 0.98, b: 0.95 },
+		intensity: 1,
+		solarIrradianceScale: 58,
+	},
+}
 ```
 
-The method integrates along the camera/view ray:
+`globe-simulation` solar-source notes:
+
+```js
+{
+	model: 'approximate-real-solar-system',
+	totalSolarIrradianceWm2: 1361,
+	colorTemperatureK: 5778,
+	targetDirectNormalIrradianceWm2AtReferencePoint: 1000,
+	astronomicalUnitKm: 149597870.7,
+	diffuseSkyIrradianceLossFraction: 0.5,
+	rendererIrradianceReferenceWm2: 340.25,
+	rendererBridge: {
+		model: 'temporary-irradiance-to-scattering-source-scale',
+		status: 'replace-with-display-exposure-in-phase-4',
+	},
+}
+```
+
+`globe-simulation` display bridge:
+
+```js
+{
+	model: 'radiometric-display-v1',
+	radiometricToSceneRgbScale: 1 / 340.25,
+	exposure: 1,
+	toneMapping: 'reinhard',
+}
+```
+
+## Current Scattering Calculation
+
+For each view-ray atmosphere sample:
 
 ```text
-camera -> atmospheric sample -> light source
+samplePosition = cameraOrigin + viewDirection * sampleDistance
+rayleighDensity = exp(-altitudeKm / rayleighScaleHeightKm)
+aerosolDensity = exp(-altitudeKm / aerosolScaleHeightKm)
+viewTransmittance = exp(-cameraToSampleOpticalDepth)
+lightTransmittance = sampleToLightTransmittance(samplePosition, light)
+cosTheta = dot(viewDirectionFromSampleToCamera, sampleToLightDirection)
 ```
 
-For each sample along the view ray:
-
-1. Compute altitude and density at the sample point.
-2. Compute transmittance from camera to sample.
-3. Compute transmittance from sample toward the light.
-4. Compute the scattering angle between the view ray and light ray.
-5. Apply Rayleigh and Mie phase functions.
-6. Accumulate in-scattered light for RGB output.
-
-The conceptual contribution per sample is:
+Rayleigh phase:
 
 ```text
-viewTransmittance
-  * lightTransmittance
-  * density
-  * phase(scatteringAngle)
-  * lightColor
-  * lightIntensity
-  * stepDistance
+rayleighPhase(cosTheta) =
+  3 / (16 * pi) * (1 + cosTheta^2)
 ```
 
-This is the missing piece in simple haze. It lets the same density field render
-differently depending on sun angle, time, and false-model assumptions.
-
-## Phase Functions
-
-Use separate Rayleigh and Mie phase terms.
-
-Rayleigh should be symmetric and wavelength-sensitive:
-
-```text
-rayleighPhase(cosTheta) = 3 / (16 * pi) * (1 + cosTheta^2)
-```
-
-Mie should model stronger forward scattering near the sun. A
-Henyey-Greenstein phase function is a good first pass:
+Mie phase:
 
 ```text
 miePhase(cosTheta, g) =
-  (1 - g^2) / (4 * pi * (1 + g^2 - 2 * g * cosTheta)^(3/2))
+  (1 - g^2)
+  / (4 * pi * (1 + g^2 - 2 * g * cosTheta)^(3 / 2))
 ```
 
-`g` should be configurable through the atmosphere profile, likely around
-`0.75` to `0.85` for aerosol-forward scattering.
-
-## Shadow Tests
-
-Direct sunlight should be blocked if the sample-to-light ray hits the ground or
-planet before leaving the atmosphere.
-
-For spherical view:
+Current flat/legacy source term:
 
 ```text
-sample -> sun ray intersects planet sphere = sample is in shadow
+sourceRgb = light.color * light.solarIrradianceScale
 ```
 
-For flat false simulation:
+Current globe atmosphere source term:
 
 ```text
-sample -> sun ray intersects the ground plane before exiting atmosphere =
-sample is in shadow
+sourceRgb =
+  sun.color
+  * sun.irradiance.topOfAtmosphereIrradianceWm2
 ```
 
-This is required for night, sunset, twilight, and Earth-shadow behavior.
-
-## Flat And Spherical Frames
-
-The same atmosphere API should support both frames:
-
-- `flat-slab`: false-simulation atmosphere above projected ground.
-- `spherical-shell`: standard sky atmosphere around a spherical planet.
-
-The light input should already be in scene/world coordinates. Converting from
-time, lat/lon, or false-model assumptions into that world-space light belongs
-to scene/projection/light helpers, not `Atmosphere`.
-
-For flat false simulation, the scene can derive local basis vectors from the
-projection model:
+For point sunlight with the current flat local-sun bridge:
 
 ```text
-worldSunDirection =
-  east * localEastVector
-  + north * localNorthVector
-  + up * { x: 0, y: 1, z: 0 }
+if falseSunRadiance.distanceFalloff:
+  sourceRgb *= (falseSunRadiance.referenceDistanceKm / sampleToSunDistanceKm)^2
 ```
 
-For spherical view, the scene can derive ENU from the observer and planet
-center:
+Per-sample in-scattering contribution:
 
 ```text
-up = normalize(observerPosition - planetCenter)
-east = normalize(cross(globalNorth, up))
-north = cross(up, east)
+scatteringRgb =
+  sourceRgb
+  * lightTransmittance
+  * (
+      rayleighBetaKm * rayleighDensity * rayleighPhase
+      + mieScatteringBetaKm * aerosolDensity * miePhase
+    )
+
+cameraContributionRgb =
+  scatteringRgb
+  * viewTransmittance
+  * stepDistanceKm
 ```
 
-## Shader Direction
-
-The shared `Atmosphere` model should expose plain data and math contracts. The
-renderer can later implement the same single-scattering integration in GLSL as
-a post/full-screen pass or atmosphere material.
-
-Preferred render pipeline:
-
-1. Render solid world/depth.
-2. For each pixel, reconstruct the camera ray and scene depth.
-3. Integrate atmosphere from camera to scene depth or atmosphere exit.
-4. Add in-scattered light and apply transmittance to the solid color.
-
-This keeps floor/terrain/object rendering separate from atmosphere composition.
-
-## Simulation Integration Plan
-
-The immediate flat integration should tie atmosphere and sun together through
-the scene view model and renderer, not by letting the shader invent a light.
-
-Data flow:
+The accumulated view-ray result is:
 
 ```text
-DEFAULT_FALSE_SIMULATION_SUN
-  -> FalseSimulationSceneModel.projectSun()
-  -> scene.sun and scene.lighting.sun
-  -> shared Sun/Atmosphere uniform data
-  -> false-simulation atmosphere shader
+inScatteredLight = sum(cameraContributionRgb)
+sceneTransmittance = exp(-cameraToSceneOpticalDepth)
 ```
 
-`scene.sun` remains the first-class visible body. `scene.lighting.sun` remains
-the light contract that atmosphere sampling consumes. The rendered body and the
-atmosphere uniforms must use the same resolved sun position each frame.
-
-The current renderer animates the visible sun by rotating a Three.js group. The
-atmosphere pass cannot use the static initial `scene.lighting.sun.position`
-while the visible body moves. The next implementation should introduce one
-runtime sun resolver, for example:
+In the current globe shader, the globe surface and synthetic mountain marker
+faces are already written to the solid-scene target as radiance:
 
 ```text
-resolveAnimatedSun(scene.sun, elapsedSeconds)
+surfaceRadiance =
+  albedoRgb
+  * (
+      directNormalIrradianceAtObserverWm2
+      * max(dot(surfaceNormal, sampleToSunDirection), 0)
+      + estimatedDiffuseSkyIrradianceWm2
+    )
+  / pi
 ```
 
-That resolver should derive the current sun position from `scene.sun.position`
-and `scene.sun.animation`. The sun mesh and atmosphere uniforms should both
-consume that resolved position. For the current solar-day fixed-latitude model,
-the resolver can rotate the initial projected sun position around the world
-`y` axis by the animation cycle ratio.
-
-Flat first pass:
-
-1. Add an atmosphere material that mirrors
-   `Atmosphere.sampleSingleScatteringRay` in GLSL.
-2. Build uniforms from `new Atmosphere({ frame, profile, sun })`, using a
-   flat-slab frame with ground at `y = 0` and up `{ x: 0, y: 1, z: 0 }`.
-3. Update point-sun uniforms each frame from the same animated sun position
-   used by the visible `SunBody`.
-4. In the shader, integrate camera-to-sample transmittance, sample-to-sun
-   transmittance, Rayleigh/Mie phase functions, and flat ground shadowing.
-5. Keep this as a shell-based first pass only long enough to validate the
-   light-aware look. The more correct render path is still a depth-aware
-   full-screen atmosphere composition pass after solid-world rendering.
-
-Spherical/standard view later uses the same `Atmosphere` and `Sun` classes but
-switches the frame to `spherical-shell` and resolves the sun as either a
-directional light or real ephemeris-derived distant sun state.
-
-## Concrete Implementation Plan
-
-This is the next implementation sequence for plugging the shared atmosphere
-and sun into the false-simulation renderer.
-
-### 1. Add One Runtime Sun Resolver
-
-Create a small helper owned by the false-simulation feature, likely:
+The current globe display boundary is:
 
 ```text
-src/flat/features/false-simulation/models/sun-animation.js
+finalRadiometric =
+  sceneRadiance * sceneTransmittance
+  + inScatteredLight
+
+finalPixel =
+  toneMap(
+    finalRadiometric
+    * display.radiometricToSceneRgbScale
+    * display.exposure
+  )
 ```
 
-Responsibilities:
+The globe solid-scene target uses linear half-float color so surface radiance
+can exceed display white before the final display mapping.
 
-- export `resolveAnimatedSun(sceneSun, elapsedSeconds)`
-- support `solar-day-fixed-latitude-rotation`
-- return a new sun view model with current `position`, `object.position`,
-  `light.position`, `light.direction`, `light.distanceKm`, and apparent-size
-  fields all updated together
-- keep null/disabled sun handling explicit
+## Current Transmittance Approximations
 
-The current animation can rotate the initial projected sun position around the
-world `y` axis by:
+CPU atmosphere sampling can march sample-to-light paths through the selected
+frame. The current real-time flat-simulation shader uses the `air-mass`
+sample-to-sun approximation by default:
 
 ```text
-angle = (elapsedSeconds % displayDurationSeconds) / displayDurationSeconds
-  * 2 * pi
+verticalOpticalDepth = opticalDepthFromSampleAltitudeToAtmosphereTop
+airMass = 1 / max(dot(sampleToSunDirection, frameUp), minimumSunLift)
+sampleToSunOpticalDepth = verticalOpticalDepth * airMass
+sampleToSunTransmittance = exp(-sampleToSunOpticalDepth)
 ```
 
-The resolver becomes the only place that knows how sun animation changes the
-current scene/light position.
+The shader still supports `sampleToSunTransmittanceModel: 'light-march'` with
+`sampleToSunTransmittanceSteps`, and `none` for diagnostic comparison.
 
-### 2. Make Sun Rendering Use The Resolver
-
-Update `src/flat/features/false-simulation/components/FalseSkyScene.jsx` so
-the visible `SunBody` uses the resolver instead of a local rotating group.
-
-The renderer should pass the resolved sun body to the mesh and should not keep
-a separate animation path for `scene.sun.object`. Generic
-`AnimatedFixedLatitudeObject` can remain for non-sun objects if needed, but
-the sun path must be first-class because atmosphere depends on it.
-
-Acceptance criteria:
-
-- the visible sun still moves on the same solar-day loop as scene rotation
-- `SunBody` and atmosphere uniforms can receive the same resolved sun object
-- no code path rotates the visible sun without also updating light state
-
-### 3. Add An Atmosphere Uniform Adapter
-
-Create a renderer adapter, likely:
+For flat-slab no-depth sky pixels:
 
 ```text
-src/flat/features/false-simulation/components/atmosphere-uniforms.js
+skyDistance = backgroundAtmosphereViewDistanceKm
+nearHorizonSkyDistance =
+  backgroundAtmosphereViewDistanceKm * flatSlabHorizonViewDistanceFactor
 ```
 
-Responsibilities:
+The flat-slab horizon factor is a renderer/geometry abstraction, not a physical
+atmosphere profile value.
 
-- accept `scene.atmosphere`, resolved `scene.sun.light`, and any renderer
-  scale/color tuning
-- construct `new Atmosphere({ frame, profile, sun })`
-- call `createShaderUniforms()`
-- convert plain arrays/objects into stable React Three Fiber uniform objects
-- expose mutable sun uniforms that can update every frame without remounting
-  the material
+## Surface Illumination
 
-This adapter is renderer-owned because Three uniform object shape is a render
-concern. The shared `Atmosphere` and `Sun` classes stay framework-free.
+Flat-simulation lit solid materials currently receive:
 
-Acceptance criteria:
+- direct local sunlight through `scene.lighting.sun`
+- point-source inverse-square falloff when the local false-sun bridge is active
+- a Three.js light-unit conversion through `threeLightUnitScale`
+- broad diffuse skylight approximation through `skyDiffuseIrradianceScale`
 
-- adapter does not duplicate atmosphere constants
-- adapter does not own sun position math
-- adapter output can be unit tested without mounting a canvas where practical
+The local observer floor uses a scrub/ground albedo of `[0.15, 0.18, 0.11]`.
+The global projected Earth map samples raster color as albedo. Both are meant
+to be lit surfaces that then pass through atmosphere composition.
 
-### 4. Add A First Light-Aware Atmosphere Material
+Globe-simulation lit surface markers currently receive:
 
-Add a replacement atmosphere component in the renderer, likely:
+- direct solar irradiance from
+  `sun.irradiance.directNormalIrradianceAtObserverWm2`
+- estimated diffuse sky irradiance from
+  `sun.irradiance.estimatedDiffuseSkyIrradianceWm2`
+- matte Lambertian albedo from the globe surface or marker color
+- final display mapping only after atmosphere transmittance and in-scattering
+  have been applied
+- a `0.02 km` lower-edge visual inset for marker faces so the rendered marker
+  contact line is not coplanar with the rendered globe mesh
 
-```text
-src/flat/features/false-simulation/components/FalseAtmosphere.jsx
-```
+## Celestial Objects
 
-or keep it local to `FalseSkyScene.jsx` initially if the first pass is still
-small.
+Stars, constellation guide overlays, and the visible sun body are ordinary scene
+objects in the depth-aware composer. Their rendered colors pass through the
+same composition rule as terrain and other objects.
 
-The first shader can be a shell-based validation pass. It should mirror the
-CPU model closely enough to validate the look:
+Current daytime visibility controls:
 
-- flat-slab altitude from world `y`
-- exponential Rayleigh and aerosol density
-- per-channel extinction/transmittance
-- point-sun direction from sample position to resolved sun position
-- sample-to-sun transmittance
-- Rayleigh and Henyey-Greenstein Mie phase functions
-- flat ground-plane shadowing when the sample-to-sun ray intersects `y = 0`
+- `starExposure: 0.02`
+- `constellationOverlayExposure: 0.04`
 
-The shell pass is acceptable only as the first visual integration because it is
-fast to wire and inspect. It should not reintroduce the removed old linear haze
-contract.
+These are renderer/material controls applied before atmosphere composition.
+Constellation lines are guide overlays, not physical light sources.
 
-Acceptance criteria:
+## Current Calibration Stance
 
-- changing sun latitude/elevation/radius changes the visible scattering
-- moving the animated sun changes scattering in sync with the rendered sun
-- atmosphere is visibly directional, not just distance opacity
-- disabling `scene.atmosphere.enabled` removes the pass
+The flat model defaults should use Earth-like physical values wherever the
+model claims to share real-world physics: atmosphere composition, aerosol
+profile, solar spectrum notes, surface albedo, and daylight irradiance targets.
 
-### 5. Add Focused Tests
+The false-model assumptions should remain explicit: flat surface geometry,
+finite local sun position/path, configured false sun radius, and configured
+false sun distance. The spherical/correct-geometry model is the calibration
+target for atmosphere tuning; the flat model should reuse the same named
+physical inputs and reveal geometry-driven consequences.
 
-Add tests before broad visual tuning:
+## Current Gaps
 
-- `sun-animation` tests:
-  - elapsed `0` returns the original projected sun position
-  - quarter/half cycle positions rotate predictably around world `y`
-  - light direction/distance/apparent size update with position
-- atmosphere uniform adapter tests:
-  - uses `scene.atmosphere.profile` and `scene.atmosphere.frame`
-  - uses the resolved animated sun, not the initial sun
-  - exposes sun position/radius/color/intensity uniforms
-- renderer source tests or focused grep-style regression:
-  - no `AltitudeHaze`
-  - no `fullOpacityDistanceKm`, `seaLevelDensity`, or old linear haze uniforms
-    in the false-simulation renderer
-
-Run `npm run test:ui:flat` and `npx polylith build flat` after each coherent
-slice. Browser screenshot checks should be added once the first shader renders.
-
-### 6. Promote To Depth-Aware Composition
-
-After the shell pass proves the sun/scattering behavior, replace or augment it
-with the preferred render pipeline:
-
-1. render solid floor, stars, sun, terrain, and objects
-2. reconstruct per-pixel camera rays and depth
-3. integrate atmosphere from camera to scene depth or atmosphere exit
-4. composite transmittance and in-scattered light over the solid color
-
-This is the path needed for terrain and object occlusion to look coherent.
-The shell pass is a stepping stone, not the target architecture.
-
-Concrete next steps for this promotion:
-
-1. Create `FalseAtmosphereComposer`, likely under
-   `src/flat/features/false-simulation/components/FalseAtmosphereComposer.jsx`.
-   It should own an offscreen `WebGLRenderTarget` with a `DepthTexture`, resize
-   it with the canvas, and render the solid false-simulation scene into that
-   target before the final screen pass.
-2. Split the current scene contents into a reusable solid-scene component so
-   the composer can render floor, scale cues, mountains, stars, constellations,
-   and the visible sun into the offscreen target without also drawing the old
-   shell atmosphere. The camera/look controls should remain outside the solid
-   render subtree.
-3. Add a fullscreen composition shader that receives:
-   - `sceneColorTexture`
-   - `sceneDepthTexture`
-   - camera projection/inverse projection matrices
-   - camera world matrix or camera position
-   - viewport resolution
-   - atmosphere uniforms from `atmosphere-uniforms.js`
-   - resolved animated sun uniforms from `resolveAnimatedSun()`
-4. In the fullscreen shader, reconstruct the world position for each pixel
-   from depth. For background pixels with no solid depth, use atmosphere-exit
-   distance along the camera ray. For solid pixels, integrate only from the
-   camera to the reconstructed solid surface.
-5. Composite with:
-
-   ```glsl
-   finalColor = sceneColor * transmittance + inScatteredLight;
-   ```
-
-   This is what makes daylight and haze attenuate stars, mountains, floor, and
-   the sun consistently instead of letting stars draw over the atmosphere.
-6. Keep the current `FalseAtmosphere` shell as a temporary fallback or debug
-   comparison only while the composer is being validated. Once the composer is
-   stable, remove or disable the shell path so there is one atmosphere render
-   owner.
-7. Add focused tests around the composer helpers where practical:
-   - render-target/depth-texture creation options
-   - uniform adapter reuse with the resolved animated sun
-   - no old `AltitudeHaze` or linear haze uniforms
-   - scene atmosphere disabling bypasses the composition pass
-8. Browser-check `/flat/false-simulation` after the composer is wired:
-   - no WebGL/shader console errors
-   - nonblank canvas on desktop and mobile
-   - stars visibly dim when the sun/airlight is high
-   - nearby mountains remain clearer than distant mountains
-   - disabling atmosphere returns the raw solid scene
-
-## Implementation Plan
-
-Completed:
-
-- Added `src/flat/features/false-simulation/models/sun-animation.js` with
-  `resolveAnimatedSun(sceneSun, elapsedSeconds, options)`. It resolves the
-  current solar-day fixed-latitude sun position, updates `scene.sun.position`,
-  `scene.sun.object.position`, `scene.sun.light.position`, light
-  direction/distance, and apparent angular size together, and can infer the
-  observer position from the initial point-light state.
-- Updated `SunBody` in
-  `src/flat/features/false-simulation/components/FalseSkyScene.jsx` to render
-  the first-class sun body from `resolveAnimatedSun()` on the same React Three
-  Fiber clock used by the rest of the scene animation. The visible sun now
-  completes one full rotation over its configured display duration without a
-  separate rotating-group light path.
-- Added `src/flat/shared/Sun.js` with directional and point sun support,
-  normalized sample-to-light direction, finite point-light distance, explicit
-  open anchor state, and plain shader uniforms.
-- Added `src/flat/shared/math-primitives.js` for shared stateless vector, RGB,
-  and numeric helpers used by `Atmosphere` and `Sun`.
-- Added `src/flat/shared/consts.js` for exported atmosphere/sun constants so
-  class implementation files export only their classes.
-- Moved Atmosphere-specific helper behavior into static `Atmosphere` methods
-  so `Atmosphere.js` is class-owned rather than a class plus loose utilities.
-- Formalized the false-simulation visible sun as
-  `DEFAULT_FALSE_SIMULATION_SUN`, deriving `scene.sun`, `scene.lighting.sun`,
-  and the renderer-compatible sun sphere from one source.
-- Made the rendered sun body a first-class scene contract. The React renderer
-  consumes `scene.sun` directly, while the derived sphere remains in
-  `scene.objects` only for compatibility with generic object consumers.
-- Added observer-relative apparent angular radius/diameter for the false-model
-  sun body from the same physical radius and position used by the point light.
-- Added regression coverage that false-sun latitude, elevation, and physical
-  radius can be varied through scene configuration and still drive the rendered
-  body, apparent size, and point-light state together.
-- Added `src/flat/features/false-simulation/components/atmosphere-uniforms.js`
-  as the renderer-owned adapter from shared `Atmosphere`/resolved `Sun` state
-  to Three/R3F-style uniform objects. It flattens atmosphere frame data for
-  shader use and updates sun position/color/radius/intensity uniforms in place
-  from the same animated sun resolver used by `SunBody`.
-- Added `src/flat/features/false-simulation/components/FalseAtmosphere.jsx`
-  as the first light-aware shell pass. It mirrors the shared single-scattering
-  model in GLSL for a flat-slab atmosphere, samples camera-to-air and
-  sample-to-sun transmittance, uses Rayleigh/Mie phase terms, performs flat
-  ground-shadow checks, and updates sun uniforms each frame from the same
-  resolved animated sun used by the visible `SunBody`.
-- Added `src/flat/features/false-simulation/components/FalseAtmosphereComposer.jsx`
-  as the first depth-aware composition pass. It renders solid scene contents
-  through a portal into an offscreen `WebGLRenderTarget` with `DepthTexture`,
-  then draws a fullscreen shader that samples scene color/depth, reconstructs
-  per-pixel world position, integrates atmosphere from the camera to the solid
-  surface or atmosphere exit, and composites
-  `sceneColor * transmittance + inScatteredLight`.
-- Stabilized the first composer after a live black-sky/ground-popping report:
-  background and grazing rays now clamp to a bounded atmosphere view distance
-  instead of integrating out to the camera far plane, the depth texture uses a
-  higher-precision unsigned integer format, render-target restore is explicit,
-  and resize handling no longer mutates the depth texture image dimensions
-  directly.
-- Added a second compositor stabilization pass after the sky remained black
-  and the floor still popped while turning. Background/no-depth pixels now get
-  a small sun-lift-aware sky airlight floor so the atmosphere pass does not
-  collapse to the black clear color while scattering is under-tuned. The giant
-  projected Earth floor now renders color-only in the solid pass
-  (`depthWrite=false`, `depthTest=false`), leaving local mountains/objects as
-  the depth-bearing geometry until floor depth can be represented by a more
-  stable local terrain/depth strategy.
-- Added a temporary observer-local floor patch after the projection-sized floor
-  still disappeared from the eye-height composed view. The patch is a stable
-  320 km plane centered below the observer at ground `y = 0`, drawn before
-  mountains, and now depth-bearing so the compositor treats it as solid ground
-  instead of background sky. It is intended only to keep the POC grounded until
-  real local terrain or a stable local floor-depth mesh replaces it.
-- Replaced the temporary distance-blend solid haze with the first
-  `Atmosphere.sampleSegment()`-equivalent shader path. The composer now uses
-  integrated optical depth for solid-pixel transmittance and adds tinted
-  segment airlight from lost average transmittance:
-  `(1 - averageTransmittance) * atmosphereMaxAirlight * atmosphereAirlightRgb`.
-- Replaced the bright false-sky no-depth fallback with the normal
-  sun-scattering path. Background/no-depth pixels now integrate optical depth
-  and single scattering to atmosphere exit like other camera rays; only a tiny
-  emergency sky floor remains to prevent total black if the scattering result
-  underflows.
-- Backed out the attempted `scene.atmosphere.rendering.skyExposure` display
-  multiplier. A black sky should be investigated as missing or blocked
-  in-scattered sunlight, not solved by making the final background contribution
-  brighter after the fact.
-- Added temporary background-pixel debug rendering to
-  `FalseAtmosphereComposer`. `backgroundDebugMode: 'diagnostics'` produced a
-  uniformly red sky, meaning background atmosphere samples were mostly
-  unshadowed but sample-to-sun transmittance and final scattering were near
-  zero. `unattenuated-scattering` then still produced a black sky, while
-  `scattering-inputs` produced a uniformly yellow sky, meaning the background
-  ray is sampling atmosphere and density while the phase/scattering side
-  remains weak. `view-path` also produced uniform yellow, meaning the
-  background ray reaches its max sky distance and view transmittance remains
-  high while optical depth remains visually low. `scattering-source` then
-  produced uniform black, meaning the raw source term is not visible at the
-  current probe scale. `scattering-factors` produced pink, confirming the
-  shader receives sun intensity, sun color, and scattering coefficient
-  uniforms. `scattering-source` stayed black even at diagnostic scale `5000`,
-  so `scattering-angles` was added. It produced yellow, confirming valid
-  light/view angle samples and active Rayleigh phase. The composer now uses
-  finite-safe source accumulation and safe point-sun normalization so one
-  invalid sample cannot poison the source or real scattering sums.
-  `scattering-source` still stayed black. The first `scattering-components`
-  probe also stayed black because it only accumulated component values after
-  the final scattering product was already valid. It now reports density,
-  phase, and coefficient-light strength from the valid angle samples; that
-  produced magenta, confirming density and coefficient-light are visible while
-  the source accumulation still does not show. The default is now
-  `scattering-sanity`, which shows final valid scattering sample ratio in red,
-  reconstructed scalar source in green, and accumulated source vector strength
-  in blue. After `scattering-sanity` produced black, the compositor stopped
-  using an all-or-nothing finite-scattering guard and now sanitizes the
-  scattering vector per channel before accumulating it. `scattering-sanity`
-  then produced red, showing the samples are valid while the source magnitude
-  remains below the visible debug range. A single global source gain of `5000`
-  made the solid ground white while the sky stayed black, proving that solid
-  pixels and no-depth sky pixels need separate diagnosis. The composer now
-  exposes `solidScatteringSourceGain`, `skyScatteringSourceGain`, and
-  `skyLightTransmittanceFloor`. Defaults are solid gain `1`, sky gain `5000`,
-  and sky light-transmittance floor `0.05`, with
-  `backgroundDebugMode: 'none'` so the real no-depth scattering path is
-  visible without bleaching the surface. This is source-term and
-  sample-to-light-path calibration for the physically shaped point-sun
-  scattering path, not the rejected final-display `skyExposure` multiplier.
-  The alternate
-  `scattering` mode shows fully attenuated in-scattered light, `diagnostics`
-  shows unshadowed sample ratio in red, average sample-to-light transmittance
-  in green, and scattering strength in blue, and `unattenuated-scattering`
-  bypasses only sample-to-light transmittance. `scattering-inputs` shows
-  atmosphere sample ratio in red, average density in green, and phase strength
-  in blue. `view-path` shows normalized ray distance in red, average view
-  transmittance in green, average optical depth in blue, and
-  `scattering-source` shows the averaged raw source term before attenuation or
-  exposure. `scattering-factors` shows the basic light/coefficient uniforms,
-  `scattering-components` splits the three source-term multipliers, and
-  `scattering-sanity` compares the reconstructed source with the accumulated
-  source vector. These are investigation tools, not the final sky renderer.
-- Current most likely factors for the black physically integrated sky:
-  1. sample-to-sun rays are being marked shadowed too often by the flat ground
-     intersection test
-  2. the nearby point-sun assumptions make the sun effectively too dim or too
-     distance-sensitive for atmospheric scattering; first pass under test is
-     explicit false-sun light intensity `64`
-  3. the visible false sun may be below, near, or inconsistently related to the
-     atmosphere samples for much of its animated cycle
-  4. the shader point-sun light direction or distance may not match the
-     resolved visible sun state
-  5. background ray length may be clamped too short for enough scattering, or
-     too long and over-extinguishing near-horizon paths
-  6. sample-to-light transmittance may be over-attenuating the already small
-     scattering contribution
-  7. Rayleigh/Mie coefficients are physically sized, but the false-world sun
-     and scene scale are not calibrated to physical solar irradiance
-  8. the render target or tone/color-space path may be hiding low but nonzero
-     scattering values
-- Split `FalseSkyScene.jsx` so camera/look controls remain in the main scene
-  while floor, scale cues, mountains, dome rings, stars, constellations, and
-  the visible sun are rendered as solid scene contents through the composer.
-- Captured the renderer integration plan for tying the visible animated
-  `scene.sun`, `scene.lighting.sun`, and shared `Atmosphere` uniforms together.
-- Removed the old false-simulation `AltitudeHaze` shader shell and replaced
-  the legacy scene atmosphere settings with a shared-atmosphere placeholder.
-- Added focused resolver tests for disabled sun handling, zero-time identity,
-  quarter-cycle rotation, updated light/apparent fields, observer inference,
-  and non-mutation of the scene-model sun.
-- Added light input normalization to `src/flat/shared/Atmosphere.js` through
-  `Sun` instances/configs.
-- Added Rayleigh and Mie phase helpers with tests.
-- Added sample-to-light transmittance and shadow tests for flat and spherical
-  atmosphere frames.
-- Added `sampleSingleScatteringRay` with deterministic CPU tests.
-
-Next:
-
-1. Browser-check the real composer path with separated solid/sky source gains
-   and `skyLightTransmittanceFloor: 0.05`. Confirm whether sky scattering is
-   now visible without whitening the ground.
-2. Browser-check the stabilized `FalseAtmosphereComposer` pass once the local
-   flat server is running: verify no shader/WebGL console errors, visible
-   observer-local floor, no floor popping while turning, and distance
-   attenuation on mountains.
-3. Replace the temporary observer-local floor patch with a local terrain mesh
-   or other stable near-observer floor depth representation.
-4. Decide whether the old shell component should remain as a debug fallback or
-   be removed.
-
-## Open Questions
-
-- What known value anchors the initial false-simulation sun position?
-- Does the false model use a distant directional sun first, or a nearby finite
-  point/area sun first?
-- Which later sun assumptions should the control panel expose after latitude,
-  elevation, and radius: longitude/azimuth, motion period, light strength, or
-  color?
-- Should twilight prioritize physical plausibility or visual legibility for
-  the POC?
-- Should the first shader be a post/depth pass, or an atmosphere shell fed by
-  the new shared uniforms?
+- `solarIrradianceScale` remains a flat-simulation and compatibility
+  source-strength bridge. `globe-simulation` no longer consumes it in the
+  atmosphere shader source term, but the legacy derived probe still exists
+  until downstream consumers stop depending on it.
+- `threeLightUnitScale` is a renderer unit bridge into Three.js lighting.
+- `skyDiffuseIrradianceScale` approximates diffuse sky irradiance but is not
+  yet computed from the atmosphere model.
+- `falseSunRadiance` is a local finite-source inspection bridge, not a fully
+  calibrated physical false-sun energy model.
+- `globe-simulation` has the first spherical atmosphere rendering path,
+  physical irradiance probes, and radiometric globe surface/marker lighting,
+  but sky color is still muted blue-gray, the horizon can look brown, and red
+  markers can shift toward pink under atmosphere airlight. The next calibration
+  should diagnose the spherical shader/display path, especially Rayleigh/Mie
+  balance, phase-angle convention, horizon path length, and tone mapping.
+- Star brightness in the globe view still uses a renderer point-size/exposure
+  path rather than a shared photometric-to-display path.

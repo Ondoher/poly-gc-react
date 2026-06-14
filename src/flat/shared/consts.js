@@ -16,6 +16,9 @@ export const STANDARD_EARTH_ATMOSPHERE = Object.freeze({
 	seaLevelDensityKgM3: 1.225,
 	rayleighScaleHeightKm: 8.5,
 	aerosolScaleHeightKm: 1.2,
+	aerosolOpticalDepth550nm: 0.12,
+	aerosolSingleScatteringAlbedo: 0.95,
+	aerosolAngstromExponent: 1.3,
 	rayleighBetaKm: Object.freeze({
 		r: 0.005802,
 		g: 0.013558,
@@ -31,6 +34,24 @@ export const STANDARD_EARTH_ATMOSPHERE = Object.freeze({
 	airlightColor: '#9fc7ff',
 	maxAirlight: 0.85,
 	integrationSteps: 16,
+});
+
+/**
+ * Store the first clear-day Earth atmosphere profile for daytime calibration.
+ *
+ * This keeps the standard Rayleigh and Mie coefficients as physical anchors,
+ * while lowering aerosol/Mie strength for a cleaner blue daylight sky.
+ *
+ * @type {Readonly<FlatAtmosphereProfile>}
+ */
+export const CLEAR_DAY_EARTH_ATMOSPHERE = Object.freeze({
+	...STANDARD_EARTH_ATMOSPHERE,
+	id: 'earth-clear-day',
+	rayleighScaleHeightKm: 8.0,
+	aerosolOpticalDepth550nm: 0.08,
+	aerosolSingleScatteringAlbedo: 0.95,
+	aerosolAngstromExponent: 1.3,
+	rayleighBetaKm: STANDARD_EARTH_ATMOSPHERE.rayleighBetaKm,
 });
 
 /**
@@ -65,6 +86,7 @@ export const STANDARD_SUN = Object.freeze({
 	direction: Object.freeze({ x: 0, y: 1, z: 0 }),
 	color: Object.freeze({ r: 1, g: 0.96, b: 0.88 }),
 	intensity: 1,
+	solarIrradianceScale: 1,
 	angularRadiusRad: 0.00465,
 	radiusKm: 696340,
 	anchor: Object.freeze({

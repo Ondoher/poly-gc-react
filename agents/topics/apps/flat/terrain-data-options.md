@@ -36,6 +36,28 @@ data is already tiled, global, and easy to request around an observer. It is
 not the most canonical source, but it is the fastest path to a working local
 terrain mesh anywhere the app lets the user move.
 
+Use the **Terrarium PNG** tile format for the first pass. Decode each pixel as:
+
+```text
+elevationMeters = (red * 256 + green + blue / 256) - 32768
+```
+
+The first visible terrain pass should be deliberately small and cached:
+
+- observer: current default San Jose root
+- radius: `25 km` to `50 km`
+- grid: `129 x 129` samples first, `257 x 257` only if performance and visual
+  framing are comfortable
+- source: Mapzen Terrain Tiles Terrarium PNGs from the public AWS terrain tile
+  bucket
+- output: checked-in/generated local terrain asset with heights and source
+  metadata, not network fetch on app startup
+- render: one indexed local terrain mesh centered on the observer, using real
+  kilometer/meter scale and the same sun/atmosphere composition path as other
+  solid objects
+- first replacement target: reduce or remove the synthetic red mountain
+  rectangles once the local terrain mesh provides enough horizon context
+
 Evaluate **Copernicus DEM GLO-30/GLO-90** as the longer-term canonical global
 DEM source if we want direct, source-stable DEM products instead of composited
 web terrain tiles.
@@ -108,7 +130,7 @@ coverage.
 
 - Useful for broad map context, coastlines, land/water, and shaded relief.
 - Not detailed enough for local terrain or horizon masking.
-- Already used by the Flat false-simulation floor texture.
+- Already used by the Flat flat-simulation floor texture.
 - Source: https://www.naturalearthdata.com/
 
 ## Implementation Notes
@@ -116,24 +138,45 @@ coverage.
 - Keep terrain generation as a build/preprocess step or explicit user action,
   not automatic app startup network work.
 - Cache local height grids as app assets with attribution metadata.
+- Put provider/tile/decode math in framework-free model/helper code, not in
+  React components.
 - Convert source lat/lon/elevation samples to a local ENU grid around the
   observer before the renderer sees them.
+- For the first flat-simulation renderer, map local ENU as `eastKm -> x`,
+  `northKm -> z`, and `(elevationMeters - observer.elevationMeters) / 1000 ->
+  y`.
+- Render the first terrain mesh as solid depth-bearing geometry so the
+  atmosphere composer can attenuate it by real camera-to-surface distance.
 - Generate a horizon profile from the grid by azimuth. Store the maximum
-  elevation angle per azimuth bin for star/sky occlusion.
-- For flat false simulation, decide whether local terrain is rendered as real
+  elevation angle per azimuth bin for star/sky occlusion. This can follow the
+  first visible mesh; it does not need to block the initial terrain pass.
+- For flat flat simulation, decide whether local terrain is rendered as real
   terrain around the observer, as terrain predicted by the false projection, or
   both in separate comparison modes.
 
+## Shortest Implementation Path
+
+1. Add a terrain module under
+   `src/flat/features/flat-simulation/models/local-terrain.js` or promote to
+   `src/flat/shared/terrain` if the first helper is immediately view-agnostic.
+2. Implement Web Mercator tile coverage for a lat/lon/radius window.
+3. Add a small script or explicit generation command that downloads Terrarium
+   PNG tiles for San Jose and writes a normalized local height-grid asset under
+   a flat feature asset path.
+4. Add source metadata beside the generated grid: provider, product, tile
+   format, source URLs, access date, observer, radius, grid size, and vertical
+   datum when known.
+5. Add a renderer component that turns the grid into one indexed terrain mesh,
+   lit by the current sun path and rendered through `FlatAtmosphereComposer`.
+6. Keep synthetic mountain rectangles available as a fallback until the terrain
+   mesh is visually useful, then disable them by default.
+
 ## Open Questions
 
-- Should the first terrain pass use Mapzen Terrain Tiles for speed, or should
-  we start directly with Copernicus DEM for a more canonical global source?
 - Should USGS 3DEP be added later as an optional U.S. high-resolution override
   behind the same provider interface?
-- What local radius should the first mesh use: `5 km`, `25 km`, `100 km`, or a
-  control-panel setting?
-- Should the default checked-in sample be San Jose-only, or should the app
-  fetch/cache terrain per selected observer later?
+- After the San Jose fixture works, should terrain be generated on demand by a
+  local script, cached per selected observer, or fetched by a backend route?
 - Do we need bare-earth terrain only, or is a surface model with buildings and
   trees acceptable for the first visual pass?
 - Which vertical datum conversions matter before the renderer uses elevations

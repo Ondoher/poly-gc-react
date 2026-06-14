@@ -63,6 +63,7 @@
     "dev:watch": "polylith watch --all -v false",
     "dev:serve": "nodemon",
     "build:sat-cities": "node scripts/sat/build-city-index.js",
+    "capture:flat-atmosphere": "node scripts/flat/capture-atmosphere-baseline.js",
     "build": "polylith build --all",
     "start": "polylith serve --all"
   },

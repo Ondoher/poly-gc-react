@@ -22,6 +22,46 @@ import {
 } from './math-primitives.js';
 
 const EPSILON = 1e-9;
+const RGB_WAVELENGTH_NM = Object.freeze({
+	r: 680,
+	g: 550,
+	b: 440,
+});
+const AEROSOL_REFERENCE_WAVELENGTH_NM = 550;
+
+function finiteNumber(value, fallback) {
+	const number = Number(value);
+
+	return Number.isFinite(number) ? number : fallback;
+}
+
+function aerosolOpticalDepthAtWavelength(profile, wavelengthNm) {
+	const opticalDepth550 = finiteNumber(profile.aerosolOpticalDepth550nm, NaN);
+	const angstromExponent = finiteNumber(profile.aerosolAngstromExponent, 0);
+
+	if (!Number.isFinite(opticalDepth550)) {
+		return null;
+	}
+
+	return opticalDepth550 * Math.pow(
+		wavelengthNm / AEROSOL_REFERENCE_WAVELENGTH_NM,
+		-angstromExponent,
+	);
+}
+
+function deriveMieExtinctionBetaKm(profile) {
+	const redOpticalDepth = aerosolOpticalDepthAtWavelength(profile, RGB_WAVELENGTH_NM.r);
+
+	if (redOpticalDepth === null) {
+		return null;
+	}
+
+	return Object.freeze({
+		r: redOpticalDepth / profile.aerosolScaleHeightKm,
+		g: aerosolOpticalDepthAtWavelength(profile, RGB_WAVELENGTH_NM.g) / profile.aerosolScaleHeightKm,
+		b: aerosolOpticalDepthAtWavelength(profile, RGB_WAVELENGTH_NM.b) / profile.aerosolScaleHeightKm,
+	});
+}
 
 /**
  * Model optical depth, transmittance, and single scattering for flat-slab and
@@ -56,12 +96,27 @@ export default class Atmosphere {
 			mieBetaKm: cloneRgb(rgbFrom(profile.mieBetaKm, STANDARD_EARTH_ATMOSPHERE.mieBetaKm)),
 		};
 
-		nextProfile.topAltitudeKm = Number(nextProfile.topAltitudeKm);
-		nextProfile.seaLevelDensityKgM3 = Number(nextProfile.seaLevelDensityKgM3);
-		nextProfile.rayleighScaleHeightKm = Number(nextProfile.rayleighScaleHeightKm);
-		nextProfile.aerosolScaleHeightKm = Number(nextProfile.aerosolScaleHeightKm);
-		nextProfile.mieStrength = Number(nextProfile.mieStrength);
-		nextProfile.mieAnisotropy = clamp(Number(nextProfile.mieAnisotropy), -0.99, 0.99);
+		nextProfile.topAltitudeKm = finiteNumber(nextProfile.topAltitudeKm, STANDARD_EARTH_ATMOSPHERE.topAltitudeKm);
+		nextProfile.seaLevelDensityKgM3 = finiteNumber(
+			nextProfile.seaLevelDensityKgM3,
+			STANDARD_EARTH_ATMOSPHERE.seaLevelDensityKgM3,
+		);
+		nextProfile.rayleighScaleHeightKm = finiteNumber(
+			nextProfile.rayleighScaleHeightKm,
+			STANDARD_EARTH_ATMOSPHERE.rayleighScaleHeightKm,
+		);
+		nextProfile.aerosolScaleHeightKm = finiteNumber(
+			nextProfile.aerosolScaleHeightKm,
+			STANDARD_EARTH_ATMOSPHERE.aerosolScaleHeightKm,
+		);
+		nextProfile.aerosolSingleScatteringAlbedo = clamp(
+			finiteNumber(nextProfile.aerosolSingleScatteringAlbedo, 1),
+			0,
+			1,
+		);
+		nextProfile.aerosolAngstromExponent = finiteNumber(nextProfile.aerosolAngstromExponent, 0);
+		nextProfile.mieStrength = finiteNumber(nextProfile.mieStrength, 1);
+		nextProfile.mieAnisotropy = clamp(finiteNumber(nextProfile.mieAnisotropy, 0), -0.99, 0.99);
 		nextProfile.maxAirlight = clamp(Number(nextProfile.maxAirlight), 0, 1);
 		nextProfile.integrationSteps = stepsFrom(nextProfile.integrationSteps);
 
@@ -76,6 +131,25 @@ export default class Atmosphere {
 		if (nextProfile.rayleighScaleHeightKm <= 0 || nextProfile.aerosolScaleHeightKm <= 0) {
 			throw new Error('Atmosphere scale heights must be greater than zero.');
 		}
+
+		const derivedMieExtinctionBetaKm = deriveMieExtinctionBetaKm(nextProfile);
+		const mieExtinctionBetaKm = derivedMieExtinctionBetaKm || Object.freeze({
+			r: nextProfile.mieBetaKm.r * nextProfile.mieStrength,
+			g: nextProfile.mieBetaKm.g * nextProfile.mieStrength,
+			b: nextProfile.mieBetaKm.b * nextProfile.mieStrength,
+		});
+
+		nextProfile.mieExtinctionBetaKm = cloneRgb(mieExtinctionBetaKm);
+		nextProfile.mieScatteringBetaKm = Object.freeze({
+			r: nextProfile.mieExtinctionBetaKm.r * nextProfile.aerosolSingleScatteringAlbedo,
+			g: nextProfile.mieExtinctionBetaKm.g * nextProfile.aerosolSingleScatteringAlbedo,
+			b: nextProfile.mieExtinctionBetaKm.b * nextProfile.aerosolSingleScatteringAlbedo,
+		});
+		nextProfile.mieAbsorptionBetaKm = Object.freeze({
+			r: nextProfile.mieExtinctionBetaKm.r - nextProfile.mieScatteringBetaKm.r,
+			g: nextProfile.mieExtinctionBetaKm.g - nextProfile.mieScatteringBetaKm.g,
+			b: nextProfile.mieExtinctionBetaKm.b - nextProfile.mieScatteringBetaKm.b,
+		});
 
 		return Object.freeze(nextProfile);
 	}
@@ -126,6 +200,9 @@ export default class Atmosphere {
 			...profile,
 			rayleighBetaKm: cloneRgb(profile.rayleighBetaKm),
 			mieBetaKm: cloneRgb(profile.mieBetaKm),
+			mieExtinctionBetaKm: cloneRgb(profile.mieExtinctionBetaKm),
+			mieScatteringBetaKm: cloneRgb(profile.mieScatteringBetaKm),
+			mieAbsorptionBetaKm: cloneRgb(profile.mieAbsorptionBetaKm),
 		});
 	}
 
@@ -372,12 +449,11 @@ export default class Atmosphere {
 	extinctionCoefficientKmAtAltitudeKm(altitudeKm) {
 		const rayleighDensity = this.relativeDensityAtAltitudeKm(altitudeKm, 'rayleigh');
 		const aerosolDensity = this.relativeDensityAtAltitudeKm(altitudeKm, 'aerosol');
-		const mieScale = this.profile.mieStrength * aerosolDensity;
 
 		return Object.freeze({
-			r: this.profile.rayleighBetaKm.r * rayleighDensity + this.profile.mieBetaKm.r * mieScale,
-			g: this.profile.rayleighBetaKm.g * rayleighDensity + this.profile.mieBetaKm.g * mieScale,
-			b: this.profile.rayleighBetaKm.b * rayleighDensity + this.profile.mieBetaKm.b * mieScale,
+			r: this.profile.rayleighBetaKm.r * rayleighDensity + this.profile.mieExtinctionBetaKm.r * aerosolDensity,
+			g: this.profile.rayleighBetaKm.g * rayleighDensity + this.profile.mieExtinctionBetaKm.g * aerosolDensity,
+			b: this.profile.rayleighBetaKm.b * rayleighDensity + this.profile.mieExtinctionBetaKm.b * aerosolDensity,
 		});
 	}
 
@@ -390,16 +466,15 @@ export default class Atmosphere {
 	scatteringCoefficientKmAtAltitudeKm(altitudeKm) {
 		const rayleighDensity = this.relativeDensityAtAltitudeKm(altitudeKm, 'rayleigh');
 		const aerosolDensity = this.relativeDensityAtAltitudeKm(altitudeKm, 'aerosol');
-		const mieScale = this.profile.mieStrength * aerosolDensity;
 		const rayleigh = {
 			r: this.profile.rayleighBetaKm.r * rayleighDensity,
 			g: this.profile.rayleighBetaKm.g * rayleighDensity,
 			b: this.profile.rayleighBetaKm.b * rayleighDensity,
 		};
 		const mie = {
-			r: this.profile.mieBetaKm.r * mieScale,
-			g: this.profile.mieBetaKm.g * mieScale,
-			b: this.profile.mieBetaKm.b * mieScale,
+			r: this.profile.mieScatteringBetaKm.r * aerosolDensity,
+			g: this.profile.mieScatteringBetaKm.g * aerosolDensity,
+			b: this.profile.mieScatteringBetaKm.b * aerosolDensity,
 		};
 
 		return Object.freeze({
@@ -741,7 +816,7 @@ export default class Atmosphere {
 					const rayleighScattering = scaleRgb(coefficients.rayleigh, this.rayleighPhase(cosTheta));
 					const mieScattering = scaleRgb(coefficients.mie, this.miePhase(cosTheta));
 					const scattering = addRgb(rayleighScattering, mieScattering);
-					const lightColor = scaleRgb(light.color, light.intensity);
+					const lightColor = scaleRgb(light.color, light.solarIrradianceScale);
 					const transmittedLight = multiplyRgb(
 						multiplyRgb(viewTransmittance, lightSample.transmittance),
 						multiplyRgb(scattering, lightColor),
@@ -832,9 +907,19 @@ export default class Atmosphere {
 				this.profile.rayleighBetaKm.b,
 			]),
 			atmosphereMieBetaKm: Object.freeze([
-				this.profile.mieBetaKm.r * this.profile.mieStrength,
-				this.profile.mieBetaKm.g * this.profile.mieStrength,
-				this.profile.mieBetaKm.b * this.profile.mieStrength,
+				this.profile.mieScatteringBetaKm.r,
+				this.profile.mieScatteringBetaKm.g,
+				this.profile.mieScatteringBetaKm.b,
+			]),
+			atmosphereMieExtinctionBetaKm: Object.freeze([
+				this.profile.mieExtinctionBetaKm.r,
+				this.profile.mieExtinctionBetaKm.g,
+				this.profile.mieExtinctionBetaKm.b,
+			]),
+			atmosphereMieScatteringBetaKm: Object.freeze([
+				this.profile.mieScatteringBetaKm.r,
+				this.profile.mieScatteringBetaKm.g,
+				this.profile.mieScatteringBetaKm.b,
 			]),
 			atmosphereMieAnisotropy: this.profile.mieAnisotropy,
 			atmosphereAirlightColor: this.profile.airlightColor,

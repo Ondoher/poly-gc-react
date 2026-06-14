@@ -54,6 +54,7 @@ describe('Sun', () => {
 		const sun = new Sun({
 			color: { r: 1, g: 0.8, b: 0.6 },
 			intensity: 2,
+			solarIrradianceScale: 50,
 		});
 		const uniforms = sun.createShaderUniforms();
 
@@ -61,5 +62,6 @@ describe('Sun', () => {
 		expect(uniforms.sunDirection).toEqual([0, 1, 0]);
 		expect(uniforms.sunColor).toEqual([1, 0.8, 0.6]);
 		expect(uniforms.sunIntensity).toBe(2);
+		expect(uniforms.sunSolarIrradianceScale).toBe(50);
 	});
 });

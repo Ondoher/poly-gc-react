@@ -1,0 +1,156 @@
+{
+  "kind": "flat-daytime-atmosphere-baseline",
+  "capturedAt": "2026-06-13T21:35:00.580Z",
+  "url": "https://localhost/flat/false-simulation",
+  "viewport": {
+    "width": 1192,
+    "height": 643
+  },
+  "canvas": {
+    "width": 1138,
+    "height": 487
+  },
+  "samplePoints": {
+    "upperSky": {
+      "x": 0.5,
+      "y": 0.18
+    },
+    "centerSky": {
+      "x": 0.5,
+      "y": 0.42
+    },
+    "horizon": {
+      "x": 0.5,
+      "y": 0.62
+    },
+    "mountainBand": {
+      "x": 0.5,
+      "y": 0.69
+    },
+    "localFloor": {
+      "x": 0.5,
+      "y": 0.84
+    },
+    "leftStarProbe": {
+      "x": 0.28,
+      "y": 0.32
+    },
+    "rightStarProbe": {
+      "x": 0.72,
+      "y": 0.32
+    }
+  },
+  "samples": {
+    "upperSky": {
+      "point": {
+        "x": 0.5,
+        "y": 0.18
+      },
+      "pixel": {
+        "x": 569,
+        "y": 87
+      },
+      "rgb": [
+        71,
+        139,
+        255
+      ]
+    },
+    "centerSky": {
+      "point": {
+        "x": 0.5,
+        "y": 0.42
+      },
+      "pixel": {
+        "x": 569,
+        "y": 204
+      },
+      "rgb": [
+        97,
+        174,
+        255
+      ]
+    },
+    "horizon": {
+      "point": {
+        "x": 0.5,
+        "y": 0.62
+      },
+      "pixel": {
+        "x": 569,
+        "y": 301
+      },
+      "rgb": [
+        128,
+        190,
+        242
+      ]
+    },
+    "mountainBand": {
+      "point": {
+        "x": 0.5,
+        "y": 0.69
+      },
+      "pixel": {
+        "x": 569,
+        "y": 335
+      },
+      "rgb": [
+        141,
+        174,
+        191
+      ]
+    },
+    "localFloor": {
+      "point": {
+        "x": 0.5,
+        "y": 0.84
+      },
+      "pixel": {
+        "x": 569,
+        "y": 408
+      },
+      "rgb": [
+        86,
+        84,
+        38
+      ]
+    },
+    "leftStarProbe": {
+      "point": {
+        "x": 0.28,
+        "y": 0.32
+      },
+      "pixel": {
+        "x": 318,
+        "y": 156
+      },
+      "rgb": [
+        97,
+        175,
+        255
+      ]
+    },
+    "rightStarProbe": {
+      "point": {
+        "x": 0.72,
+        "y": 0.32
+      },
+      "pixel": {
+        "x": 819,
+        "y": 156
+      },
+      "rgb": [
+        97,
+        175,
+        255
+      ]
+    }
+  },
+  "screenshotPath": "agents/topics/apps/flat/baselines/daytime-atmosphere/phase-5-simplified-air-mass-aod-atmosphere/screenshot.png",
+  "consoleErrors": [
+    "Failed to load resource: net::ERR_SSL_PROTOCOL_ERROR"
+  ],
+  "pageErrors": [],
+  "nonblank": true
+}

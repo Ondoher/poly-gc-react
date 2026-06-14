@@ -1,14 +1,14 @@
 # ProjectionModel API Draft
 
 This is a first-pass API contract for the math layer used by both the standard
-sky simulation and the flat/false simulation.
+sky simulation and the flat/flat simulation.
 
 The API should stay framework-free and renderer-independent. It returns plain
 data objects, not React components, DOM nodes, or Three.js classes.
 
 ## Goals
 
-- Support both real and flat/false simulations.
+- Support both real and flat/flat simulations.
 - Keep Earth projection, celestial projection, and sky-surface mapping
   independently configurable.
 - Let rendering code ask for derived positions without knowing which projection
@@ -183,7 +183,7 @@ The root does not have to mean the same thing for every projection:
 
 - standard/real simulations use it as the observer location for local horizon
   and sky calculations
-- flat/false simulations use it as the viewer's source location on the
+- flat/flat simulations use it as the viewer's source location on the
   projected Earth model
 - future terrain calculations can use it as the center of the local terrain
   window and horizon profile
@@ -244,7 +244,7 @@ Set the time or time-like rotation state used by projections that need it.
 model.setTime(new Date('2026-05-22T00:00:00-07:00'));
 ```
 
-For false simulations, this may only update a reference rotation such as
+For flat simulations, this may only update a reference rotation such as
 `referenceRightAscensionDeg`.
 
 The first POC default is midnight at the start of May 22, 2026 for San Jose,
@@ -483,13 +483,13 @@ new ProjectionModel({
 
 This mode should compute true local azimuth/altitude from each object's
 catalog/ephemeris coordinates, then map that apparent position into the flat
-scene. It is not the same as the first false simulation: the floor and scene
+scene. It is not the same as the first flat simulation: the floor and scene
 presentation remain flat, but celestial-object placement is anchored to what
 the observer would actually see in the sky.
 
-## Flat / False Simulation Shape
+## Flat / Flat Simulation Shape
 
-The first false simulation can use:
+The first flat simulation can use:
 
 ```js
 new ProjectionModel({

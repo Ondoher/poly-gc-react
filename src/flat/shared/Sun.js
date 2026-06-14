@@ -87,6 +87,10 @@ export default class Sun {
 		 */
 		this.color = cloneRgb(rgbFrom(config.color, STANDARD_SUN.color));
 		this.intensity = Math.max(0, finiteNumber(config.intensity, STANDARD_SUN.intensity));
+		this.solarIrradianceScale = Math.max(
+			0,
+			finiteNumber(config.solarIrradianceScale, STANDARD_SUN.solarIrradianceScale),
+		);
 		this.angularRadiusRad = Math.max(0, finiteNumber(config.angularRadiusRad, STANDARD_SUN.angularRadiusRad));
 		this.radiusKm = Math.max(0, finiteNumber(config.radiusKm, STANDARD_SUN.radiusKm));
 		/**
@@ -141,6 +145,7 @@ export default class Sun {
 			position: this.position ? cloneVector(this.position) : null,
 			color: cloneRgb(this.color),
 			intensity: this.intensity,
+			solarIrradianceScale: this.solarIrradianceScale,
 			angularRadiusRad: this.angularRadiusRad,
 			radiusKm: this.radiusKm,
 			anchor: Sun.cloneAnchor(this.anchor),
@@ -248,6 +253,7 @@ export default class Sun {
 				this.color.b,
 			]),
 			[`${prefix}Intensity`]: this.intensity,
+			[`${prefix}SolarIrradianceScale`]: this.solarIrradianceScale,
 			[`${prefix}AngularRadiusRad`]: this.angularRadiusRad,
 			[`${prefix}RadiusKm`]: this.radiusKm,
 			[`${prefix}Anchor`]: Sun.cloneAnchor(this.anchor),

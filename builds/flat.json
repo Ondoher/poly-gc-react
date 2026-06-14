@@ -11,6 +11,8 @@
 			"description": "Browser-based Jasmine specs for shared Flat Earth app code.",
 			"root": "src/flat",
 			"specs": [
+				"services/_tests/*Spec.js",
+				"services/_tests/*.spec.js",
 				"shared/_tests/*Spec.js",
 				"shared/_tests/*.spec.js"
 			]
@@ -37,5 +39,5 @@
 			"keepNest": true
 		}
 	],
-	"features": ["features/app", "features/false-simulation"]
+	"features": ["features/app", "features/flat-simulation", "features/globe-simulation"]
 }

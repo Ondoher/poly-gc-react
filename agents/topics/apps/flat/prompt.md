@@ -29,12 +29,12 @@ time: 2026-05-22T00:00:00-07:00
 ```
 
 Keep Phase 1 static. Do not add city picking, full catalog ingestion, planets,
-the moon, terrain, or the standard sky viewer until the false-simulation scene
+the moon, terrain, or the standard sky viewer until the flat-simulation scene
 is rendering and inspectable.
 
 ## False Model
 
-The false simulation is based on these assumptions:
+The flat simulation is based on these assumptions:
 
 - Earth is treated as an azimuthal equidistant projection centered on the north
   pole.
@@ -71,7 +71,7 @@ src/flat/
   main/
   features/
     app/
-    false-simulation/
+    flat-simulation/
   services/
   models/
   assets/
@@ -79,12 +79,12 @@ src/flat/
 builds/flat.json
 ```
 
-The first feature-level view is `false-simulation`. The later standard sky
+The first feature-level view is `flat-simulation`. The later standard sky
 viewer should become a separate feature.
 
 ## Rendering
 
-Use Three.js for the false-simulation POC.
+Use Three.js for the flat-simulation POC.
 
 Render at least:
 
@@ -112,7 +112,7 @@ For Phase 1, derive a plain scene view model before rendering:
 	},
 	time: '2026-05-22T00:00:00-07:00',
 	model: {
-		id: 'flat-poc-false-simulation',
+		id: 'flat-poc-flat-simulation',
 		earthProjection: 'north-pole-azimuthal-equidistant',
 		celestialProjection: 'north-celestial-pole-azimuthal-equidistant',
 		skySurfaceProjection: 'upper-hemisphere-radial-lift',
@@ -242,7 +242,7 @@ For `flat`, do not directly couple to SAT internals. Either:
 - generate a `flat`-owned city index using the same source package and promote
   later after the reuse shape is stable.
 
-The false-simulation feature should consume a selected observer record shaped
+The flat-simulation feature should consume a selected observer record shaped
 like:
 
 ```json
@@ -260,7 +260,7 @@ like:
 Keep false-model math in testable helpers/models.
 
 Use [ProjectionModel API Draft](projection-model-api.md) as the current
-first-pass API contract for both the standard and flat/false simulations.
+first-pass API contract for both the standard and flat/flat simulations.
 
 Although `ProjectionModel` is called a model, it is not a Polylith-style model
 service. Implement it as a plain reusable utility/domain class under

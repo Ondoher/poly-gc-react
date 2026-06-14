@@ -1,6 +1,6 @@
 # Flat POC Phase 1 Plan
 
-Phase 1 goal: render the false-simulation sky for San Jose, CA at midnight
+Phase 1 goal: render the flat-simulation sky for San Jose, CA at midnight
 local time at the start of May 22, 2026.
 
 ```text
@@ -22,7 +22,7 @@ real apparent azimuth/altitude relative to the observer and time.
 ## Progress Checklist
 
 - [x] Scaffold `flat` as a Polylith REMVC app.
-- [x] Add app shell feature and first `false-simulation` feature boundary.
+- [x] Add app shell feature and first `flat-simulation` feature boundary.
 - [x] Add clean `/flat/*` server route fallback.
 - [x] Verify `npx polylith build flat`.
 - [x] Set up app-local Polylith/Karma unit test entry.
@@ -37,7 +37,7 @@ real apparent azimuth/altitude relative to the observer and time.
   `upper-hemisphere-radial-lift`.
 - [x] Add a compact real bright-star POC fixture.
 - [x] Project fixture stars through `ProjectionModel`.
-- [x] Replace the false-simulation placeholder with a Three.js scene component.
+- [x] Replace the flat-simulation placeholder with a Three.js scene component.
 - [x] Render projected Earth disc/plane.
 - [x] Project stars to a hidden sky-dome surface.
 - [x] Draw concentric sky latitude rings every 10 degrees to the horizon/rim.
@@ -49,7 +49,7 @@ real apparent azimuth/altitude relative to the observer and time.
 - [x] Verify `node --check` for new non-JSX math/controller files.
 - [x] Verify `npm run test:ui:flat` after real projection specs are added.
 - [x] Verify `npx polylith build flat`.
-- [x] Browser-check `/flat/false-simulation` for nonblank scene, hidden dome,
+- [x] Browser-check `/flat/flat-simulation` for nonblank scene, hidden dome,
   visible Earth/sky context, visible star points, and stable responsive layout.
 
 ## Implementation Shape
@@ -108,7 +108,7 @@ Projection implementations should register by role. Avoid switch statements in
 
 ## Static POC Configuration
 
-Use this as the initial false-simulation config:
+Use this as the initial flat-simulation config:
 
 ```js
 {
@@ -136,7 +136,7 @@ Use this as the initial false-simulation config:
 
 ## Scene Output Contract
 
-The false-simulation page should derive a plain scene view model before passing
+The flat-simulation page should derive a plain scene view model before passing
 data to Three.js:
 
 ```js
@@ -152,7 +152,7 @@ data to Three.js:
 	},
 	time: '2026-05-22T00:00:00-07:00',
 	model: {
-		id: 'flat-poc-false-simulation',
+		id: 'flat-poc-flat-simulation',
 		earthProjection: 'north-pole-azimuthal-equidistant',
 		celestialProjection: 'north-celestial-pole-azimuthal-equidistant',
 		skySurfaceProjection: 'upper-hemisphere-radial-lift',
@@ -273,7 +273,7 @@ data to Three.js:
 			color: { r: 1, g: 0.82, b: 0.55 },
 			intensity: 1,
 			anchor: {
-				kind: 'false-simulation-visible-sun',
+				kind: 'flat-simulation-visible-sun',
 				status: 'open',
 			},
 		},
@@ -301,25 +301,26 @@ data to Three.js:
 			id: 'mountain-rectangle-1',
 			name: 'Mountain rectangle 1',
 			position: {
-				// Observer-relative placement between 1 and 100 miles.
+				// Observer-relative placement in the distance/bearing spiral.
 			},
 			size: {
-				// Height from 500-3000 feet; width is 5x height and
+				// Height is 2000 feet; width is 5x height and
 				// length/depth is 10x height.
 			},
 			rotationYRad: 0,
 			visible: true,
 			style: {
-				// Deterministic random primary/secondary color.
-				color: '#00ff00',
+				color: '#ff0000',
 			},
 			source: {
-				heightFeet: 500,
-				distanceMiles: 1,
-				bearingDeg: 0,
+				heightFeet: 2000,
+				distanceMiles: 0.5,
+				bearingDeg: 22.5,
+				role: 'stray-near-field-calibration',
 			},
 		},
-		// 199 more deterministic synthetic mountain rectangles.
+		// 21 more deterministic synthetic mountain spiral markers from
+		// 1 to 101 miles.
 		{
 			kind: 'sphere',
 			role: 'sun',
@@ -377,11 +378,14 @@ The Three.js component consumes this scene view model and should not know how to
 run projections itself.
 
 The current local terrain pass is intentionally synthetic: the model generates
-200 deterministic observer-relative rectangular prisms between `1` and
-`100 miles` from the observer, with heights between `500` and `3000 feet`,
-colored from the primary/secondary color set. Each prism's width is `5x` its
-height and its length/depth is `10x` its height. This is a visual simulation
-aid until real DEM terrain is connected.
+one stray near-field red prism at `0.5 miles` and `22.5 degrees` bearing, plus
+21 deterministic observer-relative red rectangular prisms in a spiral from `1`
+to `101 miles`, with one new marker every `5 miles`. Each marker is
+`2000 feet` tall; width is `5x` height and length/depth is `10x` height. The
+bearing sequence cycles through north, northeast, east, southeast, south,
+southwest, west, and northwest, then shifts the next eight-marker turn by
+`10 degrees` so distant markers are less hidden behind nearer ones. This is a
+visual simulation aid until real DEM terrain is connected.
 
 ## Verification Notes
 
@@ -402,7 +406,7 @@ Math checks should confirm:
 
 Browser check should confirm:
 
-- `/flat/false-simulation` loads.
+- `/flat/flat-simulation` loads.
 - The scene is nonblank.
 - The scene renders from the observer's projected point of view.
 - The sky dome surface is not visibly rendered.
@@ -415,7 +419,7 @@ Latest browser check:
 - Added `<base href="/flat/">` to the flat HTML template so deep routes load
   built scripts and styles from the app root instead of falling through to the
   route fallback as HTML.
-- Fixed `FalseSkyScene` OrbitControls setup so the control target is assigned
+- Fixed `FlatSkyScene` OrbitControls setup so the control target is assigned
   through `Vector3.set(...)` instead of replacing the target with an array.
 - Puppeteer desktop check at `1280x800` confirmed San Jose/time text, no page
   errors, a `1192 x 644` canvas screenshot, and nonblank visible pixels.
@@ -444,7 +448,7 @@ Latest browser check:
   unique ids, and source tagging.
 - Puppeteer desktop and mobile checks passed after the larger star subset; both
   views stayed nonblank and drag still changed the rendered view.
-- Converted false-simulation geometry from toy scene units to kilometer-scale
+- Converted flat-simulation geometry from toy scene units to kilometer-scale
   coordinates. The Earth projection now uses mean Earth radius
   `6371.0088 km`; the projected Earth disc and hidden dome radius are both
   `20015.114442035923 km`.
@@ -541,7 +545,7 @@ Latest browser check:
 - `npm run test:ui:flat` and `npx polylith build flat` passed after adding
   that initial visible solar body.
 - The former orange reference sphere is now formalized as the false-model sun:
-  `DEFAULT_FALSE_SIMULATION_SUN` derives `scene.sun`, a visible sun sphere in
+  `DEFAULT_FLAT_SIMULATION_SUN` derives `scene.sun`, a visible sun sphere in
   `scene.objects`, and `scene.lighting.sun` point-light state.
 - The renderer now consumes `scene.sun` directly for the visible body because
   the sun's position and apparent angular size are simulation evidence, not

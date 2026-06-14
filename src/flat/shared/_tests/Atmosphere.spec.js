@@ -1,5 +1,6 @@
 import Atmosphere from '../Atmosphere.js';
 import {
+	CLEAR_DAY_EARTH_ATMOSPHERE,
 	FLAT_ATMOSPHERE_FRAME,
 	MEAN_EARTH_RADIUS_KM,
 	SPHERICAL_ATMOSPHERE_FRAME,
@@ -22,6 +23,35 @@ describe('Atmosphere', () => {
 		expect(atmosphere.getSun().kind).toBe('directional');
 	});
 
+	it('defines a clear-day Earth preset with aerosol optical depth and blue Rayleigh', () => {
+		const preset = CLEAR_DAY_EARTH_ATMOSPHERE;
+
+		expect(preset.id).toBe('earth-clear-day');
+		expect(preset.topAltitudeKm).toBe(STANDARD_EARTH_ATMOSPHERE.topAltitudeKm);
+		expect(preset.rayleighScaleHeightKm).toBe(8.0);
+		expect(preset.aerosolScaleHeightKm).toBe(1.2);
+		expect(preset.aerosolOpticalDepth550nm).toBe(0.08);
+		expect(preset.aerosolSingleScatteringAlbedo).toBe(0.95);
+		expect(preset.aerosolAngstromExponent).toBe(1.3);
+		expect(preset.rayleighBetaKm).toEqual(STANDARD_EARTH_ATMOSPHERE.rayleighBetaKm);
+		expect(preset.rayleighBetaKm.b).toBeGreaterThan(preset.rayleighBetaKm.g);
+		expect(preset.rayleighBetaKm.g).toBeGreaterThan(preset.rayleighBetaKm.r);
+		expect(preset.mieAnisotropy).toBe(0.8);
+	});
+
+	it('derives Mie extinction and scattering from aerosol optical depth', () => {
+		const atmosphere = new Atmosphere({
+			profile: CLEAR_DAY_EARTH_ATMOSPHERE,
+		});
+		const profile = atmosphere.getProfile();
+
+		expect(profile.mieExtinctionBetaKm.g).toBeCloseTo(0.08 / 1.2, 8);
+		expect(profile.mieScatteringBetaKm.g).toBeCloseTo((0.08 / 1.2) * 0.95, 8);
+		expect(profile.mieAbsorptionBetaKm.g).toBeCloseTo((0.08 / 1.2) * 0.05, 8);
+		expect(profile.mieExtinctionBetaKm.b).toBeGreaterThan(profile.mieExtinctionBetaKm.r);
+		expect(profile.mieScatteringBetaKm.b).toBeGreaterThan(profile.mieScatteringBetaKm.r);
+	});
+
 	it('calculates real density from altitude and scale height', () => {
 		const atmosphere = new Atmosphere();
 
@@ -31,7 +61,7 @@ describe('Atmosphere', () => {
 		expect(atmosphere.densityKgM3AtAltitudeKm(STANDARD_EARTH_ATMOSPHERE.topAltitudeKm + 1)).toBe(0);
 	});
 
-	it('supports flat slab altitude for the false simulation', () => {
+	it('supports flat slab altitude for flat simulation', () => {
 		const atmosphere = new Atmosphere({
 			frame: FLAT_ATMOSPHERE_FRAME,
 		});
@@ -173,6 +203,45 @@ describe('Atmosphere', () => {
 		expect(sample.airlight).toBeGreaterThan(0);
 	});
 
+	it('uses solar irradiance scale rather than light intensity for scattering source strength', () => {
+		const atmosphere = new Atmosphere({
+			frame: FLAT_ATMOSPHERE_FRAME,
+		});
+		const dimIntensityBrightSun = atmosphere.sampleSingleScatteringRay(
+			{ x: 0, y: 1, z: 0 },
+			{ x: 1, y: 0, z: 0 },
+			10,
+			{
+				steps: 4,
+				lightSteps: 4,
+				light: new Sun({
+					direction: { x: 0, y: 1, z: 0 },
+					intensity: 1,
+					solarIrradianceScale: 50,
+				}),
+			},
+		);
+		const brightIntensityDimSun = atmosphere.sampleSingleScatteringRay(
+			{ x: 0, y: 1, z: 0 },
+			{ x: 1, y: 0, z: 0 },
+			10,
+			{
+				steps: 4,
+				lightSteps: 4,
+				light: new Sun({
+					direction: { x: 0, y: 1, z: 0 },
+					intensity: 50,
+					solarIrradianceScale: 1,
+				}),
+			},
+		);
+
+		expect(dimIntensityBrightSun.inScatteredLight.b)
+			.toBeGreaterThan(brightIntensityDimSun.inScatteredLight.b * 10);
+		expect(dimIntensityBrightSun.light.intensity).toBe(1);
+		expect(dimIntensityBrightSun.light.solarIrradianceScale).toBe(50);
+	});
+
 	it('does not add direct in-scattered light for shadowed flat-slab samples', () => {
 		const atmosphere = new Atmosphere({
 			frame: FLAT_ATMOSPHERE_FRAME,
@@ -199,6 +268,10 @@ describe('Atmosphere', () => {
 		expect(uniforms.atmosphereFrameKind).toBe('spherical-shell');
 		expect(uniforms.atmosphereTopAltitudeKm).toBe(100);
 		expect(uniforms.atmosphereMieAnisotropy).toBe(0.8);
+		expect(uniforms.atmosphereMieScatteringBetaKm[1])
+			.toBeCloseTo(atmosphere.getProfile().mieScatteringBetaKm.g, 8);
+		expect(uniforms.atmosphereMieExtinctionBetaKm[1])
+			.toBeCloseTo(atmosphere.getProfile().mieExtinctionBetaKm.g, 8);
 		expect(uniforms.atmosphereRayleighBetaKm).toEqual([
 			STANDARD_EARTH_ATMOSPHERE.rayleighBetaKm.r,
 			STANDARD_EARTH_ATMOSPHERE.rayleighBetaKm.g,
