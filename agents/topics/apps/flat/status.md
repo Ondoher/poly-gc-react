@@ -4,6 +4,490 @@ This topic tracks notes for a new project named `flat`.
 
 ## Current State
 
+Atmosphere reset note:
+
+- The multiple-scattering/table-generation design now records the distinction
+  between Bruneton-style tables and project-owned tables. Bruneton remains a
+  useful spherical Earth-like validation and shader-architecture precedent,
+  but flat-world/local-Sun approximation tables will likely need to be
+  generated from our own reference runs with explicit geometry, atmosphere,
+  source, optical-depth, and finite-boundary metadata.
+
+Reference integrator update:
+
+- The focused CPU spectral reference lane now has green direct stage coverage
+  through all canonical transport stages, ending at `composeSpectralRadiance`.
+- Current completed canonical stages:
+  `validateRequest`, `resolveRayPath`, `sampleViewPath`, `evaluateMedium`,
+  `integrateViewOpticalDepth`, `integrateSolarTransmittance`,
+  `evaluateScatteringPhase`, `integrateSingleScattering`,
+  `integrateDiffuseSkyAirlight`, `resolveSurfaceRadiance`, and
+  `composeSpectralRadiance`.
+- The renamed diffuse-sky-airlight stage is wired through the sky-patch CLI.
+  The latest full-stack review artifacts are
+  `tmp/atmosphere-diffuse-sky-airlight-stack/sky-patches-full-stack-132x84-fov72.png`,
+  `tmp/atmosphere-diffuse-sky-airlight-stack/sky-patches-full-stack-132x84-fov72.md`,
+  and
+  `tmp/atmosphere-diffuse-sky-airlight-stack/sky-patches-full-stack-132x84-fov72.json`.
+  Center swatches from that run: midday zenith `#798bad`, midday horizon
+  `#caccbc`, sunset horizon `#e59963`.
+- The first reference probe runner now exists at
+  `scripts/flat/atmosphere/run-reference-probe.js`. It runs
+  controlled built-in smoke probes through the canonical stage sequence and can
+  emit deterministic JSON, Markdown, and SVG visual evidence.
+- [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md)
+  is now the canonical input/output contract for each CPU reference pipeline
+  stage. It defines downstream-needed packet shapes, ownership, units, and
+  known alignment follow-ups for code and tests.
+- The controlled visual evidence artifacts were generated at
+  `tmp/flat-reference-visual-evidence/result.json`,
+  `tmp/flat-reference-visual-evidence/report.md`, and
+  `tmp/flat-reference-visual-evidence/visual.svg`. These are transport/report
+  smoke evidence, not final physical globe/flat adapter evidence; swatches use
+  a debug `650/550/450 nm -> R/G/B` mapping until CIE colorimetry exists.
+- The no-celestial sky-patch evidence artifacts were generated at
+  `tmp/flat-reference-sky-patches/result.json`,
+  `tmp/flat-reference-sky-patches/report.md`, and
+  `tmp/flat-reference-sky-patches/sky-patches.svg`. The current preview renders
+  midday zenith, midnight zenith, and low-sun horizon views from shared
+  Earth-like parameters, Rayleigh phase, Henyey-Greenstein aerosol phase, a
+  `380-780 nm` / `20 nm` grid, official CIE 1931 2-degree table-backed XYZ to
+  sRGB display, and approximate `300 DU` Chappuis-band ozone absorption.
+  Current center swatches: midday zenith `#8b9cbd`, midnight zenith `#000000`,
+  sunset horizon `#f28000`.
+- The flat finite-Sun light-extent artifacts were generated at
+  `tmp/flat-light-extent/result.json`, `tmp/flat-light-extent/report.md`, and
+  `tmp/flat-light-extent/light-extent.svg`. This probe loads named scenarios
+  from `scripts/flat/atmosphere/data/reference/light-extent-scenarios.json`, treats
+  thresholds as loss fractions in `[0, 1)`, integrates straight source-path
+  Beer-Lambert attenuation, applies finite solar-disk solid-angle falloff, and
+  reports whether useful-light loss or pure opacity limits each scenario first.
+  User-facing `sun.brightnessScale` and `sun.elevationDeg` controls are now
+  explicit in the scenario schema; brightness scales absolute irradiance while
+  elevation changes the dense-air path geometry. `sun.directLightAvailable`
+  distinguishes real no-direct-light cases from still-lit app false-Sun poses.
+  Named absolute effective-irradiance floors now tie the diagnostic back to
+  calculated app/default quantities: `app.flatDefaults.midday`,
+  `app.flatDefaults.midnight`, `realSun.sanJose.midday`, and
+  `realSun.sanJose.midnight`.
+- The latest focused verification recorded in the reference docs is
+  `npm run test:scripts:flat` passing with 279 specs and 0 failures after
+  closing the current reference-integrator-only testing boundary. The
+  integrator facade now rejects loose custom stage registries and unresolved
+  name-only probes, and the obsolete placeholder-stage fallback has been
+  removed.
+- The atmosphere reset design now identifies the next implementation layer:
+  benchmark worlds, cameras, and CLI evidence. This layer should add reusable
+  globe/flat model adapters, camera-relative probe definitions, canonical
+  post-pipeline color/display consumers, and benchmark scenario files so the
+  CLI can generate deterministic JSON, Markdown, and visual artifacts before
+  shader parity begins.
+- The camera part of that layer is now designed as a pre-transport pinhole ray
+  adapter. It resolves WGS84 geodetic globe observers or explicit flat
+  observers, local east/north/up frames, azimuth/elevation, `towardSun`,
+  target, and NDC views into `observer.positionKm` and normalized
+  `ray.direction`, with diagnostics for basis vectors, FOV/aspect,
+  source/target ids, and warnings. PBRT's camera interface is the camera-to-ray
+  precedent, EPSG 7030 supplies the WGS84 ellipsoid constants, and ESA
+  Navipedia's ECEF/ENU transform is the globe local-frame reference.
+  Hand-authored benchmark targets default to geodetic latitude/longitude plus
+  `elevationKmMsl` so changing observer locations does not require rewriting
+  observer-relative offsets; flat hypothesis runs adapt those anchors through
+  the north-pole-centered azimuthal equidistant projection; and
+  colored/hittable markers such as `marker.red` are fixture-owned surfaces
+  rather than loose points with duplicated material facts. Coordinate ownership
+  is now explicit for the benchmark layer: geodetic coordinates own permanent
+  facts, observer-relative coordinates own subjective/view-local intent, and
+  Three/app scene coordinates are future generated render endpoints for object
+  and camera placement, shader uniforms, and browser parity. Repeated coordinate
+  bridge transforms may be precomputed or cached as generated artifacts when
+  their keys include the canonical source inputs and frame metadata; cached
+  transforms must not replace source geodetic, observer, or target facts. The
+  atmosphere reset design now treats coordinate spaces and transforms as core
+  shared functionality and lists the transform roadmap end to end:
+  WGS84/geodetic/ECEF/ENU, flat projection, camera/view rays, source geometry,
+  fixture placement, and later Three.js camera state, shader reconstruction,
+  floor texture sampling, and sky-dome endpoint projections. Current work is
+  scoped to proving the CPU reference, so app/browser/shader endpoint adapters
+  remain deferred. Before implementing the camera bridge, the next
+  implementation slice is the reusable transform-core subset that the camera
+  needs: WGS84 datum/height/geodetic/ECEF/ENU, first
+  ECEF-to-globe model adapter, flat north-pole azimuthal equidistant
+  projection, flat local frames, observer/target/source direction resolution,
+  plumb-aligned pinhole basis/NDC rays, provenance metadata, and deterministic
+  cache-key fields. `rollDeg = 0` now means image vertical is parallel to the
+  local plumb line, and roll degrees increase clockwise in the image plane
+  with `0` at plumb-up/12 o'clock; missing `rollDeg` defaults to that normal
+  unrolled state.
+- Scope correction: current atmosphere-reset work is proving the reference,
+  not designing app integration. Phase 6A now stops at CPU trace requests,
+  deterministic JSON/Markdown/visual CLI artifacts, and the first-slice
+  transform/camera helpers needed to feed them. Three.js, shader, floor
+  texture, sky-dome, and app-specific endpoint rows remain deferred parity
+  roadmap. Verification: `git diff --check` passed, and the
+  trailing-whitespace scan across the updated docs returned no matches.
+- Scope refinement: the immediate reference-proof work is now framed around
+  two concrete outputs: convert reference results into deterministic image
+  pixels, and make the first Earth-like atmosphere model accurate enough that
+  those pixels are meaningful. Camera/coordinate work stays intentionally
+  small for now: enough to aim midday, midnight, and sunset sky patches and
+  report observer/ray diagnostics, not enough to become app renderer
+  infrastructure.
+- Minimal color consumer package is implemented beside the reference package:
+  `scripts/flat/atmosphere/color/spectral-color.js` now loads and validates
+  the official CIE 1931 2-degree color matching table, linearly interpolates
+  within the published `360-830 nm` range, contributes zero outside that range,
+  exposes `spectralRadianceToXyz` and `spectralRadianceToLinearSrgb` as the
+  domain API, preserves unclamped out-of-gamut linear RGB, records color
+  provenance, and keeps the analytic approximation as a named preview/fallback
+  path. `scripts/flat/atmosphere/color/pixel-output.js` converts post-pipeline
+  linear sRGB into deterministic pixel packets, supports explicit `srgb` or
+  `linear` byte encoding, applies display exposure only after physical color is
+  complete, records clamping metadata, preserves source diagnostics, builds
+  row-major pixel images, and can emit dependency-free PPM plus PNG artifacts
+  from the same pixel packets. Color/pixel packets now carry CMF,
+  interpolation, integration, RGB matrix, output color space, encoding,
+  exposure, alpha, clamped-channel, and source-provenance diagnostics for the
+  current benchmark path.
+  The reference package index does not export color helpers; color remains a
+  consumer of completed pipeline output, not part of transport. The color
+  fidelity roadmap now lives in
+  `agents/topics/apps/flat/plans/atmosphere_reset/color/plan.md`.
+- Official CIE 1931 2-degree color matching data is now stored under
+  `scripts/flat/atmosphere/data/color/`: the raw CSV, publisher metadata JSON,
+  and local README record the DOI/source, `360-830 nm` range, `1 nm` spacing,
+  `471` rows, and verified MD5 `17cca777db64b17170f06f67ce9d3ab7`. Ingestion
+  and parsing are now implemented in `spectral-color.js`.
+- The pixel bridge is now plugged into the reference CLI. For sky-patch runs,
+  `--image <path>.ppm|.png` writes through the sibling `color`
+  post-pipeline pixel bridge, while other image extensions keep the existing
+  SVG path. Sky-patch runs accept `--color preview-cie|official-cie`,
+  `--encoding srgb|linear`, and `--exposure <scale>`. Sky-patch JSON now
+  includes `pixelImage` packets so generated bytes remain traceable to
+  diagnostics.
+  Generated proof artifact:
+  `tmp/atmosphere-reference-sky-patches.png` with companion Markdown/JSON from
+  `run-reference-probe.js --sky-patches --patch midday.zenith,sunset.horizon,midnight.zenith`;
+  the CLI summary reported midday `#8b9cbd`, sunset `#f28000`, and midnight
+  `#000000`. Verification after official CIE ingestion and CLI wiring:
+  `npm run test:scripts:flat` passed with 301 specs and 0 failures, including
+  `scripts/flat/atmosphere/color/_tests`, after adding spectral-to-linear-sRGB
+  domain API coverage, pixel provenance, CLI color/display flags, and PNG
+  output; `git diff --check` passed.
+- Sky-patch wavelength-grid controls are implemented:
+  `--wavelength-grid preview-20nm|benchmark-5nm|cie-1nm`. The default remains
+  `preview-20nm` (`380-780 nm / 20 nm`, `21` samples); `benchmark-5nm`
+  provides `380-780 nm / 5 nm`, `81` samples; and `cie-1nm` exposes the full
+  official CIE `360-830 nm / 1 nm`, `471` sample domain for spot checks. The
+  `benchmark-5nm` proof command generated
+  `tmp/atmosphere-reference-sky-patches-5nm.png` plus Markdown/JSON with
+  centers midday `#8b9cbd`, sunset `#f18000`, and midnight `#000000`.
+  `npm run test:scripts:flat` passed with 302 specs and 0 failures after this
+  change.
+- The color plan still records the next output-fidelity roadmap: sourced solar
+  spectra, better absorber spectra, display/tone-mapping policies,
+  white-balance diagnostics, per-pixel supersampling, CIE-table-aligned
+  workflows, and comparison artifacts.
+- Sourced solar-spectrum controls are implemented for sky patches:
+  `--solar-spectrum blackbody-5778k|astm-g173`. The ASTM path reads
+  `ASTMG173.csv` directly from
+  `scripts/flat/atmosphere/data/color/astm-g173/astmg173.zip`, uses the
+  Gueymard 2002 extraterrestrial `Etr W*m-2*nm-1` column, and records source
+  provenance in JSON/Markdown. A `benchmark-5nm` comparison generated
+  `tmp/atmosphere-reference-sky-patches-5nm-blackbody.png` with centers
+  midday `#8b9cbd`, sunset `#f18000`, midnight `#000000`, and
+  `tmp/atmosphere-reference-sky-patches-5nm-astm-g173.png` with centers
+  midday `#889cbe`, sunset `#ef8000`, midnight `#000000`.
+  `npm run test:scripts:flat` passed with 308 specs and 0 failures after this
+  change.
+- Direction update: color/output improvements are now considered sufficient
+  for the current proof loop. The next fidelity focus is sourced atmospheric
+  composition: Rayleigh coefficient model, ozone absorber policy, aerosol/Mie
+  policy, and species/profile provenance in diagnostics. This is recorded in
+  the new
+  [Atmosphere Composition Plan](plans/atmosphere_reset/composition/plan.md);
+  remaining color follow-ups stay lower priority until the atmosphere model
+  improves.
+- The atmosphere reset plan now clarifies that the immediate composition
+  implementation step is the first item from the fidelity list: close the
+  Rayleigh model with clean Bucholtz 1995 data/provenance, tests, and a named
+  `bucholtz-standard-air` policy. Minimal policy scaffolding should support
+  comparing preview Rayleigh against Bucholtz Rayleigh; broader aerosol/ozone
+  policy work follows after that path is proven. If the checklist grows, it
+  now lives in the focused atmosphere-composition plan folder.
+- The atmosphere composition plan now includes the detailed Rayleigh substeps:
+  confirm clean source data, choose the pinned coefficient/cross-section or
+  optical-depth artifact, record Bucholtz extraction/provenance, implement
+  named preview and `bucholtz-standard-air` policies, add focused tests, and
+  generate preview-vs-Bucholtz sunset comparison artifacts.
+- Rayleigh substeps 1-4 are complete for the composition source-data slice.
+  The new composition-owned folder
+  `scripts/flat/atmosphere/composition/` contains a curated Bucholtz 1995
+  standard-air Rayleigh artifact at
+  `scripts/flat/atmosphere/data/composition/rayleigh/bucholtz-1995-standard-air.json`,
+  with Table 2 pinned volume-scattering coefficient rows, Table 3 formula
+  constants, selected Table 4 optical-depth validation rows, and source-data
+  specs wired into the flat script Jasmine lane. The selected primary quantity
+  is the local standard-air volume-scattering coefficient in `1/km`; optical
+  depth remains secondary validation data for named atmosphere columns.
+  `npm run test:scripts:flat` passed with 313 specs and 0 failures after the
+  composition source-data artifact and spec were added.
+- The script-side atmosphere packages are now consolidated under one
+  `scripts/flat/atmosphere/` folder with `reference`, `color`, and
+  `composition` child folders. The flat script Jasmine config now discovers
+  specs from that shared parent, and the reference CLI imports color helpers
+  from the sibling `color` folder.
+- The CLI is now atmosphere-owned at
+  `scripts/flat/atmosphere/run-reference-probe.js` instead of living under the
+  reference package. Shared source artifacts and scenario inputs now live under
+  `scripts/flat/atmosphere/data/`, with `data/color`, `data/composition`, and
+  `data/reference` subfolders. `npm run test:scripts:flat` passed with 313
+  specs and 0 failures after the CLI and data moves.
+- Rayleigh implementation substeps 5-7 are complete. The composition package
+  now provides `rayleigh-policy.js` with `rayleigh-lambda4-preview` as the
+  unchanged default/control and `bucholtz-standard-air` as an explicit sourced
+  policy using the local Bucholtz 1995 artifact. The atmosphere CLI accepts
+  `--rayleigh-policy` and `--patch-size WIDTHxHEIGHT`, and sky-patch
+  JSON/Markdown include the selected policy and pixel dimensions.
+  Preview-vs-Bucholtz `sunset.horizon` artifacts were generated at
+  `tmp/atmosphere-rayleigh-comparison/` with `benchmark-5nm` plus
+  `astm-g173`: preview center `#ef8000`, Bucholtz center `#ff9c00`.
+  Larger `132x84` review PNGs were generated without full JSON output:
+  preview center `#ee8300`, Bucholtz center `#ff9f12`.
+  Exposure-check variants for the Bucholtz sunset show the same physical
+  radiance at display exposure `2` (`#c3730a`) and `3` (`#ea8b0e`), confirming
+  that the default exposure `4` red-clips the display channel and can make the
+  patch read too yellow/green.
+  The color output bridge now exposes `--tone-map clip|preserve-hue`;
+  `preserve-hue` prevents channel-by-channel red clipping by scaling exposed
+  display-linear RGB together. The generated Bucholtz `132x84` preserve-hue
+  artifact has center `#ff9811` with unchanged physical linear RGB.
+  `npm run test:scripts:flat` passed with 322 specs and 0 failures after the
+  tone-map option, patch-size option, policy helper, CLI wiring, focused tests,
+  and artifacts.
+- The next atmosphere-composition slice is complete for sourced ozone
+  cross sections. MPI-Mainz/Brion 1998 `295 K` ozone data is stored at
+  `scripts/flat/atmosphere/data/composition/ozone/O3_Brion-1998_295K_345-829nm_1nm.txt`
+  with metadata, checksum, pinned rows, and focused source-data tests.
+  `scripts/flat/atmosphere/composition/ozone-policy.js` now provides
+  `preview-chappuis` as the unchanged default/control and
+  `brion-1998-ozone-295k` as the sourced table-backed policy. The atmosphere
+  CLI accepts `--ozone-policy`, reports the selected policy in JSON/Markdown,
+  and generated the Brion sunset comparison artifact at
+  `tmp/atmosphere-rayleigh-comparison/sunset-bucholtz-brion-ozone-132x84-preserve-hue.png`.
+  In that fixed Bucholtz/ASTM/preserve-hue probe, the center shifted subtly
+  from preview ozone `#ff9811` to Brion ozone `#ff990f`; the remaining ozone
+  follow-up is a sourced vertical profile/column policy. `npm run
+  test:scripts:flat` passed with 332 specs and 0 failures after this slice.
+- The rest of the first atmosphere-composition comparison pass is implemented.
+  `scripts/flat/atmosphere/composition/aerosol-policy.js` adds named
+  aerosol/Mie policies: `rayleigh-only`, `preview-earthlike-aerosol`,
+  `clear-maritime`, `clear-continental`, and `hazy-continental`, backed by
+  the local preset artifact at
+  `scripts/flat/atmosphere/data/composition/aerosol/aerosol-presets.json`.
+  `scripts/flat/atmosphere/composition/profile-policy.js` adds
+  `preview-exponential-8km` and
+  `us-standard-atmosphere-1976-density`, backed by the U.S. Standard
+  Atmosphere 1976 density artifact at
+  `scripts/flat/atmosphere/data/composition/profile/us-standard-atmosphere-1976-density.json`.
+  The atmosphere CLI now accepts `--aerosol-policy` and
+  `--molecular-profile`, reports those policies in JSON/Markdown, and includes
+  center-sample species optical-depth diagnostics. Visual comparisons were
+  generated under `tmp/atmosphere-composition-comparison/`; the embedded
+  review summary is
+  `tmp/atmosphere-composition-comparison/README.md`. Initial read: aerosol is
+  the strongest lever so far; `clear-maritime` gives the best current orange
+  sunset target, while `hazy-continental` is a darker/browner stress case.
+  `npm run test:scripts:flat` passed with 341 specs and 0 failures after this
+  slice.
+- The sky-patch CLI now accepts `--fov-y-deg <degrees>` for visual review
+  without changing built-in scene defaults. Wider `72 deg` FOV sunset and
+  best-current three-patch images were generated in
+  `tmp/atmosphere-composition-comparison/` and embedded in that folder's
+  `README.md`. `npm run test:scripts:flat` passed with 341 specs and
+  0 failures after the FOV override.
+- The reference folder now has a focused
+  [Sun Visual Plan](plans/atmosphere_reset/sun/sun_visual_plan.md) for
+  the missing visual sun stack: finite solar disk, near-sun angular
+  resolution, improved aerosol phase behavior, direct solar radiance, disk
+  occlusion, multiple scattering, camera/display response, and lower-frame
+  surface context. The recommended next slice is a diagnostic sun/aureole
+  visual mode so disk geometry and near-sun diagnostics can be tested before
+  heavier bloom, terrain, or multiple-scattering work.
+- The diagnostic sun/aureole visual mode is now implemented as
+  `--sun-visual none|diagnostic` for sky-patch CLI runs. It creates stacked
+  diagnostic image panels for sky-only, angular-distance heatmap, disk mask,
+  direct-disk approximation, and sky-plus-disk approximation while keeping the
+  canonical transport result unchanged. A new `sunset.sun` patch provides a
+  tight sun-centered crop. Generated artifacts and an embedded summary live in
+  `tmp/atmosphere-sun-diagnostic/`. The wide `72 deg` horizon diagnostic had
+  no disk-hit pixels; the tight sun-centered diagnostic had `24 / 11088`
+  disk-hit pixels. The reports now include fixed angular bucket rows around
+  the sun, averaging sky radiance, direct-disk approximation, sky-plus-disk,
+  view transmittance, and Rayleigh/Mie/ozone optical depth for `0-0.25`,
+  `0.25-0.5`, `0.5-1`, `1-2`, `2-5`, and `5-10 deg`. The tight crop shows
+  direct-disk contribution only in the innermost bucket, while the wide
+  horizon context remains sky scattering without disk pixels. The documented
+  result is now sorted by contributor: aerosol/Mie is the largest physical
+  lever, Rayleigh is second, ozone is smaller but nonzero, and the largest
+  visual gap is still the missing rendered sun-disk/aureole/glare stack in the
+  wide sunset evidence. The
+  [Sun Visual Plan](plans/atmosphere_reset/sun/sun_visual_plan.md)
+  now records diagnostic follow-ups: optical-depth validity classes, aerosol
+  sensitivity grids, improved aerosol phase data, separated extinction versus
+  radiance-contribution reporting, external comparison references, and
+  explicit high-tau labeling for sunset horizon. `npm run test:scripts:flat`
+  passed with 342 specs and 0 failures after this implementation.
+- Sun diagnostics have been extended from geometry-only reporting into
+  high-tau validity and contribution diagnostics. The sky-patch reports now
+  classify total optical depth, label high-tau buckets, and report
+  per-species single-scattered radiance beside per-species optical depth. New
+  diagnostic aerosol variants were added for lower AOD, lower/higher
+  Henyey-Greenstein `g`, and shallow/deep aerosol scale-height sensitivity.
+  Generated artifacts and findings live in
+  `tmp/atmosphere-sun-diagnostic/README.md`. Current read: the wide
+  `sunset.horizon` center is already a `single-scattering warning`, near-sun
+  buckets are `extreme horizon path` regions, Mie dominates both opacity and
+  red/green radiance in the baseline `5-10 deg` bucket, and `g` is the
+  strongest tested visual lever.
+- The sky-patch CLI now includes `midday.horizon`, a low-elevation clear-day
+  companion to `midday.zenith`. The latest full-stack artifact was generated
+  at `tmp/atmosphere-sun-diagnostic/midday-horizon-latest-stack.png` with
+  companion Markdown, using ASTM G-173, Bucholtz Rayleigh, clear-maritime
+  aerosol, Brion ozone, U.S. Standard Atmosphere density, `benchmark-5nm`, and
+  preserve-hue tone mapping. Center swatch: `#a4a791`; center radiance samples:
+  `440nm:0.0357`, `560nm:0.0467`, `660nm:0.036`.
+- Sun-plan focus reset: the next atmosphere/sun implementation target is now
+  `midday.horizon` before further sunset tuning. It remains in the sun topic
+  because the failure is causally related to sunset: both are low-elevation,
+  high-optical-depth views where single scattering does not yet produce the
+  expected pale haze/glow. Midday horizon is the cleaner first benchmark
+  because it removes sunset-specific confounders such as low solar elevation,
+  visible disk/aureole placement, red/orange expectations, and stronger
+  display-response ambiguity.
+- Midday-horizon diagnostics now report scattering angle, per-species phase
+  values, path altitude distribution, single-scattering budget factors,
+  missing-light estimate, and disabled completeness terms. Current finding:
+  `midday.horizon` is high tau but has weak Mie phase for its geometry
+  (`109.8424 deg`, Mie/Rayleigh phase ratio `0.4617` at `560 nm`), while
+  `midday.zenith` is moderate tau with much stronger Mie phase
+  (`164.0355 deg`, ratio `7.3865`). The horizon budget peaks at `2.2726 km`
+  altitude and is flagged `multiple-scattering-likely`; surface bounce,
+  clouds, terrain/ocean reflection, and multiple scattering remain disabled.
+- [Sun Visual Plan](plans/atmosphere_reset/sun/sun_visual_plan.md) now records
+  the midday-horizon roadmap: lock the zenith/horizon/sunset comparison trio,
+  add a diagnostic `single-plus-haze-lift` scattering mode, calibrate against
+  Bruneton/libRadtran-style references, improve aerosol phase policy, add
+  explicit surface/cloud bounce only after atmosphere-only haze is understood,
+  and promote changes only after comparison artifacts are reviewed.
+- A focused `midday.horizon` aerosol sensitivity pass was generated under
+  `tmp/atmosphere-sun-diagnostic/` and recorded in both the artifact summary
+  and the sun plan. Holding the latest stack fixed, `rayleigh-only` is palest
+  at `#afbdaa`, lower AOD is `#aab19a`, baseline `clear-maritime` is
+  `#a4a58b`, `clear-continental` is darker/browner at `#9e926d`, and
+  `hazy-continental` becomes an `extreme horizon path` at `#775b2e`. All
+  useful variants remain high-tau and continue to report
+  `multiple-scattering-likely`. Current recommendation: do not solve
+  midday-horizon haze by tuning aerosol or color defaults; implement the
+  named `single-plus-haze-lift` diagnostic comparison path next and calibrate
+  it against Bruneton/libRadtran-style external references before promoting
+  any canonical model change.
+- The `single-plus-haze-lift` diagnostic comparison mode is now implemented in
+  `scripts/flat/atmosphere/run-reference-probe.js` as a separate sky-patch
+  scattering mode. It renders a diagnostic spectrum while preserving canonical
+  single-scattering `finalByWavelength` in sample diagnostics. The first
+  tau560-gated attempt moved the image but exposed the wrong activation scale;
+  the corrected candidate gates on max visible optical depth and adds
+  per-wavelength diffuse airlight from lost view transmittance. Generated
+  artifacts and interpretation live in
+  `tmp/atmosphere-haze-lift-diagnostic/README.md`. Current recommended
+  diagnostic comparison value is `--scattering-mode single-plus-haze-lift
+  --haze-lift-strength 0.02`: `midday.zenith` remains `#798bad`,
+  `midday.horizon` moves from `#a4a286` to `#cdcdbb`, and `sunset.horizon`
+  moves from `#d87c01` to `#e89a65`. Recommendation: promote the model
+  direction, not the exact heuristic yet; the next physical improvement is an
+  explicit higher-order scattering/airlight term calibrated against
+  Bruneton/libRadtran-style references before becoming canonical. `npm run
+  test:scripts:flat` passed with 344 specs and 0 failures after this
+  implementation.
+- The diagnostic haze-lift direction has now been promoted into the canonical
+  reference stage named `integrateDiffuseSkyAirlight`. The fixture ledger is
+  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/diffuse-sky-airlight-contracts.json`,
+  the stage spec is
+  `scripts/flat/atmosphere/reference/stages/_tests/IntegrateDiffuseSkyAirlightStage.spec.js`,
+  and the stage contract is documented in
+  `agents/topics/apps/flat/plans/atmosphere_reset/reference/stage_contracts.md`.
+  The production stage is registered after `integrateSingleScattering`, emits
+  an explicit `diffuseSkyAirlight` packet field, and
+  `composeSpectralRadiance` now reports
+  `diffuseSkyAirlightRadianceByWavelength` as a separate component. The stage
+  defaults to zero strength unless callers opt in with
+  `numerical.diffuseSkyAirlightStrength`, keeping existing baselines stable
+  while making the source-backed model improvement available. It also applies
+  the bounded aerosol-aware formula when Mie optical depth is present and
+  reports aerosol optical-depth fraction, aerosol participation, tau regime,
+  and flat bounded-asymptotic diagnostics. Verification:
+  `npm run test:scripts:flat` passed with 353 specs and 0 failures.
+- Updated-pipeline sky-patch artifacts were generated with the sourced latest
+  stack and `--scattering-mode single-plus-haze-lift
+  --haze-lift-strength 0.02` at
+  `tmp/atmosphere-updated-pipeline-sky-patches/`. The four-patch PNG is
+  `sky-patches-haze-002.png` with companion Markdown/JSON. Center swatches:
+  `midday.zenith #798bad`, `midday.horizon #c7cbbd`,
+  `sunset.horizon #e19862`, and `midnight.zenith #000000`. The report shows
+  the canonical vs rendered split, including horizon haze lift of roughly
+  `440nm:+0.0306`, `560nm:+0.026`, and `660nm:+0.0181`.
+- Going forward, routine sky-patch experiments should omit
+  `midnight.zenith` until celestial objects, airglow, moonlight, or another
+  nighttime source is added. The CLI default sky-patch set is now
+  `midday.zenith`, `midday.horizon`, and `sunset.horizon`; `midnight.zenith`
+  remains available as an explicit no-celestial control.
+- Midday-horizon row diagnostics now separate sky rows from below-horizon
+  surface hits. Focused artifacts live in `tmp/atmosphere-horizon-profile/`.
+  The `88x56` latest-stack profile shows row `35` is still sky at
+  `0.4613 deg`, while row `36` is a black surface hit at `-0.009 deg`.
+  The true sky row also still dips: clear-maritime haze `0.02` has the last
+  sky row at `0.606` of peak sky luminance, while Rayleigh-only stays at
+  `0.996`. Recommendation recorded in the sun plan: add a named
+  aerosol-aware multiple-scattering/diffuse-sky-airlight approximation and
+  calibrate it against Bruneton/libRadtran-style reference evidence; treat
+  ocean/ground lower-frame context as a separate follow-up. The first bounded
+  aerosol-aware `integrateDiffuseSkyAirlight` formula is now implemented;
+  stronger calibration against libRadtran/DISORT or a Bruneton-style reference
+  remains future work.
+- Latest visual assessment: the aerosol-aware full-stack output is still far
+  from the user-provided real midday sky photo. The latest PNGs are
+  `tmp/atmosphere-images/059_atmosphere-diffuse-sky-airlight-stack-sky-patches-full-stack-132x84-aerosol-aware.png`
+  and
+  `tmp/atmosphere-images/060_atmosphere-diffuse-sky-airlight-stack-midday-horizon-full-stack-132x168-aerosol-aware.png`.
+  They prove the CLI is consuming the new stage output, but they do not yet
+  match the photographic target: upper sky is too desaturated and gray-blue,
+  the horizon trends beige/tan rather than pale cyan-white, and the daylight
+  gradient is not the clean saturated-blue-to-light-horizon gradient in the
+  reference. Current status: pipeline integration green, visual fidelity not
+  solved.
+- Flat-geometry impact is now recorded in the sun plan. The same
+  multiple-scattering/diffuse-airlight change must be bounded for flat
+  near-parallel rays because optical depth can keep accumulating in dense air.
+  Follow-ups: add flat horizon-profile diagnostics, extend light-extent into
+  visibility-depth classification, define flat-ray asymptotic/termination
+  behavior, and calibrate any flat approximation against a finite-slab or
+  stronger radiative-transfer reference where possible.
+- A future
+  [Multiple-Scattering Reference Design](plans/atmosphere_reset/multiple_scattering_design.md)
+  now exists. It is explicitly gated as potential future work if the
+  single-scattering path plus `integrateDiffuseSkyAirlight` starts collecting
+  too many compensatory approximations. The near-term path remains a separate,
+  bounded, calibrated diffuse-sky-airlight stage rather than a full solver.
+- Follow-up: model full flat-world lit-terrain visibility depth by combining
+  finite/distant Sun falloff, source-to-terrain/source-to-air transmittance,
+  terrain-to-camera transmittance, in-scattered airlight, and terrain contrast.
+  The current light-extent probe covers only the source-path classification
+  part of that problem. If the model says distant terrain detail is
+  functionally unrecoverable, a named low-detail visual proxy may be
+  acceptable, but it should be reported as a visibility-threshold approximation
+  rather than hidden ambient light.
+
 ## Bootstrap Handoff
 
 Current focus: physical atmosphere reset for the globe calibration path and the
@@ -43,15 +527,284 @@ Recommended next step:
   shader tuning. The implementation contract is
   [Atmosphere Reset Design](plans/atmosphere_reset/design.md), and the
   CPU solver contract is
-  [CPU Spectral Reference Integrator Design](plans/atmosphere_reset/cpu-spectral-reference-integrator-design.md).
-  The checklist is [Atmosphere Reset Plan](plans/atmosphere_reset/plan.md),
+  [Reference Code Design](plans/atmosphere_reset/reference/code_design.md).
+  The canonical stage packet contract is
+  [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md).
+  The stage-level test matrix is
+  [Reference Test Design](plans/atmosphere_reset/reference/test_design.md).
+  The actionable stage-test sequence is
+  [Reference Test Plan](plans/atmosphere_reset/reference/test_plan.md).
+  Source-to-decision traceability lives in
+  [Reference Decision Log](plans/atmosphere_reset/reference/references.md).
+  The focused script checklist is
+  [Reference Plan](plans/atmosphere_reset/reference/plan.md),
+  with current reference status in
+  [Reference Status](plans/atmosphere_reset/reference/status.md),
+  and the broader reset checklist is
+  [Atmosphere Reset Plan](plans/atmosphere_reset/plan.md),
   which adapts external test patterns from Bruneton/PBRT into local
   known-answer tests before shader parity. This plan should be executed
   test-first: write the analytic/invariant/reference-data tests for each phase,
   confirm they fail for missing behavior, then implement the reference code
-  under `scripts/flat/atmosphere-reference` until they pass. The current
+  under `scripts/flat/atmosphere/reference` until they pass. The current
   implementation should be treated as architecture and naming material to mine,
-  not as a compatibility constraint. The research note also includes the proposed
+  not as a compatibility constraint. After the stage API and stage tests are
+  stable, the reference should include a CLI runner for named probes, JSON
+  config inputs, stage-limited diagnostics, and
+  deterministic JSON output, borrowing style from the existing flat capture and
+  asset-pipeline scripts. Markdown reports should be the first human-facing
+  output format, with optional linked SVG/PNG artifacts for swatches, curves,
+  and later sky maps. The reset design now defines canonical pipeline stage ids
+  for the CPU API, CLI `--stage` diagnostics, tests, reports, and later shader
+  approximation design. Each stage should be independently runnable through
+  `CpuSpectralReferenceIntegrator.runStage` with declared
+  `requires`/`provides` metadata, so tests can execute one stage at a time and
+  `traceRay` can be verified as the composition of the same public stages.
+  `pipeline-stages.js` remains the declarative stage registry and now includes
+  each stage's `StageClass` constructor. Each canonical physical stage lives
+  behind a focused helper class under
+  `scripts/flat/atmosphere/reference/stages` with the shared helper signature
+  `run(packet) -> packet`; `descriptor` and integrator `context` are supplied
+  at construction. Class files default-export their class and export nothing
+  else; package barrels may re-export those defaults for public API convenience.
+  `runStage(stageId, packet)` remains the public stage API and the authority
+  for integrator stage specs. Pair that with a matching test split: focused stage specs in
+  `scripts/flat/atmosphere/reference/stages/_tests` own public packet
+  input/output behavior, while helper specs own internal algorithm and
+  edge-case tests when needed. JSON config/schema validation is deferred until
+  the CLI run-definition shape stabilizes; when added, it should use a
+  standard JSON validation framework with explicit schemas rather than a
+  hand-written schema system, including tests that inputs accept only a given
+  list of properties. Scattering phase
+  evaluation is split from single-scattering accumulation so angle and
+  phase-function tests can run independently. The initial
+  `scripts/flat/atmosphere/reference` scaffold and focused
+  `npm run test:scripts:flat` Jasmine lane now exist; the later physical stage
+  behaviors are still placeholders pending test-first implementation.
+  The pipeline scaffold specs are organized with one `describe` block per
+  canonical stage and an `Integration` block for composition behavior.
+  Physical behavior should now be implemented one stage at a time: write the
+  next stage's unit tests first, confirm they fail against placeholder/missing
+  behavior, implement that stage, rerun `npm run test:scripts:flat`, then move
+  to the next canonical stage. Stage tests must be domain-first: expected
+  results come from physics, math, public API contracts, analytic known
+  answers, invariants, or pinned external reference data, not from current code
+  shape or helper behavior. Expected values should be pinned directly as
+  literals, authoritative table rows, standard metadata, or reviewed
+  generated artifacts from an independent external source whenever practical;
+  do not justify one new local implementation with another new local
+  implementation. Every expected datum that enters a spec or fixture must carry
+  a nearby derivation note naming the equation, table, metadata field, external
+  tool/config, or provenance record well enough for a reviewer to locate it.
+  In specs this is usually a comment; in JSON fixtures, use the canonical
+  `reference` object with `id`, `kind`, `title`, `url` or `path`, `locator`,
+  and `derivationSummary`, plus `expected.<quantity>.derivation` for exact
+  value arithmetic. The reference test design now also includes
+  reference-mined verification ranges for transport invariants, solar-source
+  sanity, ASTM G-173 AM1.5, U.S. Standard Atmosphere checkpoints, CIE color
+  conversion, Rayleigh wavelength behavior, and Bruneton-style discipline.
+  The next test-plan stage after `validateRequest` is the analytic invariant
+  spine: toy fixtures for vacuum, zero-length paths, homogeneous media, split
+  paths, isotropic phase, one-sample scattering, and Lambertian surfaces before
+  importing external reference tables or broad sky-color comparisons. Start
+  that stage with an expectation ledger recording quantity, source class,
+  source, assumptions, pinned expected value, derivation note, tolerance, and
+  independence review note for each test. The reference decision log now owns
+  that intake workflow, derivation-note seeds, and the first analytic
+  expectation batch. The first encoded fixture now lives at
+  `scripts/flat/atmosphere/reference/fixtures/expectations/analytic-invariants.json`
+  with eight hand-derived analytic expectations and canonical `reference`
+  provenance. Physics-backed rows now use external PBRT references for
+  transmittance, phase, volume-scattering in-scattering, and diffuse
+  reflection; local code design is used only as the specialization/context,
+  not the physics authority. The first fixture-to-test helper now lives at
+  `scripts/flat/atmosphere/reference/_tests/test-expectations.js`; it loads the
+  analytic fixture, indexes expectations by `id`, and centralizes exact,
+  absolute, and relative tolerance assertions. The fixture-shape spec now
+  validates required provenance and derivation fields, and rejects
+  physics-backed expectation rows that lack an external canonical reference.
+  The current goal is to fill out validation tests only; physical stage
+  implementation is deferred until those validation tests are reviewed.
+  `scripts/flat/atmosphere/reference/_tests/expectation-fixtures.spec.js` now
+  validates the analytic fixture shape and helper behavior. Correction: the
+  first pipeline stage is `validateRequest`, so its pending shells were
+  replaced with real domain tests before implementation, those tests were
+  observed failing, and `validateRequest` has now been implemented. The
+  focused lane passes with 81 specs and 0 failures after hardening the
+  `validateRequest` tests and moving display/report consumers out of the
+  canonical transport stage registry. A validation-test review found five grounding issues
+  to close before moving to optical depth. Addressed: near-zero ray rejection
+  is covered in the `validateRequest` stage tests; flat-model coverage proves
+  interface compatibility without relying on `geometryKind` by using a model
+  fixture created without that property; request-level physical coefficient
+  extras are accepted as inputs without changing contracted output fields; and
+  placeholder scaffold assertions are documented as scaffold/API coverage, not
+  physical validation coverage. The review also identified useful additional hardening coverage.
+  Addressed: fuller observer/ray vector shape cases, a valid
+  single-wavelength-grid case, missing model owner object cases, known
+  numerical-control string rejection, positive integer sample-count controls,
+  display/report consumer extra-field tolerance, and integrator-default model,
+  numerical-control, and wavelength-grid non-mutation coverage.
+  Display/reporting consumer controls are tolerated as unrelated input extras
+  because color conversion and report shaping consume pipeline results after
+  transport. Generic allowed-property validation is deferred to a future
+  standard JSON schema layer. Zero distance controls are valid, negative
+  distance controls reject, and `minStepKm > maxStepKm` rejects.
+  `integrationMethod` accepted names belong to the future integration-method
+  registry/implementation, not to a duplicated hardcoded `validateRequest`
+  allow-list. If the registry is the single source of truth, `validateRequest`
+  may use it to validate input. Unknown numerical keys are not rejected, but
+  are dropped from `validatedRequest.numerical` so later stages only see owned
+  controls. Next, add
+  `integrateViewOpticalDepth` validation tests that consume the analytic
+  fixture, confirm they fail against placeholder behavior, and stop for review
+  before implementing optical-depth behavior. Pending
+  `integrateViewOpticalDepth` shells now exist for the four analytic fixture
+  expectations plus empty path output, schema alignment, monotonic
+  accumulation, multi-wavelength independence, species summation, and
+  negative-extinction rejection. The reference plan now tracks the next fixture
+  rows for those shells: empty explicit output, two-sample monotonic
+  accumulation, multi-wavelength homogeneous transport, multi-species
+  summation, and negative-extinction rejection. It also lists the required
+  references for each fixture row, separating PBRT physics sources from local
+  packet-schema/error-contract design sources. The plan also tracks
+  expected-input extremes for optical depth: optically thin/thick transport,
+  long-path low-extinction versus short-path high-extinction equivalence, and
+  max supported wavelength/species/sample counts. This has been corrected to be
+  data/reference based rather than arbitrary: use CIE/ASTM dataset ranges,
+  PDAS/U.S. Standard Atmosphere table extents, ASTM AM1.5 reference
+  conditions, selected clear-air coefficient models, primary-audited air-mass
+  formulas, and convergence studies rather than made-up stress numbers. Those
+  references have begun to be sourced: NLR `ASTMG173.csv` is pinned at `2002`
+  rows from `280-4000 nm`, Kasten and Young 1989 supplies the near-horizon
+  optical-air-mass row `38.0868`, and Bucholtz 1995 supplies Rayleigh optical
+  depth candidates for standard atmospheres; visible-band Rayleigh literals
+  still need clean table extraction before becoming fixtures. The flat/local-Sun
+  path also now explicitly tracks the large-lateral-atmosphere problem: a flat
+  horizontal slab ray needs a named finite side boundary, and large flat-world
+  extent should produce large optical depth through the normal path-integral
+  math rather than through a special tuning constant. The current
+  fixture-source inventory now lives at
+  [Reference Fixture Sources](plans/atmosphere_reset/reference/fixture_sources.md).
+  It records which expected-data sources are ready, partially ready, or not
+  ready. The analytic invariant fixture has been expanded to 16 rows, adding
+  empty-path explicit output, two-sample monotonic accumulation,
+  multi-wavelength homogeneous transport, multi-species summation, and
+  negative-extinction rejection for the next `integrateViewOpticalDepth` test
+  pass. A coverage reevaluation added weighted sample integration,
+  coefficient/wavelength shape rejection, and invalid sample-weight rejection,
+  so we now have enough for that analytic stage pass. We still do not have
+  enough for a full Earth clear-air spectral transmittance fixture because
+  aerosol/Mie, ozone, water vapor, and visible-band Rayleigh extraction/model
+  choices remain open. The next-phase `integrateViewOpticalDepth` tests now
+  live in
+  `scripts/flat/atmosphere/reference/stages/_tests/IntegrateViewOpticalDepthStage.spec.js`
+  and pass against `IntegrateViewOpticalDepthStage`. The first
+  `resolveRayPath` fixture-backed batch and recommended hardening batch are
+  also implemented and pass against `ResolveRayPathStage`; the focused lane
+  reported 127 specs, 0 failures, and no pending specs before the next red
+  step. The `sampleViewPath` fixture-backed tests now load
+  `view-samples-contracts.json` through the shared expectation helper and
+  compare empty paths, zero-length paths, midpoint samples, weight sums,
+  ordered distances, diagnostic preservation, invalid segment distances,
+  invalid `viewSteps`, and metadata directly against fixture rows.
+  `SampleViewPathStage` implements fixed midpoint sampling, no-sample
+  empty/zero-length paths, metadata, segment validation, and positive-integer
+  `viewSteps` validation. Segment length reconciliation now lives in the
+  shared `normalizeRayPathSegment` utility instead of the stage. The next
+  active stage is `evaluateMedium`. During this phase, each physical stage's direct
+  `runStage(stageId, packet)` tests are the authority; integration tests
+  remain composition/API checks until the stages they compose have isolated
+  known-answer coverage.
+  `EvaluateMediumStage` spec now contains 26 pending skeletons covering
+  controlled model samples, sample positions, wavelength alignment, species
+  diagnostics, altitude/density diagnostics, vacuum/outside-atmosphere
+  behavior, invalid coefficient/density data, and deferred sourced Earth
+  atmosphere checkpoints and composition coverage. The focused lane passes
+  with 173 specs, 0 failures, and 26 pending specs. The `evaluateMedium`
+  sourcing pass now favors data
+  references over algorithmic generation for real Earth/profile rows: PDAS
+  U.S. Standard Atmosphere table rows, backed by the NASA NTRS 1976 standard
+  record, are identified for `0 km`, `80 km`, and `85 km`
+  density/profile checkpoints; official CIE metadata is identified for
+  visible-grid alignment. Exact standard dry-air composition fractions and
+  their supported altitude range still need primary/standards extraction before
+  becoming fixture literals. Real coefficient fixtures remain deferred until a
+  Rayleigh/aerosol/absorber source decision is made.
+  The current
+  `validateRequest` expected values now carry inline source/derivation comments
+  that point to the reference code design and test design rather than inventing
+  unsourced values.
+  In this context, `validateRequest` validation means checking physical-unit
+  sanity, model-interface requirements, and numerical-control limits. Later
+  stages validate computed values against physical equations, analytic
+  invariants, independent fixtures, or convergence limits. Each validation
+  limitation in the current red tests now has a nearby reason comment
+  explaining why that limitation exists.
+  For any code or test backed by a physical property, include a source
+  reference plus a short description of what the source supports. The current
+  ray-origin/ray-direction validation cites PBRT v4 Rays for ray semantics;
+  local policies such as near-zero thresholds and model-owned coefficient
+  placement are described as project/API decisions rather than external
+  physics facts. Every test expectation and code validation check should carry
+  a nearby reason comment; physical reasons cite an external source, and local
+  API/schema reasons cite the reference design/test design. Implemented
+  algorithm steps also need source breadcrumbs, not only rejection branches:
+  path selection, optical-depth accumulation, species summation, and
+  Beer-Lambert conversion should cite the supporting source, fixture row, or
+  local design contract near the code. Secondary sources can be used as
+  stepping stones, but before a source-backed value or claim becomes
+  package-facing we should chase down a primary source, reinforce the secondary
+  source with one, or explicitly retain the secondary source with a stated
+  limitation.
+  Keep the reference decision log current whenever a consulted source changes a
+  value range, fixture, invariant, model assumption, or review checklist.
+  Treat the reference as a potential future standalone package: keep the core
+  framework-free, plain-data based, externally justified, browser-free, and
+  compatible with a later SemVer public API. Current package-shape precedent
+  includes libRadtran, SMARTS, Bruneton's CPU-reference validation path, and
+  Semantic Versioning.
+  Internal math helpers are provisional while contracts settle; validated
+  external libraries can replace them later when provenance, standards
+  alignment, licensing, maintenance, and replacement tests justify it. Use
+  narrow wrappers and keep domain tests as the authority, not the library's
+  current output.
+  `CpuSpectralReferenceIntegrator.js` now follows
+  class file naming conventions and `types.d.ts` defines ambient JSDoc
+  contracts for the reference API shell. The shell currently covers
+  `mergeRequest`, `resolveProbeRequest`, `createInitialPacket`, `runStage`,
+  `runUntil`, `traceRay`, and `traceProbe`.
+  The design docs now include a deferred physical-effects ledger note: before
+  treating the pipeline design as complete, explicitly list omitted
+  nontrivial physics such as refraction, their likely impact, why each is
+  deferred, where each would enter the pipeline, and what reference/test
+  evidence would be needed.
+  `utils.js` now exports `normalizeVector3`, which implements reusable
+  finite-vector validation and unit-vector canonicalization, and
+  `normalizeRayPathSegment`, which centralizes finite segment validation and
+  endpoint/length reconciliation. Both have dedicated utility tests; stage
+  expectations should still be stated from the physical/API domain first.
+  `validateRequest` now uses `normalizeVector3` as an implementation detail
+  while owning the domain rule that ray input is a finite nonzero orientation
+  vector and validated output is a unit direction.
+  Keep code files generally below 1000 lines. Keep `pipeline-stages.spec.js`
+  focused on registry behavior; adjacent producer/consumer checks belong in
+  `pipeline-handoffs.spec.js`, and full public `traceRay` physical acceptance
+  fixtures belong in `trace-ray.integration.spec.js`. Real fixture-backed
+  stage behavior should move into focused stage specs under `stages/_tests`.
+  Each canonical physical stage now has a focused helper class, with helper
+  internals covered by matching helper specs when needed. The
+  `IntegrateViewOpticalDepthStage` tests now follow the focused stage-spec
+  split.
+  The shader can later fuse those stages
+  into a one-pixel ray march with per-sample atmosphere/source evaluation and
+  accumulated radiance, swapping spectral diagnostics for RGB approximations,
+  lookup tables, and fused math only after parity probes exist.
+  Clouds remain out of the first reset, but the design now preserves a path for
+  them as future participating-medium species with spatial density,
+  extinction, scattering, phase functions, and diagnostics instead of a display
+  overlay.
+  The research note also includes the proposed
   flat-world/local-Sun variant as a separate physical configuration that should
   reuse the same scattering math while changing surface geometry, atmosphere
   volume, altitude/density rules, solar source geometry, and occlusion/boundary
@@ -66,8 +819,69 @@ Recommended next step:
 
 Recent verification:
 
-- `npm run test:ui:flat`
-- `npm run build`
+- `npm run test:scripts:flat` passed with 86 specs and 0 failures after making
+  the stage request transport-focused, deferring generic allowed-property
+  validation, verifying integrator default model non-mutation, accepting zero
+  distance step controls while rejecting negative ones and inverted min/max
+  ranges, dropping unknown numerical keys from validated controls, and keeping
+  display/report consumers out of canonical stage output.
+- `git diff --check` passed after the transport-only request and
+  post-pipeline consumer-boundary updates.
+- `npm run test:scripts:flat` passed with 120 specs, 0 failures, and
+  13 pending resolve-ray-path shells after moving canonical stages behind
+  helper classes and moving stage-specific specs under
+  `scripts/flat/atmosphere/reference/stages/_tests`.
+- Class files in `scripts/flat/atmosphere/reference` now default-export their
+  class and export nothing else. The export-contract scan found no lingering
+  named class exports or stage-class named imports, and `git diff --check`
+  passed.
+- The first `resolveRayPath` fixture-backed tests were wired and observed
+  failing against placeholder behavior, then implemented. The focused flat
+  script lane then passed with 120 specs, 0 failures, and no pending specs.
+- `types.d.ts` now provides concrete IntelliSense contracts for transport rays,
+  model-returned atmosphere intervals, surface hits, ray-path output, and the
+  model modules. `ResolveRayPathStage` narrows `validatedRequest` before model
+  calls, and implemented algorithm branches now cite their supporting
+  ray-domain, transmittance, and local model-interface sources.
+- `resolveRayPath` boundary precedence is now documented in
+  [Reference Code Design](plans/atmosphere_reset/reference/code_design.md):
+  later surface hits are ignored, exact entry surface hits produce empty paths,
+  exact exit surface hits use surface precedence with atmosphere metadata,
+  non-finite surface-hit distances reject, negative surface hits are ignored as
+  behind-observer, malformed finite atmosphere intervals reject, and model calls
+  receive the validated transport ray. The focused flat script lane now passes
+  with 127 specs, 0 failures, and no pending specs.
+- The starting `resolveRayPath` inventory now has JSON expectation data in
+  `scripts/flat/atmosphere/reference/fixtures/expectations/ray-path-contracts.json`,
+  following the existing provenance shape. JS test helpers may adapt fixture
+  rows into controlled model interfaces, but expected path distances, boundary
+  reasons, empty-path flags, and expected errors live in data.
+- The `resolveRayPath` coverage inventory has been rechecked against expected
+  extremes by intent. It now distinguishes inside-volume negative entry
+  clipping, intervals entirely behind the observer, zero-length boundary paths,
+  surface-before-entry occlusion, inverted intervals, non-finite intervals,
+  unbounded flat paths, and source-backed/model-hypothesis finite boundaries.
+- Those `resolveRayPath` intents are now real fixture-backed tests in
+  `scripts/flat/atmosphere/reference/stages/_tests/ResolveRayPathStage.spec.js`
+  and pass against `ResolveRayPathStage`.
+- The `resolveRayPath` fixture rows now live in
+  `scripts/flat/atmosphere/reference/fixtures/expectations/ray-path-contracts.json`
+  with controlled inputs, expected outputs/errors, canonical `reference`
+  properties, supporting references, and provenance notes.
+- Fixture validation now scans every expectation JSON file and requires every
+  row to carry a canonical `reference` object, including local design-contract
+  rows.
+- [Reference Decision Log](plans/atmosphere_reset/reference/references.md) now
+  maps each planned `resolveRayPath` row to its supporting references: PBRT
+  Rays, PBRT Transmittance, Bruneton reference-testing discipline, local
+  code/test design. Geometry-derived atmosphere-top conventions such as FAI
+  `100 km` are outside this stage batch.
+  It also explicitly identifies the referenced extremes: forward-ray lower
+  bound, empty forward segment, zero-length segment, ordered finite interval
+  requirement, surface-before-entry ordering, finite flat lateral path,
+  and unbounded flat horizontal path.
+  - `npm run test:ui:flat`
+  - `npm run build`
 - `git diff --check`
 - Runtime capture:
   `tmp/globe-phase-4-4-surface-radiance-rebuilt/phase-4-4-surface-radiance-rebuilt`

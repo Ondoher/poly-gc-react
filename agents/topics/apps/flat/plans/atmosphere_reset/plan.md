@@ -8,7 +8,10 @@ approximate, but it should agree with the reference within named tolerances.
 
 This plan executes the reset described in [Research](research.md) using the
 contracts in [Design](design.md) and the focused
-[CPU Spectral Reference Integrator Design](cpu-spectral-reference-integrator-design.md).
+[Reference Code Design](reference/code_design.md).
+The script-level implementation sequence for that reference lives in
+[Reference Plan](reference/plan.md), with stage expectations in
+[Reference Test Design](reference/test_design.md).
 
 ## Stance
 
@@ -29,7 +32,7 @@ model:
 
 ```text
 same spectral scattering integrator
-  + globe geometry / spherical shell / distant Sun
+  + globe geometry / WGS84 ellipsoid-relative atmosphere / distant Sun
   = real Earth calibration result
 
 same spectral scattering integrator
@@ -39,6 +42,18 @@ same spectral scattering integrator
 
 If the flat model looks unlike the globe model, that is an output to inspect,
 not a problem to tune away.
+
+Multiple scattering remains potential future work, not the immediate pivot.
+The current reference should keep direct single scattering clean and keep
+diffuse-sky airlight as an explicit bounded approximation. If that
+approximation accumulates too many compensatory rules, use
+[Multiple-Scattering Reference Design](multiple_scattering_design.md) as the
+future path for a slow benchmark mode or external libRadtran/DISORT
+calibration workflow. That design also records the table-generation stance:
+Bruneton tables are validation and shader-architecture precedents for the
+spherical Earth-like subset, while flat-world/local-Sun approximation tables
+will likely need to be generated from project-owned reference runs with
+explicit geometry, source, atmosphere, and finite-boundary metadata.
 
 ## External Test Patterns To Adapt
 
@@ -104,7 +119,7 @@ CPU reference has earned trust first.
 ## Deliverables
 
 1. A framework-free reference module under `scripts/flat`.
-   - Preferred folder: `scripts/flat/atmosphere-reference`.
+   - Preferred folder: `scripts/flat/atmosphere/reference`.
    - No React, Three.js, browser canvas, or shader dependency.
    - Plain deterministic functions/classes that can run in unit tests.
    - Promote pieces into `src/flat/shared` only later, after their contracts are
@@ -134,14 +149,73 @@ CPU reference has earned trust first.
 6. A shader-parity harness that compares selected GPU/browser rays against the
    CPU reference.
 
+## Current Next Focus: Atmosphere Composition
+
+The color/display bridge is now strong enough for current reference-proof
+work: official CIE colorimetry, named wavelength grids, sourced ASTM G-173
+solar input, provenance, and PNG/PPM artifacts are in place. Recent sunset
+comparisons changed only incrementally when improving color integration and
+solar spectrum input, so the next meaningful fidelity pass should improve the
+atmospheric composition/model inputs rather than adding more color plumbing.
+
+The focused composition roadmap now lives in
+[Atmosphere Composition Plan](composition/plan.md). Its top-level improvements
+are Rayleigh model, ozone absorption, aerosol/Mie model, species diagnostics,
+atmosphere profile, and comparison artifacts. The composition plan now owns the
+detailed Rayleigh implementation checklist: source-data confirmation, pinned
+quantity choice, Bucholtz extraction/provenance, named policies, tests, and
+preview-vs-Bucholtz comparison artifacts. Rayleigh substeps 1-7 are now
+complete under `scripts/flat/atmosphere/composition/` and
+`scripts/flat/atmosphere/run-reference-probe.js`. The default remains
+`rayleigh-lambda4-preview`; `bucholtz-standard-air` is selected explicitly for
+review runs.
+
+Next implementation step:
+
+1. Close the Rayleigh model first, because it is the first item in the
+   atmosphere-composition fidelity list.
+   - Done: fetched/extracted clean Bucholtz 1995 Rayleigh data, using
+     visible-band volume-scattering coefficients/cross sections that can
+     directly replace the current `lambda^-4` preview scaling.
+   - Done: stored a small local data artifact with DOI/source URL, table
+     locator, extraction notes, units, and pinned rows.
+   - Done: added tests for table/provenance shape, pinned visible rows, policy
+     scaling behavior, and loud failure on malformed data.
+   - Done: implemented a named `bucholtz-standard-air` Rayleigh policy beside
+     the current preview policy. The preview remains the default until the
+     comparison artifact is reviewed.
+2. Add the minimal policy scaffold needed to compare that Rayleigh change.
+   Done: start with `rayleigh-lambda4-preview`, `bucholtz-standard-air`, and
+   the existing `earth-like-sky-preview` atmosphere composition. Broader
+   aerosol variants can follow after the Rayleigh source path is reviewed.
+3. Add diagnostics that break output down by atmospheric species and policy.
+   The first useful report should make it clear how much Rayleigh, aerosol/Mie,
+   ozone absorption, source transmittance, and view transmittance contributed
+   to each sunset patch.
+4. Use the named policies to generate sunset comparison artifacts:
+   done for current preview Rayleigh vs Bucholtz Rayleigh at
+   `tmp/atmosphere-rayleigh-comparison/`, then Rayleigh-only vs
+   Rayleigh+aerosol, current ozone approximation vs no ozone, low/medium/high
+   aerosol optical depth, and different aerosol phase `g` values.
+5. After the Rayleigh path is proven, proceed through the rest of the
+   atmosphere-composition list: sourced ozone cross sections/profile, named
+   aerosol/Mie presets, atmosphere-profile improvements, and broader comparison
+   artifacts.
+6. If this checklist grows past a short implementation note, split it into a
+   focused atmosphere-composition plan folder under
+   `agents/topics/apps/flat/plans/atmosphere_reset/`.
+
 ## Proposed Module Shape
 
 ```text
-scripts/flat/atmosphere-reference/
+scripts/flat/atmosphere/reference/
   spectral-grid.js
   colorimetry.js
   radiometry.js
   atmosphere-profile.js
+  CpuSpectralReferenceIntegrator.js
+  pipeline-stages.js
+  types.d.ts
   geometry/
     spherical-world.js
     flat-world.js
@@ -150,7 +224,6 @@ scripts/flat/atmosphere-reference/
     local-finite-sun.js
   surfaces/
     lambertian-surface.js
-  reference-integrator.js
   diagnostics.js
   index.js
   _tests/
@@ -186,9 +259,11 @@ sun sample:
 surface.radianceAt(hit, wavelengthNm, lighting) -> W / m2 / sr / nm
 ```
 
-The globe implementation can answer these with spherical Earth math. The flat
-implementation can answer them with a plane/disk, slab/dome, and local finite
-Sun. The integrator should not know which one it is using.
+The Phase 6A globe benchmark implementation should answer these with WGS84
+world math. Earlier analytic fixtures may still use a spherical Earth model
+when that gives closed-form geometry expectations. The flat implementation can
+answer them with a plane/disk, slab/dome, and local finite Sun. The integrator
+should not know which one it is using.
 
 ## Output Contract
 
@@ -236,8 +311,12 @@ Tasks:
 
 - Keep [Research](research.md) as the model note.
 - Keep [Design](design.md) as the implementation contract.
-- Keep [CPU Spectral Reference Integrator Design](cpu-spectral-reference-integrator-design.md)
+- Keep [Reference Code Design](reference/code_design.md)
   as the focused solver contract.
+- Keep [Reference Plan](reference/plan.md)
+  as the focused script implementation checklist.
+- Include the CLI runner in the focused reference work so named probes and JSON
+  config runs exist before shader parity.
 - Treat this plan as the implementation checklist.
 - Create empty/failing test files for the first two phases before writing
   implementation code.
@@ -307,6 +386,13 @@ Tasks:
   - up is normalized radial direction
   - surface hit is ray-sphere intersection
   - atmosphere hit is ray-sphere-shell intersection
+- Implement WGS84 world geometry before Phase 6A benchmark use:
+  - geodetic observer placement uses EPSG 7030 semi-major axis and inverse
+    flattening
+  - altitude is ellipsoidal height above the WGS84 surface
+  - up is the local ellipsoid-normal / ENU up direction
+  - surface and atmosphere intersections report ellipsoid-relative boundary
+    metadata
 - Implement flat world geometry:
   - altitude is vertical `z` or selected local-up coordinate
   - up is constant unless terrain overrides it
@@ -497,9 +583,247 @@ Known answers:
   everywhere on a large flat plane unless extra physical assumptions are added.
 - That mismatch is a model consequence to expose.
 
+## Phase 6A: Benchmark Worlds, Cameras, And CLI Evidence
+
+Status: planned.
+
+Goal: turn the trusted transport core into repeatable visual and numeric
+benchmarks before shader parity. This phase assembles model adapters, camera
+definitions, probe rays, post-pipeline color conversion, and CLI artifacts. It
+does not tune the shader and does not add browser dependencies to the
+reference.
+
+Current scope: prove the reference. Phase 6A should make the CPU reference
+easy to run, inspect, and compare through deterministic benchmark scenarios and
+CLI artifacts. Three.js camera poses, shader ray reconstruction, shader uniform
+packing, floor texture UVs, and sky-dome endpoint projections are downstream
+parity work, not implementation targets for this slice.
+
+Near-term priority is deliberately lighter than the full transform roadmap:
+produce image pixels from reference output correctly, and make the atmosphere
+inputs Earth-like enough that those pixels are meaningful. A minimal
+observer/ray adapter is sufficient for now when it can aim the first sky
+patches and record diagnostics. Do not spend this slice building app-facing
+coordinate infrastructure beyond what the benchmark scenarios need.
+
+Tasks:
+
+- Add reusable model adapters:
+  - `earth.globe.clearDay`
+  - `earth.globe.vacuum`
+  - `flat.appDefaults.localSun`
+  - `flat.hypothesis.localPatch`
+  - `flat.vacuum`
+- Add camera/probe scenario JSON separate from stage expectation fixtures.
+  Stage fixtures remain the equation/contract oracle; benchmark scenarios
+  assemble worlds and views for visual review.
+- Add a camera adapter that can materialize named view directions into model
+  rays:
+  - zenith
+  - horizon by azimuth/elevation
+  - toward Sun / near Sun
+  - surface target / marker target
+- Keep the camera adapter outside the transport stages. It should convert
+  benchmark camera/view definitions into `observer.positionKm` and normalized
+  `ray.direction`, plus diagnostics describing the resolved local frame,
+  camera basis, FOV/aspect, probe id, target/source ids, and warnings.
+- Implement the first camera algorithm as a minimal plain pinhole ray generator:
+  geodetic or flat observer resolution, local east/north/up basis, azimuth and
+  elevation direction selection, `towardSun` and target views, and NDC samples
+  from vertical FOV/aspect.
+- Implement the coordinate/transform core from the design: geodetic
+  coordinates for permanent facts, observer-relative coordinates for
+  subjective/view-local intent, and future Three/app scene coordinates only as
+  generated render endpoints. Treat ECEF, ENU, flat projection, object-local,
+  view, clip/NDC, framebuffer UV, and texture UV as operational bridge spaces
+  with diagnostics, but implement only the reference-proof transforms needed
+  to emit CPU trace requests now.
+- Design and implement the camera-bridge first slice of the transform core
+  before implementing the camera bridge itself. The first slice should provide
+  WGS84 datum/height/geodetic/ECEF/ENU transforms, one named
+  ECEF-as-reference-globe-frame adapter, flat north-pole azimuthal equidistant projection,
+  flat local-frame resolution, observer and target resolution,
+  azimuth/elevation and `towardSun` directions, plumb-aligned pinhole basis
+  construction, NDC ray generation, provenance metadata, and deterministic
+  cache-key fields.
+- Keep the full design transform inventory as a destination map, but implement
+  only the reference-proof subset now. Three.js camera poses, shader
+  reconstruction/uniform packing, current app floor texture UV inversion,
+  celestial sky-dome projection, and app-specific axis-map variants are
+  deferred until reference scenarios are trusted enough to become parity
+  targets.
+- Allow deterministic precompute/cache for repeated coordinate bridge
+  calculations such as WGS84 derived constants, ECEF/ENU bases, flat projection
+  results, target resolution, camera bases, and NDC ray grids. Cache keys must
+  include the canonical inputs and frame metadata, and cached values must
+  remain generated artifacts rather than scenario sources of truth. Object
+  transforms and shader uniform matrices are later cache candidates after app
+  and shader endpoint adapters exist.
+- Encode hand-authored benchmark targets as geodetic anchors by default:
+  latitude, longitude, and `elevationKmMsl`. Allow
+  `distanceFromEarthCenterKm` only as an explicit alternate datum for
+  geocentric/shell-like probes, and reject targets that mix both height
+  datums. Prefer absolute anchors over observer-relative bearing/range because
+  they make it easier to change observer locations and rerun the same
+  benchmark intent in another city or model.
+- For flat-world hypothesis runs, adapt geodetic target anchors through the
+  north-pole-centered azimuthal equidistant projection unless a later scenario
+  explicitly declares another projection. Map `elevationKmMsl` to height along
+  the flat world's local `up`.
+- Use fixture-owned marker surfaces for visible/hittable markers such as
+  `marker.red`, with the fixture owning anchor, shape, size, normal, material,
+  and hit ids.
+- Feed the camera algorithm with referenced data:
+  EPSG 7030 WGS84 semi-major axis and inverse flattening for first globe
+  benchmarks, San Jose default observer coordinates, the benchmark world's
+  declared flat axes and lateral boundary metadata, the selected source
+  adapter's Sun direction or finite Sun position, and the review artifact
+  FOV/aspect/grid settings.
+- Add canonical post-pipeline display consumers:
+  - spectral radiance to CIE XYZ
+  - XYZ to linear sRGB
+  - display RGB conversion for image pixels with explicit clamp/gamma/output
+    encoding policy
+  - optional fixed exposure for visual artifacts, outside the physical
+    transport stages
+- Add a small image artifact writer that converts benchmark probe grids or sky
+  patches into deterministic pixels. The image writer consumes completed
+  reference output plus display settings; it must not feed exposure, clamping,
+  gamma, or image scaling back into transport diagnostics.
+- Tighten the first accurate atmosphere model before chasing renderer parity:
+  WGS84 globe geometry, ellipsoid-relative clear-air height, real-Sun spectral
+  irradiance, Rayleigh coefficients from a sourced model, named aerosol/Mie
+  defaults, optional ozone as a named variant, and diagnostics for every model
+  assumption that is still approximate.
+- Extend the CLI to run benchmark scenario files and probe subsets, producing:
+  - deterministic JSON diagnostics
+  - Markdown review reports
+  - SVG or PNG visual artifacts for sky patches, gradients, and swatches
+  - compact terminal summaries for iteration
+- Add benchmark metadata:
+  - scenario id, world-set id, camera id, probe id, source date/time if any
+  - physical/hypothesis labels
+  - warnings for flat lateral-boundary dependencies, direct-light
+    unavailability, missing colorimetry data, or display-only exposure
+- Add subjective review notes to generated reports without letting them become
+  test oracles. Visual review should explain what looked plausible or wrong and
+  point to physical/configuration changes to try next.
+
+First benchmark probes:
+
+- `midday.zenith`
+- `midday.sideSky`
+- `midday.horizon`
+- `sunset.horizon`
+- `towardSun.nearDisk`
+- `midnight.zenith`
+- `surface.nearGround`
+- `surface.farGround`
+- `marker.red`
+
+Tests:
+
+- Scenario loader rejects unknown world/camera/probe ids.
+- Scenario loader materializes stable observer/ray data from camera-relative
+  definitions.
+- Coordinate-role tests prove that permanent target fixtures persist as
+  geodetic anchors, observer-relative probes resolve through the selected
+  local frame, and generated reference endpoints are emitted with frame
+  metadata. App scene endpoints are deferred from this test slice.
+- First-slice transform-core tests cover WGS84 derived constants,
+  geodetic-to-ECEF pinned rows, ENU orthonormality, first ECEF-as-reference-globe
+  frame metadata, flat north-pole azimuthal equidistant projection,
+  observer/target resolution, `towardSun` source directions, pinhole basis/NDC
+  rays, plumb-aligned zero roll, missing-`rollDeg` defaulting to `0`,
+  clockwise clock-angle roll, and deterministic cache-key changes before the
+  camera bridge consumes those transforms.
+- Derived-transform cache tests prove that cache keys change when observer,
+  target, projection, datum, time, lens, orientation, or frame metadata changes;
+  cache hits reproduce the same generated transforms; and cached diagnostics do
+  not replace source geodetic target or camera facts.
+- Reference-proof scope tests prove the benchmark world/camera/transform
+  modules have no React, Three.js, DOM, renderer, shader, or browser-capture
+  dependency.
+- Globe camera tests cover local east/north/up basis construction, including
+  orthonormality and a pinned San Jose observer row.
+- Flat camera tests prove that the adapter uses the world-declared local frame
+  rather than hidden globe/geodetic assumptions.
+- Azimuth/elevation tests pin north, east, and zenith directions; pinhole tests
+  pin center and symmetric NDC rays.
+- `towardSun` camera tests use the selected source adapter and report direct
+  light unavailability instead of inventing fallback illumination.
+- Target tests prove geodetic `elevationKmMsl` anchors materialize in WGS84
+  globe worlds and in flat worlds through the default north-pole-centered
+  azimuthal equidistant projection.
+- Target validation rejects mixed `elevationKmMsl` and
+  `distanceFromEarthCenterKm` datums.
+- Marker-surface tests prove that colored/hittable markers are fixture-owned
+  surfaces, not loose camera look points with duplicated material facts.
+- Globe benchmark scenarios use the WGS84-world/distant-Sun adapter and
+  preserve ellipsoid-relative boundary diagnostics.
+- Flat benchmark scenarios use the flat-world/local-Sun adapter and expose any
+  named lateral boundary or no-direct-light dependency.
+- Post-pipeline color conversion is deterministic and does not feed exposure
+  or tone mapping back into physical radiance.
+- Image artifact tests prove known linear RGB/display RGB values map to
+  expected pixel bytes and that display clamping/gamma/exposure choices do not
+  mutate reference radiance, XYZ, or linear RGB diagnostics.
+- Atmosphere-model tests prove sourced Earth-like defaults are selected by
+  named world sets and that any missing aerosol/ozone/geoid assumptions are
+  explicit diagnostics rather than hidden tuning knobs.
+- CLI benchmark runs write JSON, Markdown, and visual artifacts with stable
+  scenario/probe ids and diagnostic summaries.
+- A vacuum benchmark gives black sky and predictable direct surface response.
+- The first Earth-like daytime sky benchmark produces nonzero sky radiance and
+  reports component diagnostics, without treating the subjective color as a
+  physical known answer.
+
+Open questions before implementation:
+
+- Which CIE table source and redistribution path becomes canonical for checked
+  benchmark artifacts?
+- Which wavelength grid is the first benchmark default: `380-780 nm / 10 nm`,
+  `380-780 nm / 20 nm`, or a smaller selected visible grid?
+- Should the first benchmark use blackbody-shaped Sun samples or imported
+  spectral irradiance data?
+- Which clear-day aerosol/Mie coefficients and phase parameter should be the
+  benchmark default?
+- Is approximate Chappuis-band ozone part of the first benchmark world, or a
+  named optional world variant?
+- Which exact pixel artifact format should be first for review: dependency-free
+  PPM, SVG rectangles, PNG through an existing dependency, or all of the above
+  as layered outputs?
+- What output encoding policy should convert display RGB to pixels: linear
+  bytes for numeric inspection, sRGB gamma-encoded bytes for visual inspection,
+  or both with clear labels?
+- What exact globe camera/date/time should be the first canonical Earth
+  daylight scene?
+- What exact `frameId` values and metadata fields should identify the first
+  globe and flat reference model-frame adapters?
+- Which `verticalFovDeg`, aspect, and NDC patch layout should become the first
+  committed benchmark artifact convention?
+- After CPU reference camera benchmarks are trusted, which deferred
+  browser/Three.js parity row should pin the same clockwise clock-angle
+  `rollDeg` convention?
+- Should Phase 6A introduce a real geoid/terrain sea-level datum, or keep the
+  explicit `wgs84-ellipsoid-as-msl` approximation until terrain data enters the
+  benchmark harness?
+- What flat lateral boundary should `flat.hypothesis.localPatch` use, and is
+  it a slab, dome, cylinder, or named local patch?
+- Should `flat.appDefaults.localSun` be a compatibility benchmark only, or can
+  it also seed a physically labeled hypothesis variant?
+- What fixed exposure or tone-map policy makes visual artifacts inspectable
+  while keeping physical radiance diagnostics unchanged?
+- Which generated artifacts should be checked in, and which should stay under
+  `tmp/` as reproducible evidence?
+
 ## Phase 7: Shader Parity Harness
 
 Status: planned.
+
+Prerequisite: Phase 6A benchmark world and camera harness has at least one
+globe sky, one globe surface, one flat sky, and one flat surface scenario with
+deterministic JSON and visual artifacts.
 
 Tasks:
 
@@ -561,7 +885,7 @@ Tests:
 
 ## Test-First Implementation Order
 
-1. Create `scripts/flat/atmosphere-reference` and empty test fixtures.
+1. Create `scripts/flat/atmosphere/reference` and empty test fixtures.
 2. Write Phase 1 tests for spectral grids, interpolation, CIE conversion, and
    zero/equal-energy spectra. Confirm they fail for missing implementation.
 3. Implement the Phase 1 code until those tests pass.
@@ -576,11 +900,16 @@ Tests:
 11. Implement the Phase 5 code until those tests pass.
 12. Write Phase 6 local-Sun calibration and flat-world consequence tests.
 13. Implement the Phase 6 code until those tests pass.
-14. Write Phase 7 shader-parity probes using the trusted CPU reference.
-15. Implement shader/debug hooks until parity is measurable.
-16. Decide whether shader parity and approximation work now needs a dedicated
+14. Write Phase 6A benchmark world, camera, scenario-loader, and post-pipeline
+    color/report tests.
+15. Implement Phase 6A until the CLI can generate deterministic benchmark
+    JSON, Markdown, and visual artifacts for globe and flat scenarios.
+16. Write Phase 7 shader-parity probes using the trusted CPU reference and
+    benchmark scenarios.
+17. Implement shader/debug hooks until parity is measurable.
+18. Decide whether shader parity and approximation work now needs a dedicated
     shader-specific design document.
-17. Use the reference output to decide which current shader/display bridges to
+19. Use the reference output to decide which current shader/display bridges to
     replace first.
 
 ## Acceptance Criteria
@@ -590,6 +919,8 @@ Tests:
 - The same integrator code runs for globe and flat configurations.
 - The reference output includes spectral radiance, XYZ, linear RGB, and optical
   diagnostics.
+- The CLI can generate deterministic benchmark JSON, Markdown, and visual
+  artifacts for named globe and flat world/camera/probe scenarios.
 - Each implementation phase begins with failing known-answer tests.
 - The test suite includes analytic known-answer tests before any shader parity
   test is trusted.
@@ -603,6 +934,9 @@ Tests:
 
 - [Research](research.md)
 - [Design](design.md)
+- [Reference Code Design](reference/code_design.md)
+- [Reference Test Design](reference/test_design.md)
+- [Reference Plan](reference/plan.md)
 - Bruneton, "Precomputed Atmospheric Scattering: a New Implementation":
   https://ebruneton.github.io/precomputed_atmospheric_scattering/
 - Bruneton GitHub repository:

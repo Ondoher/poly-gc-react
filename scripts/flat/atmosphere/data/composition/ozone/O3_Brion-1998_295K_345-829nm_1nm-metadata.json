@@ -1,0 +1,44 @@
+{
+  "kind": "flat-atmosphere-reference-ozone-source-data",
+  "id": "brion-1998-ozone-295k-visible",
+  "dataFile": "O3_Brion-1998_295K_345-829nm_1nm.txt",
+  "source": {
+    "datasetUrl": "https://www.uv-vis-spectral-atlas-mainz.org/uvvis_data/cross_sections/Ozone/O3_Brion%281998%29_295K_345-829nm%281nm%29.txt",
+    "speciesPageUrl": "https://www.uv-vis-spectral-atlas-mainz.org/uvvis/cross_sections/Ozone/O3.spc",
+    "atlasUrl": "https://www.uv-vis-spectral-atlas-mainz.org/uvvis/",
+    "atlasCitation": "Keller-Rudek, H., Moortgat, G. K., Sander, R., and Sorensen, R.: The MPI-Mainz UV/VIS spectral atlas of gaseous molecules of atmospheric interest, Earth Syst. Sci. Data, 5, 365-373, 2013.",
+    "atlasDoi": "10.5194/essd-5-365-2013",
+    "measurementCitation": "J. Brion, A. Chakir, J. Charbonnier, D. Daumont, C. Parisse, Absorption Spectra Measurements for the Ozone Molecule in the 350-830 nm Region, Journal of Atmospheric Chemistry, 1998."
+  },
+  "download": {
+    "downloadedOn": "2026-06-17",
+    "command": "curl.exe -k -L https://www.uv-vis-spectral-atlas-mainz.org/uvvis_data/cross_sections/Ozone/O3_Brion%281998%29_295K_345-829nm%281nm%29.txt -o scripts/flat/atmosphere/data/composition/ozone/O3_Brion-1998_295K_345-829nm_1nm.txt",
+    "sha256": "8d8fe492e96f6a0e1dd63dd9c37a30f06f2d20440ea826a9e899432bf6ca9cfc",
+    "byteLength": 7275
+  },
+  "table": {
+    "temperatureK": 295,
+    "wavelengthUnits": "nm",
+    "crossSectionUnits": "cm^2 molecule^-1",
+    "wavelengthRangeNm": [345, 829],
+    "wavelengthStepNm": 1,
+    "rowCount": 485,
+    "format": "ASCII whitespace-separated two-column table: wavelength_nm cross_section_cm2_per_molecule"
+  },
+  "policyUse": {
+    "selectedPolicyId": "brion-1998-ozone-295k",
+    "columnPolicy": "Use the existing 300 DU sky-patch column/profile for the first comparison; this source only replaces the spectral cross-section curve.",
+    "interpolation": "linear interpolation between 1 nm table rows; zero outside the table wavelength range"
+  },
+  "pinnedRows": [
+    { "wavelengthNm": 345, "crossSectionCm2": 6.636e-22 },
+    { "wavelengthNm": 380, "crossSectionCm2": 6.653e-24 },
+    { "wavelengthNm": 450, "crossSectionCm2": 1.899e-22 },
+    { "wavelengthNm": 550, "crossSectionCm2": 3.356e-21 },
+    { "wavelengthNm": 575, "crossSectionCm2": 4.798e-21 },
+    { "wavelengthNm": 603, "crossSectionCm2": 5.19e-21 },
+    { "wavelengthNm": 650, "crossSectionCm2": 2.494e-21 },
+    { "wavelengthNm": 780, "crossSectionCm2": 3.214e-22 },
+    { "wavelengthNm": 829, "crossSectionCm2": 1.055e-22 }
+  ]
+}

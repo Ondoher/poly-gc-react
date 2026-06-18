@@ -85,6 +85,26 @@ Use:
 `negative-space` is optional but preferred when the face contains white internal
 details.
 
+For repeated suit motifs, keep the broad `suit-art` group and add one nested
+group around each independently meaningful repeated unit:
+
+```xml
+<g id="suit-art">
+  <g id="bamboo-1">...</g>
+  <g id="bamboo-2">...</g>
+</g>
+```
+
+The broad group is enough for preprocessing to distinguish suit artwork from
+the number label. The nested repeated-unit groups are the preferred handoff for
+shape identification when the pipeline needs to align or review each dot,
+bamboo, or character unit separately.
+
+Do not put all repeated units only inside one shared group. Without the
+per-unit nesting, preprocessing can preserve the broad artwork group but may
+not produce one source shape per repeated motif, which makes repeated-part
+alignment ambiguous or fail.
+
 ### Flowers And Seasons
 
 Use:

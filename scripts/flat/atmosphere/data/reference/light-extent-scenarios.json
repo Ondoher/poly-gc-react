@@ -1,0 +1,220 @@
+{
+  "kind": "flat-atmosphere-light-extent-config",
+  "defaults": {
+    "referenceWavelengthNm": 550,
+    "thresholds": {
+      "opacityLossFraction": 0.999999,
+      "usefulLightLossFraction": 0.999
+    },
+    "sun": {
+      "brightnessScale": 1,
+      "elevationDeg": 0
+    },
+    "source": {
+      "radiusKm": 50
+    },
+    "atmosphere": {
+      "densityModel": "exponential-altitude",
+      "extinction550PerKm": 0.012,
+      "wavelengthExponent": 4,
+      "scaleHeightKm": 8,
+      "atmosphereTopKm": 100
+    },
+    "path": {
+      "startDistanceKm": 60,
+      "maxDistanceKm": 2500,
+      "startAltitudeKm": 1.7
+    },
+    "sampling": {
+      "coarseSampleCount": 32,
+      "integrationStepKm": 1,
+      "binaryIterations": 32
+    }
+  },
+  "sets": [
+    {
+      "id": "flat.closeSun.horizontalDenseAir",
+      "label": "Close Sun, Horizontal Dense Air",
+      "description": "Finite close Sun shining through a flat near-surface horizontal path. This is the dense-air extreme where a slab atmosphere can keep accumulating optical depth until a named lateral or functional boundary is reached."
+    },
+    {
+      "id": "flat.closeSun.shallowUpward",
+      "label": "Close Sun, Shallow Upward Path",
+      "description": "Same finite close Sun, but the source path slowly climbs out of dense air. This checks how quickly an upward path stops behaving like the infinite dense horizontal slab.",
+      "sun": {
+        "elevationDeg": 2
+      },
+      "path": {
+        "maxDistanceKm": 4000
+      }
+    },
+    {
+      "id": "flat.distantFiniteSun.horizontalDenseAir",
+      "label": "Distant Finite Sun, Horizontal Dense Air",
+      "description": "Same finite solar radius placed farther away, so the apparent solar disk starts small and solid-angle falloff matters before the dense horizontal atmosphere fully extinguishes the source path.",
+      "path": {
+        "startDistanceKm": 1000,
+        "maxDistanceKm": 8000
+      }
+    },
+    {
+      "id": "flat.closeSun.constantDenseAir",
+      "label": "Close Sun, Constant Dense Air",
+      "description": "A deliberately simple homogeneous-air control. It is not an Earth atmosphere; it keeps the same extinction at every altitude so the Beer-Lambert trend is easy to compare against the exponential-profile scenarios.",
+      "atmosphere": {
+        "densityModel": "constant"
+      }
+    },
+    {
+      "id": "app.flatDefaults.midday",
+      "label": "App Flat Defaults, Closest Sun",
+      "description": "Configuration-linked flat app default at the fixed closest-false-sun pose. The false Sun uses the app's 3000 mile altitude, 32 mile diameter, San Jose observer, and solarIrradianceScale 58. The floor is an engineering floor equal to 0.1% of this pose's no-atmosphere effective source term, not a perceptual visibility claim.",
+      "sun": {
+        "brightnessScale": 58,
+        "elevationDeg": 72.9232574407232
+      },
+      "source": {
+        "radiusKm": 25.749504
+      },
+      "atmosphere": {
+        "densityModel": "exponential-altitude",
+        "extinction550PerKm": 0.0149566,
+        "wavelengthExponent": 4,
+        "scaleHeightKm": 8,
+        "atmosphereTopKm": 100
+      },
+      "path": {
+        "startDistanceKm": 5050.674164842701,
+        "maxDistanceKm": 200000,
+        "startAltitudeKm": 0.03048
+      },
+      "sampling": {
+        "coarseSampleCount": 40,
+        "integrationStepKm": 25,
+        "binaryIterations": 32
+      },
+      "floors": {
+        "effectiveIrradiance": [
+          {
+            "id": "app.flatDefaults.onePermilleMiddayEffective",
+            "label": "0.1% Flat App Midday Effective Source",
+            "value": 0.000004736087535019212,
+            "units": "app-effective-source-units",
+            "basis": "0.001 * solarIrradianceScale 58 * solidAngle(radius 25.749504 km, distance 5050.674164842701 km)",
+            "description": "Engineering floor tied to the current flat app default closest-sun pose."
+          }
+        ]
+      }
+    },
+    {
+      "id": "app.flatDefaults.midnight",
+      "label": "App Flat Defaults, Opposite Sun",
+      "description": "Configuration-linked flat app default at the solar-day pose opposite the fixed closest-false-sun pose. Because the app's false Sun remains 3000 miles above the flat surface, the opposite pose is still about 20 degrees above the local flat horizon from San Jose rather than being a no-direct-light night.",
+      "sun": {
+        "brightnessScale": 58,
+        "elevationDeg": 20.0979340875104
+      },
+      "source": {
+        "radiusKm": 25.749504
+      },
+      "atmosphere": {
+        "densityModel": "exponential-altitude",
+        "extinction550PerKm": 0.0149566,
+        "wavelengthExponent": 4,
+        "scaleHeightKm": 8,
+        "atmosphereTopKm": 100
+      },
+      "path": {
+        "startDistanceKm": 14050.170417417787,
+        "maxDistanceKm": 200000,
+        "startAltitudeKm": 0.03048
+      },
+      "sampling": {
+        "coarseSampleCount": 40,
+        "integrationStepKm": 25,
+        "binaryIterations": 32
+      },
+      "floors": {
+        "effectiveIrradiance": [
+          {
+            "id": "app.flatDefaults.onePermilleMiddayEffective",
+            "label": "0.1% Flat App Midday Effective Source",
+            "value": 0.000004736087535019212,
+            "units": "app-effective-source-units",
+            "basis": "Same floor as app.flatDefaults.midday so the opposite-pose source can be compared against the current app midday baseline.",
+            "description": "Engineering floor tied to the current flat app default closest-sun pose."
+          }
+        ]
+      }
+    },
+    {
+      "id": "realSun.sanJose.midday",
+      "label": "Real Sun, San Jose Solar Noon",
+      "description": "Real Sun parameter set from the globe-simulation San Jose solar-noon default on 2026-06-13. The source uses the date-derived Earth-Sun distance, the app's mean solar radius, and top-of-atmosphere irradiance at that distance. The floor is 0.1% of the top-of-atmosphere irradiance for this pose.",
+      "sun": {
+        "brightnessScale": 19994663.95939539,
+        "elevationDeg": 75.90639477250807
+      },
+      "source": {
+        "radiusKm": 696340
+      },
+      "path": {
+        "startDistanceKm": 151931630.50436023,
+        "maxDistanceKm": 152431630.50436023,
+        "startAltitudeKm": 0.03048
+      },
+      "sampling": {
+        "coarseSampleCount": 40,
+        "integrationStepKm": 25,
+        "binaryIterations": 32
+      },
+      "floors": {
+        "effectiveIrradiance": [
+          {
+            "id": "realSun.sanJose.onePermilleToaIrradiance",
+            "label": "0.1% Real-Sun TOA Irradiance",
+            "value": 1.3195095932262169,
+            "units": "W/m2",
+            "basis": "0.001 * globe-simulation topOfAtmosphereIrradianceWm2 1319.5095932262168 at 151931630.50436023 km",
+            "description": "Engineering floor tied to the current real-Sun San Jose solar-noon parameter set."
+          }
+        ]
+      }
+    },
+    {
+      "id": "realSun.sanJose.midnight",
+      "label": "Real Sun, San Jose Midnight",
+      "description": "Real Sun parameter set twelve hours after the globe-simulation San Jose solar-noon default. The geometric Sun is below the local horizon, so direct light is explicitly unavailable even though the top-of-atmosphere source brightness remains defined.",
+      "sun": {
+        "brightnessScale": 19994663.969800204,
+        "elevationDeg": -29.393749946395037,
+        "directLightAvailable": false
+      },
+      "source": {
+        "radiusKm": 696340
+      },
+      "path": {
+        "startDistanceKm": 151939092.0908483,
+        "maxDistanceKm": 151940092.0908483,
+        "startAltitudeKm": 0.03048
+      },
+      "sampling": {
+        "coarseSampleCount": 8,
+        "integrationStepKm": 25,
+        "binaryIterations": 8
+      },
+      "floors": {
+        "effectiveIrradiance": [
+          {
+            "id": "realSun.sanJose.onePermilleToaIrradiance",
+            "label": "0.1% Real-Sun TOA Irradiance",
+            "value": 1.319379996648256,
+            "units": "W/m2",
+            "basis": "0.001 * globe-simulation topOfAtmosphereIrradianceWm2 1319.3799966482559 at 151939092.0908483 km; direct surface source is unavailable because the Sun is below the local globe horizon.",
+            "description": "Engineering floor tied to the current real-Sun San Jose midnight parameter set."
+          }
+        ]
+      }
+    }
+  ]
+}

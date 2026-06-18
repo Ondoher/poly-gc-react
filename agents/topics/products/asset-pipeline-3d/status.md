@@ -84,6 +84,25 @@ on disk for history/debugging, but they are no longer listed in
 
 ## Current Checkpoint
 
+As of 2026-06-14:
+
+- Inspected the revised 2-D contractor bamboo package at
+  `Designs/3d-assets/2d-contractor/bamboo-2.zip` in scratch output under
+  `scripts/output/asset-pipeline/delivery-inspection/bamboo-2-20260614/`.
+  The package contains nine bamboo SVGs. Each file has one broad bamboo artwork
+  group (`bamboo_1`, `bam_2`, ..., `bam_9`).
+- For `bamboo suit-02.svg`, source extraction preserves the new `bam_2`
+  group: the red number path has no parent group, while all 18 green bamboo
+  artwork paths carry `parentGroupIds: ["bam_2"]`. This grouping is sufficient
+  for identifying the whole bamboo artwork region apart from the label.
+- Design decision: contractor suit SVGs should keep the broad suit-art group
+  and add one nested group around each individual repeated unit, so future
+  shape identification can pull out individual bamboo/dot/character motifs
+  without relying only on geometry clustering. The motivating failure mode is
+  repeated-part alignment: one broad group identifies the suit artwork but does
+  not reliably create one source shape per motif, so alignment can become
+  ambiguous or fail.
+
 As of 2026-06-12:
 
 - A new 2-D face artwork contractor delivery is present at

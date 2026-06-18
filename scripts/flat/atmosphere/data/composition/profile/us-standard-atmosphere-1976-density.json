@@ -1,0 +1,46 @@
+{
+  "kind": "flat-atmosphere-reference-profile-source-data",
+  "id": "us-standard-atmosphere-1976-density",
+  "description": "Selected U.S. Standard Atmosphere 1976 density-ratio checkpoints from the PDAS SI table, backed by NASA NTRS record 19770009539.",
+  "source": {
+    "primaryStandard": "U.S. Standard Atmosphere, 1976",
+    "nasaNtrsRecord": "19770009539",
+    "nasaNtrsUrl": "https://ntrs.nasa.gov/citations/19770009539",
+    "tableUrl": "https://www.pdas.com/bigtables.html",
+    "tableLocator": "Table 1 Temperature, Pressure, & Density (SI units), 0 to 1000 km in steps of 5 km",
+    "pdasNotes": "PDAS states the big tables are based on the U.S. Standard Atmosphere 1976 reference document, Part 4."
+  },
+  "units": {
+    "altitudeKm": "geometric altitude km",
+    "densityKgM3": "kg m^-3",
+    "densityRatio": "rho / rho0"
+  },
+  "seaLevelDensityKgM3": 1.225,
+  "rows": [
+    { "altitudeKm": 0, "densityKgM3": 1.2250, "densityRatio": 1.0000 },
+    { "altitudeKm": 5, "densityKgM3": 0.73643, "densityRatio": 0.60117 },
+    { "altitudeKm": 10, "densityKgM3": 0.41351, "densityRatio": 0.33756 },
+    { "altitudeKm": 15, "densityKgM3": 0.19476, "densityRatio": 0.15898 },
+    { "altitudeKm": 20, "densityKgM3": 0.08891, "densityRatio": 0.07258 },
+    { "altitudeKm": 25, "densityKgM3": 0.040084, "densityRatio": 0.032722 },
+    { "altitudeKm": 30, "densityKgM3": 0.018410, "densityRatio": 0.015029 },
+    { "altitudeKm": 35, "densityKgM3": 0.0084634, "densityRatio": 0.0069089 },
+    { "altitudeKm": 40, "densityKgM3": 0.0039957, "densityRatio": 0.0032618 },
+    { "altitudeKm": 45, "densityKgM3": 0.0019663, "densityRatio": 0.0016051 },
+    { "altitudeKm": 50, "densityKgM3": 0.0010269, "densityRatio": 0.00083827 },
+    { "altitudeKm": 55, "densityKgM3": 0.00056810, "densityRatio": 0.00046375 },
+    { "altitudeKm": 60, "densityKgM3": 0.00030968, "densityRatio": 0.00025280 },
+    { "altitudeKm": 65, "densityKgM3": 0.00016321, "densityRatio": 0.00013323 },
+    { "altitudeKm": 70, "densityKgM3": 0.000082829, "densityRatio": 0.000067615 },
+    { "altitudeKm": 75, "densityKgM3": 0.000039921, "densityRatio": 0.000032589 },
+    { "altitudeKm": 80, "densityKgM3": 0.000018458, "densityRatio": 0.000015068 },
+    { "altitudeKm": 85, "densityKgM3": 0.0000082195, "densityRatio": 0.0000067098 },
+    { "altitudeKm": 90, "densityKgM3": 0.0000034400, "densityRatio": 0.0000028082 },
+    { "altitudeKm": 95, "densityKgM3": 0.0000013873, "densityRatio": 0.0000011325 },
+    { "altitudeKm": 100, "densityKgM3": 0.00000056044, "densityRatio": 0.00000045750 }
+  ],
+  "policyUse": {
+    "interpolation": "linear in density ratio between tabulated altitude checkpoints",
+    "outsideRange": "clamp below 0 km to sea-level ratio and above 100 km to the 100 km row for the current 100 km sky shell"
+  }
+}

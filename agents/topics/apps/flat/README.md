@@ -10,6 +10,14 @@ Deployable Flat app documentation for the false-sky / sky-comparison project.
 - [Atmosphere Design](atmosphere-design.md)
 - [Atmosphere Reset Research](plans/atmosphere_reset/research.md)
 - [Atmosphere Reset Design](plans/atmosphere_reset/design.md)
+- [Multiple-Scattering Reference Design](plans/atmosphere_reset/multiple_scattering_design.md)
+- [Reference README](plans/atmosphere_reset/reference/README.md)
+- [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md)
+- [Reference Code Design](plans/atmosphere_reset/reference/code_design.md)
+- [Reference Test Design](plans/atmosphere_reset/reference/test_design.md)
+- [Reference Test Plan](plans/atmosphere_reset/reference/test_plan.md)
+- [Reference Plan](plans/atmosphere_reset/reference/plan.md)
+- [Reference Status](plans/atmosphere_reset/reference/status.md)
 - [Atmosphere Reset Plan](plans/atmosphere_reset/plan.md)
 - [Atmosphere Rejected Ideas](atmosphere-rejected.md)
 - [Terrain Data Options](terrain-data-options.md)
@@ -79,8 +87,19 @@ Key continuation docs:
 - [Atmosphere Reset Design](plans/atmosphere_reset/design.md): reset
   implementation contracts for the script-owned reference module, globe and flat
   model adapters, diagnostics, and shader parity boundary.
-- [CPU Spectral Reference Integrator Design](plans/atmosphere_reset/cpu-spectral-reference-integrator-design.md):
+- [Reference Code Design](plans/atmosphere_reset/reference/code_design.md):
   focused contract for the slow spectral CPU truth engine.
+- [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md):
+  canonical packet input/output contracts for each CPU reference pipeline
+  stage.
+- [Reference Test Design](plans/atmosphere_reset/reference/test_design.md):
+  high-level stage test matrix for the slow spectral CPU truth engine.
+- [Reference Test Plan](plans/atmosphere_reset/reference/test_plan.md):
+  actionable stage-test sequence and current fixture-backed test batches.
+- [Reference Plan](plans/atmosphere_reset/reference/plan.md):
+  focused script implementation plan for the slow spectral CPU truth engine.
+- [Reference Status](plans/atmosphere_reset/reference/status.md): current
+  status and next documentation step for the CPU truth engine.
 - [Atmosphere Reset Plan](plans/atmosphere_reset/plan.md): test-first CPU
   spectral truth-oracle plan for globe and flat/local-Sun atmosphere tests.
 - [Atmosphere Rejected Ideas](atmosphere-rejected.md): atmosphere approaches
