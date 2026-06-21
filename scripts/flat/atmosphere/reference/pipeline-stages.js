@@ -1,7 +1,6 @@
 import ComposeSpectralRadianceStage from './stages/ComposeSpectralRadianceStage.js';
 import EvaluateMediumStage from './stages/EvaluateMediumStage.js';
 import EvaluateScatteringPhaseStage from './stages/EvaluateScatteringPhaseStage.js';
-import IntegrateDiffuseSkyAirlightStage from './stages/IntegrateDiffuseSkyAirlightStage.js';
 import IntegrateSingleScatteringStage from './stages/IntegrateSingleScatteringStage.js';
 import IntegrateSolarTransmittanceStage from './stages/IntegrateSolarTransmittanceStage.js';
 import IntegrateViewOpticalDepthStage from './stages/IntegrateViewOpticalDepthStage.js';
@@ -42,12 +41,6 @@ export const CANONICAL_STAGES = Object.freeze([
 		['validatedRequest', 'mediumSamples', 'viewOpticalDepth', 'solarTransmittance', 'scatteringPhase'],
 		['singleScattering'],
 		IntegrateSingleScatteringStage,
-	),
-	stage(
-		'integrateDiffuseSkyAirlight',
-		['validatedRequest', 'viewOpticalDepth', 'solarTransmittance', 'singleScattering'],
-		['diffuseSkyAirlight'],
-		IntegrateDiffuseSkyAirlightStage,
 	),
 	stage(
 		'resolveSurfaceRadiance',

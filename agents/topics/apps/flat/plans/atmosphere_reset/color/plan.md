@@ -13,7 +13,9 @@ Current package boundary:
   range, `1 nm` spacing, `471` rows, and the verified CIE-published MD5.
 - `scripts/flat/atmosphere/color/spectral-color.js` owns the domain API for
   `spectralRadiance + wavelengthsNm -> CIE XYZ -> unclamped linear sRGB` using
-  the official CIE table. It also keeps the analytic approximation as an
+  the official CIE table. The default path keeps the current equal-energy
+  normalized XYZ behavior; a separate unnormalized-XYZ diagnostic path exists
+  for display-scale audits. It also keeps the analytic approximation as an
   explicitly named preview/fallback path.
 - `scripts/flat/atmosphere/color/pixel-output.js` owns display exposure,
   tone mapping, output encoding, byte pixels, PPM/PNG generation, and
@@ -49,8 +51,11 @@ output are trustworthy, explicit consumers of that output.
 
 2. Add a real spectral-to-color module.
    - `spectralRadianceToXyz` converts `spectralRadiance + wavelengthsNm` to
-     CIE XYZ through the official CIE table.
+     equal-energy normalized CIE XYZ through the official CIE table.
    - `spectralRadianceToLinearSrgb` converts CIE XYZ to unclamped linear sRGB.
+   - `spectralRadianceToUnnormalizedXyz` and
+     `spectralRadianceToUnnormalizedLinearSrgb` expose raw CIE integral scale
+     for diagnostics without changing the default preview/display contract.
    - Clamping, exposure, gamma, and byte conversion stay in `pixel-output.js`.
 
 3. Add provenance to color packets.
@@ -73,7 +78,7 @@ output are trustworthy, explicit consumers of that output.
 5. Add explicit CLI color options.
    - `--color preview-cie|official-cie` selects the spectral color path.
    - `--encoding srgb|linear` selects pixel byte encoding.
-   - `--tone-map clip|preserve-hue` selects display tone mapping.
+   - `--tone-map clip|preserve-hue|exponential` selects display tone mapping.
    - `--exposure <scale>` overrides per-scene preview exposure.
    - CLI JSON records the selected color/display policy in `visual`, per-patch
      display fields, and pixel-image metadata.
@@ -116,17 +121,36 @@ output are trustworthy, explicit consumers of that output.
 
 - Add display tone-mapping controls.
   - `run-reference-probe.js --sky-patches` now accepts
-    `--tone-map clip|preserve-hue`.
+    `--tone-map clip|preserve-hue|exponential`.
   - `clip` remains the default for reproducible scalar-exposure artifacts.
   - `preserve-hue` applies scalar exposure, then scales all display-linear
     channels together when any channel would exceed `1`, preventing
     channel-by-channel red clipping in sunset review images.
+  - `exponential` applies the Bruneton-style display map
+    `1 - exp(-exposedLinearChannel)` for paper-model comparison artifacts.
   - Pixel packets preserve unchanged physical `linearRgb`, report
     `exposedLinearRgb`, `displayLinearRgb`, tone-map scale, prevented clip
     channels, and remaining display-only clamped channels.
   - The first Bucholtz sunset `132x84` preserve-hue artifact was generated at
     `tmp/atmosphere-rayleigh-comparison/sunset-bucholtz-132x84-preserve-hue.png`
     with center swatch `#ff9811`.
+
+- Add a display-only parity audit for Bruneton comparison scale.
+  - `scripts/flat/atmosphere/display-parity-audit.js` compares fixed spectra
+    and linear-RGB probes through the existing CIE, exposure, tone-map, and
+    encoding path without re-running atmosphere transport.
+  - The audit accepts an explicit `--source-summary <summary.json>` input for
+    saved radiance samples and writes JSON, Markdown, PPM, PNG, and manifest
+    files to the provided `--out-dir`.
+  - The first artifact lives at
+    `tmp/atmosphere/bruneton/007-display-parity-audit/`, using Task 3's
+    `006-no-visible-absorption/summary.json` as the saved-radiance input.
+  - Conclusion: raw CIE XYZ carries about `106.96x` more Y scale than the
+    current equal-energy normalized path on the audit samples. Under the
+    exponential tone map, display scale and `exposure=8` materially affect
+    perceived luminance, saturation, and encoded PNG colors. This must be
+    pinned before paper-PNG visual matching, but it does not explain the brown
+    horizon geometry by itself.
 
 ## Remaining Color Follow-Ups
 
@@ -172,10 +196,10 @@ plumbing.
     resampled to it with a stated policy before color integration.
   - Keep lower-resolution grids for quick preview runs.
 
-- Add comparison artifacts.
+- Add broader comparison artifacts.
   - Generate side-by-side reports for official CIE vs preview CIE, `20 nm` vs
-    `5 nm` vs `1 nm`, blackbody Sun vs sourced solar spectrum, and selected
-    display policies.
+    `5 nm` vs `1 nm`, blackbody Sun vs sourced solar spectrum, and any new
+    display policies beyond the completed display-parity audit.
   - Treat these as evidence matrices: they should help identify whether a color
     change came from spectrum resolution, solar input, atmosphere input, or
     display mapping.

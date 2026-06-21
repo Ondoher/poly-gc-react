@@ -19,7 +19,6 @@ describe('atmosphere reference pipeline stages', function() {
 				'integrateSolarTransmittance',
 				'evaluateScatteringPhase',
 				'integrateSingleScattering',
-				'integrateDiffuseSkyAirlight',
 				'resolveSurfaceRadiance',
 				'composeSpectralRadiance',
 			]);

@@ -41,9 +41,9 @@ export const SOLAR_TRANSMITTANCE_CONTRACTS_EXPECTATION_PATH = path.resolve(
 	'solar-transmittance-contracts.json',
 );
 
-export const DIFFUSE_SKY_AIRLIGHT_CONTRACTS_EXPECTATION_PATH = path.resolve(
+export const AEROSOL_PHASE_CONTRACTS_EXPECTATION_PATH = path.resolve(
 	EXPECTATION_FIXTURES_DIRECTORY,
-	'diffuse-sky-airlight-contracts.json',
+	'aerosol-phase-contracts.json',
 );
 
 export function loadExpectationFixture(
@@ -144,10 +144,10 @@ export function loadSolarTransmittanceContractExpectations() {
 	return loadExpectationFixture(SOLAR_TRANSMITTANCE_CONTRACTS_EXPECTATION_PATH);
 }
 
-export function loadDiffuseSkyAirlightContractExpectations() {
-	// Reason: integrateDiffuseSkyAirlight tests own a named fixture family for the stage contract.
-	// Source: Sun Visual Plan, Horizon-Row Diagnostic Result; fixture rows are the oracle ledger.
-	return loadExpectationFixture(DIFFUSE_SKY_AIRLIGHT_CONTRACTS_EXPECTATION_PATH);
+export function loadAerosolPhaseContractExpectations() {
+	// Reason: Task 1 tests own a named fixture family for source-backed aerosol phase-function contracts.
+	// Source: Reference Test Plan, Task 1 Follow-Up: Bruneton Aerosol Phase Policy And Cornette-Shanks.
+	return loadExpectationFixture(AEROSOL_PHASE_CONTRACTS_EXPECTATION_PATH);
 }
 
 export function loadRayPathContractExpectationsById() {
@@ -180,10 +180,10 @@ export function loadSolarTransmittanceContractExpectationsById() {
 	return indexExpectationsById(loadSolarTransmittanceContractExpectations());
 }
 
-export function loadDiffuseSkyAirlightContractExpectationsById() {
-	// Reason: specs cite stable diffuse-sky-airlight row ids rather than fixture row order.
+export function loadAerosolPhaseContractExpectationsById() {
+	// Reason: specs cite stable aerosol phase row ids rather than fixture row order.
 	// Source: Reference Test Design, Expected Value Policy.
-	return indexExpectationsById(loadDiffuseSkyAirlightContractExpectations());
+	return indexExpectationsById(loadAerosolPhaseContractExpectations());
 }
 
 export function getRayPathContractExpectation(expectationId) {
@@ -246,13 +246,13 @@ export function getSolarTransmittanceContractExpectation(expectationId) {
 	return expectation;
 }
 
-export function getDiffuseSkyAirlightContractExpectation(expectationId) {
-	const expectation = loadDiffuseSkyAirlightContractExpectationsById().get(expectationId);
+export function getAerosolPhaseContractExpectation(expectationId) {
+	const expectation = loadAerosolPhaseContractExpectationsById().get(expectationId);
 
 	if (!expectation) {
 		// Reason: tests should fail loudly when they cite an oracle that is not in the ledger.
-		// Source: Reference Test Plan, diffuse-sky-airlight fixture batch.
-		throw new Error(`Unknown diffuse-sky-airlight contract expectation: ${expectationId}`);
+		// Source: Reference Test Plan, Task 1 Follow-Up: Bruneton Aerosol Phase Policy And Cornette-Shanks.
+		throw new Error(`Unknown aerosol phase contract expectation: ${expectationId}`);
 	}
 
 	return expectation;

@@ -5,6 +5,7 @@ import {
 } from '../../_tests/test-pipeline-stages.js';
 import {
 	expectExpectationValue,
+	getAerosolPhaseContractExpectation,
 	getAnalyticInvariantExpectation,
 } from '../../_tests/test-expectations.js';
 
@@ -149,6 +150,57 @@ describe('atmosphere reference EvaluateScatteringPhaseStage', function() {
 		expect(phaseValues[1]).toBeGreaterThan(phaseValues[2]);
 	});
 
+	it('pins the same-scalar Henyey-Greenstein control values for the Bruneton aerosol phase task', function() {
+		const expectation = getAerosolPhaseContractExpectation(
+			'phase.henyey-greenstein.bruneton-g070-control-local-convention',
+		);
+		const result = runEvaluateScatteringPhase(createScatteringPhasePacket({
+			phaseKind: 'henyey-greenstein',
+			phaseParameters: { g: 0.7 },
+		}));
+		const phaseValues = result.scatteringPhase.samples[0].sourceSamples
+			.map((sourceSample) => sourceSample.species[0].phaseByWavelength[0]);
+
+		// Reason: Task 1 needs an explicit HG control with the same scalar g used by the Bruneton CS comparison.
+		// Source: aerosol-phase-contracts row phase.henyey-greenstein.bruneton-g070-control-local-convention.
+		expectExpectationValue(phaseValues, expectation, 'phaseSrInverseByCosTheta');
+	});
+
+	it('evaluates Cornette-Shanks aerosol phase values for the Bruneton g=0.7 comparison', function() {
+		const expectation = getAerosolPhaseContractExpectation(
+			'phase.cornette-shanks.bruneton-g070-local-convention',
+		);
+		const result = runEvaluateScatteringPhase(createScatteringPhasePacket({
+			phaseKind: 'cornette-shanks',
+			phaseParameters: { g: 0.7 },
+		}));
+		const phaseValues = result.scatteringPhase.samples[0].sourceSamples
+			.map((sourceSample) => sourceSample.species[0].phaseByWavelength[0]);
+
+		// Reason: the Bruneton-method comparison uses Cornette-Shanks for aerosol phase, not HG.
+		// Source: aerosol-phase-contracts row phase.cornette-shanks.bruneton-g070-local-convention.
+		expectExpectationValue(phaseValues, expectation, 'phaseSrInverseByCosTheta');
+	});
+
+	it('rejects invalid Cornette-Shanks g values by name', function() {
+		const expectation = getAerosolPhaseContractExpectation(
+			'phase.cornette-shanks.invalid-g-rejects',
+		);
+
+		for (const invalidParameters of expectation.inputs.invalidParameters) {
+			// Reason: Cornette-Shanks policy data must keep the normalized phase parameter inside its sourced domain.
+			// Source: aerosol-phase-contracts row phase.cornette-shanks.invalid-g-rejects.
+			expect(() => runEvaluateScatteringPhase(createScatteringPhasePacket({
+				phaseKind: 'cornette-shanks',
+				phaseParameters: invalidParameters,
+			}))).withContext(JSON.stringify(invalidParameters))
+				.toThrowError(
+					RangeError,
+					messageIncludesPattern(expectation.expectedError.messageIncludes),
+				);
+		}
+	});
+
 	it('records the local scattering-angle convention for source samples', function() {
 		const result = runEvaluateScatteringPhase();
 		const sourceSamples = result.scatteringPhase.samples[0].sourceSamples;
@@ -197,3 +249,9 @@ describe('atmosphere reference EvaluateScatteringPhaseStage', function() {
 		}))).toThrowError(/evaluateScatteringPhase.*unknown-phase/);
 	});
 });
+
+function messageIncludesPattern(parts) {
+	return new RegExp(parts.map((part) => {
+		return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	}).join('.*'));
+}

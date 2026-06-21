@@ -31,7 +31,6 @@ const KNOWN_NUMERICAL_NUMBER_FIELDS = new Set([
 	'sunTransmittanceSteps',
 	'diffuseSkyHemisphereSamples',
 	'finiteSunSamples',
-	'diffuseSkyAirlightStrength',
 	'minStepKm',
 	'maxStepKm',
 ]);

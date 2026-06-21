@@ -19,6 +19,7 @@ Additional reload sources:
 - [Flat Atmosphere Design](apps/flat/atmosphere-design.md)
 - [Atmosphere Reset Research](apps/flat/plans/atmosphere_reset/research.md)
 - [Atmosphere Reset Design](apps/flat/plans/atmosphere_reset/design.md)
+- [Multiple-Scattering Plan](apps/flat/plans/atmosphere_reset/multiple_scattering_plan.md)
 - [Reference README](apps/flat/plans/atmosphere_reset/reference/README.md)
 - [Reference Stage Contracts](apps/flat/plans/atmosphere_reset/reference/stage_contracts.md)
 - [Reference Code Design](apps/flat/plans/atmosphere_reset/reference/code_design.md)

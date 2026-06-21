@@ -1,9 +1,7 @@
+import { evaluatePhaseByWavelength } from '../phase-functions.js';
+
 const SCATTERING_PHASE_CONVENTION =
 	'cosTheta = dot(sourceDirectionFromSample, directionFromSampleToCamera)';
-
-const ISOTROPIC_PHASE_KIND = 'isotropic';
-const RAYLEIGH_PHASE_KIND = 'rayleigh';
-const HENYEY_GREENSTEIN_PHASE_KIND = 'henyey-greenstein';
 
 /**
  * Evaluate angular scattering phase terms.
@@ -179,78 +177,13 @@ export default class EvaluateScatteringPhaseStage {
 		wavelengthsNm,
 		cosTheta,
 	}) {
-		if (phaseKind === ISOTROPIC_PHASE_KIND) {
-			return this.isotropicPhaseByWavelength(wavelengthsNm);
-		}
-
-		if (phaseKind === RAYLEIGH_PHASE_KIND) {
-			return this.constantPhaseByWavelength(
-				wavelengthsNm,
-				3 * (1 + cosTheta * cosTheta) / (16 * Math.PI),
-			);
-		}
-
-		if (phaseKind === HENYEY_GREENSTEIN_PHASE_KIND) {
-			return this.constantPhaseByWavelength(
-				wavelengthsNm,
-				this.henyeyGreensteinPhase(cosTheta, parameters.g),
-			);
-		}
-
-		// Reason: unsupported phase functions should fail loudly instead of
-		// inventing Rayleigh, Mie, aerosol, or cloud parameters.
-		// Source: Stage Contracts, evaluateScatteringPhase ownership.
-		throw new RangeError(`evaluateScatteringPhase unsupported phase kind: ${phaseKind}`);
-	}
-
-	/**
-	 * Evaluate the normalized isotropic phase function across the active wavelengths.
-	 *
-	 * @param {readonly number[]} wavelengthsNm - Provide active wavelength grid.
-	 * @returns {number[]}
-	 */
-	isotropicPhaseByWavelength(wavelengthsNm) {
-		// Algorithm source: PBRT Phase Functions defines normalized isotropic
-		// scattering as the constant phase value 1 / (4*pi), independent of angle.
-		// See analytic-invariants row phase.isotropic.constant-over-solid-angle.
-		const value = 1 / (4 * Math.PI);
-		return this.constantPhaseByWavelength(wavelengthsNm, value);
-	}
-
-	/**
-	 * Repeat a phase value over every active wavelength.
-	 *
-	 * @param {readonly number[]} wavelengthsNm - Provide active wavelength grid.
-	 * @param {number} value - Provide phase value.
-	 * @returns {number[]}
-	 */
-	constantPhaseByWavelength(wavelengthsNm, value) {
-		return wavelengthsNm.map(() => value);
-	}
-
-	/**
-	 * Evaluate Henyey-Greenstein phase with this stage's source-direction convention.
-	 *
-	 * @param {number} cosTheta - Provide local source-direction to sample-to-camera cosine.
-	 * @param {unknown} gParameter - Provide asymmetry parameter.
-	 * @returns {number}
-	 */
-	henyeyGreensteinPhase(cosTheta, gParameter) {
-		const g = Number.isFinite(gParameter) ? gParameter : 0;
-
-		if (g <= -1 || g >= 1) {
-			// Reason: Henyey-Greenstein is normalized only for asymmetry values inside (-1, 1).
-			// Source: PBRT Phase Functions.
-			throw new RangeError('evaluateScatteringPhase henyey-greenstein g must be inside (-1, 1)');
-		}
-
-		// The local diagnostic cosTheta uses source->sample dotted with sample->camera.
-		// Incoming light direction is the opposite source vector, so forward aerosol
-		// scattering under this convention uses -cosTheta in the HG formula.
-		const incomingOutgoingCosTheta = -cosTheta;
-		const denominator = 1 + g * g - 2 * g * incomingOutgoingCosTheta;
-
-		return (1 - g * g) / (4 * Math.PI * denominator ** 1.5);
+		return evaluatePhaseByWavelength({
+			phaseKind,
+			parameters,
+			wavelengthsNm,
+			cosTheta,
+			errorPrefix: 'evaluateScatteringPhase',
+		});
 	}
 
 	/**

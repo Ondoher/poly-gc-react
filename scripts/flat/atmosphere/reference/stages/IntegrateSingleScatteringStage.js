@@ -40,8 +40,9 @@ export default class IntegrateSingleScatteringStage {
 
 		// Algorithm source: PBRT Volume Scattering Processes expresses
 		// single-scattering as incident radiance times scattering coefficient,
-		// phase, transmittance, and path length. This stage consumes those
-		// factors from earlier packets rather than recomputing them.
+		// phase, transmittance, source quadrature weight, and path length. This
+		// stage consumes those factors from earlier packets rather than
+		// recomputing them.
 		// See analytic-invariants row single-scattering.one-sample.scalar-product.
 		const samples = mediumSamples.map((mediumSample, sampleIndex) => {
 			const sampleTotals = wavelengthsNm.map(() => 0);
@@ -117,6 +118,10 @@ export default class IntegrateSingleScatteringStage {
 			wavelengthsNm,
 			'sourceSpectrum',
 		);
+		const sourceWeight = this.validateRequiredSourceWeight(
+			sourceSample.weight,
+			sourceSampleIndex,
+		);
 		const sourceTotal = wavelengthsNm.map(() => 0);
 
 		const species = (phaseSample?.species ?? []).map((phaseSpecies) => {
@@ -138,6 +143,7 @@ export default class IntegrateSingleScatteringStage {
 					* phase[wavelengthIndex]
 					* sourceSpectrum[wavelengthIndex]
 					* sourceTransmittance[wavelengthIndex]
+					* sourceWeight
 					* this.validateNonnegativeFinite(mediumSample.weightKm, 'sample weightKm');
 
 				return this.validateNonnegativeFinite(value, `${phaseSpecies.name} contribution`);
@@ -246,6 +252,29 @@ export default class IntegrateSingleScatteringStage {
 			// Reason: radiance, transmittance factors, scattering coefficients, phase, and path length are nonnegative.
 			// Source: PBRT Volume Scattering Processes and Stage Contracts, integrateSingleScattering.
 			throw new RangeError(`integrateSingleScattering ${label} must be nonnegative finite`);
+		}
+
+		return value;
+	}
+
+	/**
+	 * Validate a required source quadrature weight.
+	 *
+	 * @param {unknown} value - Provide source sample weight.
+	 * @param {number} sourceSampleIndex - Identify source sample in errors.
+	 * @returns {number}
+	 */
+	validateRequiredSourceWeight(value, sourceSampleIndex) {
+		if (value === undefined) {
+			// Reason: source quadrature weight is a required transport multiplier, so the consuming stage must not invent a fallback.
+			// Source: Stage Contracts, integrateSingleScattering source-weight contract.
+			throw new RangeError(`integrateSingleScattering source sample ${sourceSampleIndex} weight is required`);
+		}
+
+		if (!Number.isFinite(value) || value < 0) {
+			// Reason: source quadrature weights represent nonnegative finite measure in the source-direction integral.
+			// Source: PBRT Volume Scattering Processes; Stage Contracts, integrateSingleScattering source-weight contract.
+			throw new RangeError(`integrateSingleScattering source sample ${sourceSampleIndex} weight must be nonnegative finite`);
 		}
 
 		return value;

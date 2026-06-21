@@ -1,0 +1,122 @@
+{
+  "kind": "flat-atmosphere-reference-aerosol-phase-policies",
+  "id": "first-clear-sky-aerosol-phase-policies",
+  "description": "Named aerosol phase policies for atmosphere-reference output-impact comparisons. Scalar aerosol presets own AOD, wavelength slope, single-scattering albedo, and scale height; this artifact owns phase shape and g.",
+  "sources": [
+    {
+      "id": "pbrt-v4-phase-functions",
+      "citation": "PBRT v4, Volume Scattering / Phase Functions.",
+      "url": "https://www.pbr-book.org/4ed/Volume_Scattering/Phase_Functions",
+      "role": "Normalized isotropic and Henyey-Greenstein phase-function definitions and g-domain guidance."
+    },
+    {
+      "id": "bruneton-2016-clear-sky-models",
+      "citation": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models, IEEE Transactions on Visualization and Computer Graphics, 2017. arXiv:1612.04336; source constants and Cornette-Shanks formula in ebruneton/clear-sky-models.",
+      "url": "https://github.com/ebruneton/clear-sky-models",
+      "role": "Clear-sky comparison aerosol phase contract: Cornette-Shanks phase with g 0.7 for the Kider-fit model comparison."
+    }
+  ],
+  "model": {
+    "phasePolicy": "Aerosol phase shape is selected by id and emitted into medium species phase metadata.",
+    "henyeyGreenstein": "P_HG(mu,g) = (1 - g^2) / (4*pi*(1 + g^2 - 2*g*mu)^(3/2))",
+    "cornetteShanks": "P_CS(mu,g) = 3/(8*pi) * (1 - g^2)/(2 + g^2) * (1 + mu^2)/(1 + g^2 - 2*g*mu)^(3/2)",
+    "localConvention": "evaluateScatteringPhase records cosTheta = dot(sourceDirectionFromSample, directionFromSampleToCamera); aerosol phase functions use mu = -cosTheta."
+  },
+  "policies": [
+    {
+      "id": "rayleigh-only-hg-g000-control",
+      "label": "Rayleigh-only zero aerosol phase control",
+      "kind": "henyey-greenstein",
+      "parameters": { "g": 0 },
+      "provenance": {
+        "sourceIds": ["pbrt-v4-phase-functions"],
+        "selectionRationale": "Zero-aerosol scalar preset still names a phase policy so medium assembly never invents phase metadata."
+      }
+    },
+    {
+      "id": "preview-hg-g080",
+      "label": "Preview Henyey-Greenstein g 0.80",
+      "kind": "henyey-greenstein",
+      "parameters": { "g": 0.8 },
+      "provenance": {
+        "sourceIds": ["pbrt-v4-phase-functions"],
+        "selectionRationale": "Preserves the previous hardcoded preview aerosol phase as an explicit control."
+      }
+    },
+    {
+      "id": "clear-maritime-hg-g076",
+      "label": "Clear maritime Henyey-Greenstein g 0.76",
+      "kind": "henyey-greenstein",
+      "parameters": { "g": 0.76 },
+      "provenance": {
+        "sourceIds": ["pbrt-v4-phase-functions"],
+        "selectionRationale": "Preserves the prior clear-maritime phase setting as an explicit control."
+      }
+    },
+    {
+      "id": "clear-maritime-hg-g060",
+      "label": "Clear maritime lower-g Henyey-Greenstein g 0.60",
+      "kind": "henyey-greenstein",
+      "parameters": { "g": 0.6 },
+      "provenance": {
+        "sourceIds": ["pbrt-v4-phase-functions"],
+        "selectionRationale": "Phase-only sensitivity control for weaker maritime forward scattering."
+      }
+    },
+    {
+      "id": "clear-maritime-hg-g086",
+      "label": "Clear maritime higher-g Henyey-Greenstein g 0.86",
+      "kind": "henyey-greenstein",
+      "parameters": { "g": 0.86 },
+      "provenance": {
+        "sourceIds": ["pbrt-v4-phase-functions"],
+        "selectionRationale": "Phase-only sensitivity control for stronger maritime forward scattering."
+      }
+    },
+    {
+      "id": "continental-hg-g070",
+      "label": "Continental Henyey-Greenstein g 0.70",
+      "kind": "henyey-greenstein",
+      "parameters": { "g": 0.7 },
+      "provenance": {
+        "sourceIds": ["pbrt-v4-phase-functions"],
+        "selectionRationale": "Preserves the prior clear-continental phase setting as an explicit control."
+      }
+    },
+    {
+      "id": "hazy-continental-hg-g068",
+      "label": "Hazy continental Henyey-Greenstein g 0.68",
+      "kind": "henyey-greenstein",
+      "parameters": { "g": 0.68 },
+      "provenance": {
+        "sourceIds": ["pbrt-v4-phase-functions"],
+        "selectionRationale": "Preserves the prior hazy continental phase setting as an explicit control."
+      }
+    },
+    {
+      "id": "bruneton-2016-hg-g070-control",
+      "label": "Bruneton 2016 same-scalar Henyey-Greenstein g 0.70 control",
+      "kind": "henyey-greenstein",
+      "parameters": { "g": 0.7 },
+      "provenance": {
+        "sourceIds": ["pbrt-v4-phase-functions", "bruneton-2016-clear-sky-models"],
+        "selectionRationale": "Same-g control for isolating Cornette-Shanks phase shape against Henyey-Greenstein while holding Bruneton scalar aerosol parameters fixed."
+      }
+    },
+    {
+      "id": "bruneton-2016-cornette-shanks-g070",
+      "label": "Bruneton 2016 Cornette-Shanks g 0.70",
+      "kind": "cornette-shanks",
+      "parameters": { "g": 0.7 },
+      "provenance": {
+        "sourceIds": ["bruneton-2016-clear-sky-models"],
+        "selectionRationale": "Paper-aligned aerosol phase behavior for the Bruneton 2016 Kider-fit comparison."
+      }
+    }
+  ],
+  "defaultPolicy": "preview-hg-g080",
+  "notes": [
+    "These policies select aerosol phase shape only; scalar aerosol coefficients remain in aerosol-presets.json.",
+    "Cornette-Shanks is the Bruneton/Kider comparison default, while Henyey-Greenstein remains an explicit control."
+  ]
+}

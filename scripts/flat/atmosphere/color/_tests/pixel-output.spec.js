@@ -137,6 +137,40 @@ describe('pixel-output post-pipeline bridge', function() {
 		});
 	});
 
+	it('supports exponential tone mapping for paper-style comparison output', function() {
+		const pixel = linearRgbToPixel({
+			r: 0.5,
+			g: 0.25,
+			b: 0,
+		}, {
+			exposure: 2,
+			encoding: 'linear',
+			toneMap: 'exponential',
+		});
+
+		// Reason: Bruneton 2016 Figure 1 reports an exponential display map for model-output panels.
+		// Source: Bruneton 2016 clear-sky-models paper, Figure 1 caption.
+		expect(pixel.exposedLinearRgb).toEqual({
+			r: 1,
+			g: 0.5,
+			b: 0,
+		});
+		expect(pixel.displayLinearRgb.r).toBeCloseTo(1 - Math.exp(-1), 12);
+		expect(pixel.displayLinearRgb.g).toBeCloseTo(1 - Math.exp(-0.5), 12);
+		expect(pixel.displayLinearRgb.b).toBe(0);
+		expect(pixel.bytes).toEqual({
+			r: 161,
+			g: 100,
+			b: 0,
+			a: 255,
+		});
+		expect(pixel.metadata.toneMapPolicy).toEqual({
+			kind: 'exponential',
+			scale: null,
+			preventedClipChannels: [],
+		});
+	});
+
 	it('converts a reference output without mutating transport diagnostics', function() {
 		const referenceOutput = {
 			stageHistory: ['composeSpectralRadiance'],

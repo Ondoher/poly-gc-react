@@ -36,11 +36,6 @@ export default class ComposeSpectralRadianceStage {
 			wavelengthsNm,
 			'singleScattering.inScatteredRadianceByWavelength',
 		);
-		const diffuseSkyAirlightRadianceByWavelength = this.validateOptionalComponent(
-			packet.diffuseSkyAirlight?.radianceByWavelength,
-			wavelengthsNm,
-			'diffuseSkyAirlight.radianceByWavelength',
-		);
 		const surfaceViewAttenuatedRadianceByWavelength = this.validateComponent(
 			packet.surfaceRadiance?.viewAttenuatedRadianceByWavelength,
 			wavelengthsNm,
@@ -53,7 +48,6 @@ export default class ComposeSpectralRadianceStage {
 		// See Stage Contracts, composeSpectralRadiance ownership.
 		const finalByWavelength = wavelengthsNm.map((_, index) => {
 			return inScatteredRadianceByWavelength[index]
-				+ diffuseSkyAirlightRadianceByWavelength[index]
 				+ surfaceViewAttenuatedRadianceByWavelength[index];
 		});
 
@@ -64,7 +58,6 @@ export default class ComposeSpectralRadianceStage {
 				finalByWavelength,
 				components: {
 					inScatteredRadianceByWavelength,
-					diffuseSkyAirlightRadianceByWavelength,
 					surfaceViewAttenuatedRadianceByWavelength,
 				},
 				metadata: {
@@ -124,21 +117,4 @@ export default class ComposeSpectralRadianceStage {
 		});
 	}
 
-	/**
-	 * Validate an optional wavelength-aligned radiance component.
-	 *
-	 * @param {unknown} values - Provide candidate component.
-	 * @param {readonly number[]} wavelengthsNm - Provide wavelengths.
-	 * @param {string} label - Identify component.
-	 * @returns {number[]}
-	 */
-	validateOptionalComponent(values, wavelengthsNm, label) {
-		if (values === undefined || values === null) {
-			// Reason: diffuse sky airlight is an explicit approximation component; absent custom packets compose as zero.
-			// Source: Stage Contracts, composeSpectralRadiance optional diffuseSkyAirlight note.
-			return wavelengthsNm.map(() => 0);
-		}
-
-		return this.validateComponent(values, wavelengthsNm, label);
-	}
 }

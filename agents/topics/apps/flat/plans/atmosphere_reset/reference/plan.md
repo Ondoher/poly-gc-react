@@ -104,14 +104,10 @@ Completed canonical stages are `validateRequest`, `resolveRayPath`,
 `integrateSingleScattering`, `resolveSurfaceRadiance`, and
 `composeSpectralRadiance`.
 
-Current implementation checkpoint: source-backed fixture rows, direct stage
-specs, production stage code, canonical registry entry, and composition
-handoff now exist for `integrateDiffuseSkyAirlight`. The fixture ledger is
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/diffuse-sky-airlight-contracts.json`,
-and the stage spec is
-`scripts/flat/atmosphere/reference/stages/_tests/IntegrateDiffuseSkyAirlightStage.spec.js`.
-The stage defaults to zero strength so existing canonical traces remain stable
-unless callers explicitly provide `numerical.diffuseSkyAirlightStrength`.
+Current implementation checkpoint: the diffuse-sky-airlight approximation has
+been backed out of the canonical reference pipeline. The active stage order now
+goes directly from `integrateSingleScattering` to `resolveSurfaceRadiance` and
+then `composeSpectralRadiance`.
 
 Latest focused verification: `npm run test:scripts:flat` passes with 279
 specs and 0 failures after closing the current reference-integrator-only API
@@ -120,17 +116,493 @@ evidence: reusable globe/flat model adapters, camera-relative probes,
 post-pipeline color/display consumers, and deterministic benchmark scenario
 artifacts before shader parity.
 
-Latest focused verification: `npm run test:scripts:flat` passes with
-352 specs and 0 failures after implementing `integrateDiffuseSkyAirlight`,
-registering it in the canonical pipeline, composing its explicit
-`diffuseSkyAirlightRadianceByWavelength` component, and satisfying the
-aerosol/flat-geometry diagnostic rows.
+Latest focused verification: `npm run test:scripts:flat` passed with
+352 specs and 0 failures after removing the diffuse-sky-airlight approximation
+from the canonical stage registry, composition, CLI/reporting path, tests, and
+docs contracts. The old diffuse-sky-airlight fixture/spec batch is no longer
+part of the current contract.
 
 Contract checkpoint: [Stage Contracts](stage_contracts.md) is now the canonical
 input/output contract for every pipeline stage. The contract-alignment pass
 has updated `pipeline-stages.js`, ambient `types.d.ts`, implemented stage code,
 solar fixtures, and direct tests so downstream radiance stages have a firm
 `solarTransmittance` handoff target.
+
+## Current Next Focus: Output-Impact Reference Work
+
+The next atmosphere work should target the reference-runner model ingredients
+most likely to move rendered output. These tasks are sorted by likely effect
+on sky images, not by implementation convenience.
+
+General goal: close the identified weaknesses by moving the reference runner
+toward Bruneton's documented methods, data, and comparison assumptions one
+delta at a time. Each task should isolate a specific difference from the
+Bruneton 2016 comparison contract, produce evidence for that difference, and
+avoid tuning directly against photographs until the Bruneton-method gap is
+understood.
+
+Task 1: Split aerosol phase into a named policy and add Cornette-Shanks.
+
+Rationale: this is the most direct mismatch between the current pipeline and
+the Bruneton 2016 paper contract. The current aerosol scalar fit is close to
+the paper, but the phase function is Henyey-Greenstein instead of
+Cornette-Shanks. Under the Bruneton-method parity goal, Cornette-Shanks is the
+paper-aligned phase behavior for the Kider-fit comparison, while
+Henyey-Greenstein remains a named control. This can change horizon color,
+aureole structure, and overall contrast without changing
+AOD/SSA/scale-height inputs.
+
+Concrete plan:
+
+Preimplementation contract work:
+
+1. Pin the Bruneton source facts before writing code:
+   - exact Cornette-Shanks formula and source citation
+   - Bruneton/Kider aerosol parameters this comparison is trying to match
+   - which source supports each fact
+   - any local interpretation notes, especially the current
+     `evaluateScatteringPhase` source-to-camera `cosTheta` sign convention
+2. Define the isolated Bruneton-method delta. The first comparison changes
+   aerosol phase shape only; AOD, Angstrom exponent, single-scattering albedo,
+   scale height, sampling, wavelength grid, display/tone policy, geometry,
+   Sun rows, and multiple-scattering mode stay fixed.
+3. Record the intended contracts before code:
+   - no new stage; modify the existing `evaluateScatteringPhase` behavior
+   - `evaluateScatteringPhase` supports `cornette-shanks`
+   - aerosol scalar policy owns AOD, Angstrom exponent, single-scattering
+     albedo, and scale height
+   - aerosol phase policy owns `{ kind, parameters.g, provenance }`
+   - `bruneton-2016-kider-fit` resolves to Cornette-Shanks by default
+   - Henyey-Greenstein remains available as an explicit control policy
+4. Define the CLI and metadata contract:
+   - planned flag: `--aerosol-phase-policy <id>`
+   - omitted flag uses the selected aerosol scalar preset's
+     `defaultPhasePolicyId`
+   - JSON and Markdown reports expose both `aerosolPolicy` and
+     `aerosolPhasePolicy`
+5. Define the test and fixture inventory before coding:
+   - phase-policy data validation
+   - preset-to-phase default resolution
+   - Henyey-Greenstein and Cornette-Shanks numeric phase values
+   - unsupported phase kind/policy rejection
+   - CLI accepted/rejected phase policy ids
+   - report metadata includes the resolved phase policy
+   - same-scalar HG-versus-Cornette-Shanks selection
+6. Define the first artifact contract before generation:
+   - folder: `tmp/atmosphere/bruneton/001-aerosol-phase-policy/`
+   - files: `manifest.json`, `hg-control.png`, `cornette-shanks.png`,
+     `comparison.md`, and `progress.log`
+   - comparison:
+     `bruneton-2016-kider-fit + bruneton-2016-hg-g070-control` against
+     `bruneton-2016-kider-fit + bruneton-2016-cornette-shanks-g070`
+   - multiple scattering explicitly disabled/no-op
+7. Update `reference/test_plan.md`, `reference/references.md`,
+   `reference/stage_contracts.md`, and status docs as needed so the follow-up
+   reaches at least `identified`, and reaches `fixtures` or `tests` if the
+   expected numeric phase values are pinned before implementation.
+
+Current implementation status: Task 1 is implemented and verified. The
+reference runner now has named aerosol phase policies, scalar presets resolve a
+`defaultPhasePolicyId`, `evaluateScatteringPhase` supports
+`cornette-shanks`, phase math is centralized for the stage and reference-probe
+diagnostics, `--aerosol-phase-policy` selects explicit HG/CS controls, reports
+expose `aerosolPhasePolicy`, and the first phase-only artifact lives at
+`tmp/atmosphere/bruneton/001-aerosol-phase-policy/`.
+
+Implementation sequence after the contract is pinned:
+
+1. Add an aerosol phase policy artifact at
+   `scripts/flat/atmosphere/data/composition/aerosol/aerosol-phase-policies.json`.
+   The phase policy owns `kind`, `parameters.g`, source/provenance, and label.
+2. Keep aerosol scalar presets focused on AOD, Angstrom exponent, single
+   scattering albedo, and scale height. Each preset names a
+   `defaultPhasePolicyId`; phase function kind and `g` are owned by the named
+   phase policy.
+3. Add first phase policies for the current preview/HG behavior and the paper
+   comparison behavior:
+   `preview-hg-g080`, `clear-maritime-hg-g076`,
+   `clear-maritime-hg-g060`, `clear-maritime-hg-g086`,
+   `continental-hg-g070`, `hazy-continental-hg-g068`,
+   `bruneton-2016-hg-g070-control`, and
+   `bruneton-2016-cornette-shanks-g070`.
+4. Add `scripts/flat/atmosphere/composition/aerosol-phase-policy.js` with
+   `loadAerosolPhasePolicyData`, `aerosolPhasePolicyIds`, and
+   `resolveAerosolPhasePolicy`. Validate known phase kinds, finite `g`, and
+   `g` inside `(-1, 1)` for Henyey-Greenstein and Cornette-Shanks.
+5. Centralize phase math in a small framework-free helper, then use it from
+   both `EvaluateScatteringPhaseStage.js` and the multiple-scattering
+   diagnostic evaluator in `run-reference-probe.js`. This removes the current
+   duplicated Henyey-Greenstein implementation before adding Cornette-Shanks.
+6. Add Cornette-Shanks with the current source-to-camera sign convention:
+   `mu = -cosTheta`, then
+   `P_CS(mu,g) = 3 * (1 - g^2) * (1 + mu^2) / (8 * pi * (2 + g^2) * (1 + g^2 - 2gmu)^(3/2))`.
+7. In the Earth-like medium assembly path, resolve the selected aerosol phase
+   policy and emit the aerosol species phase from that policy. Metadata and
+   reports expose `aerosolPhasePolicy`.
+8. Add `--aerosol-phase-policy <id>` to the reference runner. If omitted, use
+   the selected aerosol scalar preset's `defaultPhasePolicyId`; explicit
+   overrides let comparison runs hold AOD/SSA/scale height fixed while
+   changing only phase shape.
+9. Add focused tests for phase-policy data shape, preset-to-phase resolution,
+   Cornette-Shanks phase evaluation, CLI acceptance/rejection, metadata, and
+   same-scalar HG-versus-Cornette-Shanks selection.
+10. Generate the first comparison under the predeclared artifact contract,
+   with explicit output, report, progress-log, and manifest files.
+
+Definition of done: the Bruneton Kider-fit comparison can use
+Cornette-Shanks by explicit phase policy, current preview behavior remains an
+explicit Henyey-Greenstein policy, reports identify the phase policy, and the
+comparison artifact shows how much horizon color/contrast moves from phase
+shape alone.
+
+Task 2: Add named horizon-safe sampling profiles and convergence checks.
+
+Rationale: the existing Figure 1 local artifact used only `2` source-path
+steps in a high-airmass horizon regime. Before judging model ingredients,
+reference runs need named profiles such as `fast-preview`, `paper-comparison`,
+and `horizon-safe`, with reports showing whether key
+horizon/zenith spectra and display metrics stabilize as sampling increases.
+
+Experiment status: the sampling-convergence diagnostic pass is complete at
+`tmp/atmosphere/bruneton/003-sampling-convergence/`. It held the Bruneton
+Kider-fit scalar aerosol, Cornette-Shanks phase, Bucholtz Rayleigh, Brion
+ozone, U.S. Standard Atmosphere density, exponential display, and disabled
+multiple scattering fixed while sweeping `12/2`, `24/4`, `48/8`, and `96/16`
+sampling on `36 px` domes, plus a `48 px` low-vs-high confirmation. Conclusion:
+sampling is a major contributor to the daylight brown outer ring. The three
+daylight rows move from about `6-8%` warm/non-blue affected area at `12/2` to
+near-zero warm/non-blue area by `96/16`; the `48 px` confirmation repeats the
+same direction. The dawn/low-Sun row becomes more broadly warm at higher
+sampling, but still does not produce the large soft sunset/orange affected
+area seen in richer model references.
+
+Implementation status: Task 2 is closed out in the reference runner. The CLI
+now accepts `--sampling-profile fast-preview|paper-comparison|horizon-safe`,
+rejects mixing a named profile with raw `--view-steps` or
+`--sun-transmittance-steps`, and records the resolved profile in JSON,
+Markdown, summaries, progress events, sky-patch metadata, sky-dome panel
+metadata, and baseline-freeze metadata. `fast-preview` is the explicit `12/2`
+preview/ablation lane, `paper-comparison` is the `96/16` model-comparison lane,
+and `horizon-safe` is the slower `128/32` low-elevation diagnostic lane.
+Bruneton-style `--sky-dome-grid` renders now default to `paper-comparison`
+instead of an unnamed numeric default; custom numeric steps remain available
+only as explicitly recorded `custom-explicit` experiment metadata.
+
+Closeout recommendation: do not draw model-family conclusions from `12/2`
+artifacts. Use `paper-comparison` for ordinary Bruneton-style dome evidence,
+reserve `horizon-safe` for low-elevation convergence checks, and proceed to the
+remaining model-ingredient deltas for the sunset/aureole size problem.
+
+Follow-up isolation: `tmp/atmosphere/bruneton/005-hg-high-sampling-isolation/`
+fills the missing `HG 96/16` quadrant at `72 px` and compares HG/CS against
+low/high sampling. It confirms the visible progress is sampling-driven:
+under HG alone, moving from `12/2` to `96/16` removes the daylight warm/non-blue
+ring and expands the low-Sun warm area from about `9.7%` to about `20.0%`.
+HG-to-CS phase effects remain small at both sampling levels.
+
+Verification: `npm run test:scripts:flat` passed with 382 specs and 0 failures
+after adding the sampling-profile contract and report/metadata tests.
+
+Task 3: Add a named no-visible-molecular-absorption/no-ozone paper contract.
+
+Rationale: Bruneton 2016's fitted comparison intentionally ignored visible
+air-molecule absorption, while the current local comparison uses Brion ozone.
+This can shift visible spectral balance, especially in long horizon paths. It
+should be an explicit paper-contract policy, not a fallback or hidden override.
+
+Implementation status: Task 3 is implemented and experimentally closed. The
+composition layer now exposes `bruneton-2016-no-visible-absorption` as a named
+zero-cross-section ozone/visible-absorber policy backed by the Bruneton 2016
+comparison assumption. The existing `--ozone-policy` CLI path passes it through
+normal sky-model assembly into `atmosphere.mediumAt`, so `evaluateMedium`
+receives zero ozone absorption without any transport-stage branch.
+
+Experiment artifact: `tmp/atmosphere/bruneton/006-no-visible-absorption/`
+compares `brion-1998-ozone-295k` against
+`bruneton-2016-no-visible-absorption` at `36 px`, `paper-comparison` sampling,
+Bruneton/Kider aerosol, Cornette-Shanks phase, Bucholtz Rayleigh, ASTM G-173,
+U.S. Standard Atmosphere density, exponential tone map, and explicit
+multiple-scattering no-op. Conclusion: removing visible ozone absorption is
+visually meaningful for the low-Sun row, raising warm area from about `19.9%`
+to `30.2%` and horizon warm area from `75%` to `100%`; daylight rows mostly
+show small luminance lifts and little to no warm-area change. This policy is
+important for Bruneton-method parity, but it still does not explain the
+missing broad soft sunset/orange affected area by itself.
+
+Verification: `npm run test:scripts:flat` passed with 384 specs and 0 failures
+after adding the no-visible-absorption policy, runner metadata test, and
+artifact comparison; `git diff --check` also passed.
+
+Display-only parity audit checkpoint:
+
+The display/color layer has a cheap diagnostic audit before paper-panel image
+matching. `scripts/flat/atmosphere/display-parity-audit.js` compares fixed
+spectra, fixed linear-RGB probes, and explicit saved radiance samples through
+the existing CIE, exposure, exponential tone-map, and byte-encoding path
+without re-running atmosphere transport. It also adds an unnormalized CIE XYZ
+diagnostic path beside the current equal-energy normalized color path so the
+display-scale assumption can be measured directly.
+
+Artifact: `tmp/atmosphere/bruneton/007-display-parity-audit/` contains
+`audit.json`, `audit.md`, `audit.png`, `audit.ppm`, and `manifest.json`, using
+Task 3's `006-no-visible-absorption/summary.json` as the explicit
+`--source-summary` input. Conclusion: raw CIE XYZ carries about `106.96x` more
+Y scale than the current normalized path on the audit samples; changing
+normalized exponential display exposure from `1` to `8` shifts mean
+display-linear luminance by about `0.171`; and raw-vs-normalized display at
+exposure `8` still differs by mean encoded RGB delta about `0.540`. Display
+scale must therefore be pinned before judging paper PNG parity. This is a
+perceived-contrast/saturation concern, not a likely explanation for the brown
+horizon geometry or missing broad sunset/aureole area.
+
+Verification: `npm run test:scripts:flat` passed with 389 specs and 0 failures
+after adding the display parity audit and raw-XYZ diagnostic tests.
+
+Aerosol/Mie perimeter audit checkpoint:
+
+The reference runner now supports `--dome-sample-mask full|horizon-ring` for
+`--sky-dome-grid` renders. `full` preserves the complete fisheye dome; the
+`horizon-ring` mask traces only pixels at fisheye radius `>= 0.88`, writes
+explicit skipped-pixel provenance for the interior, excludes skipped pixels
+from skydome metrics, and emits sampled/skipped counts in JSON, Markdown, and
+progress events. This is a diagnostic speedup for the current perimeter/brown
+ring work, not a replacement for full-frame image conclusions.
+
+Artifact: `tmp/atmosphere/bruneton/008-aerosol-mie-parity-audit/` contains
+`audit.json`, `audit.md`, `manifest.json`, `progress.log`, and masked
+`image-sweep/*.png` files. Conclusion: the Bruneton/Kider aerosol preset
+matches the Angstrom beta/alpha, single-scattering albedo, and scale-height
+contract to about `3.68e-13` max relative coefficient error; sea-level
+`550 nm` aerosol scattering is about `3.75x` Rayleigh scattering; and the
+Cornette-Shanks phase convention is strongly forward scattering with
+forward/side ratio about `134.7`. Named aerosol policies do move the masked
+horizon ring, especially hazy/continental variants, but the movement looks
+like parameter/environment choice and possibly missing surface/ground coupling
+rather than a missing basic Mie coefficient or phase algorithm.
+
+Verification: `npm run test:scripts:flat` passed with 395 specs and 0 failures
+after adding the sky-dome sample mask and aerosol/Mie parity audit tests.
+
+Weakness factor audit checkpoint:
+
+`scripts/flat/atmosphere/weakness-factor-audit.js` now ranks the current
+suspects with a controlled source-quadrature diagnostic, a real aerosol-policy
+perimeter sweep, and clearly marked display-side proxy sweeps for surface
+coupling and aureole movement. The proxy sweeps are sensitivity rulers only;
+they are not canonical transport and should not be promoted as model output.
+
+Artifact: `tmp/atmosphere/bruneton/009-weakness-factor-audit/` contains
+`audit.json`, `audit.md`, `manifest.json`, `progress.log`, and comparison
+PNGs under `images/`. Conclusion: the weakest current contract is source
+quadrature. A controlled one-source sample returns radiance about `0.31831`,
+but two half-weight source samples return about `0.63662`, and adding a
+zero-weight extra source also returns about `0.63662`; expected weighted ratio
+is `1.0`, actual ratio is `2.0`. That means `sourceSample.weight` and
+`solidAngleSr` are preserved as diagnostics but not applied by
+single-scattering accumulation, so finite-Sun/aureole sampling cannot be made
+trustworthy yet. Aerosol policy remains responsive but not decisive:
+Rayleigh-only gives the best daylight perimeter blue dominance, while
+Bruneton/Kider still trends slightly non-blue at the horizon; hazier aerosol
+families worsen brown perimeter metrics. Surface-coupling proxies improve the
+daylight perimeter only when the injected secondary light is strongly
+blue-biased, so generic neutral/warm ground bounce is not a credible primary
+fix.
+
+Recommendation: fix source quadrature and finite solar-source handling first,
+then rerun the sunset/aureole comparison with real weighted source samples.
+After that, implement a physical surface/ground secondary-source experiment.
+Keep aerosol parameters named and paper-aligned rather than tuning them as the
+main fix.
+
+Verification: `npm run test:scripts:flat` passed with 398 specs and 0 failures
+after adding the weakness factor audit and source-quadrature diagnostic tests;
+`git diff --check` also passed.
+
+Task 4: Pin the source-weight transport contract.
+
+Rationale: the weakness audit showed the pipeline preserves
+`sourceSample.weight` and `solidAngleSr`, but `integrateSingleScattering`
+currently sums source samples as if each had full weight. That makes any
+finite-Sun or aureole conclusion unreliable because two half-weight samples
+double the one-sample result, and a zero-weight extra sample still contributes.
+
+Concrete plan:
+
+1. Define the current contract as
+   `contribution = T_view * sigma_s * phase * sourceRadiance * T_source * sourceSample.weight * ds`.
+2. Treat `sourceSample.weight` as the transport multiplier consumed by
+   `integrateSingleScattering`.
+3. Keep `solidAngleSr` as diagnostic/provenance until a later source contract
+   explicitly switches source spectra to radiance-per-steradian integration.
+4. Require source samples entering single-scattering to carry finite,
+   nonnegative weights. Do not add fallback defaults inside the scattering
+   stage.
+5. Add red tests for:
+   - one source sample equals the current one-source baseline
+   - two half-weight samples equal that baseline
+   - a zero-weight extra sample leaves the baseline unchanged
+   - differently angled source samples sum by their weights
+   - missing or invalid weights fail loudly under the current contract
+
+Definition of done: the controlled source-quadrature diagnostic no longer
+reports a `2.0` split-sample ratio, one-sun directional runs remain unchanged,
+and the stage/test docs name `sourceSample.weight` as a consumed transport
+field.
+
+Current Task 4 status: complete. Contract docs and fixture-backed red tests
+were added first. The analytic fixture ledger includes split-source,
+zero-weight, weighted-phase, missing-weight, and invalid-weight rows for
+`integrateSingleScattering`, and those tests now pass after Task 5.
+
+Task 5: Apply source weighting in single-scattering accumulation.
+
+Rationale: after the contract is pinned, the current implementation needs the
+smallest transport change that makes source quadrature real instead of
+metadata-only.
+
+Concrete plan:
+
+1. Update `IntegrateSingleScatteringStage` to multiply each source-sample
+   contribution by the validated source weight.
+2. Preserve the existing one-sample directional-sun result by making the
+   upstream source adapter provide explicit `weight: 1`.
+3. Reject missing, negative, or non-finite weights at the consuming boundary.
+4. Keep the implementation scoped to source-sample weighting; do not tune
+   aerosol, display, exposure, or multiple-scattering behavior in this task.
+5. Rerun `weakness-factor-audit.js` and confirm the controlled source
+   quadrature section changes from "weight not applied" to "weight applied".
+
+Definition of done: focused stage tests are green, the weakness audit confirms
+the source-weight fix, and docs/status record that finite source sampling can
+now be evaluated without the known double-counting bug.
+
+Current Task 5 status: complete. `IntegrateSolarTransmittanceStage` now
+requires source adapters to provide finite nonnegative `sourceSample.weight`
+values, and `IntegrateSingleScatteringStage` multiplies each source-sample
+contribution by that weight. The weakness-factor audit now reports
+`source-sample-weight-applied`, with split-weight and zero-weight-extra ratios
+both near `1.0`. Verification: `npm run test:scripts:flat` passed with
+`403 specs, 0 failures`.
+
+Task 6: Add an explicit finite solar-source adapter mode.
+
+Rationale: once weighted source quadrature is real, the runner needs a named
+way to compare the current point/directional Sun against a deterministic finite
+solar disc without hiding source geometry in ad hoc samples.
+
+Concrete plan:
+
+1. Add named source modes:
+   - `directional-sun`: current single source sample with `weight: 1`
+   - `finite-sun-disc`: deterministic samples across the solar disc with
+     normalized weights summing to `1`
+2. Add CLI controls such as
+   `--solar-source directional-sun|finite-sun-disc` and
+   `--finite-sun-samples <count>`, with final names chosen to match the
+   runner's existing option style.
+3. Validate that finite-disc directions stay inside the configured solar
+   angular radius.
+4. Emit source-mode, sample count, angular radius, weight sum, and
+   `solidAngleSr` provenance in JSON and Markdown reports.
+5. Add convergence tests or diagnostics for increasing finite-disc sample
+   counts before trusting low-Sun visual changes.
+
+Definition of done: the runner can render otherwise identical skydomes with
+directional and finite-disc source modes, reports expose the source mode, and
+finite-disc weights are normalized by construction.
+
+Current Task 6 status: complete. The reference runner now accepts
+`--solar-source directional-sun|finite-sun-disc`; `--finite-sun-samples
+<count>` is valid only for `finite-sun-disc`. Sky-patch and sky-dome model
+adapters emit either one directional source sample with `weight: 1` or a
+deterministic equal-area finite-disc sample set with equal weights summing to
+`1`. JSON and Markdown outputs record source mode, sample count, solar angular
+radius, weight sum, and source quadrature diagnostics from the actual
+`solarTransmittance` packet. `solidAngleSr` remains provenance rather than a
+transport multiplier. Verification: `npm run test:scripts:flat` passed with
+`405 specs, 0 failures`.
+
+Task 7: Rerun sunset/aureole evidence with weighted finite-source samples.
+
+Rationale: the current small sunset/orange area may be partly a source
+quadrature artifact. This comparison must happen only after Tasks 4-6, so the
+input samples and transport accumulation are meaningful.
+
+Concrete plan:
+
+1. Generate a new artifact folder:
+   `tmp/atmosphere/bruneton/010-finite-sun-source-weighting/`.
+2. Include at least:
+   - directional-sun control
+   - finite-sun-disc low sample count
+   - finite-sun-disc higher sample count
+   - Bruneton/Kider aerosol with Cornette-Shanks phase
+   - no-visible-absorption paper policy
+   - `paper-comparison` sampling
+   - full dome and, where useful, `horizon-ring` masked perimeter evidence
+3. Compare sunset warm area, Sun-neighborhood warm area, horizon warm/non-blue
+   fraction, horizon/zenith luminance, and visible aureole radius.
+4. Treat the run as evidence only if the finite-source effect is stable under
+   sample count increases.
+
+Definition of done: the artifact records whether finite solar-source handling
+materially changes the low-Sun/sunset neighborhood and whether it addresses
+the too-small orange/aureole area.
+
+Current Task 7 status: complete. The artifact lives at
+`tmp/atmosphere/bruneton/010-finite-sun-source-weighting/` and contains
+file-directed JSON, PNG, Markdown, progress logs, `summary.json`,
+`manifest.json`, and `comparison.md`. The sweep includes a higher-resolution
+`36 px` directional control, fair full-frame `12 px` directional/finite-5/
+finite-9 comparisons, and fair `24 px` horizon-ring directional/finite-5/
+finite-9 comparisons, all with paper-comparison sampling and explicit
+multiple-scattering no-op. Result: finite solar-disc source sampling has
+negligible image-metric effect. Low-Sun warm area, horizon warm fraction,
+Sun-neighborhood warm fraction, and the rough warm-radius proxy do not move in
+the fair sweeps; the largest recorded metric delta is about `0.00050047`.
+Conclusion: finite solar-source angular extent is not the main cause of the
+too-small sunset/orange affected area. Proceed to Task 8.
+
+Task 8: Add a physical surface/ground secondary-source experiment.
+
+Rationale: the aerosol/Mie and weakness audits both point at possible missing
+surface/ground coupling, but display-side proxies only help when they inject
+strongly blue-biased light. The next version must be a transport-side,
+named-surface experiment rather than a display lift or hidden haze term.
+
+Concrete plan:
+
+1. Keep this behind a diagnostic experiment path until Task 7 is interpreted.
+2. Add named lower-boundary/surface variants such as black, neutral
+   Lambertian, ocean-like blue/cyan, warm land, and possibly later Fresnel
+   ocean.
+3. Feed secondary light through an explicit surface/ground source contract,
+   not through display tone mapping or a diffuse-sky fallback.
+4. Measure daylight horizon blue dominance, brown/non-blue horizon fraction,
+   horizon saturation and luminance, sunset warm area, and Sun-neighborhood
+   warm fraction.
+5. Require evidence that the surface model moves the daylight perimeter in a
+   physically plausible way without destroying the low-Sun result.
+
+Definition of done: the artifact shows whether missing surface/ground coupling
+is a credible next implementation target after finite source handling.
+
+Task 9: Add paper-aligned skydome comparison metrics and contact sheets.
+
+Rationale: this will not directly change pixels, but it will make output
+movement measurable against the extracted Bruneton Figure 1 panels. Track
+contrast, horizon chroma, blue-minus-warm, zenith/horizon luminance, and
+Sun-neighborhood behavior, and produce comparison sheets with the paper panels
+beside ours.
+
+Task 10: Standardize experiment manifests and artifact naming.
+
+Rationale: this should not change pixels, but it reduces experiment ambiguity.
+Each numbered experiment should have a small manifest recording command,
+inputs, source references, output files, progress log, and summary metrics.
+Prefer compact named files such as `result.png`, `result.md`, `result.json`,
+`progress.log`, and `manifest.json`, avoiding huge JSON unless explicitly
+requested.
 
 ## Immediate Remediation: Implemented-Stage Source Breadcrumb Audit
 

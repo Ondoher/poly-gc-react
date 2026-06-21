@@ -39,10 +39,17 @@ import {
 	resolveAerosolPolicy,
 } from './composition/aerosol-policy.js';
 import {
+	aerosolPhasePolicyIds,
+	resolveAerosolPhasePolicy,
+} from './composition/aerosol-phase-policy.js';
+import {
 	MOLECULAR_PROFILE_POLICY_IDS,
 	molecularDensityScaleForPolicy,
 	resolveMolecularProfilePolicy,
 } from './composition/profile-policy.js';
+import {
+	evaluatePhaseByWavelength,
+} from './reference/phase-functions.js';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const DEFAULT_STAGE = 'full';
@@ -58,9 +65,9 @@ const DEFAULT_AEROSOL_POLICY_ID = 'preview-earthlike-aerosol';
 const DEFAULT_MOLECULAR_PROFILE_POLICY_ID = 'preview-exponential-8km';
 const DEFAULT_SUN_VISUAL = 'none';
 const SUN_VISUAL_OPTIONS = Object.freeze(['none', 'diagnostic']);
-const DEFAULT_SCATTERING_MODE = 'single';
-const SCATTERING_MODE_OPTIONS = Object.freeze(['single', 'single-plus-haze-lift']);
-const DEFAULT_HAZE_LIFT_STRENGTH = 0.015;
+const DEFAULT_SOLAR_SOURCE_MODE = 'directional-sun';
+const SOLAR_SOURCE_MODES = Object.freeze(['directional-sun', 'finite-sun-disc']);
+const DEFAULT_FINITE_SUN_SAMPLE_COUNT = 9;
 const SOLAR_ANGULAR_DIAMETER_DEG = 0.533;
 const SUN_DIAGNOSTIC_DIRECT_SCALE = 1;
 const SUN_ANGLE_BUCKETS = Object.freeze([
@@ -117,6 +124,35 @@ const DEFAULT_NUMERICAL = Object.freeze({
 	sunTransmittanceSteps: 1,
 	integrationMethod: 'midpoint',
 });
+const DEFAULT_SKY_PATCH_VIEW_STEPS = 64;
+const DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS = 16;
+const DEFAULT_SKY_DOME_SAMPLING_PROFILE_ID = 'paper-comparison';
+const SKY_RENDER_SAMPLING_PROFILES = Object.freeze({
+	'fast-preview': Object.freeze({
+		id: 'fast-preview',
+		label: 'Fast preview',
+		viewSteps: 12,
+		sunTransmittanceSteps: 2,
+		integrationMethod: DEFAULT_NUMERICAL.integrationMethod,
+		evidenceUse: 'cheap preview and ablation only; not sufficient for model-family visual conclusions',
+	}),
+	'paper-comparison': Object.freeze({
+		id: 'paper-comparison',
+		label: 'Paper comparison',
+		viewSteps: 96,
+		sunTransmittanceSteps: 16,
+		integrationMethod: DEFAULT_NUMERICAL.integrationMethod,
+		evidenceUse: 'fixed high-sampling profile for Bruneton-style model-output comparison artifacts',
+	}),
+	'horizon-safe': Object.freeze({
+		id: 'horizon-safe',
+		label: 'Horizon-safe',
+		viewSteps: 128,
+		sunTransmittanceSteps: 32,
+		integrationMethod: DEFAULT_NUMERICAL.integrationMethod,
+		evidenceUse: 'extra convergence margin for low-elevation and sunset horizon diagnostics',
+	}),
+});
 const DEBUG_RGB_WAVELENGTHS = Object.freeze({
 	r: 650,
 	g: 550,
@@ -124,10 +160,97 @@ const DEBUG_RGB_WAVELENGTHS = Object.freeze({
 });
 const SKY_PATCH_SIZE = Object.freeze({ width: 44, height: 28 });
 const SKY_PATCH_MAX_PIXELS = 262144;
+const DEFAULT_SKY_DOME_SIZE = 72;
+const SKY_DOME_MAX_PIXELS = 262144;
+const DEFAULT_DOME_SAMPLE_MASK_ID = 'full';
+const DOME_SAMPLE_MASKS = Object.freeze({
+	full: Object.freeze({
+		id: 'full',
+		label: 'Full dome',
+		minRadius: 0,
+		description: 'Trace every pixel inside the fisheye dome.',
+	}),
+	'horizon-ring': Object.freeze({
+		id: 'horizon-ring',
+		label: 'Horizon ring',
+		minRadius: 0.88,
+		description: 'Trace only the outer fisheye ring used by horizon/perimeter diagnostics.',
+	}),
+});
 const DEFAULT_SKY_PATCH_IDS = Object.freeze([
 	'midday.zenith',
 	'midday.horizon',
 	'sunset.horizon',
+]);
+const MULTISCATTER_REFERENCE_MODES = Object.freeze([
+	'none',
+	'sidecar-contract',
+	'order-by-order-grid',
+	'iterative-field-grid',
+]);
+const MULTISCATTER_TARGET_MODES = Object.freeze(['diagnostic', 'dome-rings']);
+const MULTISCATTER_MAX_SUPPORTED_ORDER = 4;
+const MULTISCATTER_MAX_DOME_RING_ORDER = 3;
+const MULTISCATTER_FIELD_ALTITUDE_GRIDS_KM = Object.freeze({
+	default: Object.freeze([0, 1, 3, 8, 20]),
+	'lower-atmosphere': Object.freeze([0, 0.05, 0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 5, 8, 12, 20, 40]),
+});
+const DEFAULT_MULTISCATTER_FIELD_ALTITUDE_GRID = 'default';
+const MULTISCATTER_FIELD_ALTITUDE_GRID_IDS = Object.freeze(Object.keys(MULTISCATTER_FIELD_ALTITUDE_GRIDS_KM));
+const MULTISCATTER_FIELD_DIRECTION_BASIS_IDS = Object.freeze(['fibonacci', 'horizon-sun']);
+const DEFAULT_MULTISCATTER_FIELD_DIRECTION_BASIS = 'fibonacci';
+const MULTISCATTER_FIELD_INTERPOLATION_MODES = Object.freeze(['nearest', 'weighted']);
+const DEFAULT_MULTISCATTER_FIELD_INTERPOLATION = 'nearest';
+const MULTISCATTER_FIELD_DIRECTION_NEIGHBORS = 4;
+const MULTISCATTER_BASELINE_ID = 'single-scattering-baseline-2026-06';
+const MULTISCATTER_GRID_DEFAULTS = Object.freeze({
+	maxOrder: 2,
+	thresholdFraction: 0.01,
+	viewSteps: 3,
+	incomingViewSteps: 2,
+	sunTransmittanceSteps: 1,
+	angularSampleCount: 8,
+	targetMode: 'diagnostic',
+});
+const MULTISCATTER_DOME_RING_VIEW_ZENITH_DEG = Object.freeze([30, 60, 75, 85]);
+const MULTISCATTER_DOME_RING_RELATIVE_AZIMUTH_DEG = Object.freeze([0, 45, 90, 135, 180, 225, 270, 315]);
+const SKY_DOME_GRID_SCENES = Object.freeze([
+	Object.freeze({
+		id: '06h00.sunZenith87',
+		label: '06h00 / 87 deg',
+		timeLabel: '06h00',
+		sunZenithDeg: 87,
+		sunElevationDeg: 3,
+		sunAzimuthDeg: 40,
+		displayExposure: 8,
+	}),
+	Object.freeze({
+		id: '10h15.sunZenith41',
+		label: '10h15 / 41 deg',
+		timeLabel: '10h15',
+		sunZenithDeg: 41,
+		sunElevationDeg: 49,
+		sunAzimuthDeg: 40,
+		displayExposure: 8,
+	}),
+	Object.freeze({
+		id: '11h15.sunZenith31',
+		label: '11h15 / 31 deg',
+		timeLabel: '11h15',
+		sunZenithDeg: 31,
+		sunElevationDeg: 59,
+		sunAzimuthDeg: 40,
+		displayExposure: 8,
+	}),
+	Object.freeze({
+		id: '13h15.sunZenith21',
+		label: '13h15 / 21 deg',
+		timeLabel: '13h15',
+		sunZenithDeg: 21,
+		sunElevationDeg: 69,
+		sunAzimuthDeg: 40,
+		displayExposure: 8,
+	}),
 ]);
 const EARTH_LIKE_SKY = Object.freeze({
 	planetRadiusKm: 6371.0088,
@@ -154,7 +277,7 @@ const SKY_PATCH_SCENES = Object.freeze({
 		sunElevationDeg: 74,
 		sunAzimuthDeg: 40,
 		displayExposure: 8,
-		sunTransmittanceSteps: 2,
+		sunTransmittanceSteps: DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS,
 	}),
 	'midday.horizon': Object.freeze({
 		id: 'midday.horizon',
@@ -168,7 +291,35 @@ const SKY_PATCH_SCENES = Object.freeze({
 		sunElevationDeg: 74,
 		sunAzimuthDeg: 40,
 		displayExposure: 8,
-		sunTransmittanceSteps: 2,
+		sunTransmittanceSteps: DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS,
+	}),
+	'midday.horizonSky': Object.freeze({
+		id: 'midday.horizonSky',
+		label: 'Midday Horizon Sky Frame',
+		description: 'Looking above the horizon under shared Earth-like midday inputs, with the horizon kept near the lower frame edge for sky-gradient review.',
+		camera: {
+			forward: directionFromElevationAzimuth(12, 40),
+			up: [0, 1, 0],
+			fovYDeg: 26,
+		},
+		sunElevationDeg: 74,
+		sunAzimuthDeg: 40,
+		displayExposure: 8,
+		sunTransmittanceSteps: DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS,
+	}),
+	'midday.horizonTallSky': Object.freeze({
+		id: 'midday.horizonTallSky',
+		label: 'Midday Horizon Tall Sky Frame',
+		description: 'Looking from the horizon into higher midday sky under shared Earth-like inputs, with a taller photo-comparison field of view.',
+		camera: {
+			forward: directionFromElevationAzimuth(25, 40),
+			up: [0, 1, 0],
+			fovYDeg: 54,
+		},
+		sunElevationDeg: 74,
+		sunAzimuthDeg: 40,
+		displayExposure: 8,
+		sunTransmittanceSteps: DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS,
 	}),
 	'midnight.zenith': Object.freeze({
 		id: 'midnight.zenith',
@@ -195,7 +346,7 @@ const SKY_PATCH_SCENES = Object.freeze({
 		sunElevationDeg: 0.5,
 		sunAzimuthDeg: 0,
 		displayExposure: 4,
-		sunTransmittanceSteps: 6,
+		sunTransmittanceSteps: 32,
 	}),
 	'sunset.sun': Object.freeze({
 		id: 'sunset.sun',
@@ -267,6 +418,7 @@ export function parseArgs(argv) {
 		stage: DEFAULT_STAGE,
 		format: DEFAULT_FORMAT,
 	};
+	let skyPatchHint = false;
 
 	for (let index = 0; index < argv.length; index += 1) {
 		const arg = argv[index];
@@ -344,6 +496,11 @@ export function parseArgs(argv) {
 			continue;
 		}
 
+		if (arg === '--aerosol-phase-policy') {
+			options.aerosolPhasePolicy = readOptionValue(argv, ++index, arg);
+			continue;
+		}
+
 		if (arg === '--ozone-policy') {
 			options.ozonePolicy = readOptionValue(argv, ++index, arg);
 			continue;
@@ -360,15 +517,33 @@ export function parseArgs(argv) {
 			continue;
 		}
 
-		if (arg === '--scattering-mode') {
-			options.scatteringMode = readOptionValue(argv, ++index, arg);
-			options.skyPatches = true;
+		if (arg === '--solar-source') {
+			options.solarSource = readOptionValue(argv, ++index, arg);
+			skyPatchHint = true;
 			continue;
 		}
 
-		if (arg === '--haze-lift-strength') {
-			options.hazeLiftStrength = readFiniteNumberOption(argv, ++index, arg);
-			options.skyPatches = true;
+		if (arg === '--finite-sun-samples') {
+			options.finiteSunSamples = readPositiveIntegerOption(argv, ++index, arg);
+			skyPatchHint = true;
+			continue;
+		}
+
+		if (arg === '--sampling-profile') {
+			options.samplingProfile = readOptionValue(argv, ++index, arg);
+			skyPatchHint = true;
+			continue;
+		}
+
+		if (arg === '--view-steps') {
+			options.viewSteps = readPositiveIntegerOption(argv, ++index, arg);
+			skyPatchHint = true;
+			continue;
+		}
+
+		if (arg === '--sun-transmittance-steps') {
+			options.sunTransmittanceSteps = readPositiveIntegerOption(argv, ++index, arg);
+			skyPatchHint = true;
 			continue;
 		}
 
@@ -384,6 +559,18 @@ export function parseArgs(argv) {
 			continue;
 		}
 
+		if (arg === '--dome-size') {
+			options.domeSize = readPositiveIntegerOption(argv, ++index, arg);
+			options.skyDomeGrid = true;
+			continue;
+		}
+
+		if (arg === '--dome-sample-mask') {
+			options.domeSampleMask = readOptionValue(argv, ++index, arg);
+			options.skyDomeGrid = true;
+			continue;
+		}
+
 		if (arg === '--stage') {
 			options.stage = readOptionValue(argv, ++index, arg);
 			continue;
@@ -394,8 +581,69 @@ export function parseArgs(argv) {
 			continue;
 		}
 
+		if (arg === '--progress') {
+			options.progress = true;
+			continue;
+		}
+
+		if (arg === '--progress-log') {
+			options.progressLogPath = readOptionValue(argv, ++index, arg);
+			options.progress = true;
+			continue;
+		}
+
+		if (arg === '--external-radiance') {
+			options.externalRadiancePath = readOptionValue(argv, ++index, arg);
+			continue;
+		}
+
+		if (arg === '--multiple-scattering-reference') {
+			options.multipleScatteringReference = readOptionValue(argv, ++index, arg);
+			continue;
+		}
+
+		if (arg === '--multiple-scattering-targets') {
+			options.multipleScatteringTargets = readOptionValue(argv, ++index, arg);
+			continue;
+		}
+
+		if (arg === '--multiple-scattering-angular-samples') {
+			options.multipleScatteringAngularSamples = readPositiveIntegerOption(argv, ++index, arg);
+			continue;
+		}
+
+		if (arg === '--multiple-scattering-max-order') {
+			options.multipleScatteringMaxOrder = readPositiveIntegerOption(argv, ++index, arg);
+			continue;
+		}
+
+		if (arg === '--multiple-scattering-field-interpolation') {
+			options.multipleScatteringFieldInterpolation = readOptionValue(argv, ++index, arg);
+			continue;
+		}
+
+		if (arg === '--multiple-scattering-field-direction-basis') {
+			options.multipleScatteringFieldDirectionBasis = readOptionValue(argv, ++index, arg);
+			continue;
+		}
+
+		if (arg === '--multiple-scattering-field-altitude-grid') {
+			options.multipleScatteringFieldAltitudeGrid = readOptionValue(argv, ++index, arg);
+			continue;
+		}
+
+		if (arg === '--multiple-scattering-image-dir') {
+			options.multipleScatteringImageDir = readOptionValue(argv, ++index, arg);
+			continue;
+		}
+
 		if (arg === '--sky-patches') {
 			options.skyPatches = true;
+			continue;
+		}
+
+		if (arg === '--sky-dome-grid') {
+			options.skyDomeGrid = true;
 			continue;
 		}
 
@@ -443,7 +691,7 @@ export function parseArgs(argv) {
 		throw new Error(`Unknown output encoding: ${options.encoding}`);
 	}
 
-	if (options.toneMap && !['clip', 'preserve-hue'].includes(options.toneMap)) {
+	if (options.toneMap && !['clip', 'preserve-hue', 'exponential'].includes(options.toneMap)) {
 		throw new Error(`Unknown tone map: ${options.toneMap}`);
 	}
 
@@ -471,6 +719,10 @@ export function parseArgs(argv) {
 		throw new Error(`Unknown aerosol policy: ${options.aerosolPolicy}`);
 	}
 
+	if (options.aerosolPhasePolicy && !aerosolPhasePolicyIds().includes(options.aerosolPhasePolicy)) {
+		throw new Error(`Unknown aerosol phase policy: ${options.aerosolPhasePolicy}`);
+	}
+
 	if (options.ozonePolicy && !OZONE_POLICY_IDS.includes(options.ozonePolicy)) {
 		throw new Error(`Unknown ozone policy: ${options.ozonePolicy}`);
 	}
@@ -483,16 +735,177 @@ export function parseArgs(argv) {
 		throw new Error(`Unknown sun visual mode: ${options.sunVisual}`);
 	}
 
-	if (options.scatteringMode && !SCATTERING_MODE_OPTIONS.includes(options.scatteringMode)) {
-		throw new Error(`Unknown scattering mode: ${options.scatteringMode}`);
+	if (options.solarSource && !SOLAR_SOURCE_MODES.includes(options.solarSource)) {
+		throw new Error(`Unknown solar source mode: ${options.solarSource}`);
 	}
 
-	if (options.hazeLiftStrength !== undefined && options.hazeLiftStrength < 0) {
-		throw new Error('--haze-lift-strength must be nonnegative');
+	if (options.finiteSunSamples !== undefined && options.solarSource !== 'finite-sun-disc') {
+		throw new Error('--finite-sun-samples requires --solar-source finite-sun-disc');
 	}
 
-	if (options.skyPatches && options.lightExtent) {
-		throw new Error('Choose only one of --sky-patches or --light-extent');
+	if (options.domeSampleMask && !DOME_SAMPLE_MASKS[options.domeSampleMask]) {
+		throw new Error(`Unknown dome sample mask: ${options.domeSampleMask}`);
+	}
+
+	validateSamplingControlOptions(options);
+
+	if (
+		options.multipleScatteringReference
+		&& !MULTISCATTER_REFERENCE_MODES.includes(options.multipleScatteringReference)
+	) {
+		throw new Error(`Unknown multiple-scattering reference mode: ${options.multipleScatteringReference}`);
+	}
+
+	if (
+		options.multipleScatteringTargets
+		&& !MULTISCATTER_TARGET_MODES.includes(options.multipleScatteringTargets)
+	) {
+		throw new Error(`Unknown multiple-scattering target mode: ${options.multipleScatteringTargets}`);
+	}
+
+	if (
+		options.multipleScatteringAngularSamples !== undefined
+		&& (!Number.isInteger(options.multipleScatteringAngularSamples)
+			|| options.multipleScatteringAngularSamples <= 0)
+	) {
+		throw new Error('--multiple-scattering-angular-samples requires a positive integer');
+	}
+
+	if (
+		options.multipleScatteringMaxOrder !== undefined
+		&& (options.multipleScatteringMaxOrder < 2
+			|| options.multipleScatteringMaxOrder > MULTISCATTER_MAX_SUPPORTED_ORDER)
+	) {
+		throw new Error(`--multiple-scattering-max-order currently supports orders 2-${MULTISCATTER_MAX_SUPPORTED_ORDER}`);
+	}
+
+	if (
+		options.multipleScatteringFieldInterpolation
+		&& !MULTISCATTER_FIELD_INTERPOLATION_MODES.includes(options.multipleScatteringFieldInterpolation)
+	) {
+		throw new Error(`Unknown multiple-scattering field interpolation mode: ${options.multipleScatteringFieldInterpolation}`);
+	}
+
+	if (
+		options.multipleScatteringFieldDirectionBasis
+		&& !MULTISCATTER_FIELD_DIRECTION_BASIS_IDS.includes(options.multipleScatteringFieldDirectionBasis)
+	) {
+		throw new Error(`Unknown multiple-scattering field direction basis: ${options.multipleScatteringFieldDirectionBasis}`);
+	}
+
+	if (
+		options.multipleScatteringFieldAltitudeGrid
+		&& !MULTISCATTER_FIELD_ALTITUDE_GRID_IDS.includes(options.multipleScatteringFieldAltitudeGrid)
+	) {
+		throw new Error(`Unknown multiple-scattering field altitude grid: ${options.multipleScatteringFieldAltitudeGrid}`);
+	}
+
+	if (options.viewSteps !== undefined && (!Number.isInteger(options.viewSteps) || options.viewSteps <= 0)) {
+		throw new Error('--view-steps requires a positive integer');
+	}
+
+	if (
+		options.sunTransmittanceSteps !== undefined
+		&& (!Number.isInteger(options.sunTransmittanceSteps) || options.sunTransmittanceSteps <= 0)
+	) {
+		throw new Error('--sun-transmittance-steps requires a positive integer');
+	}
+
+	if (skyPatchHint && !options.skyDomeGrid && !options.lightExtent) {
+		options.skyPatches = true;
+	}
+
+	const selectedRenderModes = [
+		options.skyPatches,
+		options.skyDomeGrid,
+		options.lightExtent,
+	].filter(Boolean).length;
+	if (selectedRenderModes > 1) {
+		throw new Error('Choose only one of --sky-patches, --sky-dome-grid, or --light-extent');
+	}
+
+	if (options.externalRadiancePath && !options.skyPatches && !options.skyDomeGrid) {
+		throw new Error('--external-radiance currently requires --sky-patches or --sky-dome-grid');
+	}
+
+	if (options.multipleScatteringReference && !options.skyPatches && !options.skyDomeGrid) {
+		throw new Error('--multiple-scattering-reference currently requires --sky-patches or --sky-dome-grid');
+	}
+
+	if (options.multipleScatteringReference === 'iterative-field-grid' && !options.skyDomeGrid) {
+		throw new Error('--multiple-scattering-reference iterative-field-grid requires --sky-dome-grid');
+	}
+
+	if (options.multipleScatteringTargets && !options.multipleScatteringReference) {
+		throw new Error('--multiple-scattering-targets requires --multiple-scattering-reference');
+	}
+
+	if (options.multipleScatteringAngularSamples !== undefined && !options.multipleScatteringReference) {
+		throw new Error('--multiple-scattering-angular-samples requires --multiple-scattering-reference');
+	}
+
+	if (options.multipleScatteringMaxOrder !== undefined && !options.multipleScatteringReference) {
+		throw new Error('--multiple-scattering-max-order requires --multiple-scattering-reference');
+	}
+
+	if (options.multipleScatteringReference === 'none') {
+		if (
+			options.multipleScatteringTargets
+			|| options.multipleScatteringAngularSamples !== undefined
+			|| options.multipleScatteringMaxOrder !== undefined
+			|| options.multipleScatteringFieldInterpolation
+			|| options.multipleScatteringFieldDirectionBasis
+			|| options.multipleScatteringFieldAltitudeGrid
+			|| options.multipleScatteringImageDir
+		) {
+			throw new Error('--multiple-scattering-reference none does not accept solver, field, or image sidecar options');
+		}
+	}
+
+	if (
+		options.multipleScatteringFieldInterpolation
+		&& options.multipleScatteringReference !== 'iterative-field-grid'
+	) {
+		throw new Error('--multiple-scattering-field-interpolation requires --multiple-scattering-reference iterative-field-grid');
+	}
+
+	if (
+		options.multipleScatteringFieldDirectionBasis
+		&& options.multipleScatteringReference !== 'iterative-field-grid'
+	) {
+		throw new Error('--multiple-scattering-field-direction-basis requires --multiple-scattering-reference iterative-field-grid');
+	}
+
+	if (
+		options.multipleScatteringFieldAltitudeGrid
+		&& options.multipleScatteringReference !== 'iterative-field-grid'
+	) {
+		throw new Error('--multiple-scattering-field-altitude-grid requires --multiple-scattering-reference iterative-field-grid');
+	}
+
+	if (
+		options.multipleScatteringImageDir
+		&& options.multipleScatteringReference !== 'iterative-field-grid'
+	) {
+		throw new Error('--multiple-scattering-image-dir requires --multiple-scattering-reference iterative-field-grid');
+	}
+
+	if (options.multipleScatteringTargets === 'dome-rings' && !options.skyDomeGrid) {
+		throw new Error('--multiple-scattering-targets dome-rings requires --sky-dome-grid');
+	}
+
+	if (
+		options.multipleScatteringTargets === 'dome-rings'
+		&& options.multipleScatteringMaxOrder > MULTISCATTER_MAX_DOME_RING_ORDER
+	) {
+		throw new Error(`--multiple-scattering-max-order above ${MULTISCATTER_MAX_DOME_RING_ORDER} is currently diagnostic-target only`);
+	}
+
+	if (options.domeSize !== undefined) {
+		const pixelCount = options.domeSize * options.domeSize * SKY_DOME_GRID_SCENES.length;
+		if (pixelCount > SKY_DOME_MAX_PIXELS) {
+			throw new Error(`--dome-size across the grid must contain at most ${SKY_DOME_MAX_PIXELS} traced pixels`);
+		}
 	}
 
 	return options;
@@ -518,6 +931,16 @@ function readFiniteNumberOption(argv, index, optionName) {
 	return value;
 }
 
+function readPositiveIntegerOption(argv, index, optionName) {
+	const value = readFiniteNumberOption(argv, index, optionName);
+
+	if (!Number.isInteger(value) || value <= 0) {
+		throw new Error(`${optionName} requires a positive integer`);
+	}
+
+	return value;
+}
+
 function parsePatchSize(value) {
 	const match = /^(\d+)x(\d+)$/u.exec(value);
 
@@ -534,6 +957,235 @@ function parsePatchSize(value) {
 	}
 
 	return { width, height };
+}
+
+export function skyRenderSamplingProfileIds() {
+	return Object.keys(SKY_RENDER_SAMPLING_PROFILES);
+}
+
+export function skyDomeSampleMaskIds() {
+	return Object.keys(DOME_SAMPLE_MASKS);
+}
+
+export function resolveSkyRenderSamplingProfile(profileId) {
+	const profile = SKY_RENDER_SAMPLING_PROFILES[profileId];
+
+	if (!profile) {
+		throw new Error(`Unknown sampling profile: ${profileId}`);
+	}
+
+	return {
+		id: profile.id,
+		label: profile.label,
+		viewSteps: profile.viewSteps,
+		sunTransmittanceSteps: profile.sunTransmittanceSteps,
+		integrationMethod: profile.integrationMethod,
+		evidenceUse: profile.evidenceUse,
+	};
+}
+
+function validateSamplingControlOptions(options) {
+	if (options.samplingProfile) {
+		resolveSkyRenderSamplingProfile(options.samplingProfile);
+	}
+
+	if (
+		options.samplingProfile
+		&& (options.viewSteps !== undefined || options.sunTransmittanceSteps !== undefined)
+	) {
+		throw new Error('--sampling-profile cannot be combined with --view-steps or --sun-transmittance-steps');
+	}
+}
+
+function hasExplicitSamplingSteps(options) {
+	return options.viewSteps !== undefined || options.sunTransmittanceSteps !== undefined;
+}
+
+function createCustomSamplingProfileMetadata({
+	viewSteps,
+	sunTransmittanceSteps,
+}) {
+	return {
+		id: 'custom-explicit',
+		label: 'Custom explicit sampling',
+		viewSteps,
+		sunTransmittanceSteps,
+		integrationMethod: DEFAULT_NUMERICAL.integrationMethod,
+		evidenceUse: 'caller-specified experimental sampling; compare only against artifacts with matching recorded steps',
+	};
+}
+
+function createPerPatchSamplingProfileMetadata() {
+	return {
+		id: 'per-patch-default',
+		label: 'Per-patch scene defaults',
+		viewSteps: 'per-patch',
+		sunTransmittanceSteps: 'per-patch',
+		integrationMethod: DEFAULT_NUMERICAL.integrationMethod,
+		evidenceUse: 'scene-owned defaults for routine sky-patch diagnostics',
+		defaultViewSteps: DEFAULT_SKY_PATCH_VIEW_STEPS,
+		defaultSunTransmittanceSteps: DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS,
+	};
+}
+
+function resolveSkyDomeSamplingControl(options) {
+	validateSamplingControlOptions(options);
+
+	if (options.samplingProfile) {
+		const samplingProfile = resolveSkyRenderSamplingProfile(options.samplingProfile);
+
+		return {
+			samplingProfile,
+			viewStepsOverride: samplingProfile.viewSteps,
+			sunTransmittanceStepsOverride: samplingProfile.sunTransmittanceSteps,
+		};
+	}
+
+	if (hasExplicitSamplingSteps(options)) {
+		const viewSteps = options.viewSteps ?? DEFAULT_SKY_PATCH_VIEW_STEPS;
+		const sunTransmittanceSteps = options.sunTransmittanceSteps ?? DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS;
+
+		return {
+			samplingProfile: createCustomSamplingProfileMetadata({
+				viewSteps,
+				sunTransmittanceSteps,
+			}),
+			viewStepsOverride: options.viewSteps,
+			sunTransmittanceStepsOverride: options.sunTransmittanceSteps,
+		};
+	}
+
+	const samplingProfile = resolveSkyRenderSamplingProfile(DEFAULT_SKY_DOME_SAMPLING_PROFILE_ID);
+
+	return {
+		samplingProfile,
+		viewStepsOverride: samplingProfile.viewSteps,
+		sunTransmittanceStepsOverride: samplingProfile.sunTransmittanceSteps,
+	};
+}
+
+function resolveSkyPatchSamplingControl(options) {
+	validateSamplingControlOptions(options);
+
+	if (options.samplingProfile) {
+		const samplingProfile = resolveSkyRenderSamplingProfile(options.samplingProfile);
+
+		return {
+			samplingProfile,
+			viewStepsOverride: samplingProfile.viewSteps,
+			sunTransmittanceStepsOverride: samplingProfile.sunTransmittanceSteps,
+		};
+	}
+
+	if (hasExplicitSamplingSteps(options)) {
+		return {
+			samplingProfile: createCustomSamplingProfileMetadata({
+				viewSteps: options.viewSteps ?? 'per-patch',
+				sunTransmittanceSteps: options.sunTransmittanceSteps ?? 'per-patch',
+			}),
+			viewStepsOverride: options.viewSteps,
+			sunTransmittanceStepsOverride: options.sunTransmittanceSteps,
+		};
+	}
+
+	return {
+		samplingProfile: createPerPatchSamplingProfileMetadata(),
+		viewStepsOverride: undefined,
+		sunTransmittanceStepsOverride: undefined,
+	};
+}
+
+function createSamplingNumericalMetadata(samplingProfile, extras = {}) {
+	return {
+		viewSteps: samplingProfile.viewSteps,
+		sunTransmittanceSteps: samplingProfile.sunTransmittanceSteps,
+		...extras,
+		integrationMethod: samplingProfile.integrationMethod,
+		samplingProfile,
+	};
+}
+
+function createActualSamplingProfileMetadata(samplingProfile, {
+	viewSteps,
+	sunTransmittanceSteps,
+}) {
+	if (
+		samplingProfile.viewSteps === viewSteps
+		&& samplingProfile.sunTransmittanceSteps === sunTransmittanceSteps
+	) {
+		return samplingProfile;
+	}
+
+	return {
+		...samplingProfile,
+		viewSteps,
+		sunTransmittanceSteps,
+	};
+}
+
+function resolveSolarSourceSampling(options = {}) {
+	const mode = options.solarSource ?? DEFAULT_SOLAR_SOURCE_MODE;
+
+	if (!SOLAR_SOURCE_MODES.includes(mode)) {
+		throw new Error(`Unknown solar source mode: ${mode}`);
+	}
+
+	if (options.finiteSunSamples !== undefined && mode !== 'finite-sun-disc') {
+		throw new Error('--finite-sun-samples requires --solar-source finite-sun-disc');
+	}
+
+	if (
+		options.finiteSunSamples !== undefined
+		&& (!Number.isInteger(options.finiteSunSamples) || options.finiteSunSamples <= 0)
+	) {
+		throw new Error('--finite-sun-samples requires a positive integer');
+	}
+
+	const sampleCount = mode === 'finite-sun-disc'
+		? options.finiteSunSamples ?? DEFAULT_FINITE_SUN_SAMPLE_COUNT
+		: 1;
+	const solarAngularRadiusDeg = SOLAR_ANGULAR_DIAMETER_DEG / 2;
+	const solarAngularRadiusRad = degreesToRadians(solarAngularRadiusDeg);
+	const solarDiscSolidAngleSr = 2 * Math.PI * (1 - Math.cos(solarAngularRadiusRad));
+	const angularOffsets = createSolarSourceAngularOffsets(mode, sampleCount, solarAngularRadiusRad);
+	const weight = 1 / sampleCount;
+
+	return {
+		mode,
+		sampleCount,
+		solarAngularDiameterDeg: SOLAR_ANGULAR_DIAMETER_DEG,
+		solarAngularRadiusDeg,
+		solarAngularRadiusRad,
+		solarDiscSolidAngleSr,
+		perSampleSolidAngleSr: solarDiscSolidAngleSr / sampleCount,
+		minWeight: weight,
+		maxWeight: weight,
+		weightSum: roundDiagnosticNumber(weight * sampleCount),
+		weightPolicy: mode === 'finite-sun-disc'
+			? 'equal source-integral weights; source energy convention preserved'
+			: 'single directional source sample carries the full source integral',
+		directionPolicy: mode === 'finite-sun-disc'
+			? 'deterministic equal-area spiral over the apparent solar disc'
+			: 'single sample at the solar center direction',
+		minAngularOffsetDeg: roundDiagnosticNumber(radiansToDegrees(Math.min(...angularOffsets))),
+		maxAngularOffsetDeg: roundDiagnosticNumber(radiansToDegrees(Math.max(...angularOffsets))),
+		defaultMode: DEFAULT_SOLAR_SOURCE_MODE,
+		defaultFiniteSunSampleCount: DEFAULT_FINITE_SUN_SAMPLE_COUNT,
+	};
+}
+
+function createSolarSourceAngularOffsets(mode, sampleCount, solarAngularRadiusRad) {
+	if (mode === 'directional-sun') {
+		return [0];
+	}
+
+	return Array.from({ length: sampleCount }, (_, index) => {
+		return solarAngularRadiusRad * Math.sqrt((index + 0.5) / sampleCount);
+	});
+}
+
+function roundDiagnosticNumber(value) {
+	return Number(value.toPrecision(15));
 }
 
 export function helpText() {
@@ -554,7 +1206,7 @@ export function helpText() {
 		'  --color preview-cie|official-cie',
 		'                          Select sky-patch spectral color conversion. Default: official-cie.',
 		'  --encoding srgb|linear  Select sky-patch pixel byte encoding. Default: srgb.',
-		'  --tone-map clip|preserve-hue',
+		'  --tone-map clip|preserve-hue|exponential',
 		'                          Select display tone mapping. Default: clip.',
 		'  --exposure <scale>      Override sky-patch display exposure.',
 		'  --wavelength-grid preview-20nm|benchmark-5nm|cie-1nm',
@@ -565,21 +1217,50 @@ export function helpText() {
 		'                          Select sky-patch Rayleigh coefficient policy. Default: rayleigh-lambda4-preview.',
 		`  --aerosol-policy ${aerosolPolicyIds().join('|')}`,
 		'                          Select sky-patch aerosol/Mie policy. Default: preview-earthlike-aerosol.',
-		'  --ozone-policy preview-chappuis|brion-1998-ozone-295k',
+		`  --aerosol-phase-policy ${aerosolPhasePolicyIds().join('|')}`,
+		'                          Override the selected aerosol policy default phase shape.',
+		`  --ozone-policy ${OZONE_POLICY_IDS.join('|')}`,
 		'                          Select sky-patch ozone cross-section policy. Default: preview-chappuis.',
 		'  --molecular-profile preview-exponential-8km|us-standard-atmosphere-1976-density',
 		'                          Select sky-patch molecular density profile. Default: preview-exponential-8km.',
 		'  --sun-visual none|diagnostic',
 		'                          Add diagnostic finite-sun visual panels. Default: none.',
-		'  --scattering-mode single|single-plus-haze-lift',
-		'                          Select diagnostic transport-comparison mode. Default: single.',
-		'  --haze-lift-strength <scale>',
-		`                          Strength for single-plus-haze-lift. Default: ${DEFAULT_HAZE_LIFT_STRENGTH}.`,
+		`  --solar-source ${SOLAR_SOURCE_MODES.join('|')}`,
+		`                          Select source sampling for sky renders. Default: ${DEFAULT_SOLAR_SOURCE_MODE}.`,
+		`  --finite-sun-samples <count>`,
+		`                          Select finite-disc source samples when --solar-source finite-sun-disc. Default: ${DEFAULT_FINITE_SUN_SAMPLE_COUNT}.`,
+		`  --sampling-profile ${skyRenderSamplingProfileIds().join('|')}`,
+		`                          Select named sky-render numerical sampling. Default for --sky-dome-grid: ${DEFAULT_SKY_DOME_SAMPLING_PROFILE_ID}.`,
+		'  --view-steps <count>    Override sky-patch view-ray midpoint samples.',
+		'  --sun-transmittance-steps <count>',
+		'                          Override per-sample source-path midpoint samples.',
 		'  --patch-size WIDTHxHEIGHT',
 		'                          Select sky-patch pixel dimensions. Default: 44x28.',
 		'  --fov-y-deg <degrees>   Override sky-patch vertical field of view.',
+		`  --dome-size <pixels>    Select square fisheye panel size for --sky-dome-grid. Default: ${DEFAULT_SKY_DOME_SIZE}.`,
+		`  --dome-sample-mask ${skyDomeSampleMaskIds().join('|')}`,
+		'                          Select traced fisheye pixels for diagnostics. Default: full.',
 		'  --format json|summary   Print JSON or concise summary to stdout.',
+		'  --progress              Write sky-patch render progress to stderr.',
+		'  --progress-log <path>   Write sky-patch render progress to a file.',
+		'  --external-radiance <path> Compare generated diagnostic samples against an imported spectral radiance JSON artifact.',
+		'  --multiple-scattering-reference <mode> Attach sidecar multiple-scattering reference data. Modes: none, sidecar-contract, order-by-order-grid, iterative-field-grid.',
+		'  --multiple-scattering-targets diagnostic|dome-rings',
+		'                          Select sidecar target rays. Default: diagnostic.',
+		'  --multiple-scattering-angular-samples <count>',
+		'                          Override sidecar incoming angular samples. Default: 8.',
+		'  --multiple-scattering-max-order <2|3|4>',
+		'                          Override sidecar max scattering order. Default: 2. Order 4 is diagnostic-target only.',
+		'  --multiple-scattering-field-interpolation nearest|weighted',
+		'                          Select iterative-field lookup interpolation. Default: nearest.',
+		'  --multiple-scattering-field-direction-basis fibonacci|horizon-sun',
+		'                          Select iterative-field direction grid. Default: fibonacci.',
+		'  --multiple-scattering-field-altitude-grid default|lower-atmosphere',
+		'                          Select iterative-field altitude layers. Default: default.',
+		'  --multiple-scattering-image-dir <path>',
+		'                          Write iterative-field sidecar skydome PNGs and a compact README without full per-pixel JSON.',
 		'  --sky-patches           Render built-in sky patch views.',
+		'  --sky-dome-grid         Render Bruneton-style fisheye skydome rows for 06h00/87 deg, 10h15/41 deg, 11h15/31 deg, and 13h15/21 deg.',
 		`  --patch <id[,id]>       Select sky patch ids. Default: ${DEFAULT_SKY_PATCH_IDS.join(',')}.`,
 		'  --light-extent          Run flat finite-Sun light extent probes.',
 		'  --light-set <id[,id]>   Select light extent scenario ids.',
@@ -613,8 +1294,12 @@ export function runReferenceProbe(options = {}) {
 		});
 	}
 
+	if (options.skyDomeGrid) {
+		return attachMultiscatterDiagnostics(runSkyDomeGrid(options), options);
+	}
+
 	if (options.skyPatches) {
-		return runSkyPatchSet(options);
+		return attachMultiscatterDiagnostics(runSkyPatchSet(options), options);
 	}
 
 	const runDefinition = loadRunDefinition(options);
@@ -644,6 +1329,3022 @@ export function runReferenceProbe(options = {}) {
 	};
 }
 
+function attachMultiscatterDiagnostics(result, options) {
+	let decorated = result;
+
+	if (options.externalRadiancePath) {
+		decorated = {
+			...decorated,
+			externalRadianceComparison: compareExternalRadianceReference(
+				decorated,
+				loadExternalRadianceReference(options.externalRadiancePath),
+				options.externalRadiancePath,
+			),
+		};
+	}
+
+	if (options.multipleScatteringReference) {
+		decorated = {
+			...decorated,
+			multipleScatteringReference: createMultipleScatteringReferenceSidecar(
+				options.multipleScatteringReference,
+				decorated,
+				options,
+			),
+		};
+	}
+
+	return decorated;
+}
+
+function createBaselineFreezeMetadata({
+	phase,
+	mode,
+	scenarios,
+	wavelengthGrid,
+	numerical,
+	solarSource,
+	domeSampleMask,
+}) {
+	return {
+		id: MULTISCATTER_BASELINE_ID,
+		phase,
+		mode,
+		status: 'frozen-current-single-scattering-baseline',
+		canonicalTransport: 'integrateSingleScattering -> composeSpectralRadiance',
+		finalRadianceOwner: 'spectralRadiance.finalByWavelength',
+		proxyPolicy: 'removed haze-lift/diffuse-airlight proxies are not part of this baseline',
+		scenarios: [...scenarios],
+		wavelengthGrid,
+		numerical,
+		solarSource,
+		domeSampleMask,
+	};
+}
+
+function loadExternalRadianceReference(referencePath) {
+	const artifact = JSON.parse(fs.readFileSync(referencePath, 'utf8'));
+
+	if (!artifact || typeof artifact !== 'object' || Array.isArray(artifact)) {
+		throw new Error('--external-radiance requires a JSON object');
+	}
+
+	if (!artifact.source || typeof artifact.source !== 'object' || Array.isArray(artifact.source)) {
+		throw new Error('--external-radiance requires source metadata');
+	}
+
+	if (!Array.isArray(artifact.wavelengthsNm) || artifact.wavelengthsNm.length === 0) {
+		throw new Error('--external-radiance requires wavelengthsNm');
+	}
+
+	for (const wavelengthNm of artifact.wavelengthsNm) {
+		if (!Number.isFinite(wavelengthNm)) {
+			throw new Error('--external-radiance wavelengthsNm must be finite');
+		}
+	}
+
+	if (!Array.isArray(artifact.samples) || artifact.samples.length === 0) {
+		throw new Error('--external-radiance requires nonempty samples');
+	}
+
+	for (const [index, sample] of artifact.samples.entries()) {
+		const scenarioId = sample.scenarioId ?? artifact.scenarioId;
+
+		if (!scenarioId || typeof scenarioId !== 'string') {
+			throw new Error(`--external-radiance sample ${index} requires scenarioId`);
+		}
+
+		if (!sample.sampleRole || typeof sample.sampleRole !== 'string') {
+			throw new Error(`--external-radiance sample ${index} requires sampleRole`);
+		}
+
+		if (
+			!Array.isArray(sample.spectralRadiance)
+			|| sample.spectralRadiance.length !== artifact.wavelengthsNm.length
+		) {
+			throw new Error(`--external-radiance sample ${index} spectralRadiance must align to wavelengthsNm`);
+		}
+
+		for (const value of sample.spectralRadiance) {
+			if (!Number.isFinite(value) || value < 0) {
+				throw new Error(`--external-radiance sample ${index} spectralRadiance must be nonnegative finite`);
+			}
+		}
+	}
+
+	return artifact;
+}
+
+function compareExternalRadianceReference(result, reference, referencePath) {
+	const samples = reference.samples.map((sample, index) => {
+		return compareExternalRadianceSample(result, reference, sample, index);
+	});
+
+	return {
+		kind: 'flat-atmosphere-external-radiance-comparison',
+		referencePath: normalizeOutputPath(referencePath),
+		source: cloneJsonValue(reference.source),
+		referenceScenarioId: reference.scenarioId ?? null,
+		referenceWavelengthsNm: [...reference.wavelengthsNm],
+		sampleCount: samples.length,
+		matchedSampleCount: samples.filter((sample) => sample.status === 'matched').length,
+		unmatchedSampleCount: samples.filter((sample) => sample.status !== 'matched').length,
+		samples,
+	};
+}
+
+function compareExternalRadianceSample(result, reference, sample, sampleIndex) {
+	const scenarioId = sample.scenarioId ?? reference.scenarioId;
+	const generated = findGeneratedRadianceSample(result, scenarioId, sample.sampleRole);
+
+	if (!generated) {
+		return {
+			index: sampleIndex,
+			status: 'unmatched',
+			scenarioId,
+			sampleRole: sample.sampleRole,
+			reason: 'no generated diagnostic sample matched the scenarioId and sampleRole',
+		};
+	}
+
+	const wavelengthMatches = matchExactWavelengths(reference.wavelengthsNm, generated.wavelengthsNm);
+	const expectedRadianceByWavelength = wavelengthMatches.map((match) => {
+		return sample.spectralRadiance[match.referenceIndex];
+	});
+	const actualRadianceByWavelength = wavelengthMatches.map((match) => {
+		return generated.radianceByWavelength[match.generatedIndex];
+	});
+	const signedErrorByWavelength = actualRadianceByWavelength.map((actual, index) => {
+		return actual - expectedRadianceByWavelength[index];
+	});
+	const absoluteErrorByWavelength = signedErrorByWavelength.map(Math.abs);
+	const relativeErrorByWavelength = absoluteErrorByWavelength.map((absoluteError, index) => {
+		const expected = expectedRadianceByWavelength[index];
+
+		return expected > 0 ? absoluteError / expected : null;
+	});
+
+	return {
+		index: sampleIndex,
+		status: 'matched',
+		scenarioId,
+		sampleRole: sample.sampleRole,
+		generatedKind: generated.kind,
+		displayHex: generated.displayHex ?? null,
+		matchedWavelengthsNm: wavelengthMatches.map((match) => match.wavelengthNm),
+		omittedReferenceWavelengthsNm: reference.wavelengthsNm.filter((wavelengthNm) => {
+			return !wavelengthMatches.some((match) => match.wavelengthNm === wavelengthNm);
+		}),
+		expectedRadianceByWavelength,
+		actualRadianceByWavelength,
+		signedErrorByWavelength,
+		absoluteErrorByWavelength,
+		relativeErrorByWavelength,
+		meanAbsoluteError: averageOrNull(absoluteErrorByWavelength),
+		rmsAbsoluteError: rootMeanSquare(absoluteErrorByWavelength),
+		meanRelativeError: averageOrNull(relativeErrorByWavelength.filter((value) => value !== null)),
+	};
+}
+
+function findGeneratedRadianceSample(result, scenarioId, sampleRole) {
+	if (Array.isArray(result.skyDomePanels)) {
+		const panel = result.skyDomePanels.find((candidate) => candidate.id === scenarioId);
+
+		if (!panel) {
+			return null;
+		}
+
+		const sample = findSkyDomeRoleSample(panel, sampleRole);
+
+		if (!sample) {
+			return null;
+		}
+
+		return {
+			kind: 'sky-dome-panel',
+			wavelengthsNm: panel.wavelengthsNm,
+			radianceByWavelength: sample.renderedByWavelength,
+			displayHex: sample.displayHex,
+		};
+	}
+
+	if (Array.isArray(result.skyPatches)) {
+		const patch = result.skyPatches.find((candidate) => candidate.id === scenarioId);
+
+		if (!patch || sampleRole !== 'center') {
+			return null;
+		}
+
+		const sample = patch.diagnosticSamples.find((candidate) => {
+			return candidate.x === Math.floor(patch.size.width / 2)
+				&& candidate.y === Math.floor(patch.size.height / 2);
+		});
+
+		if (!sample) {
+			return null;
+		}
+
+		return {
+			kind: 'sky-patch',
+			wavelengthsNm: patch.wavelengthsNm,
+			radianceByWavelength: sample.renderedByWavelength ?? sample.finalByWavelength,
+			displayHex: sample.displayHex,
+		};
+	}
+
+	return null;
+}
+
+function findSkyDomeRoleSample(panel, sampleRole) {
+	if (sampleRole === 'zenith' || sampleRole === 'center') {
+		return skyDomeCenterSample(panel);
+	}
+
+	if (sampleRole === 'horizon-edge') {
+		return skyDomeHorizonEdgeSample(panel);
+	}
+
+	return null;
+}
+
+function matchExactWavelengths(referenceWavelengthsNm, generatedWavelengthsNm) {
+	const matches = referenceWavelengthsNm.flatMap((referenceWavelengthNm, referenceIndex) => {
+		const generatedIndex = generatedWavelengthsNm.indexOf(referenceWavelengthNm);
+
+		return generatedIndex >= 0
+			? [{ wavelengthNm: referenceWavelengthNm, referenceIndex, generatedIndex }]
+			: [];
+	});
+
+	if (matches.length === 0) {
+		throw new Error('--external-radiance comparison requires at least one exact wavelength match');
+	}
+
+	return matches;
+}
+
+function createMultipleScatteringReferenceSidecar(mode, result, options = {}) {
+	if (mode === 'none') {
+		return createNoOpMultipleScatteringReference(result);
+	}
+
+	if (mode === 'order-by-order-grid') {
+		return computeOrderByOrderGridReference(result, options);
+	}
+
+	if (mode === 'iterative-field-grid') {
+		return computeIterativeFieldGridReference(result, options);
+	}
+
+	return {
+		kind: 'flat-atmosphere-multiple-scattering-reference',
+		mode,
+		status: 'not-computed',
+		outputPolicy: 'sidecar only; spectralRadiance.finalByWavelength is unchanged',
+		plannedSolver: 'order-by-order-grid',
+		radianceByWavelength: null,
+		orders: [],
+		convergence: {
+			maxOrder: null,
+			thresholdFraction: null,
+			lastOrderFraction: null,
+			converged: null,
+		},
+		diagnostics: {
+			geometryKind: result.kind === 'flat-atmosphere-reference-sky-dome-grid'
+				? 'spherical-earth-like-sky-dome'
+				: 'spherical-earth-like-sky-patch',
+			tauRegime: 'not-evaluated',
+			angularSampleCount: null,
+			altitudeLayerCount: null,
+			calibrationReference: null,
+			warnings: [
+				'contract scaffold only; no higher-order radiance has been computed',
+				'do not compare this field as physical radiance until an order-by-order solver populates it',
+			],
+		},
+	};
+}
+
+function createNoOpMultipleScatteringReference(result) {
+	const wavelengthsNm = collectResultWavelengths(result);
+
+	return {
+		kind: 'flat-atmosphere-multiple-scattering-reference',
+		mode: 'none',
+		status: 'disabled-no-op',
+		outputPolicy: 'sidecar only; multiple-scattering radiance is explicitly zero and spectralRadiance.finalByWavelength is unchanged',
+		plannedSolver: 'none',
+		wavelengthsNm,
+		radianceByWavelength: wavelengthsNm.map(() => 0),
+		orders: [],
+		contributionPolicy: 'zero-radiance-no-op',
+		convergence: {
+			maxOrder: 0,
+			thresholdFraction: null,
+			lastOrderFraction: 0,
+			converged: true,
+		},
+		diagnostics: {
+			geometryKind: result.kind === 'flat-atmosphere-reference-sky-dome-grid'
+				? 'spherical-earth-like-sky-dome'
+				: 'spherical-earth-like-sky-patch',
+			targetMode: 'none',
+			tauRegime: 'not-evaluated',
+			targetCount: 0,
+			angularSampleCount: 0,
+			altitudeLayerCount: 0,
+			calibrationReference: null,
+			warnings: [
+				'multiple scattering explicitly disabled for contribution isolation',
+			],
+		},
+	};
+}
+
+function collectResultWavelengths(result) {
+	const source = result.skyDomePanels?.[0]
+		?? result.skyPatches?.[0]
+		?? result.probes?.[0]?.summary;
+
+	if (!Array.isArray(source?.wavelengthsNm) || source.wavelengthsNm.length === 0) {
+		return [];
+	}
+
+	return [...source.wavelengthsNm];
+}
+
+function computeOrderByOrderGridReference(result, options) {
+	const modelInputs = resolveMultipleScatteringModelInputs(result);
+	const config = {
+		...MULTISCATTER_GRID_DEFAULTS,
+		maxOrder: options.multipleScatteringMaxOrder ?? MULTISCATTER_GRID_DEFAULTS.maxOrder,
+		targetMode: options.multipleScatteringTargets ?? MULTISCATTER_GRID_DEFAULTS.targetMode,
+		angularSampleCount: options.multipleScatteringAngularSamples
+			?? MULTISCATTER_GRID_DEFAULTS.angularSampleCount,
+	};
+	validateOrderByOrderGridConfig(config);
+	const targets = collectMultipleScatteringTargets(result, config);
+	const incomingDirections = fibonacciSphereDirections(config.angularSampleCount);
+	const integrator = new CpuSpectralReferenceIntegrator();
+	const sampleResults = [];
+	const aggregateOrders = Array.from(
+		{ length: config.maxOrder },
+		() => modelInputs.wavelengthsNm.map(() => 0),
+	);
+	const progressReporter = options.progressReporter;
+
+	progressReporter?.({
+		phase: 'multiple-scattering-start',
+		mode: 'order-by-order-grid',
+		targetMode: config.targetMode,
+		targetCount: targets.length,
+		angularSampleCount: incomingDirections.length,
+	});
+
+	for (const [targetIndex, target] of targets.entries()) {
+		progressReporter?.({
+			phase: 'multiple-scattering-target-start',
+			targetIndex,
+			targetCount: targets.length,
+			scenarioId: target.scenarioId,
+			sampleRole: target.sampleRole,
+		});
+
+		const model = createMultipleScatteringModelForScene(target.scene, modelInputs);
+		const targetResult = computeOrderByOrderGridTarget({
+			target,
+			model,
+			wavelengthsNm: modelInputs.wavelengthsNm,
+			integrator,
+			incomingDirections,
+			config,
+			displayOptions: createMultipleScatteringDisplayOptions(result, target, options),
+		});
+
+		for (const order of targetResult.orders) {
+			addArrayInto(aggregateOrders[order.order - 1], order.radianceByWavelength);
+		}
+		sampleResults.push(targetResult);
+
+		progressReporter?.({
+			phase: 'multiple-scattering-target-complete',
+			targetIndex,
+			targetCount: targets.length,
+			scenarioId: target.scenarioId,
+			sampleRole: target.sampleRole,
+		});
+	}
+
+	const scale = sampleResults.length > 0 ? 1 / sampleResults.length : 0;
+	const avgOrders = aggregateOrders.map((values, index) => ({
+		order: index + 1,
+		radianceByWavelength: values.map((value) => value * scale),
+	}));
+	const accumulated = sumSpectralOrders(
+		avgOrders.map((order) => order.radianceByWavelength),
+		modelInputs.wavelengthsNm,
+	);
+	const lastOrder = avgOrders[avgOrders.length - 1]?.radianceByWavelength ?? modelInputs.wavelengthsNm.map(() => 0);
+	const lastOrderFraction = spectralEnergy(accumulated) > 0
+		? spectralEnergy(lastOrder) / spectralEnergy(accumulated)
+		: 0;
+
+	progressReporter?.({
+		phase: 'multiple-scattering-complete',
+		mode: 'order-by-order-grid',
+		targetMode: config.targetMode,
+		targetCount: targets.length,
+	});
+
+	return {
+		kind: 'flat-atmosphere-multiple-scattering-reference',
+		mode: 'order-by-order-grid',
+		status: 'computed-prototype',
+		outputPolicy: 'sidecar only; spectralRadiance.finalByWavelength is unchanged',
+		plannedSolver: 'order-by-order-grid',
+		wavelengthsNm: modelInputs.wavelengthsNm,
+		radianceByWavelength: accumulated,
+		orders: avgOrders,
+		convergence: {
+			maxOrder: config.maxOrder,
+			thresholdFraction: config.thresholdFraction,
+			lastOrderFraction,
+			converged: lastOrderFraction < config.thresholdFraction,
+		},
+		diagnostics: {
+			geometryKind: result.kind === 'flat-atmosphere-reference-sky-dome-grid'
+				? 'spherical-earth-like-sky-dome'
+				: 'spherical-earth-like-sky-patch',
+			tauRegime: summarizeSidecarTauRegime(sampleResults),
+			targetMode: config.targetMode,
+			angularSampleCount: config.angularSampleCount,
+			altitudeLayerCount: config.viewSteps,
+			incomingViewSteps: config.incomingViewSteps,
+			sunTransmittanceSteps: config.sunTransmittanceSteps,
+			domeRingViewZenithDeg: config.targetMode === 'dome-rings'
+				? [...MULTISCATTER_DOME_RING_VIEW_ZENITH_DEG]
+				: null,
+			domeRingRelativeAzimuthDeg: config.targetMode === 'dome-rings'
+				? [...MULTISCATTER_DOME_RING_RELATIVE_AZIMUTH_DEG]
+				: null,
+			calibrationReference: result.sourceComparison?.id ?? null,
+			targetCount: targets.length,
+			warnings: [
+				`prototype sidecar only; computes through order ${config.maxOrder} from a coarse angular sky field`,
+				'not a canonical transport stage and not a production precomputed-atmosphere solver',
+				'uses fixed coarse diagnostic sampling to bound runtime',
+			],
+		},
+		samples: sampleResults,
+	};
+}
+
+function computeIterativeFieldGridReference(result, options) {
+	if (!Array.isArray(result.skyDomePanels)) {
+		throw new Error('--multiple-scattering-reference iterative-field-grid requires sky-dome results');
+	}
+
+	const modelInputs = resolveMultipleScatteringModelInputs(result);
+	const config = {
+		...MULTISCATTER_GRID_DEFAULTS,
+		maxOrder: options.multipleScatteringMaxOrder ?? MULTISCATTER_MAX_SUPPORTED_ORDER,
+		angularSampleCount: options.multipleScatteringAngularSamples
+			?? Math.max(16, MULTISCATTER_GRID_DEFAULTS.angularSampleCount),
+		fieldInterpolation: options.multipleScatteringFieldInterpolation ?? DEFAULT_MULTISCATTER_FIELD_INTERPOLATION,
+		fieldDirectionBasis: options.multipleScatteringFieldDirectionBasis ?? DEFAULT_MULTISCATTER_FIELD_DIRECTION_BASIS,
+		fieldAltitudeGrid: options.multipleScatteringFieldAltitudeGrid ?? DEFAULT_MULTISCATTER_FIELD_ALTITUDE_GRID,
+		targetMode: 'field-grid',
+	};
+	validateIterativeFieldGridConfig(config);
+
+	const altitudeLayersKm = resolveMultipleScatteringFieldAltitudeLayers(config.fieldAltitudeGrid);
+	const integrator = new CpuSpectralReferenceIntegrator();
+	const progressReporter = options.progressReporter;
+	const fieldScenes = [];
+	const aggregateOrders = Array.from(
+		{ length: config.maxOrder },
+		() => modelInputs.wavelengthsNm.map(() => 0),
+	);
+	const estimatedTargetCount = result.skyDomePanels.reduce((total, panel) => {
+		const scene = SKY_DOME_GRID_SCENES.find((candidate) => candidate.id === panel.id);
+		const directionCount = scene
+			? createMultipleScatteringFieldDirectionSamples(config, scene).length
+			: config.angularSampleCount;
+
+		return total + altitudeLayersKm.length * directionCount;
+	}, 0);
+
+	progressReporter?.({
+		phase: 'multiple-scattering-start',
+		mode: 'iterative-field-grid',
+		targetMode: 'field-grid',
+		targetCount: estimatedTargetCount,
+		angularSampleCount: config.angularSampleCount,
+		fieldDirectionBasis: config.fieldDirectionBasis,
+		fieldAltitudeGrid: config.fieldAltitudeGrid,
+	});
+
+	for (const [panelIndex, panel] of result.skyDomePanels.entries()) {
+		const scene = SKY_DOME_GRID_SCENES.find((candidate) => candidate.id === panel.id);
+
+		if (!scene) {
+			throw new Error(`iterative field reference requires known sky-dome scene ${panel.id}`);
+		}
+
+		progressReporter?.({
+			phase: 'multiple-scattering-target-start',
+			targetIndex: panelIndex,
+			targetCount: result.skyDomePanels.length,
+			scenarioId: panel.id,
+			sampleRole: 'field-grid',
+		});
+
+		const model = createMultipleScatteringModelForScene(scene, modelInputs);
+		const displayOptions = createMultipleScatteringDisplayOptions(result, { scene }, options);
+		const directionSamples = createMultipleScatteringFieldDirectionSamples(config, scene);
+		const fieldScene = computeIterativeFieldScene({
+			panel,
+			scene,
+			model,
+			wavelengthsNm: modelInputs.wavelengthsNm,
+			integrator,
+			directionSamples,
+			altitudeLayersKm,
+			config,
+			displayOptions,
+		});
+
+		for (const order of fieldScene.orders) {
+			addArrayInto(aggregateOrders[order.order - 1], order.averageRadianceByWavelength);
+		}
+
+		fieldScenes.push(fieldScene);
+		progressReporter?.({
+			phase: 'multiple-scattering-target-complete',
+			targetIndex: panelIndex,
+			targetCount: result.skyDomePanels.length,
+			scenarioId: panel.id,
+			sampleRole: 'field-grid',
+		});
+	}
+
+	const scale = fieldScenes.length > 0 ? 1 / fieldScenes.length : 0;
+	const avgOrders = aggregateOrders.map((values, index) => ({
+		order: index + 1,
+		radianceByWavelength: values.map((value) => value * scale),
+	}));
+	const accumulated = sumSpectralOrders(
+		avgOrders.map((order) => order.radianceByWavelength),
+		modelInputs.wavelengthsNm,
+	);
+	const lastOrder = avgOrders[avgOrders.length - 1]?.radianceByWavelength
+		?? modelInputs.wavelengthsNm.map(() => 0);
+	const lastOrderFraction = spectralEnergy(accumulated) > 0
+		? spectralEnergy(lastOrder) / spectralEnergy(accumulated)
+		: 0;
+	const reconstruction = summarizeIterativeFieldSceneReconstructions(fieldScenes, config);
+
+	progressReporter?.({
+		phase: 'multiple-scattering-complete',
+		mode: 'iterative-field-grid',
+		targetMode: 'field-grid',
+		targetCount: fieldScenes.length,
+	});
+
+	return {
+		kind: 'flat-atmosphere-multiple-scattering-reference',
+		mode: 'iterative-field-grid',
+		status: 'computed-prototype',
+		outputPolicy: 'sidecar only; spectralRadiance.finalByWavelength is unchanged',
+		plannedSolver: 'cached-iterative-field-grid',
+		wavelengthsNm: modelInputs.wavelengthsNm,
+		radianceByWavelength: accumulated,
+		orders: avgOrders,
+		convergence: {
+			maxOrder: config.maxOrder,
+			thresholdFraction: config.thresholdFraction,
+			lastOrderFraction,
+			converged: lastOrderFraction < config.thresholdFraction,
+		},
+		reconstruction,
+		diagnostics: {
+			geometryKind: 'spherical-earth-like-sky-dome',
+			targetMode: 'field-grid',
+			tauRegime: summarizeFieldTauRegime(fieldScenes),
+			requestedAngularSampleCount: config.angularSampleCount,
+			angularSampleCount: fieldScenes[0]?.grid.directionCount ?? config.angularSampleCount,
+			angularSampleCountByScene: fieldScenes.map((scene) => ({
+				scenarioId: scene.scenarioId,
+				directionCount: scene.grid.directionCount,
+			})),
+			altitudeLayerCount: altitudeLayersKm.length,
+			incomingViewSteps: config.incomingViewSteps,
+			sunTransmittanceSteps: config.sunTransmittanceSteps,
+			calibrationReference: result.sourceComparison?.id ?? null,
+			targetCount: fieldScenes.reduce((total, scene) => {
+				return total + scene.grid.altitudeLayersKm.length * scene.grid.directionCount;
+			}, 0),
+			fieldInterpolation: config.fieldInterpolation,
+			fieldDirectionBasis: config.fieldDirectionBasis,
+			fieldDirectionPolicy: describeFieldDirectionPolicy(config),
+			fieldDirectionWeightSumSr: fieldScenes[0]?.grid.directionWeightSumSr ?? null,
+			fieldDirectionWeightRelativeError: fieldScenes[0]?.grid.directionWeightRelativeError ?? null,
+			fieldAltitudeGrid: config.fieldAltitudeGrid,
+			fieldAltitudePolicy: config.fieldInterpolation === 'weighted'
+				? 'fixed ground-biased altitude layers, linear interpolation'
+				: 'fixed ground-biased altitude layers, nearest-neighbor lookup',
+			warnings: [
+				config.fieldInterpolation === 'weighted'
+					? 'prototype sidecar only; cached iterative field is low resolution with weighted interpolation'
+					: 'prototype sidecar only; cached iterative field is low resolution and nearest-neighbor',
+				'not a canonical transport stage and not a production precomputed-atmosphere solver',
+				'comparison panels are diagnostic images; canonical skydome pixels are unchanged',
+			],
+		},
+		fieldScenes,
+	};
+}
+
+function validateIterativeFieldGridConfig(config) {
+	if (config.maxOrder < 2 || config.maxOrder > MULTISCATTER_MAX_SUPPORTED_ORDER) {
+		throw new Error(`iterative-field-grid supports orders 2-${MULTISCATTER_MAX_SUPPORTED_ORDER}`);
+	}
+
+	if (!Number.isInteger(config.angularSampleCount) || config.angularSampleCount <= 0) {
+		throw new Error('--multiple-scattering-angular-samples requires a positive integer');
+	}
+
+	if (!MULTISCATTER_FIELD_INTERPOLATION_MODES.includes(config.fieldInterpolation)) {
+		throw new Error(`Unknown multiple-scattering field interpolation mode: ${config.fieldInterpolation}`);
+	}
+
+	if (!MULTISCATTER_FIELD_DIRECTION_BASIS_IDS.includes(config.fieldDirectionBasis)) {
+		throw new Error(`Unknown multiple-scattering field direction basis: ${config.fieldDirectionBasis}`);
+	}
+
+	if (!MULTISCATTER_FIELD_ALTITUDE_GRID_IDS.includes(config.fieldAltitudeGrid)) {
+		throw new Error(`Unknown multiple-scattering field altitude grid: ${config.fieldAltitudeGrid}`);
+	}
+}
+
+function computeIterativeFieldScene({
+	panel,
+	scene,
+	model,
+	wavelengthsNm,
+	integrator,
+	directionSamples,
+	altitudeLayersKm,
+	config,
+	displayOptions,
+}) {
+	const directions = directionSamples.map((sample) => sample.direction);
+	const numerical = {
+		...DEFAULT_NUMERICAL,
+		viewSteps: config.viewSteps,
+		sunTransmittanceSteps: config.sunTransmittanceSteps,
+	};
+	const orderFields = [];
+	const tauRegimes = [];
+
+	for (let order = 1; order <= config.maxOrder; order += 1) {
+		const previousField = order > 1 ? orderFields[order - 2] : null;
+		const field = altitudeLayersKm.map((altitudeKm) => {
+			return directions.map((direction) => {
+				const packet = integrator.traceRay({
+					model,
+					observer: { positionKm: [0, altitudeKm, 0] },
+					ray: { direction },
+					wavelengthsNm,
+					numerical,
+				});
+
+				if (order === 1) {
+					tauRegimes.push(summarizeOpticalDepthValidity(
+						summarizeTotalOpticalDepthByWavelength(
+							summarizeSpeciesOpticalDepth(packet.viewOpticalDepth?.pathEnd),
+							wavelengthsNm,
+						),
+						wavelengthsNm,
+					));
+
+					return validateSpectralArray(
+						packet.singleScattering?.inScatteredRadianceByWavelength,
+						wavelengthsNm,
+						'iterative-field order 1',
+					);
+				}
+
+				return integrateCachedFieldOrderRadiance({
+					packet,
+					previousField,
+					wavelengthsNm,
+					directionSamples,
+					altitudeLayersKm,
+					fieldInterpolation: config.fieldInterpolation,
+					cameraRayDirection: direction,
+				});
+			});
+		});
+
+		orderFields.push(field);
+	}
+
+	const orders = orderFields.map((field, index) => {
+		const averageRadianceByWavelength = averageFieldRadiance(field, wavelengthsNm, directionSamples);
+
+		return {
+			order: index + 1,
+			averageRadianceByWavelength,
+			energy: spectralEnergy(averageRadianceByWavelength),
+		};
+	});
+	const accumulatedAverage = sumSpectralOrders(
+		orders.map((order) => order.averageRadianceByWavelength),
+		wavelengthsNm,
+	);
+	const lastOrderFraction = spectralEnergy(accumulatedAverage) > 0
+		? spectralEnergy(orders[orders.length - 1].averageRadianceByWavelength)
+			/ spectralEnergy(accumulatedAverage)
+		: 0;
+	const comparisonPanels = createIterativeFieldComparisonPanels({
+		panel,
+		scene,
+		orderFields,
+		wavelengthsNm,
+		directions,
+		directionSamples,
+		altitudeLayersKm,
+		fieldInterpolation: config.fieldInterpolation,
+		displayOptions,
+	});
+	const reconstruction = evaluateIterativeFieldL1Reconstruction({
+		panel,
+		scene,
+		model,
+		wavelengthsNm,
+		integrator,
+		order1Field: orderFields[0],
+		directions,
+		directionSamples,
+		altitudeLayersKm,
+		fieldInterpolation: config.fieldInterpolation,
+		config,
+		displayOptions,
+	});
+	const imageReconstruction = evaluateIterativeFieldImageL1Reconstruction({
+		panel,
+		scene,
+		order1Field: orderFields[0],
+		directions,
+		altitudeLayersKm,
+		fieldInterpolation: config.fieldInterpolation,
+		displayOptions,
+	});
+	const directionWeightSumSr = directionSamples.reduce((total, sample) => total + sample.weightSr, 0);
+
+	return {
+		scenarioId: scene.id,
+		label: scene.label,
+		grid: {
+			altitudeLayersKm,
+			directionCount: directions.length,
+			directionPolicy: describeFieldDirectionPolicy(config),
+			directionBasis: config.fieldDirectionBasis,
+			directionWeightSumSr,
+			directionWeightRelativeError: Math.abs(directionWeightSumSr - 4 * Math.PI) / (4 * Math.PI),
+			lookupPolicy: config.fieldInterpolation === 'weighted'
+				? `linear altitude and inverse-angular ${MULTISCATTER_FIELD_DIRECTION_NEIGHBORS}-neighbor direction interpolation`
+				: 'nearest altitude and nearest direction',
+			wavelengthsNm,
+		},
+		orders,
+		convergence: {
+			maxOrder: config.maxOrder,
+			thresholdFraction: config.thresholdFraction,
+			lastOrderFraction,
+			converged: lastOrderFraction < config.thresholdFraction,
+		},
+		diagnostics: {
+			tauRegime: summarizeTauRegimeIds(tauRegimes),
+		},
+		reconstruction,
+		imageReconstruction,
+		comparisonPanels,
+	};
+}
+
+function integrateCachedFieldOrderRadiance({
+	packet,
+	previousField,
+	wavelengthsNm,
+	directionSamples,
+	altitudeLayersKm,
+	fieldInterpolation,
+	cameraRayDirection,
+}) {
+	const totals = wavelengthsNm.map(() => 0);
+	const mediumSamples = packet.mediumSamples ?? [];
+	const viewSamples = packet.viewOpticalDepth?.samples ?? [];
+	const directions = directionSamples.map((sample) => sample.direction);
+
+	for (const [sampleIndex, mediumSample] of mediumSamples.entries()) {
+		const viewSample = viewSamples[sampleIndex];
+
+		if (!viewSample) {
+			continue;
+		}
+
+		for (const incomingSample of directionSamples) {
+			const incomingDirection = incomingSample.direction;
+			const incomingRadiance = lookupFieldRadiance({
+				field: previousField,
+				positionKm: mediumSample.positionKm,
+				direction: incomingDirection,
+				directions,
+				altitudeLayersKm,
+				interpolationMode: fieldInterpolation,
+			});
+			const scatteringPhase = scatteringPhaseWeightedBySpecies({
+				mediumSample,
+				wavelengthsNm,
+				sourceDirectionFromSample: incomingDirection,
+				directionFromSampleToCamera: scale3(cameraRayDirection, -1),
+			});
+
+			for (const [wavelengthIndex, incomingValue] of incomingRadiance.entries()) {
+				totals[wavelengthIndex] += (
+					(viewSample.viewTransmittanceByWavelength?.[wavelengthIndex] ?? 0)
+					* mediumSample.weightKm
+					* incomingSample.weightSr
+					* incomingValue
+					* scatteringPhase[wavelengthIndex]
+				);
+			}
+		}
+	}
+
+	return totals;
+}
+
+function lookupFieldRadiance({
+	field,
+	positionKm,
+	direction,
+	directions,
+	altitudeLayersKm,
+	interpolationMode = DEFAULT_MULTISCATTER_FIELD_INTERPOLATION,
+}) {
+	if (interpolationMode === 'weighted') {
+		return lookupWeightedFieldRadiance({
+			field,
+			positionKm,
+			direction,
+			directions,
+			altitudeLayersKm,
+		});
+	}
+
+	const altitudeKm = Math.max(0, positionKm?.[1] ?? 0);
+	const altitudeIndex = nearestNumberIndex(altitudeLayersKm, altitudeKm);
+	const directionIndex = nearestDirectionIndex(directions, direction);
+
+	return field[altitudeIndex]?.[directionIndex] ?? field[0][0];
+}
+
+function lookupWeightedFieldRadiance({
+	field,
+	positionKm,
+	direction,
+	directions,
+	altitudeLayersKm,
+}) {
+	const altitudeKm = Math.max(0, positionKm?.[1] ?? 0);
+	const bracket = bracketingNumberIndices(altitudeLayersKm, altitudeKm);
+	const lowerRadiance = lookupWeightedDirectionRadiance(
+		field[bracket.lowerIndex],
+		direction,
+		directions,
+	);
+
+	if (bracket.lowerIndex === bracket.upperIndex) {
+		return lowerRadiance;
+	}
+
+	const upperRadiance = lookupWeightedDirectionRadiance(
+		field[bracket.upperIndex],
+		direction,
+		directions,
+	);
+
+	return lowerRadiance.map((value, wavelengthIndex) => {
+		return value * (1 - bracket.upperWeight)
+			+ upperRadiance[wavelengthIndex] * bracket.upperWeight;
+	});
+}
+
+function lookupWeightedDirectionRadiance(layer, direction, directions) {
+	const neighbors = nearestDirectionNeighbors(
+		directions,
+		direction,
+		MULTISCATTER_FIELD_DIRECTION_NEIGHBORS,
+	);
+	const exact = neighbors.find((neighbor) => neighbor.angleRad < 1e-8);
+
+	if (exact) {
+		return layer[exact.index] ?? layer[0];
+	}
+
+	const wavelengthsNm = layer[0].map(() => 0);
+	let totalWeight = 0;
+
+	for (const neighbor of neighbors) {
+		const weight = 1 / Math.max(neighbor.angleRad * neighbor.angleRad, 1e-8);
+		addArrayIntoWeighted(wavelengthsNm, layer[neighbor.index], weight);
+		totalWeight += weight;
+	}
+
+	return totalWeight > 0
+		? wavelengthsNm.map((value) => value / totalWeight)
+		: layer[0];
+}
+
+function averageFieldRadiance(field, wavelengthsNm, directionSamples = null) {
+	const total = wavelengthsNm.map(() => 0);
+	let totalWeight = 0;
+
+	for (const altitudeLayer of field) {
+		for (const [directionIndex, radiance] of altitudeLayer.entries()) {
+			const weight = directionSamples?.[directionIndex]?.weightSr ?? 1;
+			addArrayIntoWeighted(total, radiance, weight);
+			totalWeight += weight;
+		}
+	}
+
+	return totalWeight > 0 ? total.map((value) => value / totalWeight) : total;
+}
+
+function evaluateIterativeFieldL1Reconstruction({
+	panel,
+	scene,
+	model,
+	wavelengthsNm,
+	integrator,
+	order1Field,
+	directions,
+	directionSamples,
+	altitudeLayersKm,
+	fieldInterpolation,
+	config,
+	displayOptions,
+}) {
+	const targets = createSkyDomeRingMultipleScatteringTargets(panel, scene);
+	const numerical = {
+		...DEFAULT_NUMERICAL,
+		viewSteps: config.viewSteps,
+		sunTransmittanceSteps: config.sunTransmittanceSteps,
+	};
+	const samples = targets.map((target) => {
+		const packet = integrator.traceRay({
+			model,
+			observer: { positionKm: [0, 0, 0] },
+			ray: { direction: target.direction },
+			wavelengthsNm,
+			numerical,
+		});
+		const direct = validateSpectralArray(
+			packet.singleScattering?.inScatteredRadianceByWavelength,
+			wavelengthsNm,
+			'iterative-field reconstruction direct order 1',
+		);
+		const reconstructed = lookupFieldRadiance({
+			field: order1Field,
+			positionKm: [0, 0, 0],
+			direction: target.direction,
+			directions,
+			altitudeLayersKm,
+			interpolationMode: fieldInterpolation,
+		});
+		const absoluteErrorByWavelength = reconstructed.map((value, wavelengthIndex) => {
+			return Math.abs(value - direct[wavelengthIndex]);
+		});
+		const relativeErrorByWavelength = absoluteErrorByWavelength.map((value, wavelengthIndex) => {
+			return direct[wavelengthIndex] > 0 ? value / direct[wavelengthIndex] : null;
+		});
+		const directDisplay = createMultipleScatteringDisplaySwatch(
+			direct,
+			wavelengthsNm,
+			displayOptions,
+		);
+		const reconstructedDisplay = createMultipleScatteringDisplaySwatch(
+			reconstructed,
+			wavelengthsNm,
+			displayOptions,
+		);
+		const displayRgbAbsoluteError = mean([
+			Math.abs(reconstructedDisplay.displaySrgb.r - directDisplay.displaySrgb.r),
+			Math.abs(reconstructedDisplay.displaySrgb.g - directDisplay.displaySrgb.g),
+			Math.abs(reconstructedDisplay.displaySrgb.b - directDisplay.displaySrgb.b),
+		]);
+		const linearLuminanceAbsoluteError = Math.abs(
+			reconstructedDisplay.linearLuminance - directDisplay.linearLuminance,
+		);
+		const linearLuminanceRelativeError = directDisplay.linearLuminance > 0
+			? linearLuminanceAbsoluteError / directDisplay.linearLuminance
+			: null;
+
+		return {
+			scenarioId: target.scenarioId,
+			sampleRole: target.sampleRole,
+			viewZenithDeg: target.viewZenithDeg,
+			relativeAzimuthDeg: target.relativeAzimuthDeg,
+			directDisplayHex: directDisplay.displayHex,
+			reconstructedDisplayHex: reconstructedDisplay.displayHex,
+			directRadianceByWavelength: direct,
+			reconstructedRadianceByWavelength: reconstructed,
+			absoluteErrorByWavelength,
+			relativeErrorByWavelength,
+			relativeSpectralEnergyError: spectralEnergy(direct) > 0
+				? spectralEnergy(absoluteErrorByWavelength) / spectralEnergy(direct)
+				: null,
+			meanRelativeSpectralError: averageOrNull(relativeErrorByWavelength.filter((value) => value !== null)),
+			displayRgbAbsoluteError,
+			linearLuminanceAbsoluteError,
+			linearLuminanceRelativeError,
+		};
+	});
+
+	return {
+		kind: 'flat-atmosphere-iterative-field-l1-reconstruction',
+		targetMode: 'dome-rings',
+		interpolationMode: fieldInterpolation,
+		directionBasis: config.fieldDirectionBasis,
+		directionCount: directionSamples.length,
+		targetCount: samples.length,
+		numerical,
+		aggregate: summarizeIterativeFieldReconstruction(samples),
+		byViewZenithDeg: summarizeIterativeFieldReconstructionByViewZenith(samples),
+		worstSamples: [...samples]
+			.sort((a, b) => (b.relativeSpectralEnergyError ?? -Infinity)
+				- (a.relativeSpectralEnergyError ?? -Infinity))
+			.slice(0, 5)
+			.map((sample) => ({
+				scenarioId: sample.scenarioId,
+				sampleRole: sample.sampleRole,
+				viewZenithDeg: sample.viewZenithDeg,
+				relativeAzimuthDeg: sample.relativeAzimuthDeg,
+				relativeSpectralEnergyError: sample.relativeSpectralEnergyError,
+				linearLuminanceRelativeError: sample.linearLuminanceRelativeError,
+				directDisplayHex: sample.directDisplayHex,
+				reconstructedDisplayHex: sample.reconstructedDisplayHex,
+			})),
+		samples,
+	};
+}
+
+function evaluateIterativeFieldImageL1Reconstruction({
+	panel,
+	scene,
+	order1Field,
+	directions,
+	altitudeLayersKm,
+	fieldInterpolation,
+	displayOptions,
+}) {
+	const directImage = panel.directRadianceImage;
+
+	if (!directImage?.radianceByPixel) {
+		return null;
+	}
+
+	const samples = [];
+
+	for (let y = 0; y < panel.size.height; y += 1) {
+		for (let x = 0; x < panel.size.width; x += 1) {
+			const projection = skyDomeDirectionForPixel(x, y, panel.size.width);
+
+			if (!projection.insideDome) {
+				continue;
+			}
+
+			const pixelIndex = y * panel.size.width + x;
+			const direct = directImage.radianceByPixel[pixelIndex];
+			const reconstructed = lookupFieldRadiance({
+				field: order1Field,
+				positionKm: [0, 0, 0],
+				direction: projection.direction,
+				directions,
+				altitudeLayersKm,
+				interpolationMode: fieldInterpolation,
+			});
+			const absoluteErrorByWavelength = reconstructed.map((value, wavelengthIndex) => {
+				return Math.abs(value - direct[wavelengthIndex]);
+			});
+			const directDisplay = createMultipleScatteringDisplaySwatch(
+				direct,
+				directImage.wavelengthsNm,
+				displayOptions,
+			);
+			const reconstructedDisplay = createMultipleScatteringDisplaySwatch(
+				reconstructed,
+				directImage.wavelengthsNm,
+				displayOptions,
+			);
+			const linearLuminanceAbsoluteError = Math.abs(
+				reconstructedDisplay.linearLuminance - directDisplay.linearLuminance,
+			);
+
+			samples.push({
+				scenarioId: scene.id,
+				x,
+				y,
+				radius: projection.radius,
+				radiusBand: radiusBandId(projection.radius),
+				elevationDeg: projection.elevationDeg,
+				azimuthDeg: projection.azimuthDeg,
+				relativeSpectralEnergyError: spectralEnergy(direct) > 0
+					? spectralEnergy(absoluteErrorByWavelength) / spectralEnergy(direct)
+					: null,
+				linearLuminanceRelativeError: directDisplay.linearLuminance > 0
+					? linearLuminanceAbsoluteError / directDisplay.linearLuminance
+					: null,
+				directDisplayHex: directDisplay.displayHex,
+				reconstructedDisplayHex: reconstructedDisplay.displayHex,
+			});
+		}
+	}
+
+	return {
+		kind: 'flat-atmosphere-iterative-field-image-l1-reconstruction',
+		targetMode: 'full-fisheye-image',
+		interpolationMode: fieldInterpolation,
+		imageSize: { ...panel.size },
+		comparedPixelCount: samples.length,
+		aggregate: summarizeIterativeFieldReconstruction(samples),
+		byRadiusBand: summarizeIterativeFieldImageReconstructionByRadiusBand(samples),
+		worstSamples: [...samples]
+			.sort((a, b) => (b.relativeSpectralEnergyError ?? -Infinity)
+				- (a.relativeSpectralEnergyError ?? -Infinity))
+			.slice(0, 8)
+			.map((sample) => ({
+				scenarioId: sample.scenarioId,
+				x: sample.x,
+				y: sample.y,
+				radius: sample.radius,
+				radiusBand: sample.radiusBand,
+				elevationDeg: sample.elevationDeg,
+				azimuthDeg: sample.azimuthDeg,
+				relativeSpectralEnergyError: sample.relativeSpectralEnergyError,
+				linearLuminanceRelativeError: sample.linearLuminanceRelativeError,
+				directDisplayHex: sample.directDisplayHex,
+				reconstructedDisplayHex: sample.reconstructedDisplayHex,
+			})),
+	};
+}
+
+function radiusBandId(radius) {
+	if (radius < 0.2) {
+		return '0.00-0.20 zenith';
+	}
+
+	if (radius < 0.5) {
+		return '0.20-0.50 upper-sky';
+	}
+
+	if (radius < 0.75) {
+		return '0.50-0.75 mid-sky';
+	}
+
+	if (radius < 0.88) {
+		return '0.75-0.88 lower-sky';
+	}
+
+	return '0.88-1.00 horizon-ring';
+}
+
+function summarizeIterativeFieldImageReconstructionByRadiusBand(samples) {
+	const groups = new Map();
+
+	for (const sample of samples) {
+		const group = groups.get(sample.radiusBand) ?? [];
+		group.push(sample);
+		groups.set(sample.radiusBand, group);
+	}
+
+	return [...groups.entries()].map(([radiusBand, group]) => ({
+		radiusBand,
+		...summarizeIterativeFieldReconstruction(group),
+	}));
+}
+
+function summarizeIterativeFieldReconstruction(samples) {
+	return {
+		comparedSampleCount: samples.length,
+		meanRelativeSpectralEnergyError: mean(samples.map((sample) => sample.relativeSpectralEnergyError)),
+		maxRelativeSpectralEnergyError: maxFinite(samples.map((sample) => sample.relativeSpectralEnergyError)),
+		rmsRelativeSpectralEnergyError: rootMeanSquare(samples
+			.map((sample) => sample.relativeSpectralEnergyError)
+			.filter((value) => Number.isFinite(value))),
+		meanDisplayRgbAbsoluteError: mean(samples.map((sample) => sample.displayRgbAbsoluteError)),
+		meanLinearLuminanceRelativeError: mean(samples.map((sample) => sample.linearLuminanceRelativeError)),
+		maxLinearLuminanceRelativeError: maxFinite(samples.map((sample) => sample.linearLuminanceRelativeError)),
+	};
+}
+
+function summarizeIterativeFieldReconstructionByViewZenith(samples) {
+	const groups = new Map();
+
+	for (const sample of samples) {
+		const key = String(sample.viewZenithDeg);
+		const group = groups.get(key) ?? [];
+		group.push(sample);
+		groups.set(key, group);
+	}
+
+	return [...groups.entries()].map(([viewZenithDeg, group]) => ({
+		viewZenithDeg: Number(viewZenithDeg),
+		...summarizeIterativeFieldReconstruction(group),
+	}));
+}
+
+function summarizeIterativeFieldSceneReconstructions(fieldScenes, config) {
+	const samples = fieldScenes.flatMap((scene) => scene.reconstruction?.samples ?? []);
+
+	return {
+		kind: 'flat-atmosphere-iterative-field-l1-reconstruction-summary',
+		targetMode: 'dome-rings',
+		interpolationMode: config.fieldInterpolation,
+		directionBasis: config.fieldDirectionBasis,
+		altitudeGrid: config.fieldAltitudeGrid,
+		sceneCount: fieldScenes.length,
+		targetCount: samples.length,
+		aggregate: summarizeIterativeFieldReconstruction(samples),
+		byViewZenithDeg: summarizeIterativeFieldReconstructionByViewZenith(samples),
+		worstSamples: [...samples]
+			.sort((a, b) => (b.relativeSpectralEnergyError ?? -Infinity)
+				- (a.relativeSpectralEnergyError ?? -Infinity))
+			.slice(0, 8)
+			.map((sample) => ({
+				scenarioId: sample.scenarioId,
+				sampleRole: sample.sampleRole,
+				viewZenithDeg: sample.viewZenithDeg,
+				relativeAzimuthDeg: sample.relativeAzimuthDeg,
+				relativeSpectralEnergyError: sample.relativeSpectralEnergyError,
+				linearLuminanceRelativeError: sample.linearLuminanceRelativeError,
+				directDisplayHex: sample.directDisplayHex,
+				reconstructedDisplayHex: sample.reconstructedDisplayHex,
+			})),
+	};
+}
+
+function createIterativeFieldComparisonPanels({
+	panel,
+	scene,
+	orderFields,
+	wavelengthsNm,
+	directions,
+	altitudeLayersKm,
+	fieldInterpolation,
+	displayOptions,
+}) {
+	const fieldPanels = orderFields.map((_, orderIndex) => {
+		const accumulatedField = accumulateFieldOrders(orderFields.slice(0, orderIndex + 1), wavelengthsNm);
+
+		return createIterativeFieldImagePanel({
+			id: `field-l1-through-l${orderIndex + 1}`,
+			label: `Field L1..L${orderIndex + 1}`,
+			accumulatedMaxOrder: orderIndex + 1,
+			panel,
+			scene,
+			wavelengthsNm,
+			displayOptions,
+			source: 'iterative-field-grid sidecar',
+			valuesForPixel: ({ projection }) => {
+				return projection.insideDome
+					? lookupFieldRadiance({
+						field: accumulatedField,
+						positionKm: [0, 0, 0],
+						direction: projection.direction,
+						directions,
+						altitudeLayersKm,
+						interpolationMode: fieldInterpolation,
+					})
+					: wavelengthsNm.map(() => 0);
+			},
+		});
+	});
+
+	const directResidualPanels = orderFields.slice(1).map((_, residualIndex) => {
+		const maxOrder = residualIndex + 2;
+		const residualField = accumulateFieldOrders(orderFields.slice(1, maxOrder), wavelengthsNm);
+
+		return createIterativeFieldImagePanel({
+			id: `direct-l1-plus-field-l2-through-l${maxOrder}`,
+			label: `Direct L1 + Field L2..L${maxOrder}`,
+			accumulatedMaxOrder: maxOrder,
+			panel,
+			scene,
+			wavelengthsNm,
+			displayOptions,
+			source: 'direct-l1-plus-cached-higher-order sidecar',
+			valuesForPixel: ({ projection, pixelIndex }) => {
+				if (!projection.insideDome) {
+					return wavelengthsNm.map(() => 0);
+				}
+
+				const direct = panel.directRadianceImage?.radianceByPixel?.[pixelIndex];
+				const residual = lookupFieldRadiance({
+					field: residualField,
+					positionKm: [0, 0, 0],
+					direction: projection.direction,
+					directions,
+					altitudeLayersKm,
+					interpolationMode: fieldInterpolation,
+				});
+
+				return (direct ?? wavelengthsNm.map(() => 0)).map((value, wavelengthIndex) => {
+					return value + residual[wavelengthIndex];
+				});
+			},
+		});
+	});
+
+	return [...fieldPanels, ...directResidualPanels];
+}
+
+function createIterativeFieldImagePanel({
+	id,
+	label,
+	accumulatedMaxOrder,
+	panel,
+	scene,
+	wavelengthsNm,
+	displayOptions,
+	source,
+	valuesForPixel,
+}) {
+	const rows = [];
+	const pixels = [];
+
+	for (let y = 0; y < panel.size.height; y += 1) {
+		const row = [];
+
+		for (let x = 0; x < panel.size.width; x += 1) {
+			const pixelIndex = y * panel.size.width + x;
+			const projection = skyDomeDirectionForPixel(x, y, panel.size.width);
+			const values = valuesForPixel({ projection, pixelIndex, x, y });
+			const rgb = createPatchRgb(values, wavelengthsNm, displayOptions);
+
+			row.push(rgb.hex);
+			pixels.push(rgb.pixel);
+		}
+
+		rows.push(row);
+	}
+
+	const pixelImage = {
+		kind: 'atmosphere-color-pixel-image',
+		width: panel.size.width,
+		height: panel.size.height,
+		encoding: displayOptions.encoding,
+		exposure: displayOptions.exposure,
+		toneMap: displayOptions.toneMap,
+		pixels,
+		metadata: {
+			displayOnly: true,
+			colorPolicy: displayOptions.colorPolicy,
+			source,
+		},
+	};
+
+	return {
+		id,
+		label,
+		accumulatedMaxOrder,
+		size: { ...panel.size },
+		rows,
+		modelComparisonMetrics: summarizeSkyDomeModelComparisonMetrics(pixelImage, scene),
+		pixelImage,
+	};
+}
+
+function accumulateFieldOrders(orderFields, wavelengthsNm) {
+	const altitudeCount = orderFields[0]?.length ?? 0;
+	const directionCount = orderFields[0]?.[0]?.length ?? 0;
+
+	return Array.from({ length: altitudeCount }, (_, altitudeIndex) => {
+		return Array.from({ length: directionCount }, (_, directionIndex) => {
+			return sumSpectralOrders(
+				orderFields.map((field) => field[altitudeIndex][directionIndex]),
+				wavelengthsNm,
+			);
+		});
+	});
+}
+
+function summarizeFieldTauRegime(fieldScenes) {
+	return summarizeTauRegimeIds(fieldScenes.map((scene) => scene.diagnostics?.tauRegime));
+}
+
+function summarizeTauRegimeIds(regimes) {
+	const ids = regimes
+		.map((regime) => typeof regime === 'string' ? regime : regime?.classification?.id)
+		.filter(Boolean);
+
+	if (ids.includes('extreme-horizon-path')) {
+		return 'extreme-horizon-path';
+	}
+
+	if (ids.includes('single-scattering-warning')) {
+		return 'single-scattering-warning';
+	}
+
+	if (ids.includes('thick')) {
+		return 'thick';
+	}
+
+	if (ids.includes('moderate')) {
+		return 'moderate';
+	}
+
+	return ids[0] ?? 'not-evaluated';
+}
+
+function validateOrderByOrderGridConfig(config) {
+	if (!MULTISCATTER_TARGET_MODES.includes(config.targetMode)) {
+		throw new Error(`Unknown multiple-scattering target mode: ${config.targetMode}`);
+	}
+
+	if (!Number.isInteger(config.angularSampleCount) || config.angularSampleCount <= 0) {
+		throw new Error('--multiple-scattering-angular-samples requires a positive integer');
+	}
+
+	if (
+		config.targetMode === 'dome-rings'
+		&& config.maxOrder > MULTISCATTER_MAX_DOME_RING_ORDER
+	) {
+		throw new Error(`--multiple-scattering-max-order above ${MULTISCATTER_MAX_DOME_RING_ORDER} is currently diagnostic-target only`);
+	}
+}
+
+function createMultipleScatteringDisplayOptions(result, target, options) {
+	return {
+		colorPolicy: result.visual?.colorPolicy ?? DEFAULT_COLOR_POLICY,
+		encoding: result.visual?.encoding ?? DEFAULT_PIXEL_ENCODING,
+		toneMap: result.visual?.toneMap ?? DEFAULT_TONE_MAP,
+		exposure: Number.isFinite(options.exposure)
+			? options.exposure
+			: target.scene?.displayExposure ?? 1,
+	};
+}
+
+function collectMultipleScatteringTargets(result, config) {
+	if (Array.isArray(result.skyDomePanels)) {
+		return result.skyDomePanels.flatMap((panel) => {
+			const scene = SKY_DOME_GRID_SCENES.find((candidate) => candidate.id === panel.id);
+
+			if (!scene) {
+				throw new Error(`multiple-scattering reference requires known sky-dome scene ${panel.id}`);
+			}
+
+			if (config.targetMode === 'dome-rings') {
+				return createSkyDomeRingMultipleScatteringTargets(panel, scene);
+			}
+
+			return createSkyDomeDiagnosticMultipleScatteringTargets(panel, scene);
+		});
+	}
+
+	if (Array.isArray(result.skyPatches)) {
+		if (config.targetMode !== 'diagnostic') {
+			throw new Error('--multiple-scattering-targets dome-rings requires sky-dome results');
+		}
+
+		return result.skyPatches.flatMap((patch) => {
+			const scene = SKY_PATCH_SCENES[patch.id];
+
+			if (!scene) {
+				throw new Error(`multiple-scattering reference requires known sky patch scene ${patch.id}`);
+			}
+
+			return patch.diagnosticSamples.map((sample) => ({
+				kind: 'sky-patch',
+				targetMode: 'diagnostic',
+				scenarioId: patch.id,
+				label: patch.label,
+				x: sample.x,
+				y: sample.y,
+				sampleRole: sample.x === Math.floor(patch.size.width / 2)
+					&& sample.y === Math.floor(patch.size.height / 2)
+					? 'center'
+					: `sample-${sample.x}-${sample.y}`,
+				direction: sample.direction,
+				elevationDeg: sample.elevationDeg ?? null,
+				azimuthDeg: sample.azimuthDeg ?? null,
+				viewZenithDeg: Number.isFinite(sample.elevationDeg) ? 90 - sample.elevationDeg : null,
+				relativeAzimuthDeg: null,
+				displayHex: sample.displayHex,
+				baselineRadianceByWavelength: sample.renderedByWavelength ?? sample.finalByWavelength,
+				scene,
+			}));
+		});
+	}
+
+	throw new Error('--multiple-scattering-reference order-by-order-grid requires sky-patch or sky-dome results');
+}
+
+function createSkyDomeDiagnosticMultipleScatteringTargets(panel, scene) {
+	return panel.diagnosticSamples.map((sample) => ({
+		kind: 'sky-dome-panel',
+		targetMode: 'diagnostic',
+		scenarioId: panel.id,
+		label: panel.label,
+		x: sample.x,
+		y: sample.y,
+		sampleRole: sample.x === Math.floor(panel.size.width / 2)
+			&& sample.y === Math.floor(panel.size.height / 2)
+			? 'zenith'
+			: 'horizon-edge',
+		direction: sample.direction,
+		elevationDeg: sample.elevationDeg,
+		azimuthDeg: sample.azimuthDeg,
+		viewZenithDeg: Number.isFinite(sample.elevationDeg) ? 90 - sample.elevationDeg : null,
+		relativeAzimuthDeg: Number.isFinite(sample.azimuthDeg)
+			? normalizeDegrees(sample.azimuthDeg - scene.sunAzimuthDeg)
+			: null,
+		displayHex: sample.displayHex,
+		baselineRadianceByWavelength: sample.renderedByWavelength,
+		scene,
+	}));
+}
+
+function createSkyDomeRingMultipleScatteringTargets(panel, scene) {
+	const zenith = createSkyDomeRingTarget(panel, scene, {
+		viewZenithDeg: 0,
+		relativeAzimuthDeg: 0,
+		sampleRole: 'zenith',
+	});
+	const ringTargets = MULTISCATTER_DOME_RING_VIEW_ZENITH_DEG.flatMap((viewZenithDeg) => {
+		return MULTISCATTER_DOME_RING_RELATIVE_AZIMUTH_DEG.map((relativeAzimuthDeg) => {
+			return createSkyDomeRingTarget(panel, scene, {
+				viewZenithDeg,
+				relativeAzimuthDeg,
+				sampleRole: `ring-vza-${formatDegreeId(viewZenithDeg)}-raz-${formatDegreeId(relativeAzimuthDeg)}`,
+			});
+		});
+	});
+
+	return [zenith, ...ringTargets];
+}
+
+function createSkyDomeRingTarget(panel, scene, {
+	viewZenithDeg,
+	relativeAzimuthDeg,
+	sampleRole,
+}) {
+	const elevationDeg = 90 - viewZenithDeg;
+	const azimuthDeg = normalizeDegrees(scene.sunAzimuthDeg + relativeAzimuthDeg);
+	const direction = directionFromElevationAzimuth(elevationDeg, azimuthDeg);
+	const pixel = skyDomePixelForDirection(direction, panel.size.width);
+
+	return {
+		kind: 'sky-dome-panel',
+		targetMode: 'dome-rings',
+		scenarioId: panel.id,
+		label: panel.label,
+		x: pixel.x,
+		y: pixel.y,
+		sampleRole,
+		direction,
+		elevationDeg,
+		azimuthDeg,
+		viewZenithDeg,
+		relativeAzimuthDeg,
+		displayHex: null,
+		baselineRadianceByWavelength: null,
+		scene,
+	};
+}
+
+function resolveMultipleScatteringModelInputs(result) {
+	const wavelengthGrid = resolveSkyPatchWavelengthGrid(result.visual?.wavelengthGrid?.id);
+	const wavelengthsNm = wavelengthGrid.wavelengthsNm;
+	const solarSpectrumPolicy = result.visual?.solarSpectrum?.policy;
+	const rayleighPolicy = resolveRayleighPolicy(result.visual?.rayleighPolicy?.id);
+	const aerosolPolicy = resolveAerosolPolicy(result.visual?.aerosolPolicy?.id);
+	const aerosolPhasePolicy = resolveAerosolPhasePolicy(result.visual?.aerosolPhasePolicy?.id);
+	const ozonePolicy = resolveOzonePolicy(result.visual?.ozonePolicy?.id);
+	const molecularProfilePolicy = resolveMolecularProfilePolicy(result.visual?.molecularProfile?.id);
+	const solarSourceSampling = result.visual?.solarSource ?? resolveSolarSourceSampling();
+	const solarSpectrum = sampleSolarSpectrum(wavelengthsNm, {
+		policy: solarSpectrumPolicy,
+		solarTemperatureK: EARTH_LIKE_SKY.solarTemperatureK,
+		solarIrradiance550Wm2Nm: EARTH_LIKE_SKY.solarIrradiance550Wm2Nm,
+	});
+
+	return {
+		wavelengthsNm,
+		wavelengthGrid: wavelengthGrid.metadata,
+		solarSpectrumPolicy,
+		solarSpectrum,
+		rayleighPolicy,
+		aerosolPolicy,
+		aerosolPhasePolicy,
+		ozonePolicy,
+		molecularProfilePolicy,
+		solarSourceSampling,
+	};
+}
+
+function createMultipleScatteringModelForScene(scene, modelInputs) {
+	return createSkyPatchModel(
+		scene,
+		modelInputs.wavelengthsNm,
+		modelInputs.solarSpectrum,
+		modelInputs.rayleighPolicy,
+		modelInputs.aerosolPolicy,
+		modelInputs.aerosolPhasePolicy,
+		modelInputs.ozonePolicy,
+		modelInputs.molecularProfilePolicy,
+		modelInputs.solarSourceSampling,
+	);
+}
+
+function computeOrderByOrderGridTarget({
+	target,
+	model,
+	wavelengthsNm,
+	integrator,
+	incomingDirections,
+	config,
+	displayOptions,
+}) {
+	if (!Array.isArray(target.direction)) {
+		throw new Error(`multiple-scattering target ${target.scenarioId}/${target.sampleRole} requires direction`);
+	}
+
+	const coarseNumerical = {
+		...DEFAULT_NUMERICAL,
+		viewSteps: config.viewSteps,
+		sunTransmittanceSteps: config.sunTransmittanceSteps,
+	};
+	const packet = integrator.traceRay({
+		model,
+		observer: { positionKm: [0, 0, 0] },
+		ray: { direction: target.direction },
+		wavelengthsNm,
+		numerical: coarseNumerical,
+	});
+	const order1 = validateSpectralArray(
+		packet.singleScattering?.inScatteredRadianceByWavelength,
+		wavelengthsNm,
+		'multiple-scattering order 1',
+	);
+	const orderSpectra = [order1];
+
+	for (let order = 2; order <= config.maxOrder; order += 1) {
+		orderSpectra.push(integrateScatteredOrderRadiance({
+			sourceOrder: order - 1,
+			packet,
+			model,
+			wavelengthsNm,
+			integrator,
+			incomingDirections,
+			config,
+			cameraRayDirection: target.direction,
+		}));
+	}
+
+	const accumulated = sumSpectralOrders(orderSpectra, wavelengthsNm);
+	const order2Fraction = spectralEnergy(accumulated) > 0
+		? spectralEnergy(orderSpectra[1] ?? wavelengthsNm.map(() => 0)) / spectralEnergy(accumulated)
+		: 0;
+	const lastOrderFraction = spectralEnergy(accumulated) > 0
+		? spectralEnergy(orderSpectra[orderSpectra.length - 1]) / spectralEnergy(accumulated)
+		: 0;
+	const displayComparison = createMultipleScatteringDisplayComparison({
+		order1,
+		order1PlusOrder2: sumSpectralOrders(orderSpectra.slice(0, 2), wavelengthsNm),
+		accumulated,
+		wavelengthsNm,
+		displayOptions,
+	});
+
+	return {
+		scenarioId: target.scenarioId,
+		label: target.label,
+		targetMode: target.targetMode,
+		sampleRole: target.sampleRole,
+		x: target.x,
+		y: target.y,
+		elevationDeg: target.elevationDeg,
+		azimuthDeg: target.azimuthDeg,
+		viewZenithDeg: target.viewZenithDeg,
+		relativeAzimuthDeg: target.relativeAzimuthDeg,
+		displayHex: target.displayHex,
+		baselineRadianceByWavelength: target.baselineRadianceByWavelength,
+		coarseSingleScatteringRadianceByWavelength: order1,
+		radianceByWavelength: accumulated,
+		displayComparison,
+		orders: orderSpectra.map((radianceByWavelength, index) => ({
+			order: index + 1,
+			radianceByWavelength,
+		})),
+		convergence: {
+			order2Fraction,
+			lastOrderFraction,
+			converged: lastOrderFraction < config.thresholdFraction,
+		},
+		diagnostics: {
+			viewSampleCount: packet.mediumSamples?.length ?? 0,
+			angularSampleCount: incomingDirections.length,
+			tauRegime: summarizeOpticalDepthValidity(
+				summarizeTotalOpticalDepthByWavelength(
+					summarizeSpeciesOpticalDepth(packet.viewOpticalDepth?.pathEnd),
+					wavelengthsNm,
+				),
+				wavelengthsNm,
+			),
+		},
+	};
+}
+
+function integrateScatteredOrderRadiance({
+	sourceOrder,
+	packet,
+	model,
+	wavelengthsNm,
+	integrator,
+	incomingDirections,
+	config,
+	cameraRayDirection,
+}) {
+	const totals = wavelengthsNm.map(() => 0);
+	const mediumSamples = packet.mediumSamples ?? [];
+	const viewSamples = packet.viewOpticalDepth?.samples ?? [];
+	const incomingSolidAngleSr = 4 * Math.PI / incomingDirections.length;
+	const incomingNumerical = {
+		...DEFAULT_NUMERICAL,
+		viewSteps: config.incomingViewSteps,
+		sunTransmittanceSteps: config.sunTransmittanceSteps,
+	};
+
+	if (sourceOrder < 1 || sourceOrder >= config.maxOrder) {
+		throw new RangeError(`multiple-scattering source order ${sourceOrder} is outside the configured order range`);
+	}
+
+	for (const [sampleIndex, mediumSample] of mediumSamples.entries()) {
+		const viewSample = viewSamples[sampleIndex];
+
+		if (!viewSample) {
+			continue;
+		}
+
+		for (const incomingDirection of incomingDirections) {
+			const incomingPacket = integrator.traceRay({
+				model,
+				observer: { positionKm: mediumSample.positionKm },
+				ray: { direction: incomingDirection },
+				wavelengthsNm,
+				numerical: incomingNumerical,
+			});
+			const incomingRadiance = incomingOrderRadiance({
+				order: sourceOrder,
+				packet: incomingPacket,
+				model,
+				wavelengthsNm,
+				integrator,
+				incomingDirections,
+				config,
+				cameraRayDirection: incomingDirection,
+			});
+			const scatteringPhase = scatteringPhaseWeightedBySpecies({
+				mediumSample,
+				wavelengthsNm,
+				sourceDirectionFromSample: incomingDirection,
+				directionFromSampleToCamera: scale3(cameraRayDirection, -1),
+			});
+
+			for (const [wavelengthIndex, incomingValue] of incomingRadiance.entries()) {
+				totals[wavelengthIndex] += (
+					(viewSample.viewTransmittanceByWavelength?.[wavelengthIndex] ?? 0)
+					* mediumSample.weightKm
+					* incomingSolidAngleSr
+					* incomingValue
+					* scatteringPhase[wavelengthIndex]
+				);
+			}
+		}
+	}
+
+	return totals;
+}
+
+function incomingOrderRadiance({
+	order,
+	packet,
+	model,
+	wavelengthsNm,
+	integrator,
+	incomingDirections,
+	config,
+	cameraRayDirection,
+}) {
+	if (order === 1) {
+		return validateSpectralArray(
+			packet.singleScattering?.inScatteredRadianceByWavelength,
+			wavelengthsNm,
+			'multiple-scattering incoming order 1',
+		);
+	}
+
+	return integrateScatteredOrderRadiance({
+		sourceOrder: order - 1,
+		packet,
+		model,
+		wavelengthsNm,
+		integrator,
+		incomingDirections,
+		config,
+		cameraRayDirection,
+	});
+}
+
+function sumSpectralOrders(orderSpectra, wavelengthsNm) {
+	const total = wavelengthsNm.map(() => 0);
+
+	for (const spectrum of orderSpectra) {
+		addArrayInto(total, validateSpectralArray(
+			spectrum,
+			wavelengthsNm,
+			'multiple-scattering order spectrum',
+		));
+	}
+
+	return total;
+}
+
+function createMultipleScatteringDisplayComparison({
+	order1,
+	order1PlusOrder2,
+	accumulated,
+	wavelengthsNm,
+	displayOptions,
+}) {
+	const order1Display = createMultipleScatteringDisplaySwatch(order1, wavelengthsNm, displayOptions);
+	const order1PlusOrder2Display = createMultipleScatteringDisplaySwatch(
+		order1PlusOrder2,
+		wavelengthsNm,
+		displayOptions,
+	);
+	const accumulatedDisplay = createMultipleScatteringDisplaySwatch(
+		accumulated,
+		wavelengthsNm,
+		displayOptions,
+	);
+	const linearLuminanceDelta = accumulatedDisplay.linearLuminance - order1Display.linearLuminance;
+	const displayLuminanceDelta = accumulatedDisplay.displayLuminance - order1Display.displayLuminance;
+
+	return {
+		kind: 'flat-atmosphere-multiple-scattering-display-comparison',
+		policy: {
+			colorPolicy: displayOptions.colorPolicy,
+			encoding: displayOptions.encoding,
+			toneMap: displayOptions.toneMap,
+			exposure: displayOptions.exposure,
+		},
+		order1: order1Display,
+		order1PlusOrder2: order1PlusOrder2Display,
+		accumulated: accumulatedDisplay,
+		delta: {
+			linearLuminanceDelta,
+			linearLuminanceRatio: order1Display.linearLuminance > 0
+				? accumulatedDisplay.linearLuminance / order1Display.linearLuminance
+				: null,
+			displayLuminanceDelta,
+			displayLuminanceRatio: order1Display.displayLuminance > 0
+				? accumulatedDisplay.displayLuminance / order1Display.displayLuminance
+				: null,
+		},
+	};
+}
+
+function createMultipleScatteringDisplaySwatch(valuesByWavelength, wavelengthsNm, displayOptions) {
+	const rgb = createPatchRgb(valuesByWavelength, wavelengthsNm, displayOptions);
+
+	return {
+		displayHex: rgb.hex,
+		linearSrgb: rgb.linearRgb,
+		displaySrgb: rgb.displayRgb,
+		linearLuminance: relativeLuminance(rgb.linearRgb),
+		displayLuminance: relativeLuminance(rgb.displayRgb),
+	};
+}
+
+function scatteringPhaseWeightedBySpecies({
+	mediumSample,
+	wavelengthsNm,
+	sourceDirectionFromSample,
+	directionFromSampleToCamera,
+}) {
+	const cosTheta = clamp01Signed(dot3(sourceDirectionFromSample, directionFromSampleToCamera));
+	const totals = wavelengthsNm.map(() => 0);
+
+	for (const species of mediumSample.species ?? []) {
+		if (!Array.isArray(species.scatteringByWavelength)) {
+			continue;
+		}
+
+		const phase = species.phase ?? (
+			typeof species.phaseKind === 'string'
+				? { kind: species.phaseKind, parameters: species.parameters }
+				: null
+		);
+
+		if (!phase) {
+			continue;
+		}
+
+		const phaseByWavelength = evaluatePhaseByWavelength({
+			phaseKind: phase.kind,
+			parameters: phase.parameters ?? {},
+			wavelengthsNm,
+			cosTheta,
+			errorPrefix: 'multiple-scattering',
+		});
+
+		for (const [wavelengthIndex, phaseValue] of phaseByWavelength.entries()) {
+			totals[wavelengthIndex] += species.scatteringByWavelength[wavelengthIndex] * phaseValue;
+		}
+	}
+
+	return totals;
+}
+
+function fibonacciSphereDirections(count) {
+	const directions = [];
+	const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+	for (let index = 0; index < count; index += 1) {
+		const y = 1 - (2 * (index + 0.5)) / count;
+		const radius = Math.sqrt(Math.max(0, 1 - y * y));
+		const theta = goldenAngle * index;
+
+		directions.push(normalize3([
+			Math.cos(theta) * radius,
+			y,
+			Math.sin(theta) * radius,
+		]));
+	}
+
+	return directions;
+}
+
+function resolveMultipleScatteringFieldAltitudeLayers(gridId) {
+	const layers = MULTISCATTER_FIELD_ALTITUDE_GRIDS_KM[gridId];
+
+	if (!layers) {
+		throw new Error(`Unknown multiple-scattering field altitude grid: ${gridId}`);
+	}
+
+	return [...layers];
+}
+
+function createMultipleScatteringFieldDirectionSamples(config, scene) {
+	if (config.fieldDirectionBasis === 'horizon-sun') {
+		return createHorizonSunFieldDirectionSamples(config.angularSampleCount, scene);
+	}
+
+	const directions = fibonacciSphereDirections(config.angularSampleCount);
+	const weightSr = 4 * Math.PI / directions.length;
+
+	return directions.map((direction, index) => ({
+		index,
+		id: `fibonacci-${index}`,
+		direction,
+		weightSr,
+		tags: ['fibonacci'],
+	}));
+}
+
+function createHorizonSunFieldDirectionSamples(requestedCount, scene) {
+	const profile = horizonSunDirectionProfile(requestedCount);
+	const elevationBands = buildElevationBands(profile.elevationCentersDeg);
+	const samples = [];
+
+	for (const band of elevationBands) {
+		const relativeAzimuthCentersDeg = band.centerDeg >= -8 && band.centerDeg <= 18
+			? profile.horizonRelativeAzimuthCentersDeg
+			: profile.coarseRelativeAzimuthCentersDeg;
+		const azimuthCells = buildCyclicAngularCells(relativeAzimuthCentersDeg);
+		const elevationWeight = Math.sin(degreesToRadians(band.upperDeg))
+			- Math.sin(degreesToRadians(band.lowerDeg));
+
+		for (const cell of azimuthCells) {
+			const relativeAzimuthDeg = cell.centerDeg;
+			const azimuthDeg = normalizeDegrees(scene.sunAzimuthDeg + relativeAzimuthDeg);
+			const weightSr = degreesToRadians(cell.widthDeg) * elevationWeight;
+
+			samples.push({
+				index: samples.length,
+				id: `horizon-sun-el-${formatDegreeId(band.centerDeg)}-raz-${formatDegreeId(relativeAzimuthDeg)}`,
+				direction: directionFromElevationAzimuth(band.centerDeg, azimuthDeg),
+				weightSr,
+				tags: [
+					'horizon-sun',
+					band.centerDeg >= -8 && band.centerDeg <= 18 ? 'horizon-dense' : 'coarse',
+					isNearCyclicDegree(relativeAzimuthDeg, 0, 25) ? 'solar-azimuth' : null,
+					isNearCyclicDegree(relativeAzimuthDeg, 180, 25) ? 'anti-solar-azimuth' : null,
+				].filter(Boolean),
+				elevationDeg: band.centerDeg,
+				relativeAzimuthDeg,
+				azimuthDeg,
+			});
+		}
+	}
+
+	const weightSumSr = samples.reduce((total, sample) => total + sample.weightSr, 0);
+	const scale = weightSumSr > 0 ? (4 * Math.PI) / weightSumSr : 1;
+
+	return samples.map((sample) => ({
+		...sample,
+		weightSr: sample.weightSr * scale,
+	}));
+}
+
+function horizonSunDirectionProfile(requestedCount) {
+	if (requestedCount <= 16) {
+		return {
+			elevationCentersDeg: [-45, 3, 10, 45],
+			coarseRelativeAzimuthCentersDeg: [0, 90, 180, 270],
+			horizonRelativeAzimuthCentersDeg: [0, 45, 90, 135, 180, 225, 270, 315],
+		};
+	}
+
+	if (requestedCount <= 64) {
+		return {
+			elevationCentersDeg: [-60, -20, 1.5, 4, 7, 12, 25, 50, 75],
+			coarseRelativeAzimuthCentersDeg: [0, 45, 90, 135, 180, 225, 270, 315],
+			horizonRelativeAzimuthCentersDeg: [
+				0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5,
+				180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5,
+			],
+		};
+	}
+
+	if (requestedCount <= 128) {
+		return {
+			elevationCentersDeg: [-70, -35, -10, 1.5, 4, 7, 12, 18, 30, 48, 68, 84],
+			coarseRelativeAzimuthCentersDeg: [0, 45, 90, 135, 180, 225, 270, 315],
+			horizonRelativeAzimuthCentersDeg: [
+				0, 10, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 170,
+				180, 190, 202.5, 225, 247.5, 270, 292.5, 315, 337.5, 350,
+			],
+		};
+	}
+
+	return {
+		elevationCentersDeg: [-80, -55, -30, -12, -4, 1, 3, 5, 8, 12, 18, 28, 42, 58, 74, 87],
+		coarseRelativeAzimuthCentersDeg: [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330],
+		horizonRelativeAzimuthCentersDeg: [
+			0, 8, 16, 30, 45, 60, 75, 90, 105, 120, 135, 150, 164, 172,
+			180, 188, 196, 210, 225, 240, 255, 270, 285, 300, 315, 330, 344, 352,
+		],
+	};
+}
+
+function buildElevationBands(centersDeg) {
+	const centers = [...centersDeg].sort((a, b) => a - b);
+
+	return centers.map((centerDeg, index) => {
+		const lowerDeg = index === 0
+			? -90
+			: (centers[index - 1] + centerDeg) / 2;
+		const upperDeg = index === centers.length - 1
+			? 90
+			: (centerDeg + centers[index + 1]) / 2;
+
+		return { centerDeg, lowerDeg, upperDeg };
+	});
+}
+
+function buildCyclicAngularCells(centersDeg) {
+	const centers = uniqueSortedCyclicDegrees(centersDeg);
+
+	return centers.map((centerDeg, index) => {
+		const previous = centers[(index - 1 + centers.length) % centers.length];
+		const next = centers[(index + 1) % centers.length];
+		const previousGap = positiveDegreesDelta(previous, centerDeg);
+		const nextGap = positiveDegreesDelta(centerDeg, next);
+
+		return {
+			centerDeg,
+			widthDeg: (previousGap + nextGap) / 2,
+		};
+	});
+}
+
+function uniqueSortedCyclicDegrees(degrees) {
+	return [...new Set(degrees.map((value) => normalizeDegrees(value).toFixed(6)))]
+		.map(Number)
+		.sort((a, b) => a - b);
+}
+
+function positiveDegreesDelta(fromDeg, toDeg) {
+	const delta = normalizeDegrees(toDeg - fromDeg);
+	return delta === 0 ? 360 : delta;
+}
+
+function isNearCyclicDegree(valueDeg, targetDeg, thresholdDeg) {
+	const delta = Math.min(
+		positiveDegreesDelta(valueDeg, targetDeg),
+		positiveDegreesDelta(targetDeg, valueDeg),
+	);
+
+	return delta <= thresholdDeg;
+}
+
+function describeFieldDirectionPolicy(config) {
+	const lookup = config.fieldInterpolation === 'weighted'
+		? `inverse-angular weighted lookup over ${MULTISCATTER_FIELD_DIRECTION_NEIGHBORS} neighbors`
+		: 'nearest-neighbor lookup';
+
+	if (config.fieldDirectionBasis === 'horizon-sun') {
+		return `sun-relative horizon-dense weighted solid-angle grid with ${lookup}`;
+	}
+
+	return `fibonacci-sphere equal-weight grid with ${lookup}`;
+}
+
+function validateSpectralArray(values, wavelengthsNm, label) {
+	if (!Array.isArray(values) || values.length !== wavelengthsNm.length) {
+		throw new Error(`${label} must align to wavelengthsNm`);
+	}
+
+	return values.map((value) => {
+		if (!Number.isFinite(value) || value < 0) {
+			throw new RangeError(`${label} must be nonnegative finite`);
+		}
+
+		return value;
+	});
+}
+
+function spectralEnergy(values) {
+	return values.reduce((sum, value) => sum + Math.abs(value), 0);
+}
+
+function summarizeSidecarTauRegime(samples) {
+	const ids = samples
+		.map((sample) => sample.diagnostics?.tauRegime?.classification?.id)
+		.filter(Boolean);
+
+	if (ids.includes('extreme-horizon-path')) {
+		return 'extreme-horizon-path';
+	}
+
+	if (ids.includes('single-scattering-warning')) {
+		return 'single-scattering-warning';
+	}
+
+	if (ids.includes('thick')) {
+		return 'thick';
+	}
+
+	if (ids.includes('moderate')) {
+		return 'moderate';
+	}
+
+	return ids[0] ?? 'not-evaluated';
+}
+
+function runSkyDomeGrid(options = {}) {
+	const colorPolicy = options.color ?? DEFAULT_COLOR_POLICY;
+	const encoding = options.encoding ?? DEFAULT_PIXEL_ENCODING;
+	const toneMap = options.toneMap ?? DEFAULT_TONE_MAP;
+	const wavelengthGrid = resolveSkyPatchWavelengthGrid(options.wavelengthGrid);
+	const solarSpectrumPolicy = options.solarSpectrum ?? DEFAULT_SOLAR_SPECTRUM_POLICY;
+	const rayleighPolicy = resolveRayleighPolicy(options.rayleighPolicy ?? DEFAULT_RAYLEIGH_POLICY_ID);
+	const aerosolPolicy = resolveAerosolPolicy(options.aerosolPolicy ?? DEFAULT_AEROSOL_POLICY_ID);
+	const aerosolPhasePolicy = resolveAerosolPhasePolicy(
+		options.aerosolPhasePolicy ?? aerosolPolicy.defaultPhasePolicyId,
+	);
+	const ozonePolicy = resolveOzonePolicy(options.ozonePolicy ?? DEFAULT_OZONE_POLICY_ID);
+	const molecularProfilePolicy = resolveMolecularProfilePolicy(
+		options.molecularProfile ?? DEFAULT_MOLECULAR_PROFILE_POLICY_ID,
+	);
+	const domeSize = options.domeSize ?? DEFAULT_SKY_DOME_SIZE;
+	const domeSampleMask = resolveDomeSampleMask(options.domeSampleMask);
+	const samplingControl = resolveSkyDomeSamplingControl(options);
+	const solarSourceSampling = resolveSolarSourceSampling(options);
+
+	options.progressReporter?.({
+		phase: 'sky-dome-grid-start',
+		panelCount: SKY_DOME_GRID_SCENES.length,
+		domeSize,
+		domeSampleMask: domeSampleMask.id,
+		wavelengthCount: wavelengthGrid.wavelengthsNm.length,
+		samplingProfile: samplingControl.samplingProfile.id,
+		solarSource: solarSourceSampling.mode,
+		solarSourceSampleCount: solarSourceSampling.sampleCount,
+		viewSteps: samplingControl.viewStepsOverride,
+		sunTransmittanceSteps: samplingControl.sunTransmittanceStepsOverride,
+	});
+
+	const skyDomePanels = SKY_DOME_GRID_SCENES.map((scene, panelIndex) => {
+		return renderSkyDomePanel(scene, {
+			stage: options.stage ?? DEFAULT_STAGE,
+			colorPolicy,
+			encoding,
+			toneMap,
+			exposureOverride: options.exposure,
+			wavelengthGrid,
+			solarSpectrumPolicy,
+			rayleighPolicy,
+			aerosolPolicy,
+			aerosolPhasePolicy,
+			ozonePolicy,
+			molecularProfilePolicy,
+			domeSize,
+			domeSampleMask,
+			samplingProfile: samplingControl.samplingProfile,
+			viewStepsOverride: samplingControl.viewStepsOverride,
+			sunTransmittanceStepsOverride: samplingControl.sunTransmittanceStepsOverride,
+			solarSourceSampling,
+			retainSpectralPixels: options.multipleScatteringReference === 'iterative-field-grid',
+			progressReporter: options.progressReporter,
+			panelIndex,
+			panelCount: SKY_DOME_GRID_SCENES.length,
+		});
+	});
+
+	options.progressReporter?.({
+		phase: 'sky-dome-grid-complete',
+		panelCount: SKY_DOME_GRID_SCENES.length,
+	});
+
+	return {
+		kind: 'flat-atmosphere-reference-sky-dome-grid',
+		generatedAt: null,
+		generatedAtPolicy: 'omitted-for-deterministic-output',
+		stage: options.stage ?? DEFAULT_STAGE,
+		visual: {
+			colorPolicy,
+			colorSpace: colorPolicy === 'official-cie'
+				? 'cie-1931-2deg-xyz-to-linear-srgb'
+				: 'preview-cie-1931-xyz-to-linear-srgb',
+			encoding,
+			toneMap,
+			exposure: options.exposure ?? 'per-panel',
+			solarSpectrum: {
+				policy: solarSpectrumPolicy,
+			},
+			rayleighPolicy: {
+				id: rayleighPolicy.id,
+				label: rayleighPolicy.label,
+				source: rayleighPolicy.source,
+			},
+			aerosolPolicy: {
+				id: aerosolPolicy.id,
+				label: aerosolPolicy.label,
+				source: aerosolPolicy.source,
+			},
+			aerosolPhasePolicy: summarizeAerosolPhasePolicy(aerosolPhasePolicy),
+			ozonePolicy: {
+				id: ozonePolicy.id,
+				label: ozonePolicy.label,
+				source: ozonePolicy.source,
+			},
+			molecularProfile: {
+				id: molecularProfilePolicy.id,
+				label: molecularProfilePolicy.label,
+				source: molecularProfilePolicy.source,
+			},
+			numerical: {
+				...createSamplingNumericalMetadata(samplingControl.samplingProfile),
+			},
+			solarSource: solarSourceSampling,
+			wavelengthGrid: wavelengthGrid.metadata,
+			domeSize,
+			domeSampleMask,
+			projection: {
+				id: 'azimuthal-equidistant-upper-hemisphere',
+				policy: 'zenith at disk center, horizon at disk edge, outside disk masked black, azimuth rotated to match the Bruneton Figure 1 extracted panels',
+				orientation: 'paper-clockwise: azimuth 0 at image right, positive azimuth clockwise',
+			},
+			sunMarker: {
+				policy: 'display-only red cross marks the directional sun center, matching the comparison-paper convention',
+			},
+			note: 'Skydome panels are model-output comparison artifacts. They are intended to classify our output against named sky model families before comparing with photographs.',
+		},
+		model: createSkyPatchModelMetadata(
+			rayleighPolicy,
+			aerosolPolicy,
+			aerosolPhasePolicy,
+			ozonePolicy,
+			molecularProfilePolicy,
+		),
+		baselineFreeze: createBaselineFreezeMetadata({
+			phase: 'multiple-scattering-plan.phase-1',
+			mode: 'sky-dome-grid',
+			scenarios: SKY_DOME_GRID_SCENES.map((scene) => scene.id),
+			wavelengthGrid: wavelengthGrid.metadata,
+			numerical: createSamplingNumericalMetadata(samplingControl.samplingProfile),
+			solarSource: solarSourceSampling,
+			domeSampleMask,
+		}),
+		sourceComparison: {
+			id: 'bruneton-2016-clear-sky-models-figure-1',
+			source: 'Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models, Figure 1',
+			url: 'https://arxiv.org/abs/1612.04336',
+			timeRows: SKY_DOME_GRID_SCENES.map((scene) => ({
+				id: scene.id,
+				label: scene.label,
+				sunZenithDeg: scene.sunZenithDeg,
+				sunElevationDeg: scene.sunElevationDeg,
+			})),
+		},
+		skyDomePanelCount: skyDomePanels.length,
+		skyDomePanels,
+	};
+}
+
+function renderSkyDomePanel(scene, {
+	stage,
+	colorPolicy,
+	encoding,
+	toneMap,
+	exposureOverride,
+	wavelengthGrid,
+	solarSpectrumPolicy,
+	rayleighPolicy,
+	aerosolPolicy,
+	aerosolPhasePolicy,
+	ozonePolicy,
+	molecularProfilePolicy,
+	domeSize,
+	domeSampleMask,
+	samplingProfile,
+	viewStepsOverride,
+	sunTransmittanceStepsOverride,
+	solarSourceSampling,
+	retainSpectralPixels = false,
+	progressReporter,
+	panelIndex,
+	panelCount,
+}) {
+	const wavelengthsNm = [...wavelengthGrid.wavelengthsNm];
+	const resolvedViewSteps = viewStepsOverride ?? DEFAULT_SKY_PATCH_VIEW_STEPS;
+	const resolvedSunTransmittanceSteps = sunTransmittanceStepsOverride ?? DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS;
+	const numerical = {
+		...DEFAULT_NUMERICAL,
+		viewSteps: resolvedViewSteps,
+		sunTransmittanceSteps: resolvedSunTransmittanceSteps,
+	};
+	const actualSamplingProfile = createActualSamplingProfileMetadata(samplingProfile, {
+		viewSteps: resolvedViewSteps,
+		sunTransmittanceSteps: resolvedSunTransmittanceSteps,
+	});
+	const solarSpectrum = sampleSolarSpectrum(wavelengthsNm, {
+		policy: solarSpectrumPolicy,
+		solarTemperatureK: EARTH_LIKE_SKY.solarTemperatureK,
+		solarIrradiance550Wm2Nm: EARTH_LIKE_SKY.solarIrradiance550Wm2Nm,
+	});
+	const model = createSkyPatchModel(
+		scene,
+		wavelengthsNm,
+		solarSpectrum,
+		rayleighPolicy,
+		aerosolPolicy,
+		aerosolPhasePolicy,
+		ozonePolicy,
+		molecularProfilePolicy,
+		solarSourceSampling,
+	);
+	const integrator = new CpuSpectralReferenceIntegrator();
+	const rows = [];
+	const pixelSources = [];
+	const directRadiancePixels = retainSpectralPixels ? [] : null;
+	const diagnosticSamples = {};
+	const displayExposure = exposureOverride ?? scene.displayExposure ?? 1;
+	const sunDirection = directionFromElevationAzimuth(scene.sunElevationDeg, scene.sunAzimuthDeg);
+	let sampledInsideDomePixelCount = 0;
+	let skippedInsideDomePixelCount = 0;
+
+	progressReporter?.({
+		phase: 'sky-dome-panel-start',
+		panelId: scene.id,
+		panelIndex,
+		panelCount,
+		domeSize,
+		domeSampleMask: domeSampleMask.id,
+		samplingProfile: actualSamplingProfile.id,
+		viewSteps: resolvedViewSteps,
+		sunTransmittanceSteps: resolvedSunTransmittanceSteps,
+		wavelengthCount: wavelengthsNm.length,
+	});
+
+	for (let y = 0; y < domeSize; y += 1) {
+		const row = [];
+
+		for (let x = 0; x < domeSize; x += 1) {
+			const projection = skyDomeDirectionForPixel(x, y, domeSize);
+
+			if (!projection.insideDome) {
+				row.push('#000000');
+				pixelSources.push(createBlackPixelSource(wavelengthsNm, colorPolicy));
+				directRadiancePixels?.push(wavelengthsNm.map(() => 0));
+				continue;
+			}
+
+			if (!shouldTraceSkyDomeProjection(projection, domeSampleMask)) {
+				row.push('#000000');
+				pixelSources.push(createSkippedSkyDomePixelSource(wavelengthsNm, colorPolicy, domeSampleMask));
+				directRadiancePixels?.push(wavelengthsNm.map(() => 0));
+				skippedInsideDomePixelCount += 1;
+				continue;
+			}
+
+			sampledInsideDomePixelCount += 1;
+			const sample = traceSkyDomeSample({
+				integrator,
+				model,
+				stage,
+				direction: projection.direction,
+				sunDirection,
+				wavelengthsNm,
+				numerical,
+				displayExposure,
+				encoding,
+				toneMap,
+				colorPolicy,
+			});
+
+			row.push(sample.displayHex);
+			pixelSources.push(sample.pixelSource);
+			directRadiancePixels?.push(sample.diagnostics.finalByWavelength);
+
+			if (
+				(x === Math.floor(domeSize / 2) && y === Math.floor(domeSize / 2))
+				|| (x === Math.floor(domeSize / 2) && y === 0)
+			) {
+				diagnosticSamples[`${x},${y}`] = {
+					x,
+					y,
+					elevationDeg: projection.elevationDeg,
+					azimuthDeg: projection.azimuthDeg,
+					...sample.diagnostics,
+				};
+			}
+		}
+
+		rows.push(row);
+		progressReporter?.({
+			phase: 'sky-dome-panel-row',
+			panelId: scene.id,
+			panelIndex,
+			panelCount,
+			rowIndex: y,
+			rowCount: domeSize,
+			sampledInsideDomePixelCount,
+			skippedInsideDomePixelCount,
+		});
+	}
+
+	const analysisPixelImage = referenceOutputsToPixelImage({
+		width: domeSize,
+		height: domeSize,
+		pixels: pixelSources,
+	}, {
+		encoding,
+		toneMap,
+		exposure: displayExposure,
+	});
+	const modelComparisonMetrics = summarizeSkyDomeModelComparisonMetrics(
+		analysisPixelImage,
+		scene,
+	);
+	let pixelImage = analysisPixelImage;
+	const sunMarker = skyDomePixelForDirection(sunDirection, domeSize);
+	pixelImage = overlaySunCross(pixelImage, sunMarker, encoding);
+
+	progressReporter?.({
+		phase: 'sky-dome-panel-complete',
+		panelId: scene.id,
+		panelIndex,
+		panelCount,
+		sampledInsideDomePixelCount,
+		skippedInsideDomePixelCount,
+	});
+
+	return {
+		id: scene.id,
+		label: scene.label,
+		timeLabel: scene.timeLabel,
+		sunZenithDeg: scene.sunZenithDeg,
+		sunElevationDeg: scene.sunElevationDeg,
+		sunAzimuthDeg: scene.sunAzimuthDeg,
+		stage,
+		size: { width: domeSize, height: domeSize },
+		domeSampleMask,
+		sampledInsideDomePixelCount,
+		skippedInsideDomePixelCount,
+		solarSource: solarSourceSampling,
+		numerical: {
+			viewSteps: resolvedViewSteps,
+			sunTransmittanceSteps: resolvedSunTransmittanceSteps,
+			integrationMethod: numerical.integrationMethod,
+			samplingProfile: actualSamplingProfile,
+		},
+		wavelengthsNm,
+		wavelengthGrid: wavelengthGrid.metadata,
+		colorPolicy,
+		solarSpectrum: {
+			policy: solarSpectrumPolicy,
+			provenance: solarSpectrum.provenance,
+		},
+		rayleighPolicy: {
+			id: rayleighPolicy.id,
+			label: rayleighPolicy.label,
+			source: rayleighPolicy.source,
+			doi: rayleighPolicy.doi ?? null,
+			coefficientModel: rayleighPolicy.coefficientModel,
+		},
+		aerosolPolicy: {
+			id: aerosolPolicy.id,
+			label: aerosolPolicy.label,
+			source: aerosolPolicy.source,
+			aod550: aerosolPolicy.aod550,
+			angstromExponent: aerosolPolicy.angstromExponent,
+			singleScatteringAlbedo: aerosolPolicy.singleScatteringAlbedo,
+			defaultPhasePolicyId: aerosolPolicy.defaultPhasePolicyId,
+			scaleHeightKm: aerosolPolicy.scaleHeightKm,
+		},
+		aerosolPhasePolicy: summarizeAerosolPhasePolicy(aerosolPhasePolicy),
+		ozonePolicy: {
+			id: ozonePolicy.id,
+			label: ozonePolicy.label,
+			source: ozonePolicy.source,
+			atlasDoi: ozonePolicy.atlasDoi ?? null,
+			crossSectionModel: ozonePolicy.crossSectionModel,
+		},
+		molecularProfile: {
+			id: molecularProfilePolicy.id,
+			label: molecularProfilePolicy.label,
+			source: molecularProfilePolicy.source,
+			nasaNtrsRecord: molecularProfilePolicy.nasaNtrsRecord ?? null,
+		},
+		displayEncoding: encoding,
+		toneMap,
+		displayExposure,
+		projection: {
+			id: 'azimuthal-equidistant-upper-hemisphere',
+			orientation: 'paper-clockwise: azimuth 0 at image right, positive azimuth clockwise',
+			sunMarker,
+		},
+		modelComparisonMetrics,
+		diagnosticSamples: Object.values(diagnosticSamples),
+		directRadianceImage: directRadiancePixels
+			? {
+				kind: 'flat-atmosphere-direct-l1-spectral-image',
+				width: domeSize,
+				height: domeSize,
+				wavelengthsNm,
+				radianceByPixel: directRadiancePixels,
+			}
+			: null,
+		pixelImage,
+		rows,
+	};
+}
+
+function traceSkyDomeSample({
+	integrator,
+	model,
+	stage,
+	direction,
+	sunDirection,
+	wavelengthsNm,
+	numerical,
+	displayExposure,
+	encoding,
+	toneMap,
+	colorPolicy,
+}) {
+	const request = {
+		model,
+		observer: { positionKm: [0, 0, 0] },
+		ray: { direction },
+		wavelengthsNm,
+		numerical,
+	};
+	const packet = stage === DEFAULT_STAGE
+		? integrator.traceRay(request)
+		: integrator.runUntil(stage, request);
+	const finalByWavelength = requireFinalRadianceByWavelength(
+		packet,
+		wavelengthsNm,
+		'sky-dome sample',
+	);
+	const pathEnd = packet.viewOpticalDepth?.pathEnd;
+	const speciesOpticalDepth = summarizeSpeciesOpticalDepth(pathEnd);
+	const totalOpticalDepthByWavelength = summarizeTotalOpticalDepthByWavelength(
+		speciesOpticalDepth,
+		wavelengthsNm,
+	);
+	const opticalDepthValidity = summarizeOpticalDepthValidity(
+		totalOpticalDepthByWavelength,
+		wavelengthsNm,
+	);
+	const rgb = createPatchRgb(finalByWavelength, wavelengthsNm, {
+		exposure: displayExposure,
+		encoding,
+		toneMap,
+		colorPolicy,
+	});
+
+	return {
+		displayHex: rgb.hex,
+		pixelSource: {
+			stageHistory: packet.stageHistory ?? [],
+			wavelengthsNm,
+			spectralRadiance: {
+				...(packet.spectralRadiance ?? {}),
+				wavelengthsNm,
+				finalByWavelength,
+			},
+			xyz: rgb.xyz,
+			linearRgb: rgb.linearRgb,
+			colorProvenance: rgb.colorProvenance,
+		},
+		diagnostics: {
+			direction,
+			finalByWavelength,
+			renderedByWavelength: finalByWavelength,
+			viewTransmittanceByWavelength: pathEnd?.viewTransmittanceByWavelength ?? null,
+			totalOpticalDepthByWavelength,
+			opticalDepthValidity,
+			sourceQuadrature: summarizeSourceQuadrature(packet.solarTransmittance, sunDirection),
+			linearSrgb: rgb.linearRgb,
+			displaySrgb: rgb.displayRgb,
+			displayHex: rgb.hex,
+		},
+	};
+}
+
+function summarizeSkyDomeModelComparisonMetrics(pixelImage, scene) {
+	const accumulators = {
+		dome: createDisplayMetricAccumulator(),
+		horizonRing: createDisplayMetricAccumulator(),
+		zenithDisk: createDisplayMetricAccumulator(),
+		sunNeighborhood10Deg: createDisplayMetricAccumulator(),
+	};
+	const sunDirection = directionFromElevationAzimuth(scene.sunElevationDeg, scene.sunAzimuthDeg);
+	let skippedDomePixelCount = 0;
+
+	for (let y = 0; y < pixelImage.height; y += 1) {
+		for (let x = 0; x < pixelImage.width; x += 1) {
+			const projection = skyDomeDirectionForPixel(x, y, pixelImage.width);
+
+			if (!projection.insideDome) {
+				continue;
+			}
+
+			const pixel = pixelImage.pixels[y * pixelImage.width + x];
+
+			if (isSkyDomeSampleMaskSkippedPixel(pixel)) {
+				skippedDomePixelCount += 1;
+				continue;
+			}
+
+			const angularDistanceFromSunDeg = radiansToDegrees(Math.acos(clamp01Signed(dot3(
+				projection.direction,
+				sunDirection,
+			))));
+
+			addDisplayMetricPixel(accumulators.dome, pixel);
+
+			if (projection.radius >= 0.88) {
+				addDisplayMetricPixel(accumulators.horizonRing, pixel);
+			}
+
+			if (projection.radius <= 0.2) {
+				addDisplayMetricPixel(accumulators.zenithDisk, pixel);
+			}
+
+			if (angularDistanceFromSunDeg <= 10) {
+				addDisplayMetricPixel(accumulators.sunNeighborhood10Deg, pixel);
+			}
+		}
+	}
+
+	const dome = finalizeDisplayMetricAccumulator(accumulators.dome);
+	const horizonRing = finalizeDisplayMetricAccumulator(accumulators.horizonRing);
+	const zenithDisk = finalizeDisplayMetricAccumulator(accumulators.zenithDisk);
+	const sunNeighborhood10Deg = finalizeDisplayMetricAccumulator(accumulators.sunNeighborhood10Deg);
+	const hasHorizonAndZenith = horizonRing.luminance.average !== null
+		&& zenithDisk.luminance.average !== null;
+
+	return {
+		kind: 'display-encoded-fisheye-model-comparison-metrics',
+		source: 'generated pixel image before display-only Sun marker overlay',
+		domePixelCount: dome.pixelCount,
+		sampledDomePixelCount: dome.pixelCount,
+		skippedDomePixelCount,
+		warmAffectedFraction: dome.warmAffectedFraction,
+		brightWarmAffectedFraction: dome.brightWarmAffectedFraction,
+		nonBlueAffectedFraction: dome.nonBlueAffectedFraction,
+		luminance: dome.luminance,
+		horizonRing,
+		zenithDisk,
+		sunNeighborhood10Deg,
+		zenithToHorizon: {
+			luminanceRatio: horizonRing.luminance.average > 0 && zenithDisk.luminance.average > 0
+				? horizonRing.luminance.average / zenithDisk.luminance.average
+				: null,
+			saturationDelta: hasHorizonAndZenith
+				? horizonRing.saturation.average - zenithDisk.saturation.average
+				: null,
+			valueDelta: hasHorizonAndZenith
+				? horizonRing.value.average - zenithDisk.value.average
+				: null,
+		},
+	};
+}
+
+function createDisplayMetricAccumulator() {
+	return {
+		pixelCount: 0,
+		warmAffectedCount: 0,
+		brightWarmAffectedCount: 0,
+		nonBlueAffectedCount: 0,
+		luminanceSum: 0,
+		luminanceMin: Infinity,
+		luminanceMax: -Infinity,
+		saturationSum: 0,
+		valueSum: 0,
+	};
+}
+
+function addDisplayMetricPixel(accumulator, pixel) {
+	const rgb = pixel.displayRgb ?? {
+		r: pixel.bytes.r / 255,
+		g: pixel.bytes.g / 255,
+		b: pixel.bytes.b / 255,
+	};
+	const hsv = rgbToHsv(rgb);
+	const luminance = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
+
+	accumulator.pixelCount += 1;
+	accumulator.luminanceSum += luminance;
+	accumulator.luminanceMin = Math.min(accumulator.luminanceMin, luminance);
+	accumulator.luminanceMax = Math.max(accumulator.luminanceMax, luminance);
+	accumulator.saturationSum += hsv.s;
+	accumulator.valueSum += hsv.v;
+
+	if (hsv.h >= 20 && hsv.h <= 70 && hsv.s >= 0.22 && hsv.v >= 0.18) {
+		accumulator.warmAffectedCount += 1;
+	}
+
+	if (hsv.h >= 25 && hsv.h <= 65 && hsv.s >= 0.35 && hsv.v >= 0.35) {
+		accumulator.brightWarmAffectedCount += 1;
+	}
+
+	if ((hsv.h < 185 || hsv.h > 260) && hsv.s >= 0.15 && hsv.v >= 0.18) {
+		accumulator.nonBlueAffectedCount += 1;
+	}
+}
+
+function finalizeDisplayMetricAccumulator(accumulator) {
+	if (accumulator.pixelCount === 0) {
+		return {
+			pixelCount: 0,
+			warmAffectedFraction: 0,
+			brightWarmAffectedFraction: 0,
+			nonBlueAffectedFraction: 0,
+			luminance: { min: null, max: null, average: null, range: null },
+			saturation: { average: null },
+			value: { average: null },
+		};
+	}
+
+	return {
+		pixelCount: accumulator.pixelCount,
+		warmAffectedFraction: accumulator.warmAffectedCount / accumulator.pixelCount,
+		brightWarmAffectedFraction: accumulator.brightWarmAffectedCount / accumulator.pixelCount,
+		nonBlueAffectedFraction: accumulator.nonBlueAffectedCount / accumulator.pixelCount,
+		luminance: {
+			min: accumulator.luminanceMin,
+			max: accumulator.luminanceMax,
+			average: accumulator.luminanceSum / accumulator.pixelCount,
+			range: accumulator.luminanceMax - accumulator.luminanceMin,
+		},
+		saturation: {
+			average: accumulator.saturationSum / accumulator.pixelCount,
+		},
+		value: {
+			average: accumulator.valueSum / accumulator.pixelCount,
+		},
+	};
+}
+
+function rgbToHsv(rgb) {
+	const max = Math.max(rgb.r, rgb.g, rgb.b);
+	const min = Math.min(rgb.r, rgb.g, rgb.b);
+	const delta = max - min;
+	let h = 0;
+
+	if (delta !== 0) {
+		if (max === rgb.r) {
+			h = 60 * (((rgb.g - rgb.b) / delta) % 6);
+		} else if (max === rgb.g) {
+			h = 60 * (((rgb.b - rgb.r) / delta) + 2);
+		} else {
+			h = 60 * (((rgb.r - rgb.g) / delta) + 4);
+		}
+	}
+
+	return {
+		h: h < 0 ? h + 360 : h,
+		s: max === 0 ? 0 : delta / max,
+		v: max,
+	};
+}
+
+function createBlackPixelSource(wavelengthsNm, colorPolicy) {
+	return {
+		stageHistory: [],
+		wavelengthsNm,
+		spectralRadiance: {
+			wavelengthsNm,
+			finalByWavelength: wavelengthsNm.map(() => 0),
+		},
+		linearRgb: { r: 0, g: 0, b: 0 },
+		colorProvenance: {
+			colorPolicy,
+			mask: 'outside-fisheye-sky-dome',
+		},
+	};
+}
+
+function resolveDomeSampleMask(maskId = DEFAULT_DOME_SAMPLE_MASK_ID) {
+	const mask = DOME_SAMPLE_MASKS[maskId];
+
+	if (!mask) {
+		throw new Error(`Unknown dome sample mask: ${maskId}`);
+	}
+
+	return {
+		id: mask.id,
+		label: mask.label,
+		minRadius: mask.minRadius,
+		description: mask.description,
+	};
+}
+
+function shouldTraceSkyDomeProjection(projection, domeSampleMask) {
+	return projection.radius >= domeSampleMask.minRadius;
+}
+
+function createSkippedSkyDomePixelSource(wavelengthsNm, colorPolicy, domeSampleMask) {
+	return {
+		stageHistory: [],
+		wavelengthsNm,
+		spectralRadiance: {
+			wavelengthsNm,
+			finalByWavelength: wavelengthsNm.map(() => 0),
+		},
+		linearRgb: { r: 0, g: 0, b: 0 },
+		colorProvenance: {
+			colorPolicy,
+			mask: 'dome-sample-mask-skipped',
+			domeSampleMask: {
+				id: domeSampleMask.id,
+				minRadius: domeSampleMask.minRadius,
+			},
+		},
+	};
+}
+
+function isSkyDomeSampleMaskSkippedPixel(pixel) {
+	return pixel?.source?.colorProvenance?.mask === 'dome-sample-mask-skipped';
+}
+
+function requireFinalRadianceByWavelength(packet, wavelengthsNm, contextLabel) {
+	const finalByWavelength = packet.spectralRadiance?.finalByWavelength;
+
+	if (!Array.isArray(finalByWavelength)) {
+		throw new Error(`${contextLabel} requires spectralRadiance.finalByWavelength`);
+	}
+
+	if (finalByWavelength.length !== wavelengthsNm.length) {
+		throw new Error(`${contextLabel} final radiance must align to wavelengthsNm`);
+	}
+
+	return finalByWavelength;
+}
+
+function skyDomeDirectionForPixel(x, y, size) {
+	const ndcX = ((x + 0.5) / size) * 2 - 1;
+	const ndcY = 1 - ((y + 0.5) / size) * 2;
+	const radius = Math.sqrt(ndcX * ndcX + ndcY * ndcY);
+
+	if (radius > 1) {
+		return {
+			insideDome: false,
+			radius,
+			direction: null,
+			elevationDeg: null,
+			azimuthDeg: null,
+		};
+	}
+
+	const zenithAngleRad = radius * Math.PI / 2;
+	const elevationDeg = 90 - radiansToDegrees(zenithAngleRad);
+	const azimuthDeg = radiansToDegrees(Math.atan2(-ndcY, ndcX));
+
+	return {
+		insideDome: true,
+		radius,
+		direction: directionFromElevationAzimuth(elevationDeg, azimuthDeg),
+		elevationDeg,
+		azimuthDeg,
+	};
+}
+
+function skyDomePixelForDirection(direction, size) {
+	const normalized = normalize3(direction);
+	const elevationRad = Math.asin(clamp01Signed(normalized[1]));
+	const zenithAngleRad = Math.PI / 2 - elevationRad;
+	const radius = zenithAngleRad / (Math.PI / 2);
+	const horizontalLength = Math.sqrt(normalized[0] * normalized[0] + normalized[2] * normalized[2]);
+	const screenX = horizontalLength > 0 ? normalized[2] / horizontalLength * radius : 0;
+	const screenY = horizontalLength > 0 ? -normalized[0] / horizontalLength * radius : 0;
+
+	return {
+		x: Math.round((screenX + 1) * 0.5 * (size - 1)),
+		y: Math.round((1 - (screenY + 1) * 0.5) * (size - 1)),
+		radius,
+		insideDome: radius <= 1,
+	};
+}
+
+function overlaySunCross(pixelImage, sunMarker, encoding) {
+	if (!sunMarker?.insideDome) {
+		return pixelImage;
+	}
+
+	const pixels = pixelImage.pixels.map((pixel) => ({ ...pixel, bytes: { ...pixel.bytes } }));
+	const markerPixel = linearRgbToPixel({ r: 1, g: 0, b: 0 }, {
+		encoding,
+		exposure: 1,
+		toneMap: 'clip',
+	});
+	const offsets = [
+		[0, 0],
+		[-1, 0],
+		[1, 0],
+		[0, -1],
+		[0, 1],
+		[-2, 0],
+		[2, 0],
+		[0, -2],
+		[0, 2],
+	];
+
+	for (const [dx, dy] of offsets) {
+		const x = sunMarker.x + dx;
+		const y = sunMarker.y + dy;
+
+		if (x < 0 || x >= pixelImage.width || y < 0 || y >= pixelImage.height) {
+			continue;
+		}
+
+		pixels[y * pixelImage.width + x] = {
+			...markerPixel,
+			metadata: {
+				...markerPixel.metadata,
+				displayOnly: true,
+				overlay: 'sun-direction-cross',
+			},
+		};
+	}
+
+	return {
+		...pixelImage,
+		pixels,
+		metadata: {
+			...(pixelImage.metadata ?? {}),
+			sunMarkerOverlay: {
+				kind: 'red-cross',
+				x: sunMarker.x,
+				y: sunMarker.y,
+			},
+		},
+	};
+}
+
 function runSkyPatchSet(options = {}) {
 	const colorPolicy = options.color ?? DEFAULT_COLOR_POLICY;
 	const encoding = options.encoding ?? DEFAULT_PIXEL_ENCODING;
@@ -652,18 +4353,31 @@ function runSkyPatchSet(options = {}) {
 	const solarSpectrumPolicy = options.solarSpectrum ?? DEFAULT_SOLAR_SPECTRUM_POLICY;
 	const rayleighPolicy = resolveRayleighPolicy(options.rayleighPolicy ?? DEFAULT_RAYLEIGH_POLICY_ID);
 	const aerosolPolicy = resolveAerosolPolicy(options.aerosolPolicy ?? DEFAULT_AEROSOL_POLICY_ID);
+	const aerosolPhasePolicy = resolveAerosolPhasePolicy(
+		options.aerosolPhasePolicy ?? aerosolPolicy.defaultPhasePolicyId,
+	);
 	const ozonePolicy = resolveOzonePolicy(options.ozonePolicy ?? DEFAULT_OZONE_POLICY_ID);
 	const molecularProfilePolicy = resolveMolecularProfilePolicy(
 		options.molecularProfile ?? DEFAULT_MOLECULAR_PROFILE_POLICY_ID,
 	);
 	const sunVisual = options.sunVisual ?? DEFAULT_SUN_VISUAL;
-	const scatteringMode = options.scatteringMode ?? DEFAULT_SCATTERING_MODE;
-	const hazeLiftStrength = options.hazeLiftStrength ?? DEFAULT_HAZE_LIFT_STRENGTH;
 	const patchSize = options.patchSize ?? SKY_PATCH_SIZE;
 	const selectedIds = options.patchIds?.length
 		? options.patchIds
 		: DEFAULT_SKY_PATCH_IDS;
-	const skyPatches = selectedIds.map((id) => {
+	const samplingControl = resolveSkyPatchSamplingControl(options);
+	const solarSourceSampling = resolveSolarSourceSampling(options);
+	options.progressReporter?.({
+		phase: 'sky-patches-start',
+		patchCount: selectedIds.length,
+		patchSize,
+		wavelengthCount: wavelengthGrid.wavelengthsNm.length,
+		samplingProfile: samplingControl.samplingProfile.id,
+		solarSource: solarSourceSampling.mode,
+		solarSourceSampleCount: solarSourceSampling.sampleCount,
+	});
+
+	const skyPatches = selectedIds.map((id, patchIndex) => {
 		const scene = SKY_PATCH_SCENES[id];
 
 		if (!scene) {
@@ -680,14 +4394,25 @@ function runSkyPatchSet(options = {}) {
 			solarSpectrumPolicy,
 			rayleighPolicy,
 			aerosolPolicy,
+			aerosolPhasePolicy,
 			ozonePolicy,
 			molecularProfilePolicy,
 			patchSize,
 			fovYDegOverride: options.fovYDeg,
 			sunVisual,
-			scatteringMode,
-			hazeLiftStrength,
+			samplingProfile: samplingControl.samplingProfile,
+			viewStepsOverride: samplingControl.viewStepsOverride,
+			sunTransmittanceStepsOverride: samplingControl.sunTransmittanceStepsOverride,
+			solarSourceSampling,
+			progressReporter: options.progressReporter,
+			patchIndex,
+			patchCount: selectedIds.length,
 		});
+	});
+
+	options.progressReporter?.({
+		phase: 'sky-patches-complete',
+		patchCount: selectedIds.length,
 	});
 
 	return {
@@ -716,6 +4441,7 @@ function runSkyPatchSet(options = {}) {
 				label: aerosolPolicy.label,
 				source: aerosolPolicy.source,
 			},
+			aerosolPhasePolicy: summarizeAerosolPhasePolicy(aerosolPhasePolicy),
 			ozonePolicy: {
 				id: ozonePolicy.id,
 				label: ozonePolicy.label,
@@ -735,18 +4461,35 @@ function runSkyPatchSet(options = {}) {
 					? 'diagnostic approximation: solar source spectrum times view transmittance, kept separate from transport radiance'
 					: 'disabled',
 			},
-			scatteringMode: {
-				id: scatteringMode,
-				hazeLiftStrength,
-				policy: scatteringMode === 'single-plus-haze-lift'
-					? 'diagnostic approximation: adds a bounded aerosol-aware diffuse sky airlight term from source spectrum, view optical depth, aerosol optical depth, and lost view transmittance'
-					: 'canonical single-scattering transport output',
+			numerical: {
+				...createSamplingNumericalMetadata(samplingControl.samplingProfile, {
+					defaultViewSteps: DEFAULT_SKY_PATCH_VIEW_STEPS,
+					defaultSunTransmittanceSteps: DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS,
+				}),
 			},
+			solarSource: solarSourceSampling,
 			wavelengthGrid: wavelengthGrid.metadata,
 			patchSize,
 			note: 'Patch colors integrate the sky spectrum through the selected CIE color policy, convert XYZ to linear sRGB, then apply display-only tone mapping, exposure, and byte encoding.',
 		},
-		model: createSkyPatchModelMetadata(rayleighPolicy, aerosolPolicy, ozonePolicy, molecularProfilePolicy),
+		model: createSkyPatchModelMetadata(
+			rayleighPolicy,
+			aerosolPolicy,
+			aerosolPhasePolicy,
+			ozonePolicy,
+			molecularProfilePolicy,
+		),
+		baselineFreeze: createBaselineFreezeMetadata({
+			phase: 'multiple-scattering-plan.phase-1',
+			mode: 'sky-patches',
+			scenarios: selectedIds,
+			wavelengthGrid: wavelengthGrid.metadata,
+			numerical: createSamplingNumericalMetadata(samplingControl.samplingProfile, {
+				defaultViewSteps: DEFAULT_SKY_PATCH_VIEW_STEPS,
+				defaultSunTransmittanceSteps: DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS,
+			}),
+			solarSource: solarSourceSampling,
+		}),
 		skyPatchCount: skyPatches.length,
 		skyPatches,
 	};
@@ -762,26 +4505,37 @@ function renderSkyPatch(scene, {
 	solarSpectrumPolicy,
 	rayleighPolicy,
 	aerosolPolicy,
+	aerosolPhasePolicy,
 	ozonePolicy,
 	molecularProfilePolicy,
 	patchSize,
 	fovYDegOverride,
 	sunVisual,
-	scatteringMode,
-	hazeLiftStrength,
+	samplingProfile,
+	viewStepsOverride,
+	sunTransmittanceStepsOverride,
+	solarSourceSampling,
+	progressReporter,
+	patchIndex,
+	patchCount,
 }) {
 	const cameraConfig = fovYDegOverride === undefined
 		? scene.camera
 		: { ...scene.camera, fovYDeg: fovYDegOverride };
 	const wavelengthsNm = [...wavelengthGrid.wavelengthsNm];
+	const resolvedViewSteps = viewStepsOverride ?? scene.viewSteps ?? DEFAULT_SKY_PATCH_VIEW_STEPS;
+	const resolvedSunTransmittanceSteps = sunTransmittanceStepsOverride
+		?? scene.sunTransmittanceSteps
+		?? DEFAULT_SKY_PATCH_SUN_TRANSMITTANCE_STEPS;
 	const numerical = {
 		...DEFAULT_NUMERICAL,
-		viewSteps: scene.viewSteps ?? 12,
-		sunTransmittanceSteps: scene.sunTransmittanceSteps ?? 2,
-		...(scatteringMode === 'single-plus-haze-lift'
-			? { diffuseSkyAirlightStrength: hazeLiftStrength }
-			: {}),
+		viewSteps: resolvedViewSteps,
+		sunTransmittanceSteps: resolvedSunTransmittanceSteps,
 	};
+	const actualSamplingProfile = createActualSamplingProfileMetadata(samplingProfile, {
+		viewSteps: resolvedViewSteps,
+		sunTransmittanceSteps: resolvedSunTransmittanceSteps,
+	});
 	const solarSpectrum = sampleSolarSpectrum(wavelengthsNm, {
 		policy: solarSpectrumPolicy,
 		solarTemperatureK: EARTH_LIKE_SKY.solarTemperatureK,
@@ -797,8 +4551,10 @@ function renderSkyPatch(scene, {
 		solarSpectrum,
 		rayleighPolicy,
 		aerosolPolicy,
+		aerosolPhasePolicy,
 		ozonePolicy,
 		molecularProfilePolicy,
+		solarSourceSampling,
 	);
 	const integrator = new CpuSpectralReferenceIntegrator();
 	const camera = createCameraBasis(cameraConfig);
@@ -818,6 +4574,20 @@ function renderSkyPatch(scene, {
 	let minAngularDistanceDeg = Infinity;
 	let maxAngularDistanceDeg = 0;
 
+	progressReporter?.({
+		phase: 'patch-start',
+		patchId: scene.id,
+		patchLabel: scene.label,
+		patchIndex,
+		patchCount,
+		width: patchSize.width,
+		height: patchSize.height,
+		samplingProfile: actualSamplingProfile.id,
+		viewSteps: resolvedViewSteps,
+		sunTransmittanceSteps: resolvedSunTransmittanceSteps,
+		wavelengthCount: wavelengthsNm.length,
+	});
+
 	for (let y = 0; y < patchSize.height; y += 1) {
 		const row = [];
 
@@ -833,11 +4603,10 @@ function renderSkyPatch(scene, {
 			const packet = stage === DEFAULT_STAGE
 				? integrator.traceRay(request)
 				: integrator.runUntil(stage, request);
-			const finalByWavelength = packet.spectralRadiance?.finalByWavelength
-				?? wavelengthsNm.map(() => 0);
-			const canonicalFinalByWavelength = subtractSpectrum(
-				finalByWavelength,
-				packet.diffuseSkyAirlight?.radianceByWavelength,
+			const finalByWavelength = requireFinalRadianceByWavelength(
+				packet,
+				wavelengthsNm,
+				`sky patch ${scene.id} pixel ${x},${y}`,
 			);
 			const pathEnd = packet.viewOpticalDepth?.pathEnd;
 			const speciesOpticalDepth = summarizeSpeciesOpticalDepth(pathEnd);
@@ -856,17 +4625,6 @@ function renderSkyPatch(scene, {
 				packet,
 				wavelengthsNm,
 			);
-			const hazeLiftDiagnostic = createHazeLiftDiagnosticSpectrum({
-				mode: scatteringMode,
-				strength: hazeLiftStrength,
-				solarSpectrum,
-				finalByWavelength: canonicalFinalByWavelength,
-				viewTransmittanceByWavelength: pathEnd?.viewTransmittanceByWavelength,
-				totalOpticalDepthByWavelength,
-				wavelengthsNm,
-				pipelineApproximation: packet.diffuseSkyAirlight,
-			});
-			const renderedByWavelength = hazeLiftDiagnostic.renderedByWavelength;
 			const sunGeometry = createSunPixelGeometry(direction, sunDirection, packet);
 			const directDiskByWavelength = createDiagnosticDirectDiskSpectrum({
 				sunGeometry,
@@ -874,11 +4632,11 @@ function renderSkyPatch(scene, {
 				viewTransmittanceByWavelength: pathEnd?.viewTransmittanceByWavelength,
 				wavelengthsNm,
 			});
-			const combinedByWavelength = renderedByWavelength.map((value, wavelengthIndex) => {
+			const combinedByWavelength = finalByWavelength.map((value, wavelengthIndex) => {
 				return value + directDiskByWavelength[wavelengthIndex];
 			});
 			const displayExposure = exposureOverride ?? scene.displayExposure ?? 1;
-			const rgb = createPatchRgb(renderedByWavelength, wavelengthsNm, {
+			const rgb = createPatchRgb(finalByWavelength, wavelengthsNm, {
 				exposure: displayExposure,
 				encoding,
 				toneMap,
@@ -900,9 +4658,7 @@ function renderSkyPatch(scene, {
 				spectralRadiance: {
 					...(packet.spectralRadiance ?? {}),
 					wavelengthsNm,
-					finalByWavelength: renderedByWavelength,
-					canonicalFinalByWavelength,
-					diagnosticHazeLiftByWavelength: hazeLiftDiagnostic.addedByWavelength,
+					finalByWavelength,
 				},
 				xyz: rgb.xyz,
 				linearRgb: rgb.linearRgb,
@@ -911,7 +4667,7 @@ function renderSkyPatch(scene, {
 			if (sunDiagnosticSources) {
 				appendSunDiagnosticSources(sunDiagnosticSources, {
 					sunGeometry,
-					finalByWavelength: renderedByWavelength,
+					finalByWavelength,
 					directDiskByWavelength,
 					combinedByWavelength,
 					wavelengthsNm,
@@ -919,7 +4675,7 @@ function renderSkyPatch(scene, {
 				});
 				addSunAngleBucketSample(sunAngleBucketAccumulators, {
 					sunGeometry,
-					skyRadianceByWavelength: renderedByWavelength,
+					skyRadianceByWavelength: finalByWavelength,
 					directDiskByWavelength,
 					combinedByWavelength,
 					viewTransmittanceByWavelength: pathEnd?.viewTransmittanceByWavelength,
@@ -942,9 +4698,8 @@ function renderSkyPatch(scene, {
 					y,
 					...sunGeometry,
 					displayHex: rgb.hex,
-					skyRadianceByWavelength: renderedByWavelength,
-					renderedRadianceByWavelength: renderedByWavelength,
-					hazeLiftDiagnostic,
+					skyRadianceByWavelength: finalByWavelength,
+					renderedRadianceByWavelength: finalByWavelength,
 					directDiskByWavelength,
 					combinedByWavelength,
 					viewTransmittanceByWavelength: pathEnd?.viewTransmittanceByWavelength ?? null,
@@ -953,6 +4708,7 @@ function renderSkyPatch(scene, {
 					opticalDepthValidity,
 					speciesRadianceContribution,
 					skyCompletenessDiagnostics,
+					sourceQuadrature: summarizeSourceQuadrature(packet.solarTransmittance, sunDirection),
 				};
 			}
 
@@ -963,9 +4719,7 @@ function renderSkyPatch(scene, {
 					direction,
 					packet,
 					rgb,
-					renderedByWavelength,
-					canonicalFinalByWavelength,
-					hazeLiftDiagnostic,
+					finalByWavelength,
 					pathEnd,
 					totalOpticalDepthByWavelength,
 					opticalDepthValidity,
@@ -988,15 +4742,15 @@ function renderSkyPatch(scene, {
 						combinedByWavelength,
 						combinedDisplayHex: combinedRgb?.hex ?? null,
 					},
-					finalByWavelength: canonicalFinalByWavelength,
-					renderedByWavelength,
-					hazeLiftDiagnostic,
+					finalByWavelength,
+					renderedByWavelength: finalByWavelength,
 					viewTransmittanceByWavelength: pathEnd?.viewTransmittanceByWavelength ?? null,
 					speciesOpticalDepth,
 					totalOpticalDepthByWavelength,
 					opticalDepthValidity,
 					speciesRadianceContribution,
 					skyCompletenessDiagnostics,
+					sourceQuadrature: summarizeSourceQuadrature(packet.solarTransmittance, sunDirection),
 					viewDistanceKm: packet.rayPath?.viewSegment?.lengthKm ?? null,
 					linearSrgb: rgb.linearRgb,
 					displaySrgb: rgb.displayRgb,
@@ -1018,6 +4772,14 @@ function renderSkyPatch(scene, {
 		}
 
 		rows.push(row);
+		progressReporter?.({
+			phase: 'patch-row',
+			patchId: scene.id,
+			patchIndex,
+			patchCount,
+			rowIndex: y,
+			rowCount: patchSize.height,
+		});
 	}
 
 	const sunDiagnostic = sunVisual === 'diagnostic'
@@ -1037,12 +4799,25 @@ function renderSkyPatch(scene, {
 		})
 		: null;
 
+	progressReporter?.({
+		phase: 'patch-complete',
+		patchId: scene.id,
+		patchIndex,
+		patchCount,
+	});
+
 	return {
 		id: scene.id,
 		label: scene.label,
 		description: scene.description,
 		stage,
 		size: { ...patchSize },
+		numerical: {
+			viewSteps: resolvedViewSteps,
+			sunTransmittanceSteps: resolvedSunTransmittanceSteps,
+			integrationMethod: numerical.integrationMethod,
+			samplingProfile: actualSamplingProfile,
+		},
 		wavelengthsNm,
 		wavelengthGrid: wavelengthGrid.metadata,
 		colorPolicy,
@@ -1056,13 +4831,7 @@ function renderSkyPatch(scene, {
 			solarAngularRadiusDeg: SOLAR_ANGULAR_DIAMETER_DEG / 2,
 			diagnosticDirectScale: SUN_DIAGNOSTIC_DIRECT_SCALE,
 		},
-		scatteringMode: {
-			id: scatteringMode,
-			hazeLiftStrength,
-			policy: scatteringMode === 'single-plus-haze-lift'
-				? 'diagnostic approximation: adds a bounded aerosol-aware diffuse sky airlight term from source spectrum, view optical depth, aerosol optical depth, and lost view transmittance'
-				: 'canonical single-scattering transport output',
-		},
+		solarSource: solarSourceSampling,
 		rayleighPolicy: {
 			id: rayleighPolicy.id,
 			label: rayleighPolicy.label,
@@ -1077,9 +4846,10 @@ function renderSkyPatch(scene, {
 			aod550: aerosolPolicy.aod550,
 			angstromExponent: aerosolPolicy.angstromExponent,
 			singleScatteringAlbedo: aerosolPolicy.singleScatteringAlbedo,
-			asymmetryG: aerosolPolicy.asymmetryG,
+			defaultPhasePolicyId: aerosolPolicy.defaultPhasePolicyId,
 			scaleHeightKm: aerosolPolicy.scaleHeightKm,
 		},
+		aerosolPhasePolicy: summarizeAerosolPhasePolicy(aerosolPhasePolicy),
 		ozonePolicy: {
 			id: ozonePolicy.id,
 			label: ozonePolicy.label,
@@ -1140,9 +4910,7 @@ function createHorizonProfileSample({
 	direction,
 	packet,
 	rgb,
-	renderedByWavelength,
-	canonicalFinalByWavelength,
-	hazeLiftDiagnostic,
+	finalByWavelength,
 	pathEnd,
 	totalOpticalDepthByWavelength,
 	opticalDepthValidity,
@@ -1168,9 +4936,8 @@ function createHorizonProfileSample({
 		displayLuminance: relativeLuminance(rgb.displayRgb),
 		linearSrgb: rgb.linearRgb,
 		linearLuminance: relativeLuminance(rgb.linearRgb),
-		renderedByWavelength,
-		canonicalFinalByWavelength,
-		hazeLiftByWavelength: hazeLiftDiagnostic.addedByWavelength,
+		finalByWavelength,
+		renderedByWavelength: finalByWavelength,
 		viewTransmittanceByWavelength: pathEnd?.viewTransmittanceByWavelength ?? null,
 		totalOpticalDepthByWavelength,
 		opticalDepthValidity,
@@ -1241,6 +5008,12 @@ function mean(values) {
 	}
 
 	return finiteValues.reduce((total, value) => total + value, 0) / finiteValues.length;
+}
+
+function maxFinite(values) {
+	const finiteValues = values.filter((value) => Number.isFinite(value));
+
+	return finiteValues.length > 0 ? Math.max(...finiteValues) : null;
 }
 
 function rayForPatchPixel(camera, x, y, size) {
@@ -1438,6 +5211,39 @@ function collectPhaseSourceSamples(scatteringPhase) {
 	return (scatteringPhase?.samples ?? []).flatMap((sample) => sample.sourceSamples ?? []);
 }
 
+function summarizeSourceQuadrature(solarTransmittance, sunDirection) {
+	const sourceSamples = (solarTransmittance?.samples ?? [])
+		.find((sample) => (sample.sourceSamples ?? []).length > 0)
+		?.sourceSamples ?? [];
+
+	if (sourceSamples.length === 0) {
+		return null;
+	}
+
+	const weights = sourceSamples.map((sample) => sample.weight).filter(Number.isFinite);
+	const solidAnglesSr = sourceSamples.map((sample) => sample.solidAngleSr).filter(Number.isFinite);
+	const normalizedSunDirection = normalize3(sunDirection);
+	const angularOffsetsDeg = sourceSamples.map((sample) => {
+		return radiansToDegrees(Math.acos(clamp01Signed(dot3(
+			normalize3(sample.direction),
+			normalizedSunDirection,
+		))));
+	});
+
+	return {
+		sourceSampleCount: sourceSamples.length,
+		sourceSampleIds: sourceSamples.map((sample) => sample.sourceSampleId),
+		weightSum: roundDiagnosticNumber(weights.reduce((sum, value) => sum + value, 0)),
+		minWeight: roundDiagnosticNumber(Math.min(...weights)),
+		maxWeight: roundDiagnosticNumber(Math.max(...weights)),
+		solidAngleSrSum: solidAnglesSr.length > 0
+			? roundDiagnosticNumber(solidAnglesSr.reduce((sum, value) => sum + value, 0))
+			: null,
+		minAngularOffsetDeg: roundDiagnosticNumber(Math.min(...angularOffsetsDeg)),
+		maxAngularOffsetDeg: roundDiagnosticNumber(Math.max(...angularOffsetsDeg)),
+	};
+}
+
 function summarizeAltitudeDistribution(mediumSamples) {
 	if (!Array.isArray(mediumSamples) || mediumSamples.length === 0) {
 		return null;
@@ -1556,7 +5362,7 @@ function estimateMissingLightRequirement(packet, wavelengthsNm) {
 	return {
 		assessment: likelyMultipleScattering ? 'multiple-scattering-likely' : 'single-scattering-likely-sufficient',
 		reason: likelyMultipleScattering
-			? 'view max tau is in a high-tau regime; single scattering is qualitative and may understate pale haze lift'
+			? 'view max tau is in a high-tau regime; single scattering is qualitative and may miss higher-order sky radiance'
 			: 'view max tau is below the high-tau warning threshold',
 		likelyMultipleScattering,
 		likelyAureolePhaseSensitivity,
@@ -1814,6 +5620,16 @@ function addArrayInto(target, values) {
 	}
 }
 
+function addArrayIntoWeighted(target, values, weight) {
+	if (!Array.isArray(values)) {
+		return;
+	}
+
+	for (const [index, value] of values.entries()) {
+		target[index] += (value ?? 0) * weight;
+	}
+}
+
 function createSunPixelGeometry(viewDirection, sunDirection, packet) {
 	const angularDistanceFromSunDeg = radiansToDegrees(Math.acos(clamp01Signed(dot3(
 		normalize3(viewDirection),
@@ -1851,95 +5667,6 @@ function createDiagnosticDirectDiskSpectrum({
 	});
 }
 
-function createHazeLiftDiagnosticSpectrum({
-	mode,
-	strength,
-	solarSpectrum,
-	finalByWavelength,
-	viewTransmittanceByWavelength,
-	totalOpticalDepthByWavelength,
-	wavelengthsNm,
-	pipelineApproximation,
-}) {
-	if (pipelineApproximation) {
-		return {
-			mode: pipelineApproximation.mode ?? mode ?? DEFAULT_SCATTERING_MODE,
-			strength: pipelineApproximation.diagnostics?.strength ?? strength,
-			addedByWavelength: [...(pipelineApproximation.radianceByWavelength ?? wavelengthsNm.map(() => 0))],
-			renderedByWavelength: [...(pipelineApproximation.renderedSinglePlusSkyAirlightByWavelength ?? finalByWavelength)],
-			activation: pipelineApproximation.diagnostics?.activation ?? 0,
-			tau560: selectedSpectrumValues(
-				totalOpticalDepthByWavelength,
-				wavelengthsNm,
-				[560],
-			)[0]?.value ?? null,
-			maxTau: pipelineApproximation.diagnostics?.activationTau ?? null,
-			policy: 'canonical pipeline integrateDiffuseSkyAirlight aerosol-aware output',
-		};
-	}
-
-	if (mode !== 'single-plus-haze-lift') {
-		return {
-			mode: mode ?? DEFAULT_SCATTERING_MODE,
-			strength,
-			addedByWavelength: wavelengthsNm.map(() => 0),
-			renderedByWavelength: [...finalByWavelength],
-			activation: 0,
-			tau560: null,
-			policy: 'disabled',
-		};
-	}
-
-	const wavelengthIndex560 = nearestWavelengthIndex(wavelengthsNm, 560);
-	const tau560 = totalOpticalDepthByWavelength?.[wavelengthIndex560] ?? 0;
-	const maxTau = Array.isArray(totalOpticalDepthByWavelength)
-		? Math.max(...totalOpticalDepthByWavelength)
-		: 0;
-	const activation = smoothstep(1, 8, maxTau);
-	const transmittance = Array.isArray(viewTransmittanceByWavelength)
-		? viewTransmittanceByWavelength
-		: wavelengthsNm.map(() => 1);
-	const addedByWavelength = wavelengthsNm.map((_, wavelengthIndex) => {
-		const lostViewLight = 1 - Math.max(0, Math.min(1, transmittance[wavelengthIndex] ?? 1));
-		const sourceValue = solarSpectrum.valuesByWavelength[wavelengthIndex] ?? 0;
-
-		return sourceValue * lostViewLight * activation * strength;
-	});
-
-	return {
-		mode,
-		strength,
-		addedByWavelength,
-		renderedByWavelength: finalByWavelength.map((value, wavelengthIndex) => {
-			return value + addedByWavelength[wavelengthIndex];
-		}),
-		activation,
-		tau560,
-		maxTau,
-		policy: 'diagnostic bounded diffuse sky airlight fallback from lost view transmittance; full pipeline uses integrateDiffuseSkyAirlight aerosol-aware output',
-	};
-}
-
-function subtractSpectrum(values, subtractValues) {
-	if (!Array.isArray(subtractValues)) {
-		return [...values];
-	}
-
-	return values.map((value, index) => {
-		return value - (subtractValues[index] ?? 0);
-	});
-}
-
-function smoothstep(edge0, edge1, value) {
-	if (edge0 === edge1) {
-		return value >= edge1 ? 1 : 0;
-	}
-
-	const t = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
-
-	return t * t * (3 - 2 * t);
-}
-
 function sunAngleHeatmapLinearRgb(sunGeometry) {
 	if (sunGeometry.intersectsSolarDisk) {
 		return { r: 1, g: 1, b: 1 };
@@ -1962,14 +5689,86 @@ function spectralToLinearRgbForPolicy(valuesByWavelength, wavelengthsNm, colorPo
 	return color.linearRgb;
 }
 
+function createEarthLikeSolarSourceSamples({
+	sunDirection,
+	solarSpectrum,
+	solarSourceSampling,
+}) {
+	const directions = createSolarSourceDirections(sunDirection, solarSourceSampling);
+	const weight = 1 / solarSourceSampling.sampleCount;
+	const sourceSpectrum = {
+		kind: 'spectral-irradiance',
+		valuesByWavelength: solarSpectrum.valuesByWavelength,
+		units: 'W m-2 nm-1',
+		derivation: solarSpectrum.provenance.title,
+		provenance: solarSpectrum.provenance,
+	};
+
+	return directions.map((entry, index) => {
+		return {
+			id: solarSourceSampling.mode === 'directional-sun'
+				? 'earth-like-sun.center'
+				: `earth-like-sun.disc.${index}`,
+			direction: entry.direction,
+			weight,
+			solidAngleSr: solarSourceSampling.perSampleSolidAngleSr,
+			sourceSpectrum,
+		};
+	});
+}
+
+function createSolarSourceDirections(sunDirection, solarSourceSampling) {
+	const center = normalize3(sunDirection);
+
+	if (solarSourceSampling.mode === 'directional-sun') {
+		return [{
+			direction: center,
+			angularOffsetRad: 0,
+		}];
+	}
+
+	const { tangentX, tangentY } = createSolarDiscBasis(center);
+	const goldenAngleRad = Math.PI * (3 - Math.sqrt(5));
+
+	return Array.from({ length: solarSourceSampling.sampleCount }, (_, index) => {
+		const offsetRad = solarSourceSampling.solarAngularRadiusRad
+			* Math.sqrt((index + 0.5) / solarSourceSampling.sampleCount);
+		const azimuthRad = index * goldenAngleRad;
+		const tangent = normalize3(add3(
+			scale3(tangentX, Math.cos(azimuthRad)),
+			scale3(tangentY, Math.sin(azimuthRad)),
+		));
+
+		return {
+			direction: normalize3(add3(
+				scale3(center, Math.cos(offsetRad)),
+				scale3(tangent, Math.sin(offsetRad)),
+			)),
+			angularOffsetRad: offsetRad,
+		};
+	});
+}
+
+function createSolarDiscBasis(centerDirection) {
+	const reference = Math.abs(dot3(centerDirection, [0, 1, 0])) > 0.9
+		? [1, 0, 0]
+		: [0, 1, 0];
+	const tangentX = normalize3(cross(reference, centerDirection));
+	const tangentY = normalize3(cross(centerDirection, tangentX));
+
+	return { tangentX, tangentY };
+}
+
 function createSkyPatchModel(
 	scene,
 	wavelengthsNm,
 	solarSpectrum,
 	rayleighPolicy,
 	aerosolPolicy,
+	aerosolPhasePolicy,
 	ozonePolicy,
 	molecularProfilePolicy,
+	solarSourceSampling = resolveSolarSourceSampling(),
 ) {
 	const planetRadiusKm = EARTH_LIKE_SKY.planetRadiusKm;
 	const atmosphereRadiusKm = planetRadiusKm + EARTH_LIKE_SKY.atmosphereTopAltitudeKm;
@@ -1978,6 +5777,11 @@ function createSkyPatchModel(
 		scene.sunElevationDeg ?? 45,
 		scene.sunAzimuthDeg ?? 0,
 	);
+	const sourceSamples = createEarthLikeSolarSourceSamples({
+		sunDirection,
+		solarSpectrum,
+		solarSourceSampling,
+	});
 
 	return {
 		id: `sky-patch-${scene.id}`,
@@ -1990,7 +5794,9 @@ function createSkyPatchModel(
 			aerosolOpticalDepth550Nm: aerosolPolicy.aod550,
 			aerosolSingleScatteringAlbedo: aerosolPolicy.singleScatteringAlbedo,
 			aerosolAngstromExponent: aerosolPolicy.angstromExponent,
-			aerosolAsymmetryG: aerosolPolicy.asymmetryG,
+			aerosolPhasePolicyId: aerosolPhasePolicy.id,
+			aerosolPhaseKind: aerosolPhasePolicy.kind,
+			aerosolPhaseG: aerosolPhasePolicy.parameters.g,
 			ozoneDobsonUnits: EARTH_LIKE_SKY.ozoneDobsonUnits,
 			ozoneLayerCenterAltitudeKm: EARTH_LIKE_SKY.ozoneLayerCenterAltitudeKm,
 			ozoneLayerWidthKm: EARTH_LIKE_SKY.ozoneLayerWidthKm,
@@ -2044,6 +5850,7 @@ function createSkyPatchModel(
 					planetRadiusKm,
 					rayleighPolicy,
 					aerosolPolicy,
+					aerosolPhasePolicy,
 					ozonePolicy,
 					molecularProfilePolicy,
 				);
@@ -2059,6 +5866,7 @@ function createSkyPatchModel(
 					planetRadiusKm,
 					rayleighPolicy,
 					aerosolPolicy,
+					aerosolPhasePolicy,
 					ozonePolicy,
 					molecularProfilePolicy,
 				);
@@ -2089,19 +5897,7 @@ function createSkyPatchModel(
 					return [];
 				}
 
-				return [{
-					id: 'earth-like-sun',
-					direction: sunDirection,
-					weight: 1,
-					solidAngleSr: 1,
-					sourceSpectrum: {
-						kind: 'spectral-irradiance',
-						valuesByWavelength: solarSpectrum.valuesByWavelength,
-						units: 'W m-2 nm-1',
-						derivation: solarSpectrum.provenance.title,
-						provenance: solarSpectrum.provenance,
-					},
-				}];
+				return sourceSamples;
 			},
 			transmittanceSegment(positionKm, sourceSample, query) {
 				const groundHitKm = intersectSphereForward(
@@ -2141,6 +5937,7 @@ function createSkyPatchModel(
 							planetRadiusKm,
 							rayleighPolicy,
 							aerosolPolicy,
+							aerosolPhasePolicy,
 							ozonePolicy,
 							molecularProfilePolicy,
 						);
@@ -2180,6 +5977,7 @@ function earthLikeMediumAt(
 	planetRadiusKm,
 	rayleighPolicy,
 	aerosolPolicy,
+	aerosolPhasePolicy,
 	ozonePolicy,
 	molecularProfilePolicy,
 ) {
@@ -2218,6 +6016,7 @@ function earthLikeMediumAt(
 			molecularProfile: molecularDensity.provenance,
 			aerosolDensity,
 			aerosolPolicy: aerosol.provenance,
+			aerosolPhasePolicy: summarizeAerosolPhasePolicy(aerosolPhasePolicy),
 			ozoneDensityPerKm,
 			ozonePolicy: ozone.provenance,
 		},
@@ -2235,8 +6034,8 @@ function earthLikeMediumAt(
 				scatteringByWavelength: aerosolScattering,
 				absorptionByWavelength: aerosolAbsorption,
 				phase: {
-					kind: 'henyey-greenstein',
-					parameters: { g: aerosolPolicy.asymmetryG },
+					kind: aerosolPhasePolicy.kind,
+					parameters: { ...aerosolPhasePolicy.parameters },
 				},
 			},
 			{
@@ -2282,7 +6081,24 @@ function ozoneProfileDensityPerKm(altitudeKm) {
 	return Math.exp(-0.5 * offset * offset) / (widthKm * Math.sqrt(2 * Math.PI));
 }
 
-function createSkyPatchModelMetadata(rayleighPolicy, aerosolPolicy, ozonePolicy, molecularProfilePolicy) {
+function summarizeAerosolPhasePolicy(aerosolPhasePolicy) {
+	return {
+		id: aerosolPhasePolicy.id,
+		label: aerosolPhasePolicy.label,
+		kind: aerosolPhasePolicy.kind,
+		parameters: { ...aerosolPhasePolicy.parameters },
+		source: aerosolPhasePolicy.source,
+		provenance: { ...aerosolPhasePolicy.provenance },
+	};
+}
+
+function createSkyPatchModelMetadata(
+	rayleighPolicy,
+	aerosolPolicy,
+	aerosolPhasePolicy,
+	ozonePolicy,
+	molecularProfilePolicy,
+) {
 	return {
 		kind: 'earth-like-sky-preview',
 		parameters: {
@@ -2294,7 +6110,9 @@ function createSkyPatchModelMetadata(rayleighPolicy, aerosolPolicy, ozonePolicy,
 			aerosolOpticalDepth550Nm: aerosolPolicy.aod550,
 			aerosolSingleScatteringAlbedo: aerosolPolicy.singleScatteringAlbedo,
 			aerosolAngstromExponent: aerosolPolicy.angstromExponent,
-			aerosolAsymmetryG: aerosolPolicy.asymmetryG,
+			aerosolPhasePolicyId: aerosolPhasePolicy.id,
+			aerosolPhaseKind: aerosolPhasePolicy.kind,
+			aerosolPhaseG: aerosolPhasePolicy.parameters.g,
 			ozoneDobsonUnits: EARTH_LIKE_SKY.ozoneDobsonUnits,
 			ozoneLayerCenterAltitudeKm: EARTH_LIKE_SKY.ozoneLayerCenterAltitudeKm,
 			ozoneLayerWidthKm: EARTH_LIKE_SKY.ozoneLayerWidthKm,
@@ -2317,10 +6135,11 @@ function createSkyPatchModelMetadata(rayleighPolicy, aerosolPolicy, ozonePolicy,
 			aod550: aerosolPolicy.aod550,
 			angstromExponent: aerosolPolicy.angstromExponent,
 			singleScatteringAlbedo: aerosolPolicy.singleScatteringAlbedo,
-			asymmetryG: aerosolPolicy.asymmetryG,
+			defaultPhasePolicyId: aerosolPolicy.defaultPhasePolicyId,
 			scaleHeightKm: aerosolPolicy.scaleHeightKm,
 			defaultPolicy: DEFAULT_AEROSOL_POLICY_ID,
 		},
+		aerosolPhasePolicy: summarizeAerosolPhasePolicy(aerosolPhasePolicy),
 		ozonePolicy: {
 			id: ozonePolicy.id,
 			label: ozonePolicy.label,
@@ -2337,7 +6156,7 @@ function createSkyPatchModelMetadata(rayleighPolicy, aerosolPolicy, ozonePolicy,
 		},
 		phaseFunctions: {
 			rayleigh: 'rayleigh',
-			aerosol: 'henyey-greenstein',
+			aerosol: aerosolPhasePolicy.kind,
 		},
 		molecularProfile: {
 			id: molecularProfilePolicy.id,
@@ -2793,6 +6612,10 @@ export function buildMarkdownReport(result, { imagePath, outPath, reportPath } =
 		return buildSkyPatchMarkdownReport(result, { imagePath, outPath, reportPath });
 	}
 
+	if (Array.isArray(result.skyDomePanels)) {
+		return buildSkyDomeGridMarkdownReport(result, { imagePath, outPath, reportPath });
+	}
+
 	const imageLink = imagePath
 		? `\n![Visual probe summary](${relativeReportPath(imagePath, reportPath)})\n`
 		: '';
@@ -2849,6 +6672,10 @@ export function buildSvg(result) {
 		return buildSkyPatchSvg(result);
 	}
 
+	if (Array.isArray(result.skyDomePanels)) {
+		return buildSkyDomeGridSvg(result);
+	}
+
 	const rowHeight = 112;
 	const width = 980;
 	const height = 80 + result.probes.length * rowHeight;
@@ -2901,11 +6728,272 @@ export function buildImageArtifact(result, imagePath) {
 }
 
 export function buildPng(result) {
-	return pixelImageToPng(composeSkyPatchPixelImage(result, 'PNG'));
+	return pixelImageToPng(composeReferencePixelImage(result, 'PNG'));
 }
 
 export function buildPpm(result) {
-	return pixelImageToPpm(composeSkyPatchPixelImage(result, 'PPM'));
+	return pixelImageToPpm(composeReferencePixelImage(result, 'PPM'));
+}
+
+export function buildMultipleScatteringImageArtifacts(result) {
+	const sidecar = result.multipleScatteringReference;
+
+	if (!Array.isArray(result.skyDomePanels)) {
+		throw new Error('multiple-scattering image artifacts require --sky-dome-grid results');
+	}
+
+	if (sidecar?.mode !== 'iterative-field-grid' || !Array.isArray(sidecar.fieldScenes)) {
+		throw new Error('multiple-scattering image artifacts require iterative-field-grid sidecar panels');
+	}
+
+	const fieldSceneById = new Map(sidecar.fieldScenes.map((scene) => [scene.scenarioId, scene]));
+	const orderedFieldScenes = result.skyDomePanels.map((panel) => {
+		const scene = fieldSceneById.get(panel.id);
+
+		if (!scene) {
+			throw new Error(`multiple-scattering image artifacts missing field scene for ${panel.id}`);
+		}
+
+		return scene;
+	});
+	const baselineColumn = {
+		relativePath: 'baseline-canonical.png',
+		label: 'Baseline canonical single scattering',
+		pixelImage: composeSkyDomeGridPixelImage(result, 'multiple-scattering baseline image artifact'),
+	};
+	const comparisonPanelIds = orderedFieldScenes[0]?.comparisonPanels?.map((panel) => panel.id) ?? [];
+	const sidecarColumns = comparisonPanelIds.map((panelId) => {
+		const panels = orderedFieldScenes.map((scene) => {
+			const panel = scene.comparisonPanels?.find((candidate) => candidate.id === panelId);
+
+			if (!panel) {
+				throw new Error(`multiple-scattering image artifacts missing ${panelId} for ${scene.scenarioId}`);
+			}
+
+			return overlayFieldPanelSunCross(panel.pixelImage, scene.scenarioId);
+		});
+		const label = orderedFieldScenes[0].comparisonPanels.find((panel) => panel.id === panelId)?.label ?? panelId;
+
+		return {
+			relativePath: `${panelId}.png`,
+			label,
+			pixelImage: stackPixelImagesVertically(panels, `multiple-scattering ${panelId} image artifact`),
+		};
+	});
+	const columns = [baselineColumn, ...sidecarColumns];
+	const contactSheet = {
+		relativePath: 'sidecar-skydome-set.png',
+		label: 'Baseline and iterative-field sidecar skydome set',
+		pixelImage: composeHorizontalPixelImages(
+			columns.map((column) => column.pixelImage),
+			'multiple-scattering sidecar skydome set image artifact',
+		),
+	};
+	const sceneRows = result.skyDomePanels.map((panel, sceneIndex) => {
+		const scene = orderedFieldScenes[sceneIndex];
+		const images = [
+			panel.pixelImage,
+			...(scene.comparisonPanels ?? []).map((comparisonPanel) => {
+				return overlayFieldPanelSunCross(comparisonPanel.pixelImage, scene.scenarioId);
+			}),
+		];
+
+		return {
+			relativePath: `scene-${String(sceneIndex + 1).padStart(2, '0')}-${fileSafeSlug(panel.id)}.png`,
+			label: `${panel.label} baseline and sidecar orders`,
+			pixelImage: composeHorizontalPixelImages(
+				images,
+				`multiple-scattering ${panel.id} image artifact`,
+			),
+		};
+	});
+	const imageArtifacts = [contactSheet, ...columns, ...sceneRows].map((artifact) => ({
+		relativePath: artifact.relativePath,
+		label: artifact.label,
+		contents: pixelImageToPng(artifact.pixelImage),
+	}));
+	const readme = buildMultipleScatteringImageReadme({
+		result,
+		sidecar,
+		contactSheet,
+		columns,
+		sceneRows,
+	});
+
+	return {
+		kind: 'flat-atmosphere-multiple-scattering-image-artifacts',
+		mode: sidecar.mode,
+		files: [
+			...imageArtifacts,
+			{
+				relativePath: 'README.md',
+				label: 'Artifact index',
+				contents: `${readme}\n`,
+			},
+		],
+	};
+}
+
+export function writeMultipleScatteringImageArtifacts(result, outputDir) {
+	const artifactSet = buildMultipleScatteringImageArtifacts(result);
+
+	fs.mkdirSync(path.resolve(outputDir), { recursive: true });
+	for (const file of artifactSet.files) {
+		writeFileEnsuringDirectory(path.join(outputDir, file.relativePath), file.contents);
+	}
+
+	return artifactSet;
+}
+
+function overlayFieldPanelSunCross(pixelImage, scenarioId) {
+	const scene = SKY_DOME_GRID_SCENES.find((candidate) => candidate.id === scenarioId);
+
+	if (!scene) {
+		return pixelImage;
+	}
+
+	const sunDirection = directionFromElevationAzimuth(scene.sunElevationDeg, scene.sunAzimuthDeg);
+	const sunMarker = skyDomePixelForDirection(sunDirection, pixelImage.width);
+
+	return overlaySunCross(pixelImage, sunMarker, pixelImage.encoding);
+}
+
+function buildMultipleScatteringImageReadme({
+	result,
+	sidecar,
+	contactSheet,
+	columns,
+	sceneRows,
+}) {
+	return [
+		'# Multiple-Scattering Sidecar Skydome Images',
+		'',
+		'This artifact set exports the current iterative-field multiple-scattering sidecar as real PNG skydome images.',
+		'',
+		'Important: these images are diagnostic sidecar output. They do not replace canonical `spectralRadiance.finalByWavelength`.',
+		'',
+		`Mode: \`${sidecar.mode}\``,
+		`Status: \`${sidecar.status}\``,
+		`Convergence: max order \`${sidecar.convergence?.maxOrder ?? 'n/a'}\`, last-order fraction \`${formatPercent(sidecar.convergence?.lastOrderFraction)}\`, threshold \`${formatPercent(sidecar.convergence?.thresholdFraction)}\`, converged \`${sidecar.convergence?.converged ?? 'n/a'}\``,
+		`Field grid: altitude grid \`${sidecar.diagnostics?.fieldAltitudeGrid ?? 'n/a'}\`, altitude layers \`${sidecar.diagnostics?.altitudeLayerCount ?? 'n/a'}\`, direction basis \`${sidecar.diagnostics?.fieldDirectionBasis ?? 'n/a'}\`, requested directions \`${sidecar.diagnostics?.requestedAngularSampleCount ?? sidecar.diagnostics?.angularSampleCount ?? 'n/a'}\`, resolved directions \`${sidecar.diagnostics?.angularSampleCount ?? 'n/a'}\`, weight error \`${formatPercent(sidecar.diagnostics?.fieldDirectionWeightRelativeError)}\`, lookup \`${sidecar.diagnostics?.fieldDirectionPolicy ?? 'n/a'}\``,
+		`Rendered dome size: \`${result.visual?.domeSize ?? result.skyDomePanels?.[0]?.size?.width ?? 'n/a'} px\``,
+		'',
+		`![${contactSheet.label}](${contactSheet.relativePath})`,
+		'',
+		'## Columns',
+		'',
+		'| File | Contents |',
+		'| --- | --- |',
+		...columns.map((artifact) => `| [${artifact.relativePath}](${artifact.relativePath}) | ${artifact.label} |`),
+		'',
+		'## Scene Rows',
+		'',
+		'Each scene row places the baseline panel first, then the sidecar accumulated-order panels.',
+		'',
+		'## Image Metrics',
+		'',
+		'Metrics are measured before the display-only Sun marker overlay.',
+		'',
+		...formatMultipleScatteringImageReadmeMetrics(result, sidecar),
+		'',
+		'## Dense Cached L1 Image Reconstruction',
+		'',
+		'This compares cached field `L1` against canonical direct `L1` over every in-dome image pixel.',
+		'',
+		...formatMultipleScatteringImageReconstructionReadme(sidecar),
+		'',
+		'| File | Contents |',
+		'| --- | --- |',
+		...sceneRows.map((artifact) => `| [${artifact.relativePath}](${artifact.relativePath}) | ${artifact.label} |`),
+		'',
+	].join('\n');
+}
+
+function formatMultipleScatteringImageReconstructionReadme(sidecar) {
+	return (sidecar.fieldScenes ?? []).flatMap((scene) => {
+		const reconstruction = scene.imageReconstruction;
+
+		if (!reconstruction) {
+			return [
+				`### ${scene.label}`,
+				'',
+				'No dense image reconstruction data available.',
+				'',
+			];
+		}
+
+		return [
+			`### ${scene.label}`,
+			'',
+			`Pixels: \`${reconstruction.comparedPixelCount}\`, mean error \`${formatPercent(reconstruction.aggregate?.meanRelativeSpectralEnergyError)}\`, max \`${formatPercent(reconstruction.aggregate?.maxRelativeSpectralEnergyError)}\`, mean luminance error \`${formatPercent(reconstruction.aggregate?.meanLinearLuminanceRelativeError)}\``,
+			'',
+			'| Radius band | Pixels | Mean spectral-energy error | Max spectral-energy error | Mean luminance error |',
+			'| --- | ---: | ---: | ---: | ---: |',
+			...(reconstruction.byRadiusBand ?? []).map((row) => {
+				return `| ${[
+					row.radiusBand,
+					row.comparedSampleCount,
+					formatPercent(row.meanRelativeSpectralEnergyError),
+					formatPercent(row.maxRelativeSpectralEnergyError),
+					formatPercent(row.meanLinearLuminanceRelativeError),
+				].join(' | ')} |`;
+			}),
+			'',
+		];
+	});
+}
+
+function formatMultipleScatteringImageReadmeMetrics(result, sidecar) {
+	return (sidecar.fieldScenes ?? []).flatMap((scene) => {
+		const baselinePanel = result.skyDomePanels?.find((panel) => panel.id === scene.scenarioId);
+		const rows = [
+			...(baselinePanel
+				? [formatImageMetricRow('Canonical L1', baselinePanel.modelComparisonMetrics)]
+				: []),
+			...(scene.comparisonPanels ?? []).map((panel) => {
+				return formatImageMetricRow(panel.label, panel.modelComparisonMetrics);
+			}),
+		];
+
+		return [
+			`### ${scene.label}`,
+			'',
+			'| Panel | Warm area | Non-blue area | Horizon lum | Horizon sat | Zenith lum | Zenith sat | Horizon/zenith lum | Sun-neighborhood warm |',
+			'| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+			...rows.map((row) => `| ${row} |`),
+			'',
+		];
+	});
+}
+
+function formatImageMetricRow(label, metrics) {
+	return [
+		label,
+		formatPercent(metrics?.warmAffectedFraction),
+		formatPercent(metrics?.nonBlueAffectedFraction),
+		formatNumber(metrics?.horizonRing?.luminance?.average),
+		formatNumber(metrics?.horizonRing?.saturation?.average),
+		formatNumber(metrics?.zenithDisk?.luminance?.average),
+		formatNumber(metrics?.zenithDisk?.saturation?.average),
+		formatNumber(metrics?.zenithToHorizon?.luminanceRatio),
+		formatPercent(metrics?.sunNeighborhood10Deg?.warmAffectedFraction),
+	].join(' | ');
+}
+
+function fileSafeSlug(value) {
+	return String(value)
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '')
+		|| 'artifact';
+}
+
+function composeReferencePixelImage(result, artifactLabel) {
+	if (Array.isArray(result.skyDomePanels)) {
+		return composeSkyDomeGridPixelImage(result, artifactLabel);
+	}
+
+	return composeSkyPatchPixelImage(result, artifactLabel);
 }
 
 function composeSkyPatchPixelImage(result, artifactLabel) {
@@ -2923,6 +7011,15 @@ function composeSkyPatchPixelImage(result, artifactLabel) {
 
 	const patchImages = result.skyPatches.map((patch) => patch.pixelImage);
 	return composeHorizontalPixelImages(patchImages, artifactLabel);
+}
+
+function composeSkyDomeGridPixelImage(result, artifactLabel) {
+	if (result.skyDomePanels.length === 0) {
+		throw new Error(`${artifactLabel} image artifact requires at least one sky-dome panel`);
+	}
+
+	const panelImages = result.skyDomePanels.map((panel) => panel.pixelImage);
+	return stackPixelImagesVertically(panelImages, artifactLabel);
 }
 
 function composeSunDiagnosticPixelImage(result, artifactLabel) {
@@ -3044,6 +7141,408 @@ function uniqueSorted(values) {
 	return [...new Set(values)].sort();
 }
 
+function formatBaselineFreezeSection(result) {
+	const baseline = result.baselineFreeze;
+
+	if (!baseline) {
+		return [];
+	}
+
+	return [
+		`Baseline freeze: \`${baseline.id}\`, mode \`${baseline.mode}\`, status \`${baseline.status}\``,
+		`Baseline scenarios: \`${baseline.scenarios.join(', ')}\``,
+		`Baseline proxy policy: \`${baseline.proxyPolicy}\``,
+	];
+}
+
+function formatSkyDomeModelMetricRows(result) {
+	return result.skyDomePanels.map((panel) => {
+		const metrics = panel.modelComparisonMetrics;
+
+		return [
+			panel.label,
+			formatPercent(metrics?.warmAffectedFraction),
+			formatPercent(metrics?.brightWarmAffectedFraction),
+			formatPercent(metrics?.nonBlueAffectedFraction),
+			`${metrics?.sampledDomePixelCount ?? metrics?.domePixelCount ?? 'n/a'} / ${metrics?.skippedDomePixelCount ?? 0}`,
+			formatNumber(metrics?.horizonRing?.luminance?.average),
+			formatNumber(metrics?.zenithDisk?.luminance?.average),
+			formatNumber(metrics?.zenithToHorizon?.luminanceRatio),
+			formatNumber(metrics?.horizonRing?.saturation?.average),
+			formatPercent(metrics?.sunNeighborhood10Deg?.warmAffectedFraction),
+		].join(' | ');
+	}).map((row) => `| ${row} |`);
+}
+
+function formatSamplingProfileLine(samplingProfile) {
+	if (!samplingProfile) {
+		return 'Sampling profile: `n/a`';
+	}
+
+	return `Sampling profile: \`${samplingProfile.id}\`, label \`${samplingProfile.label ?? 'n/a'}\`, use \`${samplingProfile.evidenceUse ?? 'n/a'}\``;
+}
+
+function formatExternalRadianceComparisonSection(result) {
+	const comparison = result.externalRadianceComparison;
+
+	if (!comparison) {
+		return [];
+	}
+
+	return [
+		'## External Radiance Comparison',
+		'',
+		`Reference artifact: \`${comparison.referencePath}\``,
+		`Reference source: \`${comparison.source?.model ?? 'n/a'}\`, version \`${comparison.source?.version ?? 'n/a'}\``,
+		`Samples: \`${comparison.matchedSampleCount}/${comparison.sampleCount}\` matched, \`${comparison.unmatchedSampleCount}\` unmatched`,
+		'',
+		'| Scenario | Role | Status | Matched wavelengths | Mean abs error | RMS abs error | Mean relative error |',
+		'| --- | --- | --- | --- | ---: | ---: | ---: |',
+		...comparison.samples.map((sample) => {
+			return [
+				sample.scenarioId,
+				sample.sampleRole,
+				sample.status,
+				Array.isArray(sample.matchedWavelengthsNm)
+					? sample.matchedWavelengthsNm.join(', ')
+					: 'n/a',
+				formatNumber(sample.meanAbsoluteError),
+				formatNumber(sample.rmsAbsoluteError),
+				formatNumber(sample.meanRelativeError),
+			].join(' | ');
+		}).map((row) => `| ${row} |`),
+		'',
+	];
+}
+
+function formatMultipleScatteringReferenceSection(result) {
+	const sidecar = result.multipleScatteringReference;
+
+	if (!sidecar) {
+		return [];
+	}
+
+	const wavelengthsNm = sidecar.wavelengthsNm ?? result.visual?.wavelengthGrid?.wavelengthsNm;
+	const orderRows = (sidecar.orders ?? []).map((order) => {
+		return [
+			order.order,
+			formatSelectedSpectrum(order.radianceByWavelength, wavelengthsNm),
+		].join(' | ');
+	});
+	const sampleRows = (sidecar.samples ?? []).map((sample) => {
+		const order1 = sample.orders?.find((order) => order.order === 1);
+		const order2 = sample.orders?.find((order) => order.order === 2);
+
+		return [
+			sample.scenarioId,
+			sample.sampleRole,
+			formatNumber(sample.viewZenithDeg),
+			formatNumber(sample.relativeAzimuthDeg),
+			formatDisplaySwatch(sample.displayHex),
+			formatDisplaySwatch(sample.displayComparison?.order1?.displayHex),
+			formatDisplaySwatch(sample.displayComparison?.order1PlusOrder2?.displayHex),
+			formatDisplaySwatch(sample.displayComparison?.accumulated?.displayHex),
+			formatPercent((sample.displayComparison?.delta?.linearLuminanceRatio ?? 1) - 1),
+			formatSelectedSpectrum(order1?.radianceByWavelength, wavelengthsNm),
+			formatSelectedSpectrum(order2?.radianceByWavelength, wavelengthsNm),
+			formatPercent(sample.convergence?.order2Fraction),
+			formatPercent(sample.convergence?.lastOrderFraction),
+		].join(' | ');
+	});
+	const fieldSceneRows = (sidecar.fieldScenes ?? []).flatMap((scene) => {
+		const totalEnergy = (scene.orders ?? []).reduce((sum, order) => sum + (order.energy ?? 0), 0);
+
+		return (scene.orders ?? []).map((order) => [
+			scene.scenarioId,
+			order.order,
+			formatNumber(order.energy),
+			formatPercent(totalEnergy > 0 ? order.energy / totalEnergy : null),
+			formatSelectedSpectrum(order.averageRadianceByWavelength, wavelengthsNm),
+			formatPercent(scene.convergence?.lastOrderFraction),
+			scene.convergence?.converged ?? 'n/a',
+		].join(' | '));
+	});
+	const reconstruction = sidecar.reconstruction;
+	const reconstructionByZenithRows = (reconstruction?.byViewZenithDeg ?? []).map((row) => [
+		formatNumber(row.viewZenithDeg),
+		row.comparedSampleCount,
+		formatPercent(row.meanRelativeSpectralEnergyError),
+		formatPercent(row.maxRelativeSpectralEnergyError),
+		formatPercent(row.meanLinearLuminanceRelativeError),
+		formatNumber(row.meanDisplayRgbAbsoluteError),
+	].join(' | '));
+	const reconstructionWorstRows = (reconstruction?.worstSamples ?? []).map((sample) => [
+		sample.scenarioId,
+		sample.sampleRole,
+		formatNumber(sample.viewZenithDeg),
+		formatNumber(sample.relativeAzimuthDeg),
+		formatPercent(sample.relativeSpectralEnergyError),
+		formatPercent(sample.linearLuminanceRelativeError),
+		formatDisplaySwatch(sample.directDisplayHex),
+		formatDisplaySwatch(sample.reconstructedDisplayHex),
+	].join(' | '));
+
+	return [
+		'## Multiple-Scattering Reference Sidecar',
+		'',
+		`Mode: \`${sidecar.mode}\``,
+		`Status: \`${sidecar.status}\``,
+		`Output policy: \`${sidecar.outputPolicy}\``,
+		`Planned solver: \`${sidecar.plannedSolver}\``,
+		`Diagnostics: geometry \`${sidecar.diagnostics?.geometryKind ?? 'n/a'}\`, target mode \`${sidecar.diagnostics?.targetMode ?? 'n/a'}\`, tau regime \`${sidecar.diagnostics?.tauRegime ?? 'n/a'}\`, targets \`${sidecar.diagnostics?.targetCount ?? 'n/a'}\`, direction basis \`${sidecar.diagnostics?.fieldDirectionBasis ?? 'n/a'}\`, requested directions \`${sidecar.diagnostics?.requestedAngularSampleCount ?? sidecar.diagnostics?.angularSampleCount ?? 'n/a'}\`, resolved directions \`${sidecar.diagnostics?.angularSampleCount ?? 'n/a'}\`, direction weight error \`${formatPercent(sidecar.diagnostics?.fieldDirectionWeightRelativeError)}\`, altitude grid \`${sidecar.diagnostics?.fieldAltitudeGrid ?? 'n/a'}\`, altitude layers \`${sidecar.diagnostics?.altitudeLayerCount ?? 'n/a'}\``,
+		`Convergence: max order \`${sidecar.convergence?.maxOrder ?? 'n/a'}\`, last-order fraction \`${formatPercent(sidecar.convergence?.lastOrderFraction)}\`, threshold \`${formatPercent(sidecar.convergence?.thresholdFraction)}\`, converged \`${sidecar.convergence?.converged ?? 'n/a'}\``,
+		...(sidecar.diagnostics?.warnings ?? []).map((warning) => `- ${warning}`),
+		...(orderRows.length > 0
+			? [
+				'',
+				'| Order | Average selected radiance |',
+				'| ---: | --- |',
+				...orderRows.map((row) => `| ${row} |`),
+			]
+			: []),
+		...(sampleRows.length > 0
+			? [
+				'',
+				'| Scenario | Role | View zenith deg | Rel az deg | Rendered display | L1 display | L1+L2 display | Accumulated display | Linear luminance lift | Order 1 selected radiance | Order 2 selected radiance | Order 2 fraction | Last order fraction |',
+				'| --- | --- | ---: | ---: | --- | --- | --- | --- | ---: | --- | --- | ---: | ---: |',
+				...sampleRows.map((row) => `| ${row} |`),
+			]
+			: []),
+		...(fieldSceneRows.length > 0
+			? [
+				'',
+				'| Scenario | Order | Field energy | Energy fraction | Average field radiance | Scene last-order fraction | Scene converged |',
+				'| --- | ---: | ---: | ---: | --- | ---: | --- |',
+				...fieldSceneRows.map((row) => `| ${row} |`),
+				'',
+				...formatFieldComparisonPanelSection(sidecar.fieldScenes),
+			]
+			: []),
+		...(reconstruction
+			? [
+				'',
+				'### Cached Field L1 Reconstruction',
+				'',
+				`Interpolation: \`${reconstruction.interpolationMode}\`, target mode \`${reconstruction.targetMode}\`, samples \`${reconstruction.targetCount}\``,
+				`Aggregate: mean spectral-energy error \`${formatPercent(reconstruction.aggregate?.meanRelativeSpectralEnergyError)}\`, max \`${formatPercent(reconstruction.aggregate?.maxRelativeSpectralEnergyError)}\`, mean luminance error \`${formatPercent(reconstruction.aggregate?.meanLinearLuminanceRelativeError)}\`, mean display RGB error \`${formatNumber(reconstruction.aggregate?.meanDisplayRgbAbsoluteError)}\``,
+				'',
+				'| View zenith deg | Samples | Mean spectral-energy error | Max spectral-energy error | Mean luminance error | Mean display RGB abs error |',
+				'| ---: | ---: | ---: | ---: | ---: | ---: |',
+				...reconstructionByZenithRows.map((row) => `| ${row} |`),
+				'',
+				'| Scenario | Role | View zenith deg | Rel az deg | Spectral-energy error | Luminance error | Direct display | Reconstructed display |',
+				'| --- | --- | ---: | ---: | ---: | ---: | --- | --- |',
+				...reconstructionWorstRows.map((row) => `| ${row} |`),
+			]
+			: []),
+		'',
+	];
+}
+
+function formatFieldComparisonPanelSection(fieldScenes) {
+	return (fieldScenes ?? []).flatMap((scene) => {
+		const metricRows = (scene.comparisonPanels ?? []).map((panel) => {
+			const metrics = panel.modelComparisonMetrics;
+
+			return [
+				panel.label,
+				formatPercent(metrics?.warmAffectedFraction),
+				formatPercent(metrics?.nonBlueAffectedFraction),
+				formatNumber(metrics?.horizonRing?.luminance?.average),
+				formatNumber(metrics?.horizonRing?.saturation?.average),
+				formatNumber(metrics?.zenithDisk?.luminance?.average),
+				formatNumber(metrics?.zenithDisk?.saturation?.average),
+				formatNumber(metrics?.zenithToHorizon?.luminanceRatio),
+				formatPercent(metrics?.sunNeighborhood10Deg?.warmAffectedFraction),
+			].join(' | ');
+		});
+
+		return [
+			`### ${scene.label} Field Comparison Panels`,
+			'',
+			...(metricRows.length > 0
+				? [
+					'| Panel | Warm area | Non-blue area | Horizon luminance | Horizon saturation | Zenith luminance | Zenith saturation | Horizon/zenith luminance | Sun-neighborhood warm area |',
+					'| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+					...metricRows.map((row) => `| ${row} |`),
+					'',
+				]
+				: []),
+			...(scene.comparisonPanels ?? []).flatMap((panel) => [
+				`**${panel.label}**`,
+				'',
+				formatSwatchGrid(panel.rows, 4),
+				'',
+			]),
+		];
+	});
+}
+
+function formatSwatchGrid(rows, cellSizePx) {
+	if (!Array.isArray(rows) || rows.length === 0) {
+		return 'n/a';
+	}
+
+	const width = rows[0]?.length ?? 0;
+	const cells = rows.flatMap((row) => {
+		return row.map((hex) => {
+			return `<span style="width:${cellSizePx}px;height:${cellSizePx}px;background:${hex};display:block"></span>`;
+		});
+	}).join('');
+
+	return `<div style="display:grid;grid-template-columns:repeat(${width},${cellSizePx}px);gap:0;line-height:0">${cells}</div>`;
+}
+
+function buildSkyDomeGridMarkdownReport(result, { imagePath, outPath, reportPath } = {}) {
+	const imageLink = imagePath
+		? `\n![Sky-dome comparison grid](${relativeReportPath(imagePath, reportPath)})\n`
+		: '';
+	const jsonLink = outPath ? `\nJSON output: \`${relativeReportPath(outPath, reportPath)}\`\n` : '';
+	const rows = result.skyDomePanels.map((panel) => {
+		const centerSample = skyDomeCenterSample(panel);
+		const horizonSample = skyDomeHorizonEdgeSample(panel);
+
+		return [
+			panel.label,
+			formatNumber(panel.sunZenithDeg),
+			formatNumber(panel.sunElevationDeg),
+			`${panel.size.width} x ${panel.size.height}`,
+			`<span style="display:inline-block;width:48px;height:18px;background:${centerSample?.displayHex ?? '#000'};border:1px solid #777"></span> \`${centerSample?.displayHex ?? 'n/a'}\``,
+			`<span style="display:inline-block;width:48px;height:18px;background:${horizonSample?.displayHex ?? '#000'};border:1px solid #777"></span> \`${horizonSample?.displayHex ?? 'n/a'}\``,
+			formatSelectedSpectrum(centerSample?.renderedByWavelength, panel.wavelengthsNm),
+			formatSelectedSpectrum(horizonSample?.renderedByWavelength, panel.wavelengthsNm),
+		].join(' | ');
+	});
+
+	return [
+		'# Atmosphere Reference Sky-Dome Grid',
+		'',
+		'This report is generated by `scripts/flat/atmosphere/run-reference-probe.js --sky-dome-grid`.',
+		'',
+		'The panels are fisheye skydome renders for the four time rows listed in Bruneton 2016 Figure 1. They are model-output comparison artifacts: the goal is to compare our current transport and color path against published sky-model outputs before using photographs as the target.',
+		imageLink,
+		jsonLink,
+		`Comparison source: \`${result.sourceComparison?.source ?? 'n/a'}\`, \`${result.sourceComparison?.url ?? 'n/a'}\``,
+		`Stage: \`${result.stage}\``,
+		`Panel count: \`${result.skyDomePanelCount}\``,
+		`Projection: \`${result.visual?.projection?.id ?? 'n/a'}\`, policy \`${result.visual?.projection?.policy ?? 'n/a'}\``,
+		`Dome sample mask: \`${result.visual?.domeSampleMask?.id ?? 'full'}\`, min radius \`${formatNumber(result.visual?.domeSampleMask?.minRadius ?? 0)}\`, ${result.visual?.domeSampleMask?.description ?? 'Trace every pixel inside the fisheye dome.'}`,
+		`Solar source: \`${result.visual?.solarSource?.mode ?? 'directional-sun'}\`, source samples \`${result.visual?.solarSource?.sampleCount ?? 1}\`, solar angular radius \`${formatNumber(result.visual?.solarSource?.solarAngularRadiusDeg)} deg\`, weight sum \`${formatNumber(result.visual?.solarSource?.weightSum)}\``,
+		`Display: \`${result.visual?.colorSpace ?? 'n/a'}\`, encoding \`${result.visual?.encoding ?? 'n/a'}\`, tone map \`${result.visual?.toneMap ?? 'n/a'}\`, exposure \`${result.visual?.exposure ?? 'n/a'}\`, solar \`${result.visual?.solarSpectrum?.policy ?? 'n/a'}\`, Rayleigh \`${result.visual?.rayleighPolicy?.id ?? 'n/a'}\`, aerosol \`${result.visual?.aerosolPolicy?.id ?? 'n/a'}\`, aerosol phase \`${result.visual?.aerosolPhasePolicy?.id ?? 'n/a'}\`, ozone \`${result.visual?.ozonePolicy?.id ?? 'n/a'}\`, molecular profile \`${result.visual?.molecularProfile?.id ?? 'n/a'}\`, grid \`${formatWavelengthGrid(result.visual?.wavelengthGrid)}\``,
+		formatSamplingProfileLine(result.visual?.numerical?.samplingProfile),
+		`Numerical sampling: view steps \`${result.visual?.numerical?.viewSteps ?? 'n/a'}\`, source-path steps \`${result.visual?.numerical?.sunTransmittanceSteps ?? 'n/a'}\`, integration \`${result.visual?.numerical?.integrationMethod ?? 'n/a'}\``,
+		`World parameters: radius \`${formatPlainNumber(result.model?.parameters?.planetRadiusKm)} km\`, atmosphere top \`${formatPlainNumber(result.model?.parameters?.atmosphereTopAltitudeKm)} km\`, Rayleigh scale height \`${formatPlainNumber(result.model?.parameters?.rayleighScaleHeightKm)} km\`, aerosol optical depth 550 nm \`${formatPlainNumber(result.model?.parameters?.aerosolOpticalDepth550Nm)}\`, aerosol SSA \`${formatPlainNumber(result.model?.parameters?.aerosolSingleScatteringAlbedo)}\`, aerosol phase \`${result.model?.parameters?.aerosolPhaseKind ?? 'n/a'} g=${formatPlainNumber(result.model?.parameters?.aerosolPhaseG)}\`, ozone \`${formatPlainNumber(result.model?.parameters?.ozoneDobsonUnits)} DU\``,
+		...formatBaselineFreezeSection(result),
+		'',
+		'| Row | Sun zenith deg | Sun elevation deg | Cells | Zenith display | Horizon-edge display | Zenith rendered radiance | Horizon rendered radiance |',
+		'| --- | ---: | ---: | ---: | --- | --- | --- | --- |',
+		...rows.map((row) => `| ${row} |`),
+		'',
+		'## Model-Output Metrics',
+		'',
+		'These display-encoded fisheye metrics are computed before the red Sun marker is overlaid. They are diagnostic image-shape measurements for model-family comparison, not physical radiance truth.',
+		'',
+		'| Row | Warm area | Bright warm area | Non-blue area | Sampled / skipped pixels | Horizon luminance avg | Zenith luminance avg | Horizon/zenith luminance | Horizon saturation | Sun 10 deg warm area |',
+		'| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+		...formatSkyDomeModelMetricRows(result),
+		'',
+		...formatExternalRadianceComparisonSection(result),
+		...formatMultipleScatteringReferenceSection(result),
+		'## Panel Notes',
+		'',
+		...result.skyDomePanels.flatMap((panel) => {
+			const centerSample = skyDomeCenterSample(panel);
+			const horizonSample = skyDomeHorizonEdgeSample(panel);
+
+			return [
+				`### ${panel.label}`,
+				'',
+				`- Time row: \`${panel.timeLabel}\`, sun zenith \`${formatNumber(panel.sunZenithDeg)} deg\`, elevation \`${formatNumber(panel.sunElevationDeg)} deg\`, azimuth \`${formatNumber(panel.sunAzimuthDeg)} deg\``,
+				`- Display exposure: \`${formatNumber(panel.displayExposure)}\``,
+				`- Dome sample mask: \`${panel.domeSampleMask?.id ?? 'full'}\`, sampled \`${panel.sampledInsideDomePixelCount ?? 'n/a'}\`, skipped \`${panel.skippedInsideDomePixelCount ?? 0}\``,
+				`- Tone map: \`${panel.toneMap ?? 'n/a'}\``,
+				`- Solar spectrum: \`${panel.solarSpectrum?.policy ?? 'n/a'}\``,
+				`- Rayleigh policy: \`${panel.rayleighPolicy?.id ?? 'n/a'}\``,
+				`- Aerosol policy: \`${panel.aerosolPolicy?.id ?? 'n/a'}\`, AOD550 \`${formatPlainNumber(panel.aerosolPolicy?.aod550)}\`, SSA \`${formatPlainNumber(panel.aerosolPolicy?.singleScatteringAlbedo)}\`, default phase \`${panel.aerosolPolicy?.defaultPhasePolicyId ?? 'n/a'}\``,
+				`- Aerosol phase policy: \`${panel.aerosolPhasePolicy?.id ?? 'n/a'}\`, kind \`${panel.aerosolPhasePolicy?.kind ?? 'n/a'}\`, g \`${formatPlainNumber(panel.aerosolPhasePolicy?.parameters?.g)}\``,
+				`- Ozone policy: \`${panel.ozonePolicy?.id ?? 'n/a'}\``,
+				`- Molecular profile: \`${panel.molecularProfile?.id ?? 'n/a'}\``,
+				`- ${formatSamplingProfileLine(panel.numerical?.samplingProfile)}`,
+				`- Numerical sampling: \`${panel.numerical?.viewSteps ?? 'n/a'} view steps, ${panel.numerical?.sunTransmittanceSteps ?? 'n/a'} source-path steps, ${panel.numerical?.integrationMethod ?? 'n/a'} integration\``,
+				`- Zenith rendered radiance: \`${formatSelectedSpectrum(centerSample?.renderedByWavelength, panel.wavelengthsNm)}\``,
+				`- Horizon rendered radiance: \`${formatSelectedSpectrum(horizonSample?.renderedByWavelength, panel.wavelengthsNm)}\``,
+				`- Horizon optical-depth validity: \`${formatOpticalDepthValiditySummary(horizonSample?.opticalDepthValidity)}\``,
+				`- Sun marker: \`x=${panel.projection?.sunMarker?.x ?? 'n/a'}, y=${panel.projection?.sunMarker?.y ?? 'n/a'}\``,
+				`- Wavelengths: \`${formatWavelengthList(panel.wavelengthsNm)}\``,
+				'',
+			];
+		}),
+	].join('\n');
+}
+
+function buildSkyDomeGridSvg(result) {
+	const cellSize = 4;
+	const rowGap = 28;
+	const margin = 24;
+	const labelWidth = 136;
+	const firstPanelSize = result.skyDomePanels[0]?.size ?? {
+		width: DEFAULT_SKY_DOME_SIZE,
+		height: DEFAULT_SKY_DOME_SIZE,
+	};
+	const panelWidth = firstPanelSize.width * cellSize;
+	const panelHeight = firstPanelSize.height * cellSize;
+	const headerHeight = 48;
+	const width = margin * 2 + labelWidth + panelWidth;
+	const height = margin * 2 + headerHeight
+		+ result.skyDomePanels.length * panelHeight
+		+ Math.max(0, result.skyDomePanels.length - 1) * rowGap
+		+ 28;
+	const panels = result.skyDomePanels.map((panel, panelIndex) => {
+		const x0 = margin + labelWidth;
+		const y0 = margin + headerHeight + panelIndex * (panelHeight + rowGap);
+		const labelX = margin;
+		const cells = panel.rows.flatMap((row, y) => {
+			return row.map((hex, x) => {
+				return `<rect x="${x0 + x * cellSize}" y="${y0 + y * cellSize}" width="${cellSize}" height="${cellSize}" fill="${hex}"/>`;
+			});
+		}).join('\n');
+
+		return [
+			`<text x="${labelX}" y="${y0 + 18}" class="title">${escapeXml(panel.timeLabel)}</text>`,
+			`<text x="${labelX}" y="${y0 + 39}" class="muted">${escapeXml(`${panel.sunZenithDeg} deg zenith`)}</text>`,
+			`<text x="${labelX}" y="${y0 + 58}" class="muted">${escapeXml(panel.id)}</text>`,
+			`<rect x="${x0 - 1}" y="${y0 - 1}" width="${panelWidth + 2}" height="${panelHeight + 2}" fill="none" stroke="#304050"/>`,
+			cells,
+		].join('\n');
+	}).join('\n');
+
+	return [
+		`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+		'<style>',
+		'text{font-family:Arial,Helvetica,sans-serif;fill:#1f2933}.title{font-size:18px;font-weight:700}.muted{font-size:12px;fill:#5f6b7a}.heading{font-size:22px;font-weight:700}',
+		'</style>',
+		'<rect width="100%" height="100%" fill="#f7f9fb"/>',
+		`<text x="${margin}" y="${margin + 22}" class="heading">Sky-Dome Model Comparison Column</text>`,
+		panels,
+		`<text x="${margin}" y="${height - 20}" class="muted">Display: ${escapeXml(result.visual?.colorSpace ?? 'n/a')} / ${escapeXml(result.visual?.encoding ?? 'n/a')} from ${formatPlainNumber(result.visual?.wavelengthGrid?.count)} wavelength samples. Red cross marks the sun direction.</text>`,
+		'</svg>',
+	].join('\n');
+}
+
+function skyDomeCenterSample(panel) {
+	return panel.diagnosticSamples.find((sample) => {
+		return sample.x === Math.floor(panel.size.width / 2)
+			&& sample.y === Math.floor(panel.size.height / 2);
+	});
+}
+
+function skyDomeHorizonEdgeSample(panel) {
+	return panel.diagnosticSamples.find((sample) => {
+		return sample.x === Math.floor(panel.size.width / 2)
+			&& sample.y === 0;
+	});
+}
+
 function buildSkyPatchMarkdownReport(result, { imagePath, outPath, reportPath } = {}) {
 	const imageLink = imagePath
 		? `\n![Sky patch visual evidence](${relativeReportPath(imagePath, reportPath)})\n`
@@ -3075,11 +7574,13 @@ function buildSkyPatchMarkdownReport(result, { imagePath, outPath, reportPath } 
 		'The image is made from many `traceRay` calls through the current canonical transport stages. The adapters are intentionally basic: a small camera model, a spherical Earth-like sky shell, named top-of-atmosphere solar spectrum samples, named Rayleigh/aerosol/ozone/profile composition policies, and official CIE 1931 2-degree table-backed XYZ to sRGB display mapping. This is meant to show colors and gradients now, not final validated Earth truth.',
 		imageLink,
 		jsonLink,
+		...formatBaselineFreezeSection(result),
 		`Stage: \`${result.stage}\``,
 		`Patch count: \`${result.skyPatchCount}\``,
 		`Model: \`${result.model?.kind ?? 'n/a'}\``,
-		`Display: \`${result.visual?.colorSpace ?? 'n/a'}\`, encoding \`${result.visual?.encoding ?? 'n/a'}\`, tone map \`${result.visual?.toneMap ?? 'n/a'}\`, exposure \`${result.visual?.exposure ?? 'n/a'}\`, solar \`${result.visual?.solarSpectrum?.policy ?? 'n/a'}\`, Rayleigh \`${result.visual?.rayleighPolicy?.id ?? 'n/a'}\`, aerosol \`${result.visual?.aerosolPolicy?.id ?? 'n/a'}\`, ozone \`${result.visual?.ozonePolicy?.id ?? 'n/a'}\`, molecular profile \`${result.visual?.molecularProfile?.id ?? 'n/a'}\`, grid \`${formatWavelengthGrid(result.visual?.wavelengthGrid)}\``,
-		`Scattering mode: \`${result.visual?.scatteringMode?.id ?? 'single'}\`, haze-lift strength \`${formatNumber(result.visual?.scatteringMode?.hazeLiftStrength)}\`, policy \`${result.visual?.scatteringMode?.policy ?? 'n/a'}\``,
+		`Display: \`${result.visual?.colorSpace ?? 'n/a'}\`, encoding \`${result.visual?.encoding ?? 'n/a'}\`, tone map \`${result.visual?.toneMap ?? 'n/a'}\`, exposure \`${result.visual?.exposure ?? 'n/a'}\`, solar \`${result.visual?.solarSpectrum?.policy ?? 'n/a'}\`, Rayleigh \`${result.visual?.rayleighPolicy?.id ?? 'n/a'}\`, aerosol \`${result.visual?.aerosolPolicy?.id ?? 'n/a'}\`, aerosol phase \`${result.visual?.aerosolPhasePolicy?.id ?? 'n/a'}\`, ozone \`${result.visual?.ozonePolicy?.id ?? 'n/a'}\`, molecular profile \`${result.visual?.molecularProfile?.id ?? 'n/a'}\`, grid \`${formatWavelengthGrid(result.visual?.wavelengthGrid)}\``,
+		formatSamplingProfileLine(result.visual?.numerical?.samplingProfile),
+		`Numerical sampling: view steps \`${result.visual?.numerical?.viewSteps ?? 'n/a'}\`, source-path steps \`${result.visual?.numerical?.sunTransmittanceSteps ?? 'n/a'}\`, default view/source \`${result.visual?.numerical?.defaultViewSteps ?? 'n/a'}/${result.visual?.numerical?.defaultSunTransmittanceSteps ?? 'n/a'}\`, integration \`${result.visual?.numerical?.integrationMethod ?? 'n/a'}\``,
 		`Sun visual: \`${result.visual?.sunVisual?.mode ?? 'none'}\`, solar angular diameter \`${formatNumber(result.visual?.sunVisual?.solarAngularDiameterDeg)} deg\``,
 		...(result.visual?.sunVisual?.mode === 'diagnostic'
 			? [
@@ -3087,12 +7588,14 @@ function buildSkyPatchMarkdownReport(result, { imagePath, outPath, reportPath } 
 				'Diagnostic panel order for PNG/PPM output: sky-only, angular-distance heatmap, disk mask, direct-disk approximation, sky-plus-disk approximation.',
 			]
 			: []),
-		`World parameters: radius \`${formatPlainNumber(result.model?.parameters?.planetRadiusKm)} km\`, atmosphere top \`${formatPlainNumber(result.model?.parameters?.atmosphereTopAltitudeKm)} km\`, Rayleigh scale height \`${formatPlainNumber(result.model?.parameters?.rayleighScaleHeightKm)} km\`, aerosol optical depth 550 nm \`${formatPlainNumber(result.model?.parameters?.aerosolOpticalDepth550Nm)}\`, aerosol g \`${formatPlainNumber(result.model?.parameters?.aerosolAsymmetryG)}\`, ozone \`${formatPlainNumber(result.model?.parameters?.ozoneDobsonUnits)} DU\``,
+		`World parameters: radius \`${formatPlainNumber(result.model?.parameters?.planetRadiusKm)} km\`, atmosphere top \`${formatPlainNumber(result.model?.parameters?.atmosphereTopAltitudeKm)} km\`, Rayleigh scale height \`${formatPlainNumber(result.model?.parameters?.rayleighScaleHeightKm)} km\`, aerosol optical depth 550 nm \`${formatPlainNumber(result.model?.parameters?.aerosolOpticalDepth550Nm)}\`, aerosol phase \`${result.model?.parameters?.aerosolPhaseKind ?? 'n/a'} g=${formatPlainNumber(result.model?.parameters?.aerosolPhaseG)}\`, ozone \`${formatPlainNumber(result.model?.parameters?.ozoneDobsonUnits)} DU\``,
 		'',
 		'| Patch | View | Center display | Cells | Preview exposure | Center linear sRGB | Center rendered radiance samples | Center transmittance samples |',
 		'| --- | --- | --- | ---: | ---: | --- | --- | --- |',
 		...rows.map((row) => `| ${row} |`),
 		'',
+		...formatExternalRadianceComparisonSection(result),
+		...formatMultipleScatteringReferenceSection(result),
 		'## Patch Notes',
 		'',
 		...result.skyPatches.flatMap((patch) => {
@@ -3111,13 +7614,13 @@ function buildSkyPatchMarkdownReport(result, { imagePath, outPath, reportPath } 
 				`- Solar spectrum: \`${patch.solarSpectrum?.policy ?? 'n/a'}\``,
 				`- Rayleigh policy: \`${patch.rayleighPolicy?.id ?? 'n/a'}\``,
 				`- Aerosol policy: \`${patch.aerosolPolicy?.id ?? 'n/a'}\``,
+				`- Aerosol phase policy: \`${patch.aerosolPhasePolicy?.id ?? 'n/a'}\`, kind \`${patch.aerosolPhasePolicy?.kind ?? 'n/a'}\`, g \`${formatPlainNumber(patch.aerosolPhasePolicy?.parameters?.g)}\``,
 				`- Ozone policy: \`${patch.ozonePolicy?.id ?? 'n/a'}\``,
 				`- Molecular profile: \`${patch.molecularProfile?.id ?? 'n/a'}\``,
-				`- Scattering mode: \`${patch.scatteringMode?.id ?? 'single'}\`, haze-lift strength \`${formatNumber(patch.scatteringMode?.hazeLiftStrength)}\``,
+				`- ${formatSamplingProfileLine(patch.numerical?.samplingProfile)}`,
+				`- Numerical sampling: \`${patch.numerical?.viewSteps ?? 'n/a'} view steps, ${patch.numerical?.sunTransmittanceSteps ?? 'n/a'} source-path steps, ${patch.numerical?.integrationMethod ?? 'n/a'} integration\``,
 				`- Sun/source: \`${patch.sun.mode ?? `${patch.sun.elevationDeg} deg elevation`}\``,
-				`- Center canonical radiance: \`${formatSelectedSpectrum(centerSample?.finalByWavelength, patch.wavelengthsNm)}\``,
-				`- Center rendered radiance: \`${formatSelectedSpectrum(centerSample?.renderedByWavelength ?? centerSample?.finalByWavelength, patch.wavelengthsNm)}\``,
-				`- Center haze lift: \`${formatHazeLiftDiagnostic(centerSample?.hazeLiftDiagnostic, patch.wavelengthsNm)}\``,
+				`- Center final radiance: \`${formatSelectedSpectrum(centerSample?.finalByWavelength, patch.wavelengthsNm)}\``,
 				`- Center optical-depth validity: \`${formatOpticalDepthValiditySummary(centerSample?.opticalDepthValidity)}\``,
 				`- Center scattering geometry: \`${formatPhaseDiagnosticSummary(centerSample?.skyCompletenessDiagnostics?.phase)}\``,
 				`- Center altitude distribution: \`${formatAltitudeDistributionSummary(centerSample?.skyCompletenessDiagnostics?.altitude)}\``,
@@ -3126,8 +7629,8 @@ function buildSkyPatchMarkdownReport(result, { imagePath, outPath, reportPath } 
 				`- Disabled completeness terms: \`${formatDisabledTerms(centerSample?.skyCompletenessDiagnostics?.disabledTerms)}\``,
 				`- Horizon profile: \`${formatHorizonProfileSummary(patch.horizonProfile)}\``,
 				'',
-				'| Center-column row | Elevation | Class | Display | Linear luminance | Rendered radiance | Haze lift | View transmittance | Tau class |',
-				'| ---: | ---: | --- | --- | ---: | --- | --- | --- | --- |',
+				'| Center-column row | Elevation | Class | Display | Linear luminance | Final radiance | View transmittance | Tau class |',
+				'| ---: | ---: | --- | --- | ---: | --- | --- | --- |',
 				...formatHorizonProfileRows(patch.horizonProfile, patch.wavelengthsNm),
 				...(patch.sunDiagnostic
 					? [
@@ -3215,6 +7718,14 @@ function formatArray(values) {
 	}
 
 	return `[${values.map(formatNumber).join(', ')}]`;
+}
+
+function formatDisplaySwatch(hex) {
+	if (!hex) {
+		return 'n/a';
+	}
+
+	return `<span style="display:inline-block;width:48px;height:18px;background:${hex};border:1px solid #777"></span> \`${hex}\``;
 }
 
 function formatRgb(rgb) {
@@ -3316,7 +7827,7 @@ function formatHorizonProfileSummary(profile) {
 
 function formatHorizonProfileRows(profile, wavelengthsNm) {
 	if (!profile?.samples?.length) {
-		return ['| n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |'];
+		return ['| n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |'];
 	}
 
 	const selectedSamples = uniqueHorizonProfileRows([
@@ -3336,8 +7847,7 @@ function formatHorizonProfileRows(profile, wavelengthsNm) {
 			sample.rayClass,
 			`<span style="display:inline-block;width:32px;height:14px;background:${sample.displayHex};border:1px solid #777"></span> \`${sample.displayHex}\``,
 			formatNumber(sample.linearLuminance),
-			formatSelectedSpectrum(sample.renderedByWavelength, wavelengthsNm),
-			formatSelectedSpectrum(sample.hazeLiftByWavelength, wavelengthsNm),
+			formatSelectedSpectrum(sample.finalByWavelength, wavelengthsNm),
 			formatSelectedSpectrum(sample.viewTransmittanceByWavelength, wavelengthsNm),
 			formatOpticalDepthValiditySummary(sample.opticalDepthValidity),
 		].join(' | ');
@@ -3429,14 +7939,6 @@ function formatMissingLightEstimate(estimate) {
 	return `${estimate.assessment}: ${estimate.reason}`;
 }
 
-function formatHazeLiftDiagnostic(diagnostic, wavelengthsNm) {
-	if (!diagnostic) {
-		return 'n/a';
-	}
-
-	return `activation ${formatNumber(diagnostic.activation)}, maxTau ${formatNumber(diagnostic.maxTau)}, tau560 ${formatNumber(diagnostic.tau560)}, added ${formatSelectedSpectrum(diagnostic.addedByWavelength, wavelengthsNm)}`;
-}
-
 function formatDisabledTerms(disabledTerms) {
 	if (!disabledTerms) {
 		return 'n/a';
@@ -3505,6 +8007,26 @@ function formatPercent(value) {
 	return `${formatNumber(value * 100)}%`;
 }
 
+function averageOrNull(values) {
+	if (!values.length) {
+		return null;
+	}
+
+	return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function rootMeanSquare(values) {
+	if (!values.length) {
+		return null;
+	}
+
+	return Math.sqrt(values.reduce((sum, value) => sum + value * value, 0) / values.length);
+}
+
+function cloneJsonValue(value) {
+	return JSON.parse(JSON.stringify(value));
+}
+
 function normalizeOutputPath(outputPath) {
 	return outputPath.replaceAll('\\', '/');
 }
@@ -3533,23 +8055,35 @@ export function runCli(argv = process.argv.slice(2), {
 } = {}) {
 	try {
 		const options = parseArgs(argv);
+		const progressReporter = createCliProgressReporter(options, stderr);
 
 		if (options.help) {
 			stdout.write(`${helpText()}\n`);
 			return 0;
 		}
 
-		const result = runReferenceProbe(options);
+		const result = runReferenceProbe({
+			...options,
+			progressReporter,
+		});
 
 		if (options.outPath) {
+			progressReporter?.({ phase: 'write-output', path: options.outPath });
 			writeFileEnsuringDirectory(options.outPath, `${JSON.stringify(result, null, 2)}\n`);
 		}
 
 		if (options.imagePath) {
+			progressReporter?.({ phase: 'write-output', path: options.imagePath });
 			writeFileEnsuringDirectory(options.imagePath, buildImageArtifact(result, options.imagePath));
 		}
 
+		if (options.multipleScatteringImageDir) {
+			progressReporter?.({ phase: 'write-output', path: options.multipleScatteringImageDir });
+			writeMultipleScatteringImageArtifacts(result, options.multipleScatteringImageDir);
+		}
+
 		if (options.reportPath) {
+			progressReporter?.({ phase: 'write-output', path: options.reportPath });
 			writeFileEnsuringDirectory(
 				options.reportPath,
 				`${buildMarkdownReport(result, {
@@ -3566,11 +8100,105 @@ export function runCli(argv = process.argv.slice(2), {
 				: `${JSON.stringify(result, null, 2)}\n`);
 		}
 
+		progressReporter?.({ phase: 'done' });
 		return 0;
 	} catch (error) {
 		stderr.write(`${error.message}\n`);
 		return 1;
 	}
+}
+
+function createCliProgressReporter(options, stderr) {
+	if (options.progressLogPath) {
+		return createCliProgressFileReporter(options.progressLogPath);
+	}
+
+	if (!options.progress) {
+		return null;
+	}
+
+	return (event) => {
+		stderr.write(`${formatProgressEvent(event)}\n`);
+	};
+}
+
+function createCliProgressFileReporter(progressLogPath) {
+	fs.mkdirSync(path.dirname(path.resolve(progressLogPath)), { recursive: true });
+	fs.writeFileSync(progressLogPath, '');
+
+	return (event) => {
+		fs.appendFileSync(progressLogPath, `${formatProgressEvent(event)}\n`);
+	};
+}
+
+function formatProgressEvent(event) {
+	const timestamp = new Date().toISOString();
+
+	if (event.phase === 'sky-patches-start') {
+		return `[${timestamp}] sky-patches start patches=${event.patchCount} size=${event.patchSize.width}x${event.patchSize.height} wavelengths=${event.wavelengthCount}`;
+	}
+
+	if (event.phase === 'patch-start') {
+		return `[${timestamp}] patch ${event.patchIndex + 1}/${event.patchCount} ${event.patchId} start size=${event.width}x${event.height} steps=${event.viewSteps}/${event.sunTransmittanceSteps} wavelengths=${event.wavelengthCount}`;
+	}
+
+	if (event.phase === 'patch-row') {
+		return `[${timestamp}] patch ${event.patchIndex + 1}/${event.patchCount} ${event.patchId} row ${event.rowIndex + 1}/${event.rowCount}`;
+	}
+
+	if (event.phase === 'patch-complete') {
+		return `[${timestamp}] patch ${event.patchIndex + 1}/${event.patchCount} ${event.patchId} complete`;
+	}
+
+	if (event.phase === 'sky-patches-complete') {
+		return `[${timestamp}] sky-patches complete patches=${event.patchCount}`;
+	}
+
+	if (event.phase === 'sky-dome-grid-start') {
+		return `[${timestamp}] sky-dome-grid start panels=${event.panelCount} size=${event.domeSize}x${event.domeSize} wavelengths=${event.wavelengthCount}`;
+	}
+
+	if (event.phase === 'sky-dome-panel-start') {
+		return `[${timestamp}] sky-dome panel ${event.panelIndex + 1}/${event.panelCount} ${event.panelId} start size=${event.domeSize}x${event.domeSize} steps=${event.viewSteps}/${event.sunTransmittanceSteps} wavelengths=${event.wavelengthCount}`;
+	}
+
+	if (event.phase === 'sky-dome-panel-row') {
+		return `[${timestamp}] sky-dome panel ${event.panelIndex + 1}/${event.panelCount} ${event.panelId} row ${event.rowIndex + 1}/${event.rowCount}`;
+	}
+
+	if (event.phase === 'sky-dome-panel-complete') {
+		return `[${timestamp}] sky-dome panel ${event.panelIndex + 1}/${event.panelCount} ${event.panelId} complete`;
+	}
+
+	if (event.phase === 'sky-dome-grid-complete') {
+		return `[${timestamp}] sky-dome-grid complete panels=${event.panelCount}`;
+	}
+
+	if (event.phase === 'multiple-scattering-start') {
+		return `[${timestamp}] multiple-scattering ${event.mode} start targetMode=${event.targetMode ?? 'n/a'} targets=${event.targetCount} angularSamples=${event.angularSampleCount}`;
+	}
+
+	if (event.phase === 'multiple-scattering-target-start') {
+		return `[${timestamp}] multiple-scattering target ${event.targetIndex + 1}/${event.targetCount} ${event.scenarioId} ${event.sampleRole} start`;
+	}
+
+	if (event.phase === 'multiple-scattering-target-complete') {
+		return `[${timestamp}] multiple-scattering target ${event.targetIndex + 1}/${event.targetCount} ${event.scenarioId} ${event.sampleRole} complete`;
+	}
+
+	if (event.phase === 'multiple-scattering-complete') {
+		return `[${timestamp}] multiple-scattering ${event.mode} complete targetMode=${event.targetMode ?? 'n/a'} targets=${event.targetCount}`;
+	}
+
+	if (event.phase === 'write-output') {
+		return `[${timestamp}] write ${event.path}`;
+	}
+
+	if (event.phase === 'done') {
+		return `[${timestamp}] done`;
+	}
+
+	return `[${timestamp}] ${event.phase ?? 'progress'}`;
 }
 
 export function formatSummary(result) {
@@ -3587,7 +8215,19 @@ export function formatSummary(result) {
 						&& sample.y === Math.floor(patch.size.height / 2);
 				});
 
-				return `- ${patch.id}: center=${center?.displayHex ?? center?.debugHex ?? 'n/a'} linearSrgb=${formatRgb(center?.linearSrgb)} radiance=${formatSelectedSpectrum(center?.renderedByWavelength ?? center?.finalByWavelength, patch.wavelengthsNm)} viewT=${formatSelectedSpectrum(center?.viewTransmittanceByWavelength, patch.wavelengthsNm)}`;
+				return `- ${patch.id}: center=${center?.displayHex ?? center?.debugHex ?? 'n/a'} sampling=${patch.numerical?.samplingProfile?.id ?? 'n/a'} steps=${patch.numerical?.viewSteps ?? 'n/a'}/${patch.numerical?.sunTransmittanceSteps ?? 'n/a'} linearSrgb=${formatRgb(center?.linearSrgb)} radiance=${formatSelectedSpectrum(center?.renderedByWavelength ?? center?.finalByWavelength, patch.wavelengthsNm)} viewT=${formatSelectedSpectrum(center?.viewTransmittanceByWavelength, patch.wavelengthsNm)}`;
+			}),
+		].join('\n');
+	}
+
+	if (Array.isArray(result.skyDomePanels)) {
+		return [
+			`Atmosphere reference sky-dome grid (${result.stage})`,
+			...result.skyDomePanels.map((panel) => {
+				const center = skyDomeCenterSample(panel);
+				const horizon = skyDomeHorizonEdgeSample(panel);
+
+				return `- ${panel.id}: sunZenith=${formatNumber(panel.sunZenithDeg)} center=${center?.displayHex ?? 'n/a'} horizon=${horizon?.displayHex ?? 'n/a'} sampling=${panel.numerical?.samplingProfile?.id ?? 'n/a'} steps=${panel.numerical?.viewSteps ?? 'n/a'}/${panel.numerical?.sunTransmittanceSteps ?? 'n/a'} centerRadiance=${formatSelectedSpectrum(center?.renderedByWavelength, panel.wavelengthsNm)} horizonRadiance=${formatSelectedSpectrum(horizon?.renderedByWavelength, panel.wavelengthsNm)}`;
 			}),
 		].join('\n');
 	}
@@ -3653,6 +8293,93 @@ function degreesToRadians(degrees) {
 
 function radiansToDegrees(radians) {
 	return radians * 180 / Math.PI;
+}
+
+function normalizeDegrees(degrees) {
+	const normalized = degrees % 360;
+
+	return normalized < 0 ? normalized + 360 : normalized;
+}
+
+function formatDegreeId(degrees) {
+	return String(Math.round(degrees)).padStart(3, '0');
+}
+
+function nearestNumberIndex(values, target) {
+	let bestIndex = 0;
+	let bestDistance = Infinity;
+
+	for (const [index, value] of values.entries()) {
+		const distance = Math.abs(value - target);
+
+		if (distance < bestDistance) {
+			bestDistance = distance;
+			bestIndex = index;
+		}
+	}
+
+	return bestIndex;
+}
+
+function bracketingNumberIndices(values, target) {
+	if (target <= values[0]) {
+		return { lowerIndex: 0, upperIndex: 0, upperWeight: 0 };
+	}
+
+	const lastIndex = values.length - 1;
+	if (target >= values[lastIndex]) {
+		return { lowerIndex: lastIndex, upperIndex: lastIndex, upperWeight: 0 };
+	}
+
+	for (let index = 0; index < lastIndex; index += 1) {
+		const lower = values[index];
+		const upper = values[index + 1];
+
+		if (target >= lower && target <= upper) {
+			return {
+				lowerIndex: index,
+				upperIndex: index + 1,
+				upperWeight: upper > lower ? (target - lower) / (upper - lower) : 0,
+			};
+		}
+	}
+
+	const nearestIndex = nearestNumberIndex(values, target);
+	return { lowerIndex: nearestIndex, upperIndex: nearestIndex, upperWeight: 0 };
+}
+
+function nearestDirectionIndex(directions, targetDirection) {
+	const normalized = normalize3(targetDirection);
+	let bestIndex = 0;
+	let bestDot = -Infinity;
+
+	for (const [index, direction] of directions.entries()) {
+		const score = dot3(direction, normalized);
+
+		if (score > bestDot) {
+			bestDot = score;
+			bestIndex = index;
+		}
+	}
+
+	return bestIndex;
+}
+
+function nearestDirectionNeighbors(directions, targetDirection, count) {
+	const normalized = normalize3(targetDirection);
+
+	return directions
+		.map((direction, index) => {
+			const dot = clamp01Signed(dot3(direction, normalized));
+
+			return {
+				index,
+				dot,
+				angleRad: Math.acos(dot),
+			};
+		})
+		.sort((a, b) => b.dot - a.dot)
+		.slice(0, Math.max(1, count));
 }
 
 function clamp01Signed(value) {

@@ -4,6 +4,8 @@ import {
 	loadOfficialCie1931Table,
 	officialCie1931ColorMatchingFunctions,
 	spectralRadianceToLinearSrgb,
+	spectralRadianceToUnnormalizedLinearSrgb,
+	spectralRadianceToUnnormalizedXyz,
 	spectralRadianceToXyz,
 	spectralToApproximateSrgb,
 	spectralToApproximateXyz,
@@ -122,6 +124,25 @@ describe('spectral-color preview consumers', function() {
 		expect(equalEnergy.xyz.y).toBeCloseTo(1, 12);
 		expect(equalEnergy.xyz.z).toBeCloseTo(1.0003278525483947, 12);
 		expect(equalEnergy.provenance.interpolation).toContain('linear');
+	});
+
+	it('exposes an unnormalized XYZ diagnostic path for display scale audits', function() {
+		const officialWavelengthsNm = loadOfficialCie1931Table().wavelengthsNm;
+		const values = officialWavelengthsNm.map(() => 1);
+		const normalized = spectralRadianceToXyz(values, officialWavelengthsNm);
+		const unnormalized = spectralRadianceToUnnormalizedXyz(values, officialWavelengthsNm);
+		const unnormalizedRgb = spectralRadianceToUnnormalizedLinearSrgb(values, officialWavelengthsNm);
+
+		// Reason: Bruneton-style exponential display comparison is scale-sensitive, so the audit needs raw CIE scale beside the preview-normalized path.
+		// Source: Atmosphere Color Plan, display/tone-mapping follow-up and CIE official table metadata.
+		expect(normalized.xyz.y).toBeCloseTo(1, 12);
+		expect(unnormalized.xyz.y).toBeCloseTo(unnormalized.provenance.yEqualEnergyResponse, 12);
+		expect(unnormalized.xyz.y).toBeGreaterThan(100);
+		expect(normalized.provenance.normalizationScale)
+			.toBeCloseTo(1 / unnormalized.provenance.yEqualEnergyResponse, 15);
+		expect(unnormalized.provenance.normalization).toContain('none');
+		expect(unnormalizedRgb.linearRgb.r).toBeGreaterThan(100);
+		expect(unnormalizedRgb.provenance.clamping).toBe('none');
 	});
 
 	it('exposes implementation-named official helpers as aliases of the domain API', function() {

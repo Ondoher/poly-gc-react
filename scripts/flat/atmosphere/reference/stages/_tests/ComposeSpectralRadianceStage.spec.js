@@ -11,16 +11,12 @@ describe('atmosphere reference ComposeSpectralRadianceStage', function() {
 
 	function createComposePacket({
 		inScattered = [0.1, 0.2],
-		diffuseSkyAirlight = [0.05, 0.06],
 		surface = [0.3, 0.4],
 	} = {}) {
 		return {
 			validatedRequest: { wavelengthsNm: [450, 650] },
 			singleScattering: {
 				inScatteredRadianceByWavelength: inScattered,
-			},
-			diffuseSkyAirlight: {
-				radianceByWavelength: diffuseSkyAirlight,
 			},
 			surfaceRadiance: {
 				viewAttenuatedRadianceByWavelength: surface,
@@ -53,49 +49,28 @@ describe('atmosphere reference ComposeSpectralRadianceStage', function() {
 		expectStagePrerequisiteFailure('composeSpectralRadiance');
 	});
 
-	it('sums in-scattered, diffuse-sky-airlight, and surface radiance wavelength by wavelength', function() {
+	it('sums in-scattered and surface radiance wavelength by wavelength', function() {
 		const result = runComposeSpectralRadiance();
 
 		// Reason: final transport radiance is the component sum at each wavelength before display conversion.
 		// Source: Stage Contracts, composeSpectralRadiance ownership.
 		expect(result.spectralRadiance.wavelengthsNm).toEqual([450, 650]);
-		expect(result.spectralRadiance.finalByWavelength).toEqual([0.45, 0.66]);
-		expect(result.spectralRadiance.components).toEqual({
-			inScatteredRadianceByWavelength: [0.1, 0.2],
-			diffuseSkyAirlightRadianceByWavelength: [0.05, 0.06],
-			surfaceViewAttenuatedRadianceByWavelength: [0.3, 0.4],
-		});
-	});
-
-	it('treats absent diffuse-sky-airlight packets as zero for custom direct composition packets', function() {
-		const packet = createComposePacket();
-		delete packet.diffuseSkyAirlight;
-		const result = runComposeSpectralRadiance(packet);
-
-		// Reason: diffuse sky airlight is optional until callers opt into the approximation stage.
-		// Source: Stage Contracts, composeSpectralRadiance optional diffuseSkyAirlight note.
 		expect(result.spectralRadiance.finalByWavelength).toEqual([0.4, 0.6000000000000001]);
-		expect(result.spectralRadiance.components.diffuseSkyAirlightRadianceByWavelength).toEqual([0, 0]);
+		expect(result.spectralRadiance.components).toEqual(jasmine.objectContaining({
+			inScatteredRadianceByWavelength: [0.1, 0.2],
+			surfaceViewAttenuatedRadianceByWavelength: [0.3, 0.4],
+		}));
 	});
 
 	it('allows very bright radiance without display clamping', function() {
 		const result = runComposeSpectralRadiance(createComposePacket({
 			inScattered: [1000, 0],
-			diffuseSkyAirlight: [0, 0],
 			surface: [2, 0],
 		}));
 
 		// Reason: tone mapping and display range conversion are post-pipeline consumers, not transport composition.
 		// Source: Stage Contracts, composeSpectralRadiance ownership.
 		expect(result.spectralRadiance.finalByWavelength).toEqual([1002, 0]);
-	});
-
-	it('rejects negative diffuse-sky-airlight component radiance', function() {
-		// Reason: approximation components are physical radiance additions and should not be repaired by clamping.
-		// Source: Stage Contracts, composeSpectralRadiance ownership.
-		expect(() => runComposeSpectralRadiance(createComposePacket({
-			diffuseSkyAirlight: [-0.1, 0],
-		}))).toThrowError(/composeSpectralRadiance.*negative/);
 	});
 
 	it('rejects negative component radiance', function() {

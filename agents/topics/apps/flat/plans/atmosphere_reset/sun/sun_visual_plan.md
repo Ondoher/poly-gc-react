@@ -51,6 +51,9 @@ First midday-horizon work should stay diagnostic and physical:
   likely needed without adding a hidden color/display patch
 - Done: keep surface/cloud/terrain bounce explicit as disabled terms in the
   reports
+- Done: expose reference sampling controls (`--view-steps`,
+  `--sun-transmittance-steps`) and report the resolved per-patch counts, so
+  convergence can be checked before accepting another physics change
 - only return to sunset once midday horizon has a credible pale-haze baseline
 
 ## Midday Horizon Roadmap
@@ -70,16 +73,11 @@ least speculative work and only then changing the physical model.
      - phase values
      - disabled completeness terms
 
-2. **Add a first multiple-scattering approximation**
-   - Add a named, explicitly approximate mode rather than hiding it in color
-     output:
-     - `scatteringMode: single`
-     - `scatteringMode: single-plus-haze-lift`
-   - The first version should be conservative and diagnostic: use high tau,
-     single-scattering albedo, and existing in-scattered radiance to add a
-     bounded diffuse haze term only in high-tau low-elevation cases.
-   - Keep canonical single-scattering output unchanged until comparison
-     artifacts justify promotion.
+2. **Use model-family comparison before adding another approximation**
+   - Keep the current single-scattering output as the baseline.
+   - Compare it against the Bruneton-style model gallery, analytic sky models,
+     and later libRadtran/DISORT artifacts.
+   - Do not add a display-side or packet fallback to force a pale horizon.
 
 3. **Find a stronger reference for the approximation**
    - Use Bruneton 2016 or libRadtran as the external comparison target.
@@ -117,10 +115,9 @@ least speculative work and only then changing the physical model.
    - Promote a change into the reference baseline only after the artifacts and
      diagnostics are reviewed.
 
-Recommended first implementation step: add `scatteringMode:
-single-plus-haze-lift` as a diagnostic approximation for `midday.horizon`,
-with explicit reporting and side-by-side artifacts. It should not replace the
-canonical single-scattering result yet.
+Recommended first implementation step: keep the backed-out haze-lift proxy out
+of the pipeline and use the model-output comparison lane to choose the next
+transport reference.
 
 Source-backed rationale:
 
@@ -145,13 +142,13 @@ Source-backed rationale:
 
 ### Haze-Lift Experiment Result
 
-Done: `scatteringMode: single-plus-haze-lift` is implemented as a named
-diagnostic comparison mode in the atmosphere CLI. It does not replace
-canonical single scattering. It keeps the canonical `finalByWavelength` in
-diagnostics while rendering a separate diagnostic spectrum that adds a bounded
-diffuse airlight term.
+Historical result: `scatteringMode: single-plus-haze-lift` was implemented as
+a named diagnostic comparison mode in the atmosphere CLI, then backed out. It
+brightened high-tau horizons but also reduced daylight contrast and pushed the
+output toward gray/beige. It is no longer part of the current CLI or reference
+pipeline contract.
 
-Current formula:
+Historical formula:
 
 - activation: `smoothstep(1, 8, maxVisibleTau)`
 - per-wavelength added radiance:
@@ -547,17 +544,17 @@ the comfortable range of a simple single-scattering validation image. It
 should be treated as a high-tau stress benchmark. The midday-horizon pass
 makes the next recommendation sharper: the brown/olive low-elevation horizon
 is not primarily a color-output failure or an aerosol-preset typo. The next
-implementation step should be an explicitly named multiple-scattering/haze
-diagnostic path, calibrated against Bruneton/libRadtran-style references,
-before changing canonical aerosol or display defaults. Better sourced aerosol
-phase behavior remains important, but it should follow the transport
-completeness comparison rather than stand in for it.
+implementation step should be a stronger transport reference, calibrated
+against Bruneton/libRadtran-style evidence, before changing canonical aerosol
+or display defaults. Better sourced aerosol phase behavior remains important,
+but it should follow the transport completeness comparison rather than stand
+in for it.
 
 ### Horizon-Row Diagnostic Result
 
 Done: the sky-patch runner now reports a center-column horizon profile for
 each patch. The profile records per-row elevation angle, sky-versus-surface
-classification, display color, linear luminance, rendered radiance, haze lift,
+classification, display color, linear luminance, final radiance,
 view transmittance, and optical-depth class. This was added specifically to
 separate a true sky-gradient failure from the known black lower-frame surface
 placeholder.
@@ -583,13 +580,8 @@ Findings:
   elevation at `#cdcdbb`, but the last sky row at `0.46 deg` falls to
   `#b0a092`; near-horizon luminance is only `0.606` of the sky peak.
 - The canonical single-scattering run shows the same shape more severely:
-  the last sky row is only `0.183` of the peak. The current haze lift is
-  helping, but it is not shaped strongly enough for the aerosol high-tau
-  horizon limit.
-- Increasing haze-lift strength from `0.02` to `0.04` lifts the last sky row
-  ratio from `0.606` to `0.762`, but the final half degree still dips below
-  the brighter row above it. This looks like a wrong-shaped approximation,
-  not just a missing exposure or display scale.
+  the last sky row is only `0.183` of the peak. The removed haze-lift runs
+  lifted that row but did not fix the gradient shape or color fidelity.
 - The Rayleigh-only control does not show the same dip: the last sky row is
   `0.996` of the peak. Adding clear-maritime aerosol causes the ratio to drop
   to `0.606`; clear-continental aerosol drops it to `0.545`. The failure is
@@ -599,14 +591,12 @@ Findings:
 
 Evidence-backed recommendation:
 
-- The implemented first model improvement is a named aerosol-aware
-  diffuse-sky-airlight approximation, not a color/display patch. The term acts
-  in high-tau near-horizon sky rows where aerosol extinction is large and
-  direct single-scattering collapses, and it is reported as a separate
-  component. It is still a bounded approximation rather than a full
-  multiple-scattering solver, so calibration against a stronger reference model
-  such as libRadtran/DISORT or a Bruneton-style clear-sky comparison fixture
-  remains future work.
+- The removed first model improvement was a named aerosol-aware
+  diffuse-sky-airlight approximation, not a color/display patch. It helped
+  diagnose the high-tau horizon limit, but should not remain in the current
+  pipeline. Calibration against a stronger reference model such as
+  libRadtran/DISORT or a Bruneton-style clear-sky comparison fixture remains
+  future work.
 - Latest visual comparison against the user-provided real midday sky photo:
   the current aerosol-aware output is still not visually credible as a real
   sky. It improved the high-tau horizon-profile diagnostic, but the rendered
@@ -616,8 +606,35 @@ Evidence-backed recommendation:
   `tmp/atmosphere-images/059_atmosphere-diffuse-sky-airlight-stack-sky-patches-full-stack-132x84-aerosol-aware.png`
   and
   `tmp/atmosphere-images/060_atmosphere-diffuse-sky-airlight-stack-midday-horizon-full-stack-132x168-aerosol-aware.png`.
-  Treat the current state as a green pipeline and fixture-backed approximation,
-  not as an accepted sky appearance baseline.
+  Treat those artifacts as removed-experiment evidence, not as an accepted sky
+  appearance baseline.
+- First follow-up from that comparison: the reference sky-patch runner now
+  trades speed for accuracy through `--view-steps` and
+  `--sun-transmittance-steps`; `--progress` now writes row-level stderr
+  heartbeat logs and `--progress-log <path>` writes the same progress to an
+  explicit file for long artifact runs. Defaults are `64/16` for sky patches,
+  with `sunset.horizon` using `64/32`; reports and summaries include the
+  resolved counts. The historical full `132x84` sourced-stack comparison is
+  `tmp/atmosphere-finer-sampling-sky-patches/sky-patches-full-stack-132x84-finer-defaults-progress.png`
+  with Markdown/JSON/log siblings. Centers: `midday.zenith #c6cede`,
+  `midday.horizon #dce0db`, `sunset.horizon #cf946b`. This is useful
+  convergence evidence and should be used before promoting new model terms,
+  but it does not by itself explain or fix the remaining photo mismatch.
+- Framing follow-up: `midday.horizonSky` is now a panned-up companion view for
+  photo-style comparison. It centers the 26 degree FOV at 12 degrees elevation,
+  keeping the horizon near the lower edge while preserving the original
+  `midday.horizon` as the low-elevation transport stress diagnostic. Full
+  `132x84` output:
+  `tmp/atmosphere-finer-sampling-sky-patches/midday-horizon-sky-frame-132x84-finer-defaults.png`
+  with Markdown/JSON/progress-log siblings. The report shows `81/84`
+  center-column rows are sky, center `#96abc2`, top row `#8297b6`, nearest
+  sky-horizon row `#f7e0cd`, and first surface row `81` at `-0.2503 deg`.
+  The framing is much better, but the upper blue remains muted versus the
+  user photo, so the next work should still target color/transport
+  calibration rather than just camera placement.
+- A taller `midday.horizonTallSky` scene is implemented for the next full-size
+  sky comparison. It centers a 54 degree FOV at 25 degrees elevation, but no
+  full `132x168` artifact has been generated for it yet.
 - A separate follow-up should add explicit lower-frame surface context, likely
   an ocean/ground radiance model viewed through the same atmosphere. That
   fixes the black below-horizon band, but it is not sufficient for the sky

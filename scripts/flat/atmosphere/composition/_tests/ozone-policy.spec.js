@@ -36,6 +36,27 @@ describe('Ozone composition policies', function() {
 		expect(result.provenance.atlasDoi).toBe('10.5194/essd-5-365-2013');
 	});
 
+	it('provides an explicit Bruneton no-visible-absorption policy', function() {
+		const policy = resolveOzonePolicy('bruneton-2016-no-visible-absorption');
+		const result = ozoneCrossSectionsForPolicy([380, 550, 780], {
+			policyId: 'bruneton-2016-no-visible-absorption',
+		});
+
+		// Reason: Bruneton Figure 1 parity comparisons need a named no-ozone/no-visible-absorption contract, not a hidden toggle.
+		// Source: Reference Plan, Output-Impact Task 3.
+		expect(policy).toEqual(jasmine.objectContaining({
+			id: 'bruneton-2016-no-visible-absorption',
+			label: 'Bruneton 2016 no visible molecular absorption',
+			crossSectionModel: jasmine.stringContaining('zero visible-band'),
+		}));
+		expect(result.valuesByWavelength).toEqual([0, 0, 0]);
+		expect(result.provenance).toEqual(jasmine.objectContaining({
+			policyId: 'bruneton-2016-no-visible-absorption',
+			source: 'Bruneton 2016 clear-sky comparison contract',
+			units: 'cm^2 molecule^-1',
+		}));
+	});
+
 	it('linearly interpolates between Brion 1 nm table rows', function() {
 		const result = ozoneCrossSectionsForPolicy([550.5], {
 			policyId: 'brion-1998-ozone-295k',

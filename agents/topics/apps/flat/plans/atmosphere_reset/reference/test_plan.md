@@ -480,6 +480,256 @@ Remaining future phase work:
 - Henyey-Greenstein/Mie `g` bounds and normalization coverage.
 - Cloud/tabulated phase functions if that model is later selected.
 
+### Task 1 Follow-Up: Bruneton Aerosol Phase Policy And Cornette-Shanks
+
+Status: complete.
+
+Goal: make the first output-impact implementation step a source-backed,
+phase-only Bruneton-method delta instead of another visual tuning pass.
+
+Pinned source facts:
+
+- Bruneton 2016 clear-sky model comparison uses a wavelength-independent
+  Cornette-Shanks aerosol phase function with `g = 0.7`.
+- The same comparison uses aerosol scale height `1.2 km`, single-scattering
+  albedo `0.8`, and Angstrom aerosol optical depth
+  `beta * lambda_um^-alpha` with `alpha = 0.8` and `beta = 0.04`.
+- In the current local aerosol scalar schema,
+  `beta = 0.04` maps to `aod550 = 0.0645312146448`.
+- Under this stage's recorded convention, aerosol phase formulas use
+  `mu = -cosTheta`.
+
+Pinned phase fixture targets for `g = 0.7`:
+
+| Stage `cosTheta` | Phase `mu` | Henyey-Greenstein | Cornette-Shanks | CS / HG |
+| --- | --- | --- | --- | --- |
+| `-1` | `1` | `1.50313001809` | `1.81100002180` | `1.20481927711` |
+| `0` | `0` | `0.0223141788394` | `0.0134422764093` | `0.602409638554` |
+| `1` | `-1` | `0.00826063718470` | `0.00995257492133` | `1.20481927711` |
+
+Implemented coverage:
+
+- Phase helper or stage test evaluates `cornette-shanks` exactly at
+  `cosTheta = -1, 0, 1` for `g = 0.7`.
+- `cornette-shanks` `g` validation rejects non-finite values and values
+  outside `(-1, 1)`.
+- Existing Henyey-Greenstein fixture values remain available as the explicit
+  same-scalar control.
+- Aerosol scalar preset data resolves a `defaultPhasePolicyId`; phase function
+  kind and `g` live in the named phase-policy artifact.
+- Aerosol phase policy data validates known `kind`, finite `parameters.g`,
+  provenance, and ids.
+- `bruneton-2016-kider-fit` resolves to
+  `bruneton-2016-cornette-shanks-g070` by default, while
+  `bruneton-2016-hg-g070-control` remains selectable as an explicit control.
+- CLI accepts `--aerosol-phase-policy <id>`, rejects unknown ids loudly, and
+  reports the resolved `aerosolPhasePolicy` in JSON and Markdown outputs.
+
+Source and contract status:
+
+- [Reference Decision Log](references.md#bruneton-a-qualitative-and-quantitative-evaluation-of-8-clear-sky-models)
+  pins the paper/source-code facts, formula, local schema mapping, and local
+  sign-convention interpretation.
+- [Stage Contracts](stage_contracts.md#evaluatescatteringphase) records the
+  implemented `cornette-shanks` phase kind and phase-policy ownership split.
+
+Implementation status:
+
+- `aerosol-phase-contracts.json` pins the Cornette-Shanks, same-scalar
+  Henyey-Greenstein, and invalid-`g` oracle rows with reference objects,
+  derivations, tolerances, and independence notes.
+- `EvaluateScatteringPhaseStage.spec.js` now cites those fixture rows for the
+  same-scalar HG control, Cornette-Shanks values, and Cornette-Shanks `g`
+  rejection.
+- `aerosol-phase-policy.spec.js` expects the new phase-policy module/data
+  contract, including Bruneton CS, Bruneton HG control, validation, and unknown
+  id rejection.
+- `aerosol-policy.spec.js` expects scalar aerosol presets to expose
+  `defaultPhasePolicyId` and keeps the Bruneton scalar preset pinned to
+  `aod550 = 0.0645312146448`.
+- `run-reference-probe.spec.js` expects `--aerosol-phase-policy`, unknown
+  phase-policy rejection, resolved `aerosolPhasePolicy` metadata, Markdown
+  report exposure, and same-scalar HG-versus-CS selection with multiple
+  scattering disabled.
+- The reference runner now resolves named aerosol phase policies, uses
+  Cornette-Shanks by default for `bruneton-2016-kider-fit`, keeps the
+  same-scalar Henyey-Greenstein policy as an explicit control, and emits the
+  resolved `aerosolPhasePolicy` in JSON and Markdown reports.
+- Verification: `npm run test:scripts:flat` passed with 378 specs and
+  0 failures after the Task 1 implementation.
+- Verification: `git diff --check` passed after the Task 1 documentation
+  checkpoint.
+- Artifact: the first phase-only comparison lives at
+  `tmp/atmosphere/bruneton/001-aerosol-phase-policy/` with HG control and
+  Cornette-Shanks JSON/PNG/Markdown/progress-log outputs, `manifest.json`,
+  `comparison.md`, and combined `progress.log`.
+
+### Task 3 Follow-Up: Bruneton No Visible Absorption Policy
+
+Status: complete.
+
+Goal: make the Bruneton 2016 no-visible-air-absorption comparison assumption
+an explicit named composition policy instead of a hidden toggle or transport
+branch.
+
+Pinned source fact:
+
+- Bruneton 2016 clear-sky model comparison assumes no visible air-molecule
+  absorption. Locally, the output-impact comparison represents that assumption
+  as a zero-cross-section ozone/visible-absorber policy selected through the
+  existing ozone policy contract.
+
+Implemented coverage:
+
+- `ozone-policy.spec.js` expects
+  `bruneton-2016-no-visible-absorption` to resolve as a named policy with
+  zero cross sections and provenance tied to the Bruneton 2016 comparison
+  contract.
+- `run-reference-probe.spec.js` expects the runner to accept the policy through
+  `--ozone-policy`, expose the resolved policy in JSON/Markdown metadata, and
+  produce zero ozone optical depth in a rendered diagnostic sample.
+- [Reference Decision Log](references.md#bruneton-a-qualitative-and-quantitative-evaluation-of-8-clear-sky-models)
+  records the paper comparison assumption and the local zero-cross-section
+  policy interpretation.
+
+Artifact:
+
+- `tmp/atmosphere/bruneton/006-no-visible-absorption/` compares Brion ozone
+  control against `bruneton-2016-no-visible-absorption` with all other
+  Bruneton-method comparison inputs fixed. The policy is visually meaningful
+  for the low-Sun row, but it does not solve the missing broad soft
+  sunset/orange affected area by itself.
+- Verification: `npm run test:scripts:flat` passed with 384 specs and
+  0 failures after the Task 3 implementation; `git diff --check` also passed.
+
+### Output-Impact Diagnostic CLIs
+
+Status: complete.
+
+Goal: keep non-transport comparison/audit tooling test-backed while the
+Bruneton output-impact work narrows likely causes for the brown horizon and
+small sunset/aureole area.
+
+Implemented coverage:
+
+- `display-parity-audit.spec.js` expects the display-only audit to run from
+  file-directed options, write deterministic JSON/Markdown/PPM/PNG/manifest
+  artifacts, and compare normalized versus unnormalized CIE/display paths
+  without re-running atmosphere transport.
+- `run-reference-probe.spec.js` expects `--dome-sample-mask horizon-ring` to
+  select a sky-dome perimeter-only diagnostic render, reject unknown mask ids,
+  mark skipped interior pixels in provenance, exclude skipped pixels from
+  skydome metrics, and report sampled/skipped counts.
+- `aerosol-mie-parity-audit.spec.js` expects the aerosol/Mie audit to verify
+  Bruneton/Kider coefficient parity through the live policy helpers, record
+  Rayleigh/Mie and Cornette-Shanks phase diagnostics, keep the image sweep
+  opt-in, and parse file-directed experiment options including the dome sample
+  mask.
+- `weakness-factor-audit.spec.js` expects the controlled source-quadrature
+  diagnostic to expose the current missing source-weight application:
+  split half-weight samples and a zero-weight extra sample both double the
+  one-source result. It also expects the audit to support cheap non-transport
+  runs and file-directed options.
+- Verification: `npm run test:scripts:flat` passed with 398 specs and
+  0 failures after the sky-dome sample mask, aerosol/Mie audit, and weakness
+  factor audit tests.
+
+### Source Weighting And Finite Solar Source Follow-Up
+
+Status: complete.
+
+Goal: convert the weakness-factor audit's source-quadrature finding into a
+test-first transport fix, then add a named finite solar-source comparison mode
+that can be trusted for sunset/aureole evidence.
+
+Planned Task 4 source-weight contract tests:
+
+- `integrateSingleScattering` keeps the one-source directional-sun baseline
+  unchanged when the source sample has `weight: 1`.
+- Two otherwise identical source samples with `weight: 0.5` each produce the
+  same radiance as the one-source baseline.
+- A zero-weight extra source sample does not change the one-source baseline.
+- Differently angled source samples accumulate by their individual weights and
+  phase values.
+- Missing, negative, or non-finite source weights reject loudly at the
+  consuming boundary under the current contract.
+
+Task 4 red-test checkpoint:
+
+- `analytic-invariants.json` now contains fixture-backed source-weight rows:
+  `single-scattering.source-weight.two-half-samples`,
+  `single-scattering.source-weight.zero-extra-sample`,
+  `single-scattering.source-weight.weighted-phase-sum`,
+  `single-scattering.source-weight.missing-rejects`, and
+  `single-scattering.source-weight.invalid-rejects`.
+- `IntegrateSingleScatteringStage.spec.js` now marks the old one-source
+  baseline with explicit `weight: 1` and adds active tests for split weights,
+  zero-weight samples, weighted phase/source sums, missing weights, and
+  invalid weights.
+- Red verification before implementation: `npm run test:scripts:flat` failed
+  with `403 specs, 5 failures`. The failures were the intended Task 4
+  failures: source weights were not multiplied into the radiance contribution,
+  missing weights did not throw, and negative/non-finite weights did not throw.
+- Task 5 implementation is now green: `IntegrateSingleScatteringStage` requires
+  finite nonnegative `sourceSample.weight` values, multiplies each
+  source-sample contribution by the weight, and the weakness-factor audit now
+  reports `source-sample-weight-applied` with split-weight and
+  zero-weight-extra ratios near `1.0`.
+- `IntegrateSolarTransmittanceStage` also rejects source samples without
+  finite nonnegative `weight` before emitting the downstream handoff.
+- Verification: `npm run test:scripts:flat` passed with
+  `403 specs, 0 failures`.
+
+Task 5 implementation verification:
+
+- `weakness-factor-audit.spec.js` changed from expecting the historical `2.0`
+  split-source ratio to expecting weighted ratios near `1.0`.
+- One-sample source behavior remains explicit through `weight: 1`; no fallback
+  default was added inside `integrateSingleScattering`.
+- Source adapters must provide the current required `weight` field.
+
+Task 6 finite-source implementation checkpoint:
+
+- `directional-sun` produces exactly one source sample with `weight: 1`.
+- `finite-sun-disc` produces the requested deterministic sample count with
+  finite nonnegative weights whose sum is `1`.
+- Every finite-disc direction lies inside the configured solar angular radius.
+- The runner accepts the named source mode and sample count, rejects unknown
+  modes and invalid counts, and reports source mode, sample count, angular
+  radius, weight sum, and `solidAngleSr` provenance in JSON and Markdown.
+- Low and higher finite-disc sample counts can be compared in the
+  `tmp/atmosphere/bruneton/010-finite-sun-source-weighting/` artifact before
+  using the result as sunset/aureole evidence.
+- Implementation is green. `run-reference-probe.js` now accepts
+  `--solar-source directional-sun|finite-sun-disc`; `--finite-sun-samples`
+  is valid only with `--solar-source finite-sun-disc`. The sky-patch,
+  sky-dome, and multiple-scattering sidecar model paths all resolve the same
+  source-sampling metadata.
+- The finite-disc adapter emits deterministic equal-area spiral samples across
+  the apparent solar disc with equal source-integral weights summing to `1`.
+  `solidAngleSr` is recorded per sample as provenance and remains outside the
+  transport multiplier under the current source-energy convention.
+- JSON and Markdown outputs expose source mode, sample count, solar angular
+  radius, weight sum, and source quadrature diagnostics from the actual
+  `solarTransmittance` packet consumed by the transport stages.
+- Verification: `npm run test:scripts:flat` passed with `405 specs, 0
+  failures` after adding the CLI, metadata, and finite-source diagnostics
+  coverage.
+
+Source and fixture notes:
+
+- Expected weighted-sum values can use analytic one-sample scalar fixtures from
+  the existing single-scattering test family plus local API-contract fixture
+  rows for required source-sample weights.
+- Any finite-disc angular sampling fixture must identify whether it is a local
+  deterministic quadrature policy or a sourced physical solar-angular-radius
+  fact. Do not justify new expected directions by duplicating the same
+  production sampler in the test.
+- Update [Stage Contracts](stage_contracts.md), [Code Design](code_design.md),
+  and [Reference Decision Log](references.md) before moving this follow-up
+  past `identified` if the weight field becomes required in a stage packet or
+  source adapter contract.
+
 ## Final Transport Stage Batch
 
 Status: complete.

@@ -43,17 +43,19 @@ same spectral scattering integrator
 If the flat model looks unlike the globe model, that is an output to inspect,
 not a problem to tune away.
 
-Multiple scattering remains potential future work, not the immediate pivot.
-The current reference should keep direct single scattering clean and keep
-diffuse-sky airlight as an explicit bounded approximation. If that
-approximation accumulates too many compensatory rules, use
-[Multiple-Scattering Reference Design](multiple_scattering_design.md) as the
-future path for a slow benchmark mode or external libRadtran/DISORT
-calibration workflow. That design also records the table-generation stance:
-Bruneton tables are validation and shader-architecture precedents for the
-spherical Earth-like subset, while flat-world/local-Sun approximation tables
-will likely need to be generated from project-owned reference runs with
-explicit geometry, source, atmosphere, and finite-boundary metadata.
+Multiple scattering is closed as the active output-fidelity follow-up. Keep
+the sidecar and no-op contracts for isolation and future reference, but do not
+spend more time tuning the current multiple-scattering field grid before the
+larger model-ingredient tasks in the focused reference plan. Use
+[Multiple-Scattering Reference Design](multiple_scattering_design.md) for the
+design rationale and [Multiple-Scattering Plan](multiple_scattering_plan.md)
+for closeout/history: the investigation showed that generic higher-order
+scattering is not enough to explain the muted daylight, low contrast, and
+brown horizon. Bruneton tables remain validation and shader-architecture
+precedents for the spherical Earth-like subset, while flat-world/local-Sun
+approximation tables will likely need to be generated from project-owned
+reference runs with explicit geometry, source, atmosphere, and finite-boundary
+metadata.
 
 ## External Test Patterns To Adapt
 
@@ -149,7 +151,21 @@ CPU reference has earned trust first.
 6. A shader-parity harness that compares selected GPU/browser rays against the
    CPU reference.
 
-## Current Next Focus: Atmosphere Composition
+## Current Next Focus
+
+General comparison goal: move each identified reference weakness toward the
+methods, data, and assumptions used by Bruneton's clear-sky model comparison
+before judging the remaining gap. This means treating Bruneton-method parity
+as the first model-output target, not tuning the pipeline directly toward
+photographs or isolated visual preferences.
+
+The active output-impact implementation queue now lives in
+[Reference Plan](reference/plan.md#current-next-focus-output-impact-reference-work)
+because the first follow-up items are script/reference-runner model and
+artifact changes. This plan keeps the broader reset direction and composition
+context.
+
+## Composition Context
 
 The color/display bridge is now strong enough for current reference-proof
 work: official CIE colorimetry, named wavelength grids, sourced ASTM G-173
@@ -170,7 +186,7 @@ complete under `scripts/flat/atmosphere/composition/` and
 `rayleigh-lambda4-preview`; `bucholtz-standard-air` is selected explicitly for
 review runs.
 
-Next implementation step:
+Composition checkpoint:
 
 1. Close the Rayleigh model first, because it is the first item in the
    atmosphere-composition fidelity list.

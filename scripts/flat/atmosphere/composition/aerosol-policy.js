@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { aerosolPhasePolicyIds } from './aerosol-phase-policy.js';
 
 const AEROSOL_PRESETS_URL = new URL(
 	'../data/composition/aerosol/aerosol-presets.json',
@@ -35,10 +36,14 @@ export function validateAerosolPresetData(data) {
 		}
 		ids.add(preset.id);
 
-		for (const field of ['aod550', 'angstromExponent', 'singleScatteringAlbedo', 'scaleHeightKm', 'asymmetryG']) {
+		for (const field of ['aod550', 'angstromExponent', 'singleScatteringAlbedo', 'scaleHeightKm']) {
 			if (!Number.isFinite(preset[field])) {
 				throw new Error(`Aerosol preset ${preset.id} must have finite ${field}`);
 			}
+		}
+
+		if (!preset.defaultPhasePolicyId || typeof preset.defaultPhasePolicyId !== 'string') {
+			throw new Error(`Aerosol preset ${preset.id} must have defaultPhasePolicyId`);
 		}
 
 		if (preset.aod550 < 0) {
@@ -53,13 +58,17 @@ export function validateAerosolPresetData(data) {
 			throw new Error(`Aerosol preset ${preset.id} must have singleScatteringAlbedo in [0, 1]`);
 		}
 
-		if (preset.asymmetryG < -1 || preset.asymmetryG > 1) {
-			throw new Error(`Aerosol preset ${preset.id} must have asymmetryG in [-1, 1]`);
-		}
 	}
 
 	if (!ids.has(data.defaultPolicy)) {
 		throw new Error('Aerosol default policy must be one of the presets');
+	}
+
+	const phasePolicyIds = new Set(aerosolPhasePolicyIds());
+	for (const preset of data.presets) {
+		if (!phasePolicyIds.has(preset.defaultPhasePolicyId)) {
+			throw new Error(`Aerosol preset ${preset.id} references unknown defaultPhasePolicyId ${preset.defaultPhasePolicyId}`);
+		}
 	}
 }
 
@@ -120,7 +129,7 @@ export function aerosolCoefficientsForPolicy(wavelengthsNm, {
 			angstromExponent: policy.angstromExponent,
 			singleScatteringAlbedo: policy.singleScatteringAlbedo,
 			scaleHeightKm: policy.scaleHeightKm,
-			asymmetryG: policy.asymmetryG,
+			defaultPhasePolicyId: policy.defaultPhasePolicyId,
 			densityScale,
 			coefficientModel: policy.coefficientModel,
 			units: '1/km',

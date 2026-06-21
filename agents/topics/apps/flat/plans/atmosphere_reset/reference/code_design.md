@@ -256,7 +256,6 @@ integrateViewOpticalDepth
 integrateSolarTransmittance
 evaluateScatteringPhase
 integrateSingleScattering
-integrateDiffuseSkyAirlight
 resolveSurfaceRadiance
 composeSpectralRadiance
 ```
@@ -418,6 +417,13 @@ Initial options:
 - `--stage <id>`: run only through a pipeline stage for diagnostics.
 - `--format json|summary`: choose full JSON or concise console summary for
   stdout.
+- `--solar-source directional-sun|finite-sun-disc`: choose whether sky-patch
+  and sky-dome evidence uses one weighted directional source sample or a
+  deterministic finite solar-disc source adapter.
+- `--finite-sun-samples <count>`: choose the deterministic finite-disc sample
+  count. It is valid only with `--solar-source finite-sun-disc`; finite-disc
+  source weights preserve the current source-energy convention by summing to
+  `1`.
 - `--help`: print usage and available built-in probes.
 
 Do not add a broad CLI framework unless the existing local flag parsing becomes
@@ -1173,7 +1179,11 @@ The stage output is:
 ```
 
 Only model-supplied source-sample metadata should appear on a source-sample
-output. Required transport arrays are always aligned to
+output. The source adapter must provide an explicit finite nonnegative
+`weight` for each source sample; this is the downstream source-quadrature
+multiplier and is not defaulted by the transport stages. `solidAngleSr` is
+preserved as source-shape provenance/diagnostic metadata under the current
+contract. Required transport arrays are always aligned to
 `validatedRequest.wavelengthsNm`. For a model-declared occluded source sample,
 `visible` is `false`, `sourceTransmittanceByWavelength` is a zero array, and
 `opticalDepthByWavelength` is `null`; the stage does not replace occlusion

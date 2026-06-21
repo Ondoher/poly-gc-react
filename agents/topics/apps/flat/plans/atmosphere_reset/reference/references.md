@@ -122,17 +122,15 @@ The current artifact contains 16 analytic/error-contract rows.
 | Black Lambertian | hand-derived analytic | PBRT diffuse reflection, specialized by [Code Design](code_design.md) | albedo `0` | `L = 0` |
 | White Lambertian | hand-derived analytic | PBRT diffuse reflection, specialized by [Code Design](code_design.md) | albedo `1`, direct irradiance `E = pi`, normal incidence | `L = 1` before view attenuation |
 
-## Diffuse Sky Airlight Fixture Batch
+## Removed Diffuse Sky Airlight Fixture Batch
 
-Encoded fixture artifact:
+Historical encoded fixture artifact:
 `scripts/flat/atmosphere/reference/stages/_tests/fixtures/diffuse-sky-airlight-contracts.json`.
 
-This batch defines the implemented successor contract for the airlight stage:
-`integrateDiffuseSkyAirlight`. The active mode is
-`aerosol-aware-lost-transmittance-haze-lift`: it preserves the first
-lost-transmittance arithmetic when aerosol/Mie optical depth is absent, and
-adds bounded aerosol participation, neutral veil mixing, and aerosol gain when
-Mie optical depth is present.
+This batch belonged to the removed airlight approximation stage,
+`integrateDiffuseSkyAirlight`. It is retained here only as historical context
+for why that proxy was backed out. It is not part of the current reference
+contract.
 
 | Fixture row | Source class | Source basis | Assumptions | Pinned expectation |
 | --- | --- | --- | --- | --- |
@@ -141,17 +139,8 @@ Mie optical depth is present.
 | `diffuse-sky-airlight.high-tau.aerosol-aware` | hand-derived analytic | PBRT volume transport order, PBRT Beer-Lambert transmittance, Bruneton/libRadtran calibration discipline, local bounded flat-geometry policy | same high-tau row plus Mie tau `[4, 1]`; aerosol participation `mieTau / totalTau * (1 - exp(-mieTau))`; neutral mix cap `0.6`; gain `1 + 1.5 * participation` | aerosol saturation `[0.9816843611112658, 0.6321205588285577]`, aerosol participation `[0.6544562407408439, 0.31606027941427883]`, sky airlight `[0.05388577434411065, 0.023667930940134668]`, rendered `[0.15388577434411066, 0.22366793094013468]` |
 | `diffuse-sky-airlight.aerosol-diagnostics` | invariant/error contract | libRadtran aerosol/radiance/RTE boundary plus Bruneton aerosol-complexity discussion | fixture species tau: Rayleigh `[3, 1]`, Mie `[4, 2]`, ozone `[0.2, 0.1]`, total tau `[7.2, 3.1]` | aerosol tau `[4, 2]`, aerosol fractions `[4/7.2, 2/3.1]`, max aerosol tau `4`, tau regime `single-scattering-warning`, flat policy `bounded-asymptotic-required` |
 
-Current implementation status:
-
-- `scripts/flat/atmosphere/reference/stages/_tests/IntegrateDiffuseSkyAirlightStage.spec.js`
-  expects the stage descriptor, output packet, preserved low/high-tau fallback
-  arithmetic, the aerosol-aware formula row, and aerosol/flat diagnostics.
-- `scripts/flat/atmosphere/reference/_tests/pipeline-stages.spec.js` now
-  expects the canonical stage id to be `integrateDiffuseSkyAirlight`.
-- `composeSpectralRadiance` consumes the output as
-  `diffuseSkyAirlightRadianceByWavelength`.
-- `npm run test:scripts:flat` passes with 353 specs and 0 failures after the
-  production aerosol-aware formula implementation.
+Current implementation status: removed from stage registry, packet types,
+fixtures, direct specs, composition, and CLI comparison modes.
 
 Derivation-note seeds to carry into specs or fixtures:
 
@@ -227,6 +216,84 @@ Status:
 - Also supports the `resolveRayPath` testing discipline: use isolated runtime
   tests for stage behavior, avoid ad-hoc constants, and keep geometry/model
   parameters explicit instead of burying them in shader or integrator code.
+
+### Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models
+
+Links:
+
+- Paper: https://arxiv.org/abs/1612.04336
+- Source repository: https://github.com/ebruneton/clear-sky-models
+- Source constants:
+  https://raw.githubusercontent.com/ebruneton/clear-sky-models/master/atmosphere/atmosphere.h
+- Source formula:
+  https://raw.githubusercontent.com/ebruneton/clear-sky-models/master/atmosphere/atmosphere.cc
+
+Consulted for:
+
+- The model-comparison assumptions behind the Bruneton 2016 sky-dome tables.
+- Aerosol/Mie scalar parameters used in the paper comparison.
+- The normalized Cornette-Shanks aerosol phase function used by the reference
+  implementation.
+- The Task 3 `bruneton-2016-no-visible-absorption` policy, which represents
+  the paper comparison's no visible air-molecule absorption assumption as a
+  named zero-cross-section absorber policy.
+- Figure 1 display-chain notes for later image-level comparison: spectral
+  radiance, CIE color matching, XYZ to linear sRGB, and exponential tone
+  mapping.
+
+Pinned source facts:
+
+- The paper's comparison setup assumes no visible air-molecule absorption, a
+  wavelength-independent aerosol phase function, Lambertian ground, fixed
+  grass spectral albedo, aerosol scale height `1.2 km`, aerosol
+  single-scattering albedo `0.8`, Angstrom aerosol optical depth
+  `beta * lambda_um^-alpha`, and Cornette-Shanks phase parameter `g`.
+- The selected aerosol values are `alpha = 0.8`, `beta = 0.04`, and `g = 0.7`.
+  The source implementation constants match these values.
+- In the local `aod550` schema, the paper's `beta = 0.04` maps to
+  `0.04 * 0.55^-0.8 = 0.0645312146448`, matching the existing
+  `bruneton-2016-kider-fit` scalar preset.
+- Sea-level aerosol extinction for that schema is
+  `aod(lambda) / 1.2 km`; sea-level aerosol scattering is extinction times
+  the source-backed single-scattering albedo `0.8`.
+- The source implementation's normalized Cornette-Shanks phase is:
+  `P_CS(mu, g) = 3 / (8 * pi) * (1 - g^2) / (2 + g^2) * (1 + mu^2) / (1 + g^2 - 2 * g * mu)^(3/2)`.
+- Under the current `evaluateScatteringPhase` convention,
+  `cosTheta = dot(sourceDirectionFromSample, directionFromSampleToCamera)`.
+  The aerosol phase's physical incoming/outgoing cosine is interpreted as
+  `mu = -cosTheta`, matching the current Henyey-Greenstein implementation
+  convention.
+- For `g = 0.7`, the source-pinned fixture targets are:
+  `P_CS(mu = 1) = 1.81100002180`,
+  `P_CS(mu = 0) = 0.0134422764093`, and
+  `P_CS(mu = -1) = 0.00995257492133`.
+
+Decisions:
+
+- Treat Cornette-Shanks as the paper-aligned aerosol phase for the
+  `bruneton-2016-kider-fit` comparison.
+- Keep Henyey-Greenstein as an explicit same-scalar control policy rather than
+  as the implicit Bruneton/Kider aerosol behavior.
+- Isolate the first output-impact comparison to phase shape only: hold AOD,
+  Angstrom exponent, single-scattering albedo, scale height, sampling,
+  wavelength grid, geometry, Sun rows, display policy, and multiple-scattering
+  mode fixed.
+
+Assumptions and limits:
+
+- We are not copying Bruneton code. The paper and source implementation are
+  used to pin the public formula, constants, units, and comparison contract.
+- The image table is a model-family comparison target, not proof that the
+  model matches photographs. It should guide Bruneton-method parity before
+  photographic tuning.
+
+Status:
+
+- Implemented in Output-Impact Task 1. The source-backed facts now drive named
+  aerosol phase policies, Cornette-Shanks support in
+  `evaluateScatteringPhase`, the same-scalar Henyey-Greenstein control, and
+  the first phase-only comparison artifact under
+  `tmp/atmosphere/bruneton/001-aerosol-phase-policy/`.
 
 ### Homolya, WebGL Atmosphere Shader Observable Notebook
 
@@ -2034,10 +2101,13 @@ Consulted for:
 Decisions:
 
 - `integrateSingleScattering` consumes view transmittance, scattering
-  coefficients, phase values, source spectrum, source transmittance, and view
-  sample weight from upstream packets. Its first implemented behavior is the
-  PBRT in-scattering product
-  `T_view * beta_sca * phase * source * T_source * ds`.
+  coefficients, phase values, source spectrum, source transmittance, source
+  quadrature weight, and view sample weight from upstream packets. The current
+  source-weight contract specializes PBRT's incident-direction integral as a
+  weighted source-sample sum:
+  `T_view * beta_sca * phase * source * T_source * sourceSample.weight * ds`.
+  `solidAngleSr` is preserved as source-shape provenance under this contract,
+  not consumed as an additional multiplier.
 - `resolveSurfaceRadiance` treats material/BRDF response as model-owned
   through `model.surface.radianceAt`, computes direct irradiance from
   `solarTransmittance.surfacePoint`, disables diffuse sky for the first slice,
@@ -2061,6 +2131,11 @@ Source support:
   ownership, output shape, and no-display-conversion policy.
 - `analytic-invariants.json` rows
   `single-scattering.one-sample.scalar-product`,
+  `single-scattering.source-weight.two-half-samples`,
+  `single-scattering.source-weight.zero-extra-sample`,
+  `single-scattering.source-weight.weighted-phase-sum`,
+  `single-scattering.source-weight.missing-rejects`,
+  `single-scattering.source-weight.invalid-rejects`,
   `surface.lambertian.black-direct-normal`, and
   `surface.lambertian.white-direct-normal-equals-one` supply fixture
   provenance for the first numeric expectations.
@@ -2068,6 +2143,51 @@ Source support:
 Status:
 
 - First implementation slices completed for the final three transport stages.
+
+### Reference Runner Solar-Source Mode Policy
+
+Implementation file:
+
+- `scripts/flat/atmosphere/run-reference-probe.js`
+
+Consulted for:
+
+- CLI/report contract and deterministic source-sample adapter behavior for
+  output-impact Task 6.
+
+Decisions:
+
+- `--solar-source directional-sun` is the default sky-patch and sky-dome
+  adapter. It emits one source sample at the solar center direction with
+  `weight: 1`.
+- `--solar-source finite-sun-disc` emits deterministic equal-area samples over
+  the apparent solar disc. The finite-disc weights are equal and sum to `1`,
+  preserving the current source-energy convention so the experiment isolates
+  angular source extent rather than total source strength.
+- `--finite-sun-samples <count>` is valid only with
+  `--solar-source finite-sun-disc`. This prevents a hidden switch from the
+  directional control into finite-source behavior.
+- `solidAngleSr` remains source-shape provenance in the emitted samples. It is
+  not multiplied into transport while `sourceSpectrum` represents the current
+  source-energy convention rather than radiance-per-steradian input.
+- The equal-area spiral is a local quadrature policy for deterministic
+  experiments. It is not a physical solar measurement. The physical solar-size
+  input remains the existing runner constant for apparent solar angular
+  diameter.
+
+Source support:
+
+- [Stage Contracts](stage_contracts.md#integratesolartransmittance) supplies
+  the source-sample handoff shape, required `weight`, and current
+  `solidAngleSr` provenance policy.
+- [Reference Code Design](code_design.md#cli-shape) supplies the runner CLI
+  ownership and deterministic artifact policy.
+
+Status:
+
+- Task 6 implementation is complete. `npm run test:scripts:flat` passed with
+  `405 specs, 0 failures` after adding parser, metadata, and finite-disc
+  source-quadrature diagnostics.
 
 ### Flat Light Extent Probe Source Map
 

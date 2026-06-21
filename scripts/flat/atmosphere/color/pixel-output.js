@@ -69,7 +69,7 @@ function exposureFromOptions(options) {
 function toneMapFromOptions(options) {
 	const toneMap = options.toneMap ?? 'clip';
 
-	if (!['clip', 'preserve-hue'].includes(toneMap)) {
+	if (!['clip', 'preserve-hue', 'exponential'].includes(toneMap)) {
 		throw new Error(`Unknown pixel output tone map: ${toneMap}`);
 	}
 
@@ -81,6 +81,18 @@ function applyToneMap(exposedLinearRgb, toneMap) {
 		return {
 			displayLinearRgb: { ...exposedLinearRgb },
 			scale: 1,
+			preventedClipChannels: [],
+		};
+	}
+
+	if (toneMap === 'exponential') {
+		return {
+			displayLinearRgb: {
+				r: 1 - Math.exp(-exposedLinearRgb.r),
+				g: 1 - Math.exp(-exposedLinearRgb.g),
+				b: 1 - Math.exp(-exposedLinearRgb.b),
+			},
+			scale: null,
 			preventedClipChannels: [],
 		};
 	}
@@ -121,7 +133,7 @@ function createChannelResult(exposedLinear, displayLinear, encoding) {
  * radiance, XYZ, or linear RGB diagnostics produced by the reference pipeline.
  *
  * @param {{ r: number, g: number, b: number }} linearRgb - Linear sRGB color.
- * @param {{ exposure?: number, encoding?: 'srgb' | 'linear', toneMap?: 'clip' | 'preserve-hue', alpha?: number }} options - Display policy.
+ * @param {{ exposure?: number, encoding?: 'srgb' | 'linear', toneMap?: 'clip' | 'preserve-hue' | 'exponential', alpha?: number }} options - Display policy.
  * @returns {object} Pixel packet with bytes and provenance.
  */
 export function linearRgbToPixel(linearRgb, options = {}) {

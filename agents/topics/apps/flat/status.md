@@ -6,12 +6,336 @@ This topic tracks notes for a new project named `flat`.
 
 Atmosphere reset note:
 
+- Multiple-scattering plan phases 1-5 now have first CLI/report scaffolding
+  and a computed order-by-order prototype sidecar.
+  `run-reference-probe.js` attaches `baselineFreeze` metadata to sky-patch and
+  sky-dome outputs, computes skydome model-output metrics such as warm area,
+  non-blue area, horizon-ring luminance/chroma, zenith-to-horizon contrast,
+  and Sun-neighborhood warm fraction, imports explicit external spectral
+  radiance JSON via `--external-radiance <path>`, and exposes an opt-in
+  `--multiple-scattering-reference sidecar-contract` field that is explicitly
+  `not-computed`. The new opt-in
+  `--multiple-scattering-reference order-by-order-grid` mode computes a
+  sidecar-only order-1/order-2 diagnostic for selected sky-patch/skydome
+  samples without modifying the rendered single-scattering radiance. It now
+  accepts `--multiple-scattering-targets diagnostic|dome-rings` and
+  `--multiple-scattering-angular-samples <count>` so transport evidence can be
+  densified independently from rendered image resolution. The first coarse
+  sky-dome prototype lives at
+  `tmp/atmosphere-multi-scatter/002-order-by-order-grid-prototype/`; its
+  Markdown/JSON report shows an averaged order-2 fraction of about `12.88%`
+  with `8` incoming angular samples, `3` camera-ray path samples, and
+  `2` incoming-ray path samples. The new dome-ring runs live at
+  `tmp/atmosphere-multi-scatter/003-dome-rings-order2-angular8/` and
+  `tmp/atmosphere-multi-scatter/004-dome-rings-order2-angular32/`; they sample
+  `132` skydome target rays and report order-2 fractions of about `11.66%`
+  and `11.32%`, with only about `3.38%` aggregate order-2 energy delta between
+  angular `8` and `32`. The explicit display-comparison report is
+  `tmp/atmosphere-multi-scatter/005-dome-rings-l1-vs-l1plusl2-angular32/`;
+  it adds `L1` versus `L1+L2` swatches and reports about `10.05%` average
+  linear-luminance lift across the `132` targets, with canonical rendered
+  radiance still unchanged. Phase 6 has now started with
+  `--multiple-scattering-max-order 3`; the first convergence artifact is
+  `tmp/atmosphere-multi-scatter/006-phase6-order3-convergence-diagnostic/`.
+  It reports order energies `L1 = 0.3762`, `L2 = 0.0556`, `L3 = 0.0105`, and
+  last-order fraction about `2.38%`, so the prototype is not yet converged
+  against the `1%` threshold. Follow-up sweep artifacts
+  `tmp/atmosphere-multi-scatter/007-phase6-order4-convergence-angular4/`,
+  `tmp/atmosphere-multi-scatter/008-phase6-order4-convergence-angular8/`,
+  and `tmp/atmosphere-multi-scatter/009-phase6-order3-convergence-angular16/`
+  show the diagnostic series converging by order 4 at angular `8` with
+  order-4 fraction about `0.58%`, while order 3 remains above threshold at
+  angular `16` with order-3 fraction about `2.09%`. Practical conclusion:
+  use order-4-or-converged higher-order radiance for the next comparison, but
+  build an image-level cached/iterative sidecar field or table-shaped
+  reference rather than recursively tracing every pixel. That next step now
+  has a first prototype:
+  `tmp/atmosphere-multi-scatter/010-iterative-field-grid-image-comparison/`.
+  The new `--multiple-scattering-reference iterative-field-grid` mode is
+  skydome-only and sidecar-only; the first run uses `5` altitude layers,
+  `16` field directions, max order `4`, nearest-neighbor lookup, and emits
+  Markdown/JSON comparison panels for `L1`, `L1+L2`, `L1+L2+L3`, and
+  `L1+L2+L3+L4`. It converges with last-order fraction about `0.51%`.
+  A current canonical skydome snapshot now lives at
+  `tmp/atmosphere-multi-scatter/012-current-skydome-snapshot/`; it renders the
+  four Bruneton-style time rows at `128 px` with the current single-scattering
+  pipeline, `12/2` sampling, ASTM G-173, Bucholtz Rayleigh, Brion ozone,
+  U.S. Standard Atmosphere density, Kider-fit aerosol, and exponential
+  exposure `8`. The image confirms the current visual state: midday panels
+  remain muted blue-gray and the fisheye limb/horizon remains brown/gold.
+  A follow-up sidecar visual set was generated at
+  `tmp/atmosphere-multi-scatter/013-sidecar-skydome-visual-set/` after adding
+  `--multiple-scattering-image-dir <path>`. That option writes PNG-only
+  iterative-field sidecar artifacts plus a compact README without full
+  per-pixel JSON. The `128 px` contact sheet
+  `images/sidecar-skydome-set.png` shows the canonical baseline beside
+  field `L1`, `L1+L2`, `L1+L2+L3`, and `L1+L2+L3+L4` columns. It also exposes
+  the current sidecar limitation clearly: with `16` Fibonacci directions and
+  nearest-neighbor lookup, the sidecar skydomes are visibly faceted and are
+  useful as progress evidence, not yet as a smooth image-quality prediction.
+  Phase 6 L1 reconstruction metrics now make that limitation numeric:
+  `014-phase6-l1-reconstruction-nearest`, `015-phase6-l1-reconstruction-weighted`,
+  `016-phase6-l1-reconstruction-weighted-angular32`, and
+  `017-phase6-l1-reconstruction-weighted-angular64` compare cached-field `L1`
+  against direct single scattering over `132` dome-ring targets. Weighted
+  interpolation plus `64` directions improves aggregate mean spectral-energy
+  error to about `21.85%`, but the `85 deg` view-zenith horizon ring remains
+  about `57.95%` wrong. Phase 7 has now implemented weighted field-direction
+  samples plus explicit field-grid controls:
+  `--multiple-scattering-field-direction-basis fibonacci|horizon-sun` and
+  `--multiple-scattering-field-altitude-grid default|lower-atmosphere`.
+  Artifacts `018` through `023` show that the angular basis was the immediate
+  cached-field blocker. The control run `018` keeps the Fibonacci-64 result at
+  about `21.85%` mean L1 error and `57.95%` horizon-ring error. The best
+  current run, `022-phase7-horizon-sun128-default-altitude`, uses a requested
+  budget of `128` directions, resolves to `156` solid-angle-weighted
+  horizon/sun-relative directions, and reports about `4.49%` aggregate mean
+  L1 error, `11.65%` max error, `7.53%` at `75 deg`, and `8.80%` at
+  `85 deg`, while remaining converged by order 4. The lower-atmosphere
+  altitude grid did not move the current ground-observer L1 metric because
+  altitude `0 km` is an exact layer in both grids; altitude choices need a
+  path-sampled L1 diagnostic before they count as `L2+` promotion evidence.
+  Recommendation: use the `022` horizon/sun field as the next sidecar
+  skydome-image candidate, keep weighted interpolation and order-4 convergence,
+  and do not promote multiple scattering into canonical radiance yet. Phase 8
+  generated that image-level candidate at
+  `tmp/atmosphere-multi-scatter/024-phase8-horizon-sun128-sidecar-skydomes/`
+  and recorded the interpretation at
+  `tmp/atmosphere-multi-scatter/025-phase8-conclusion/`. The result does not
+  validate the current field-only sidecar: cached field `L1` does not visually
+  track canonical direct `L1` across the full `128 px` fisheye dome, and the
+  higher-order movement from field `L1` to field `L1..L4` is modest compared
+  with that first-order image mismatch. The next implementation should render
+  `direct L1 + cached L2+` and add a dense image-level L1 reconstruction gate
+  before any image-level sidecar conclusion counts. Phase 9 now does that:
+  `026-phase9-direct-l1-plus-residual-skydomes` renders direct canonical
+  `L1` plus cached `L2+` residual panels, and
+  `027-phase9-conclusion` records the interpretation. The residual-only
+  higher-order terms move the image only modestly: daylight horizon luminance
+  rises by roughly four percent in the sampled rows, horizon/zenith ratios
+  nudge upward, and non-blue/warm affected fractions often decrease rather
+  than producing richer model-reference skies. Dense cached-`L1` image
+  reconstruction remains poor, confirming field-only skydomes should not drive
+  conclusions. Recommendation: stop treating missing high-order atmospheric
+  scattering as the single dominant cause; keep the residual sidecar, and move
+  next to a model-ingredient audit covering aerosol optical depth/SSA,
+  wavelength dependence, Mie phase policy, surface/ocean bounce, display and
+  exposure calibration, and atmosphere/profile assumptions. That audit now
+  lives at `tmp/atmosphere-multi-scatter/028-model-family-delta-audit/`. It
+  compares the Bruneton 2016 model family against the current pipeline and
+  narrows the next phase to model-ingredient ablations: horizon-safe
+  source-path sampling, Cornette-Shanks aerosol phase versus the current
+  Henyey-Greenstein phase, a named no-visible-air-absorption/no-ozone paper
+  contract, and ground/surface bounce into sky in-scattering. Its coarse
+  Figure 1 image metrics also show the current daylight skydome has lower
+  disk contrast than every extracted paper-model column, while the Phase 9
+  residual only modestly improves contrast. The CLI now has an explicit
+  `--multiple-scattering-reference none` mode for these Phase 10 isolation
+  comparisons; it attaches a zero-radiance `disabled-no-op` sidecar, keeps
+  rendered radiance unchanged, and rejects solver/field/image sidecar controls
+  so disabled multiple scattering is visible in artifacts without doing any of
+  the expensive work. Multiple scattering is now closed as an active
+  output-fidelity investigation. The successor output-impact tasks now live in
+  [Reference Plan](plans/atmosphere_reset/reference/plan.md#current-next-focus-output-impact-reference-work)
+  instead of this multiple-scattering status note. General direction for those
+  tasks: close identified model weaknesses by moving the reference runner
+  toward Bruneton's documented methods, data, and comparison assumptions one
+  isolated delta at a time. Task 1 is now implemented and verified. The
+  reference runner has named aerosol phase policies, aerosol scalar presets
+  resolve a `defaultPhasePolicyId`, `evaluateScatteringPhase` supports
+  `cornette-shanks`, shared phase math is used by the stage and runner
+  diagnostics, `--aerosol-phase-policy` selects HG or Cornette-Shanks controls,
+  and JSON/Markdown reports expose the resolved `aerosolPhasePolicy`.
+  Verification: `npm run test:scripts:flat` passed with 378 specs and
+  0 failures after the Task 1 implementation, and `git diff --check` passed
+  after the documentation checkpoint. The first phase-only artifact
+  lives at `tmp/atmosphere/bruneton/001-aerosol-phase-policy/` with HG control
+  and Cornette-Shanks JSON/PNG/Markdown/progress-log outputs, `manifest.json`,
+  `comparison.md`, and combined `progress.log`. Cornette-Shanks moved the
+  daylight metrics only modestly, so aerosol phase shape alone is not the
+  dominant fix for the muted/brown daylight result.
+  Task 2 sampling-convergence artifacts now live at
+  `tmp/atmosphere/bruneton/003-sampling-convergence/`. Holding physics fixed,
+  the `36 px` sweep through `12/2`, `24/4`, `48/8`, and `96/16`, plus a
+  `48 px` low-vs-high confirmation, shows sampling is a major contributor to
+  the daylight brown outer ring: the three daylight rows fall from about
+  `6-8%` warm/non-blue affected area at `12/2` to near-zero by `96/16`. The
+  dawn/low-Sun row becomes more broadly warm at higher sampling, but the large
+  soft sunset/orange affected area remains unsolved. Task 2 is now closed out
+  in code: the reference runner accepts
+  `--sampling-profile fast-preview|paper-comparison|horizon-safe`, rejects
+  mixing a named profile with raw `--view-steps` or
+  `--sun-transmittance-steps`, records the resolved profile in JSON,
+  Markdown, summaries, progress events, sky-patch metadata, sky-dome panel
+  metadata, and baseline-freeze metadata, and defaults Bruneton-style
+  `--sky-dome-grid` renders to `paper-comparison` (`96/16`). `fast-preview`
+  remains the explicit `12/2` preview/ablation lane, and `horizon-safe` is the
+  slower `128/32` low-elevation diagnostic lane. Raw numeric sampling remains
+  available only as recorded `custom-explicit` experiment metadata.
+  A `72 px` side-by-side comparison for visual review now lives at
+  `tmp/atmosphere/bruneton/004-72px-current-vs-control/`, with the original
+  Task 1 HG `12/2` stack beside a fresh current-state Cornette-Shanks `96/16`
+  stack in `control-vs-current-d72.png`.
+  The follow-up isolation artifact
+  `tmp/atmosphere/bruneton/005-hg-high-sampling-isolation/` fills the missing
+  high-sampling HG quadrant and confirms the main visible change is sampling,
+  not phase model: under HG alone, `96/16` removes the daylight warm/non-blue
+  ring and expands the low-Sun warm area from about `9.7%` to about `20.0%`,
+  while HG-to-CS phase effects remain small at both sampling levels.
+  Verification: `npm run test:scripts:flat` passed with 382 specs and
+  0 failures after adding the sampling-profile contract and metadata/report
+  tests.
+  Task 3 is now implemented and experimentally closed. The new
+  `bruneton-2016-no-visible-absorption` policy is a named zero-cross-section
+  ozone/visible-absorber policy passed through the existing `--ozone-policy`
+  CLI path into normal `atmosphere.mediumAt` composition, so the transport
+  stages do not branch. The artifact
+  `tmp/atmosphere/bruneton/006-no-visible-absorption/` compares Brion ozone
+  control against no-visible absorption at `36 px`, `paper-comparison`
+  sampling, Bruneton/Kider aerosol, Cornette-Shanks phase, Bucholtz Rayleigh,
+  ASTM G-173, U.S. Standard Atmosphere density, exponential tone map, and
+  explicit multiple-scattering no-op. Result: removing visible ozone
+  absorption is visually meaningful for the low-Sun row, raising warm area
+  from about `19.9%` to `30.2%` and horizon warm area from `75%` to `100%`;
+  daylight rows mostly show small luminance lifts and little to no warm-area
+  change. It should be used for Bruneton-method parity, but it does not solve
+  the missing broad soft sunset/orange affected area by itself.
+  Verification: `npm run test:scripts:flat` passed with 384 specs and
+  0 failures after adding the Task 3 no-visible-absorption policy and
+  artifact comparison; `git diff --check` also passed.
+  A display-only parity audit now lives at
+  `tmp/atmosphere/bruneton/007-display-parity-audit/`. The new
+  `scripts/flat/atmosphere/display-parity-audit.js` diagnostic compares fixed
+  spectra, fixed linear-RGB probes, and Task 3 saved radiance samples from
+  `006-no-visible-absorption/summary.json` through the existing CIE,
+  exponential tone-map, exposure, and byte-encoding path without re-running
+  atmosphere transport. The color module also exposes an unnormalized CIE XYZ
+  diagnostic path beside the current equal-energy normalized path. Result:
+  raw CIE XYZ carries about `106.96x` more Y scale than the normalized path on
+  these samples; normalized `exposure=1` to `8` changes mean display-linear
+  luminance by about `0.171`; raw-vs-normalized output at exposure `8` still
+  has about `0.540` mean encoded RGB delta. Display scale must be pinned before
+  paper-PNG parity conclusions, but this is a perceived contrast/saturation
+  concern rather than the likely cause of the brown horizon geometry or missing
+  broad sunset/aureole area. Verification:
+  `npm run test:scripts:flat` passed with 389 specs and 0 failures after the
+  audit and raw-XYZ diagnostic tests.
+  The sky-dome CLI now supports `--dome-sample-mask full|horizon-ring`; the
+  `horizon-ring` option traces only fisheye radius `>= 0.88`, marks skipped
+  interior pixels explicitly, excludes them from skydome metrics, and reports
+  sampled/skipped counts in progress and artifact metadata. A perimeter-focused
+  aerosol/Mie audit now lives at
+  `tmp/atmosphere/bruneton/008-aerosol-mie-parity-audit/`. It found the
+  Bruneton/Kider aerosol coefficients match the Angstrom/SSA/scale-height
+  contract to about `3.68e-13` max relative error, sea-level `550 nm` aerosol
+  scattering is about `3.75x` Rayleigh scattering, and the Cornette-Shanks
+  phase convention is strongly forward-scattering. Named aerosol policies can
+  move the horizon ring, but the current evidence points toward
+  parameter/environment choice or missing surface/ground coupling rather than a
+  missing basic Mie coefficient or phase algorithm. Verification:
+  `npm run test:scripts:flat` passed with 395 specs and 0 failures after the
+  mask and aerosol/Mie audit tests.
+  A weakness factor audit now lives at
+  `tmp/atmosphere/bruneton/009-weakness-factor-audit/`. It found the weakest
+  current contract is source quadrature: a one-source controlled sample returns
+  about `0.31831` radiance, while two half-weight source samples and a
+  one-source-plus-zero-weight-extra case both return about `0.63662`; expected
+  weighted ratio is `1.0`, actual ratio is `2.0`. This means
+  `sourceSample.weight` and `solidAngleSr` are preserved but not applied by
+  single-scattering accumulation, so finite-Sun/aureole sampling cannot be
+  trusted yet. The same audit found aerosol policy is responsive but not
+  decisive, and surface-coupling proxies only improve the daylight perimeter
+  when the injected secondary light is strongly blue-biased. Recommendation:
+  fix source quadrature/finite solar-source handling first, rerun the
+  sunset/aureole comparison with real weighted source samples, then implement a
+  physical surface/ground secondary-source experiment. Verification:
+  `npm run test:scripts:flat` passed with 398 specs and 0 failures after the
+  weakness factor audit tests; `git diff --check` also passed.
+  The focused output-impact queue now lives in
+  [Reference Plan](plans/atmosphere_reset/reference/plan.md#current-next-focus-output-impact-reference-work):
+  Tasks 4-6 now pin the source-weight transport contract, apply source
+  weighting in single-scattering accumulation, and add explicit directional
+  versus finite-disc solar-source modes. Task 7 is complete, and Task 8 is
+  next: test a physical surface/ground secondary-source experiment. The
+  paper-panel comparison metrics/contact-sheet and manifest-cleanup tasks now
+  follow those physics-contract steps.
+  Tasks 4, 5, and 6 are complete: the reference contracts and fixtures require
+  `integrateSingleScattering` to consume finite nonnegative
+  `sourceSample.weight` values, with `solidAngleSr` kept as provenance, and
+  production now requires that weight at solar-transmittance handoff and
+  applies it during single-scattering accumulation. The weakness-factor audit
+  now reports `source-sample-weight-applied`, with split-weight and
+  zero-weight-extra ratios near `1.0`. The reference runner now accepts
+  `--solar-source directional-sun|finite-sun-disc`, accepts
+  `--finite-sun-samples <count>` only for `finite-sun-disc`, emits weighted
+  deterministic finite-disc source samples when selected, and records source
+  mode, sample count, solar angular radius, and weight sum in JSON and
+  Markdown. Verification: `npm run test:scripts:flat` passed with
+  `405 specs, 0 failures`.
+  Task 7 artifacts now live under
+  `tmp/atmosphere/bruneton/010-finite-sun-source-weighting/`, with
+  file-directed runs, logs, `summary.json`, `manifest.json`, and
+  `comparison.md`. The sweep includes a `36 px` directional control, fair
+  full-frame `12 px` directional/finite-5/finite-9 comparisons, and fair
+  `24 px` horizon-ring directional/finite-5/finite-9 comparisons. Result:
+  finite solar-disc source sampling is effectively a no-op at image-metric
+  level; low-Sun warm area, horizon warm fraction, Sun-neighborhood warm
+  fraction, and the rough warm-radius proxy do not move, and the largest
+  recorded metric delta is about `0.00050047`. Conclusion: finite solar-source
+  angular extent is not the main cause of the too-small sunset/orange affected
+  area.
+  New Bruneton output-impact experiment artifacts should live under
+  `tmp/atmosphere/bruneton/` with sortable numbered folders. Historical
+  multiple-scattering artifacts remain under `tmp/atmosphere-multi-scatter/`;
+  the first smoke run is
+  `tmp/atmosphere-multi-scatter/001-phase1-4-diagnostic-smoke/`, containing
+  `skydome-smoke.png`, `skydome-smoke.md`, `skydome-smoke.json`,
+  `skydome-smoke.progress.log`, and the zero-radiance external fixture.
+  Verification: `npm run test:scripts:flat` passed with 364 specs and
+  0 failures after the Phase 9 residual-panel and dense image-gate update.
+- [Multiple-Scattering Plan](plans/atmosphere_reset/multiple_scattering_plan.md)
+  now records the closed comparison-first investigation, diagnostic sidecar
+  contracts, no-op isolation mode, and evidence trail. The active successor
+  queue lives in the focused
+  [Reference Plan](plans/atmosphere_reset/reference/plan.md#current-next-focus-output-impact-reference-work).
 - The multiple-scattering/table-generation design now records the distinction
   between Bruneton-style tables and project-owned tables. Bruneton remains a
   useful spherical Earth-like validation and shader-architecture precedent,
   but flat-world/local-Sun approximation tables will likely need to be
   generated from our own reference runs with explicit geometry, atmosphere,
   source, optical-depth, and finite-boundary metadata.
+- The June 2026 midday-horizon review now treats the Lopes/Fernandes 2014
+  atmospheric-scattering survey as a model-ladder reference. The user-provided
+  screenshot maps to the paper's O'Neal clear-sky example, so the current
+  muted blue-gray output is plausibly an older single-scattering/optimized
+  real-time look rather than a finished photographic target. The next
+  reference step is a comparison lane across O'Neal/Nishita-class baseline,
+  Preetham or Hosek-Wilkie analytic sky, Bruneton-style multiple scattering,
+  and later libRadtran/DISORT artifacts before further haze-proxy tuning.
+- The immediate comparison target is model-output matching rather than
+  reality matching. A local source index and extracted model-image gallery now
+  lives at `tmp/atmosphere-model-output-gallery/README.md`; the primary
+  comparison source is Bruneton 2016's eight clear-sky-model skydome grid.
+- The reference CLI now has a `--sky-dome-grid` mode for a Bruneton Figure 1
+  style comparison column. It renders the listed time rows `06h00 / 87 deg`,
+  `10h15 / 41 deg`, `11h15 / 31 deg`, and `13h15 / 21 deg`, marks the Sun
+  direction with a red cross, and writes PNG/PPM/SVG/Markdown with
+  progress-log support. The first paper-resolution, paper-oriented artifact is
+  `tmp/atmosphere-model-output-gallery/ours-bruneton-figure1-skydome-256-preview20-v12-s2-exponential-paper-orientation.png`
+  with Markdown/progress-log siblings. Full diagnostic JSON is intentionally
+  omitted at `256 px` because it would be extremely large. It uses the new
+  `bruneton-2016-kider-fit` aerosol preset (`tau550 ~= 0.0645`, Angstrom
+  alpha `0.8`, single-scattering albedo `0.8`, scale height `1.2 km`, and
+  asymmetry `g = 0.7`) plus Bucholtz Rayleigh, ASTM G-173 solar spectrum,
+  Brion ozone, U.S. Standard Atmosphere density, exponential display exposure
+  `8`, and 12/2 transport samples. The output is structurally comparable to
+  the paper grid but still dim/desaturated versus the richer published model
+  panels.
+- A historical pass over `tmp/atmosphere-images` separated two regressions:
+  the daylight horizon browning is already present in the single-scattering
+  midday-horizon frames around `036`/`040`, while the later overall contrast
+  loss begins with the haze-lift/diffuse-airlight approximation around `044`
+  and `047` and is carried forward into `054`, `056`, `057`, `059`, and `060`.
 
 Reference integrator update:
 
@@ -21,14 +345,17 @@ Reference integrator update:
   `validateRequest`, `resolveRayPath`, `sampleViewPath`, `evaluateMedium`,
   `integrateViewOpticalDepth`, `integrateSolarTransmittance`,
   `evaluateScatteringPhase`, `integrateSingleScattering`,
-  `integrateDiffuseSkyAirlight`, `resolveSurfaceRadiance`, and
-  `composeSpectralRadiance`.
-- The renamed diffuse-sky-airlight stage is wired through the sky-patch CLI.
-  The latest full-stack review artifacts are
+  `resolveSurfaceRadiance`, and `composeSpectralRadiance`.
+- The diffuse-sky-airlight/haze-lift approximation has been backed out of the
+  canonical pipeline and CLI. It is no longer a stage, packet component,
+  display-side comparison mode, or compatibility fallback. The old review
+  artifacts remain useful as historical evidence only:
   `tmp/atmosphere-diffuse-sky-airlight-stack/sky-patches-full-stack-132x84-fov72.png`,
   `tmp/atmosphere-diffuse-sky-airlight-stack/sky-patches-full-stack-132x84-fov72.md`,
   and
   `tmp/atmosphere-diffuse-sky-airlight-stack/sky-patches-full-stack-132x84-fov72.json`.
+  Verification: `npm run test:scripts:flat` passed with 352 specs and
+  0 failures after the removal.
   Center swatches from that run: midday zenith `#798bad`, midday horizon
   `#caccbc`, sunset horizon `#e59963`.
 - The first reference probe runner now exists at
@@ -374,12 +701,12 @@ Reference integrator update:
   (`164.0355 deg`, ratio `7.3865`). The horizon budget peaks at `2.2726 km`
   altitude and is flagged `multiple-scattering-likely`; surface bounce,
   clouds, terrain/ocean reflection, and multiple scattering remain disabled.
-- [Sun Visual Plan](plans/atmosphere_reset/sun/sun_visual_plan.md) now records
-  the midday-horizon roadmap: lock the zenith/horizon/sunset comparison trio,
-  add a diagnostic `single-plus-haze-lift` scattering mode, calibrate against
-  Bruneton/libRadtran-style references, improve aerosol phase policy, add
-  explicit surface/cloud bounce only after atmosphere-only haze is understood,
-  and promote changes only after comparison artifacts are reviewed.
+- [Sun Visual Plan](plans/atmosphere_reset/sun/sun_visual_plan.md) records the
+  midday-horizon roadmap and the model-family comparison context. The previous
+  haze-lift proxy branch has been backed out; future work should compare the
+  single-scattering baseline against Bruneton/libRadtran-style references and
+  move toward a real multiple-scattering/table path instead of another
+  display-side or packet fallback.
 - A focused `midday.horizon` aerosol sensitivity pass was generated under
   `tmp/atmosphere-sun-diagnostic/` and recorded in both the artifact summary
   and the sun plan. Holding the latest stack fixed, `rayleigh-only` is palest
@@ -388,55 +715,14 @@ Reference integrator update:
   `hazy-continental` becomes an `extreme horizon path` at `#775b2e`. All
   useful variants remain high-tau and continue to report
   `multiple-scattering-likely`. Current recommendation: do not solve
-  midday-horizon haze by tuning aerosol or color defaults; implement the
-  named `single-plus-haze-lift` diagnostic comparison path next and calibrate
-  it against Bruneton/libRadtran-style external references before promoting
-  any canonical model change.
-- The `single-plus-haze-lift` diagnostic comparison mode is now implemented in
-  `scripts/flat/atmosphere/run-reference-probe.js` as a separate sky-patch
-  scattering mode. It renders a diagnostic spectrum while preserving canonical
-  single-scattering `finalByWavelength` in sample diagnostics. The first
-  tau560-gated attempt moved the image but exposed the wrong activation scale;
-  the corrected candidate gates on max visible optical depth and adds
-  per-wavelength diffuse airlight from lost view transmittance. Generated
-  artifacts and interpretation live in
-  `tmp/atmosphere-haze-lift-diagnostic/README.md`. Current recommended
-  diagnostic comparison value is `--scattering-mode single-plus-haze-lift
-  --haze-lift-strength 0.02`: `midday.zenith` remains `#798bad`,
-  `midday.horizon` moves from `#a4a286` to `#cdcdbb`, and `sunset.horizon`
-  moves from `#d87c01` to `#e89a65`. Recommendation: promote the model
-  direction, not the exact heuristic yet; the next physical improvement is an
-  explicit higher-order scattering/airlight term calibrated against
-  Bruneton/libRadtran-style references before becoming canonical. `npm run
-  test:scripts:flat` passed with 344 specs and 0 failures after this
-  implementation.
-- The diagnostic haze-lift direction has now been promoted into the canonical
-  reference stage named `integrateDiffuseSkyAirlight`. The fixture ledger is
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/diffuse-sky-airlight-contracts.json`,
-  the stage spec is
-  `scripts/flat/atmosphere/reference/stages/_tests/IntegrateDiffuseSkyAirlightStage.spec.js`,
-  and the stage contract is documented in
-  `agents/topics/apps/flat/plans/atmosphere_reset/reference/stage_contracts.md`.
-  The production stage is registered after `integrateSingleScattering`, emits
-  an explicit `diffuseSkyAirlight` packet field, and
-  `composeSpectralRadiance` now reports
-  `diffuseSkyAirlightRadianceByWavelength` as a separate component. The stage
-  defaults to zero strength unless callers opt in with
-  `numerical.diffuseSkyAirlightStrength`, keeping existing baselines stable
-  while making the source-backed model improvement available. It also applies
-  the bounded aerosol-aware formula when Mie optical depth is present and
-  reports aerosol optical-depth fraction, aerosol participation, tau regime,
-  and flat bounded-asymptotic diagnostics. Verification:
-  `npm run test:scripts:flat` passed with 353 specs and 0 failures.
-- Updated-pipeline sky-patch artifacts were generated with the sourced latest
-  stack and `--scattering-mode single-plus-haze-lift
-  --haze-lift-strength 0.02` at
-  `tmp/atmosphere-updated-pipeline-sky-patches/`. The four-patch PNG is
-  `sky-patches-haze-002.png` with companion Markdown/JSON. Center swatches:
-  `midday.zenith #798bad`, `midday.horizon #c7cbbd`,
-  `sunset.horizon #e19862`, and `midnight.zenith #000000`. The report shows
-  the canonical vs rendered split, including horizon haze lift of roughly
-  `440nm:+0.0306`, `560nm:+0.026`, and `660nm:+0.0181`.
+  midday-horizon haze by tuning aerosol, color defaults, or haze proxies.
+- Historical haze-lift artifacts remain in `tmp/atmosphere-haze-lift-diagnostic/`,
+  `tmp/atmosphere-updated-pipeline-sky-patches/`, and
+  `tmp/atmosphere-diffuse-sky-airlight-stack/`. They showed that the proxy
+  brightened the horizon but also introduced broad contrast loss and
+  gray/beige daylight color. The implementation has now been removed from the
+  canonical stage registry, CLI, packet shape, composition output, tests, and
+  docs contracts.
 - Going forward, routine sky-patch experiments should omit
   `midnight.zenith` until celestial objects, airglow, moonlight, or another
   nighttime source is added. The CLI default sky-patch set is now
@@ -448,24 +734,52 @@ Reference integrator update:
   `0.4613 deg`, while row `36` is a black surface hit at `-0.009 deg`.
   The true sky row also still dips: clear-maritime haze `0.02` has the last
   sky row at `0.606` of peak sky luminance, while Rayleigh-only stays at
-  `0.996`. Recommendation recorded in the sun plan: add a named
-  aerosol-aware multiple-scattering/diffuse-sky-airlight approximation and
-  calibrate it against Bruneton/libRadtran-style reference evidence; treat
-  ocean/ground lower-frame context as a separate follow-up. The first bounded
-  aerosol-aware `integrateDiffuseSkyAirlight` formula is now implemented;
-  stronger calibration against libRadtran/DISORT or a Bruneton-style reference
-  remains future work.
+  `0.996`. Recommendation recorded in the sun plan: do not keep tuning
+  proxies; use the model gallery and a stronger multiple-scattering/table
+  reference to decide the next transport model. Treat ocean/ground lower-frame
+  context as a separate follow-up.
 - Latest visual assessment: the aerosol-aware full-stack output is still far
   from the user-provided real midday sky photo. The latest PNGs are
   `tmp/atmosphere-images/059_atmosphere-diffuse-sky-airlight-stack-sky-patches-full-stack-132x84-aerosol-aware.png`
   and
   `tmp/atmosphere-images/060_atmosphere-diffuse-sky-airlight-stack-midday-horizon-full-stack-132x168-aerosol-aware.png`.
-  They prove the CLI is consuming the new stage output, but they do not yet
+  They prove the removed proxy was being consumed, but they did not
   match the photographic target: upper sky is too desaturated and gray-blue,
   the horizon trends beige/tan rather than pale cyan-white, and the daylight
-  gradient is not the clean saturated-blue-to-light-horizon gradient in the
-  reference. Current status: pipeline integration green, visual fidelity not
-  solved.
+  gradient was not the clean saturated-blue-to-light-horizon gradient in the
+  reference. Current status: the proxy is removed; visual fidelity still needs
+  a better transport reference.
+- First follow-up from that photo review: sky-patch reference sampling can now
+  trade speed for accuracy. The CLI accepts `--view-steps <count>` and
+  `--sun-transmittance-steps <count>`, reports the resolved per-patch numerical
+  sampling, and has `--progress` stderr logging plus `--progress-log <path>`
+  file logging for long artifact runs. The
+  sky-patch defaults are now `64` view-ray midpoint samples plus `16`
+  source-path midpoint samples; `sunset.horizon` keeps the same view count but
+  uses `32` source-path samples because its grazing source path is more
+  sensitive. A full `132x84` sourced-stack comparison was generated at
+  `tmp/atmosphere-finer-sampling-sky-patches/sky-patches-full-stack-132x84-finer-defaults-progress.png`
+  with Markdown/JSON/log siblings. Center swatches: `midday.zenith #c6cede`,
+  `midday.horizon #dce0db`, `sunset.horizon #cf946b`. This confirms the
+  denser reference path is live, but it is not an accepted visual baseline.
+  Verified with `npm run test:scripts:flat` passing 354 specs and 0 failures.
+- A panned-up companion patch, `midday.horizonSky`, now keeps the midday
+  horizon near the lower frame edge instead of spending most pixels below the
+  horizon. Full `132x84` sourced-stack output was generated at
+  `tmp/atmosphere-finer-sampling-sky-patches/midday-horizon-sky-frame-132x84-finer-defaults.png`
+  with Markdown/JSON/progress-log siblings. It used the same `64/16`
+  numerical sampling as that historical run. The report shows
+  `81/84` center-column rows are sky, center `#96abc2`, top row `#8297b6`,
+  nearest sky-horizon row `#f7e0cd`, and first surface row `81` at
+  `-0.2503 deg`. This improves the comparison framing, but the upper sky is
+  still muted relative to the user photo. Verified with
+  `npm run test:scripts:flat` passing 356 specs and 0 failures.
+- The `midday.horizonTallSky` scene is implemented and covered by tests for a
+  future taller artifact. It centers a `54 degree` vertical FOV at
+  `25 degrees` elevation so the comparison can include more upper sky with the
+  horizon low in frame. No full `132x168` image has been generated for that
+  scene yet. Last observed verification after adding it:
+  `npm run test:scripts:flat` passed with 357 specs and 0 failures.
 - Flat-geometry impact is now recorded in the sun plan. The same
   multiple-scattering/diffuse-airlight change must be bounded for flat
   near-parallel rays because optical depth can keep accumulating in dense air.
@@ -475,10 +789,9 @@ Reference integrator update:
   stronger radiative-transfer reference where possible.
 - A future
   [Multiple-Scattering Reference Design](plans/atmosphere_reset/multiple_scattering_design.md)
-  now exists. It is explicitly gated as potential future work if the
-  single-scattering path plus `integrateDiffuseSkyAirlight` starts collecting
-  too many compensatory approximations. The near-term path remains a separate,
-  bounded, calibrated diffuse-sky-airlight stage rather than a full solver.
+  now exists. It is the preferred direction after backing out the
+  diffuse-airlight proxy: build or source a real higher-order transport
+  reference instead of accumulating compensatory approximations.
 - Follow-up: model full flat-world lit-terrain visibility depth by combining
   finite/distant Sun falloff, source-to-terrain/source-to-air transmittance,
   terrain-to-camera transmittance, in-scattered airlight, and terrain contrast.

@@ -270,11 +270,6 @@ type AtmosphereReferenceNumericalControls = {
 	finiteSunSamples?: number;
 
 	/**
-	 * Scale the named diffuse-sky-airlight diagnostic approximation.
-	 */
-	diffuseSkyAirlightStrength?: number;
-
-	/**
 	 * Store the smallest allowed integration step in kilometers.
 	 */
 	minStepKm?: number;
@@ -635,9 +630,9 @@ type AtmosphereReferenceSolarSourceSample = {
 	direction: AtmosphereReferenceVector3Tuple;
 
 	/**
-	 * Store source quadrature weight, when supplied.
+	 * Store the required source quadrature weight consumed by single scattering.
 	 */
-	weight?: number;
+	weight: number;
 
 	/**
 	 * Store source sample solid angle in steradians, when supplied.
@@ -680,9 +675,9 @@ type AtmosphereReferenceSolarTransmittanceSourceSample = {
 	direction: AtmosphereReferenceVector3Tuple;
 
 	/**
-	 * Preserve source quadrature weight, when supplied.
+	 * Preserve the required source quadrature weight consumed by single scattering.
 	 */
-	weight?: number;
+	weight: number;
 
 	/**
 	 * Preserve source solid angle in steradians, when supplied.
@@ -991,60 +986,6 @@ type AtmosphereReferenceSingleScattering = {
 }
 
 /**
- * Store diagnostic diffuse-sky-airlight approximation output.
- */
-type AtmosphereReferenceDiffuseSkyAirlight = {
-	/**
-	 * Identify the approximation mode.
-	 */
-	mode: "aerosol-aware-lost-transmittance-haze-lift";
-
-	/**
-	 * Store added approximate diffuse-sky-airlight spectral radiance.
-	 */
-	radianceByWavelength: number[];
-
-	/**
-	 * Store canonical single scattering plus the approximation.
-	 */
-	renderedSinglePlusSkyAirlightByWavelength: number[];
-
-	/**
-	 * Store approximation diagnostics.
-	 */
-	diagnostics: {
-		contract: {
-			transportOrder: string;
-			bounded: boolean;
-			calibrationStatus: string;
-			approximationWarning: string;
-		};
-		activation: number;
-		activationTau: number;
-		activationPolicy: string;
-		strength: number;
-		aerosolOpticalDepthByWavelength: number[];
-		aerosolOpticalDepthFractionByWavelength: number[];
-		maxAerosolOpticalDepth: number;
-		aerosolSaturationByWavelength: number[];
-		aerosolParticipationByWavelength: number[];
-		neutralSourceSpectrum: number;
-		neutralMixByWavelength: number[];
-		aerosolGainByWavelength: number[];
-		aerosolPolicy: {
-			neutralMixMax: number;
-			multipleScatterGain: number;
-		};
-		tauRegime: string;
-		flatGeometryLimitPolicy: string;
-		lostViewTransmittanceByWavelength: number[];
-		sourceSpectrumByWavelength: number[];
-		canonicalSingleScatteringByWavelength: number[];
-		approximationWarning: string;
-	};
-}
-
-/**
  * Store surface-radiance output.
  */
 type AtmosphereReferenceSurfaceRadiance = {
@@ -1112,7 +1053,6 @@ type AtmosphereReferenceSpectralRadiance = {
 	 */
 	components: {
 		inScatteredRadianceByWavelength: number[];
-		diffuseSkyAirlightRadianceByWavelength: number[];
 		surfaceViewAttenuatedRadianceByWavelength: number[];
 	};
 
@@ -1274,7 +1214,6 @@ type AtmosphereReferenceStageId =
 	| "integrateSolarTransmittance"
 	| "evaluateScatteringPhase"
 	| "integrateSingleScattering"
-	| "integrateDiffuseSkyAirlight"
 	| "resolveSurfaceRadiance"
 	| "composeSpectralRadiance";
 
@@ -1491,11 +1430,6 @@ type AtmosphereReferencePacket = AtmosphereReferenceTraceRequest & {
 	 * Store single-scattering radiance diagnostics.
 	 */
 	singleScattering?: AtmosphereReferenceSingleScattering;
-
-	/**
-	 * Store diagnostic diffuse-sky-airlight approximation output.
-	 */
-	diffuseSkyAirlight?: AtmosphereReferenceDiffuseSkyAirlight;
 
 	/**
 	 * Store surface radiance diagnostics.

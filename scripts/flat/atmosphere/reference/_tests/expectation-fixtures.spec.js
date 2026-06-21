@@ -27,6 +27,11 @@ const EXPECTED_ANALYTIC_INVARIANT_IDS = Object.freeze([
 	'view-transmittance.invalid-sample-weight-rejects',
 	'phase.isotropic.constant-over-solid-angle',
 	'single-scattering.one-sample.scalar-product',
+	'single-scattering.source-weight.two-half-samples',
+	'single-scattering.source-weight.zero-extra-sample',
+	'single-scattering.source-weight.weighted-phase-sum',
+	'single-scattering.source-weight.missing-rejects',
+	'single-scattering.source-weight.invalid-rejects',
 	'surface.lambertian.black-direct-normal',
 	'surface.lambertian.white-direct-normal-equals-one',
 ]);

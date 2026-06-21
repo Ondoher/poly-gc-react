@@ -152,7 +152,7 @@ export default class IntegrateSolarTransmittanceStage {
 				sourceSample.direction,
 				sourceSampleIndex,
 			),
-			weight: this.validateOptionalNonnegativeFinite(
+			weight: this.validateRequiredNonnegativeFinite(
 				sourceSample.weight,
 				`source sample ${sourceSampleIndex} weight`,
 			),
@@ -287,7 +287,7 @@ export default class IntegrateSolarTransmittanceStage {
 				sourceSample.direction,
 				sourceSampleIndex,
 			),
-			weight: this.validateOptionalNonnegativeFinite(
+			weight: this.validateRequiredNonnegativeFinite(
 				sourceSample.weight,
 				`source sample ${sourceSampleIndex} weight`,
 			),
@@ -809,8 +809,8 @@ export default class IntegrateSolarTransmittanceStage {
 	 */
 	validateOptionalNonnegativeFinite(value, label) {
 		if (value === undefined) {
-			// Branch source: source weight and solid angle are optional
-			// model-owned metadata. Missing metadata is omitted, not invented.
+			// Branch source: solid angle is optional model-owned provenance
+			// metadata. Missing metadata is omitted, not invented.
 			// See Stage Contracts, source sample output.
 			return undefined;
 		}
@@ -818,6 +818,29 @@ export default class IntegrateSolarTransmittanceStage {
 		if (!Number.isFinite(value) || value < 0) {
 			// Reason: source quadrature weights and solid angles are nonnegative finite diagnostics.
 			// Source: Reference Code Design, solarSource.samplesAt source-sample metadata.
+			throw new RangeError(`${label} must be nonnegative finite`);
+		}
+
+		return value;
+	}
+
+	/**
+	 * Validate a required nonnegative finite source-sample value.
+	 *
+	 * @param {number | undefined} value - Provide value.
+	 * @param {string} label - Identify value in errors.
+	 * @returns {number}
+	 */
+	validateRequiredNonnegativeFinite(value, label) {
+		if (value === undefined) {
+			// Branch source: source quadrature weight is a required downstream transport multiplier, not optional metadata.
+			// See Stage Contracts, source sample output and integrateSingleScattering source-weight contract.
+			throw new RangeError(`${label} is required`);
+		}
+
+		if (!Number.isFinite(value) || value < 0) {
+			// Reason: source quadrature weights are nonnegative finite measures in the source-direction integral.
+			// Source: PBRT Volume Scattering Processes; Reference Stage Contracts, source sample output.
 			throw new RangeError(`${label} must be nonnegative finite`);
 		}
 

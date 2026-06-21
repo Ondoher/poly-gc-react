@@ -37,6 +37,32 @@ export function spectralRadianceToLinearSrgb(spectralRadiance, wavelengthsNm) {
 }
 
 /**
+ * Convert spectral radiance samples to unnormalized CIE XYZ and unclamped linear sRGB.
+ *
+ * This diagnostic path preserves the raw wavelength integral scale so display
+ * audits can compare it against the default equal-energy normalized preview path.
+ *
+ * @param {number[]} spectralRadiance - Spectral radiance values aligned to wavelengths.
+ * @param {number[]} wavelengthsNm - Wavelength grid in nanometers.
+ * @returns {{ xyz: { x: number, y: number, z: number }, linearRgb: { r: number, g: number, b: number }, provenance: object }}
+ */
+export function spectralRadianceToUnnormalizedLinearSrgb(spectralRadiance, wavelengthsNm) {
+	const xyzResult = spectralRadianceToUnnormalizedXyz(spectralRadiance, wavelengthsNm);
+	const linearRgb = xyzToLinearSrgb(xyzResult.xyz);
+
+	return {
+		xyz: xyzResult.xyz,
+		linearRgb,
+		provenance: {
+			...xyzResult.provenance,
+			rgbMatrix: 'sRGB D65 XYZ-to-linear-RGB matrix',
+			outputColorSpace: 'linear-srgb',
+			clamping: 'none',
+		},
+	};
+}
+
+/**
  * Integrate spectral radiance samples against the official CIE 1931 2-degree table.
  *
  * Wavelengths between table rows use linear interpolation. Wavelengths outside
@@ -47,13 +73,56 @@ export function spectralRadianceToLinearSrgb(spectralRadiance, wavelengthsNm) {
  * @returns {{ xyz: { x: number, y: number, z: number }, provenance: object }}
  */
 export function spectralRadianceToXyz(spectralRadiance, wavelengthsNm) {
+	const integrated = integrateSpectralRadianceToXyz(spectralRadiance, wavelengthsNm);
+	const scale = integrated.yEqualEnergyResponse > 0 ? 1 / integrated.yEqualEnergyResponse : 1;
+
+	return {
+		xyz: {
+			x: integrated.xyz.x * scale,
+			y: integrated.xyz.y * scale,
+			z: integrated.xyz.z * scale,
+		},
+		provenance: {
+			...integrated.provenance,
+			normalization: 'Y normalized by equal-energy response over caller wavelengths',
+			normalizationScale: scale,
+			yEqualEnergyResponse: integrated.yEqualEnergyResponse,
+		},
+	};
+}
+
+/**
+ * Integrate spectral radiance samples against the official CIE table without
+ * equal-energy normalization.
+ *
+ * This is a display-audit diagnostic. It is not the default preview color path.
+ *
+ * @param {number[]} spectralRadiance - Spectral radiance values aligned to wavelengths.
+ * @param {number[]} wavelengthsNm - Wavelength grid in nanometers.
+ * @returns {{ xyz: { x: number, y: number, z: number }, provenance: object }}
+ */
+export function spectralRadianceToUnnormalizedXyz(spectralRadiance, wavelengthsNm) {
+	const integrated = integrateSpectralRadianceToXyz(spectralRadiance, wavelengthsNm);
+
+	return {
+		xyz: integrated.xyz,
+		provenance: {
+			...integrated.provenance,
+			normalization: 'none; raw CIE integral keeps caller radiance scale and wavelength weights',
+			normalizationScale: 1,
+			yEqualEnergyResponse: integrated.yEqualEnergyResponse,
+		},
+	};
+}
+
+function integrateSpectralRadianceToXyz(spectralRadiance, wavelengthsNm) {
 	validateAlignedSpectralSamples(spectralRadiance, wavelengthsNm);
 
 	const table = loadOfficialCie1931Table();
 	let x = 0;
 	let y = 0;
 	let z = 0;
-	let yNormalizer = 0;
+	let yEqualEnergyResponse = 0;
 
 	for (let index = 0; index < wavelengthsNm.length; index += 1) {
 		const wavelengthNm = wavelengthsNm[index];
@@ -64,22 +133,20 @@ export function spectralRadianceToXyz(spectralRadiance, wavelengthsNm) {
 		x += radiance * cmf.x * integrationWeightNm;
 		y += radiance * cmf.y * integrationWeightNm;
 		z += radiance * cmf.z * integrationWeightNm;
-		yNormalizer += cmf.y * integrationWeightNm;
+		yEqualEnergyResponse += cmf.y * integrationWeightNm;
 	}
-
-	const scale = yNormalizer > 0 ? 1 / yNormalizer : 1;
 
 	return {
 		xyz: {
-			x: x * scale,
-			y: y * scale,
-			z: z * scale,
+			x,
+			y,
+			z,
 		},
+		yEqualEnergyResponse,
 		provenance: {
 			cmf: table.provenance,
 			interpolation: 'linear within 1 nm table rows; zero outside 360-830 nm',
 			integration: 'trapezoidal wavelength weights over caller-provided samples',
-			normalization: 'Y normalized by equal-energy response over caller wavelengths',
 		},
 	};
 }

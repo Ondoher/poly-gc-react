@@ -594,19 +594,205 @@
         "phaseSrInverse": 0.25,
         "sourceSpectralIrradiance": 4,
         "sourceTransmittance": 0.8,
+        "sourceSampleWeight": 1,
         "stepLengthKm": 2
       },
       "expected": {
         "spectralRadiance": {
           "value": 0.16,
           "units": "fixture radiance units",
-          "derivation": "PBRT in-scattering source function specialized by the reference design to one source/sample step: dL = T_view * beta_sca * phase * source * T_source * ds = 0.5 * 0.2 * 0.25 * 4 * 0.8 * 2 = 0.16."
+          "derivation": "PBRT in-scattering source function specialized by the reference design to one source/sample step with normalized source quadrature weight 1: dL = T_view * beta_sca * phase * source * T_source * sourceWeight * ds = 0.5 * 0.2 * 0.25 * 4 * 0.8 * 1 * 2 = 0.16."
         }
       },
       "tolerance": {
         "spectralRadiance": { "mode": "absolute", "value": 1e-12 }
       },
       "independence": "The expectation is a scalar product from the documented equation with deliberately simple factors."
+    },
+    {
+      "id": "single-scattering.source-weight.two-half-samples",
+      "stage": "integrateSingleScattering",
+      "quantity": "single-scattering source quadrature with split weights",
+      "sourceClass": "hand-derived analytic",
+      "reference": {
+        "id": "pbrt-v4-volume-scattering-processes",
+        "kind": "external-document",
+        "title": "PBRT v4, Volume Scattering / Volume Scattering Processes",
+        "url": "https://www.pbr-book.org/4ed/Volume_Scattering/Volume_Scattering_Processes",
+        "locator": "Section 11.1.4 In Scattering, source function and phase-function in-scattering integral.",
+        "derivationSummary": "PBRT expresses in-scattering as an integral over incident direction. A deterministic source quadrature represents that angular integral as a weighted sum over source samples."
+      },
+      "assumptions": {
+        "medium": "one homogeneous sample",
+        "wavelengthsNm": [550],
+        "sourceSamples": "two identical source samples split from the one-source baseline",
+        "sourceWeights": [0.5, 0.5],
+        "noSurfaceContribution": true,
+        "noMultipleScattering": true
+      },
+      "inputs": {
+        "wavelengthsNm": [550],
+        "viewTransmittance": 0.5,
+        "scatteringCoefficientPerKm": 0.2,
+        "phaseSrInverse": 0.25,
+        "sourceSpectralIrradiance": 4,
+        "sourceTransmittance": 0.8,
+        "sourceSampleWeights": [0.5, 0.5],
+        "stepLengthKm": 2
+      },
+      "expected": {
+        "spectralRadiance": {
+          "value": 0.16,
+          "units": "fixture radiance units",
+          "derivation": "Each split source contributes 0.5 * 0.2 * 0.25 * 4 * 0.8 * 0.5 * 2 = 0.08; the two source contributions sum to 0.16, matching the one-source baseline."
+        }
+      },
+      "tolerance": {
+        "spectralRadiance": { "mode": "absolute", "value": 1e-12 }
+      },
+      "independence": "The expected value is hand-derived from the angular quadrature weights and the one-sample in-scattering product, not from the production accumulator."
+    },
+    {
+      "id": "single-scattering.source-weight.zero-extra-sample",
+      "stage": "integrateSingleScattering",
+      "quantity": "single-scattering zero-weight source contribution",
+      "sourceClass": "hand-derived analytic",
+      "reference": {
+        "id": "pbrt-v4-volume-scattering-processes",
+        "kind": "external-document",
+        "title": "PBRT v4, Volume Scattering / Volume Scattering Processes",
+        "url": "https://www.pbr-book.org/4ed/Volume_Scattering/Volume_Scattering_Processes",
+        "locator": "Section 11.1.4 In Scattering, source function and phase-function in-scattering integral.",
+        "derivationSummary": "A quadrature sample with zero weight has zero measure in the source-direction integral and should not change the accumulated radiance."
+      },
+      "assumptions": {
+        "medium": "one homogeneous sample",
+        "wavelengthsNm": [550],
+        "sourceSamples": "one normal source plus one zero-weight duplicate",
+        "sourceWeights": [1, 0],
+        "noSurfaceContribution": true,
+        "noMultipleScattering": true
+      },
+      "inputs": {
+        "wavelengthsNm": [550],
+        "viewTransmittance": 0.5,
+        "scatteringCoefficientPerKm": 0.2,
+        "phaseSrInverse": 0.25,
+        "sourceSpectralIrradiance": 4,
+        "sourceTransmittance": 0.8,
+        "sourceSampleWeights": [1, 0],
+        "stepLengthKm": 2
+      },
+      "expected": {
+        "spectralRadiance": {
+          "value": 0.16,
+          "units": "fixture radiance units",
+          "derivation": "The first source contributes 0.5 * 0.2 * 0.25 * 4 * 0.8 * 1 * 2 = 0.16; the zero-weight duplicate contributes 0, so the total remains 0.16."
+        }
+      },
+      "tolerance": {
+        "spectralRadiance": { "mode": "absolute", "value": 1e-12 }
+      },
+      "independence": "The expected value is the hand-derived weighted sum; it does not depend on how the implementation loops over source samples."
+    },
+    {
+      "id": "single-scattering.source-weight.weighted-phase-sum",
+      "stage": "integrateSingleScattering",
+      "quantity": "single-scattering weighted source samples with different phase values",
+      "sourceClass": "hand-derived analytic",
+      "reference": {
+        "id": "pbrt-v4-volume-scattering-processes",
+        "kind": "external-document",
+        "title": "PBRT v4, Volume Scattering / Volume Scattering Processes",
+        "url": "https://www.pbr-book.org/4ed/Volume_Scattering/Volume_Scattering_Processes",
+        "locator": "Section 11.1.4 In Scattering, source function and phase-function in-scattering integral.",
+        "derivationSummary": "The incident-direction integral is linear in phase and incoming source radiance, so deterministic source samples accumulate as the weighted sum of each source's phase-weighted contribution."
+      },
+      "assumptions": {
+        "medium": "one homogeneous sample",
+        "wavelengthsNm": [550],
+        "sourceWeights": [0.25, 0.75],
+        "phaseSrInverseBySource": [0.25, 0.5],
+        "noSurfaceContribution": true,
+        "noMultipleScattering": true
+      },
+      "inputs": {
+        "wavelengthsNm": [550],
+        "viewTransmittance": 0.5,
+        "scatteringCoefficientPerKm": 0.2,
+        "phaseSrInverseBySource": [0.25, 0.5],
+        "sourceSpectralIrradiance": 4,
+        "sourceTransmittance": 0.8,
+        "sourceSampleWeights": [0.25, 0.75],
+        "stepLengthKm": 2
+      },
+      "expected": {
+        "spectralRadiance": {
+          "value": 0.28,
+          "units": "fixture radiance units",
+          "derivation": "The common factor without phase and source weight is 0.5 * 0.2 * 4 * 0.8 * 2 = 0.64. Weighted phase sum is 0.25 * 0.25 + 0.5 * 0.75 = 0.4375. Total radiance is 0.64 * 0.4375 = 0.28."
+        }
+      },
+      "tolerance": {
+        "spectralRadiance": { "mode": "absolute", "value": 1e-12 }
+      },
+      "independence": "The expected value is hand-derived weighted quadrature arithmetic and does not call any stage helper."
+    },
+    {
+      "id": "single-scattering.source-weight.missing-rejects",
+      "stage": "integrateSingleScattering",
+      "quantity": "missing source quadrature weight rejection",
+      "sourceClass": "local API/schema contract",
+      "reference": {
+        "id": "reference-stage-contracts-integrate-single-scattering-source-weight",
+        "kind": "local-design-doc",
+        "title": "Reference Stage Contracts",
+        "path": "agents/topics/apps/flat/plans/atmosphere_reset/reference/stage_contracts.md",
+        "locator": "integrateSingleScattering source-weight contract.",
+        "derivationSummary": "The current stage contract requires every consumed source sample to carry an explicit source quadrature weight so finite-source integration cannot silently double-count or invent a fallback."
+      },
+      "assumptions": {
+        "sourceSampleWeight": "missing",
+        "invalidReason": "the consuming stage has no fallback default for source quadrature"
+      },
+      "inputs": {
+        "sourceSample": {
+          "weight": "missing"
+        }
+      },
+      "expectedError": {
+        "type": "RangeError",
+        "messageIncludes": ["source sample", "weight", "required"],
+        "derivation": "Local source-sample contract: integrateSingleScattering consumes sourceSample.weight as a transport multiplier, so a missing weight fails loudly instead of defaulting."
+      },
+      "independence": "The oracle is the documented packet contract and no-fallback policy, not the current implementation behavior."
+    },
+    {
+      "id": "single-scattering.source-weight.invalid-rejects",
+      "stage": "integrateSingleScattering",
+      "quantity": "invalid source quadrature weight rejection",
+      "sourceClass": "local API/schema contract",
+      "reference": {
+        "id": "reference-stage-contracts-integrate-single-scattering-source-weight",
+        "kind": "local-design-doc",
+        "title": "Reference Stage Contracts",
+        "path": "agents/topics/apps/flat/plans/atmosphere_reset/reference/stage_contracts.md",
+        "locator": "integrateSingleScattering source-weight contract.",
+        "derivationSummary": "The source quadrature weight is a nonnegative finite multiplier in the source-direction sum. Negative or non-finite weights cannot define valid source measure."
+      },
+      "assumptions": {
+        "sourceSampleWeight": "negative or non-finite",
+        "invalidReason": "invalid source quadrature measure"
+      },
+      "inputs": {
+        "invalidSourceSampleWeights": [-0.5, "Infinity"]
+      },
+      "expectedError": {
+        "type": "RangeError",
+        "messageIncludes": ["source sample", "weight", "nonnegative finite"],
+        "derivation": "Local source-sample contract: sourceSample.weight is multiplied into radiance as source quadrature measure and therefore must be finite and nonnegative."
+      },
+      "independence": "The oracle is the documented packet contract and numeric-domain policy, not any current validation helper."
     },
     {
       "id": "surface.lambertian.black-direct-normal",

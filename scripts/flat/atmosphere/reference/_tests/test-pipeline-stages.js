@@ -92,48 +92,6 @@ export const STAGE_CONTRACTS = Object.freeze({
 			stageHistory: [],
 		},
 	},
-	integrateDiffuseSkyAirlight: {
-		requires: ['validatedRequest', 'viewOpticalDepth', 'solarTransmittance', 'singleScattering'],
-		provides: ['diffuseSkyAirlight'],
-		packet: {
-			validatedRequest: { wavelengthsNm: [550], numerical: { diffuseSkyAirlightStrength: 0.02 } },
-			viewOpticalDepth: {
-				pathEnd: {
-					cumulativeOpticalDepthByWavelength: [6],
-					viewTransmittanceByWavelength: [0.0024787521766663585],
-					speciesOpticalDepth: {
-						mie: {
-							cumulativeOpticalDepthByWavelength: [4],
-						},
-					},
-				},
-			},
-			solarTransmittance: {
-				samples: [
-					{
-						sampleIndex: 0,
-						sourceSamples: [
-							{
-								sourceSampleIndex: 0,
-								sourceSampleId: 'test-source',
-								visible: true,
-								sourceSpectrum: {
-									kind: 'spectral-irradiance',
-									valuesByWavelength: [1],
-									units: 'W m-2 nm-1',
-									derivation: 'test source',
-								},
-							},
-						],
-					},
-				],
-			},
-			singleScattering: {
-				inScatteredRadianceByWavelength: [0.1],
-			},
-			stageHistory: [],
-		},
-	},
 	resolveSurfaceRadiance: {
 		requires: ['validatedRequest', 'rayPath', 'viewOpticalDepth', 'solarTransmittance'],
 		provides: ['surfaceRadiance'],

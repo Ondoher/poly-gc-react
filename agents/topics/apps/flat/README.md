@@ -11,6 +11,7 @@ Deployable Flat app documentation for the false-sky / sky-comparison project.
 - [Atmosphere Reset Research](plans/atmosphere_reset/research.md)
 - [Atmosphere Reset Design](plans/atmosphere_reset/design.md)
 - [Multiple-Scattering Reference Design](plans/atmosphere_reset/multiple_scattering_design.md)
+- [Multiple-Scattering Plan](plans/atmosphere_reset/multiple_scattering_plan.md)
 - [Reference README](plans/atmosphere_reset/reference/README.md)
 - [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md)
 - [Reference Code Design](plans/atmosphere_reset/reference/code_design.md)
@@ -87,6 +88,10 @@ Key continuation docs:
 - [Atmosphere Reset Design](plans/atmosphere_reset/design.md): reset
   implementation contracts for the script-owned reference module, globe and flat
   model adapters, diagnostics, and shader parity boundary.
+- [Multiple-Scattering Plan](plans/atmosphere_reset/multiple_scattering_plan.md):
+  current comparison-first path for model-family reports, external numeric
+  artifacts, and a sidecar order-by-order reference before any canonical
+  higher-order transport change.
 - [Reference Code Design](plans/atmosphere_reset/reference/code_design.md):
   focused contract for the slow spectral CPU truth engine.
 - [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md):

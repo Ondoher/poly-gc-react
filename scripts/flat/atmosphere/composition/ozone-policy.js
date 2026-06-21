@@ -13,6 +13,7 @@ const BRION_DATA_URL = new URL(
 export const OZONE_POLICY_IDS = Object.freeze([
 	'preview-chappuis',
 	'brion-1998-ozone-295k',
+	'bruneton-2016-no-visible-absorption',
 ]);
 
 let brionDataCache = null;
@@ -126,6 +127,28 @@ export function resolveOzonePolicy(policyId = 'preview-chappuis') {
 			crossSectionModel: 'linear interpolation of MPI-Mainz Brion 1998 295 K 1 nm table',
 			crossSectionsForWavelengths(wavelengthsNm) {
 				return brionCrossSectionsForWavelengths(sourceData, wavelengthsNm);
+			},
+		};
+	}
+
+	if (policyId === 'bruneton-2016-no-visible-absorption') {
+		return {
+			id: policyId,
+			label: 'Bruneton 2016 no visible molecular absorption',
+			source: 'Bruneton 2016 clear-sky comparison contract',
+			crossSectionModel: 'zero visible-band ozone/air-molecule absorption for paper-aligned model comparison',
+			crossSectionsForWavelengths(wavelengthsNm) {
+				validateWavelengths(wavelengthsNm);
+
+				return {
+					valuesByWavelength: wavelengthsNm.map(() => 0),
+					provenance: {
+						policyId,
+						source: 'Bruneton 2016 clear-sky comparison contract',
+						crossSectionModel: 'zero visible-band ozone/air-molecule absorption for paper-aligned model comparison',
+						units: 'cm^2 molecule^-1',
+					},
+				};
 			},
 		};
 	}

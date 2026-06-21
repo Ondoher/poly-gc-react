@@ -79,6 +79,42 @@ physical properties" at the renderer level. It is not just changing scalar
 constants in the current shader. The integrator must be written against a
 geometry/source contract.
 
+### Model-Output Comparison Parameters
+
+Bruneton 2016's eight-clear-sky-model comparison is the current reference lane
+for classifying our output against published model families before treating
+photographs as the target. Its Figure 1 skydome rows use these times and Sun
+zenith angles:
+
+- `06h00 / 87 deg`
+- `10h15 / 41 deg`
+- `11h15 / 31 deg`
+- `13h15 / 21 deg`
+
+The paper's shared comparison setup is useful because it names the fit inputs:
+Penndorf sea-level molecular scattering at `15 C`, molecular scale height
+`8 km`, grass spectral ground albedo, aerosol scale height `1.2 km`,
+aerosol single-scattering albedo `0.8`, Angstrom aerosol alpha `0.8`, beta
+`0.04` with wavelength measured in micrometers, and Henyey-Greenstein
+asymmetry `g = 0.7`. In this repo's aerosol preset schema, that beta maps to
+about `tau550 = 0.0645`.
+
+The Figure 1 display path also matters: the paper converts spectral radiance
+through CIE color matching functions to linear sRGB, then tone maps with an
+exponential form `L' = 1 - exp(-kL)`. The CLI therefore exposes an
+`exponential` tone-map option for comparison artifacts instead of forcing the
+older `clip` or `preserve-hue` display paths.
+
+The extracted `256 x 256` panel tiles are also rotated relative to the first
+local skydome convention. The comparison CLI now uses a paper-panel
+orientation for `--sky-dome-grid`: azimuth `0` maps to image right, and
+positive azimuth moves clockwise.
+
+The same paper reports Preetham/Hosek turbidity around `T = 2.53` for that
+comparison set. Those analytic-sky turbidity values should be treated as
+model-specific handles, not as direct replacements for the reference
+integrator's spectral aerosol parameters.
+
 ### Geometry/Source Contract
 
 A shared atmosphere integrator should ask the active model for these operations:
@@ -655,6 +691,8 @@ Simplification:
 
 Reference:
 
+- Lopes and Fernandes, "Atmospheric Scattering - State of the Art":
+  https://repositorium.uminho.pt/server/api/core/bitstreams/00ac3a4f-ceb0-4d07-9694-0a78ac47d1e0/content
 - Bruneton precomputed atmospheric scattering:
   https://ebruneton.github.io/precomputed_atmospheric_scattering/
 
@@ -819,6 +857,12 @@ L_pixel(lambda) =
   radiometric quantities.
 - Do not leave shader-only approximations untested. The reset needs a CPU
   reference integrator that the shader can be compared against.
+- Do not mistake an O'Neal/Nishita-class clear-sky screenshot for the final
+  target. The 2014 Lopes/Fernandes survey shows that muted blue-gray horizons
+  are common for older single-scattering or optimized real-time models, while
+  the later Bruneton-class examples rely on multiple-scattering
+  precomputation. Use that ladder as a comparison framework before adding more
+  local haze tuning.
 
 ## Recommended Implementation Path
 
@@ -863,5 +907,11 @@ implementation contract lives in [Design](design.md).
   https://www.pbr-book.org/4ed/Volume_Scattering/Phase_Functions
 - Eric Bruneton, "Precomputed Atmospheric Scattering: a New Implementation":
   https://ebruneton.github.io/precomputed_atmospheric_scattering/
+- Eric Bruneton, "A Qualitative and Quantitative Evaluation of 8 Clear Sky
+  Models":
+  https://arxiv.org/abs/1612.04336
 - NASA AERONET aerosol data and concepts:
   https://aeronet.gsfc.nasa.gov/
+- Diogo A. R. Lopes and Antonio Ramires Fernandes, "Atmospheric Scattering -
+  State of the Art":
+  https://repositorium.uminho.pt/server/api/core/bitstreams/00ac3a4f-ceb0-4d07-9694-0a78ac47d1e0/content

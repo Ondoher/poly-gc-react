@@ -2,23 +2,41 @@
 
 ## Status
 
-Potential future work.
+Active calibration candidate after the midday horizon review.
 
-Do not start this path only because one benchmark looks imperfect. Use it if
-the single-scattering reference plus explicit approximation stages keep
-accumulating compensatory terms until the model boundary becomes hard to trust.
-The current near-term path remains:
+Do not jump straight into a full local multiple-scattering solver only because
+one benchmark looks imperfect. The immediate shift is narrower: add an
+external/model-ladder comparison lane before adding more compensatory haze
+rules. Use the current pipeline to reproduce or compare against known model
+families, then decide whether the local implementation needs an order-by-order
+reference, imported external artifacts, or a better bounded approximation.
+
+The current near-term path is now:
 
 - keep `integrateSingleScattering` as the direct first-order transport term
-- rename/evolve the current diffuse-airlight approximation into
-  `integrateDiffuseSkyAirlight`
-- keep that diffuse-airlight term separate, bounded, diagnostic, and calibrated
-  against stronger reference evidence
+- keep removed haze/diffuse-airlight proxies out of the canonical pipeline
+- compare the single-scattering baseline against model-family references
+- build or source a real higher-order transport reference before adding new
+  compensating terms
 
-If `integrateDiffuseSkyAirlight` needs too many special cases for aerosol
-regime, horizon rows, flat geometry, surface bounce, or sky-direction coupling,
-promote a slow multiple-scattering reference mode rather than continuing to
-patch the approximation.
+The implementation sequence for that path now lives in
+[Multiple-Scattering Plan](multiple_scattering_plan.md). Keep this document as
+the design rationale and the plan as the actionable checklist.
+
+The backed-out diffuse-airlight proxy crossed the warning line: it improved
+some horizon numbers but cost too much contrast and pushed daylight toward
+gray/beige. Do not revive it as a fallback path. Use this design to define the
+next source-backed transport reference instead.
+
+The June 2026 midday-horizon review is the first concrete warning that the
+current path is approaching that boundary. Finer sampling and panned-up framing
+improved the diagnostic view, but the upper sky remains muted and the
+bounded haze lift bleaches the dome. A Lopes/Fernandes atmospheric-scattering
+survey screenshot that visually resembles the current output maps to the
+O'Neal clear-sky model family, while the same survey shows richer Bruneton
+clear-sky output produced with multiple-scattering precomputation. Treat that
+as evidence that the current result is plausible for an older simplified
+model, not evidence that it is close enough to the photographic target.
 
 ## Purpose
 
@@ -40,7 +58,7 @@ The goal would not be real-time rendering. The goal would be a slow,
 source-backed truth-ish benchmark that can:
 
 - validate high optical-depth horizon rows
-- calibrate `integrateDiffuseSkyAirlight`
+- calibrate any future practical approximation from a stronger reference
 - expose where single scattering is only qualitative
 - separate atmosphere transport errors from color/display or lower-frame
   surface-context errors
@@ -60,6 +78,12 @@ horizon, especially with aerosols, optical depth can become high:
 
 External references supporting this direction:
 
+- Lopes and Fernandes, "Atmospheric Scattering - State of the Art", provides
+  a compact model ladder from Klassen and Nishita through Preetham, O'Neal,
+  Schafhitzel, and Bruneton. The useful lesson for this project is not the
+  image pixels themselves, but the distinction between single-scattering
+  real-time approximations and later multiple-scattering/precomputed models:
+  `https://repositorium.uminho.pt/server/api/core/bitstreams/00ac3a4f-ceb0-4d07-9694-0a78ac47d1e0/content`
 - Bruneton 2016 compares graphics clear-sky models with measurements and
   libRadtran, and frames accuracy around how many physical simplifications are
   retained or removed:
@@ -73,6 +97,33 @@ External references supporting this direction:
   preferred external calibration target before claiming Earth-truth behavior.
 
 ## Candidate Algorithms
+
+### Survey-Derived Calibration Ladder
+
+Use the Lopes/Fernandes survey as a practical ladder for reference comparison:
+
+1. Keep the current direct single-scattering path as the O'Neal/Nishita-class
+   baseline. Its muted blue-gray horizon result is a known simplified-model
+   look, so it should be labeled as a baseline rather than tuned into the
+   final answer.
+2. Add an analytic sky-model comparison, preferably Preetham and then
+   Hosek-Wilkie, as cheap external behavior checks. These models are not the
+   target transport architecture, but they provide useful expected gradients,
+   turbidity sensitivity, and ground-albedo handling.
+3. Compare the same camera/sun scenarios against a Bruneton-style
+   multiple-scattering implementation or published/reference artifacts for the
+   spherical Earth-like subset.
+4. Use libRadtran/DISORT artifacts for a smaller number of high-confidence
+   radiance checks once the scenario translation is explicit.
+5. Only after those comparisons decide whether to implement a local
+   order-by-order grid, keep an external-artifact workflow, or derive a new
+   practical approximation from the reference.
+
+Borrow implementation ideas from the survey's progression without copying
+code: precompute optical depth by altitude/view angle, separate view and source
+transmittance tables, compare single-scattering and multiple-scattering
+orders side by side, and keep the table keys tied to physical configuration
+metadata.
 
 ### Order-By-Order Reference
 
@@ -129,7 +180,8 @@ Pros:
 
 - strongest near-term source backing
 - avoids inventing a second local solver before we know what accuracy we need
-- good for calibrating `integrateDiffuseSkyAirlight`
+- good for calibrating any future practical approximation from a stronger
+  reference
 
 Cons:
 
@@ -181,7 +233,6 @@ Treat it as an offline benchmark mode:
 ```text
 single-scattering pipeline result
 slow multiple-scattering reference result
-fast diffuse-sky-airlight approximation result
 comparison report
 ```
 
@@ -189,7 +240,6 @@ Possible public/script API:
 
 ```text
 run-reference-probe --multiple-scattering-reference
-run-reference-probe --compare-diffuse-sky-airlight
 ```
 
 Possible output packet:
@@ -222,26 +272,23 @@ multipleScatteringReference: {
 
 Do not merge this output into `spectralRadiance.finalByWavelength` until its
 contract and calibration are reviewed. Early reports should compare it against
-single scattering and `integrateDiffuseSkyAirlight` side by side.
+the single-scattering baseline side by side.
 
-## Relationship To `integrateDiffuseSkyAirlight`
+## Relationship To Removed Haze-Lift Proxy
 
-`integrateDiffuseSkyAirlight` should remain the practical approximation stage.
-The multiple-scattering reference would exist to calibrate or replace that
-approximation when needed.
+The removed diffuse-airlight/haze-lift proxy should not remain the practical
+approximation stage. It is useful only as historical evidence that ad hoc
+horizon brightening can trade one artifact for another.
 
 Use this relationship:
 
 - `integrateSingleScattering`: direct first-order scattering only
-- `integrateDiffuseSkyAirlight`: bounded practical approximation for missing
-  diffuse/higher-order atmospheric radiance
 - `multipleScatteringReference`: slow diagnostic/reference mode used to
-  validate the approximation, not always part of the canonical render path
+  validate whether a future practical approximation is justified
 
-If the approximation becomes small and well calibrated, keep it. If it grows
-into many unrelated fixes, replace it with a better approximation derived from
-the multiple-scattering reference or promote the reference for benchmark-only
-truth artifacts.
+If a future approximation is added, derive it from the reference and make it a
+new current contract. Do not reintroduce the old proxy as a compatibility mode
+or display fallback.
 
 ## Flat Geometry Concerns
 
@@ -263,8 +310,8 @@ define:
 
 Start this work if at least one of these becomes true:
 
-- `integrateDiffuseSkyAirlight` needs multiple independent knobs to fit one
-  benchmark family.
+- The single-scattering baseline cannot match a selected benchmark family
+  without higher-order transport.
 - High-tau horizon rows remain visibly wrong after aerosol-aware bounded
   airlight and lower-frame surface context are separated.
 - Flat-geometry visibility-depth claims require stronger evidence than the
@@ -276,20 +323,27 @@ Start this work if at least one of these becomes true:
 
 ## First Implementation Slice
 
-If this path opens, start with the smallest useful benchmark:
+This path is now open for comparison work, not for an immediate broad solver.
+Start with the smallest useful benchmark:
 
 1. Select two globe scenarios:
    - `midday.zenith`
    - `midday.horizon`
-2. Select one flat finite-slab scenario with a declared maximum path length.
-3. Use the existing sourced composition stack:
+2. Add the panned-up review scenario:
+   - `midday.horizonSky` or `midday.horizonTallSky`
+3. Select one flat finite-slab scenario with a declared maximum path length.
+4. Use the existing sourced composition stack:
    - Bucholtz Rayleigh
    - Brion ozone
    - named aerosol policy
    - U.S. Standard Atmosphere molecular profile where applicable
-4. Generate or import an external libRadtran/DISORT comparison artifact.
-5. Add a local comparison report before implementing a local solver.
-6. Only then decide whether to implement order-by-order local scattering,
+5. Generate or import at least one external/model-family comparison artifact:
+   - O'Neal/Nishita-class single scattering if reproduced locally
+   - Preetham or Hosek-Wilkie analytic sky for a fast gradient sanity check
+   - Bruneton-style multiple scattering for the spherical Earth-like subset
+   - libRadtran/DISORT for high-confidence radiance checks
+6. Add a local comparison report before implementing a local solver.
+7. Only then decide whether to implement order-by-order local scattering,
    Monte Carlo reference tracing, or keep using external artifacts.
 
 ## Open Questions

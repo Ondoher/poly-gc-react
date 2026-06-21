@@ -35,8 +35,8 @@ boundary, lives in [Reference Code Design](code_design.md#integrator-facade-cont
   extra fields. Code may require field absence when the input contract defines
   mutually exclusive alternatives. Tests may include extra input fields, then
   assert the contracted output fields and values. Tests may assert field
-  absence when mutually exclusive alternatives, or explicit removal behavior,
-  are part of the stage contract.
+  absence only when mutually exclusive alternatives are part of the current
+  stage contract.
 - Display, exposure, tone mapping, report formatting, and color conversion are
   post-pipeline consumers. They do not enter the physical transport stages.
 
@@ -80,7 +80,6 @@ integrateViewOpticalDepth
 integrateSolarTransmittance
 evaluateScatteringPhase
 integrateSingleScattering
-integrateDiffuseSkyAirlight
 resolveSurfaceRadiance
 composeSpectralRadiance
 ```
@@ -500,6 +499,19 @@ radiance stages:
 }
 ```
 
+`weight` is the required source-quadrature multiplier consumed by
+`integrateSingleScattering`. A directional Sun source emits a single source
+sample with `weight: 1`; a finite solar disc emits deterministic samples whose
+weights define the angular quadrature and should sum to the selected source
+integral policy. `solidAngleSr` remains source-shape provenance/diagnostic
+metadata until a later contract explicitly switches the source spectrum to a
+radiance-per-steradian angular integration path.
+
+The current reference runner exposes this adapter choice as
+`directional-sun` or `finite-sun-disc`. Its finite-disc adapter uses
+deterministic equal-area samples with equal source-integral weights summing to
+`1` under the current source-energy convention.
+
 `surfacePoint` is optional and present when `rayPath.surfaceHit` is a visible
 surface endpoint:
 
@@ -518,6 +530,8 @@ Ownership:
   occlusion, and source-path segment selection are model-owned.
 - This stage owns Beer-Lambert integration over model-returned source-path
   segment samples.
+- Every emitted source sample must carry a finite nonnegative `weight`. The
+  stage preserves the model-owned value; it does not invent fallback weights.
 - For a model-declared occluded source sample, `visible` is `false`,
   `sourceTransmittanceByWavelength` is a zero array, and
   `opticalDepthByWavelength` is `null`.
@@ -529,7 +543,8 @@ Downstream use:
 
 - `evaluateScatteringPhase` consumes source directions and sample ids.
 - `integrateSingleScattering` consumes source spectrum, source transmittance,
-  source weight/solid angle, and visibility.
+  source weight, source-shape provenance such as `solidAngleSr`, and
+  visibility.
 - `resolveSurfaceRadiance` consumes `surfacePoint` source samples for direct
   surface irradiance.
 - Diagnostics consume source path lengths, boundary reasons, visibility, and
@@ -607,10 +622,18 @@ Ownership:
 - Phase-function parameters come from `mediumSamples.species[].phase` or the
   selected medium model diagnostics; this stage does not invent aerosol or
   cloud parameters.
-- The implemented phase kinds are `isotropic`, `rayleigh`, and
-  `henyey-greenstein`. Positive-`g` Henyey-Greenstein uses the stage's recorded
+- The implemented phase kinds are `isotropic`, `rayleigh`,
+  `henyey-greenstein`, and `cornette-shanks`.
+- Positive-`g` Henyey-Greenstein and Cornette-Shanks use the stage's recorded
   local sign convention so aerosol forward scattering aligns with a low-Sun
-  camera ray.
+  camera ray. Cornette-Shanks is an aerosol phase kind in this existing stage,
+  not a separate transport stage. It uses the same physical incoming/outgoing
+  cosine as the current aerosol implementation, `mu = -cosTheta`, and evaluates
+  `P_CS(mu, g) = 3 / (8 * pi) * (1 - g^2) / (2 + g^2) * (1 + mu^2) / (1 + g^2 - 2 * g * mu)^(3/2)`.
+- The aerosol scalar policy owns AOD, Angstrom exponent, single-scattering
+  albedo, and scale height. A separate aerosol phase policy owns
+  `{ kind, parameters.g, provenance }`, so `g` is not duplicated in scalar
+  preset data.
 - Species without phase metadata stay out of the phase list rather than
   inventing a model-owned phase function.
 - Metadata records the convention plus medium/source sample counts for
@@ -681,11 +704,17 @@ Produces:
 Ownership:
 
 - This stage owns the single-scattering product:
-  `T_view * beta_sca * phase * source * T_source * ds`.
+  `T_view * beta_sca * phase * source * T_source * sourceSample.weight * ds`.
 - It consumes source energy and transmittance from
   `integrateSolarTransmittance`, phase values from `evaluateScatteringPhase`,
   scattering coefficients and sample weights from `mediumSamples`, and view
   transmittance from `viewOpticalDepth`.
+- It requires every consumed source sample to carry a finite nonnegative
+  `weight`; the stage fails loudly if the weight is missing or invalid instead
+  of defaulting to `1`.
+- `solidAngleSr` is not a transport multiplier in this stage under the current
+  contract. It remains diagnostic provenance for the source adapter and future
+  radiance-per-steradian source contracts.
 - It does not compute surface radiance, diffuse sky irradiance, display color,
   or multiple scattering.
 
@@ -694,119 +723,6 @@ Downstream use:
 - `composeSpectralRadiance` consumes
   `singleScattering.inScatteredRadianceByWavelength`.
 - Diagnostics consume component and per-species contribution summaries.
-
-## `integrateDiffuseSkyAirlight`
-
-Purpose: add a named, explicitly approximate higher-order diffuse sky airlight
-component for high-optical-depth low-elevation views. This stage owns the
-bounded diagnostic approximation separately from canonical single scattering
-and reports aerosol/flat-geometry diagnostics for the bounded formula.
-
-Consumes:
-
-```js
-{
-  validatedRequest: {
-    wavelengthsNm,
-    numerical: {
-      diffuseSkyAirlightStrength
-    }
-  },
-  viewOpticalDepth,
-  solarTransmittance,
-  singleScattering
-}
-```
-
-Produces:
-
-```js
-{
-  diffuseSkyAirlight: {
-    mode,
-    radianceByWavelength,
-    renderedSinglePlusSkyAirlightByWavelength,
-    diagnostics: {
-      activation,
-      activationTau,
-      activationPolicy,
-      strength,
-      lostViewTransmittanceByWavelength,
-      sourceSpectrumByWavelength,
-      canonicalSingleScatteringByWavelength,
-      aerosolOpticalDepthByWavelength,
-      aerosolOpticalDepthFractionByWavelength,
-      maxAerosolOpticalDepth,
-      aerosolSaturationByWavelength,
-      aerosolParticipationByWavelength,
-      neutralSourceSpectrum,
-      neutralMixByWavelength,
-      aerosolGainByWavelength,
-      aerosolPolicy,
-      tauRegime,
-      flatGeometryLimitPolicy,
-      contract,
-      approximationWarning
-    }
-  }
-}
-```
-
-Ownership:
-
-- This stage owns only a named approximation to higher-order atmospheric
-  airlight. It is not a full multiple-scattering solver and must report that
-  limitation in diagnostics.
-- The canonical single-scattering output remains owned by
-  `integrateSingleScattering`; this stage must not rewrite
-  `singleScattering.inScatteredRadianceByWavelength`.
-- The implemented diagnostic policy is
-  `aerosol-aware-lost-transmittance-haze-lift`. It activates from the maximum
-  visible optical depth on the view path, uses Beer-Lambert lost view
-  transmittance as the available veil signal, and modulates that signal by
-  aerosol participation:
-
-  ```text
-  aerosolSaturation[w] = 1 - exp(-aerosolTau[w])
-  aerosolParticipation[w] = aerosolOpticalDepthFraction[w] * aerosolSaturation[w]
-  neutralMix[w] = min(0.6, aerosolParticipation[w])
-  veilSource[w] = sourceSpectrum[w] * (1 - neutralMix[w])
-    + mean(sourceSpectrum) * neutralMix[w]
-  aerosolGain[w] = 1 + 1.5 * aerosolParticipation[w]
-  added[w] = veilSource[w]
-    * (1 - viewTransmittance[w])
-    * activation
-    * strength
-    * aerosolGain[w]
-  ```
-
-  If aerosol/Mie optical depth is absent or zero, aerosol participation is zero
-  and the formula reduces to the previous lost-transmittance proxy:
-  `sourceSpectrum[w] * (1 - viewTransmittance[w]) * activation * strength`.
-- Missing `numerical.diffuseSkyAirlightStrength` defaults to `0`, so the
-  canonical stage is present but does not change existing baseline radiance
-  unless a caller opts in.
-- The aerosol-aware formula is deliberately bounded. `neutralMix` is capped at
-  `0.6`, and `aerosolParticipation <= 1` keeps `aerosolGain <= 2.5`. This is
-  required for flat or near-parallel paths where optical depth can continue
-  growing instead of naturally exiting a spherical atmosphere.
-- The stage must expose aerosol and flat-geometry diagnostics. In particular,
-  reports need Mie/aerosol optical depth, aerosol optical-depth fraction,
-  aerosol participation, max aerosol optical depth, tau regime, and a
-  bounded/asymptotic flat-geometry policy marker.
-- This approximation is source-backed as a model direction, not as a final
-  closed-form radiative-transfer solution. It must stay opt-in or clearly
-  named until calibrated against a stronger radiative-transfer reference.
-- Negative or non-finite input radiance, source spectrum, transmittance,
-  optical-depth, or strength values reject before accumulation.
-
-Downstream use:
-
-- `composeSpectralRadiance` consumes
-  `diffuseSkyAirlight.radianceByWavelength` as an explicit
-  component.
-- Diagnostics consume activation, max-tau, lost-transmittance, source-spectrum,
-  aerosol, flat-geometry, and limitation fields.
 
 ## `resolveSurfaceRadiance`
 
@@ -891,7 +807,6 @@ Consumes:
     wavelengthsNm
   },
   singleScattering,
-  diffuseSkyAirlight,
   surfaceRadiance
 }
 ```
@@ -905,7 +820,6 @@ Produces:
     finalByWavelength,
     components: {
       inScatteredRadianceByWavelength,
-      diffuseSkyAirlightRadianceByWavelength,
       surfaceViewAttenuatedRadianceByWavelength
     },
     metadata
@@ -916,10 +830,8 @@ Produces:
 Ownership:
 
 - This stage owns wavelength-by-wavelength physical radiance composition.
-- `diffuseSkyAirlight` is canonical in normal stage order. Direct custom
-  composition packets that omit it compose an explicit zero diffuse sky
-  airlight component so focused tests and custom harnesses do not hide a
-  display-side fallback.
+- It composes the current transport components only: single scattering and
+  view-attenuated surface radiance.
 - It does not tone-map, clamp, convert to XYZ/RGB, apply exposure, or build
   reports.
 - Negative physical radiance components reject before composition; very bright

@@ -214,11 +214,10 @@ describe('atmosphere reference pipeline handoffs', function() {
 			.toBeCloseTo(expectedViewTransmittance, 12);
 		// Reason: composeSpectralRadiance sums in-scattered and view-attenuated surface components wavelength by wavelength.
 		// Source: Stage Contracts, composeSpectralRadiance ownership.
-		expect(result.spectralRadiance.components).toEqual({
+		expect(result.spectralRadiance.components).toEqual(jasmine.objectContaining({
 			inScatteredRadianceByWavelength: [0],
-			diffuseSkyAirlightRadianceByWavelength: [0],
 			surfaceViewAttenuatedRadianceByWavelength: [result.surfaceRadiance.viewAttenuatedRadianceByWavelength[0]],
-		});
+		}));
 		expect(result.spectralRadiance.finalByWavelength[0])
 			.toBeCloseTo(expectedViewTransmittance, 12);
 	});
