@@ -34,7 +34,7 @@ visible-band coefficient or optical-depth rows, then implement a named
      locators, extraction method, units, and exponent-expansion notes.
 4. Store source data and provenance locally.
    - Done:
-     `scripts/flat/atmosphere/data/composition/rayleigh/bucholtz-1995-standard-air.json`.
+     `scripts/flat/atmosphere_rejected/data/composition/rayleigh/bucholtz-1995-standard-air.json`.
    - The artifact includes pinned visible rows, units, source locator,
      extraction notes, and independence notes for tests.
 5. Implement named Rayleigh policies.
@@ -84,7 +84,7 @@ making the spectral absorption more real.
    - Atlas citation DOI: `10.5194/essd-5-365-2013`.
 2. Store source data and provenance locally.
    - Done:
-     `scripts/flat/atmosphere/data/composition/ozone/O3_Brion-1998_295K_345-829nm_1nm.txt`.
+     `scripts/flat/atmosphere_rejected/data/composition/ozone/O3_Brion-1998_295K_345-829nm_1nm.txt`.
    - Done: metadata records source URLs, temperature, range, row count,
      SHA-256, selected pinned rows, and retrieval notes.
 3. Implement named ozone policies.
@@ -138,7 +138,7 @@ Best next action: define named aerosol presets rather than one hardcoded
      aerosol scenario selection.
 2. Store source data and provenance locally.
    - Done:
-     `scripts/flat/atmosphere/data/composition/aerosol/aerosol-presets.json`.
+     `scripts/flat/atmosphere_rejected/data/composition/aerosol/aerosol-presets.json`.
 3. Implement named aerosol policies.
    - Done: `rayleigh-only`, `preview-earthlike-aerosol`,
      `clear-maritime`, `clear-continental`, and `hazy-continental`.
@@ -197,7 +197,7 @@ approximation.
      the PDAS SI table, backed by NASA NTRS record `19770009539`.
 2. Store source data and provenance locally.
    - Done:
-     `scripts/flat/atmosphere/data/composition/profile/us-standard-atmosphere-1976-density.json`.
+     `scripts/flat/atmosphere_rejected/data/composition/profile/us-standard-atmosphere-1976-density.json`.
 3. Implement named profile policies.
    - Done: `preview-exponential-8km` remains the default/control.
    - Done: `us-standard-atmosphere-1976-density` linearly interpolates the
@@ -254,7 +254,7 @@ Rayleigh substeps above are the working checklist for this slice.
 
 1. Done: fetch or extract clean Bucholtz 1995 visible-band Rayleigh data.
 2. Done: store a local data artifact or curated table under
-   `scripts/flat/atmosphere/data/composition` with source/provenance, units,
+   `scripts/flat/atmosphere_rejected/data/composition` with source/provenance, units,
    extraction notes, and pinned rows.
 3. Done: add broader tests for table shape, pinned rows, policy scaling
    behavior, malformed data, default-policy preservation, and CLI diagnostics.

@@ -140,7 +140,7 @@ files or files outside the repo.
   problem:
   `tmp/atmosphere/bruneton-skydome-rerun/014-color-source-defaults-d128-horizon-ring/skydome.png`
 - Current implementation:
-  `scripts/flat/atmosphere/run-reference-probe.js`
+  `scripts/flat/atmosphere_rejected/run-reference-probe.js`
 - Current default physics mode:
   `--sky-dome-visual-fit bruneton-ground-single-bounce-v1`
 - Current Bruneton skydome defaults now align to source/display references:

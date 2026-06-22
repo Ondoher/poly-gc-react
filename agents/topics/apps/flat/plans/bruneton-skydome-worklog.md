@@ -45,7 +45,7 @@ Original visual-match goal, now mostly satisfied by the latest shape pass:
 
 - Created focused active-topic restart instructions and this work log.
 - Located the skydome generator in
-  `scripts/flat/atmosphere/run-reference-probe.js` and the local Bruneton
+  `scripts/flat/atmosphere_rejected/run-reference-probe.js` and the local Bruneton
   comparison sheet under
   `tmp/atmosphere/model-output-gallery/bruneton-2016-clear-sky-models/`.
 - Added a display-side `--sky-dome-visual-fit` path for `--sky-dome-grid`;
@@ -70,7 +70,7 @@ Original visual-match goal, now mostly satisfied by the latest shape pass:
 - Updated the sky-dome Markdown report generator to print the active
   `skyDomeVisualFit` mode, then stamped the final report with
   `bruneton-edge-aureole-v1`.
-- Verification: `node --check scripts\flat\atmosphere\run-reference-probe.js`
+- Verification: `node --check scripts\flat\atmosphere_rejected\run-reference-probe.js`
   passed after the final source edits. Full tests were intentionally not run
   per user instruction.
 - Superseded next step from the ad hoc pass: do not continue tuning
@@ -144,7 +144,7 @@ Original visual-match goal, now mostly satisfied by the latest shape pass:
   warm localized Sun-side wedge, daylight panels show a broad pale/white
   fisheye-edge fade, and daylight Sun glows are broad and pale like the
   Bruneton panels.
-- Verification: `node --check scripts\flat\atmosphere\run-reference-probe.js`
+- Verification: `node --check scripts\flat\atmosphere_rejected\run-reference-probe.js`
   passed. Full tests were intentionally not run per user instruction.
 - Remaining caveat: this is not Bruneton's full precomputed atmospheric
   scattering implementation. The physics-mode fit is a named approximation
@@ -233,7 +233,7 @@ Original visual-match goal, now mostly satisfied by the latest shape pass:
   row/region goals remain guardrails for the perceptual match.
 - Continuation run for the current horizon/aureole prompt:
   added non-render-changing diagnostic split fields to
-  `scripts/flat/atmosphere/run-reference-probe.js` so sampled JSON can report
+  `scripts/flat/atmosphere_rejected/run-reference-probe.js` so sampled JSON can report
   `groundSourceSecondaryByWavelength` and `upperSkySecondaryByWavelength`
   separately. This helped identify why the 128 px daylight ring looked
   gray/green-gray: the current approximation mixes a green-heavy lower-boundary
@@ -356,5 +356,5 @@ Original visual-match goal, now mostly satisfied by the latest shape pass:
   center-preserving multiple-scattering/precompute change, not another global
   midpoint-transmittance patch or RGB display grade.
 - Verification for the retained code path:
-  `node --check scripts/flat/atmosphere/run-reference-probe.js` passed. Full
+  `node --check scripts/flat/atmosphere_rejected/run-reference-probe.js` passed. Full
   tests were not run.

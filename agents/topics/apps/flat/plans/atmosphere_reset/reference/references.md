@@ -98,7 +98,7 @@ spine. They are intentionally tiny hand-derived cases, not Earth atmosphere or
 sky-color comparisons.
 
 Encoded fixture artifact:
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/analytic-invariants.json`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/analytic-invariants.json`.
 Its rows use the canonical JSON `reference` object with `id`, `kind`, `title`,
 `url` or `path`, `locator`, and `derivationSummary` fields.
 The current artifact contains 16 analytic/error-contract rows.
@@ -125,7 +125,7 @@ The current artifact contains 16 analytic/error-contract rows.
 ## Removed Diffuse Sky Airlight Fixture Batch
 
 Historical encoded fixture artifact:
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/diffuse-sky-airlight-contracts.json`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/diffuse-sky-airlight-contracts.json`.
 
 This batch belonged to the removed airlight approximation stage,
 `integrateDiffuseSkyAirlight`. It is retained here only as historical context
@@ -618,7 +618,7 @@ Consulted for:
 Decisions:
 
 - Implement the first transform core under
-  `scripts/flat/atmosphere/reference/transforms` until the contracts are
+  `scripts/flat/atmosphere_rejected/reference/transforms` until the contracts are
   proven.
 - Keep the first API plain-data and named-transform based rather than a general
   graph solver.
@@ -726,7 +726,7 @@ Status:
 ### `validateRequest` Implementation Branch Source Map
 
 Implementation file:
-`scripts/flat/atmosphere/reference/stages/ValidateRequestStage.js`
+`scripts/flat/atmosphere_rejected/reference/stages/ValidateRequestStage.js`
 
 Consulted for:
 
@@ -964,7 +964,7 @@ Status:
 ### Sky-Patch Preview Color And Ozone Upgrade
 
 Implementation file:
-`scripts/flat/atmosphere/run-reference-probe.js`
+`scripts/flat/atmosphere_rejected/run-reference-probe.js`
 
 Consulted for:
 
@@ -1158,7 +1158,7 @@ Status:
 ### `resolveRayPath` Implementation Branch Source Map
 
 Implementation file:
-`scripts/flat/atmosphere/reference/stages/ResolveRayPathStage.js`
+`scripts/flat/atmosphere_rejected/reference/stages/ResolveRayPathStage.js`
 
 Consulted for:
 
@@ -1271,7 +1271,7 @@ Assumptions and limits:
 ### `sampleViewPath` Implementation Branch Source Map
 
 Implementation file:
-`scripts/flat/atmosphere/reference/stages/SampleViewPathStage.js`
+`scripts/flat/atmosphere_rejected/reference/stages/SampleViewPathStage.js`
 
 Consulted for:
 
@@ -1452,7 +1452,7 @@ Assumptions and limits:
 ### `evaluateMedium` Implementation Branch Source Map
 
 Implementation file:
-`scripts/flat/atmosphere/reference/stages/EvaluateMediumStage.js`
+`scripts/flat/atmosphere_rejected/reference/stages/EvaluateMediumStage.js`
 
 Consulted for:
 
@@ -1520,8 +1520,8 @@ Status:
 
 Implementation files:
 
-- `scripts/flat/atmosphere/reference/stages/EvaluateMediumStage.js`
-- `scripts/flat/atmosphere/reference/stages/_tests/EvaluateMediumStage.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/EvaluateMediumStage.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/EvaluateMediumStage.spec.js`
 
 Consulted for:
 
@@ -1618,7 +1618,7 @@ Decisions:
 - Use Table 2 for standard-air Rayleigh volume-scattering coefficient seeds.
   The first curated artifact pins visible blue, green, and red rows plus
   ultraviolet and near-infrared guards under
-  `scripts/flat/atmosphere/data/composition/rayleigh/bucholtz-1995-standard-air.json`.
+  `scripts/flat/atmosphere_rejected/data/composition/rayleigh/bucholtz-1995-standard-air.json`.
 - Use Table 4 for vertical Rayleigh optical-depth rows after the atmosphere
   model is explicit. The curated artifact includes selected `1962 U.S.
   Standard` rows as secondary validation data.
@@ -1643,7 +1643,7 @@ Status:
 ### `integrateViewOpticalDepth` Hardening Fixture Source Map
 
 Fixture file:
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/view-optical-depth-hardening.json`
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/view-optical-depth-hardening.json`
 
 Consulted for:
 
@@ -1684,7 +1684,7 @@ Status:
 ### `integrateViewOpticalDepth` Implementation Branch Source Map
 
 Implementation file:
-`scripts/flat/atmosphere/reference/stages/IntegrateViewOpticalDepthStage.js`
+`scripts/flat/atmosphere_rejected/reference/stages/IntegrateViewOpticalDepthStage.js`
 
 Consulted for:
 
@@ -1745,7 +1745,7 @@ Status:
 ### `integrateSolarTransmittance` Fixture Source Map
 
 Fixture file:
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/solar-transmittance-contracts.json`
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/solar-transmittance-contracts.json`
 
 Consulted for:
 
@@ -1810,7 +1810,7 @@ Status:
 ### `integrateSolarTransmittance` Implementation Branch Source Map
 
 Implementation file:
-`scripts/flat/atmosphere/reference/stages/IntegrateSolarTransmittanceStage.js`
+`scripts/flat/atmosphere_rejected/reference/stages/IntegrateSolarTransmittanceStage.js`
 
 Consulted for:
 
@@ -1883,12 +1883,12 @@ Status:
 
 Spec files:
 
-- `scripts/flat/atmosphere/reference/stages/_tests/IntegrateViewOpticalDepthStage.spec.js`
-- `scripts/flat/atmosphere/reference/stages/_tests/IntegrateSolarTransmittanceStage.spec.js`
-- `scripts/flat/atmosphere/reference/stages/_tests/EvaluateMediumStage.spec.js`
-- `scripts/flat/atmosphere/reference/stages/_tests/ValidateRequestStage.spec.js`
-- `scripts/flat/atmosphere/reference/stages/_tests/ResolveRayPathStage.spec.js`
-- `scripts/flat/atmosphere/reference/stages/_tests/SampleViewPathStage.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/IntegrateViewOpticalDepthStage.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/IntegrateSolarTransmittanceStage.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/EvaluateMediumStage.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/ValidateRequestStage.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/ResolveRayPathStage.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/SampleViewPathStage.spec.js`
 
 Consulted for:
 
@@ -1934,10 +1934,10 @@ Status:
 
 Files:
 
-- `scripts/flat/atmosphere/reference/_tests/test-pipeline-stages.js`
-- `scripts/flat/atmosphere/reference/_tests/test-expectations.js`
-- `scripts/flat/atmosphere/reference/_tests/utils.spec.js`
-- `scripts/flat/atmosphere/reference/_tests/pipeline-stages.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/_tests/test-pipeline-stages.js`
+- `scripts/flat/atmosphere_rejected/reference/_tests/test-expectations.js`
+- `scripts/flat/atmosphere_rejected/reference/_tests/utils.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/_tests/pipeline-stages.spec.js`
 
 Consulted for:
 
@@ -1987,12 +1987,12 @@ Status:
 
 Fixture files:
 
-- `scripts/flat/atmosphere/reference/stages/_tests/fixtures/analytic-invariants.json`
-- `scripts/flat/atmosphere/reference/stages/_tests/fixtures/medium-contracts.json`
-- `scripts/flat/atmosphere/reference/stages/_tests/fixtures/view-samples-contracts.json`
-- `scripts/flat/atmosphere/reference/stages/_tests/fixtures/ray-path-contracts.json`
-- `scripts/flat/atmosphere/reference/stages/_tests/fixtures/solar-transmittance-contracts.json`
-- `scripts/flat/atmosphere/reference/stages/_tests/fixtures/view-optical-depth-hardening.json`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/analytic-invariants.json`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/medium-contracts.json`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/view-samples-contracts.json`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/ray-path-contracts.json`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/solar-transmittance-contracts.json`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/view-optical-depth-hardening.json`
 
 Consulted for:
 
@@ -2032,7 +2032,7 @@ Status:
 ### `evaluateScatteringPhase` Implementation Branch Source Map
 
 Implementation file:
-`scripts/flat/atmosphere/reference/stages/EvaluateScatteringPhaseStage.js`
+`scripts/flat/atmosphere_rejected/reference/stages/EvaluateScatteringPhaseStage.js`
 
 Consulted for:
 
@@ -2088,9 +2088,9 @@ Status:
 
 Implementation files:
 
-- `scripts/flat/atmosphere/reference/stages/IntegrateSingleScatteringStage.js`
-- `scripts/flat/atmosphere/reference/stages/ResolveSurfaceRadianceStage.js`
-- `scripts/flat/atmosphere/reference/stages/ComposeSpectralRadianceStage.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/IntegrateSingleScatteringStage.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/ResolveSurfaceRadianceStage.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/ComposeSpectralRadianceStage.js`
 
 Consulted for:
 
@@ -2148,7 +2148,7 @@ Status:
 
 Implementation file:
 
-- `scripts/flat/atmosphere/run-reference-probe.js`
+- `scripts/flat/atmosphere_rejected/run-reference-probe.js`
 
 Consulted for:
 
@@ -2193,9 +2193,9 @@ Status:
 
 Implementation files:
 
-- `scripts/flat/atmosphere/reference/light-extent-probe.js`
-- `scripts/flat/atmosphere/data/reference/light-extent-scenarios.json`
-- `scripts/flat/atmosphere/run-reference-probe.js`
+- `scripts/flat/atmosphere_rejected/reference/light-extent-probe.js`
+- `scripts/flat/atmosphere_rejected/data/reference/light-extent-scenarios.json`
+- `scripts/flat/atmosphere_rejected/run-reference-probe.js`
 
 Consulted for:
 
@@ -2294,7 +2294,7 @@ Status:
 ### `expectation-fixtures.spec.js` Validation Source Map
 
 Spec file:
-`scripts/flat/atmosphere/reference/_tests/expectation-fixtures.spec.js`
+`scripts/flat/atmosphere_rejected/reference/_tests/expectation-fixtures.spec.js`
 
 Consulted for:
 
@@ -2304,7 +2304,7 @@ Consulted for:
 Decisions:
 
 - Every fixture file under
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures` is part of the
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures` is part of the
   oracle ledger and must validate through the same envelope checks.
 - Every expected datum must carry a value, units, and derivation. Numeric
   expected data also needs a matching tolerance rule. Nonnumeric expected data

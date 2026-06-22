@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 const BUCHOLTZ_DATA_PATH =
-	'scripts/flat/atmosphere/data/composition/rayleigh/bucholtz-1995-standard-air.json';
+	'scripts/flat/atmosphere_rejected/data/composition/rayleigh/bucholtz-1995-standard-air.json';
 
 function loadBucholtzData() {
 	return JSON.parse(fs.readFileSync(BUCHOLTZ_DATA_PATH, 'utf8'));

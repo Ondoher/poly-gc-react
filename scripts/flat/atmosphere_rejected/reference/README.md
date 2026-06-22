@@ -105,13 +105,13 @@ npm run test:scripts
 Generate the first visual evidence artifacts with:
 
 ```text
-node scripts/flat/atmosphere/run-reference-probe.js --out tmp/flat-reference-visual-evidence/result.json --report tmp/flat-reference-visual-evidence/report.md --image tmp/flat-reference-visual-evidence/visual.svg --format summary
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --out tmp/flat-reference-visual-evidence/result.json --report tmp/flat-reference-visual-evidence/report.md --image tmp/flat-reference-visual-evidence/visual.svg --format summary
 ```
 
 Generate the current sky-patch preview with:
 
 ```text
-node scripts/flat/atmosphere/run-reference-probe.js --sky-patches --out tmp/flat-reference-sky-patches/result.json --report tmp/flat-reference-sky-patches/report.md --image tmp/flat-reference-sky-patches/sky-patches.svg --format summary
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --sky-patches --out tmp/flat-reference-sky-patches/result.json --report tmp/flat-reference-sky-patches/report.md --image tmp/flat-reference-sky-patches/sky-patches.svg --format summary
 ```
 
 The sky-patch mode renders three basic camera/world/source views:
@@ -124,10 +124,10 @@ every `20 nm`, with an approximate `300 DU` ozone column.
 Generate the current flat finite-Sun light-extent classification with:
 
 ```text
-node scripts/flat/atmosphere/run-reference-probe.js --light-extent --out tmp/flat-light-extent/result.json --report tmp/flat-light-extent/report.md --image tmp/flat-light-extent/light-extent.svg --format summary
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --light-extent --out tmp/flat-light-extent/result.json --report tmp/flat-light-extent/report.md --image tmp/flat-light-extent/light-extent.svg --format summary
 ```
 
 The default named sets are loaded from
-`scripts/flat/atmosphere/data/reference/light-extent-scenarios.json`. Use
+`scripts/flat/atmosphere_rejected/data/reference/light-extent-scenarios.json`. Use
 `--light-set <id[,id]>` to run a subset, or `--light-config <path>` to load a
 different named-set file with the same shape.

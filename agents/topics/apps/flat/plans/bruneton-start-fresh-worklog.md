@@ -14,7 +14,7 @@ On compression or a fresh agent restart, load only:
 
 Then inspect:
 
-- `scripts/flat/atmosphere/experimental/bruneton-start-fresh.js`
+- `scripts/flat/experimental/bruneton-start-fresh.js`
 - the latest numbered folder under
   `tmp/atmosphere/bruneton_start_fresh/`
 
@@ -39,32 +39,47 @@ implementation rather than continuing fresh-lane visual iteration.
 
 ## Current Status
 
-The start-fresh Bruneton skydome experiment is closed. The final generated
-artifact is step 031, and the final simplified visual anchor is step 029. Do
-not create further numbered fresh-lane steps unless the user explicitly reopens
-this experiment.
+The start-fresh Bruneton skydome experiment is closed except for explicit
+source-audit reruns requested by the user. The latest generated artifact and
+best current Figure 1 comparison fit is step 032. Step 029 remains the prior
+simplified fitted-k anchor, and step 031 remains the prior fitted-k four-row
+orientation artifact. Do not create further numbered fresh-lane steps unless
+the user explicitly reopens this experiment.
 
 Step 029,
 `tmp/atmosphere/bruneton_start_fresh/029-paper-figure1-derived-k-no-ground-baseline/`,
-is the final simplified visual-equivalent anchor. It keeps step 021's
-accepted visual setup while using the direct derived Figure 1 tone-map value
+is the prior simplified fitted-k visual-equivalent anchor. It keeps step 021's
+accepted visual setup while using the fitted Figure 1 tone-map value
 `k = 0.0002454` and turning off both ground-coupling terms. User subjective
 review says there is no clear visual difference between steps 021, 029, and
-030. Treat step 029 as the cleanest final anchor because it removes the
-inactive ground/display bookkeeping knobs while preserving the closest visual
-family.
+030. Step 029 remains useful as the cleanest pre-source-k anchor because it
+removes the inactive ground/display bookkeeping knobs while preserving the
+older closest visual family, but step 032 supersedes it for the Figure 1
+comparison fit.
 
 Step 031,
 `tmp/atmosphere/bruneton_start_fresh/031-figure1-four-view-derived-k-no-ground-baseline/`,
-is the latest generated artifact. It is a four-view Figure 1 render using the
-step 029 model, not a new model baseline. It uses the PDF Figure 1 row labels
-06h00 / 87 degrees, 10h15 / 41 degrees, 11h15 / 31 degrees, and
-13h15 / 21 degrees; Sun azimuths are measured from the red-cross centers in
-the directly extracted external Bruneton-column tiles Im6, Im15, Im25, and
-Im35. It produced four generated skydomes plus a generated-only contact sheet
-and an external-Bruneton-column comparison sheet. Step 031 closes the
-experiment as a view-set artifact for reference handoff, not as a new model
-baseline.
+is a four-view Figure 1 render using the step 029 model, not a new model
+baseline. It uses the PDF Figure 1 row labels 06h00 / 87 degrees,
+10h15 / 41 degrees, 11h15 / 31 degrees, and 13h15 / 21 degrees; Sun azimuths
+are measured from the red-cross centers in the directly extracted external
+Bruneton-column tiles Im6, Im15, Im25, and Im35. It produced four generated
+skydomes plus a generated-only contact sheet and an external-Bruneton-column
+comparison sheet. Step 031 remains the fitted-k four-row orientation artifact,
+but step 032 supersedes it as the best fit because the Bruneton comparison
+source-derived `k` brightens the result toward the external paper tiles.
+
+Step 032,
+`tmp/atmosphere/bruneton_start_fresh/032-figure1-four-view-source-k-no-ground-baseline/`,
+is the current best Figure 1 comparison fit. It keeps the same no-ground,
+no-direct-disc, no-ozone, Bruneton 2016 aerosol, 15-sample CIE, full-sphere
+Fibonacci second-order path as step 031, but computes the Figure 1 tone-map
+scalar from Bruneton's comparison source as `k = 1 / (5 * 683) =
+0.00029282576866764275` instead of using the fitted step 021/029 value
+`0.0002454`. User review says step 31 was already slightly darker than
+Bruneton and this source-backed `k` moves the result closer, so treat step 032
+as the best current visual/reference handoff candidate for the comparison
+target.
 
 Step 030,
 `tmp/atmosphere/bruneton_start_fresh/030-paper-figure1-derived-k-direct-ground-baseline/`,
@@ -110,7 +125,7 @@ too dark. Step 027 softens step 026 slightly, but it still leaves the high-Sun
 anti-Sun side too dark and the low-Sun rim too warm/ring-like. Reference
 incorporation should move to real higher-order scattering/irradiance
 computation, not more partial coordinate-cache patches, and should be judged by
-whether reference outputs clearly improve on the step 029 visual family.
+whether reference outputs clearly improve on the step 032 comparison fit.
 
 Step 018 remains the target-contract diagnostic. Step 015 remains the cleaner
 direct-Sun baseline before the Figure 1 sky-radiance target-contract
@@ -122,12 +137,12 @@ diagnostic artifact and must not be revived as the solution.
 
 Reference incorporation notes:
 
-- Incorporate the step 029 visual family into the reference as the current
+- Incorporate the step 032 visual family into the reference as the current
   comparison anchor: no direct solar disc in the Figure 1 sky-radiance camera
   pass, Bruneton 2016 paper aerosols, no ozone for the paper comparison,
   15-sample CIE spectral conversion, full-sphere Fibonacci second-order
-  quadrature, no ground coupling, and direct paper tone-map product
-  `k = 0.0002454`.
+  quadrature, no ground coupling, and Bruneton comparison-source tone-map value
+  `k = 1 / (5 * 683) = 0.00029282576866764275`.
 - Preserve the step 015 paper aerosol improvement while developing a better
   sourced higher-order scattering quadrature/precompute than the equal-weight
   step 016 plane sum.
@@ -145,9 +160,24 @@ Reference incorporation notes:
   variation in the low-Sun interior.
 - Broaden and shape the fading horizon band through transport/irradiance
   physics instead of additional global tone-map fitting.
-- Use step 031's four generated views and external-Bruneton-column comparison
-  sheet as an orientation/scene-position check when adding reference outputs
-  for Figure 1 rows.
+- Use step 032's four generated views, external-Bruneton-column comparison
+  sheet, and step31/Bruneton/step32 three-column sheet as the primary
+  orientation/scene-position and display-constant check when adding reference
+  outputs for Figure 1 rows.
+- Keep step 031 only as the previous fitted-k comparison artifact. It is useful
+  for showing that the fitted `k = 0.0002454` was close to the source-backed
+  value, but it is no longer the recorded best fit.
+- Architectural incorporation should treat step 032 as a named
+  Figure-1-comparison profile and parity target for the staged reference
+  integrator, not as a monolithic script to transplant. The overlapping stage
+  sequence is ray/path geometry, view sampling, medium coefficients,
+  view/source transmittance, phase evaluation, single-scattering integration,
+  spectral radiance composition, then post-pipeline CIE/linear-sRGB/source-`k`
+  display. The reference pipeline already owns these boundaries, but it needs a
+  step-032 profile for the 15-sample spectral grid, no-ground/no-direct-disc
+  target contract, `k = 1 / (5 * 683)` display policy, Figure 1 scene
+  orientations, and an explicit higher-order/second-order transport extension
+  or sidecar boundary before it can reproduce the cleanroom result exactly.
 
 Do not solve these remaining deltas with hidden RGB grading. Continue to use
 direct external Bruneton paper/source images or outputs as visual targets.
@@ -155,7 +185,7 @@ direct external Bruneton paper/source images or outputs as visual targets.
 ## Constraints
 
 - Script path:
-  `scripts/flat/atmosphere/experimental/bruneton-start-fresh.js`.
+  `scripts/flat/experimental/bruneton-start-fresh.js`.
 - Do not import, reuse, inspect, cite, or derive equations/constants from
   existing project atmosphere/rendering/color/reference-probe/skydome code,
   older local docs, or older local implementation logs/artifacts.
@@ -191,7 +221,7 @@ direct external Bruneton paper/source images or outputs as visual targets.
   the clean-room self-contained Bruneton skydome experiment.
 - No script or numbered artifact folder has been created yet. The first
   implementation step should scaffold
-  `scripts/flat/atmosphere/experimental/bruneton-start-fresh.js` and produce
+  `scripts/flat/experimental/bruneton-start-fresh.js` and produce
   `tmp/atmosphere/bruneton_start_fresh/001-.../` with two diagnostic skydome
   outputs plus reproducibility logs.
 - Tightened the rules after user clarification: this is a clean-room lane, not
@@ -225,7 +255,7 @@ direct external Bruneton paper/source images or outputs as visual targets.
   upper sky hemisphere, with zenith at the center and horizon at the circular
   edge, explicitly not a 3D mesh or reused project rendering artifact.
 - Created the first implementation scaffold at
-  `scripts/flat/atmosphere/experimental/bruneton-start-fresh.js`. The script
+  `scripts/flat/experimental/bruneton-start-fresh.js`. The script
   is self-contained ES module code using only Node built-ins.
 - Ran the scaffold and produced
   `tmp/atmosphere/bruneton_start_fresh/001-scaffold-diagnostic/` with
@@ -712,7 +742,7 @@ direct external Bruneton paper/source images or outputs as visual targets.
   exposure-times-fit decomposition with the direct derived paper Figure 1
   value `k = 0.0002454`, then test ground-coupling removal.
 - Added `paperFigure1ToneMapFittedK` and new derived-k step helpers to
-  `scripts/flat/atmosphere/experimental/bruneton-start-fresh.js`.
+  `scripts/flat/experimental/bruneton-start-fresh.js`.
 - First ran step 028,
   `tmp/atmosphere/bruneton_start_fresh/028-paper-figure1-derived-k-no-ground-baseline/`,
   but it produced diagnostic projection PNGs because the new step id was
@@ -760,7 +790,52 @@ direct external Bruneton paper/source images or outputs as visual targets.
 - Closed the start-fresh Bruneton skydome experiment. Future work should stop
   creating fresh-lane numbered visual iterations by default and instead
   incorporate the source-backed findings into the reference implementation:
-  step 029 as the simplified visual-equivalent anchor, step 031 as the four-row
-  Figure 1 orientation artifact, and steps 015/018/019/023/027 as supporting
-  evidence about aerosols, target contract, quadrature, spectral sampling, and
-  cache-coordinate effects.
+  step 032 as the best current Figure 1 comparison fit, step 029 as the prior
+  simplified fitted-k anchor, step 031 as the previous four-row orientation
+  artifact, and steps 015/018/019/023/027 as supporting evidence about
+  aerosols, target contract, quadrature, spectral sampling, and cache-coordinate
+  effects.
+- Reopened the lane only for a requested source-k audit after tracing
+  Bruneton's 2016 comparison implementation. Added
+  `figure1-four-view-source-k-no-ground-baseline`, which uses the same
+  four-view no-ground output shape as step 031 but computes the paper Figure 1
+  tone-map scalar as `k = 1 / (5 * MAX_LUMINOUS_EFFICACY) = 1 / (5 * 683) =
+  0.00029282576866764275` from the comparison source, rather than the fitted
+  step 021/029 value `0.0002454`.
+- Ran
+  `node scripts/flat/experimental/bruneton-start-fresh.js --step=figure1-four-view-source-k-no-ground-baseline`
+  and produced
+  `tmp/atmosphere/bruneton_start_fresh/032-figure1-four-view-source-k-no-ground-baseline/`
+  with `figure1-06h00-z87-figure1-four-view-source-k-no-ground.png`,
+  `figure1-10h15-z41-figure1-four-view-source-k-no-ground.png`,
+  `figure1-11h15-z31-figure1-four-view-source-k-no-ground.png`, and
+  `figure1-13h15-z21-figure1-four-view-source-k-no-ground.png`. Copied and
+  retargeted the step 031 contact-sheet helper, then generated
+  `figure1-four-view-contact-sheet.png` and
+  `external-bruneton-column-step32-comparison.png`. Verified that
+  `equations-and-constants.json` records `sourceDerivedK =
+  0.00029282576866764275`, `brunetonComparisonToneMapExposureScale = 5`, and
+  `maxLuminousEfficacy = 683`.
+- Added `step31-step32-source-k-comparison.png` in the step 032 artifact as a
+  four-row side-by-side stack comparing step 031's fitted-k output against step
+  032's Bruneton-source-k output for the same Figure 1 scenes.
+- Added `step31-bruneton-step32-comparison.png` in the step 032 artifact as a
+  three-column four-row stack: step 031 fitted-k output, external Bruneton
+  Figure 1 tile, and step 032 source-k output.
+- User review concluded that step 31 was still a bit darker than the external
+  Bruneton tiles and that step 32's comparison-source `k` moves the render
+  closer. Record step 032 as the best current fit rather than step 31.
+- Compared the cleanroom algorithm against the older reference pipeline
+  architecture. The main fit is to introduce a named Figure 1 comparison
+  profile in the reference runner and then add parity checks at the staged
+  packet boundaries. The main gap is that the cleanroom step 032 includes a
+  local full-sphere second-order sky term, while the canonical reference stages
+  currently stop at single scattering plus optional surface radiance and keep
+  generic multiple scattering as sidecar-only diagnostics.
+- Moved the cleanroom experiment script into `scripts/flat/experimental/` so
+  the experimental script directory is a direct child of `scripts/flat/`.
+  Updated the script's repository-root calculation and refreshed active-topic,
+  prompt, worklog, and status path references.
+- Renamed the older atmosphere reference/script tree to
+  `scripts/flat/atmosphere_rejected/` at user request and refreshed path
+  references so remaining links intentionally point at the rejected tree.

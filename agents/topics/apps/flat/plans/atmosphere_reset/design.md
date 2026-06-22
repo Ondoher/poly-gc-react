@@ -38,7 +38,7 @@ swappable physical properties.
 The reset reference implementation should initially live under `scripts/flat`:
 
 ```text
-scripts/flat/atmosphere/reference/
+scripts/flat/atmosphere_rejected/reference/
 ```
 
 It must not depend on React, Three.js, browser canvas state, render targets, or
@@ -80,7 +80,7 @@ The design has three layers:
 Preferred first layout:
 
 ```text
-scripts/flat/atmosphere/reference/
+scripts/flat/atmosphere_rejected/reference/
   spectral-grid.js
   colorimetry.js
   radiometry.js
@@ -396,7 +396,7 @@ are stable.
 The runner should live at:
 
 ```text
-scripts/flat/atmosphere/run-reference-probe.js
+scripts/flat/atmosphere_rejected/run-reference-probe.js
 ```
 
 It should accept direct probe flags and JSON run definitions, then emit
@@ -682,7 +682,7 @@ First-slice module placement should stay under the reference package until the
 contracts are proven:
 
 ```text
-scripts/flat/atmosphere/reference/transforms/
+scripts/flat/atmosphere_rejected/reference/transforms/
   transform-registry.js
   transform-cache.js
   frames.js

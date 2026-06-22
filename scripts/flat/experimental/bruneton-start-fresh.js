@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ROOT = path.resolve(__dirname, "../../../..");
+const ROOT = path.resolve(__dirname, "../../..");
 const ARTIFACT_ROOT = path.join(
   ROOT,
   "tmp",
@@ -225,6 +225,16 @@ const STEPS = {
     model:
       "spectral-cie-paper-aerosol-fibonacci-sphere-second-order-derived-paper-tone-map-no-ground-four-figure1-views",
     outputSuffix: "figure1-four-view-derived-k-no-ground",
+  },
+  "figure1-four-view-source-k-no-ground-baseline": {
+    id: "figure1-four-view-source-k-no-ground-baseline",
+    label: "figure1-four-view-source-k-no-ground-baseline",
+    title:
+      "Four Figure 1 skydome views with Bruneton source-derived k and no ground coupling",
+    status: "source-k comparison experiment",
+    model:
+      "spectral-cie-paper-aerosol-fibonacci-sphere-second-order-source-paper-tone-map-no-ground-four-figure1-views",
+    outputSuffix: "figure1-four-view-source-k-no-ground",
   },
   "paper-figure1-derived-k-direct-ground-baseline": {
     id: "paper-figure1-derived-k-direct-ground-baseline",
@@ -541,6 +551,7 @@ const XYZ_TO_SRGB = [
 ];
 
 const MAX_LUMINOUS_EFFICACY = 683;
+const BRUNETON_COMPARISON_TONE_MAP_EXPOSURE_SCALE = 5;
 
 const EXTERNAL_SOURCES = [
   {
@@ -678,6 +689,17 @@ const EXTERNAL_SOURCES = [
       "Figure 1 renders spectral radiance convolved with CIE color matching functions",
       "Figure 1 converts XYZ to linear sRGB before display",
       "Figure 1 tone maps with 1 - exp(-kL)",
+    ],
+  },
+  {
+    id: "bruneton-2016-comparison-source-tone-map",
+    title:
+      "Eric Bruneton, clear-sky-models comparison source, atmosphere/comparisons.cc",
+    url:
+      "https://github.com/ebruneton/clear-sky-models/blob/master/atmosphere/comparisons.cc#L148-L153",
+    usedFor: [
+      "Figure-style comparison tone-map implementation c = 5 * MaxLuminousEfficacy",
+      "source-derived k = 1 / (5 * 683)",
     ],
   },
   {
@@ -861,6 +883,7 @@ function isSingleScatteringStep() {
     "paper-figure1-fitted-tone-map-baseline",
     "paper-figure1-derived-k-no-ground-baseline",
     "figure1-four-view-derived-k-no-ground-baseline",
+    "figure1-four-view-source-k-no-ground-baseline",
     "paper-figure1-derived-k-direct-ground-baseline",
     "figure1-sun-zenith-baseline",
     "paper-40-wavelength-baseline",
@@ -893,6 +916,7 @@ function usesLuminanceConversion() {
     "paper-figure1-fitted-tone-map-baseline",
     "paper-figure1-derived-k-no-ground-baseline",
     "figure1-four-view-derived-k-no-ground-baseline",
+    "figure1-four-view-source-k-no-ground-baseline",
     "paper-figure1-derived-k-direct-ground-baseline",
     "figure1-sun-zenith-baseline",
     "paper-40-wavelength-baseline",
@@ -922,6 +946,7 @@ function usesFullSpectralConversion() {
     "paper-figure1-fitted-tone-map-baseline",
     "paper-figure1-derived-k-no-ground-baseline",
     "figure1-four-view-derived-k-no-ground-baseline",
+    "figure1-four-view-source-k-no-ground-baseline",
     "paper-figure1-derived-k-direct-ground-baseline",
     "figure1-sun-zenith-baseline",
     "paper-40-wavelength-baseline",
@@ -964,6 +989,7 @@ function usesSecondOrderScattering() {
     "paper-figure1-fitted-tone-map-baseline",
     "paper-figure1-derived-k-no-ground-baseline",
     "figure1-four-view-derived-k-no-ground-baseline",
+    "figure1-four-view-source-k-no-ground-baseline",
     "paper-figure1-derived-k-direct-ground-baseline",
     "figure1-sun-zenith-baseline",
     "paper-40-wavelength-baseline",
@@ -1031,6 +1057,7 @@ function usesPaperComparisonNoOzonePolicy() {
     "paper-figure1-fitted-tone-map-baseline",
     "paper-figure1-derived-k-no-ground-baseline",
     "figure1-four-view-derived-k-no-ground-baseline",
+    "figure1-four-view-source-k-no-ground-baseline",
     "paper-figure1-derived-k-direct-ground-baseline",
     "figure1-sun-zenith-baseline",
     "paper-40-wavelength-baseline",
@@ -1066,6 +1093,7 @@ function usesBruneton2016Aerosols() {
     "paper-figure1-fitted-tone-map-baseline",
     "paper-figure1-derived-k-no-ground-baseline",
     "figure1-four-view-derived-k-no-ground-baseline",
+    "figure1-four-view-source-k-no-ground-baseline",
     "paper-figure1-derived-k-direct-ground-baseline",
     "figure1-sun-zenith-baseline",
     "paper-40-wavelength-baseline",
@@ -1087,6 +1115,7 @@ function usesFibonacciSphereSecondOrderDirections() {
     "paper-figure1-fitted-tone-map-baseline",
     "paper-figure1-derived-k-no-ground-baseline",
     "figure1-four-view-derived-k-no-ground-baseline",
+    "figure1-four-view-source-k-no-ground-baseline",
     "paper-figure1-derived-k-direct-ground-baseline",
     "figure1-sun-zenith-baseline",
     "paper-40-wavelength-baseline",
@@ -1103,6 +1132,7 @@ function usesPaperFigure1ToneMap() {
     "paper-figure1-fitted-tone-map-baseline",
     "paper-figure1-derived-k-no-ground-baseline",
     "figure1-four-view-derived-k-no-ground-baseline",
+    "figure1-four-view-source-k-no-ground-baseline",
     "paper-figure1-derived-k-direct-ground-baseline",
     "figure1-sun-zenith-baseline",
     "paper-40-wavelength-baseline",
@@ -1136,6 +1166,10 @@ function usesDerivedPaperFigure1ToneMapK() {
   ].includes(STEP.id);
 }
 
+function usesSourcePaperFigure1ToneMapK() {
+  return STEP.id === "figure1-four-view-source-k-no-ground-baseline";
+}
+
 function usesDerivedPaperFigure1NoGround() {
   return STEP.id === "paper-figure1-derived-k-no-ground-baseline";
 }
@@ -1145,7 +1179,10 @@ function usesDerivedPaperFigure1DirectGroundOnly() {
 }
 
 function usesFigure1FourSkydomeViews() {
-  return STEP.id === "figure1-four-view-derived-k-no-ground-baseline";
+  return [
+    "figure1-four-view-derived-k-no-ground-baseline",
+    "figure1-four-view-source-k-no-ground-baseline",
+  ].includes(STEP.id);
 }
 
 function usesFigure1SunZenithAngles() {
@@ -1171,6 +1208,7 @@ function omitsDirectSolarDiscForPaperSkyRadiance() {
     "paper-figure1-fitted-tone-map-baseline",
     "paper-figure1-derived-k-no-ground-baseline",
     "figure1-four-view-derived-k-no-ground-baseline",
+    "figure1-four-view-source-k-no-ground-baseline",
     "paper-figure1-derived-k-direct-ground-baseline",
     "figure1-sun-zenith-baseline",
     "paper-40-wavelength-baseline",
@@ -1609,7 +1647,16 @@ function displayExposureScalar() {
     : ATMOSPHERE.displayExposure;
 }
 
+function brunetonComparisonToneMapK() {
+  return 1 /
+    (BRUNETON_COMPARISON_TONE_MAP_EXPOSURE_SCALE * MAX_LUMINOUS_EFFICACY);
+}
+
 function paperFigure1ToneMapK() {
+  if (usesSourcePaperFigure1ToneMapK()) {
+    return brunetonComparisonToneMapK();
+  }
+
   if (usesDerivedPaperFigure1ToneMapK()) {
     return ATMOSPHERE.paperFigure1ToneMapFittedK;
   }
@@ -3118,6 +3165,8 @@ function makeEquationsRecord() {
           ? "paper-40-wavelength-baseline"
           : usesFigure1SunZenithAngles()
           ? "figure1-sun-zenith-baseline"
+          : usesSourcePaperFigure1ToneMapK()
+          ? "figure1-four-view-source-k-no-ground-baseline"
           : usesFigure1FourSkydomeViews()
           ? "figure1-four-view-derived-k-no-ground-baseline"
           : usesDerivedPaperFigure1DirectGroundOnly()
@@ -3433,18 +3482,34 @@ function makeEquationsRecord() {
             : "display = (1 - exp(-radiance / white_point * exposure))^(1/2.2)",
           purpose:
             usesPaperFigure1ToneMap()
-              ? usesDerivedPaperFigure1ToneMapK()
+              ? usesSourcePaperFigure1ToneMapK()
+                ? "Audits the Figure 1 paper display contract after CIE integration and XYZ-to-linear-sRGB conversion, using the comparison source implementation k = 1 / (5 * 683)."
+                : usesDerivedPaperFigure1ToneMapK()
                 ? "Audits the Figure 1 paper display contract after CIE integration and XYZ-to-linear-sRGB conversion, using the fitted step 021 global k product directly instead of preserving exposure and fitted-scale as separate knobs."
                 : usesFittedPaperFigure1ToneMap()
                 ? "Audits the Figure 1 paper display contract after CIE integration and XYZ-to-linear-sRGB conversion, using a single global k multiplier fit against direct external Figure 1 target tiles because the caption gives the form but not a numeric k."
                 : "Audits the Figure 1 paper display contract after CIE integration and XYZ-to-linear-sRGB conversion, holding k equal to the previous external demo exposure scalar because the caption gives the form but not a numeric k."
               : "Maps radiance-channel values into PNG bytes for visual inspection.",
           source: usesPaperFigure1ToneMap()
-            ? usesFittedPaperFigure1ToneMap()
+            ? usesSourcePaperFigure1ToneMapK()
+              ? "bruneton-2016-figure1-display-transform; bruneton-2016-comparison-source-tone-map"
+              : usesFittedPaperFigure1ToneMap()
               ? "bruneton-2016-figure1-display-transform; bruneton-2016-figure1-extracted-target-tiles; bruneton-demo-display"
               : "bruneton-2016-figure1-display-transform; bruneton-demo-display"
             : "bruneton-demo-display",
         },
+        ...(usesSourcePaperFigure1ToneMapK()
+          ? [
+              {
+                name: "Bruneton comparison source Figure 1 tone-map k",
+                expression:
+                  "k = 1 / (5 * MaxLuminousEfficacy) = 1 / (5 * 683) = 0.00029282576866764275",
+                purpose:
+                  "Uses the same reciprocal display scale as Bruneton's clear-sky comparison source ToneMapping function.",
+                source: "bruneton-2016-comparison-source-tone-map",
+              },
+            ]
+          : []),
         ...(usesDerivedPaperFigure1ToneMapK()
           ? [
               {
@@ -3521,9 +3586,25 @@ function makeEquationsRecord() {
             ? {
                 expression: "1 - exp(-kL)",
                 k: paperFigure1ToneMapK(),
-                baseK: usesDerivedPaperFigure1ToneMapK()
+                baseK:
+                  usesSourcePaperFigure1ToneMapK() ||
+                  usesDerivedPaperFigure1ToneMapK()
                   ? null
                   : displayExposureScalar(),
+                sourceDerivedK: usesSourcePaperFigure1ToneMapK()
+                  ? brunetonComparisonToneMapK()
+                  : null,
+                sourceDerivedFrom: usesSourcePaperFigure1ToneMapK()
+                  ? "1 / (5 * MAX_LUMINOUS_EFFICACY)"
+                  : null,
+                brunetonComparisonToneMapExposureScale:
+                  usesSourcePaperFigure1ToneMapK()
+                    ? BRUNETON_COMPARISON_TONE_MAP_EXPOSURE_SCALE
+                    : null,
+                maxLuminousEfficacy:
+                  usesSourcePaperFigure1ToneMapK()
+                    ? MAX_LUMINOUS_EFFICACY
+                    : null,
                 directDerivedK: usesDerivedPaperFigure1ToneMapK()
                   ? ATMOSPHERE.paperFigure1ToneMapFittedK
                   : null,
@@ -3670,7 +3751,9 @@ function makeEquationsRecord() {
           displayExposureScalar(),
         whitePoint: displayWhitePoint(),
         transform: usesPaperFigure1ToneMap()
-          ? usesDerivedPaperFigure1ToneMapK()
+          ? usesSourcePaperFigure1ToneMapK()
+            ? "1 - exp(-k * max(0, linear_sRGB)); k is Bruneton comparison source k = 1 / (5 * 683)"
+            : usesDerivedPaperFigure1ToneMapK()
             ? "1 - exp(-k * max(0, linear_sRGB)); k is the direct derived step 021 product 0.0002454"
             : usesFittedPaperFigure1ToneMap()
             ? "1 - exp(-k * max(0, linear_sRGB)); k is a single global scalar fit against external Figure 1 target tiles"
@@ -3914,7 +3997,9 @@ The physical integration uses ${
         : ""
     }${
       usesPaperFigure1ToneMap()
-        ? usesDerivedPaperFigure1ToneMapK()
+        ? usesSourcePaperFigure1ToneMapK()
+          ? " This run replaces the demo shader display path with the Bruneton 2016 Figure 1 comparison-source display form: CIE-integrated linear sRGB is tone mapped as 1 - exp(-kL), using k = 1 / (5 * 683) = 0.00029282576866764275."
+          : usesDerivedPaperFigure1ToneMapK()
           ? " This run replaces the demo shader display path with the Bruneton 2016 Figure 1 caption display form: CIE-integrated linear sRGB is tone mapped as 1 - exp(-kL), using the step 021 fitted product k = 0.0002454 directly instead of keeping exposure and fitted scale as separate knobs."
           : usesFittedPaperFigure1ToneMap()
           ? " This run replaces the demo shader display path with the Bruneton 2016 Figure 1 caption display form: CIE-integrated linear sRGB is tone mapped as 1 - exp(-kL), with k fitted as a single global scalar against the direct external low-Sun and high-Sun Figure 1 target tiles because the caption does not specify its numeric value."
@@ -3949,6 +4034,8 @@ The physical integration uses ${
     }${
       usesDerivedPaperFigure1NoGround()
         ? " This run deliberately omits both step 021 ground-bounce terms while keeping the same visual-anchor scattering, aerosol, no-direct-disc, and paper tone-map path, so the artifact isolates whether ground coupling materially contributed."
+        : usesSourcePaperFigure1ToneMapK()
+        ? " This run uses the experiment 31 four-view no-ground model path but replaces the fitted k with Bruneton's comparison-source k, so both ground-coupling terms remain off."
         : usesFigure1FourSkydomeViews()
         ? " This run uses the step 029 no-ground derived-k model path for all four Figure 1 skydome views, so both ground-coupling terms remain off."
         : usesDerivedPaperFigure1DirectGroundOnly()

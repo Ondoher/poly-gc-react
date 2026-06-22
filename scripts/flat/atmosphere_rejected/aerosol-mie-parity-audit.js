@@ -695,7 +695,7 @@ function readPositiveIntegerOption(argv, index, optionName) {
 
 function printUsage() {
 	return [
-		`Usage: node scripts/flat/atmosphere/aerosol-mie-parity-audit.js --out-dir <dir> [--include-image-sweep] [--dome-size <pixels>] [--sampling-profile <id>] [--dome-sample-mask ${skyDomeSampleMaskIds().join('|')}]`,
+		`Usage: node scripts/flat/atmosphere_rejected/aerosol-mie-parity-audit.js --out-dir <dir> [--include-image-sweep] [--dome-size <pixels>] [--sampling-profile <id>] [--dome-sample-mask ${skyDomeSampleMaskIds().join('|')}]`,
 		'',
 		'Writes audit.json, audit.md, and manifest.json.',
 		'With --include-image-sweep, also writes image-sweep PNGs and progress.log.',

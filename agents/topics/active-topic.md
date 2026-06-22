@@ -3,17 +3,17 @@
 Current active topic: `flat`
 
 Current focus: The start-fresh Bruneton skydome experiment is closed as an
-experimental lane. Step 029 is the cleanest simplified visual-equivalent anchor
-for step 021: it keeps the step 021 visual setup, uses the direct derived
-Figure 1 tone-map value `k = 0.0002454`, and turns off both ground-coupling
-terms. User review says steps 021, 029, and 030 have no clear subjective visual
-difference; step 030 is supporting ground-term equivalence evidence rather
-than the simpler anchor. Step 031 is the final generated artifact and renders
-the four Bruneton Figure 1 skydome row views using the step 029 model with the
-same row sun zeniths and measured red-cross orientations. Do not keep
-iterating numbered fresh-lane artifacts unless the user explicitly reopens
-this experiment. Future work should incorporate the lessons from this lane
-into the reference implementation.
+experimental lane, except for explicit source-audit reruns. Step 032 is the
+best current Figure 1 comparison fit and reference handoff candidate: it keeps
+the no-ground, no-direct-disc, no-ozone, Bruneton 2016 aerosol, 15-sample CIE,
+full-sphere Fibonacci second-order setup from step 031, but uses the Bruneton
+comparison-source tone-map scalar `k = 1 / (5 * 683) =
+0.00029282576866764275`. User review says the source-backed `k` moves the
+render closer to the external Bruneton tiles, so step 031 is now only the prior
+fitted-k four-row artifact. Current work is comparing this cleanroom algorithm
+against the older reference pipeline architecture and planning how to
+incorporate the step 032 visual family without continuing numbered fresh-lane
+iterations by default.
 
 ## Bootstrap For This Task
 
@@ -30,33 +30,36 @@ Load only:
 7. `agents/topics/apps/flat/plans/bruneton-start-fresh-prompt.md`
 8. `agents/topics/apps/flat/plans/bruneton-start-fresh-worklog.md`
 
-Then inspect only:
+Then inspect:
 
-- `scripts/flat/atmosphere/experimental/bruneton-start-fresh.js`
+- `scripts/flat/experimental/bruneton-start-fresh.js`
 - the latest numbered folder under `tmp/atmosphere/bruneton_start_fresh/`
+- when the task is reference incorporation or architecture comparison,
+  `scripts/flat/atmosphere_rejected/run-reference-probe.js`,
+  `scripts/flat/atmosphere_rejected/reference/`, and
+  `agents/topics/apps/flat/plans/atmosphere_reset/reference/`
 
-Do not load `agents/topics/apps/flat/status.md`, `atmosphere-design.md`,
-older Flat atmosphere plans, previous skydome logs, local comparison galleries,
-archive/migration docs, or `agents/topics.bak` for this task.
+For clean-room source audits, do not load `agents/topics/apps/flat/status.md`,
+`atmosphere-design.md`, older Flat atmosphere plans, previous skydome logs,
+local comparison galleries, archive/migration docs, or `agents/topics.bak`.
+For explicit reference-incorporation tasks, the reference pipeline docs/code
+are in scope for architecture and integration only; do not use older local
+project code/docs as sources for physics constants, display constants, expected
+colors, or visual targets.
 
-Current subtopic: Close out the new independent script at
-`scripts/flat/atmosphere/experimental/bruneton-start-fresh.js` as a completed
-experimental evidence lane. The final simplified visual anchor is step 029,
-`tmp/atmosphere/bruneton_start_fresh/029-paper-figure1-derived-k-no-ground-baseline/`.
-It is subjectively equivalent to step 021 and step 030, while turning off both
-ground-coupling terms and using the direct derived paper Figure 1 tone-map
-`k`. The final rendered run is step 031,
-`tmp/atmosphere/bruneton_start_fresh/031-figure1-four-view-derived-k-no-ground-baseline/`,
-which uses the step 029 model to render the four Figure 1 rows: 06h00 / 87
-degrees, 10h15 / 41 degrees, 11h15 / 31 degrees, and 13h15 / 21 degrees, with
-Sun azimuths measured from the external Bruneton-column red-cross tiles. Step
-030 preserves direct-Sun ground bounce only and confirms the 021/029/030
-subjective equivalence. Treat steps 022-027 as evidence about scene angles,
-spectral sampling, lower-boundary coupling, and cache-coordinate
-approximations. Step 017 tried pixel-footprint filtering of the direct solar
-disc and is rejected as too patch-like. The next implementation phase is not
-more fresh-lane visual iteration; it is incorporating the source-backed
-findings into the reference implementation.
+Current subtopic: Incorporate the completed cleanroom evidence lane into the
+older reference implementation. The current visual handoff candidate is step
+032,
+`tmp/atmosphere/bruneton_start_fresh/032-figure1-four-view-source-k-no-ground-baseline/`.
+Step 032 uses the four Figure 1 rows, red-cross-derived Sun orientations, no
+ground coupling, no direct solar-disc camera term, no ozone, Bruneton 2016
+aerosol constants, 15-sample CIE conversion, full-sphere Fibonacci second-order
+scattering, and `k = 1 / (5 * 683)`. Step 029 remains the prior simplified
+fitted-k anchor, step 031 remains the prior fitted-k four-row orientation
+artifact, and step 030 remains direct-ground equivalence evidence. The next
+implementation phase is not more fresh-lane visual iteration; it is mapping
+the step 032 profile into the reference pipeline with explicit stage contracts,
+post-pipeline display policy, and parity checks.
 This was a clean-room fresh experimental lane: do not
 import, reuse,
 inspect, cite, or derive equations/constants from existing project atmosphere,
@@ -85,13 +88,17 @@ paper/source images or outputs, not prior local renders or galleries. Do not
 delete any file that is not tracked by Git; verify tracking before any deletion,
 and leave untracked files in place. Unit tests are not required for this task.
 
-Additional reload sources for the closed experiment record:
+Additional reload sources for the closed experiment and reference-incorporation
+record:
 
 - [Bruneton Start-Fresh Prompt](apps/flat/plans/bruneton-start-fresh-prompt.md)
 - [Bruneton Start-Fresh Work Log](apps/flat/plans/bruneton-start-fresh-worklog.md)
+- [Reference Stage Contracts](apps/flat/plans/atmosphere_reset/reference/stage_contracts.md)
+- [Reference Code Design](apps/flat/plans/atmosphere_reset/reference/code_design.md)
+- [Reference Status](apps/flat/plans/atmosphere_reset/reference/status.md)
 
 When switching topics, update this file with the new topic id from
 [Routing](context/routing.md). On bootstrap, load the active topic README after
 the lightweight shared context only far enough to see its `Current Active Task`
-routing note, then load only the additional reload sources above. Do not load
-the older Flat status/design/plan links for this clean-room task.
+routing note, then load only the additional reload sources above unless the
+user explicitly asks for a broader architecture comparison.

@@ -12,7 +12,7 @@
   },
   "download": {
     "downloadedOn": "2026-06-17",
-    "command": "curl.exe -k -L https://www.uv-vis-spectral-atlas-mainz.org/uvvis_data/cross_sections/Ozone/O3_Brion%281998%29_295K_345-829nm%281nm%29.txt -o scripts/flat/atmosphere/data/composition/ozone/O3_Brion-1998_295K_345-829nm_1nm.txt",
+    "command": "curl.exe -k -L https://www.uv-vis-spectral-atlas-mainz.org/uvvis_data/cross_sections/Ozone/O3_Brion%281998%29_295K_345-829nm%281nm%29.txt -o scripts/flat/atmosphere_rejected/data/composition/ozone/O3_Brion-1998_295K_345-829nm_1nm.txt",
     "sha256": "8d8fe492e96f6a0e1dd63dd9c37a30f06f2d20440ea826a9e899432bf6ca9cfc",
     "byteLength": 7275
   },

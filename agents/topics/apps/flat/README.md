@@ -5,23 +5,31 @@ Deployable Flat app documentation for the false-sky / sky-comparison project.
 ## Current Active Task
 
 Active bootstrap record: clean-room Bruneton start-fresh skydome experiment,
-now closed after step 031.
+now closed with step 032 as the best current Figure 1 comparison fit and
+reference handoff candidate.
 
-When the active topic is this task, use this README only as a routing marker.
-Do not read the older Flat status/design/plan links below, and do not use this
-README's historical implementation notes as technical context. Continue
-directly to:
+When the active topic is a clean-room source audit, use this README only as a
+routing marker. Do not read the older Flat status/design/plan links below for
+physics, constants, color, sampling, or visual targets. Continue directly to:
 
 - [Bruneton Start-Fresh Prompt](plans/bruneton-start-fresh-prompt.md)
 - [Bruneton Start-Fresh Work Log](plans/bruneton-start-fresh-worklog.md)
+
+When the active task is reference incorporation or architecture comparison,
+the older reference pipeline docs/code are in scope for architecture and
+integration only:
+
+- [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md)
+- [Reference Code Design](plans/atmosphere_reset/reference/code_design.md)
+- [Reference Status](plans/atmosphere_reset/reference/status.md)
 
 For this closed task record, repository docs may guide only file placement and
 avoiding unrelated churn. Atmosphere physics, rendering equations, constants,
 color, sampling, and visual targets in the closed lane must come only from
 direct external sources. Future implementation work should incorporate the
-lessons into the reference implementation rather than continue the fresh-lane
-artifact sequence by default. Do not delete any file that is not tracked by
-Git.
+step 032 lessons into the reference implementation rather than continue the
+fresh-lane artifact sequence by default. Do not delete any file that is not
+tracked by Git.
 
 ## Documents
 

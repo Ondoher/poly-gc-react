@@ -121,7 +121,7 @@ CPU reference has earned trust first.
 ## Deliverables
 
 1. A framework-free reference module under `scripts/flat`.
-   - Preferred folder: `scripts/flat/atmosphere/reference`.
+   - Preferred folder: `scripts/flat/atmosphere_rejected/reference`.
    - No React, Three.js, browser canvas, or shader dependency.
    - Plain deterministic functions/classes that can run in unit tests.
    - Promote pieces into `src/flat/shared` only later, after their contracts are
@@ -181,8 +181,8 @@ atmosphere profile, and comparison artifacts. The composition plan now owns the
 detailed Rayleigh implementation checklist: source-data confirmation, pinned
 quantity choice, Bucholtz extraction/provenance, named policies, tests, and
 preview-vs-Bucholtz comparison artifacts. Rayleigh substeps 1-7 are now
-complete under `scripts/flat/atmosphere/composition/` and
-`scripts/flat/atmosphere/run-reference-probe.js`. The default remains
+complete under `scripts/flat/atmosphere_rejected/composition/` and
+`scripts/flat/atmosphere_rejected/run-reference-probe.js`. The default remains
 `rayleigh-lambda4-preview`; `bucholtz-standard-air` is selected explicitly for
 review runs.
 
@@ -224,7 +224,7 @@ Composition checkpoint:
 ## Proposed Module Shape
 
 ```text
-scripts/flat/atmosphere/reference/
+scripts/flat/atmosphere_rejected/reference/
   spectral-grid.js
   colorimetry.js
   radiometry.js
@@ -901,7 +901,7 @@ Tests:
 
 ## Test-First Implementation Order
 
-1. Create `scripts/flat/atmosphere/reference` and empty test fixtures.
+1. Create `scripts/flat/atmosphere_rejected/reference` and empty test fixtures.
 2. Write Phase 1 tests for spectral grids, interpolation, CIE conversion, and
    zero/equal-energy spectra. Confirm they fail for missing implementation.
 3. Implement the Phase 1 code until those tests pass.

@@ -7,26 +7,26 @@ linear color diagnostics into inspectable pixels and image artifacts.
 
 Current package boundary:
 
-- `scripts/flat/atmosphere/data/color/cie-1931-2deg.csv` stores the official
+- `scripts/flat/atmosphere_rejected/data/color/cie-1931-2deg.csv` stores the official
   CIE 1931 2-degree color matching functions as a raw source artifact. Its
   sibling metadata JSON and README record DOI/source provenance, `360-830 nm`
   range, `1 nm` spacing, `471` rows, and the verified CIE-published MD5.
-- `scripts/flat/atmosphere/color/spectral-color.js` owns the domain API for
+- `scripts/flat/atmosphere_rejected/color/spectral-color.js` owns the domain API for
   `spectralRadiance + wavelengthsNm -> CIE XYZ -> unclamped linear sRGB` using
   the official CIE table. The default path keeps the current equal-energy
   normalized XYZ behavior; a separate unnormalized-XYZ diagnostic path exists
   for display-scale audits. It also keeps the analytic approximation as an
   explicitly named preview/fallback path.
-- `scripts/flat/atmosphere/color/pixel-output.js` owns display exposure,
+- `scripts/flat/atmosphere_rejected/color/pixel-output.js` owns display exposure,
   tone mapping, output encoding, byte pixels, PPM/PNG generation, and
   display-only clamping metadata/provenance.
-- `scripts/flat/atmosphere/color/solar-spectrum.js` owns named solar spectrum
+- `scripts/flat/atmosphere_rejected/color/solar-spectrum.js` owns named solar spectrum
   policies for sky-patch source input. It keeps `blackbody-5778k` as the
   smooth preview/control path and adds `astm-g173` as the first sourced
   extraterrestrial solar benchmark path.
-- `scripts/flat/atmosphere/run-reference-probe.js` may import the
+- `scripts/flat/atmosphere_rejected/run-reference-probe.js` may import the
   color package as a consumer. The reference pipeline and
-  `scripts/flat/atmosphere/reference/index.js` must not import or export color
+  `scripts/flat/atmosphere_rejected/reference/index.js` must not import or export color
   helpers.
 
 ## Goal
@@ -40,7 +40,7 @@ output are trustworthy, explicit consumers of that output.
 1. Replace the analytic CIE preview with the official CIE 1931 2-degree color
    matching function table.
    - Source data is present and checksum-verified at
-     `scripts/flat/atmosphere/data/color/cie-1931-2deg.csv`; publisher
+     `scripts/flat/atmosphere_rejected/data/color/cie-1931-2deg.csv`; publisher
      metadata is stored beside it.
    - `spectral-color.js` loads and validates the official `360-830 nm`, `1 nm`,
      `471` row table, interpolates linearly between table rows, contributes
@@ -111,7 +111,7 @@ output are trustworthy, explicit consumers of that output.
   - `astm-g173` samples the ASTM G-173 `Etr W*m-2*nm-1` extraterrestrial
     spectral irradiance column from the downloaded `ASTMG173.csv` zip artifact.
   - The ASTM zip is stored at
-    `scripts/flat/atmosphere/data/color/astm-g173/astmg173.zip`, with local
+    `scripts/flat/atmosphere_rejected/data/color/astm-g173/astmg173.zip`, with local
     README provenance, `2002` rows, `280-4000 nm` range, nonuniform spacing,
     MD5, and SHA256.
   - The loader interpolates linearly on the nonuniform ASTM grid and returns
@@ -136,7 +136,7 @@ output are trustworthy, explicit consumers of that output.
     with center swatch `#ff9811`.
 
 - Add a display-only parity audit for Bruneton comparison scale.
-  - `scripts/flat/atmosphere/display-parity-audit.js` compares fixed spectra
+  - `scripts/flat/atmosphere_rejected/display-parity-audit.js` compares fixed spectra
     and linear-RGB probes through the existing CIE, exposure, tone-map, and
     encoding path without re-running atmosphere transport.
   - The audit accepts an explicit `--source-summary <summary.json>` input for

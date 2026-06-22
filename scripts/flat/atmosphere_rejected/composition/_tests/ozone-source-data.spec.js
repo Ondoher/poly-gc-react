@@ -1,9 +1,9 @@
 import fs from 'fs';
 
 const OZONE_METADATA_PATH =
-	'scripts/flat/atmosphere/data/composition/ozone/O3_Brion-1998_295K_345-829nm_1nm-metadata.json';
+	'scripts/flat/atmosphere_rejected/data/composition/ozone/O3_Brion-1998_295K_345-829nm_1nm-metadata.json';
 const OZONE_DATA_PATH =
-	'scripts/flat/atmosphere/data/composition/ozone/O3_Brion-1998_295K_345-829nm_1nm.txt';
+	'scripts/flat/atmosphere_rejected/data/composition/ozone/O3_Brion-1998_295K_345-829nm_1nm.txt';
 
 function loadMetadata() {
 	return JSON.parse(fs.readFileSync(OZONE_METADATA_PATH, 'utf8'));

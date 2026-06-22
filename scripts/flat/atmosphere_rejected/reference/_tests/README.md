@@ -1,7 +1,7 @@
 # Atmosphere Reference Tests
 
 This folder contains non-browser Jasmine specs for
-`scripts/flat/atmosphere/reference`.
+`scripts/flat/atmosphere_rejected/reference`.
 
 Run the focused lane with:
 
@@ -17,7 +17,7 @@ npm run test:scripts
 
 Keep specs close to the script code they exercise. The focused Jasmine config
 discovers `*.spec.js` and `*.spec.mjs` files under
-`scripts/flat/atmosphere/reference`.
+`scripts/flat/atmosphere_rejected/reference`.
 
 The reference integrator test split is now active:
 

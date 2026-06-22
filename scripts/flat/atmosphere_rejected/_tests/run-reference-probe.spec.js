@@ -214,7 +214,7 @@ describe('run-reference-probe CLI helpers', function() {
 			'--light-set',
 			'flat.closeSun.horizontalDenseAir,flat.closeSun.shallowUpward',
 			'--light-config',
-			'scripts/flat/atmosphere/data/reference/light-extent-scenarios.json',
+			'scripts/flat/atmosphere_rejected/data/reference/light-extent-scenarios.json',
 			'--format',
 			'summary',
 		]);
@@ -226,7 +226,7 @@ describe('run-reference-probe CLI helpers', function() {
 			stage: 'full',
 			format: 'summary',
 			lightSetIds: ['flat.closeSun.horizontalDenseAir', 'flat.closeSun.shallowUpward'],
-			lightConfigPath: 'scripts/flat/atmosphere/data/reference/light-extent-scenarios.json',
+			lightConfigPath: 'scripts/flat/atmosphere_rejected/data/reference/light-extent-scenarios.json',
 			lightExtent: true,
 		});
 	});

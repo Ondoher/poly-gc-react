@@ -715,7 +715,7 @@ function readOptionValue(argv, index, optionName) {
 
 function printUsage() {
 	return [
-		'Usage: node scripts/flat/atmosphere/display-parity-audit.js --out-dir <dir> [--source-summary <summary.json>]',
+		'Usage: node scripts/flat/atmosphere_rejected/display-parity-audit.js --out-dir <dir> [--source-summary <summary.json>]',
 		'',
 		'Writes audit.json, audit.md, audit.ppm, audit.png, and manifest.json.',
 		'The audit is display-only and does not run atmosphere transport.',

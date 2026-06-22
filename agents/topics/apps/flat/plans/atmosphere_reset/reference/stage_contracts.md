@@ -85,7 +85,7 @@ composeSpectralRadiance
 ```
 
 The declarative registry in
-`scripts/flat/atmosphere/reference/pipeline-stages.js` should mirror the
+`scripts/flat/atmosphere_rejected/reference/pipeline-stages.js` should mirror the
 top-level `requires` and `provides` fields in this document. Detailed nested
 shapes belong here and in the ambient `types.d.ts` implementation mirror.
 

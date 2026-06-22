@@ -423,7 +423,7 @@ or texture fade was introduced.
 Initial implementation note: `run-reference-probe.js --light-extent` now
 covers the source-path classification slice of this follow-up. It reads named
 scenario sets from
-`scripts/flat/atmosphere/data/reference/light-extent-scenarios.json`, samples a
+`scripts/flat/atmosphere_rejected/data/reference/light-extent-scenarios.json`, samples a
 straight path from a finite Sun through a simple flat atmosphere profile, and
 reports two independent thresholds:
 
@@ -760,7 +760,7 @@ comparison against atmospheric transport equations.
 
 Current shell location:
 
-- `scripts/flat/atmosphere/reference/_tests/pipeline-stages.spec.js`, inside
+- `scripts/flat/atmosphere_rejected/reference/_tests/pipeline-stages.spec.js`, inside
   `describe('validateRequest')`.
 
 Valid input -> canonical output:
@@ -946,7 +946,7 @@ Starting isolated test inventory, absent implementation:
 Fixture policy for this stage:
 
 - Expected cases should be encoded as data rows in
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/analytic-invariants.json`
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/analytic-invariants.json`
   or a sibling expectation JSON fixture with the same provenance schema.
 - Each row should include `stage: "resolveRayPath"`, a stable `id`, structured
   `inputs` describing the controlled model-returned atmosphere/surface/boundary
@@ -985,7 +985,7 @@ Fixture policy for this stage:
 Created fixture rows:
 
 These rows are encoded in
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/ray-path-contracts.json`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/ray-path-contracts.json`.
 
 - `ray-path.atmosphere.inside-exits-top`
 - `ray-path.surface-hit.clips-atmosphere-segment`

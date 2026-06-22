@@ -4,7 +4,7 @@ Current reference checkpoint:
 
 - Multiple-scattering comparison phases 1-5 now have script-level scaffolding
   and a computed prototype sidecar in
-  `scripts/flat/atmosphere/run-reference-probe.js`. Sky-patch and
+  `scripts/flat/atmosphere_rejected/run-reference-probe.js`. Sky-patch and
   sky-dome outputs carry `baselineFreeze` metadata; skydome panels compute
   display-encoded model-output metrics before Sun-marker overlay; the CLI
   accepts `--external-radiance <path>` for file-based spectral-radiance
@@ -208,7 +208,7 @@ Current reference checkpoint:
   artifact comparison; `git diff --check` also passed.
 - Display-only parity audit artifacts now live at
   `tmp/atmosphere/bruneton/007-display-parity-audit/`. The new
-  `scripts/flat/atmosphere/display-parity-audit.js` diagnostic compares fixed
+  `scripts/flat/atmosphere_rejected/display-parity-audit.js` diagnostic compares fixed
   spectra, fixed linear-RGB probes, and Task 3 saved radiance samples from
   `006-no-visible-absorption/summary.json` through the existing CIE,
   exponential tone-map, exposure, and byte-encoding path without re-running
@@ -233,7 +233,7 @@ Current reference checkpoint:
   renders.
 - Aerosol/Mie perimeter audit artifacts now live at
   `tmp/atmosphere/bruneton/008-aerosol-mie-parity-audit/`. The new
-  `scripts/flat/atmosphere/aerosol-mie-parity-audit.js` diagnostic verifies
+  `scripts/flat/atmosphere_rejected/aerosol-mie-parity-audit.js` diagnostic verifies
   Bruneton/Kider aerosol coefficient parity, vertical profile behavior,
   Rayleigh/Mie balance, Cornette-Shanks phase convention, coefficient
   sensitivity, and a masked horizon-ring image sweep. Result: Bruneton/Kider
@@ -248,7 +248,7 @@ Current reference checkpoint:
   audit tests.
 - Weakness factor audit artifacts now live at
   `tmp/atmosphere/bruneton/009-weakness-factor-audit/`. The new
-  `scripts/flat/atmosphere/weakness-factor-audit.js` diagnostic combines a
+  `scripts/flat/atmosphere_rejected/weakness-factor-audit.js` diagnostic combines a
   controlled source-quadrature check, real aerosol-policy perimeter sweeps,
   and display-side proxy sweeps for surface coupling and aureole movement.
   Result: the weakest current contract is source quadrature. A one-source
@@ -341,14 +341,14 @@ Historical diffuse-sky-airlight experiment (removed):
 
 - Source-backed fixtures and direct specs now exist for the
   `integrateDiffuseSkyAirlight` contract. The fixture ledger is
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/diffuse-sky-airlight-contracts.json`,
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/diffuse-sky-airlight-contracts.json`,
   and the stage spec is
-  `scripts/flat/atmosphere/reference/stages/_tests/IntegrateDiffuseSkyAirlightStage.spec.js`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/IntegrateDiffuseSkyAirlightStage.spec.js`.
 - The fixture rows preserved the low/high tau proxy behavior under the final
   stage/packet vocabulary, and the direct stage spec now pins the aerosol-aware
   bounded formula when Mie optical depth is present.
 - The production stage previously lived at
-  `scripts/flat/atmosphere/reference/stages/IntegrateDiffuseSkyAirlightStage.js`,
+  `scripts/flat/atmosphere_rejected/reference/stages/IntegrateDiffuseSkyAirlightStage.js`,
   was registered after `integrateSingleScattering`, and emitted an explicit
   `diffuseSkyAirlight` packet field.
 - During that experiment, `composeSpectralRadiance` included
@@ -485,7 +485,7 @@ Historical diffuse-sky-airlight experiment (removed):
 
 Current script-runner checkpoint:
 
-- `scripts/flat/atmosphere/run-reference-probe.js` now exists as the
+- `scripts/flat/atmosphere_rejected/run-reference-probe.js` now exists as the
   first reference probe runner.
 - The runner supports built-in controlled probe ids, `--probe`, `--config`,
   `--stage`, `--out`, `--report`, `--image`, `--format json|summary`,
@@ -512,7 +512,7 @@ Current script-runner checkpoint:
   `tmp/flat-reference-sky-patches/sky-patches.svg`.
 - The runner now also has a `--light-extent` mode for flat finite-Sun
   source-path classification. It loads named scenarios from
-  `scripts/flat/atmosphere/data/reference/light-extent-scenarios.json`, integrates
+  `scripts/flat/atmosphere_rejected/data/reference/light-extent-scenarios.json`, integrates
   source-path optical depth through a simple flat atmosphere profile, applies
   finite solar-disk solid-angle falloff, and reports where configurable loss
   thresholds are crossed. Thresholds are fractions in `[0, 1)`, where values
@@ -634,13 +634,13 @@ Current script-runner checkpoint:
   sunset sky patches, or to allow explicit low-level rays for early analytic
   probes, without building renderer-facing infrastructure.
 - Minimal color consumer package implemented beside the reference package:
-  `scripts/flat/atmosphere/color/spectral-color.js` now loads and validates
+  `scripts/flat/atmosphere_rejected/color/spectral-color.js` now loads and validates
   the official CIE 1931 2-degree color matching table, linearly interpolates
   within the published `360-830 nm` range, contributes zero outside that range,
   exposes `spectralRadianceToXyz` and `spectralRadianceToLinearSrgb` as the
   domain API, preserves unclamped out-of-gamut linear RGB, records color
   provenance, and keeps the analytic approximation as a named preview/fallback
-  path. `scripts/flat/atmosphere/color/pixel-output.js` converts post-pipeline
+  path. `scripts/flat/atmosphere_rejected/color/pixel-output.js` converts post-pipeline
   linear sRGB into deterministic pixel packets, supports explicit `srgb` or
   `linear` byte encoding, applies display exposure only after physical color is
   complete, records clamped channels, preserves source diagnostics, builds
@@ -652,7 +652,7 @@ Current script-runner checkpoint:
   The color fidelity roadmap now lives in
   `agents/topics/apps/flat/plans/atmosphere_reset/color/plan.md`.
 - Official CIE source data for the next color-fidelity pass is now stored in
-  `scripts/flat/atmosphere/data/color/cie-1931-2deg.csv`, with publisher
+  `scripts/flat/atmosphere_rejected/data/color/cie-1931-2deg.csv`, with publisher
   metadata in `cie-1931-2deg-metadata.json` and local provenance in the data
   README. The CSV was verified against CIE's published MD5
   `17cca777db64b17170f06f67ce9d3ab7` and contains `471` rows from `360` to
@@ -667,7 +667,7 @@ Current script-runner checkpoint:
   reference package index no longer exports color helpers; color remains a
   consumer of completed pipeline output, not part of transport.
 - Generated proof artifact:
-  `node scripts/flat/atmosphere/run-reference-probe.js --sky-patches --patch midday.zenith,sunset.horizon,midnight.zenith --image tmp/atmosphere-reference-sky-patches.png --report tmp/atmosphere-reference-sky-patches.md --out tmp/atmosphere-reference-sky-patches.json --format summary`
+  `node scripts/flat/atmosphere_rejected/run-reference-probe.js --sky-patches --patch midday.zenith,sunset.horizon,midnight.zenith --image tmp/atmosphere-reference-sky-patches.png --report tmp/atmosphere-reference-sky-patches.md --out tmp/atmosphere-reference-sky-patches.json --format summary`
   produced a 132x28 PNG image plus Markdown/JSON using the official CIE table
   color path. Summary centers were midday `#8b9cbd`, sunset `#f28000`, and
   midnight `#000000`.
@@ -693,7 +693,7 @@ Current script-runner checkpoint:
 - Sourced solar-spectrum controls are implemented for sky patches:
   `--solar-spectrum blackbody-5778k|astm-g173`. The ASTM path reads
   `ASTMG173.csv` directly from
-  `scripts/flat/atmosphere/data/color/astm-g173/astmg173.zip`, uses the
+  `scripts/flat/atmosphere_rejected/data/color/astm-g173/astmg173.zip`, uses the
   Gueymard 2002 extraterrestrial `Etr W*m-2*nm-1` column, and records source
   provenance in JSON/Markdown. A `benchmark-5nm` comparison generated
   `tmp/atmosphere-reference-sky-patches-5nm-blackbody.png` with centers
@@ -723,9 +723,9 @@ Current script-runner checkpoint:
   generate preview-vs-Bucholtz sunset comparison artifacts.
 - Rayleigh substeps 1-4 are complete for the composition source-data slice.
   The new composition-owned folder
-  `scripts/flat/atmosphere/composition/` contains a curated Bucholtz 1995
+  `scripts/flat/atmosphere_rejected/composition/` contains a curated Bucholtz 1995
   standard-air Rayleigh artifact at
-  `scripts/flat/atmosphere/data/composition/rayleigh/bucholtz-1995-standard-air.json`,
+  `scripts/flat/atmosphere_rejected/data/composition/rayleigh/bucholtz-1995-standard-air.json`,
   with Table 2 pinned volume-scattering coefficient rows, Table 3 formula
   constants, selected Table 4 optical-depth validation rows, and source-data
   specs wired into the flat script Jasmine lane. The selected primary quantity
@@ -734,14 +734,14 @@ Current script-runner checkpoint:
   `npm run test:scripts:flat` passed with 313 specs and 0 failures after the
   composition source-data artifact and spec were added.
 - The script-side atmosphere packages are now consolidated under one
-  `scripts/flat/atmosphere/` folder with `reference`, `color`, and
+  `scripts/flat/atmosphere_rejected/` folder with `reference`, `color`, and
   `composition` child folders. The flat script Jasmine config now discovers
   specs from that shared parent, and the reference CLI imports color helpers
   from the sibling `color` folder.
 - The CLI is now atmosphere-owned at
-  `scripts/flat/atmosphere/run-reference-probe.js` instead of living under the
+  `scripts/flat/atmosphere_rejected/run-reference-probe.js` instead of living under the
   reference package. Shared source artifacts and scenario inputs now live under
-  `scripts/flat/atmosphere/data/`, with `data/color`, `data/composition`, and
+  `scripts/flat/atmosphere_rejected/data/`, with `data/color`, `data/composition`, and
   `data/reference` subfolders. `npm run test:scripts:flat` passed with 313
   specs and 0 failures after the CLI and data moves.
 - Rayleigh implementation substeps 5-7 are complete. The composition package
@@ -768,7 +768,7 @@ Current script-runner checkpoint:
   and artifacts.
 - Sourced ozone cross-section support is implemented for sky-patch
   composition comparisons. The MPI-Mainz/Brion 1998 `295 K` ozone table is
-  stored under `scripts/flat/atmosphere/data/composition/ozone/` with local
+  stored under `scripts/flat/atmosphere_rejected/data/composition/ozone/` with local
   metadata, SHA-256, and pinned validation rows. The composition package now
   provides `ozone-policy.js` with `preview-chappuis` as the default/control
   and `brion-1998-ozone-295k` as the explicit sourced policy. The atmosphere
@@ -889,7 +889,7 @@ The CPU spectral reference work is now encapsulated in this folder:
   they informed, assumptions, limits, and open reference needs.
 - [Fixture Sources](fixture_sources.md): fixture-readiness inventory and
   deficiency list for expected data.
-- [Plan](plan.md): implementation checklist for `scripts/flat/atmosphere/reference`.
+- [Plan](plan.md): implementation checklist for `scripts/flat/atmosphere_rejected/reference`.
 
 The implemented-stage source-breadcrumb audit in
 [Plan](plan.md#immediate-remediation-implemented-stage-source-breadcrumb-audit)
@@ -929,7 +929,7 @@ ledger:
 
 - Follow-up status: `complete`.
 - Notes: hardening fixture rows are sourced and encoded in
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/view-optical-depth-hardening.json`;
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/view-optical-depth-hardening.json`;
   matching Jasmine tests are now active and green. Supplied non-finite
   `intervalEndKm` rejects; omitted or `undefined` endpoint data may fall back
   to the final sample distance.
@@ -1099,9 +1099,9 @@ Current decisions:
 
 Current implementation:
 
-- `scripts/flat/atmosphere/reference` contains the declarative stage registry,
+- `scripts/flat/atmosphere_rejected/reference` contains the declarative stage registry,
   the integrator facade, and focused stage helper classes under
-  `scripts/flat/atmosphere/reference/stages`.
+  `scripts/flat/atmosphere_rejected/reference/stages`.
 - `CpuSpectralReferenceIntegrator.js` follows class file naming conventions and
   now default-exports its class. `types.d.ts` defines ambient JSDoc contracts
   for the shell API.
@@ -1120,9 +1120,9 @@ Current implementation:
 - `npm run test:scripts:flat` runs only the flat reference script specs.
 - The root pipeline scaffold spec now covers registry and composition behavior;
   stage-specific tests live in
-  `scripts/flat/atmosphere/reference/stages/_tests` using
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests` using
   `<ClassName>.spec.js` names.
-- `scripts/flat/atmosphere/reference/stages/_tests/ValidateRequestStage.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/ValidateRequestStage.spec.js`
   now has
   real domain tests for valid canonical output and invalid named-error cases.
   They cover globe and flat model contracts, unit ray-direction
@@ -1139,22 +1139,22 @@ Current implementation:
   explaining the physical admissibility, numerical necessity, or API
   source-of-truth constraint behind the check.
 - Shared stage contract data and reusable spec expectations live in
-  `scripts/flat/atmosphere/reference/_tests/test-pipeline-stages.js` to keep
+  `scripts/flat/atmosphere_rejected/reference/_tests/test-pipeline-stages.js` to keep
   stage specs small as physical behavior tests are added.
 - The first expectation-ledger fixture lives at
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/analytic-invariants.json`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/analytic-invariants.json`.
   It encodes sixteen analytic/error-contract expectations with structured
   canonical `reference` provenance and per-expected-value derivation notes.
   Physics-backed rows now use external PBRT references rather than local-only
   design references: transmittance, phase, volume-scattering in-scattering,
   and diffuse reflection.
 - Expectation fixture helpers live in
-  `scripts/flat/atmosphere/reference/_tests/test-expectations.js`. They load
+  `scripts/flat/atmosphere_rejected/reference/_tests/test-expectations.js`. They load
   the analytic fixture, index rows by `id`, retrieve individual expected data,
   and centralize exact, absolute, and relative tolerance assertions for future
   specs.
 - Fixture validation specs live in
-  `scripts/flat/atmosphere/reference/_tests/expectation-fixtures.spec.js`.
+  `scripts/flat/atmosphere_rejected/reference/_tests/expectation-fixtures.spec.js`.
   They validate fixture metadata, pinned expectation ids, canonical `reference`
   objects, expected-value derivations, tolerance alignment, and helper
   tolerance behavior. They also reject physics-backed expectation rows whose
@@ -1167,12 +1167,12 @@ Current implementation:
   summation, negative-extinction rejection, weighted piecewise-constant sample
   integration, coefficient/wavelength shape rejection, and invalid
   sample-weight rejection.
-- `scripts/flat/atmosphere/reference/stages/_tests/IntegrateViewOpticalDepthStage.spec.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/IntegrateViewOpticalDepthStage.spec.js`
   now contains real `integrateViewOpticalDepth` tests for the full analytic
   optical-depth batch. They use crafted packets with `wavelengthsNm`,
   `mediumSamples`, `weightKm`, wavelength-indexed extinction arrays, and
   species diagnostics to assert the public stage output shape and values.
-- `scripts/flat/atmosphere/reference/stages/IntegrateViewOpticalDepthStage.js`
+- `scripts/flat/atmosphere_rejected/reference/stages/IntegrateViewOpticalDepthStage.js`
   now computes cumulative optical depth and Beer-Lambert transmittance by
   wavelength, accumulates species optical-depth diagnostics when species are
   supplied, and rejects negative extinction, wavelength-shape mismatches, and
@@ -1192,7 +1192,7 @@ Current implementation:
   validation plus endpoint/length reconciliation for sampling stages. Both
   have dedicated tests in `utils.spec.js`; stage expectations should still be
   stated from the physical/API domain first.
-- `scripts/flat/atmosphere/reference/stages/ValidateRequestStage.js` owns the
+- `scripts/flat/atmosphere_rejected/reference/stages/ValidateRequestStage.js` owns the
   real `validateRequest` implementation. The completed transport stages now
   run through focused helper classes; downstream scattering, surface, and
   composition stages still need test-first implementation.
@@ -1243,7 +1243,7 @@ Current implementation:
 
 Latest verification:
 
-- `scripts/flat/atmosphere/reference/stages/_tests/fixtures/analytic-invariants.json`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/analytic-invariants.json`
   parsed as valid JSON, and all 16 expectation rows include the canonical
   `reference` fields: `id`, `kind`, `title`, `locator`, `derivationSummary`,
   plus either `url` or `path`. Numeric rows carry expected data and tolerance;
@@ -1261,13 +1261,13 @@ Latest verification:
 - `npm run test:scripts:flat` passed with 120 specs, 0 failures, and
   13 pending resolve-ray-path shells after moving canonical stages behind
   helper classes and moving stage-specific specs under
-  `scripts/flat/atmosphere/reference/stages/_tests`.
-- Class files in `scripts/flat/atmosphere/reference` now default-export their
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests`.
+- Class files in `scripts/flat/atmosphere_rejected/reference` now default-export their
   class and export nothing else. A scan found no lingering named class exports
   or stage-class named imports, and `git diff --check` passed.
 - The first `resolveRayPath` fixture-backed tests were wired and observed
   failing against placeholder behavior, then
-  `scripts/flat/atmosphere/reference/stages/ResolveRayPathStage.js` was
+  `scripts/flat/atmosphere_rejected/reference/stages/ResolveRayPathStage.js` was
   implemented to consume model-returned atmosphere intervals and surface hits.
   `npm run test:scripts:flat` then passed with 120 specs, 0 failures, and no
   pending specs.
@@ -1293,7 +1293,7 @@ Latest verification:
   positive-integer `viewSteps` errors. `npm run test:scripts:flat` passes with
   147 specs and 0 failures.
 - The initial `evaluateMedium` skeleton inventory is added to
-  `scripts/flat/atmosphere/reference/stages/_tests/EvaluateMediumStage.spec.js`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/EvaluateMediumStage.spec.js`.
   It includes 20 controlled-model pending rows for empty samples, sample
   positions, model-call shape, coefficient arrays, species diagnostics,
   world-derived altitude diagnostics, atmosphere/profile density diagnostics,
@@ -1337,9 +1337,9 @@ Latest verification:
   `0.000003303`, so tests should assert the listed source rows and residual
   rather than forcing an exact sum-to-one.
 - The first `evaluateMedium` fixture-backed test batch is now encoded in
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/medium-contracts.json`
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/medium-contracts.json`
   and wired into
-  `scripts/flat/atmosphere/reference/stages/_tests/EvaluateMediumStage.spec.js`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/EvaluateMediumStage.spec.js`.
   The batch covers empty samples, sample position/call arguments, sample-field
   preservation, vacuum/outside-volume zeros, direct coefficients,
   multi-wavelength alignment, species preservation and summation,
@@ -1375,7 +1375,7 @@ Latest verification:
   semantics, named species arrays, per-species optical depth, total optical
   depth, and transmittance all survive across adjacent stage boundaries.
 - Stage-owned expectation fixtures now live under
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures`. The previous
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures`. The previous
   package-level expectation fixture folder was removed so there is one fixture
   location for stage tests.
 - Stage helper JSDoc now uses concrete ambient packet/model types through the
@@ -1387,7 +1387,7 @@ Latest verification:
   true input boundaries such as `validateRequest` and placeholder scaffolds.
 - The planned `evaluateMedium` follow-up extremes are now represented as eleven
   active direct stage specs in
-  `scripts/flat/atmosphere/reference/stages/_tests/EvaluateMediumStage.spec.js`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/EvaluateMediumStage.spec.js`.
   They cover dense near-surface profile input, low-density upper-supported
   profile input, invalid density diagnostics, vacuum/zero coefficients,
   contradictory vacuum/nonzero coefficients, full selected visible-grid shape,
@@ -1399,9 +1399,9 @@ Latest verification:
   returns.
 - The first `integrateSolarTransmittance` fixture-backed and contract-alignment
   batches now live in
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/solar-transmittance-contracts.json`
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/solar-transmittance-contracts.json`
   and are wired into
-  `scripts/flat/atmosphere/reference/stages/_tests/IntegrateSolarTransmittanceStage.spec.js`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/IntegrateSolarTransmittanceStage.spec.js`.
   The batch covers empty medium samples, vacuum/unit source transmittance,
   homogeneous Beer-Lambert source-path integration, multi-wavelength
   independence, source-sample metadata preservation, occluded source samples,
@@ -1516,13 +1516,13 @@ Completed implementation checkpoint:
   hard invariants, or explicitly labeled controlled sentinels.
 - The starting `sampleViewPath` skeleton specs have been replaced with real
   fixture-backed tests in
-  `scripts/flat/atmosphere/reference/stages/_tests/SampleViewPathStage.spec.js`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/SampleViewPathStage.spec.js`.
   [Test Plan](test_plan.md) now lists the planned fixture rows for empty paths,
   zero-length paths, midpoint samples, weight summation, monotonic order,
   ray-path diagnostic preservation, invalid segment distances, invalid
   view-step counts, and midpoint integration metadata. Those rows are now
   encoded in
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/view-samples-contracts.json`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/view-samples-contracts.json`.
   The tests were observed failing against placeholder behavior, then the stage
   was implemented and verified green.
 - [Test Plan](test_plan.md) and [Reference Decision Log](references.md) now
@@ -1540,7 +1540,7 @@ Completed implementation checkpoint:
   horizontal rejection, and boundary metadata preservation. The expected cases
   should be encoded as JSON expectation rows,
   following the same data/provenance pattern as
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/analytic-invariants.json`;
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/analytic-invariants.json`;
   JS test helpers should only adapt those rows into controlled model interfaces.
   [Fixture Sources](fixture_sources.md) now records controlled ray-path segment
   data as ready for stage-selection tests, but not as a source of arbitrary
@@ -1549,7 +1549,7 @@ Completed implementation checkpoint:
   Earth-radius-dependent ray geometry remains deferred.
   These fixture-backed behavior targets are now represented as pending Jasmine
   shells in
-  `scripts/flat/atmosphere/reference/stages/_tests/ResolveRayPathStage.spec.js`;
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/ResolveRayPathStage.spec.js`;
   the next pass should wire the JSON expectation rows into real failing tests
   before implementation.
 - Coverage recheck on the `resolveRayPath` inventory corrected an over-broad
@@ -1558,7 +1558,7 @@ Completed implementation checkpoint:
   observer become empty forward paths and inverted/non-finite intervals reject
   as invalid model returns.
 - The `resolveRayPath` fixture rows have been created in
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/ray-path-contracts.json`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/ray-path-contracts.json`.
   They encode controlled model-returned inputs, expected `rayPath` outputs or
   expected errors, canonical `reference` objects, supporting references, and
   derivation notes. The Jasmine shells have been wired to these rows as real
@@ -1573,7 +1573,7 @@ Completed implementation checkpoint:
   stage seeds for `sampleViewPath` and `evaluateMedium`, fixture intake rules,
   and the verification command.
 - Fixture validation now loads every JSON fixture under
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures` and enforces that
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures` and enforces that
   every row has a canonical `reference` object. Local design-contract rows may
   reference design docs, but those design docs then own the deeper rationale for
   the constraint.

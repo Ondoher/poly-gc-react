@@ -37,9 +37,9 @@ promotion step rather than a rewrite.
 - [Fixture Sources](fixture_sources.md): fixture-readiness inventory showing
   what source data is ready, partially ready, or deficient.
 - [Plan](plan.md): implementation checklist for
-  `scripts/flat/atmosphere/reference`.
+  `scripts/flat/atmosphere_rejected/reference`.
 - [Status](status.md): current decisions and next documentation step.
-- `scripts/flat/atmosphere/reference/stages/_tests/fixtures/analytic-invariants.json`:
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/analytic-invariants.json`:
   first JSON expectation ledger for the analytic invariant spine.
 
 ## Current Direction
@@ -60,7 +60,7 @@ The immediate design focus is the stage API:
   reference decision log
 - CLI and shader design are deferred until the stage API and tests are stable
 
-The current script scaffold lives at `scripts/flat/atmosphere/reference`.
+The current script scaffold lives at `scripts/flat/atmosphere_rejected/reference`.
 Run its focused Jasmine lane with:
 
 ```text

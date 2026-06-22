@@ -4,7 +4,7 @@
 
 Create a new self-contained experimental script at:
 
-`scripts/flat/atmosphere/experimental/bruneton-start-fresh.js`
+`scripts/flat/experimental/bruneton-start-fresh.js`
 
 The script must render two fisheye skydome images that closely resemble the
 Bruneton 2016 clear-sky skydome examples:

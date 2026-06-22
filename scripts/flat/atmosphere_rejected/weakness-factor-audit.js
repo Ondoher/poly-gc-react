@@ -1170,7 +1170,7 @@ function normalizeArtifactPath(filePath) {
 
 function printUsage() {
 	return [
-		`Usage: node scripts/flat/atmosphere/weakness-factor-audit.js --out-dir <dir> [--dome-size <pixels>] [--sampling-profile <id>] [--dome-sample-mask ${skyDomeSampleMaskIds().join('|')}] [--skip-transport]`,
+		`Usage: node scripts/flat/atmosphere_rejected/weakness-factor-audit.js --out-dir <dir> [--dome-size <pixels>] [--sampling-profile <id>] [--dome-sample-mask ${skyDomeSampleMaskIds().join('|')}] [--skip-transport]`,
 		'',
 		'Writes audit.json, audit.md, and manifest.json.',
 		'Transport diagnostics also write images/*.png and progress.log.',

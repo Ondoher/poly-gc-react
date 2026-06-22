@@ -4,7 +4,7 @@ This plan implements the script-owned CPU truth engine described in
 [Code Design](code_design.md) and the canonical stage packet contracts in
 [Stage Contracts](stage_contracts.md). It is narrower than the full
 [Atmosphere Reset Plan](../plan.md): this document ends when
-`scripts/flat/atmosphere/reference` can compute trusted spectral reference rays
+`scripts/flat/atmosphere_rejected/reference` can compute trusted spectral reference rays
 with diagnostics. Shader parity and app integration come later. The stage-level
 test matrix lives in [Test Design](test_design.md), and the actionable
 test-writing sequence lives in [Test Plan](test_plan.md).
@@ -14,7 +14,7 @@ test-writing sequence lives in [Test Plan](test_plan.md).
 Create a test-first, framework-free reference package under:
 
 ```text
-scripts/flat/atmosphere/reference/
+scripts/flat/atmosphere_rejected/reference/
 ```
 
 The package should compute spectral radiance, CIE XYZ, linear RGB, and
@@ -55,7 +55,7 @@ promotion step, not a rewrite.
 Initial file layout:
 
 ```text
-scripts/flat/atmosphere/reference/
+scripts/flat/atmosphere_rejected/reference/
   index.js
   spectral-grid.js
   colorimetry.js
@@ -212,7 +212,7 @@ expose `aerosolPhasePolicy`, and the first phase-only artifact lives at
 Implementation sequence after the contract is pinned:
 
 1. Add an aerosol phase policy artifact at
-   `scripts/flat/atmosphere/data/composition/aerosol/aerosol-phase-policies.json`.
+   `scripts/flat/atmosphere_rejected/data/composition/aerosol/aerosol-phase-policies.json`.
    The phase policy owns `kind`, `parameters.g`, source/provenance, and label.
 2. Keep aerosol scalar presets focused on AOD, Angstrom exponent, single
    scattering albedo, and scale height. Each preset names a
@@ -225,7 +225,7 @@ Implementation sequence after the contract is pinned:
    `continental-hg-g070`, `hazy-continental-hg-g068`,
    `bruneton-2016-hg-g070-control`, and
    `bruneton-2016-cornette-shanks-g070`.
-4. Add `scripts/flat/atmosphere/composition/aerosol-phase-policy.js` with
+4. Add `scripts/flat/atmosphere_rejected/composition/aerosol-phase-policy.js` with
    `loadAerosolPhasePolicyData`, `aerosolPhasePolicyIds`, and
    `resolveAerosolPhasePolicy`. Validate known phase kinds, finite `g`, and
    `g` inside `(-1, 1)` for Henyey-Greenstein and Cornette-Shanks.
@@ -336,7 +336,7 @@ artifact comparison; `git diff --check` also passed.
 Display-only parity audit checkpoint:
 
 The display/color layer has a cheap diagnostic audit before paper-panel image
-matching. `scripts/flat/atmosphere/display-parity-audit.js` compares fixed
+matching. `scripts/flat/atmosphere_rejected/display-parity-audit.js` compares fixed
 spectra, fixed linear-RGB probes, and explicit saved radiance samples through
 the existing CIE, exposure, exponential tone-map, and byte-encoding path
 without re-running atmosphere transport. It also adds an unnormalized CIE XYZ
@@ -385,7 +385,7 @@ after adding the sky-dome sample mask and aerosol/Mie parity audit tests.
 
 Weakness factor audit checkpoint:
 
-`scripts/flat/atmosphere/weakness-factor-audit.js` now ranks the current
+`scripts/flat/atmosphere_rejected/weakness-factor-audit.js` now ranks the current
 suspects with a controlled source-quadrature diagnostic, a real aerosol-policy
 perimeter sweep, and clearly marked display-side proxy sweeps for surface
 coupling and aureole movement. The proxy sweeps are sensitivity rulers only;
@@ -704,14 +704,14 @@ the first API shape.
 Add the CLI as part of the reference package, not as an afterthought:
 
 ```text
-scripts/flat/atmosphere/run-reference-probe.js
+scripts/flat/atmosphere_rejected/run-reference-probe.js
 ```
 
 The runner accepts direct flags and JSON configs today. The next CLI extension
 should add benchmark scenario files with world/camera/probe/display metadata.
 Follow the local script precedents:
 
-- `scripts/flat/atmosphere/run-reference-probe.js` for small
+- `scripts/flat/atmosphere_rejected/run-reference-probe.js` for small
   explicit argument parsing, `--help`, JSON artifact output, Markdown reports,
   linked SVG artifacts, and clear failure behavior.
 - `scripts/3d-assets/asset-pipeline/run-asset-pipeline.js` for `--config`
@@ -720,12 +720,12 @@ Follow the local script precedents:
 Initial commands:
 
 ```text
-node scripts/flat/atmosphere/run-reference-probe.js --probe globe.zenith
-node scripts/flat/atmosphere/run-reference-probe.js --probe flat.localSunReference --out tmp/flat-local-sun-reference.json
-node scripts/flat/atmosphere/run-reference-probe.js --probe globe.zenith --report tmp/globe-zenith.md
-node scripts/flat/atmosphere/run-reference-probe.js --config scripts/flat/atmosphere/reference/fixtures/runs/globe-clear-day.json
-node scripts/flat/atmosphere/run-reference-probe.js --config tmp/custom-run.json --stage integrateViewOpticalDepth
-node scripts/flat/atmosphere/run-reference-probe.js --benchmark scripts/flat/atmosphere/reference/benchmarks/earth-globe-clear-day-basic-sky.json --report tmp/earth-globe-clear-day-basic-sky/report.md --image tmp/earth-globe-clear-day-basic-sky/preview.svg
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --probe globe.zenith
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --probe flat.localSunReference --out tmp/flat-local-sun-reference.json
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --probe globe.zenith --report tmp/globe-zenith.md
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --config scripts/flat/atmosphere_rejected/reference/fixtures/runs/globe-clear-day.json
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --config tmp/custom-run.json --stage integrateViewOpticalDepth
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --benchmark scripts/flat/atmosphere_rejected/reference/benchmarks/earth-globe-clear-day-basic-sky.json --report tmp/earth-globe-clear-day-basic-sky/report.md --image tmp/earth-globe-clear-day-basic-sky/preview.svg
 ```
 
 Initial flags:
@@ -757,7 +757,7 @@ Status: planned.
 
 Tasks:
 
-- Create `scripts/flat/atmosphere/reference`.
+- Create `scripts/flat/atmosphere_rejected/reference`.
 - Create placeholder module files only where needed by tests.
 - Create first test files for:
   - spectral grid
@@ -800,7 +800,7 @@ Purpose:
 Current fixture artifact:
 
 ```text
-scripts/flat/atmosphere/reference/stages/_tests/fixtures/analytic-invariants.json
+scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/analytic-invariants.json
 ```
 
 Current fixture rows:
@@ -836,11 +836,11 @@ Next validation-test loop:
 Current progress:
 
 - Step 1 is complete:
-  `scripts/flat/atmosphere/reference/_tests/test-expectations.js` loads the
+  `scripts/flat/atmosphere_rejected/reference/_tests/test-expectations.js` loads the
   analytic fixture, indexes expectations by `id`, and centralizes exact,
   absolute, and relative tolerance checks.
 - Step 2 is complete:
-  `scripts/flat/atmosphere/reference/_tests/expectation-fixtures.spec.js`
+  `scripts/flat/atmosphere_rejected/reference/_tests/expectation-fixtures.spec.js`
   validates fixture metadata, pinned expectation ids, canonical `reference`
   objects, expected-value derivations, tolerance alignment, and helper
   tolerance behavior.
@@ -853,7 +853,7 @@ Current progress:
 - `validateRequest` hardening is complete for the current scope.
 - Step 3 and Step 4 are complete for the `integrateViewOpticalDepth` analytic
   pass: real stage tests consume the analytic fixture from
-  `scripts/flat/atmosphere/reference/stages/_tests/IntegrateViewOpticalDepthStage.spec.js`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/IntegrateViewOpticalDepthStage.spec.js`.
 - The scoped `integrateViewOpticalDepth` exception is complete:
   `npm run test:scripts:flat` reported 120 specs, 0 failures, and 13 pending
   resolve-ray-path fixture shells after moving stage behavior into helper
@@ -878,17 +878,17 @@ Current progress:
 - The starting `resolveRayPath` test inventory is now listed in
   [Test Design](test_design.md). It has been encoded as expectation JSON data
   in
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/ray-path-contracts.json`,
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/ray-path-contracts.json`,
   using the same provenance pattern as
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/analytic-invariants.json`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/analytic-invariants.json`.
   Specs may use small JS adapters to turn those rows into controlled model
   interfaces, but expected distances, boundary reasons, empty-path flags, and
   expected errors belong in data.
 - Those `resolveRayPath` fixture rows have now been consumed by direct stage
   tests in
-  `scripts/flat/atmosphere/reference/stages/_tests/ResolveRayPathStage.spec.js`,
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/ResolveRayPathStage.spec.js`,
   observed failing against placeholder behavior, and implemented in
-  `scripts/flat/atmosphere/reference/stages/ResolveRayPathStage.js`.
+  `scripts/flat/atmosphere_rejected/reference/stages/ResolveRayPathStage.js`.
 - [Fixture Sources](fixture_sources.md) now marks controlled ray-path segment
   data as ready for `resolveRayPath` unit fixtures and marks
   Earth-radius-dependent ray geometry and atmosphere-top conventions as
@@ -987,7 +987,7 @@ Tasks:
   rejection, flat lateral-boundary recording, unbounded horizontal rejection,
   and boundary metadata preservation.
 - The corresponding expectation rows now exist as data in
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures/ray-path-contracts.json`:
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/ray-path-contracts.json`:
   `ray-path.atmosphere.inside-exits-top`,
   `ray-path.surface-hit.clips-atmosphere-segment`,
   `ray-path.surface-hit.before-atmosphere-entry-empty`,
@@ -1428,7 +1428,7 @@ Status: in progress.
 
 Current implemented slice:
 
-- Added `scripts/flat/atmosphere/run-reference-probe.js`.
+- Added `scripts/flat/atmosphere_rejected/run-reference-probe.js`.
 - Supports the initial documented flags:
   `--config`, `--probe`, `--out`, `--report`, `--image`, `--stage`,
   `--format json|summary`, and `--help`.
@@ -1557,7 +1557,7 @@ Exit criteria:
 
 ## Completion Criteria
 
-- `scripts/flat/atmosphere/reference` exists and is test-covered.
+- `scripts/flat/atmosphere_rejected/reference` exists and is test-covered.
 - The same integrator handles globe and flat/local-Sun fixtures.
 - The reference returns spectral radiance, XYZ, linear RGB, and diagnostics.
 - Known-answer tests pass for spectral math, geometry, transmittance, phase

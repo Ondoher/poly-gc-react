@@ -22,7 +22,7 @@ bridges, and shortcuts must be compared against.
 The first implementation should live under:
 
 ```text
-scripts/flat/atmosphere/reference/
+scripts/flat/atmosphere_rejected/reference/
 ```
 
 This keeps the truth engine outside app runtime code while we are still
@@ -312,7 +312,7 @@ produce test-friendly errors such as
 
 The integrator facade should live in `CpuSpectralReferenceIntegrator.js` to
 match class file naming conventions. Stage helper classes live under
-`scripts/flat/atmosphere/reference/stages`, also using class file names such as
+`scripts/flat/atmosphere_rejected/reference/stages`, also using class file names such as
 `ResolveRayPathStage.js`. `pipeline-stages.js` remains the canonical registry:
 it stores stage ids, prerequisites, provided packet fields, and the helper
 class constructor. Complex API shapes should live in the nearby ambient
@@ -364,7 +364,7 @@ runStage(stageId, packet) {
 Helper specs can exercise internal algorithms directly when useful, but
 integrator stage specs should continue to assert public `runStage(stageId,
 packet)` input/output behavior. Stage-local specs live under
-`scripts/flat/atmosphere/reference/stages/_tests` and use
+`scripts/flat/atmosphere_rejected/reference/stages/_tests` and use
 `<ClassName>.spec.js` file names.
 
 ## CLI Shape
@@ -378,12 +378,12 @@ that later shader parity will use.
 The CLI runner lives alongside the package:
 
 ```text
-scripts/flat/atmosphere/run-reference-probe.js
+scripts/flat/atmosphere_rejected/run-reference-probe.js
 ```
 
 Use repo-local script precedents:
 
-- `scripts/flat/atmosphere/run-reference-probe.js`: explicit option
+- `scripts/flat/atmosphere_rejected/run-reference-probe.js`: explicit option
   parsing, `--help`, deterministic JSON output, Markdown reports, and linked
   visual artifacts.
 - `scripts/3d-assets/asset-pipeline/run-asset-pipeline.js`: `--config` JSON
@@ -392,12 +392,12 @@ Use repo-local script precedents:
 The CLI should support both JSON-first usage and quick command-line probes:
 
 ```text
-node scripts/flat/atmosphere/run-reference-probe.js --probe globe.zenith
-node scripts/flat/atmosphere/run-reference-probe.js --probe flat.localSunReference --out tmp/flat-local-sun.json
-node scripts/flat/atmosphere/run-reference-probe.js --probe globe.zenith --report tmp/globe-zenith.md
-node scripts/flat/atmosphere/run-reference-probe.js --config scripts/flat/atmosphere/reference/fixtures/runs/globe-clear-day.json
-node scripts/flat/atmosphere/run-reference-probe.js --config tmp/custom-atmosphere-run.json --probe horizon --stage integrateViewOpticalDepth
-node scripts/flat/atmosphere/run-reference-probe.js --benchmark scripts/flat/atmosphere/reference/benchmarks/earth-globe-clear-day-basic-sky.json --report tmp/earth-globe-clear-day-basic-sky/report.md --image tmp/earth-globe-clear-day-basic-sky/preview.svg
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --probe globe.zenith
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --probe flat.localSunReference --out tmp/flat-local-sun.json
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --probe globe.zenith --report tmp/globe-zenith.md
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --config scripts/flat/atmosphere_rejected/reference/fixtures/runs/globe-clear-day.json
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --config tmp/custom-atmosphere-run.json --probe horizon --stage integrateViewOpticalDepth
+node scripts/flat/atmosphere_rejected/run-reference-probe.js --benchmark scripts/flat/atmosphere_rejected/reference/benchmarks/earth-globe-clear-day-basic-sky.json --report tmp/earth-globe-clear-day-basic-sky/report.md --image tmp/earth-globe-clear-day-basic-sky/preview.svg
 ```
 
 Initial options:
@@ -655,7 +655,7 @@ CLI output should include run metadata and per-probe results:
 {
   "kind": "flat-atmosphere-reference-result",
   "generatedAt": "2026-06-14T00:00:00.000Z",
-  "configPath": "scripts/flat/atmosphere/reference/fixtures/runs/globe-clear-day.json",
+  "configPath": "scripts/flat/atmosphere_rejected/reference/fixtures/runs/globe-clear-day.json",
   "stage": "full",
   "probes": [
     {
@@ -672,7 +672,7 @@ shader work begins.
 
 Initial implemented runner slice:
 
-- `scripts/flat/atmosphere/run-reference-probe.js` runs controlled
+- `scripts/flat/atmosphere_rejected/run-reference-probe.js` runs controlled
   built-in smoke probes through the canonical integrator stages.
 - The current built-ins intentionally exercise transport/report mechanics
   before package-level globe and flat/local-Sun adapters exist. They must be

@@ -133,7 +133,7 @@ negative extremes, and source needs are visible in the docs.
 Create pending test shells that preserve the identified intent:
 
 - Put the shells in the focused stage spec under
-  `scripts/flat/atmosphere/reference/stages/_tests`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests`.
 - Use one `describe` for each stage, and a nested `describe` for a follow-up
   batch when the main stage is already complete.
 - Name each pending `it` from the domain expectation, not the expected helper
@@ -150,7 +150,7 @@ Create sourced fixture rows before active tests whenever expected data needs
 reviewable provenance:
 
 - Add rows under
-  `scripts/flat/atmosphere/reference/stages/_tests/fixtures`.
+  `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures`.
 - Include a stable `id`, `stage`, quantity under test, `sourceClass`,
   canonical `reference`, assumptions, inputs, expected output or
   `expectedError`, tolerance for expected data, and an independence note.
@@ -769,7 +769,7 @@ Source and contract status:
 Status: complete.
 
 Goal: turn the former pending shells into real direct stage tests backed by
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/ray-path-contracts.json`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/ray-path-contracts.json`.
 
 Ready fixture rows:
 
@@ -793,7 +793,7 @@ Completed test work:
 2. Added a tiny controlled model adapter for fixture-owned atmosphere and surface
    returns.
 3. Replaced the 13 pending shells in
-   `scripts/flat/atmosphere/reference/stages/_tests/ResolveRayPathStage.spec.js`
+   `scripts/flat/atmosphere_rejected/reference/stages/_tests/ResolveRayPathStage.spec.js`
    with real input-to-output assertions.
 4. Confirmed those tests failed against placeholder behavior.
 5. Implemented `ResolveRayPathStage.run(packet)`.
@@ -830,7 +830,7 @@ The second fixture/test batch pins boundary and malformed-return hardening:
   direction shape expected by the model contract.
 
 Each hardening case now has fixture data in
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/ray-path-contracts.json`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/ray-path-contracts.json`.
 Boundary precedence choices are local API decisions, so their `reference`
 points to [Code Design](code_design.md), with PBRT ray semantics used where
 ray-parameter ordering is the supporting concept.
@@ -871,11 +871,11 @@ Planned fixture rows:
 - `view-samples.midpoint.integration-metadata`
 
 The corresponding fixture-backed specs now live in
-`scripts/flat/atmosphere/reference/stages/_tests/SampleViewPathStage.spec.js`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/SampleViewPathStage.spec.js`.
 The fixture rows now live in
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/view-samples-contracts.json`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/view-samples-contracts.json`.
 The direct stage tests load those rows through
-`scripts/flat/atmosphere/reference/_tests/test-expectations.js`, materialize
+`scripts/flat/atmosphere_rejected/reference/_tests/test-expectations.js`, materialize
 non-finite JSON sentinel values only inside the test adapter, and compare the
 stage packet output to pinned expected rows. `SampleViewPathStage` now
 implements the fixed midpoint sampler, empty/zero-length no-sample policy,
@@ -984,10 +984,10 @@ Sourced data candidates for later fixture rows:
 | `medium.earth-profile.visible-wavelength-grid-alignment` | CIE official `360-830 nm`, `1 nm` grid, `471` rows, md5 `17cca777db64b17170f06f67ce9d3ab7`. | Official CIE dataset DOI `10.25039/CIE.DS.xvudnb9b`. Ready for grid-alignment metadata; not a medium coefficient table. |
 
 The corresponding direct stage tests now live in
-`scripts/flat/atmosphere/reference/stages/_tests/EvaluateMediumStage.spec.js`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/EvaluateMediumStage.spec.js`.
 Those shells have now been replaced by real fixture-backed specs, with fixture
 rows in
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/medium-contracts.json`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/medium-contracts.json`.
 The first red run failed because `EvaluateMediumStage` still returned placeholder
 `mediumSamples` and did not call the controlled medium model. The implementation
 now makes those rows green while keeping the batch scoped to this stage's output
@@ -1039,10 +1039,10 @@ Positive/negative pairing audit:
 | Coefficients | `zero-and-positive-finite` accepts zero and controlled positive finite arrays. | `invalid-boundaries` rejects negative and non-finite coefficients. |
 
 Fixture/test status: rows for these eleven follow-up extremes now live in
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/medium-contracts.json`
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/medium-contracts.json`
 with canonical references and derivation notes. The specs are wired as real
 direct stage tests in
-`scripts/flat/atmosphere/reference/stages/_tests/EvaluateMediumStage.spec.js`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/EvaluateMediumStage.spec.js`.
 The first wired run failed on contradictory vacuum coefficients and invalid
 composition diagnostics; `EvaluateMediumStage` now implements those validation
 paths.
@@ -1053,7 +1053,7 @@ Follow-up status: `complete`.
 
 Notes: this follow-up is queued before or alongside the next stage. The
 sourced fixture rows now live in
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/view-optical-depth-hardening.json`
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/view-optical-depth-hardening.json`
 and validate through the global fixture envelope checks. The former pending
 Jasmine shells in `IntegrateViewOpticalDepthStage.spec.js` are now active
 tests and green.
@@ -1100,7 +1100,7 @@ Active spec inventory:
 
 Fixture row file:
 
-- `scripts/flat/atmosphere/reference/stages/_tests/fixtures/view-optical-depth-hardening.json`
+- `scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/view-optical-depth-hardening.json`
   contains the row-level references, assumptions, expected data or expected
   errors, and derivation notes for the active hardening inventory above.
 
@@ -1112,7 +1112,7 @@ The flat/local-Sun terrain-visibility follow-up is broader than one canonical
 pipeline stage, so the first implementation lives in the probe runner instead
 of a stage spec. `run-reference-probe.js --light-extent` reads named scenario
 sets from
-`scripts/flat/atmosphere/data/reference/light-extent-scenarios.json`, integrates a
+`scripts/flat/atmosphere_rejected/data/reference/light-extent-scenarios.json`, integrates a
 straight source path through a simple flat atmosphere profile, applies finite
 solar-disk solid-angle falloff, and reports where configurable loss-fraction
 thresholds are crossed.
@@ -1257,9 +1257,9 @@ Source support:
   source-path segments rather than performing geometry itself.
 
 Fixture/test status: rows for this batch live in
-`scripts/flat/atmosphere/reference/stages/_tests/fixtures/solar-transmittance-contracts.json`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/solar-transmittance-contracts.json`.
 The active direct specs live in
-`scripts/flat/atmosphere/reference/stages/_tests/IntegrateSolarTransmittanceStage.spec.js`.
+`scripts/flat/atmosphere_rejected/reference/stages/_tests/IntegrateSolarTransmittanceStage.spec.js`.
 The stage implementation has source breadcrumbs for Beer-Lambert accumulation,
 nonnegative coefficient validation, source visibility handling, and local
 packet-shape decisions.

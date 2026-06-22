@@ -652,7 +652,7 @@
         "id": "future-convergence-study-placeholder",
         "kind": "external-tool",
         "title": "Future convergence study for selected reference profile",
-        "path": "scripts/flat/atmosphere/reference/stages/_tests/fixtures/view-optical-depth-hardening.json",
+        "path": "scripts/flat/atmosphere_rejected/reference/stages/_tests/fixtures/view-optical-depth-hardening.json",
         "locator": "Placeholder row to be replaced by a checked-in convergence-study artifact.",
         "derivationSummary": "This row records the required fixture shape, but the expected sample count and error bound are not source-backed yet. Do not enable it until an external-tool or independent convergence artifact is checked in."
       },
