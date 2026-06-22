@@ -2,6 +2,27 @@
 
 Deployable Flat app documentation for the false-sky / sky-comparison project.
 
+## Current Active Task
+
+Active bootstrap record: clean-room Bruneton start-fresh skydome experiment,
+now closed after step 031.
+
+When the active topic is this task, use this README only as a routing marker.
+Do not read the older Flat status/design/plan links below, and do not use this
+README's historical implementation notes as technical context. Continue
+directly to:
+
+- [Bruneton Start-Fresh Prompt](plans/bruneton-start-fresh-prompt.md)
+- [Bruneton Start-Fresh Work Log](plans/bruneton-start-fresh-worklog.md)
+
+For this closed task record, repository docs may guide only file placement and
+avoiding unrelated churn. Atmosphere physics, rendering equations, constants,
+color, sampling, and visual targets in the closed lane must come only from
+direct external sources. Future implementation work should incorporate the
+lessons into the reference implementation rather than continue the fresh-lane
+artifact sequence by default. Do not delete any file that is not tracked by
+Git.
+
 ## Documents
 
 - [Status](status.md)

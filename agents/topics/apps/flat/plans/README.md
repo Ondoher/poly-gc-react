@@ -20,6 +20,11 @@ Future Flat app implementation plans live here.
   for the slow truth engine.
 - [Atmosphere Reset Plan](atmosphere_reset/plan.md) - active test-first
   implementation sequence.
+- [Bruneton Start-Fresh Prompt](bruneton-start-fresh-prompt.md) - active
+  self-contained script prompt for rendering sunset and midday Bruneton-like
+  skydomes with physics-justified equations and per-step artifacts.
+- [Bruneton Start-Fresh Work Log](bruneton-start-fresh-worklog.md) - active
+  continuation log for the fresh skydome experiment.
 - [Spherical Sun Atmosphere Plan](spherical-sun-atmosphere-plan.md) - active:
   continue Phase 4.6 diagnostics for the globe sky's muted blue-gray color,
   brown horizon, and red marker airlight behavior after Phase 4.4 radiometric

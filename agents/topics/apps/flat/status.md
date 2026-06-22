@@ -4,6 +4,31 @@ This topic tracks notes for a new project named `flat`.
 
 ## Current State
 
+Bruneton start-fresh skydome note:
+
+- Active work has moved to a fresh self-contained experiment. The new prompt
+  is `agents/topics/apps/flat/plans/bruneton-start-fresh-prompt.md`, with
+  continuity in
+  `agents/topics/apps/flat/plans/bruneton-start-fresh-worklog.md`. The target
+  script is `scripts/flat/atmosphere/experimental/bruneton-start-fresh.js`,
+  and each implementation/evaluation step must create a numbered artifact
+  folder under `tmp/atmosphere/bruneton_start_fresh/` containing both sunset
+  and midday skydome outputs plus provenance/logs sufficient to reconstruct
+  the run. This is a clean-room lane: do not import, reuse, inspect, cite, or
+  derive equations/constants from previous local project implementations, older
+  local docs, status entries, work logs, rerun logs, or generated artifacts.
+  Treat older Flat atmosphere notes below as out of scope for this experiment;
+  they are not technical guidance. Only external sources may justify equations,
+  constants, algorithms, expected colors, and display decisions, including
+  external-source downloads already present in the workspace. Already-downloaded
+  external files are allowed only as direct external primary material; local
+  summaries and local generated images are not allowed as source material or
+  visual targets. Repository architecture/convention docs may guide file
+  placement and avoiding unrelated churn only; they must not guide the
+  atmosphere or display model. Do not delete any file that is not tracked by
+  Git; this includes scratch/generated/downloaded files and numbered artifact
+  folders.
+
 Atmosphere reset note:
 
 - Multiple-scattering plan phases 1-5 now have first CLI/report scaffolding

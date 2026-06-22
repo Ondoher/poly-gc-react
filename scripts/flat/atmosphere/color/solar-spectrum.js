@@ -3,6 +3,22 @@ import { inflateRawSync } from 'node:zlib';
 
 const ASTM_G173_ZIP_URL = new URL('../data/color/astm-g173/astmg173.zip', import.meta.url);
 const ASTM_G173_ENTRY_NAME = 'ASTMG173.csv';
+const BRUNETON_2016_ASTMG173_POLICY_ID = 'bruneton-2016-astm-40';
+const BRUNETON_2016_ASTMG173_MIN_NM = 360;
+const BRUNETON_2016_ASTMG173_MAX_NM = 830;
+const BRUNETON_2016_ASTMG173_SAMPLES = Object.freeze([
+	1.13419, 1.09801, 1.03541, 1.45086, 1.72453, 1.654, 1.70536, 1.97393,
+	2.03543, 2.00643, 1.95531, 1.95426, 1.92438, 1.82092, 1.88517, 1.85545,
+	1.85083, 1.82758, 1.84475, 1.78771, 1.76683, 1.70858, 1.68278, 1.63849,
+	1.59608, 1.52211, 1.52468, 1.47836, 1.4485, 1.40522, 1.35526, 1.32788,
+	1.28834, 1.26938, 1.23241, 1.20345, 1.17087, 1.1344, 1.11012, 1.07147,
+]);
+
+export const SOLAR_SPECTRUM_POLICY_IDS = Object.freeze([
+	'blackbody-5778k',
+	'astm-g173',
+	BRUNETON_2016_ASTMG173_POLICY_ID,
+]);
 
 let astmG173TableCache = null;
 
@@ -48,7 +64,7 @@ export function loadAstmg173SolarSpectrum() {
  * Sample a named solar spectrum onto the caller's wavelength grid.
  *
  * @param {number[]} wavelengthsNm - Wavelength grid in nanometers.
- * @param {{ policy?: 'blackbody-5778k' | 'astm-g173', solarTemperatureK?: number, solarIrradiance550Wm2Nm?: number }} options - Solar source policy.
+ * @param {{ policy?: 'blackbody-5778k' | 'astm-g173' | 'bruneton-2016-astm-40', solarTemperatureK?: number, solarIrradiance550Wm2Nm?: number }} options - Solar source policy.
  * @returns {{ valuesByWavelength: number[], provenance: object }}
  */
 export function sampleSolarSpectrum(wavelengthsNm, options = {}) {
@@ -60,6 +76,10 @@ export function sampleSolarSpectrum(wavelengthsNm, options = {}) {
 
 	if (policy === 'astm-g173') {
 		return astmG173ExtraterrestrialSpectrum(wavelengthsNm);
+	}
+
+	if (policy === BRUNETON_2016_ASTMG173_POLICY_ID) {
+		return bruneton2016AstmG173BinnedSpectrum(wavelengthsNm);
 	}
 
 	throw new Error(`Unknown solar spectrum policy: ${policy}`);
@@ -119,6 +139,36 @@ export function astmG173ExtraterrestrialSpectrum(wavelengthsNm) {
 	};
 }
 
+/**
+ * Sample Bruneton's 40-bin ASTM G-173 ETR spectrum from the clear-sky-models source.
+ *
+ * @param {number[]} wavelengthsNm - Wavelength grid in nanometers.
+ * @returns {{ valuesByWavelength: number[], provenance: object }}
+ */
+export function bruneton2016AstmG173BinnedSpectrum(wavelengthsNm) {
+	validateWavelengths(wavelengthsNm);
+	const sourceWavelengthsNm = bruneton2016AstmG173Wavelengths();
+
+	return {
+		valuesByWavelength: wavelengthsNm.map((wavelengthNm) => {
+			return interpolateSamples(sourceWavelengthsNm, BRUNETON_2016_ASTMG173_SAMPLES, wavelengthNm);
+		}),
+		provenance: {
+			sourceId: BRUNETON_2016_ASTMG173_POLICY_ID,
+			title: 'Bruneton 2016 clear-sky-models 40-bin ASTM G-173 ETR solar spectrum',
+			sourceUrl: 'https://github.com/ebruneton/clear-sky-models/blob/master/atmosphere/atmosphere.cc',
+			policy: BRUNETON_2016_ASTMG173_POLICY_ID,
+			column: 'ASTM G-173 ETR',
+			units: 'W m-2 nm-1',
+			wavelengthRangeNm: [BRUNETON_2016_ASTMG173_MIN_NM, BRUNETON_2016_ASTMG173_MAX_NM],
+			rowCount: BRUNETON_2016_ASTMG173_SAMPLES.length,
+			grid: '40 equally spaced Bruneton comparison samples',
+			resamplingPolicy: 'linear interpolation from the 40 source samples; exact when caller uses the Bruneton 2016 40-wavelength grid',
+			sourceComment: 'Bruneton source says each value is summed and averaged in its ASTM G-173 wavelength bin',
+		},
+	};
+}
+
 function interpolateAstmg173Extraterrestrial(rows, wavelengthNm) {
 	if (wavelengthNm < rows[0].wavelengthNm || wavelengthNm > rows[rows.length - 1].wavelengthNm) {
 		return 0;
@@ -148,6 +198,49 @@ function interpolateAstmg173Extraterrestrial(rows, wavelengthNm) {
 
 	return lower.extraterrestrialWm2Nm
 		+ (upper.extraterrestrialWm2Nm - lower.extraterrestrialWm2Nm) * t;
+}
+
+function bruneton2016AstmG173Wavelengths() {
+	const stepNm = (
+		BRUNETON_2016_ASTMG173_MAX_NM - BRUNETON_2016_ASTMG173_MIN_NM
+	) / (BRUNETON_2016_ASTMG173_SAMPLES.length - 1);
+
+	return BRUNETON_2016_ASTMG173_SAMPLES.map((_value, index) => {
+		return BRUNETON_2016_ASTMG173_MIN_NM + stepNm * index;
+	});
+}
+
+function interpolateSamples(wavelengthsNm, values, wavelengthNm) {
+	if (wavelengthNm < wavelengthsNm[0] || wavelengthNm > wavelengthsNm[wavelengthsNm.length - 1]) {
+		return 0;
+	}
+
+	for (let index = 0; index < wavelengthsNm.length; index += 1) {
+		if (wavelengthsNm[index] === wavelengthNm) {
+			return values[index];
+		}
+	}
+
+	let low = 0;
+	let high = wavelengthsNm.length - 1;
+
+	while (low <= high) {
+		const mid = Math.floor((low + high) / 2);
+		const sampleWavelengthNm = wavelengthsNm[mid];
+
+		if (sampleWavelengthNm < wavelengthNm) {
+			low = mid + 1;
+		} else {
+			high = mid - 1;
+		}
+	}
+
+	const lowerIndex = high;
+	const upperIndex = low;
+	const t = (wavelengthNm - wavelengthsNm[lowerIndex])
+		/ (wavelengthsNm[upperIndex] - wavelengthsNm[lowerIndex]);
+
+	return values[lowerIndex] + (values[upperIndex] - values[lowerIndex]) * t;
 }
 
 function parseAstmg173Row(line, index) {

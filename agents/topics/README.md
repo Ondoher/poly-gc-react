@@ -33,8 +33,16 @@ On session bootstrap, load:
 Then load the active product/app README and any focused reload sources listed
 by the active topic.
 
+If the active topic declares a clean-room task, restricted source boundary, or
+focused reload list, that active-topic instruction wins over the general topic
+tree. Do not mine archive, migration, historical, or unrelated app docs for
+that task unless a later user explicitly changes the active-topic rule.
+
 ## Migration Note
 
 Until migration is complete, `topics.bak` remains the source to mine for old
 content. Prefer creating focused docs in this new tree instead of copying old
 folders wholesale.
+
+Exception: do not mine `topics.bak` or other old local docs for active
+clean-room tasks.

@@ -3,6 +3,11 @@
 Use this as the small, always-safe architecture context card. It gives the
 repo's architectural shape without replacing the deeper topic documents.
 
+If the active topic marks architecture docs as routing-only or file-placement
+only, use this document only for those boundaries. Do not follow expansion
+links or use architecture notes as domain/physics/model guidance for that
+task.
+
 ## Core Model
 
 The client architecture is best read as registry-centered REMVC:

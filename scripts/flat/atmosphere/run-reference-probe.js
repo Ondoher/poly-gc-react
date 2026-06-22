@@ -21,6 +21,7 @@ import {
 	spectralToApproximateSrgb,
 } from './color/spectral-color.js';
 import {
+	SOLAR_SPECTRUM_POLICY_IDS,
 	sampleSolarSpectrum,
 } from './color/solar-spectrum.js';
 import {
@@ -49,6 +50,7 @@ import {
 } from './composition/profile-policy.js';
 import {
 	evaluatePhaseByWavelength,
+	evaluatePhaseValue,
 } from './reference/phase-functions.js';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
@@ -58,6 +60,14 @@ const DEFAULT_COLOR_POLICY = 'official-cie';
 const DEFAULT_PIXEL_ENCODING = 'srgb';
 const DEFAULT_TONE_MAP = 'clip';
 const DEFAULT_SKY_PATCH_WAVELENGTH_GRID_ID = 'preview-20nm';
+const BRUNETON_2016_WAVELENGTH_GRID_ID = 'bruneton-2016-40';
+const BRUNETON_2016_ASTMG173_SOLAR_POLICY_ID = 'bruneton-2016-astm-40';
+const BRUNETON_2016_RAYLEIGH_POLICY_ID = 'bruneton-2016-penndorf-standard-air';
+const BRUNETON_2016_AEROSOL_POLICY_ID = 'bruneton-2016-kider-fit';
+const BRUNETON_2016_AEROSOL_PHASE_POLICY_ID = 'bruneton-2016-cornette-shanks-g070';
+const BRUNETON_2016_OZONE_POLICY_ID = 'bruneton-2016-no-visible-absorption';
+const BRUNETON_2016_DOME_TONE_MAP = 'exponential';
+const BRUNETON_2016_DOME_ENCODING = 'linear';
 const DEFAULT_SOLAR_SPECTRUM_POLICY = 'blackbody-5778k';
 const DEFAULT_RAYLEIGH_POLICY_ID = 'rayleigh-lambda4-preview';
 const DEFAULT_OZONE_POLICY_ID = 'preview-chappuis';
@@ -65,6 +75,31 @@ const DEFAULT_AEROSOL_POLICY_ID = 'preview-earthlike-aerosol';
 const DEFAULT_MOLECULAR_PROFILE_POLICY_ID = 'preview-exponential-8km';
 const DEFAULT_SUN_VISUAL = 'none';
 const SUN_VISUAL_OPTIONS = Object.freeze(['none', 'diagnostic']);
+const BRUNETON_GROUND_SINGLE_BOUNCE_FIT = 'bruneton-ground-single-bounce-v1';
+const LEGACY_BRUNETON_EDGE_AUREOLE_FIT = 'bruneton-edge-aureole-v1';
+const DEFAULT_SKY_DOME_VISUAL_FIT = BRUNETON_GROUND_SINGLE_BOUNCE_FIT;
+const SKY_DOME_VISUAL_FIT_OPTIONS = Object.freeze([
+	'none',
+	LEGACY_BRUNETON_EDGE_AUREOLE_FIT,
+	BRUNETON_GROUND_SINGLE_BOUNCE_FIT,
+]);
+const BRUNETON_GRASS_ALBEDO_MIN_NM = 360;
+const BRUNETON_GRASS_ALBEDO_STEP_NM = 10;
+const BRUNETON_GRASS_ALBEDO_SAMPLES = Object.freeze([
+	0.018, 0.019, 0.019, 0.020, 0.022, 0.024, 0.027, 0.029, 0.030, 0.031,
+	0.032, 0.032, 0.032, 0.033, 0.035, 0.040, 0.055, 0.073, 0.084, 0.089,
+	0.089, 0.079, 0.069, 0.063, 0.061, 0.057, 0.052, 0.051, 0.048, 0.042,
+	0.039, 0.035, 0.035, 0.043, 0.087, 0.156, 0.234, 0.334, 0.437, 0.513,
+	0.553, 0.571, 0.579, 0.581, 0.587,
+]);
+const LOWER_HEMISPHERE_PHASE_THETA_SAMPLES = 6;
+const LOWER_HEMISPHERE_PHASE_PHI_SAMPLES = 12;
+const UPPER_HEMISPHERE_SKY_THETA_SAMPLES = 6;
+const UPPER_HEMISPHERE_SKY_PHI_SAMPLES = 12;
+const SKY_DOME_SECONDARY_SCATTERING_ORDER_COUNT = 4;
+const SKY_DOME_SECONDARY_MIDPOINT_TAU_START = 4;
+const SKY_DOME_SECONDARY_MIDPOINT_TAU_END = 8;
+const BRUNETON_EXPONENTIAL_TONE_MAP_DENOMINATOR = 5;
 const DEFAULT_SOLAR_SOURCE_MODE = 'directional-sun';
 const SOLAR_SOURCE_MODES = Object.freeze(['directional-sun', 'finite-sun-disc']);
 const DEFAULT_FINITE_SUN_SAMPLE_COUNT = 9;
@@ -108,6 +143,16 @@ const SKY_PATCH_WAVELENGTH_GRIDS = Object.freeze({
 		stepNm: 5,
 		relationToCieTable: 'visible subset aligned to every fifth row of the official CIE 1931 2-degree 1 nm table',
 		resamplingPolicy: 'transport samples are generated directly on this grid; CIE CMFs are exact table rows at sample wavelengths',
+	}),
+	[BRUNETON_2016_WAVELENGTH_GRID_ID]: Object.freeze({
+		id: BRUNETON_2016_WAVELENGTH_GRID_ID,
+		label: 'Bruneton 2016 comparison 40-wavelength grid',
+		startNm: 360,
+		endNm: 830,
+		count: 40,
+		relationToCieTable: 'matches the 40 wavelengths between 360 nm and 830 nm used for the Bruneton paper model comparisons',
+		resamplingPolicy: 'transport samples are generated directly on this grid; CIE CMFs are interpolated at sample wavelengths',
+		reference: 'Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models, Section 3.1 and Section 5.5',
 	}),
 	'cie-1nm': Object.freeze({
 		id: 'cie-1nm',
@@ -571,6 +616,12 @@ export function parseArgs(argv) {
 			continue;
 		}
 
+		if (arg === '--sky-dome-visual-fit') {
+			options.skyDomeVisualFit = readOptionValue(argv, ++index, arg);
+			options.skyDomeGrid = true;
+			continue;
+		}
+
 		if (arg === '--stage') {
 			options.stage = readOptionValue(argv, ++index, arg);
 			continue;
@@ -707,7 +758,7 @@ export function parseArgs(argv) {
 		throw new Error(`Unknown wavelength grid: ${options.wavelengthGrid}`);
 	}
 
-	if (options.solarSpectrum && !['blackbody-5778k', 'astm-g173'].includes(options.solarSpectrum)) {
+	if (options.solarSpectrum && !SOLAR_SPECTRUM_POLICY_IDS.includes(options.solarSpectrum)) {
 		throw new Error(`Unknown solar spectrum policy: ${options.solarSpectrum}`);
 	}
 
@@ -745,6 +796,10 @@ export function parseArgs(argv) {
 
 	if (options.domeSampleMask && !DOME_SAMPLE_MASKS[options.domeSampleMask]) {
 		throw new Error(`Unknown dome sample mask: ${options.domeSampleMask}`);
+	}
+
+	if (options.skyDomeVisualFit && !SKY_DOME_VISUAL_FIT_OPTIONS.includes(options.skyDomeVisualFit)) {
+		throw new Error(`Unknown sky-dome visual fit: ${options.skyDomeVisualFit}`);
 	}
 
 	validateSamplingControlOptions(options);
@@ -1205,22 +1260,22 @@ export function helpText() {
 		'  --image <path>          Write a linked visual artifact. .ppm/.png use the post-pipeline pixel bridge; other extensions write SVG.',
 		'  --color preview-cie|official-cie',
 		'                          Select sky-patch spectral color conversion. Default: official-cie.',
-		'  --encoding srgb|linear  Select sky-patch pixel byte encoding. Default: srgb.',
+		`  --encoding srgb|linear  Select sky-patch pixel byte encoding. Default: ${DEFAULT_PIXEL_ENCODING}; Bruneton skydome fit defaults to ${BRUNETON_2016_DOME_ENCODING}.`,
 		'  --tone-map clip|preserve-hue|exponential',
-		'                          Select display tone mapping. Default: clip.',
+		`                          Select display tone mapping. Default: ${DEFAULT_TONE_MAP}; Bruneton skydome fit defaults to ${BRUNETON_2016_DOME_TONE_MAP}.`,
 		'  --exposure <scale>      Override sky-patch display exposure.',
-		'  --wavelength-grid preview-20nm|benchmark-5nm|cie-1nm',
-		'                          Select sky-patch wavelength sampling grid. Default: preview-20nm.',
-		'  --solar-spectrum blackbody-5778k|astm-g173',
-		'                          Select sky-patch solar source spectrum. Default: blackbody-5778k.',
-		'  --rayleigh-policy rayleigh-lambda4-preview|bucholtz-standard-air',
-		'                          Select sky-patch Rayleigh coefficient policy. Default: rayleigh-lambda4-preview.',
+		`  --wavelength-grid ${Object.keys(SKY_PATCH_WAVELENGTH_GRIDS).join('|')}`,
+		`                          Select sky-patch wavelength sampling grid. Default: ${DEFAULT_SKY_PATCH_WAVELENGTH_GRID_ID}; Bruneton skydome fit defaults to ${BRUNETON_2016_WAVELENGTH_GRID_ID}.`,
+		`  --solar-spectrum ${SOLAR_SPECTRUM_POLICY_IDS.join('|')}`,
+		`                          Select sky-patch solar source spectrum. Default: ${DEFAULT_SOLAR_SPECTRUM_POLICY}; Bruneton skydome fit defaults to ${BRUNETON_2016_ASTMG173_SOLAR_POLICY_ID}.`,
+		`  --rayleigh-policy ${RAYLEIGH_POLICY_IDS.join('|')}`,
+		`                          Select sky-patch Rayleigh coefficient policy. Default: ${DEFAULT_RAYLEIGH_POLICY_ID}; Bruneton skydome fit defaults to ${BRUNETON_2016_RAYLEIGH_POLICY_ID}.`,
 		`  --aerosol-policy ${aerosolPolicyIds().join('|')}`,
-		'                          Select sky-patch aerosol/Mie policy. Default: preview-earthlike-aerosol.',
+		`                          Select sky-patch aerosol/Mie policy. Default: ${DEFAULT_AEROSOL_POLICY_ID}; Bruneton skydome fit defaults to ${BRUNETON_2016_AEROSOL_POLICY_ID}.`,
 		`  --aerosol-phase-policy ${aerosolPhasePolicyIds().join('|')}`,
 		'                          Override the selected aerosol policy default phase shape.',
 		`  --ozone-policy ${OZONE_POLICY_IDS.join('|')}`,
-		'                          Select sky-patch ozone cross-section policy. Default: preview-chappuis.',
+		`                          Select sky-patch ozone cross-section policy. Default: ${DEFAULT_OZONE_POLICY_ID}; Bruneton skydome fit defaults to ${BRUNETON_2016_OZONE_POLICY_ID}.`,
 		'  --molecular-profile preview-exponential-8km|us-standard-atmosphere-1976-density',
 		'                          Select sky-patch molecular density profile. Default: preview-exponential-8km.',
 		'  --sun-visual none|diagnostic',
@@ -1240,6 +1295,8 @@ export function helpText() {
 		`  --dome-size <pixels>    Select square fisheye panel size for --sky-dome-grid. Default: ${DEFAULT_SKY_DOME_SIZE}.`,
 		`  --dome-sample-mask ${skyDomeSampleMaskIds().join('|')}`,
 		'                          Select traced fisheye pixels for diagnostics. Default: full.',
+		`  --sky-dome-visual-fit ${SKY_DOME_VISUAL_FIT_OPTIONS.join('|')}`,
+		`                          Select Bruneton skydome comparison fit. Default: ${DEFAULT_SKY_DOME_VISUAL_FIT}.`,
 		'  --format json|summary   Print JSON or concise summary to stdout.',
 		'  --progress              Write sky-patch render progress to stderr.',
 		'  --progress-log <path>   Write sky-patch render progress to a file.',
@@ -3520,22 +3577,25 @@ function summarizeSidecarTauRegime(samples) {
 }
 
 function runSkyDomeGrid(options = {}) {
+	const domeSize = options.domeSize ?? DEFAULT_SKY_DOME_SIZE;
+	const domeSampleMask = resolveDomeSampleMask(options.domeSampleMask);
+	const skyDomeVisualFit = options.skyDomeVisualFit ?? DEFAULT_SKY_DOME_VISUAL_FIT;
 	const colorPolicy = options.color ?? DEFAULT_COLOR_POLICY;
-	const encoding = options.encoding ?? DEFAULT_PIXEL_ENCODING;
-	const toneMap = options.toneMap ?? DEFAULT_TONE_MAP;
-	const wavelengthGrid = resolveSkyPatchWavelengthGrid(options.wavelengthGrid);
-	const solarSpectrumPolicy = options.solarSpectrum ?? DEFAULT_SOLAR_SPECTRUM_POLICY;
-	const rayleighPolicy = resolveRayleighPolicy(options.rayleighPolicy ?? DEFAULT_RAYLEIGH_POLICY_ID);
-	const aerosolPolicy = resolveAerosolPolicy(options.aerosolPolicy ?? DEFAULT_AEROSOL_POLICY_ID);
+	const encoding = options.encoding ?? defaultSkyDomeEncoding(skyDomeVisualFit);
+	const toneMap = options.toneMap ?? defaultSkyDomeToneMap(skyDomeVisualFit);
+	const solarSpectrumPolicy = options.solarSpectrum ?? defaultSkyDomeSolarSpectrumPolicy(skyDomeVisualFit);
+	const rayleighPolicy = resolveRayleighPolicy(options.rayleighPolicy ?? defaultSkyDomeRayleighPolicyId(skyDomeVisualFit));
+	const aerosolPolicy = resolveAerosolPolicy(options.aerosolPolicy ?? defaultSkyDomeAerosolPolicyId(skyDomeVisualFit));
 	const aerosolPhasePolicy = resolveAerosolPhasePolicy(
-		options.aerosolPhasePolicy ?? aerosolPolicy.defaultPhasePolicyId,
+		options.aerosolPhasePolicy ?? defaultSkyDomeAerosolPhasePolicyId(skyDomeVisualFit, aerosolPolicy),
 	);
-	const ozonePolicy = resolveOzonePolicy(options.ozonePolicy ?? DEFAULT_OZONE_POLICY_ID);
+	const ozonePolicy = resolveOzonePolicy(options.ozonePolicy ?? defaultSkyDomeOzonePolicyId(skyDomeVisualFit));
 	const molecularProfilePolicy = resolveMolecularProfilePolicy(
 		options.molecularProfile ?? DEFAULT_MOLECULAR_PROFILE_POLICY_ID,
 	);
-	const domeSize = options.domeSize ?? DEFAULT_SKY_DOME_SIZE;
-	const domeSampleMask = resolveDomeSampleMask(options.domeSampleMask);
+	const wavelengthGrid = resolveSkyPatchWavelengthGrid(
+		options.wavelengthGrid ?? defaultSkyDomeWavelengthGridId(skyDomeVisualFit),
+	);
 	const samplingControl = resolveSkyDomeSamplingControl(options);
 	const solarSourceSampling = resolveSolarSourceSampling(options);
 
@@ -3568,6 +3628,7 @@ function runSkyDomeGrid(options = {}) {
 			molecularProfilePolicy,
 			domeSize,
 			domeSampleMask,
+			skyDomeVisualFit,
 			samplingProfile: samplingControl.samplingProfile,
 			viewStepsOverride: samplingControl.viewStepsOverride,
 			sunTransmittanceStepsOverride: samplingControl.sunTransmittanceStepsOverride,
@@ -3628,6 +3689,10 @@ function runSkyDomeGrid(options = {}) {
 			wavelengthGrid: wavelengthGrid.metadata,
 			domeSize,
 			domeSampleMask,
+			skyDomeVisualFit: {
+				mode: skyDomeVisualFit,
+				policy: describeSkyDomeVisualFit(skyDomeVisualFit),
+			},
 			projection: {
 				id: 'azimuthal-equidistant-upper-hemisphere',
 				policy: 'zenith at disk center, horizon at disk edge, outside disk masked black, azimuth rotated to match the Bruneton Figure 1 extracted panels',
@@ -3685,6 +3750,7 @@ function renderSkyDomePanel(scene, {
 	molecularProfilePolicy,
 	domeSize,
 	domeSampleMask,
+	skyDomeVisualFit,
 	samplingProfile,
 	viewStepsOverride,
 	sunTransmittanceStepsOverride,
@@ -3727,8 +3793,25 @@ function renderSkyDomePanel(scene, {
 	const pixelSources = [];
 	const directRadiancePixels = retainSpectralPixels ? [] : null;
 	const diagnosticSamples = {};
-	const displayExposure = exposureOverride ?? scene.displayExposure ?? 1;
+	const displayExposure = resolveSkyDomeDisplayExposure({
+		exposureOverride,
+		scene,
+		wavelengthsNm,
+		colorPolicy,
+		toneMap,
+		skyDomeVisualFit,
+	});
 	const sunDirection = directionFromElevationAzimuth(scene.sunElevationDeg, scene.sunAzimuthDeg);
+	const skyDomeSpectralFit = createSkyDomeSpectralFitContext({
+		mode: skyDomeVisualFit,
+		integrator,
+		model,
+		stage,
+		scene,
+		wavelengthsNm,
+		numerical,
+		aerosolPhasePolicy,
+	});
 	let sampledInsideDomePixelCount = 0;
 	let skippedInsideDomePixelCount = 0;
 
@@ -3779,6 +3862,7 @@ function renderSkyDomePanel(scene, {
 				encoding,
 				toneMap,
 				colorPolicy,
+				skyDomeSpectralFit,
 			});
 
 			row.push(sample.displayHex);
@@ -3812,7 +3896,7 @@ function renderSkyDomePanel(scene, {
 		});
 	}
 
-	const analysisPixelImage = referenceOutputsToPixelImage({
+	let analysisPixelImage = referenceOutputsToPixelImage({
 		width: domeSize,
 		height: domeSize,
 		pixels: pixelSources,
@@ -3821,10 +3905,16 @@ function renderSkyDomePanel(scene, {
 		toneMap,
 		exposure: displayExposure,
 	});
+	analysisPixelImage = applySkyDomeVisualFit(
+		analysisPixelImage,
+		scene,
+		skyDomeVisualFit,
+	);
 	const modelComparisonMetrics = summarizeSkyDomeModelComparisonMetrics(
 		analysisPixelImage,
 		scene,
 	);
+	const displayRows = pixelImageToHexRows(analysisPixelImage);
 	let pixelImage = analysisPixelImage;
 	const sunMarker = skyDomePixelForDirection(sunDirection, domeSize);
 	pixelImage = overlaySunCross(pixelImage, sunMarker, encoding);
@@ -3915,7 +4005,7 @@ function renderSkyDomePanel(scene, {
 			}
 			: null,
 		pixelImage,
-		rows,
+		rows: displayRows,
 	};
 }
 
@@ -3931,6 +4021,7 @@ function traceSkyDomeSample({
 	encoding,
 	toneMap,
 	colorPolicy,
+	skyDomeSpectralFit,
 }) {
 	const request = {
 		model,
@@ -3942,11 +4033,18 @@ function traceSkyDomeSample({
 	const packet = stage === DEFAULT_STAGE
 		? integrator.traceRay(request)
 		: integrator.runUntil(stage, request);
-	const finalByWavelength = requireFinalRadianceByWavelength(
+	const rawFinalByWavelength = requireFinalRadianceByWavelength(
 		packet,
 		wavelengthsNm,
 		'sky-dome sample',
 	);
+	const spectralFitResult = applySkyDomeSpectralFit(rawFinalByWavelength, {
+		packet,
+		direction,
+		wavelengthsNm,
+		skyDomeSpectralFit,
+	});
+	const finalByWavelength = spectralFitResult.finalByWavelength;
 	const pathEnd = packet.viewOpticalDepth?.pathEnd;
 	const speciesOpticalDepth = summarizeSpeciesOpticalDepth(pathEnd);
 	const totalOpticalDepthByWavelength = summarizeTotalOpticalDepthByWavelength(
@@ -3973,15 +4071,32 @@ function traceSkyDomeSample({
 				...(packet.spectralRadiance ?? {}),
 				wavelengthsNm,
 				finalByWavelength,
+				...(spectralFitResult.applied
+					? { rawFinalByWavelength }
+					: {}),
 			},
 			xyz: rgb.xyz,
 			linearRgb: rgb.linearRgb,
-			colorProvenance: rgb.colorProvenance,
+			colorProvenance: {
+				...rgb.colorProvenance,
+				...(spectralFitResult.applied
+					? { skyDomeSpectralFit: spectralFitResult.metadata }
+					: {}),
+			},
 		},
 		diagnostics: {
 			direction,
 			finalByWavelength,
 			renderedByWavelength: finalByWavelength,
+				...(spectralFitResult.applied
+					? {
+						rawFinalByWavelength,
+						groundSecondaryByWavelength: spectralFitResult.contributionByWavelength,
+						groundSourceSecondaryByWavelength: spectralFitResult.groundContributionByWavelength,
+						upperSkySecondaryByWavelength: spectralFitResult.upperSkyContributionByWavelength,
+						skyDomeSpectralFit: spectralFitResult.metadata,
+					}
+					: {}),
 			viewTransmittanceByWavelength: pathEnd?.viewTransmittanceByWavelength ?? null,
 			totalOpticalDepthByWavelength,
 			opticalDepthValidity,
@@ -3991,6 +4106,636 @@ function traceSkyDomeSample({
 			displayHex: rgb.hex,
 		},
 	};
+}
+
+function describeSkyDomeVisualFit(mode) {
+	if (mode === 'none') {
+		return 'raw display pixels from the reference transport/color pipeline';
+	}
+
+	if (mode === LEGACY_BRUNETON_EDGE_AUREOLE_FIT) {
+		return 'legacy ad hoc display-side edge whitening and Sun aureole grade retained only for comparison';
+	}
+
+	if (mode === BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return 'spectral secondary-scattering approximation using cached sky radiance through four total orders, Bruneton grass albedo, Lambertian ground radiance, Beer-Lambert transmittance, and Rayleigh/Cornette-Shanks phase integration before CIE/tone mapping';
+	}
+
+	throw new Error(`Unknown sky-dome visual fit: ${mode}`);
+}
+
+function resolveSkyDomeDisplayExposure({
+	exposureOverride,
+	scene,
+	wavelengthsNm,
+	colorPolicy,
+	toneMap,
+	skyDomeVisualFit,
+}) {
+	if (exposureOverride !== undefined) {
+		return exposureOverride;
+	}
+
+	if (
+		skyDomeVisualFit === BRUNETON_GROUND_SINGLE_BOUNCE_FIT
+		&& colorPolicy === 'official-cie'
+		&& toneMap === 'exponential'
+	) {
+		return brunetonNormalizedCieExposure(wavelengthsNm);
+	}
+
+	return scene.displayExposure ?? 1;
+}
+
+function brunetonNormalizedCieExposure(wavelengthsNm) {
+	const equalEnergy = spectralRadianceToLinearSrgb(
+		wavelengthsNm.map(() => 1),
+		wavelengthsNm,
+	).provenance.yEqualEnergyResponse;
+
+	return equalEnergy / BRUNETON_EXPONENTIAL_TONE_MAP_DENOMINATOR;
+}
+
+function createSkyDomeSpectralFitContext({
+	mode,
+	integrator,
+	model,
+	stage,
+	scene,
+	wavelengthsNm,
+	numerical,
+	aerosolPhasePolicy,
+}) {
+	if (mode !== BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return null;
+	}
+
+	const lowerHemisphereSamples = createLowerHemispherePhaseSamples();
+	const upperSkySamples = estimateUpperHemisphereSkySourceSamples({
+		integrator,
+		model,
+		stage,
+		wavelengthsNm,
+		numerical,
+	});
+	const diffuseSkyIrradianceByWavelength = estimateDiffuseSkyIrradianceFromSamples(
+		upperSkySamples,
+		wavelengthsNm,
+	);
+	const ground = estimateBrunetonGrassGroundRadiance({
+		model,
+		wavelengthsNm,
+		numerical,
+		diffuseSkyIrradianceByWavelength,
+	});
+	const accumulatedUpperSkySamples = createAccumulatedUpperSkySourceSamples({
+		baseUpperSkySamples: upperSkySamples,
+		wavelengthsNm,
+		aerosolPhasePolicy,
+		lowerHemisphereSamples,
+		groundRadianceByWavelength: ground.radianceByWavelength,
+	});
+
+	return {
+		mode,
+		kind: 'spectral-lower-boundary-single-bounce',
+		sceneId: scene.id,
+		wavelengthsNm,
+		aerosolPhasePolicy,
+		lowerHemisphereSamples,
+		lowerHemisphereSampleCount: lowerHemisphereSamples.length,
+		upperSkySamples: accumulatedUpperSkySamples,
+		upperSkySampleCount: accumulatedUpperSkySamples.length,
+		secondaryScatteringOrderCount: SKY_DOME_SECONDARY_SCATTERING_ORDER_COUNT,
+		diffuseSkyIrradianceByWavelength,
+		groundDirectCosTheta: ground.directCosTheta,
+		groundDirectHorizontalIrradianceByWavelength: ground.directHorizontalIrradianceByWavelength,
+		groundRadianceByWavelength: ground.radianceByWavelength,
+		groundAlbedoByWavelength: ground.albedoByWavelength,
+		provenance: {
+			groundAlbedo: 'Bruneton clear-sky-models NewGroundAlbedo grass spectral albedo, 360-800 nm at 10 nm spacing, from Feister and Grewe 1995',
+			surfaceModel: 'Lambertian lower boundary: L = rho * E_horizontal / pi',
+			transmittance: 'Beer-Lambert source-path transmittance from the existing atmosphere model; optically thick secondary in-scattering blends toward the midpoint camera transmittance implied by sampleViewPath intervals',
+			scattering: 'Neumann-series secondary in-scattering approximation over cached upper-hemisphere sky radiance plus lower-hemisphere ground radiance, using the existing Rayleigh and aerosol phase functions',
+			references: [
+				'https://github.com/ebruneton/clear-sky-models/blob/master/atmosphere/atmosphere.cc',
+				'https://arxiv.org/abs/1612.04336',
+				'https://www.pbr-book.org/4ed/Volume_Scattering/Transmittance',
+				'https://www.pbr-book.org/4ed/Volume_Scattering/Volume_Scattering_Processes',
+				'https://www.pbr-book.org/4ed/Volume_Scattering/Phase_Functions',
+			],
+		},
+	};
+}
+
+function applySkyDomeSpectralFit(rawFinalByWavelength, {
+	packet,
+	direction,
+	wavelengthsNm,
+	skyDomeSpectralFit,
+}) {
+	if (!skyDomeSpectralFit) {
+		return {
+			applied: false,
+			finalByWavelength: rawFinalByWavelength,
+		};
+	}
+
+	const secondary = estimateGroundSingleBounceRadiance({
+		packet,
+		direction,
+		wavelengthsNm,
+		context: skyDomeSpectralFit,
+	});
+	const finalByWavelength = rawFinalByWavelength.map((value, wavelengthIndex) => {
+		return value + secondary.radianceByWavelength[wavelengthIndex];
+	});
+
+	return {
+		applied: true,
+		finalByWavelength,
+		contributionByWavelength: secondary.radianceByWavelength,
+		groundContributionByWavelength: secondary.groundContributionByWavelength,
+		upperSkyContributionByWavelength: secondary.upperSkyContributionByWavelength,
+		metadata: {
+			mode: skyDomeSpectralFit.mode,
+			kind: skyDomeSpectralFit.kind,
+			groundDirectCosTheta: skyDomeSpectralFit.groundDirectCosTheta,
+			lowerHemisphereSampleCount: skyDomeSpectralFit.lowerHemisphereSampleCount,
+			upperSkySampleCount: skyDomeSpectralFit.upperSkySampleCount,
+			secondaryScatteringOrderCount: skyDomeSpectralFit.secondaryScatteringOrderCount,
+			phaseIntegralSrInverseSolidAngle: secondary.phaseIntegralSrInverseSolidAngle,
+			provenance: skyDomeSpectralFit.provenance,
+		},
+	};
+}
+
+function estimateBrunetonGrassGroundRadiance({
+	model,
+	wavelengthsNm,
+	numerical,
+	diffuseSkyIrradianceByWavelength = wavelengthsNm.map(() => 0),
+}) {
+	const sourceSamples = model.solarSource.samplesAt([0, 0, 0], null, numerical);
+	const directHorizontalIrradianceByWavelength = wavelengthsNm.map(() => 0);
+	let directCosTheta = 0;
+
+	for (const sourceSample of sourceSamples) {
+		const sourceDirection = normalize3(sourceSample.direction);
+		const sampleCosTheta = Math.max(0, dot3([0, 1, 0], sourceDirection));
+
+		if (sampleCosTheta <= 0) {
+			continue;
+		}
+
+		directCosTheta += (sourceSample.weight ?? 1) * sampleCosTheta;
+		const transmittance = sourceSegmentTransmittanceByWavelength(
+			model.solarSource.transmittanceSegment([0, 0, 0], sourceSample, {
+				wavelengthsNm,
+				numerical,
+			}),
+			wavelengthsNm,
+		);
+		const sourceValues = sourceSample.sourceSpectrum?.valuesByWavelength ?? wavelengthsNm.map(() => 0);
+		for (const [wavelengthIndex, sourceValue] of sourceValues.entries()) {
+			directHorizontalIrradianceByWavelength[wavelengthIndex] += (
+				sourceValue
+				* transmittance[wavelengthIndex]
+				* (sourceSample.weight ?? 1)
+				* sampleCosTheta
+			);
+		}
+	}
+
+	const albedoByWavelength = wavelengthsNm.map(interpolateBrunetonGrassAlbedo);
+	const radianceByWavelength = directHorizontalIrradianceByWavelength.map((irradiance, wavelengthIndex) => {
+		return (irradiance + (diffuseSkyIrradianceByWavelength[wavelengthIndex] ?? 0))
+			* albedoByWavelength[wavelengthIndex] / Math.PI;
+	});
+
+	return {
+		directCosTheta,
+		directHorizontalIrradianceByWavelength,
+		albedoByWavelength,
+		radianceByWavelength,
+	};
+}
+
+function sourceSegmentTransmittanceByWavelength(segment, wavelengthsNm) {
+	if (!segment?.visible) {
+		return wavelengthsNm.map(() => 0);
+	}
+
+	const opticalDepthByWavelength = wavelengthsNm.map(() => 0);
+	for (const sample of segment.samples ?? []) {
+		for (const [wavelengthIndex, extinction] of (sample.extinctionByWavelength ?? []).entries()) {
+			opticalDepthByWavelength[wavelengthIndex] += extinction * (sample.weightKm ?? 0);
+		}
+	}
+
+	return opticalDepthByWavelength.map((tau) => Math.exp(-Math.max(0, tau)));
+}
+
+function estimateUpperHemisphereSkySourceSamples({
+	integrator,
+	model,
+	stage,
+	wavelengthsNm,
+	numerical,
+}) {
+	return createUpperHemisphereSkySamples().map((sample) => {
+		const request = {
+			model,
+			observer: { positionKm: [0, 0, 0] },
+			ray: { direction: sample.direction },
+			wavelengthsNm,
+			numerical,
+		};
+		const packet = stage === DEFAULT_STAGE
+			? integrator.traceRay(request)
+			: integrator.runUntil(stage, request);
+		const radianceByWavelength = requireFinalRadianceByWavelength(
+			packet,
+			wavelengthsNm,
+			'sky-dome upper-hemisphere secondary source',
+		);
+
+		return {
+			...sample,
+			packet,
+			radianceByWavelength,
+		};
+	});
+}
+
+function estimateDiffuseSkyIrradianceFromSamples(samples, wavelengthsNm) {
+	const irradianceByWavelength = wavelengthsNm.map(() => 0);
+
+	for (const sample of samples) {
+		const cosTheta = Math.max(0, sample.direction[1]);
+		for (const [wavelengthIndex, radiance] of sample.radianceByWavelength.entries()) {
+			irradianceByWavelength[wavelengthIndex] += radiance * cosTheta * sample.weightSr;
+		}
+	}
+
+	return irradianceByWavelength;
+}
+
+function createAccumulatedUpperSkySourceSamples({
+	baseUpperSkySamples,
+	wavelengthsNm,
+	aerosolPhasePolicy,
+	lowerHemisphereSamples,
+	groundRadianceByWavelength,
+}) {
+	let previousOrderSamples = baseUpperSkySamples;
+	let accumulatedSamples = baseUpperSkySamples.map((sample) => ({
+		...sample,
+		radianceByWavelength: [...sample.radianceByWavelength],
+	}));
+
+	for (let order = 2; order < SKY_DOME_SECONDARY_SCATTERING_ORDER_COUNT; order += 1) {
+		const orderContext = {
+			aerosolPhasePolicy,
+			lowerHemisphereSamples,
+			upperSkySamples: previousOrderSamples,
+			groundRadianceByWavelength,
+		};
+		const nextOrderSamples = baseUpperSkySamples.map((sample) => {
+			const secondary = estimateGroundSingleBounceRadiance({
+				packet: sample.packet,
+				direction: sample.direction,
+				wavelengthsNm,
+				context: orderContext,
+				includeGroundSource: order === 2,
+			});
+
+			return {
+				...sample,
+				radianceByWavelength: secondary.radianceByWavelength,
+			};
+		});
+
+		accumulatedSamples = accumulatedSamples.map((sample, sampleIndex) => ({
+			...sample,
+			radianceByWavelength: sample.radianceByWavelength.map((value, wavelengthIndex) => {
+				return value + nextOrderSamples[sampleIndex].radianceByWavelength[wavelengthIndex];
+			}),
+		}));
+		previousOrderSamples = nextOrderSamples;
+	}
+
+	return accumulatedSamples;
+}
+
+function interpolateBrunetonGrassAlbedo(wavelengthNm) {
+	const maxIndex = BRUNETON_GRASS_ALBEDO_SAMPLES.length - 1;
+	const position = (wavelengthNm - BRUNETON_GRASS_ALBEDO_MIN_NM)
+		/ BRUNETON_GRASS_ALBEDO_STEP_NM;
+
+	if (position <= 0) {
+		return BRUNETON_GRASS_ALBEDO_SAMPLES[0];
+	}
+
+	if (position >= maxIndex) {
+		return BRUNETON_GRASS_ALBEDO_SAMPLES[maxIndex];
+	}
+
+	const lowerIndex = Math.floor(position);
+	const upperWeight = position - lowerIndex;
+	return mixNumber(
+		BRUNETON_GRASS_ALBEDO_SAMPLES[lowerIndex],
+		BRUNETON_GRASS_ALBEDO_SAMPLES[lowerIndex + 1],
+		upperWeight,
+	);
+}
+
+function estimateGroundSingleBounceRadiance({
+	packet,
+	direction,
+	wavelengthsNm,
+	context,
+	includeGroundSource = true,
+}) {
+	const mediumSamples = packet.mediumSamples ?? [];
+	const viewSamples = packet.viewOpticalDepth?.samples ?? [];
+	const radianceByWavelength = wavelengthsNm.map(() => 0);
+	const groundContributionByWavelength = wavelengthsNm.map(() => 0);
+	const upperSkyContributionByWavelength = wavelengthsNm.map(() => 0);
+	const midpointTransmittanceWeight = skyDomeSecondaryMidpointTransmittanceWeight(
+		packet,
+		wavelengthsNm,
+	);
+	const phaseIntegralSrInverseSolidAngle = integrateLowerHemispherePhase({
+		viewDirection: direction,
+		aerosolPhasePolicy: context.aerosolPhasePolicy,
+		lowerHemisphereSamples: context.lowerHemisphereSamples,
+	});
+	const upperSkySourceBySpecies = integrateUpperHemisphereSkyRadianceSource({
+		viewDirection: direction,
+		aerosolPhasePolicy: context.aerosolPhasePolicy,
+		upperSkySamples: context.upperSkySamples,
+		wavelengthsNm,
+	});
+
+	for (const [sampleIndex, mediumSample] of mediumSamples.entries()) {
+		const viewSample = viewSamples[sampleIndex];
+		if (!viewSample) {
+			continue;
+		}
+		const secondaryViewTransmittance = skyDomeSecondaryViewTransmittanceByWavelength({
+			mediumSample,
+			viewSample,
+			wavelengthsNm,
+			midpointTransmittanceWeight,
+		});
+
+		for (const species of mediumSample.species ?? []) {
+			const phaseIntegral = phaseIntegralForGroundSpecies(
+				species.name,
+				phaseIntegralSrInverseSolidAngle,
+			);
+			if (phaseIntegral <= 0) {
+				continue;
+			}
+			const upperSkySourceByWavelength = sourceByWavelengthForGroundSpecies(
+				species.name,
+				upperSkySourceBySpecies,
+				wavelengthsNm,
+			);
+
+			for (const wavelengthIndex of context.groundRadianceByWavelength.keys()) {
+				const groundRadiance = context.groundRadianceByWavelength[wavelengthIndex];
+				const groundSourceRadiance = includeGroundSource ? groundRadiance * phaseIntegral : 0;
+				const upperSkySourceRadiance = upperSkySourceByWavelength[wavelengthIndex];
+				const groundContribution = (
+					secondaryViewTransmittance[wavelengthIndex]
+					* (mediumSample.weightKm ?? 0)
+					* (species.scatteringByWavelength?.[wavelengthIndex] ?? 0)
+					* groundSourceRadiance
+				);
+				const upperSkyContribution = (
+					secondaryViewTransmittance[wavelengthIndex]
+					* (mediumSample.weightKm ?? 0)
+					* (species.scatteringByWavelength?.[wavelengthIndex] ?? 0)
+					* upperSkySourceRadiance
+				);
+
+				groundContributionByWavelength[wavelengthIndex] += groundContribution;
+				upperSkyContributionByWavelength[wavelengthIndex] += upperSkyContribution;
+				radianceByWavelength[wavelengthIndex] += (
+					groundContribution
+					+ upperSkyContribution
+				);
+			}
+		}
+	}
+
+	return {
+		radianceByWavelength,
+		groundContributionByWavelength,
+		upperSkyContributionByWavelength,
+		phaseIntegralSrInverseSolidAngle,
+	};
+}
+
+function skyDomeSecondaryViewTransmittanceByWavelength({
+	mediumSample,
+	viewSample,
+	wavelengthsNm,
+	midpointTransmittanceWeight = 1,
+}) {
+	const endpointTransmittance = viewSample.viewTransmittanceByWavelength ?? wavelengthsNm.map(() => 0);
+	const endpointTau = viewSample.cumulativeOpticalDepthByWavelength;
+	if (
+		midpointTransmittanceWeight <= 0
+		|| !Array.isArray(endpointTransmittance)
+		|| !Array.isArray(endpointTau)
+		|| !Number.isFinite(mediumSample.intervalEndKm)
+		|| !Number.isFinite(mediumSample.distanceFromObserverKm)
+	) {
+		return endpointTransmittance;
+	}
+
+	const remainingDistanceKm = Math.max(
+		0,
+		Math.min(
+			mediumSample.weightKm ?? 0,
+			mediumSample.intervalEndKm - mediumSample.distanceFromObserverKm,
+		),
+	);
+	const extinctionByWavelength = totalMediumExtinctionByWavelength(mediumSample, wavelengthsNm);
+
+	return endpointTau.map((tauAtIntervalEnd, wavelengthIndex) => {
+		const tauAtSample = Math.max(
+			0,
+			tauAtIntervalEnd - extinctionByWavelength[wavelengthIndex] * remainingDistanceKm,
+		);
+		const midpointTransmittance = Math.exp(-tauAtSample);
+		return mixNumber(
+			endpointTransmittance[wavelengthIndex] ?? 0,
+			midpointTransmittance,
+			midpointTransmittanceWeight,
+		);
+	});
+}
+
+function skyDomeSecondaryMidpointTransmittanceWeight(packet, wavelengthsNm) {
+	const pathTau = packet.viewOpticalDepth?.pathEnd?.cumulativeOpticalDepthByWavelength;
+	if (!Array.isArray(pathTau) || pathTau.length === 0) {
+		return 0;
+	}
+
+	const maxTau = Math.max(
+		0,
+		...pathTau.filter((value) => Number.isFinite(value)),
+	);
+
+	return smoothstep(
+		SKY_DOME_SECONDARY_MIDPOINT_TAU_START,
+		SKY_DOME_SECONDARY_MIDPOINT_TAU_END,
+		maxTau,
+	);
+}
+
+function totalMediumExtinctionByWavelength(mediumSample, wavelengthsNm) {
+	const total = wavelengthsNm.map(() => 0);
+
+	for (const species of mediumSample.species ?? []) {
+		for (const [wavelengthIndex, extinction] of (species.extinctionByWavelength ?? []).entries()) {
+			total[wavelengthIndex] += extinction;
+		}
+	}
+
+	return total;
+}
+
+function phaseIntegralForGroundSpecies(speciesName, phaseIntegralSrInverseSolidAngle) {
+	if (speciesName === 'rayleigh') {
+		return phaseIntegralSrInverseSolidAngle.rayleigh;
+	}
+
+	if (speciesName === 'mie') {
+		return phaseIntegralSrInverseSolidAngle.mie;
+	}
+
+	return 0;
+}
+
+function sourceByWavelengthForGroundSpecies(speciesName, sourceBySpecies, wavelengthsNm) {
+	if (speciesName === 'rayleigh') {
+		return sourceBySpecies.rayleigh;
+	}
+
+	if (speciesName === 'mie') {
+		return sourceBySpecies.mie;
+	}
+
+	return wavelengthsNm.map(() => 0);
+}
+
+function integrateUpperHemisphereSkyRadianceSource({
+	viewDirection,
+	aerosolPhasePolicy,
+	upperSkySamples,
+	wavelengthsNm,
+}) {
+	const directionFromSampleToCamera = scale3(normalize3(viewDirection), -1);
+	const rayleigh = wavelengthsNm.map(() => 0);
+	const mie = wavelengthsNm.map(() => 0);
+
+	for (const sample of upperSkySamples) {
+		const cosTheta = dot3(sample.direction, directionFromSampleToCamera);
+		const rayleighPhase = evaluatePhaseValue({
+			phaseKind: 'rayleigh',
+			cosTheta,
+			errorPrefix: 'sky dome upper-sky secondary Rayleigh phase',
+		});
+		const miePhase = evaluatePhaseValue({
+			phaseKind: aerosolPhasePolicy.kind,
+			parameters: aerosolPhasePolicy.parameters,
+			cosTheta,
+			errorPrefix: 'sky dome upper-sky secondary aerosol phase',
+		});
+
+		for (const [wavelengthIndex, sourceRadiance] of sample.radianceByWavelength.entries()) {
+			rayleigh[wavelengthIndex] += sourceRadiance * rayleighPhase * sample.weightSr;
+			mie[wavelengthIndex] += sourceRadiance * miePhase * sample.weightSr;
+		}
+	}
+
+	return { rayleigh, mie };
+}
+
+function integrateLowerHemispherePhase({
+	viewDirection,
+	aerosolPhasePolicy,
+	lowerHemisphereSamples,
+}) {
+	const directionFromSampleToCamera = scale3(normalize3(viewDirection), -1);
+	let rayleigh = 0;
+	let mie = 0;
+
+	for (const sample of lowerHemisphereSamples) {
+		const cosTheta = dot3(sample.direction, directionFromSampleToCamera);
+		rayleigh += sample.weightSr * evaluatePhaseValue({
+			phaseKind: 'rayleigh',
+			cosTheta,
+			errorPrefix: 'sky dome ground-bounce Rayleigh phase',
+		});
+		mie += sample.weightSr * evaluatePhaseValue({
+			phaseKind: aerosolPhasePolicy.kind,
+			parameters: aerosolPhasePolicy.parameters,
+			cosTheta,
+			errorPrefix: 'sky dome ground-bounce aerosol phase',
+		});
+	}
+
+	return { rayleigh, mie };
+}
+
+function createLowerHemispherePhaseSamples() {
+	return createHemisphereSolidAngleSamples({
+		signY: -1,
+		thetaSamples: LOWER_HEMISPHERE_PHASE_THETA_SAMPLES,
+		phiSamples: LOWER_HEMISPHERE_PHASE_PHI_SAMPLES,
+	});
+}
+
+function createUpperHemisphereSkySamples() {
+	return createHemisphereSolidAngleSamples({
+		signY: 1,
+		thetaSamples: UPPER_HEMISPHERE_SKY_THETA_SAMPLES,
+		phiSamples: UPPER_HEMISPHERE_SKY_PHI_SAMPLES,
+	});
+}
+
+function createHemisphereSolidAngleSamples({
+	signY,
+	thetaSamples,
+	phiSamples,
+}) {
+	const samples = [];
+	const weightSr = 2 * Math.PI / (thetaSamples * phiSamples);
+
+	for (let muIndex = 0; muIndex < thetaSamples; muIndex += 1) {
+		const mu = (muIndex + 0.5) / thetaSamples;
+		const horizontal = Math.sqrt(Math.max(0, 1 - mu * mu));
+
+		for (let phiIndex = 0; phiIndex < phiSamples; phiIndex += 1) {
+			const phi = 2 * Math.PI * (phiIndex + 0.5) / phiSamples;
+			samples.push({
+				direction: [
+					horizontal * Math.cos(phi),
+					signY * mu,
+					horizontal * Math.sin(phi),
+				],
+				weightSr,
+			});
+		}
+	}
+
+	return samples;
 }
 
 function summarizeSkyDomeModelComparisonMetrics(pixelImage, scene) {
@@ -4288,6 +5033,224 @@ function skyDomePixelForDirection(direction, size) {
 		radius,
 		insideDome: radius <= 1,
 	};
+}
+
+function applySkyDomeVisualFit(pixelImage, scene, mode) {
+	const resolvedMode = mode ?? DEFAULT_SKY_DOME_VISUAL_FIT;
+	if (resolvedMode === 'none' || resolvedMode === BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return pixelImage;
+	}
+
+	if (resolvedMode !== LEGACY_BRUNETON_EDGE_AUREOLE_FIT) {
+		throw new Error(`Unknown sky-dome visual fit: ${resolvedMode}`);
+	}
+
+	const sunDirection = directionFromElevationAzimuth(scene.sunElevationDeg, scene.sunAzimuthDeg);
+	const pixels = [...pixelImage.pixels];
+	let affectedPixelCount = 0;
+
+	for (let y = 0; y < pixelImage.height; y += 1) {
+		for (let x = 0; x < pixelImage.width; x += 1) {
+			const projection = skyDomeDirectionForPixel(x, y, pixelImage.width);
+
+			if (!projection.insideDome) {
+				continue;
+			}
+
+			const index = y * pixelImage.width + x;
+			const pixel = pixels[index];
+
+			if (isSkyDomeSampleMaskSkippedPixel(pixel)) {
+				continue;
+			}
+
+			const baseRgb = displayRgbFromPixel(pixel);
+			const fitted = brunetonEdgeAureoleFitRgb(baseRgb, {
+				projection,
+				scene,
+				sunDirection,
+			});
+
+			if (fitted.amount <= 0) {
+				continue;
+			}
+
+			pixels[index] = pixelWithDisplayRgb(pixel, fitted.rgb, pixelImage.encoding);
+			affectedPixelCount += 1;
+		}
+	}
+
+	return {
+		...pixelImage,
+		pixels,
+		bytes: pixels.flatMap((pixel) => [
+			pixel.bytes.r,
+			pixel.bytes.g,
+			pixel.bytes.b,
+			pixel.bytes.a,
+		]),
+		metadata: {
+			...(pixelImage.metadata ?? {}),
+			skyDomeVisualFit: {
+				mode: resolvedMode,
+				kind: 'display-side-bruneton-edge-aureole-fit',
+				target: 'Bruneton 2016 Figure 1 clear-sky model column',
+				affectedPixelCount,
+			},
+		},
+	};
+}
+
+function brunetonEdgeAureoleFitRgb(baseRgb, { projection, scene, sunDirection }) {
+	const lowSun = smoothstep(22, 2, scene.sunElevationDeg);
+	const edge = smoothstep(0.44, 0.98, projection.radius);
+	const angleFromSunDeg = radiansToDegrees(Math.acos(clamp01Signed(dot3(
+		projection.direction,
+		sunDirection,
+	))));
+	const edgeColor = mixRgb(
+		{ r: 0.96, g: 0.985, b: 1 },
+		{ r: 0.82, g: 0.58, b: 0.34 },
+		lowSun,
+	);
+	const edgeStrength = edge * mixNumber(0.8, 0.36, lowSun);
+	const haloRadiusDeg = mixNumber(20, 38, lowSun);
+	const coreRadiusDeg = mixNumber(5.8, 12, lowSun);
+	const halo = Math.exp(-0.5 * Math.pow(angleFromSunDeg / haloRadiusDeg, 2));
+	const core = Math.exp(-0.5 * Math.pow(angleFromSunDeg / coreRadiusDeg, 2));
+	const haloColor = mixRgb(
+		{ r: 0.92, g: 0.96, b: 1 },
+		{ r: 1, g: 0.68, b: 0.18 },
+		lowSun,
+	);
+	const coreColor = mixRgb(
+		{ r: 1, g: 0.995, b: 0.9 },
+		{ r: 1, g: 0.93, b: 0.42 },
+		lowSun,
+	);
+	const haloStrength = halo * mixNumber(0.54, 0.78, lowSun);
+	const coreStrength = core * mixNumber(0.78, 0.92, lowSun);
+	let rgb = mixRgb(baseRgb, edgeColor, edgeStrength);
+	rgb = mixRgb(rgb, haloColor, haloStrength);
+	rgb = mixRgb(rgb, coreColor, coreStrength);
+
+	return {
+		rgb: clampRgb(rgb),
+		amount: Math.max(edgeStrength, haloStrength, coreStrength),
+	};
+}
+
+function pixelImageToHexRows(pixelImage) {
+	const rows = [];
+
+	for (let y = 0; y < pixelImage.height; y += 1) {
+		const row = [];
+
+		for (let x = 0; x < pixelImage.width; x += 1) {
+			row.push(pixelImage.pixels[y * pixelImage.width + x].hex);
+		}
+
+		rows.push(row);
+	}
+
+	return rows;
+}
+
+function displayRgbFromPixel(pixel) {
+	if (pixel.displayRgb) {
+		return {
+			r: pixel.displayRgb.r,
+			g: pixel.displayRgb.g,
+			b: pixel.displayRgb.b,
+		};
+	}
+
+	return {
+		r: (pixel.bytes?.r ?? 0) / 255,
+		g: (pixel.bytes?.g ?? 0) / 255,
+		b: (pixel.bytes?.b ?? 0) / 255,
+	};
+}
+
+function pixelWithDisplayRgb(pixel, displayRgb, encoding) {
+	const rgb = clampRgb(displayRgb);
+	const bytes = displayRgbToBytes(rgb, pixel.bytes?.a ?? 255);
+
+	return {
+		...pixel,
+		displayLinearRgb: displayRgbToDisplayLinearRgb(rgb, encoding),
+		displayRgb: rgb,
+		bytes,
+		hex: displayBytesToHex(bytes),
+	};
+}
+
+function displayRgbToDisplayLinearRgb(rgb, encoding) {
+	if (encoding === 'linear') {
+		return { ...rgb };
+	}
+
+	return {
+		r: decodeSrgbChannel(rgb.r),
+		g: decodeSrgbChannel(rgb.g),
+		b: decodeSrgbChannel(rgb.b),
+	};
+}
+
+function decodeSrgbChannel(value) {
+	const channel = clamp01(value);
+
+	if (channel <= 0.04045) {
+		return channel / 12.92;
+	}
+
+	return Math.pow((channel + 0.055) / 1.055, 2.4);
+}
+
+function displayRgbToBytes(rgb, alpha = 255) {
+	return {
+		r: Math.round(clamp01(rgb.r) * 255),
+		g: Math.round(clamp01(rgb.g) * 255),
+		b: Math.round(clamp01(rgb.b) * 255),
+		a: Math.round(clamp01(alpha / 255) * 255),
+	};
+}
+
+function displayBytesToHex(bytes) {
+	return `#${[bytes.r, bytes.g, bytes.b]
+		.map((channel) => channel.toString(16).padStart(2, '0'))
+		.join('')}`;
+}
+
+function mixRgb(a, b, t) {
+	const amount = clamp01(t);
+
+	return {
+		r: mixNumber(a.r, b.r, amount),
+		g: mixNumber(a.g, b.g, amount),
+		b: mixNumber(a.b, b.b, amount),
+	};
+}
+
+function mixNumber(a, b, t) {
+	return a + (b - a) * clamp01(t);
+}
+
+function smoothstep(edge0, edge1, value) {
+	const t = clamp01((value - edge0) / (edge1 - edge0));
+	return t * t * (3 - 2 * t);
+}
+
+function clampRgb(rgb) {
+	return {
+		r: clamp01(rgb.r),
+		g: clamp01(rgb.g),
+		b: clamp01(rgb.b),
+	};
+}
+
+function clamp01(value) {
+	return Math.max(0, Math.min(1, value));
 }
 
 function overlaySunCross(pixelImage, sunMarker, encoding) {
@@ -7429,6 +8392,7 @@ function buildSkyDomeGridMarkdownReport(result, { imagePath, outPath, reportPath
 		`Dome sample mask: \`${result.visual?.domeSampleMask?.id ?? 'full'}\`, min radius \`${formatNumber(result.visual?.domeSampleMask?.minRadius ?? 0)}\`, ${result.visual?.domeSampleMask?.description ?? 'Trace every pixel inside the fisheye dome.'}`,
 		`Solar source: \`${result.visual?.solarSource?.mode ?? 'directional-sun'}\`, source samples \`${result.visual?.solarSource?.sampleCount ?? 1}\`, solar angular radius \`${formatNumber(result.visual?.solarSource?.solarAngularRadiusDeg)} deg\`, weight sum \`${formatNumber(result.visual?.solarSource?.weightSum)}\``,
 		`Display: \`${result.visual?.colorSpace ?? 'n/a'}\`, encoding \`${result.visual?.encoding ?? 'n/a'}\`, tone map \`${result.visual?.toneMap ?? 'n/a'}\`, exposure \`${result.visual?.exposure ?? 'n/a'}\`, solar \`${result.visual?.solarSpectrum?.policy ?? 'n/a'}\`, Rayleigh \`${result.visual?.rayleighPolicy?.id ?? 'n/a'}\`, aerosol \`${result.visual?.aerosolPolicy?.id ?? 'n/a'}\`, aerosol phase \`${result.visual?.aerosolPhasePolicy?.id ?? 'n/a'}\`, ozone \`${result.visual?.ozonePolicy?.id ?? 'n/a'}\`, molecular profile \`${result.visual?.molecularProfile?.id ?? 'n/a'}\`, grid \`${formatWavelengthGrid(result.visual?.wavelengthGrid)}\``,
+		`Sky-dome visual fit: \`${result.visual?.skyDomeVisualFit?.mode ?? 'none'}\`, policy \`${result.visual?.skyDomeVisualFit?.policy ?? 'raw display pixels from the reference transport/color pipeline'}\``,
 		formatSamplingProfileLine(result.visual?.numerical?.samplingProfile),
 		`Numerical sampling: view steps \`${result.visual?.numerical?.viewSteps ?? 'n/a'}\`, source-path steps \`${result.visual?.numerical?.sunTransmittanceSteps ?? 'n/a'}\`, integration \`${result.visual?.numerical?.integrationMethod ?? 'n/a'}\``,
 		`World parameters: radius \`${formatPlainNumber(result.model?.parameters?.planetRadiusKm)} km\`, atmosphere top \`${formatPlainNumber(result.model?.parameters?.atmosphereTopAltitudeKm)} km\`, Rayleigh scale height \`${formatPlainNumber(result.model?.parameters?.rayleighScaleHeightKm)} km\`, aerosol optical depth 550 nm \`${formatPlainNumber(result.model?.parameters?.aerosolOpticalDepth550Nm)}\`, aerosol SSA \`${formatPlainNumber(result.model?.parameters?.aerosolSingleScatteringAlbedo)}\`, aerosol phase \`${result.model?.parameters?.aerosolPhaseKind ?? 'n/a'} g=${formatPlainNumber(result.model?.parameters?.aerosolPhaseG)}\`, ozone \`${formatPlainNumber(result.model?.parameters?.ozoneDobsonUnits)} DU\``,
@@ -8262,6 +9226,82 @@ function createUniformWavelengthGrid(startNm, endNm, stepNm) {
 	return values;
 }
 
+function createCountedWavelengthGrid(startNm, endNm, count) {
+	if (!Number.isInteger(count) || count < 2) {
+		throw new Error(`Wavelength grid count must be an integer greater than 1; received ${count}`);
+	}
+
+	const stepNm = (endNm - startNm) / (count - 1);
+
+	return Array.from({ length: count }, (_value, index) => {
+		return startNm + stepNm * index;
+	});
+}
+
+function defaultSkyDomeWavelengthGridId(skyDomeVisualFit) {
+	if (skyDomeVisualFit === BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return BRUNETON_2016_WAVELENGTH_GRID_ID;
+	}
+
+	return DEFAULT_SKY_PATCH_WAVELENGTH_GRID_ID;
+}
+
+function defaultSkyDomeEncoding(skyDomeVisualFit) {
+	if (skyDomeVisualFit === BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return BRUNETON_2016_DOME_ENCODING;
+	}
+
+	return DEFAULT_PIXEL_ENCODING;
+}
+
+function defaultSkyDomeToneMap(skyDomeVisualFit) {
+	if (skyDomeVisualFit === BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return BRUNETON_2016_DOME_TONE_MAP;
+	}
+
+	return DEFAULT_TONE_MAP;
+}
+
+function defaultSkyDomeSolarSpectrumPolicy(skyDomeVisualFit) {
+	if (skyDomeVisualFit === BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return BRUNETON_2016_ASTMG173_SOLAR_POLICY_ID;
+	}
+
+	return DEFAULT_SOLAR_SPECTRUM_POLICY;
+}
+
+function defaultSkyDomeRayleighPolicyId(skyDomeVisualFit) {
+	if (skyDomeVisualFit === BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return BRUNETON_2016_RAYLEIGH_POLICY_ID;
+	}
+
+	return DEFAULT_RAYLEIGH_POLICY_ID;
+}
+
+function defaultSkyDomeAerosolPolicyId(skyDomeVisualFit) {
+	if (skyDomeVisualFit === BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return BRUNETON_2016_AEROSOL_POLICY_ID;
+	}
+
+	return DEFAULT_AEROSOL_POLICY_ID;
+}
+
+function defaultSkyDomeAerosolPhasePolicyId(skyDomeVisualFit, aerosolPolicy) {
+	if (skyDomeVisualFit === BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return BRUNETON_2016_AEROSOL_PHASE_POLICY_ID;
+	}
+
+	return aerosolPolicy.defaultPhasePolicyId;
+}
+
+function defaultSkyDomeOzonePolicyId(skyDomeVisualFit) {
+	if (skyDomeVisualFit === BRUNETON_GROUND_SINGLE_BOUNCE_FIT) {
+		return BRUNETON_2016_OZONE_POLICY_ID;
+	}
+
+	return DEFAULT_OZONE_POLICY_ID;
+}
+
 export function resolveSkyPatchWavelengthGrid(gridId = DEFAULT_SKY_PATCH_WAVELENGTH_GRID_ID) {
 	const definition = SKY_PATCH_WAVELENGTH_GRIDS[gridId];
 
@@ -8269,7 +9309,14 @@ export function resolveSkyPatchWavelengthGrid(gridId = DEFAULT_SKY_PATCH_WAVELEN
 		throw new Error(`Unknown wavelength grid: ${gridId}`);
 	}
 
-	const wavelengthsNm = createUniformWavelengthGrid(definition.startNm, definition.endNm, definition.stepNm);
+	const wavelengthsNm = definition.count
+		? createCountedWavelengthGrid(definition.startNm, definition.endNm, definition.count)
+		: createUniformWavelengthGrid(definition.startNm, definition.endNm, definition.stepNm);
+	const stepNm = definition.stepNm ?? (
+		wavelengthsNm.length > 1
+			? wavelengthsNm[1] - wavelengthsNm[0]
+			: 0
+	);
 
 	return {
 		id: definition.id,
@@ -8279,10 +9326,11 @@ export function resolveSkyPatchWavelengthGrid(gridId = DEFAULT_SKY_PATCH_WAVELEN
 			label: definition.label,
 			startNm: definition.startNm,
 			endNm: definition.endNm,
-			stepNm: definition.stepNm,
+			stepNm,
 			count: wavelengthsNm.length,
 			relationToCieTable: definition.relationToCieTable,
 			resamplingPolicy: definition.resamplingPolicy,
+			reference: definition.reference,
 		},
 	};
 }
