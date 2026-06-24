@@ -4,32 +4,54 @@ Deployable Flat app documentation for the false-sky / sky-comparison project.
 
 ## Current Active Task
 
-Active bootstrap record: clean-room Bruneton start-fresh skydome experiment,
-now closed with step 032 as the best current Figure 1 comparison fit and
-reference handoff candidate.
+Active bootstrap record: Algorithm32 shader iteration ladder. The accepted
+fixed spherical, distant-Sun browser shader endpoint is `054`. Shader
+performance benchmark scaffolding now exists as `browser-shader-benchmark`;
+artifact `067-browser-shader-benchmark` proves structured diagnostics, but no
+isolated GPU timing baseline exists because this Chromium/WebGL backend did
+not expose `EXT_disjoint_timer_query_webgl2`. Treat
+`069-browser-shader-benchmark` only as a cautionary aggressive-batching
+artifact. Resume performance work from
+`tmp/atmosphere/algorithm32_shader_lab/browser-shader-benchmark-command.json`
+using a dedicated user-owned browser/harness process or exact process
+ownership. Do not clean up by killing generic `chrome` processes. The earlier
+flat-earth visibility offshoot remains accepted in artifacts `056`, `062`, and
+`065`.
+Local Sun behavior, changing Sun configuration, clouds, app texture rebuilds,
+and production integration remain deferred unless the user explicitly
+redirects to them.
 
-When the active topic is a clean-room source audit, use this README only as a
-routing marker. Do not read the older Flat status/design/plan links below for
-physics, constants, color, sampling, or visual targets. Continue directly to:
+For this active task, use this README only as a routing marker. Do not read the
+older Flat status/design/plan links below for physics, constants, color,
+sampling, or visual targets. Continue directly to:
 
-- [Bruneton Start-Fresh Prompt](plans/bruneton-start-fresh-prompt.md)
-- [Bruneton Start-Fresh Work Log](plans/bruneton-start-fresh-worklog.md)
+- [Atmosphere Cleanroom Design](plans/atmosphere-cleanroom-design/README.md)
+- [Environment Object Color Closeout](plans/atmosphere-cleanroom-design/environment-object-color-closeout.md)
+- [Object Color Transport](plans/atmosphere-cleanroom-design/object-color-transport.md)
+- [Experiment 032 Algorithm](plans/atmosphere-cleanroom-design/experiment-032-algorithm.md)
+- [Reference To Shader Goal](plans/atmosphere-cleanroom-design/reference-to-shader-goal.md)
+- [Algorithm32 Module Design](plans/atmosphere-cleanroom-design/algorithm32-module-design.md)
+- [Algorithm32 Shader Iteration Plan](plans/atmosphere-cleanroom-design/algorithm32-shader-iteration-plan.md)
+- [Algorithm32 Shader Lab Plan](plans/atmosphere-cleanroom-design/algorithm32-shader-lab-plan.md)
+- [Production Flat Shader Differences](plans/atmosphere-cleanroom-design/production-flat-shader-differences.md)
 
-When the active task is reference incorporation or architecture comparison,
-the older reference pipeline docs/code are in scope for architecture and
-integration only:
+Then inspect only when needed:
 
-- [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md)
-- [Reference Code Design](plans/atmosphere_reset/reference/code_design.md)
-- [Reference Status](plans/atmosphere_reset/reference/status.md)
+- `scripts/flat/algorithm32-shader-lab/README.md`
+- `scripts/flat/algorithm32-shader-lab/`
+- `scripts/flat/experimental/bruneton-start-fresh.js`, only when Algorithm32
+  equation/constant implementation detail is needed
 
-For this closed task record, repository docs may guide only file placement and
+For source audits or architecture comparison, explicitly requested older
+skydome/rejected-reference docs may be loaded. Otherwise, keep the environment
+closeout and pipeline handoff docs above as the minimal reload set.
+
+For this active task, repository docs may guide only file placement and
 avoiding unrelated churn. Atmosphere physics, rendering equations, constants,
-color, sampling, and visual targets in the closed lane must come only from
-direct external sources. Future implementation work should incorporate the
-step 032 lessons into the reference implementation rather than continue the
-fresh-lane artifact sequence by default. Do not delete any file that is not
-tracked by Git.
+color, sampling, and visual targets must trace to direct external sources. The
+current implementation work should use Algorithm32 as the CPU oracle for
+shader parity rather than continuing closed artifact lanes by default. Do not
+delete any file that is not tracked by Git.
 
 ## Documents
 
@@ -41,6 +63,20 @@ tracked by Git.
 - [Atmosphere Reset Design](plans/atmosphere_reset/design.md)
 - [Multiple-Scattering Reference Design](plans/atmosphere_reset/multiple_scattering_design.md)
 - [Multiple-Scattering Plan](plans/atmosphere_reset/multiple_scattering_plan.md)
+- [Atmosphere Cleanroom Design](plans/atmosphere-cleanroom-design/README.md)
+- [Experiment 032 Algorithm](plans/atmosphere-cleanroom-design/experiment-032-algorithm.md)
+- [Object Color Transport](plans/atmosphere-cleanroom-design/object-color-transport.md)
+- [Reference To Shader Goal](plans/atmosphere-cleanroom-design/reference-to-shader-goal.md)
+- [Algorithm32 Module Design](plans/atmosphere-cleanroom-design/algorithm32-module-design.md)
+- [Algorithm32 Shader Iteration Plan](plans/atmosphere-cleanroom-design/algorithm32-shader-iteration-plan.md)
+- [Algorithm32 Shader Lab Plan](plans/atmosphere-cleanroom-design/algorithm32-shader-lab-plan.md)
+- [Production Flat Shader Differences](plans/atmosphere-cleanroom-design/production-flat-shader-differences.md)
+- [Object Transport Experiment Plan](plans/atmosphere-cleanroom-design/object-transport-experiment-plan.md)
+- [Environment Object Color Closeout](plans/atmosphere-cleanroom-design/environment-object-color-closeout.md)
+- [Environment Object Color Prompt](plans/atmosphere-cleanroom-design/environment-object-color-prompt.md)
+- [Objective Success Criteria](plans/atmosphere-cleanroom-design/objective-success-criteria.md)
+- [Environment Experiment Run Shape](plans/atmosphere-cleanroom-design/environment-experiment-run-shape.md)
+- [Environment Experiment Preflight Spec](plans/atmosphere-cleanroom-design/environment-experiment-preflight-spec.md)
 - [Reference README](plans/atmosphere_reset/reference/README.md)
 - [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md)
 - [Reference Code Design](plans/atmosphere_reset/reference/code_design.md)

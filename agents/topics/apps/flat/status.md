@@ -4,29 +4,248 @@ This topic tracks notes for a new project named `flat`.
 
 ## Current State
 
-Bruneton start-fresh skydome note:
+Algorithm32 shader status:
 
-- The fresh self-contained Bruneton experiment is closed except for explicit
-  source-audit reruns. Its continuity is in
-  `agents/topics/apps/flat/plans/bruneton-start-fresh-worklog.md`, and its
-  target script remains
-  `scripts/flat/experimental/bruneton-start-fresh.js`. Step 032,
-  `tmp/atmosphere/bruneton_start_fresh/032-figure1-four-view-source-k-no-ground-baseline/`,
-  is the current best Figure 1 comparison fit and reference handoff candidate:
-  four Figure 1 rows, no ground coupling, no direct solar-disc camera term, no
-  ozone, Bruneton 2016 aerosol constants, 15-sample CIE conversion,
-  full-sphere Fibonacci second-order scattering, and source-backed
-  `k = 1 / (5 * 683)`. For clean-room source audits, do not import, reuse,
-  inspect, cite, or derive equations/constants from previous local project
-  implementations, older local docs, status entries, work logs, rerun logs, or
-  generated artifacts. For explicit reference-incorporation tasks, older
-  reference pipeline docs/code are in scope for architecture and integration
-  only; that rejected reference tree now lives under
-  `scripts/flat/atmosphere_rejected/`. External sources remain the authority
-  for equations, constants, expected colors, and visual targets. Do not delete
-  any file that is not
-  tracked by Git; this includes scratch/generated/downloaded files and numbered
-  artifact folders.
+- Current task: execute the Algorithm32 shader iteration ladder. Iteration 1,
+  Browser Three Scene Baseline, is accepted. The agent-launched
+  browser-control branch is rejected, but the user-owned manual Puppeteer
+  harness launch works. The accepted manual artifact is
+  `tmp/atmosphere/algorithm32_shader_lab/018-browser-three-baseline/`, produced
+  by `harness.js --once` with no page errors and a `629 ms` harness duration.
+  The accepted watch-mode reload proof is
+  `tmp/atmosphere/algorithm32_shader_lab/020-browser-three-baseline-watch-reload-check/`.
+  Iteration 2 is accepted by
+  `tmp/atmosphere/algorithm32_shader_lab/021-browser-ray-depth-diagnostics/`
+  and
+  `tmp/atmosphere/algorithm32_shader_lab/022-browser-ray-depth-diagnostics-comparison/`.
+  Iteration 3 is accepted by
+  `tmp/atmosphere/algorithm32_shader_lab/025-browser-atmosphere-components/`
+  and
+  `tmp/atmosphere/algorithm32_shader_lab/026-browser-atmosphere-components-shader-comparison/`.
+  Browser JS and Node atmosphere components matched with max transmittance
+  delta `1.1102230246251565e-16`; the WebGL2 diagnostic shader readback
+  matched browser JS with max shader transmittance delta
+  `0.000007160129086525302`. Iteration 4.1 is accepted by
+  `tmp/atmosphere/algorithm32_shader_lab/027-browser-direct-radiance/`
+  and
+  `tmp/atmosphere/algorithm32_shader_lab/028-browser-direct-radiance-comparison/`.
+  One-wavelength 532 nm first-order selected-pixel radiance agrees across
+  browser JS, independent Node recomputation, and WebGL2 shader readback.
+  Iteration 4.2 is accepted by
+  `tmp/atmosphere/algorithm32_shader_lab/030-browser-direct-radiance-spectral/`
+  and
+  `tmp/atmosphere/algorithm32_shader_lab/031-browser-direct-radiance-spectral-comparison/`.
+  All 15 Algorithm32 first-order spectral channels agree across browser JS,
+  independent Node recomputation, and WebGL2 shader readback for selected
+  pixels. Full-image first-order shader composition on the simple browser
+  scene is accepted by
+  `tmp/atmosphere/algorithm32_shader_lab/032-browser-first-order-image/`.
+  The objective simple-scene image pair `038` measures the first-order shader
+  against full CPU Algorithm32 reference `037` and records the expected missing
+  second-order gap. The first-order isolation pair `040` measures the same
+  shader class against CPU first-order reference `039` and shows near-exact
+  agreement. Selected-pixel second-order diagnostics are accepted in `041`
+  through `045`, and full-image second-order simple-scene parity is accepted by
+  `tmp/atmosphere/algorithm32_shader_lab/048-browser-second-order-image/`.
+  Scene-input second-order parity is accepted by
+  `tmp/atmosphere/algorithm32_shader_lab/051-browser-scene-input-second-order-image/`
+  using a per-pixel browser JS Three Raycaster distance/spectrum texture, and
+  by
+  `tmp/atmosphere/algorithm32_shader_lab/053-browser-gpu-scene-input-second-order-image/`
+  using a GPU-rendered scene-input target through a readback/upload bridge.
+  Artifact `052` is rejected because the scene background was written into sky
+  pixels before the background-clear fix. Direct GPU texture scene-input parity
+  is accepted by
+  `tmp/atmosphere/algorithm32_shader_lab/054-browser-gpu-direct-scene-input-second-order-image/`,
+  which binds the Three render-target texture directly into the atmosphere pass
+  without scene-input readback/upload for shader input.
+  Shader benchmark mode now exists as `browser-shader-benchmark`.
+  `tmp/atmosphere/algorithm32_shader_lab/067-browser-shader-benchmark/`
+  is an accepted smoke artifact proving the mode returns structured timing
+  diagnostics, but this Chromium/WebGL backend did not expose
+  `EXT_disjoint_timer_query_webgl2`, so it does not contain isolated GPU pass
+  timing. `069-browser-shader-benchmark` used aggressive batching and is only
+  a cautionary artifact; the benchmark defaults now yield between samples, use
+  small sample counts, and keep `gl.finish()` fallback timing opt-in. Resume
+  performance work from
+  `tmp/atmosphere/algorithm32_shader_lab/browser-shader-benchmark-command.json`
+  and use a dedicated user-owned browser/harness process or exact process
+  ownership. Do not clean up benchmark runs by killing generic `chrome`
+  processes.
+  Current subjective mountain progress snapshots are accepted by
+  `tmp/atmosphere/algorithm32_shader_lab/049-browser-mountain-second-order-front-high-sun/`
+  and
+  `tmp/atmosphere/algorithm32_shader_lab/050-browser-mountain-second-order-sunset-behind-camera/`;
+  each contains a `side-by-side.png` beside CPU Algorithm32 references from
+  `033` and `034`. Those comparisons are only for progress visibility. The
+  flat-earth visibility offshoot is accepted by artifacts `056`, `062`, and
+  `065` under `tmp/atmosphere/algorithm32_shader_lab/`: `056` records the
+  original cannot-see threshold, `062` records inverse visibility-loss
+  milestones, and `065` records the high-resolution visual gallery. Production
+  flat shader design differences are now documented in
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/production-flat-shader-differences.md`.
+  Next spherical shader work remains moving the browser atmosphere pass from
+  hard-coded analytic intersections to a production-style depth/material
+  texture contract or Three-owned composition pass.
+- The runnable plan is
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/algorithm32-shader-iteration-plan.md`.
+  The broader harness/background plan is
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/algorithm32-shader-lab-plan.md`.
+- The accepted spherical shader endpoint is still `054`. The flat-earth
+  visibility work is a documented user-directed offshoot, not a replacement
+  for the spherical endpoint. Local Sun behavior, changing Sun configuration,
+  clouds, app texture rebuilds, and production integration remain deferred
+  unless explicitly redirected.
+- The reusable Algorithm32 module remains the end product of the cleanroom
+  "reference" effort.
+- "Reference" now means reusable Algorithm32 direct trace APIs,
+  cache-builder APIs, profile/preset data, and shader parity fixtures. It does
+  not mean a separate final renderer, a permanent script-only pipeline, or a
+  revival of the rejected one-stage-per-calculation reference pipeline.
+- Algorithm32 is the shorthand for the final cleanroom algorithm from
+  experiment 032:
+  `tmp/atmosphere/bruneton_start_fresh/032-figure1-four-view-source-k-no-ground-baseline/`.
+  The baseline uses no ozone, no ground coupling, no direct solar-disc camera
+  radiance, Bruneton 2016 aerosol constants, 15-sample CIE conversion,
+  full-sphere Fibonacci second-order scattering, and display-only
+  `k = 1 / (5 * 683)` for Figure 1 comparison output.
+- The active interface workbench is
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/algorithm32-module-design.md`.
+  It drafts APIs for `createAlgorithm32Profile`, `traceSkyRay`,
+  `traceAtmosphereSegment`, `applyAtmosphereToObjectRadiance`,
+  `buildAtmosphereCache`, and `compareShaderSample`.
+- The active framing document is
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/reference-to-shader-goal.md`.
+  It records that Algorithm32 should validate the shader/cache path and may
+  supply promoted kernels for app-side flat/local-Sun texture rebuilds.
+- `scripts/flat/algorithm32-shader-lab/` now exists as an experimental
+  Puppeteer shader-lab scaffold. Its first purpose is only to prove a
+  long-running browser harness can load a local page, reload on command, return
+  useful browser-side JSON, and save artifacts under
+  `tmp/atmosphere/algorithm32_shader_lab/`. It is not production code and does
+  not require a test suite.
+- `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/algorithm32-shader-lab-plan.md`
+  records the planned build-up from this browser-control smoke loop to
+  Node/Three CPU Algorithm32 reference rendering, geometry validation,
+  shared browser/Three shader adapters, and shader parity runs.
+- `scripts/flat/algorithm32-shader-lab/node-three-reference.js` now implements
+  the first Node/Three CPU reference runner. It creates a Three camera, three
+  spectral card meshes, and a diagnostic ground plane, uses
+  `Raycaster.setFromCamera()` for rays/hits, maps those rays into Algorithm32
+  local coordinates, and traces Algorithm32 sky/object spectral packets without
+  Chromium.
+- The object-color experiment is closed. Its closeout is
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/environment-object-color-closeout.md`;
+  the final accepted scene artifact is
+  `tmp/atmosphere/cleanroom_environment/040-scene-gallery/scene-gallery.png`.
+  Do not continue generating numbered environment-object artifacts unless the
+  user explicitly asks for a new diagnostic.
+- The cleanroom docs to load for fresh/compacted agents are listed in
+  `agents/topics/active-topic.md` and routed through
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/README.md`.
+- Older Flat atmosphere docs, rejected pipeline code, previous skydome
+  worklogs, and generated local skydome artifacts are out of scope unless the
+  user explicitly asks for source-audit, historical-reference, or
+  architecture-comparison work.
+- External sources remain the authority for equations, constants, expected
+  colors, and visual targets. Older local project code/docs are not authority
+  for Algorithm32 physics or display choices.
+- Do not delete any file that is not tracked by Git; this includes
+  scratch/generated/downloaded files and numbered artifact folders.
+- Latest shader-lab scaffold verification: `node --check
+  scripts/flat/algorithm32-shader-lab/harness.js`, `node
+  scripts/flat/algorithm32-shader-lab/harness.js --help`, and `node
+  scripts/flat/algorithm32-shader-lab/harness.js --once` passed. The browser
+  smoke artifact is
+  `tmp/atmosphere/algorithm32_shader_lab/002-smoke-reload/`; it reported page
+  reload count `2`, WebGL 2 via SwiftShader, canvas pixel samples, screenshot
+  output, and no page errors.
+- Latest Node/Three Algorithm32 verification: `node --check
+  scripts/flat/algorithm32-shader-lab/node-three-reference.js` and `node
+  scripts/flat/algorithm32-shader-lab/node-three-reference.js` passed. The
+  accepted artifact is
+  `tmp/atmosphere/algorithm32_shader_lab/003-node-three-algorithm32-reference/`
+  with `11` passing criteria, `0` failing, `0` unresolved. It includes
+  `reference-image.png`, `object-mask.png`, `geometry-diagnostics.json`,
+  `transport-diagnostics.json`, `criteria-results.json`, and source/reference
+  metadata.
+- Latest generated shader-lab scene request: `node
+  scripts/flat/algorithm32-shader-lab/node-three-reference.js --scene
+  sunset-floor --width 320 --height 180 --label sunset-floor` produced
+  `tmp/atmosphere/algorithm32_shader_lab/005-sunset-floor/` with `7` passing
+  criteria, `0` failing, `0` unresolved. It contains no card objects, uses the
+  low-Sun Figure 1 case, renders a grass-green floor, and computes the
+  sky/floor through Algorithm32 spectral transport. Artifact
+  `004-sunset-floor` is rejected because the first synthetic floor spectrum
+  clipped red and green together and read as yellow.
+- Latest less-zoom follow-up: `node
+  scripts/flat/algorithm32-shader-lab/node-three-reference.js --scene
+  sunset-floor --sunset-framing less-zoom --width 320 --height 180 --label
+  sunset-floor-less-zoom` produced
+  `tmp/atmosphere/algorithm32_shader_lab/006-sunset-floor-less-zoom/` with
+  `8` passing criteria, `0` failing, `0` unresolved. It keeps the no-object
+  grass-floor sunset scene but uses a `92 deg` vertical FOV so the composition
+  is less zoomed.
+- Subjective mountain scene references are paused for now:
+  `tmp/atmosphere/algorithm32_shader_lab/012-mountain-ridges-framed-large/`
+  and
+  `tmp/atmosphere/algorithm32_shader_lab/013-mountain-ridges-sunset-behind-camera/`.
+  They have `0` formal criteria by design and should be used for visual
+  progress only, not objective shader acceptance. A fresh
+  CPU-only forward rerun exists at
+  `tmp/atmosphere/algorithm32_shader_lab/029-mountain-ridges-framed-large/`,
+  and the current second-order shader-path progress snapshots are `049` and
+  `050`, paired with CPU Algorithm32 references `033` and `034`. Do not
+  generate more
+  CPU-only subjective mountain reruns unless explicitly requested.
+- Latest browser-control update: artifacts `014` and `015` remain rejected
+  records of the failed agent-launched Karma fallback, but artifact `018`
+  proves the existing Puppeteer harness works when the user launches it
+  manually. It supersedes `017`; diagnostic card pixels are computed by
+  projecting each card's Three world position, and all three card samples hit
+  their intended objects. Artifact `020` proves the persistent `--watch` loop:
+  editing the watched command file produced a fresh accepted artifact with
+  pageLoadCount `3` and stable selected-pixel diagnostics.
+- Latest ray/depth update: artifact `021` returned browser-selected camera
+  rays and equivalent hit distances through the watch loop. Artifact `022`
+  independently rebuilt the same scene in Node/Three and matched all selected
+  rays, classifications, hit objects, card projected sample pixels, and finite
+  hit distances with `7` passing criteria, `0` failing, and `0` unresolved.
+- Latest atmosphere-component update: artifact `025` returned selected-pixel
+  path length, altitude range, optical lengths, optical depth, transmittance,
+  and WebGL2 diagnostic shader readback through the watch loop. Artifact `026`
+  compared those outputs against independent Node recomputation and passed
+  `10` criteria, with `0` failing and `0` unresolved.
+- Latest direct-radiance update: artifact `027` returned first-order 532 nm
+  Rayleigh, Mie, path, object-transmitted, and final radiance diagnostics,
+  plus WebGL2 shader readback, through the watch loop. Artifact `028` compared
+  those outputs against independent Node recomputation and passed `10`
+  criteria, with `0` failing and `0` unresolved. Artifact `030` then returned
+  the same first-order diagnostics for all `15` Algorithm32 spectral channels;
+  artifact `031` compared those outputs against independent Node recomputation
+  and passed `9` criteria, with `0` failing and `0` unresolved. Artifact `032`
+  proves the current first-order shader can render a full simple-scene image.
+  Artifact `038` pairs that shader against full CPU Algorithm32 reference `037`
+  and reports display-space `maxAbsRgbDelta = 38` and `meanAbsRgbDelta =
+  11.354444444444445`, with the missing second-order shader contribution named
+  as the known solver difference. Artifact `040` pairs the shader against CPU
+  first-order reference `039` and reports `maxAbsRgbDelta = 1` and
+  `meanAbsRgbDelta = 0.0015277777777777779`, proving first-order image parity.
+  Artifacts `041` through `045` prove selected-pixel second-order radiance
+  parity, and artifact `048` proves full-image second-order parity for the
+  analytic simple scene with display-space `maxAbsRgbDelta = 1` and
+  `meanAbsRgbDelta = 0.0017824074074074075` against CPU Algorithm32 reference
+  `037`. Artifact `051` proves the same shader can consume per-pixel Three
+  Raycaster scene input with the same image diff as `048`; artifact `053`
+  proves a GPU-rendered scene-input target can feed the shader with selected
+  pixels within `1` encoded RGB and image diff `meanAbsRgbDelta =
+  0.8947337962962963` against `037`, with remaining movement classified as
+  edge/rasterization placement. Artifact `054` proves the GPU scene-input
+  texture can be bound directly into the experimental atmosphere pass without
+  the readback/upload bridge, with the same selected-pixel and image-diff
+  behavior as `053`. Artifacts `049` and `050` prove the current
+  second-order shader path can produce the subjective mountain progress views
+  with Algorithm32 reference images beside them.
 
 Atmosphere reset note:
 

@@ -839,3 +839,87 @@ direct external Bruneton paper/source images or outputs as visual targets.
 - Renamed the older atmosphere reference/script tree to
   `scripts/flat/atmosphere_rejected/` at user request and refreshed path
   references so remaining links intentionally point at the rejected tree.
+- Registered `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/` as
+  the documentation home for the new reset that will supersede the rejected
+  reference pipeline.
+- Confirmed that the original spectral-radiance endpoint goal fits the
+  cleanroom design. Recorded the principle that CIE conversion, linear RGB,
+  exposure, tone mapping, PNGs, and report swatches are post-pipeline caller
+  consumers rather than transport-stage outputs.
+- Compared the rejected one-stage-per-calculation pipeline shape against the
+  cleanroom evidence. Recorded the new architecture direction: keep explicit
+  major contract boundaries, but implement the coupled spectral transport work
+  as a solver composed from small source-backed pure kernels rather than public
+  packet stages for every formula.
+- Added
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/experiment-032-algorithm.md`
+  with the step 032 algorithm, equations, active constants, inactive
+  script-carried constants, source references, and explicit algorithmic
+  decisions.
+- Added
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/object-color-transport.md`
+  to make environment-object coloration a first-class cleanroom requirement:
+  finite object rays must compose caller-owned object radiance with spectral
+  view transmittance and atmospheric path radiance.
+- Added
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/object-transport-experiment-plan.md`
+  as the next experimental effort: fork or factor experiment 032 kernels into
+  a finite-segment object-transfer proof before generating the production
+  pipeline.
+- Added
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/environment-object-color-prompt.md`
+  as the active prompt for the next experimental effort. It uses the new script
+  folder `scripts/flat/atmosphere-environment/`, writes numbered artifacts
+  under `tmp/atmosphere/cleanroom_environment/`, and defines success criteria
+  for spectral object transfer, black-object path radiance, linearity,
+  distance effects, Sun-position effects, and keeping display conversion as a
+  post-transport consumer.
+- Added
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/objective-success-criteria.md`
+  to make the success definition objective rather than visual-only. It defines
+  hard spectral transport identities, finite-segment split/recomposition,
+  objective distance and Sun-position checks, a convergence-backed threshold
+  policy, and display-only CIE/RGB review checks. It also records the current
+  limitation: without a measured object/material/atmosphere benchmark, this
+  lane can prove correct transport behavior and usefulness for object
+  coloration, but not absolute outdoor color accuracy.
+- Added the two additional user-requested considerations to the cleanroom
+  environment-object plan as candidate follow-up experiments: a local Sun
+  variant with non-parallel source rays and inverse-square receiver irradiance
+  falloff, and a flat-Earth long-line-of-sight variant using labeled
+  plane-parallel or flat-slab geometry. The baseline remains the Bruneton-style
+  distant directional Sun and spherical atmosphere; these source/geometry
+  changes must be reported as named follow-up experiments with their own
+  objective checks.
+- Added
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/environment-experiment-run-shape.md`
+  with the proposed execution shape for the cleanroom environment-object
+  experiments. The first run is `001-transfer-baseline`, followed by a
+  convergence run, optional Lambertian surface lighting, and the local-Sun and
+  flat long-sightline follow-ups. The first 3D environment is a deterministic
+  local-ENU ray-test scene made of camera point, target cards, object spectra,
+  and explicit finite object rays, with display images derived from recorded
+  spectral transfer packets.
+- Recorded the operating contract for the environment-object lane: once
+  implementation starts, it should proceed as self-guided numbered iterations
+  that survive context compaction and agent bootstraps. Each artifact should
+  state its goal, status, verification, and next step, and work should stop
+  only when the stated state goal is reached, a dead end is documented, or the
+  user interrupts.
+- Added
+  `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/environment-experiment-preflight-spec.md`
+  to lock the first-run decisions before implementation. The first run uses all
+  active experiment 032 constants and assumptions, includes the Bruneton
+  sunrise/sunset and highest-Sun Figure 1 cases, uses algorithmic stress
+  defaults for distances, target placement, and synthetic spectra, requires
+  audit-trail references in the input/output packets, uses the cleanroom
+  script's `--step=<step-id>` CLI shape as the guide for the new experiment
+  CLI, and adds a root
+  `tmp/atmosphere/cleanroom_environment/running-log.md` updated by every
+  numbered iteration with what it is doing and what it learned.
+- Updated the active-topic and Flat README bootstrap handoff so fresh or
+  compacted agents load the minimal environment-object experiment docs first,
+  inspect only `scripts/flat/atmosphere-environment/`, the cleanroom script,
+  and any cleanroom-environment artifacts, and avoid the older skydome/rejected
+  reference history unless explicitly asked for source-audit or architecture
+  comparison work.
