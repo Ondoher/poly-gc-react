@@ -1,4 +1,5 @@
 import * as THREE from '/node_modules/three/build/three.module.js';
+import { OrbitControls } from '/node_modules/three/examples/jsm/controls/OrbitControls.js';
 
 const loadCountKey = 'algorithm32ShaderLabLoadCount';
 const loadCount = Number(sessionStorage.getItem(loadCountKey) || '0') + 1;
@@ -34,8 +35,47 @@ window.runShaderLabSmoke = async function runShaderLabSmoke(command) {
 	if (mode === 'browser-gpu-direct-scene-input-second-order-image') {
 		return runBrowserGpuDirectSceneInputSecondOrderImage(command, startedAt);
 	}
+	if (mode === 'browser-lit-scene-input-capture') {
+		return runBrowserLitSceneInputCapture(command, startedAt);
+	}
+	if (mode === 'browser-soft-shader-packet-passthrough') {
+		return runBrowserSoftShaderPacketPassthrough(command, startedAt);
+	}
+	if (mode === 'browser-packet-driven-distant-sun-shader') {
+		return runBrowserPacketDrivenDistantSunShader(command, startedAt);
+	}
+	if (mode === 'browser-lit-scene-soft-shader-composition') {
+		return runBrowserLitSceneSoftShaderComposition(command, startedAt);
+	}
+	if (mode === 'browser-local-sun-first-order-diagnostics') {
+		return runBrowserLocalSunFirstOrderDiagnostics(command, startedAt);
+	}
+	if (mode === 'browser-local-sun-full-image-shader') {
+		return runBrowserLocalSunFullImageShader(command, startedAt);
+	}
+	if (mode === 'browser-scene-packet-soft-shader-image') {
+		return runBrowserScenePacketSoftShaderImage(command, startedAt);
+	}
 	if (mode === 'browser-mountain-shader-image') {
 		return runBrowserMountainShaderImage(command, startedAt);
+	}
+	if (mode === 'browser-mountain-lit-scene-input-capture') {
+		return runBrowserMountainLitSceneInputCapture(command, startedAt);
+	}
+	if (mode === 'browser-three-native-atmosphere-pass') {
+		return runBrowserThreeNativeAtmospherePass(command, startedAt);
+	}
+	if (mode === 'browser-three-native-live-atmosphere-pass') {
+		return runBrowserThreeNativeLiveAtmospherePass(command, startedAt);
+	}
+	if (mode === 'browser-three-native-unified-adapter-switch') {
+		return runBrowserThreeNativeUnifiedAdapterSwitch(command, startedAt);
+	}
+	if (mode === 'browser-three-native-live-pass-soft-shader-matrix') {
+		return runBrowserThreeNativeLivePassSoftShaderMatrix(command, startedAt);
+	}
+	if (mode === 'browser-three-native-scenario-controls-poc') {
+		return runBrowserThreeNativeScenarioControlsPoc(command, startedAt);
 	}
 	if (mode === 'browser-flat-earth-visibility-search') {
 		return runBrowserFlatEarthVisibilitySearch(command, startedAt);
@@ -48,6 +88,13 @@ window.runShaderLabSmoke = async function runShaderLabSmoke(command) {
 };
 
 console.log(`Algorithm32 shader lab page loaded ${loadCount} time(s).`);
+
+const THREE_NATIVE_DEPTH_ACCEPTANCE_SAMPLE_IDS = Object.freeze([
+	'upper-sky',
+	'center',
+	'lower-center',
+]);
+let algorithm32AtmospherePassInstanceCounter = 0;
 
 function runBrowserThreeBaseline(command, startedAt) {
 	const mode = command?.payload?.mode || 'browser-three-baseline';
@@ -609,6 +656,933 @@ function runBrowserGpuDirectSceneInputSecondOrderImage(command, startedAt) {
 	};
 }
 
+function runBrowserLitSceneInputCapture(command, startedAt) {
+	const payload = command?.payload || {};
+	const width = positiveInteger(payload.width, 160);
+	const height = positiveInteger(payload.height, 90);
+	const sunCase = resolveDistantSunCase(payload.sunCase);
+	const sourcePacket = makeDistantSunSourcePacket(sunCase);
+	const sourceLightMode = payload.sourceLightMode || 'hardcoded-browser-light';
+	const sceneLightConfig =
+		sourceLightMode === 'distant-directional-sun'
+			? makeDistantSunSceneLightConfig({ sunCase })
+			: null;
+	const canvas = document.getElementById('lab-canvas');
+	const captures = {};
+	const allSelectedPixels = [];
+
+	const unlitSetup = createBaselineScene(canvas, { width, height });
+	try {
+		unlitSetup.renderer.render(unlitSetup.scene, unlitSetup.camera);
+		captures.unlitMaterialControl = captureSceneInputPacket({
+			captureId: 'unlit-material-control',
+			sceneMode: 'three-card-reference',
+			sceneColorPolicy:
+				'unlit MeshBasicMaterial scene matching the original CPU renderer geometry; no Three lights or shadows',
+			canvas,
+			renderer: unlitSetup.renderer,
+			camera: unlitSetup.camera,
+			meshes: unlitSetup.meshes,
+			sceneObjects: unlitSetup.cards,
+			ground: unlitSetup.ground,
+			sourcePacket,
+			sceneLightPacket: null,
+		});
+		allSelectedPixels.push(
+			...captures.unlitMaterialControl.selectedPixels.map((sample) => ({
+				...sample,
+				captureId: 'unlit-material-control',
+			}))
+		);
+	} finally {
+		disposeSceneSetup(unlitSetup);
+	}
+
+	const litSetup = createShadowCardFloorScene(canvas, {
+		width,
+		height,
+		sceneLightConfig,
+	});
+	let imageDataUrl = null;
+	try {
+		litSetup.renderer.render(litSetup.scene, litSetup.camera);
+		captures.litShadowScene = captureSceneInputPacket({
+			captureId: 'lit-shadow-scene',
+			sceneMode: 'shadow-card-floor',
+			sceneColorPolicy:
+				sourceLightMode === 'distant-directional-sun'
+					? 'Three MeshStandardMaterial scene with source-driven DirectionalLight shadows and ambient fill'
+					: 'Three MeshStandardMaterial scene with DirectionalLight shadows and ambient fill',
+			canvas,
+			renderer: litSetup.renderer,
+			camera: litSetup.camera,
+			meshes: litSetup.meshes,
+			sceneObjects: litSetup.sceneObjects,
+			ground: litSetup.ground,
+			sourcePacket,
+			sceneLightPacket: litSetup.sceneLightPacket,
+		});
+		allSelectedPixels.push(
+			...captures.litShadowScene.selectedPixels.map((sample) => ({
+				...sample,
+				captureId: 'lit-shadow-scene',
+			}))
+		);
+		imageDataUrl = canvas.toDataURL('image/png');
+	} finally {
+		disposeSceneSetup(litSetup);
+	}
+
+	const diagnostics = litSceneInputCaptureDiagnostics({
+		command,
+		width,
+		height,
+		captures,
+	});
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-lit-scene-input-capture-result',
+		status: diagnostics.status,
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: { width, height },
+		imageDataUrl,
+		selectedPixels: allSelectedPixels,
+		diagnostics,
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+function runBrowserSoftShaderPacketPassthrough(command, startedAt) {
+	const payload = command?.payload || {};
+	const width = positiveInteger(payload.width, 160);
+	const height = positiveInteger(payload.height, 90);
+	const sunCase = resolveDistantSunCase(payload.sunCase);
+	const sourcePacket = makeDistantSunSourcePacket(sunCase);
+	const sourceLightMode = payload.sourceLightMode || 'distant-directional-sun';
+	const sceneLightConfig =
+		sourceLightMode === 'distant-directional-sun'
+			? makeDistantSunSceneLightConfig({ sunCase })
+			: null;
+	const canvas = document.getElementById('lab-canvas');
+	const sceneSetup = createShadowCardFloorScene(canvas, {
+		width,
+		height,
+		sceneLightConfig,
+	});
+	let packet;
+	let shaderResult;
+
+	try {
+		sceneSetup.renderer.render(sceneSetup.scene, sceneSetup.camera);
+		packet = captureSceneInputPacket({
+			captureId: 'soft-shader-packet-passthrough-lit-shadow-scene',
+			sceneMode: 'shadow-card-floor',
+			sceneColorPolicy:
+				'Three MeshStandardMaterial lit scene-color packet uploaded to a GPU passthrough shader with atmosphere disabled',
+			canvas,
+			renderer: sceneSetup.renderer,
+			camera: sceneSetup.camera,
+			meshes: sceneSetup.meshes,
+			sceneObjects: sceneSetup.sceneObjects,
+			ground: sceneSetup.ground,
+			sourcePacket,
+			sceneLightPacket: sceneSetup.sceneLightPacket,
+		});
+		shaderResult = renderSceneColorPassthroughShader({
+			renderer: sceneSetup.renderer,
+			packet,
+		});
+	} finally {
+		disposeSceneSetup(sceneSetup);
+	}
+
+	const selectedChecks = packet.selectedPixels.map((sample) => {
+		const offset = (sample.y * width + sample.x) * 4;
+		const expectedRgba = packet.sceneColorRgba8.slice(offset, offset + 4);
+		const shaderRgba = Array.from(
+			shaderResult.readbackRgba8.slice(offset, offset + 4)
+		);
+		const deltas = shaderRgba.map((value, index) => value - expectedRgba[index]);
+		return {
+			id: sample.id,
+			x: sample.x,
+			y: sample.y,
+			classification: sample.classification,
+			hitDistanceMeters: sample.hitDistanceMeters,
+			expectedRgba,
+			shaderRgba,
+			deltas,
+			maxAbsRgbDelta: Math.max(
+				...deltas.slice(0, 3).map((value) => Math.abs(value))
+			),
+		};
+	});
+	const maxAbsDelta = maxAbsByteDelta(
+		new Uint8Array(packet.sceneColorRgba8),
+		shaderResult.readbackRgba8
+	);
+	const diagnostics = softShaderPacketPassthroughDiagnostics({
+		command,
+		packet,
+		shaderResult,
+		selectedChecks,
+		maxAbsDelta,
+	});
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-soft-shader-packet-passthrough-result',
+		status: diagnostics.status,
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: { width, height },
+		imageDataUrl: canvas.toDataURL('image/png'),
+		selectedPixels: packet.selectedPixels,
+		sceneInputPacket: packet,
+		shaderReadbackRgba8: Array.from(shaderResult.readbackRgba8),
+		selectedDisplayChecks: selectedChecks,
+		diagnostics,
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+function runBrowserPacketDrivenDistantSunShader(command, startedAt) {
+	const payload = command?.payload || {};
+	const width = positiveInteger(payload.width, 160);
+	const height = positiveInteger(payload.height, 80);
+	const sunCase = resolveDistantSunCase(payload.sunCase);
+	const sourcePacket = makeDistantSunSourcePacket(sunCase);
+	const canvas = document.getElementById('lab-canvas');
+	const sceneSetup = createBaselineScene(canvas, { width, height });
+	const { renderer, camera, meshes, cards, ground } = sceneSetup;
+	let sceneInputTextureData;
+	let imageShaderDiagnostics;
+	let selectedPixels;
+	let secondOrderRadianceSpectralDiagnostics;
+	let selectedDisplayChecks;
+	let outputRgba8;
+
+	try {
+		sceneInputTextureData = buildSceneInputTextureData({
+			canvas,
+			camera,
+			meshes,
+		});
+		imageShaderDiagnostics = renderFirstOrderImageShader({
+			renderer,
+			camera,
+			includeSecondOrder: true,
+			sceneInputTextureData,
+			sunRay: sourcePacket.sunDirection,
+		});
+		selectedPixels = sampleBaselinePixels({
+			canvas,
+			renderer,
+			camera,
+			meshes,
+			cardMeshes: meshes.filter((mesh) => mesh.userData.kind === 'card'),
+		});
+		const secondOrderSpectralIncidentSkyCache = new Map();
+		secondOrderRadianceSpectralDiagnostics = selectedPixels.map((sample) =>
+			computeSecondOrderRadianceSpectralDiagnostic(
+				sample,
+				secondOrderSpectralIncidentSkyCache,
+				sunCase
+			)
+		);
+		selectedDisplayChecks = compareSelectedImagePixelsToSpectralPreview({
+			selectedPixels,
+			spectralDiagnostics: secondOrderRadianceSpectralDiagnostics,
+		});
+		outputRgba8 = readCanvasRgbaTopLeft(renderer, width, height);
+	} finally {
+		disposeSceneSetup(sceneSetup);
+	}
+
+	const diagnostics = packetDrivenDistantSunShaderDiagnostics({
+		command,
+		canvas,
+		renderer,
+		camera,
+		cards,
+		ground,
+		sourcePacket,
+		sunCase,
+		selectedPixels,
+		imageShaderDiagnostics,
+		secondOrderRadianceSpectralDiagnostics,
+		selectedDisplayChecks,
+		sceneInputTextureData,
+		outputRgba8,
+	});
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-packet-driven-distant-sun-shader-result',
+		status: diagnostics.status,
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: { width, height },
+		imageDataUrl: canvas.toDataURL('image/png'),
+		selectedPixels,
+		sourcePacket,
+		imageShaderDiagnostics,
+		secondOrderRadianceSpectralDiagnostics,
+		selectedDisplayChecks,
+		outputSummary: summarizeRgba8(outputRgba8),
+		diagnostics,
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+function runBrowserLitSceneSoftShaderComposition(command, startedAt) {
+	const payload = command?.payload || {};
+	const width = positiveInteger(payload.width, 160);
+	const height = positiveInteger(payload.height, 90);
+	const sunCase = resolveDistantSunCase(payload.sunCase);
+	const sourcePacket = makeDistantSunSourcePacket(sunCase);
+	const sceneLightConfig = makeDistantSunSceneLightConfig({ sunCase });
+	const canvas = document.getElementById('lab-canvas');
+	const sceneSetup = createShadowCardFloorScene(canvas, {
+		width,
+		height,
+		sceneLightConfig,
+	});
+	let packet;
+	let passthroughResult;
+	let atmosphereResult;
+
+	try {
+		sceneSetup.renderer.render(sceneSetup.scene, sceneSetup.camera);
+		packet = captureSceneInputPacket({
+			captureId: 'lit-scene-soft-shader-composition',
+			sceneMode: 'shadow-card-floor',
+			sceneColorPolicy:
+				'Three MeshStandardMaterial lit scene-color packet composed by GPU soft-shader atmosphere pass',
+			canvas,
+			renderer: sceneSetup.renderer,
+			camera: sceneSetup.camera,
+			meshes: sceneSetup.meshes,
+			sceneObjects: sceneSetup.sceneObjects,
+			ground: sceneSetup.ground,
+			sourcePacket,
+			sceneLightPacket: sceneSetup.sceneLightPacket,
+		});
+		passthroughResult = renderSceneColorPassthroughShader({
+			renderer: sceneSetup.renderer,
+			packet,
+		});
+		atmosphereResult = renderSoftShaderAtmospherePostprocess({
+			renderer: sceneSetup.renderer,
+			camera: sceneSetup.camera,
+			packet,
+			includeSecondOrder: true,
+		});
+	} finally {
+		disposeSceneSetup(sceneSetup);
+	}
+
+	const passthroughMaxAbsDelta = maxAbsByteDelta(
+		new Uint8Array(packet.sceneColorRgba8),
+		passthroughResult.readbackRgba8
+	);
+	const selectedChecks = packet.selectedPixels.map((sample) =>
+		softShaderCompositionSelectedCheck({
+			packet,
+			sample,
+			sunCase,
+			shaderRgba: rgbaAt(
+				atmosphereResult.readbackRgba8,
+				packet.width,
+				sample.x,
+				sample.y
+			),
+		})
+	);
+	const shadowCheck = softShaderShadowCheck({
+		packet,
+		outputRgba8: atmosphereResult.readbackRgba8,
+	});
+	const skyReplacementCheck = softShaderSkyReplacementCheck({
+		packet,
+		outputRgba8: atmosphereResult.readbackRgba8,
+	});
+	const diagnostics = litSceneSoftShaderCompositionDiagnostics({
+		command,
+		packet,
+		passthroughResult,
+		atmosphereResult,
+		passthroughMaxAbsDelta,
+		selectedChecks,
+		shadowCheck,
+		skyReplacementCheck,
+	});
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-lit-scene-soft-shader-composition-result',
+		status: diagnostics.status,
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: { width, height },
+		imageDataUrl: canvas.toDataURL('image/png'),
+		selectedPixels: packet.selectedPixels,
+		sceneInputPacket: packet,
+		shaderReadbackRgba8: Array.from(atmosphereResult.readbackRgba8),
+		selectedDisplayChecks: selectedChecks,
+		diagnostics,
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+function runBrowserLocalSunFirstOrderDiagnostics(command, startedAt) {
+	const payload = command?.payload || {};
+	const cases = payload.localSourceCases || [];
+	const topAltitudeMeters = finitePositiveNumber(
+		payload.topAltitudeMeters,
+		100000
+	);
+	const observerPositionMeters = payload.observerPositionMeters || [0, 0, 2];
+	const caseResults = cases.map((sourceCase) => {
+		const samples = localSunDiagnosticSamples({
+			sourceCase,
+			observerPositionMeters,
+			topAltitudeMeters,
+		});
+		const cpuDiagnostics = samples.map((sample) =>
+			computeFlatLocalFirstOrderDisplayDiagnostic({
+				sample,
+				sourceCase,
+				topAltitudeMeters,
+			})
+		);
+		const shaderDiagnostics = runFlatLocalFirstOrderDiagnosticShader({
+			samples,
+			sourceCase,
+			topAltitudeMeters,
+		});
+		const selectedChecks = cpuDiagnostics.map((cpu, index) => {
+			const shader = shaderDiagnostics.samples[index];
+			const deltas = shader.rgba.map((value, channelIndex) =>
+				value - cpu.encodedRgba[channelIndex]
+			);
+			return {
+				id: cpu.id,
+				rgba: shader.rgba,
+				expectedRgba: cpu.encodedRgba,
+				deltas,
+				maxAbsRgbDelta: Math.max(
+					...deltas.slice(0, 3).map((value) => Math.abs(value))
+				),
+				cpu,
+				shader,
+			};
+		});
+		const maxSelectedRgbDelta = Math.max(
+			0,
+			...selectedChecks.map((item) => item.maxAbsRgbDelta)
+		);
+		const sourceSampleAtObserver = flatLocalSourceSample({
+			sourceCase,
+			position: observerPositionMeters,
+		});
+		const criteria = [
+			{
+				id: 'shader-run-accepted',
+				status: shaderDiagnostics.status === 'accepted' ? 'passed' : 'failed',
+				measured: shaderDiagnostics.summary,
+			},
+			{
+				id: 'selected-display-parity',
+				status: maxSelectedRgbDelta <= 2 ? 'passed' : 'failed',
+				measured: { maxSelectedRgbDelta },
+			},
+			{
+				id: 'finite-source-diagnostics-recorded',
+				status:
+					Number.isFinite(sourceSampleAtObserver.distanceMeters) &&
+					Number.isFinite(sourceSampleAtObserver.incidentScale) &&
+					sourceSampleAtObserver.distanceMeters > 0
+						? 'passed'
+						: 'failed',
+				measured: sourceSampleAtObserver,
+			},
+			{
+				id: 'local-second-order-deferred',
+				status: 'passed',
+				measured: {
+					includeSecondOrder: false,
+					reason:
+						'Milestone 25 validates first-order finite local-source shader math only.',
+				},
+			},
+		];
+		const summary = {
+			passed: criteria.filter((criterion) => criterion.status === 'passed').length,
+			failed: criteria.filter((criterion) => criterion.status === 'failed').length,
+		};
+
+		return {
+			id: sourceCase.id,
+			offsetDegrees: sourceCase.offsetDegrees,
+			status: summary.failed === 0 ? 'accepted' : 'rejected',
+			sourceCase,
+			sourceSampleAtObserver,
+			selectedChecks,
+			maxSelectedRgbDelta,
+			summary,
+			criteria,
+		};
+	});
+	const closest = caseResults.find((item) => item.offsetDegrees === 0);
+	const ninety = caseResults.find((item) => item.offsetDegrees === 90);
+	const aggregateCriteria = [
+		{
+			id: 'required-local-cases-present',
+			status: closest && ninety ? 'passed' : 'failed',
+			measured: caseResults.map((item) => ({
+				id: item.id,
+				offsetDegrees: item.offsetDegrees,
+			})),
+		},
+		{
+			id: 'all-local-cases-accepted',
+			status: caseResults.every((item) => item.status === 'accepted')
+				? 'passed'
+				: 'failed',
+			measured: caseResults.map((item) => ({
+				id: item.id,
+				status: item.status,
+				summary: item.summary,
+			})),
+		},
+		{
+			id: 'closest-brighter-than-90deg',
+			status:
+				closest &&
+				ninety &&
+				meanCaseLuminance(closest) > meanCaseLuminance(ninety)
+					? 'passed'
+					: 'failed',
+			measured: {
+				closestMeanLuminance: closest ? meanCaseLuminance(closest) : null,
+				ninetyMeanLuminance: ninety ? meanCaseLuminance(ninety) : null,
+			},
+		},
+	];
+	const aggregateSummary = {
+		passed:
+			aggregateCriteria.filter((criterion) => criterion.status === 'passed')
+				.length +
+			caseResults.reduce((sum, item) => sum + item.summary.passed, 0),
+		failed:
+			aggregateCriteria.filter((criterion) => criterion.status === 'failed')
+				.length +
+			caseResults.reduce((sum, item) => sum + item.summary.failed, 0),
+	};
+	const diagnostics = {
+		kind: 'browser-local-sun-first-order-diagnostics',
+		status: aggregateSummary.failed === 0 ? 'accepted' : 'rejected',
+		iteration: payload.iteration || '25-local-sun-first-order-shader',
+		goal:
+			'Validate flat/local point-Sun first-order source sampling in a focused WebGL diagnostic shader.',
+		commandPayload: payload,
+		caseResults,
+		aggregateCriteria,
+		summary: aggregateSummary,
+	};
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-local-sun-first-order-diagnostics-result',
+		status: diagnostics.status,
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: { width: cases.length || 1, height: 1 },
+		selectedPixels: caseResults.flatMap((item) =>
+			item.selectedChecks.map((check) => ({
+				caseId: item.id,
+				id: check.id,
+				rgba: check.rgba,
+				expectedRgba: check.expectedRgba,
+				maxAbsRgbDelta: check.maxAbsRgbDelta,
+			}))
+		),
+		diagnostics,
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+function runBrowserLocalSunFullImageShader(command, startedAt) {
+	const payload = command?.payload || {};
+	const packet = payload.sceneInputPacket;
+	if (!packet || packet.source?.kind !== 'flat-local-point-sun') {
+		return {
+			kind: 'algorithm32-browser-local-sun-full-image-shader-result',
+			status: 'rejected',
+			commandId: command?.id,
+			commandLabel: command?.label,
+			reason:
+				'browser-local-sun-full-image-shader requires a sceneInputPacket with source.kind = flat-local-point-sun.',
+			diagnostics: {
+				status: 'rejected',
+				summary: { passed: 0, failed: 1 },
+				criteria: [
+					{
+						id: 'flat-local-source-packet-present',
+						status: 'failed',
+						measured: { source: packet?.source || null },
+					},
+				],
+			},
+		};
+	}
+
+	const canvas = document.getElementById('lab-canvas');
+	canvas.width = packet.width;
+	canvas.height = packet.height;
+	const renderer = new THREE.WebGLRenderer({
+		canvas,
+		antialias: false,
+		preserveDrawingBuffer: true,
+	});
+	renderer.setSize(packet.width, packet.height, false);
+	renderer.setPixelRatio(1);
+	if ('toneMapping' in renderer) {
+		renderer.toneMapping = THREE.NoToneMapping;
+	}
+
+	const surfacePolicy =
+		payload.surfacePolicy ||
+		packet.sceneColorPolicy ||
+		'spectrum-id-reference-radiance';
+	const composeSceneColor = surfacePolicy !== 'spectrum-id-reference-radiance';
+	const expectedSelectedPixels = Array.isArray(payload.expectedSelectedPixels)
+		? payload.expectedSelectedPixels
+		: [];
+	const shaderResult = renderFlatLocalSoftShaderPostprocess({
+		renderer,
+		packet,
+		composeSceneColor,
+		surfacePolicy,
+	});
+	const selectedChecks = localFullImageSelectedChecks({
+		packet,
+		outputRgba8: shaderResult.readbackRgba8,
+		expectedSelectedPixels,
+	});
+	const maxSelectedRgbDelta = Math.max(
+		0,
+		...selectedChecks.map((item) => item.maxAbsRgbDelta ?? 0)
+	);
+	const criteria = [
+		{
+			id: 'flat-local-source-packet-present',
+			status: packet.source?.kind === 'flat-local-point-sun' ? 'passed' : 'failed',
+			measured: {
+				source: {
+					kind: packet.source?.kind,
+					id: packet.source?.id,
+					offsetDegrees: packet.source?.offsetDegrees ?? null,
+				},
+				geometry: packet.geometry,
+			},
+		},
+		{
+			id: 'packet-has-sky-and-hit',
+			status:
+				packet.counts?.skyPixels > 0 && packet.counts?.hitPixels > 0
+					? 'passed'
+					: 'failed',
+			measured: packet.counts || null,
+		},
+		{
+			id: 'full-image-shader-run-accepted',
+			status: shaderResult.imageShaderDiagnostics?.status === 'accepted'
+				? 'passed'
+				: 'failed',
+			measured: shaderResult.imageShaderDiagnostics,
+		},
+		{
+			id: 'selected-pixels-match-cpu-soft-shader',
+			status:
+				expectedSelectedPixels.length > 0 && maxSelectedRgbDelta <= 2
+					? 'passed'
+					: 'failed',
+			measured: {
+				expectedSelectedPixels: expectedSelectedPixels.length,
+				maxSelectedRgbDelta,
+				selectedChecks,
+			},
+		},
+		{
+			id: 'surface-policy-recorded',
+			status:
+				shaderResult.imageShaderDiagnostics?.composeSceneColor ===
+				composeSceneColor
+					? 'passed'
+					: 'failed',
+			measured: {
+				surfacePolicy,
+				composeSceneColor,
+			},
+		},
+	];
+	const summary = {
+		passed: criteria.filter((criterion) => criterion.status === 'passed').length,
+		failed: criteria.filter((criterion) => criterion.status === 'failed').length,
+	};
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-local-sun-full-image-shader-result',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: { width: packet.width, height: packet.height },
+		imageDataUrl: canvas.toDataURL('image/png'),
+		selectedPixels: selectedChecks.map((check) => ({
+			id: check.id,
+			x: check.x,
+			y: check.y,
+			shaderRgba: check.shaderRgba,
+			expectedRgba: check.expectedRgba,
+			maxAbsRgbDelta: check.maxAbsRgbDelta,
+		})),
+		diagnostics: {
+			kind: 'browser-local-sun-full-image-shader-diagnostics',
+			status: summary.failed === 0 ? 'accepted' : 'rejected',
+			iteration:
+				payload.iteration || '27-local-sun-full-image-shader-parity',
+			goal:
+				'Render a full scene-input packet through the flat/local point-Sun GPU soft-shader path.',
+			commandPayload: {
+				...payload,
+				sceneInputPacket: {
+					width: packet.width,
+					height: packet.height,
+					captureId: packet.captureId,
+					sceneMode: packet.sceneMode,
+					counts: packet.counts,
+					source: packet.source,
+					geometry: packet.geometry,
+					sceneColorPolicy: packet.sceneColorPolicy,
+				},
+				expectedSelectedPixels: expectedSelectedPixels.map((sample) => ({
+					id: sample.id,
+					x: sample.x,
+					y: sample.y,
+					postprocessRgba8: sample.postprocessRgba8,
+				})),
+			},
+			threeRevision: THREE.REVISION,
+			webgl: shaderResult.webgl,
+			packetSummary: {
+				width: packet.width,
+				height: packet.height,
+				captureId: packet.captureId,
+				sceneMode: packet.sceneMode,
+				rowOrder: packet.rowOrder,
+				counts: packet.counts,
+				source: packet.source,
+				geometry: packet.geometry,
+			},
+			surfacePolicy,
+			composeSceneColor,
+			textureInputs: shaderResult.textureInputs,
+			outputSummary: summarizeRgba8(shaderResult.readbackRgba8),
+			selectedChecks,
+			maxSelectedRgbDelta,
+			criteria,
+			summary,
+		},
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+function runBrowserScenePacketSoftShaderImage(command, startedAt) {
+	const payload = command?.payload || {};
+	const packet = payload.sceneInputPacket;
+	if (!packet?.source?.kind) {
+		return {
+			kind: 'algorithm32-browser-scene-packet-soft-shader-image-result',
+			status: 'rejected',
+			commandId: command?.id,
+			commandLabel: command?.label,
+			reason:
+				'browser-scene-packet-soft-shader-image requires a sceneInputPacket with source.kind.',
+			diagnostics: {
+				status: 'rejected',
+				summary: { passed: 0, failed: 1 },
+				criteria: [
+					{
+						id: 'source-packet-present',
+						status: 'failed',
+						measured: { source: packet?.source || null },
+					},
+				],
+			},
+		};
+	}
+
+	const { canvas, renderer, camera } = createPacketPostprocessRenderer(packet);
+	const surfacePolicy =
+		payload.surfacePolicy ||
+		packet.sceneColorPolicy ||
+		'captured-rgba8-display-domain';
+	const composeSceneColor = surfacePolicy !== 'spectrum-id-reference-radiance';
+	const includeSecondOrder =
+		packet.source.kind === 'distant-directional-sun'
+			? payload.includeSecondOrder !== false
+			: false;
+	const expectedSelectedPixels = Array.isArray(payload.expectedSelectedPixels)
+		? payload.expectedSelectedPixels
+		: [];
+	let shaderResult;
+
+	try {
+		if (packet.source.kind === 'distant-directional-sun') {
+			shaderResult = renderSoftShaderAtmospherePostprocess({
+				renderer,
+				camera,
+				packet,
+				includeSecondOrder,
+			});
+		} else if (packet.source.kind === 'flat-local-point-sun') {
+			shaderResult = renderFlatLocalSoftShaderPostprocess({
+				renderer,
+				packet,
+				composeSceneColor,
+				surfacePolicy,
+			});
+		} else {
+			throw new Error(`Unsupported source kind: ${packet.source.kind}`);
+		}
+	} finally {
+		renderer.dispose();
+	}
+
+const selectedChecks = scenePacketSoftShaderSelectedChecks({
+		packet,
+		expectedSelectedPixels,
+		shaderRgba8: shaderResult.readbackRgba8,
+	});
+	const maxSelectedRgbDelta = Math.max(
+		0,
+		...selectedChecks.map((item) => item.maxAbsRgbDelta ?? 0)
+	);
+	const diagnostics = scenePacketSoftShaderImageDiagnostics({
+		command,
+		packet,
+		shaderResult,
+		selectedChecks,
+		maxSelectedRgbDelta,
+		surfacePolicy,
+		composeSceneColor,
+		includeSecondOrder,
+	});
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-scene-packet-soft-shader-image-result',
+		status: diagnostics.status,
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: { width: packet.width, height: packet.height },
+		imageDataUrl: canvas.toDataURL('image/png'),
+		shaderReadbackRgba8: Array.from(shaderResult.readbackRgba8),
+		selectedPixels: selectedChecks.map((check) => ({
+			id: check.id,
+			x: check.x,
+			y: check.y,
+			shaderRgba: check.shaderRgba,
+			expectedRgba: check.expectedRgba,
+			maxAbsRgbDelta: check.maxAbsRgbDelta,
+		})),
+		diagnostics,
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
 async function runBrowserShaderBenchmark(command, startedAt) {
 	const config = shaderBenchmarkConfig(command?.payload || {});
 	const canvas = document.getElementById('lab-canvas');
@@ -1098,6 +2072,2977 @@ function runBrowserMountainShaderImage(command, startedAt) {
 	};
 }
 
+function runBrowserMountainLitSceneInputCapture(command, startedAt) {
+	const payload = command?.payload || {};
+	const canvas = document.getElementById('lab-canvas');
+	const sourcePacket = resolveMountainLitSourcePacket(payload);
+	const geometryPacket = payload.geometryPacket || null;
+	const sceneSetup = createMountainLitScene(canvas, {
+		width: payload.width || 320,
+		height: payload.height || 180,
+		mountainView: payload.mountainView || MOUNTAIN_VIEW_MODES.frontHighSun,
+		cameraViewMode: payload.cameraViewMode || null,
+		sourcePacket,
+		sceneDetailSpec: payload.sceneDetailSpec || null,
+	});
+	const { renderer, scene, camera } = sceneSetup;
+	let imageDataUrl = null;
+	let capture = null;
+
+	try {
+		renderer.render(scene, camera);
+		imageDataUrl = canvas.toDataURL('image/png');
+		capture = captureSceneInputPacket({
+			captureId: payload.captureId || 'mountain-lit-scene',
+			sceneMode: 'mountain-ridges-lit',
+			sceneColorPolicy:
+				'Three MeshStandardMaterial mountain scene with a white source-position light; CPU Algorithm32 postprocess owns atmospheric color.',
+			canvas,
+			renderer,
+			camera,
+			meshes: sceneSetup.meshes,
+			sceneObjects: sceneSetup.sceneObjects,
+			ground: sceneSetup.ground,
+			sourcePacket,
+			sceneLightPacket: sceneSetup.sceneLightPacket,
+			geometryPacket,
+			sceneDetailPacket: sceneSetup.sceneDetailPacket,
+		});
+	} finally {
+		disposeSceneSetup(sceneSetup);
+	}
+
+	const diagnostics = mountainLitSceneInputDiagnostics({
+		command,
+		capture,
+		sceneLightPacket: sceneSetup.sceneLightPacket,
+	});
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-mountain-lit-scene-input-capture-result',
+		status: diagnostics.status,
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: {
+			width: canvas.width,
+			height: canvas.height,
+		},
+		imageDataUrl,
+		selectedPixels: capture.selectedPixels,
+		diagnostics,
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+function runBrowserThreeNativeAtmospherePass(command, startedAt) {
+	const payload = command?.payload || {};
+	const milestone = positiveInteger(payload.milestone, 30);
+	const passMode =
+		payload.passMode || (milestone >= 31 ? 'depth-distance' : 'identity');
+	const defaultSourcePacket = resolveMountainLitSourcePacket(payload);
+	const geometryPacket =
+		payload.geometryPacket ||
+		(passMode === 'flat-local-first-order-atmosphere'
+			? makeFlatAtmosphereGeometryPacket()
+			: makeSphericalAtmosphereGeometryPacket());
+	const cases =
+		Array.isArray(payload.cases) && payload.cases.length > 0
+			? payload.cases
+			: defaultThreeNativePassCases({ passMode });
+	const results = cases.map((caseConfig) =>
+		runThreeNativeAtmospherePassCase({
+			command,
+			payload,
+			caseConfig,
+			passMode,
+			sourcePacket: resolveThreeNativeCaseSourcePacket({
+				payload,
+				caseConfig,
+				defaultSourcePacket,
+			}),
+			geometryPacket,
+		})
+	);
+	const criteria = threeNativeAtmospherePassCriteria({
+		passMode,
+		results,
+	});
+	const summary = summarizeCriteria(criteria);
+	const completedAt = performance.now();
+	const lastResult = results[results.length - 1] || null;
+
+	return {
+		kind: 'algorithm32-browser-three-native-atmosphere-pass-result',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: lastResult?.canvas || null,
+		imageDataUrl: lastResult?.imageDataUrl || null,
+		selectedPixels: lastResult?.selectedPixels || [],
+		passMode,
+		milestone,
+		results,
+		diagnostics: {
+			kind: 'browser-three-native-atmosphere-pass-diagnostics',
+			status: summary.failed === 0 ? 'accepted' : 'rejected',
+			iteration:
+				command?.payload?.iteration ||
+				(passMode === 'identity'
+					? '30-three-native-atmosphere-pass-shell'
+					: '31-depth-to-ray-distance-contract'),
+			goal:
+				passMode === 'identity'
+					? 'Render a live Three scene into a Three-owned color/depth target and pass scene color through Algorithm32AtmospherePass without atmosphere physics.'
+					: 'Use the Three-owned depth texture in Algorithm32AtmospherePass to reconstruct selected pixel hit distance and sky/hit classification.',
+			threeRevision: THREE.REVISION,
+			passContract: {
+				kind: 'Algorithm32AtmospherePass',
+				normalInputPath:
+					'live Three scene render -> WebGLRenderTarget color texture + DepthTexture -> Three ShaderMaterial fullscreen pass',
+				jsonPackets:
+					'Raycaster scene packets are validation oracles only and are not sampled by the live pass.',
+				passMode,
+			},
+			defaultSourcePacket,
+			caseSourcePackets: results.map((result) => ({
+				id: result.id,
+				sourcePacket: result.sourcePacket,
+			})),
+			geometryPacket,
+			criteria,
+			summary,
+		},
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+async function runBrowserThreeNativeLiveAtmospherePass(command, startedAt) {
+	const payload = command?.payload || {};
+	const canvas = document.getElementById('lab-canvas');
+	const sourcePacket = resolveMountainLitSourcePacket(payload);
+	const geometryPacket =
+		payload.geometryPacket || makeSphericalAtmosphereGeometryPacket();
+	const sceneSetup = createMountainLitScene(canvas, {
+		width: positiveInteger(payload.width, 320),
+		height: positiveInteger(payload.height, 180),
+		mountainView: payload.mountainView || MOUNTAIN_VIEW_MODES.frontHighSun,
+		cameraViewMode: payload.cameraViewMode || null,
+		sourcePacket,
+		sceneDetailSpec: payload.sceneDetailSpec || null,
+	});
+	const { renderer, scene, camera } = sceneSetup;
+	const controls = new OrbitControls(camera, renderer.domElement);
+	controls.enableDamping = false;
+	controls.target.set(0, 620, -30000);
+	controls.update();
+	applyThreeNativeDepthCameraPolicy({
+		camera,
+		passMode: 'distant-first-order-atmosphere',
+		payload,
+	});
+	const pass = new Algorithm32AtmospherePass({
+		renderer,
+		width: canvas.width,
+		height: canvas.height,
+		camera,
+		config: {
+			source: sourcePacket,
+			geometry: geometryPacket,
+			atmosphere: { kind: 'algorithm32-earth-poc' },
+			display: { mode: 'first-order-distant-atmosphere' },
+		},
+		mode: 'distant-first-order-atmosphere',
+		maxDistanceMeters: finitePositiveNumber(
+			payload.depthDebugMaxDistanceMeters,
+			camera.far
+		),
+	});
+	const frames = [];
+	const gl = renderer.getContext();
+
+	try {
+		frames.push(
+			await renderThreeNativeLiveAtmosphereFrame({
+				id: 'initial',
+				renderer,
+				scene,
+				camera,
+				controls,
+				pass,
+				canvas,
+			})
+		);
+		camera.position.x += 4200;
+		camera.position.y += 650;
+		controls.target.set(2500, 900, -30000);
+		controls.update();
+		frames.push(
+			await renderThreeNativeLiveAtmosphereFrame({
+				id: 'orbit-controls-moved',
+				renderer,
+				scene,
+				camera,
+				controls,
+				pass,
+				canvas,
+			})
+		);
+		camera.fov = Math.min(camera.fov + 12, 74);
+		camera.updateProjectionMatrix();
+		controls.update();
+		frames.push(
+			await renderThreeNativeLiveAtmosphereFrame({
+				id: 'wide-fov',
+				renderer,
+				scene,
+				camera,
+				controls,
+				pass,
+				canvas,
+			})
+		);
+	} finally {
+		pass.dispose();
+		controls.dispose();
+		disposeSceneSetup(sceneSetup);
+	}
+
+	const frameDeltas = [];
+	for (let index = 1; index < frames.length; index += 1) {
+		frameDeltas.push({
+			from: frames[index - 1].id,
+			to: frames[index].id,
+			maxAbsDelta: maxAbsByteDelta(
+				new Uint8Array(frames[index - 1].rgba8),
+				new Uint8Array(frames[index].rgba8)
+			),
+		});
+	}
+	const webglError = gl.getError();
+	const criteria = [
+		{
+			id: 'orbit-controls-created',
+			status: controls.object === camera ? 'passed' : 'failed',
+			measured: {
+				controlsType: 'OrbitControls',
+				enableDamping: controls.enableDamping,
+			},
+		},
+		{
+			id: 'continuous-frames-rendered',
+			status: frames.length >= 3 ? 'passed' : 'failed',
+			measured: frames.map((frame) => ({
+				id: frame.id,
+				camera: frame.camera,
+				outputSummary: frame.outputSummary,
+			})),
+		},
+		{
+			id: 'camera-and-fov-changed',
+			status:
+				maxAbsArrayDelta(
+					frames[0].camera.positionMeters,
+					frames[1].camera.positionMeters
+				) > 0 &&
+				frames[2].camera.verticalFovDegrees !==
+					frames[0].camera.verticalFovDegrees
+					? 'passed'
+					: 'failed',
+			measured: frames.map((frame) => ({
+				id: frame.id,
+				camera: frame.camera,
+			})),
+		},
+		{
+			id: 'output-responded-to-camera-movement',
+			status: frameDeltas.every((delta) => delta.maxAbsDelta > 0)
+				? 'passed'
+				: 'failed',
+			measured: frameDeltas,
+		},
+		{
+			id: 'webgl-error-free-after-live-loop',
+			status: webglError === gl.NO_ERROR ? 'passed' : 'failed',
+			measured: {
+				error: webglError,
+				noErrorConstant: gl.NO_ERROR,
+			},
+		},
+	];
+	const summary = summarizeCriteria(criteria);
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-three-native-live-atmosphere-pass-result',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: {
+			width: canvas.width,
+			height: canvas.height,
+		},
+		imageDataUrl: frames[frames.length - 1]?.imageDataUrl || null,
+		selectedPixels: [],
+		frames,
+		frameDeltas,
+		diagnostics: {
+			kind: 'browser-three-native-live-atmosphere-pass-diagnostics',
+			status: summary.failed === 0 ? 'accepted' : 'rejected',
+			iteration:
+				command?.payload?.iteration ||
+				'33-live-scene-and-camera-controls',
+			goal:
+				'Run Algorithm32AtmospherePass in a live Three render loop with OrbitControls and changing camera/FOV uniforms.',
+			threeRevision: THREE.REVISION,
+			passContract: {
+				normalInputPath:
+					'live Three scene render -> color/depth render target -> Algorithm32AtmospherePass',
+				controls: 'OrbitControls',
+				sourcePacket,
+				geometryPacket,
+			},
+			criteria,
+			summary,
+		},
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+function runBrowserThreeNativeUnifiedAdapterSwitch(command, startedAt) {
+	const payload = command?.payload || {};
+	const canvas = document.getElementById('lab-canvas');
+	const distantSource = makeDistantSunSourcePacket(DIRECT_RADIANCE_SUN_CASE);
+	const distantGeometry = makeSphericalAtmosphereGeometryPacket();
+	const localSource = makeFlatLocalSunSourcePacket(0);
+	const localGeometry = makeFlatAtmosphereGeometryPacket();
+	const sceneSetup = createMountainLitScene(canvas, {
+		width: positiveInteger(payload.width, 320),
+		height: positiveInteger(payload.height, 180),
+		mountainView: MOUNTAIN_VIEW_MODES.frontHighSun,
+		sourcePacket: distantSource,
+	});
+	const { renderer, scene, camera } = sceneSetup;
+	const pass = new Algorithm32AtmospherePass({
+		renderer,
+		width: canvas.width,
+		height: canvas.height,
+		camera,
+		config: {
+			source: distantSource,
+			geometry: distantGeometry,
+			atmosphere: { kind: 'algorithm32-earth-poc' },
+			display: { mode: 'first-order-distant-atmosphere' },
+		},
+		mode: 'distant-first-order-atmosphere',
+		maxDistanceMeters: finitePositiveNumber(
+			payload.depthDebugMaxDistanceMeters,
+			camera.far
+		),
+	});
+	const gl = renderer.getContext();
+	let distantFrame;
+	let localFrame;
+	let localSceneLightPacket;
+
+	try {
+		applyThreeNativeDepthCameraPolicy({
+			camera,
+			passMode: 'distant-first-order-atmosphere',
+			payload,
+		});
+		distantFrame = renderThreeNativeAdapterSwitchFrame({
+			id: 'distant-spherical',
+			renderer,
+			scene,
+			camera,
+			pass,
+			canvas,
+			source: distantSource,
+			geometry: distantGeometry,
+			mode: 'distant-first-order-atmosphere',
+			sceneLightPacket: sceneSetup.sceneLightPacket,
+		});
+
+		localSceneLightPacket = replaceMountainSourceLight({
+			scene,
+			sourcePacket: localSource,
+			targetMeters: sceneSetup.mountainView.lookAtMeters,
+		});
+		pass.mode = 'flat-local-first-order-atmosphere';
+		pass.setConfig({
+			source: localSource,
+			geometry: localGeometry,
+			atmosphere: { kind: 'algorithm32-earth-poc' },
+			display: { mode: 'first-order-flat-local-atmosphere' },
+		});
+		localFrame = renderThreeNativeAdapterSwitchFrame({
+			id: 'local-flat',
+			renderer,
+			scene,
+			camera,
+			pass,
+			canvas,
+			source: localSource,
+			geometry: localGeometry,
+			mode: 'flat-local-first-order-atmosphere',
+			sceneLightPacket: localSceneLightPacket,
+		});
+	} finally {
+		pass.dispose();
+		disposeSceneSetup(sceneSetup);
+	}
+
+	const webglError = gl.getError();
+	const frames = [distantFrame, localFrame];
+	const criteria = [
+		{
+			id: 'same-renderer-and-pass-instance',
+			status:
+				distantFrame.passInstanceId === localFrame.passInstanceId &&
+				distantFrame.rendererContext === localFrame.rendererContext
+					? 'passed'
+					: 'failed',
+			measured: frames.map((frame) => ({
+				id: frame.id,
+				passInstanceId: frame.passInstanceId,
+				rendererContext: frame.rendererContext,
+			})),
+		},
+		{
+			id: 'source-family-switched',
+			status:
+				distantFrame.source.kind === 'distant-directional-sun' &&
+				localFrame.source.kind === 'flat-local-point-sun'
+					? 'passed'
+					: 'failed',
+			measured: frames.map((frame) => ({
+				id: frame.id,
+				source: frame.source,
+			})),
+		},
+		{
+			id: 'geometry-family-switched',
+			status:
+				distantFrame.geometry.kind === 'spherical-atmosphere-geometry' &&
+				localFrame.geometry.kind === 'flat-z-up-atmosphere'
+					? 'passed'
+					: 'failed',
+			measured: frames.map((frame) => ({
+				id: frame.id,
+				geometry: frame.geometry,
+			})),
+		},
+		{
+			id: 'three-light-adapter-switched',
+			status:
+				distantFrame.sceneLight.mode === 'distant-directional-sun' &&
+				localFrame.sceneLight.mode === 'flat-local-point-sun'
+					? 'passed'
+					: 'failed',
+			measured: frames.map((frame) => ({
+				id: frame.id,
+				sceneLight: frame.sceneLight,
+			})),
+		},
+		{
+			id: 'output-changed-after-source-geometry-switch',
+			status:
+				maxAbsByteDelta(
+					new Uint8Array(distantFrame.rgba8),
+					new Uint8Array(localFrame.rgba8)
+				) > 0
+					? 'passed'
+					: 'failed',
+			measured: {
+				maxAbsDelta: maxAbsByteDelta(
+					new Uint8Array(distantFrame.rgba8),
+					new Uint8Array(localFrame.rgba8)
+				),
+			},
+		},
+		{
+			id: 'webgl-error-free-after-adapter-switch',
+			status: webglError === gl.NO_ERROR ? 'passed' : 'failed',
+			measured: {
+				error: webglError,
+				noErrorConstant: gl.NO_ERROR,
+			},
+		},
+	];
+	const summary = summarizeCriteria(criteria);
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-three-native-unified-adapter-switch-result',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: {
+			width: canvas.width,
+			height: canvas.height,
+		},
+		imageDataUrl: localFrame.imageDataUrl,
+		selectedPixels: [],
+		frames,
+		diagnostics: {
+			kind: 'browser-three-native-unified-adapter-switch-diagnostics',
+			status: summary.failed === 0 ? 'accepted' : 'rejected',
+			iteration:
+				command?.payload?.iteration ||
+				'35-unified-source-and-geometry-adapter',
+			goal:
+				'Switch one Algorithm32AtmospherePass instance between distant/spherical and flat/local source+geometry adapters.',
+			criteria,
+			summary,
+		},
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+async function runBrowserThreeNativeLivePassSoftShaderMatrix(command, startedAt) {
+	const payload = command?.payload || {};
+	const cases = [
+		{
+			id: 'distant-midday',
+			passMode: 'distant-first-order-atmosphere',
+			sourcePacket: makeDistantSunSourcePacket(DIRECT_RADIANCE_SUN_CASE),
+			geometryPacket: makeSphericalAtmosphereGeometryPacket(),
+			caseConfig: {
+				id: 'distant-midday',
+				width: 320,
+				height: 180,
+				cameraAdjustment: 'none',
+			},
+		},
+		{
+			id: 'distant-sunset-behind-camera',
+			passMode: 'distant-first-order-atmosphere',
+			sourcePacket: makeDistantSunSourcePacket(LOW_SUN_CASE),
+			geometryPacket: makeSphericalAtmosphereGeometryPacket(),
+			caseConfig: {
+				id: 'distant-sunset-behind-camera',
+				width: 320,
+				height: 180,
+				cameraViewMode: 'source-behind-camera',
+				cameraAdjustment: 'none',
+			},
+		},
+		{
+			id: 'local-closest',
+			passMode: 'flat-local-first-order-atmosphere',
+			sourcePacket: makeFlatLocalSunSourcePacket(0),
+			geometryPacket: makeFlatAtmosphereGeometryPacket(),
+			caseConfig: {
+				id: 'local-closest',
+				width: 320,
+				height: 180,
+				cameraAdjustment: 'none',
+			},
+		},
+		{
+			id: 'local-090deg',
+			passMode: 'flat-local-first-order-atmosphere',
+			sourcePacket: makeFlatLocalSunSourcePacket(90),
+			geometryPacket: makeFlatAtmosphereGeometryPacket(),
+			caseConfig: {
+				id: 'local-090deg',
+				width: 320,
+				height: 180,
+				cameraAdjustment: 'none',
+			},
+		},
+	];
+	const results = cases.map((matrixCase) =>
+		runThreeNativeAtmospherePassCase({
+			command,
+			payload,
+			caseConfig: matrixCase.caseConfig,
+			passMode: matrixCase.passMode,
+			sourcePacket: matrixCase.sourcePacket,
+			geometryPacket: matrixCase.geometryPacket,
+		})
+	);
+	const canvas = document.getElementById('lab-canvas');
+	const contactSheet = await drawLivePassSoftShaderContactSheet({
+		results,
+	});
+	const maxGatingDelta = Math.max(
+		0,
+		...results.flatMap((result) =>
+			(result.atmosphereParity?.selectedChecks || [])
+				.filter((check) => check.acceptanceRole === 'gating')
+				.map((check) => check.maxAbsRgbDelta)
+		)
+	);
+	const criteria = [
+		{
+			id: 'four-required-cases-rendered',
+			status:
+				results.map((result) => result.id).join(',') ===
+				'distant-midday,distant-sunset-behind-camera,local-closest,local-090deg'
+					? 'passed'
+					: 'failed',
+			measured: results.map((result) => ({
+				id: result.id,
+				sourceKind: result.sourcePacket?.kind,
+				geometryKind:
+					result.sourcePacket?.kind === 'flat-local-point-sun'
+						? 'flat-z-up-atmosphere'
+						: 'spherical-atmosphere-geometry',
+			})),
+		},
+		{
+			id: 'live-and-oracle-images-recorded',
+			status:
+				results.every(
+					(result) =>
+						result.imageDataUrl &&
+						result.atmosphereParity?.oracleImageDataUrl
+				)
+					? 'passed'
+					: 'failed',
+			measured: results.map((result) => ({
+				id: result.id,
+				hasLiveImage: Boolean(result.imageDataUrl),
+				hasOracleImage: Boolean(
+					result.atmosphereParity?.oracleImageDataUrl
+				),
+				imageDeltaSummary:
+					result.atmosphereParity?.imageDeltaSummary || null,
+			})),
+		},
+		{
+			id: 'selected-gating-parity',
+			status: maxGatingDelta <= 3 ? 'passed' : 'failed',
+			measured: {
+				maxGatingDelta,
+				selectedChecks: results.map((result) => ({
+					id: result.id,
+					selectedChecks:
+						result.atmosphereParity?.selectedChecks || [],
+				})),
+			},
+		},
+		{
+			id: 'side-by-side-contact-sheet-created',
+			status: contactSheet.dataUrl ? 'passed' : 'failed',
+			measured: {
+				canvas: {
+					width: contactSheet.width,
+					height: contactSheet.height,
+				},
+				columns: ['live-pass', 'soft-shader-oracle'],
+			},
+		},
+	];
+	const summary = summarizeCriteria(criteria);
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-three-native-live-pass-soft-shader-matrix-result',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: {
+			width: contactSheet.width,
+			height: contactSheet.height,
+		},
+		imageDataUrl: contactSheet.dataUrl,
+		selectedPixels: [],
+		results,
+		diagnostics: {
+			kind: 'browser-three-native-live-pass-soft-shader-matrix-diagnostics',
+			status: summary.failed === 0 ? 'accepted' : 'rejected',
+			iteration:
+				command?.payload?.iteration ||
+				'36-live-pass-vs-soft-shader-matrix',
+			goal:
+				'Compare the live Three-native atmosphere pass against the CPU/GPU soft-shader oracle for distant and local source families.',
+			criteria,
+			summary,
+		},
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+function runBrowserThreeNativeScenarioControlsPoc(command, startedAt) {
+	const payload = command?.payload || {};
+	const scenarios = threeNativeScenarioControlDefinitions();
+	const debugViews = [
+		'scene-color',
+		'depth',
+		'transmittance',
+		'path-radiance',
+		'final',
+	];
+	const controls = createThreeNativeScenarioControls({
+		scenarios,
+		debugViews,
+	});
+	const canvas = document.getElementById('lab-canvas');
+	const initial = scenarios[0];
+	const sceneSetup = createMountainLitScene(canvas, {
+		width: positiveInteger(payload.width, 320),
+		height: positiveInteger(payload.height, 180),
+		sourcePacket: initial.source,
+		cameraViewMode: initial.cameraViewMode || null,
+	});
+	const { renderer, scene, camera } = sceneSetup;
+	const pass = new Algorithm32AtmospherePass({
+		renderer,
+		width: canvas.width,
+		height: canvas.height,
+		camera,
+		config: {
+			source: initial.source,
+			geometry: initial.geometry,
+			atmosphere: { kind: 'algorithm32-earth-poc' },
+			display: { debugView: 'final' },
+		},
+		mode: initial.passMode,
+		maxDistanceMeters: finitePositiveNumber(
+			payload.depthDebugMaxDistanceMeters,
+			camera.far
+		),
+	});
+	const renders = [];
+	let sceneLightPacket = sceneSetup.sceneLightPacket;
+
+	try {
+		for (const scenario of scenarios) {
+			controls.scenario.value = scenario.id;
+			sceneLightPacket = replaceMountainSourceLight({
+				scene,
+				sourcePacket: scenario.source,
+				targetMeters: sceneSetup.mountainView.lookAtMeters,
+			});
+			pass.mode = scenario.passMode;
+			pass.setConfig({
+				source: scenario.source,
+				geometry: scenario.geometry,
+				atmosphere: { kind: 'algorithm32-earth-poc' },
+				display: { debugView: 'final' },
+			});
+			for (const debugView of debugViews) {
+				controls.debugView.value = debugView;
+				const modeForDebug =
+					debugView === 'scene-color'
+						? 'identity'
+						: debugView === 'depth'
+							? 'depth-distance'
+							: scenario.passMode;
+				pass.mode = modeForDebug;
+				pass.setConfig({
+					source: scenario.source,
+					geometry: scenario.geometry,
+					atmosphere: { kind: 'algorithm32-earth-poc' },
+					display: {
+						debugView:
+							debugView === 'transmittance' ||
+							debugView === 'path-radiance'
+								? debugView
+								: 'final',
+					},
+				});
+				pass.renderScene(scene, camera);
+				pass.render({ camera });
+				const rgba8 = readCanvasRgbaTopLeft(
+					renderer,
+					canvas.width,
+					canvas.height
+				);
+				renders.push({
+					scenarioId: scenario.id,
+					debugView,
+					passMode: modeForDebug,
+					sourceKind: scenario.source.kind,
+					geometryKind: scenario.geometry.kind,
+					sceneLightMode: sceneLightPacket.mode,
+					outputSummary: summarizeRgba8(rgba8),
+				});
+			}
+		}
+	} finally {
+		pass.dispose();
+		disposeSceneSetup(sceneSetup);
+	}
+
+	const scenarioIds = scenarios.map((scenario) => scenario.id);
+	const criteria = [
+		{
+			id: 'scenario-and-debug-controls-created',
+			status:
+				controls.scenario.options.length === scenarios.length &&
+				controls.debugView.options.length === debugViews.length
+					? 'passed'
+					: 'failed',
+			measured: {
+				scenarios: Array.from(controls.scenario.options).map(
+					(option) => option.value
+				),
+				debugViews: Array.from(controls.debugView.options).map(
+					(option) => option.value
+				),
+			},
+		},
+		{
+			id: 'all-required-scenarios-rendered',
+			status: scenarioIds.every((id) =>
+				renders.some((render) => render.scenarioId === id)
+			)
+				? 'passed'
+				: 'failed',
+			measured: scenarioIds,
+		},
+		{
+			id: 'all-debug-views-rendered',
+			status: debugViews.every((debugView) =>
+				scenarioIds.every((scenarioId) =>
+					renders.some(
+						(render) =>
+							render.scenarioId === scenarioId &&
+							render.debugView === debugView
+					)
+				)
+			)
+				? 'passed'
+				: 'failed',
+			measured: debugViews,
+		},
+		{
+			id: 'source-updates-light-and-pass-together',
+			status:
+				renders
+					.filter((render) => render.debugView === 'final')
+					.every((render) =>
+						render.sourceKind === 'flat-local-point-sun'
+							? render.sceneLightMode === 'flat-local-point-sun'
+							: render.sceneLightMode === 'distant-directional-sun'
+					)
+					? 'passed'
+					: 'failed',
+			measured: renders
+				.filter((render) => render.debugView === 'final')
+				.map((render) => ({
+					scenarioId: render.scenarioId,
+					sourceKind: render.sourceKind,
+					sceneLightMode: render.sceneLightMode,
+				})),
+		},
+		{
+			id: 'screenshot-capture-remains-available',
+			status: canvas.toDataURL('image/png') ? 'passed' : 'failed',
+			measured: {
+				canvas: {
+					width: canvas.width,
+					height: canvas.height,
+				},
+			},
+		},
+	];
+	const summary = summarizeCriteria(criteria);
+	const completedAt = performance.now();
+
+	return {
+		kind: 'algorithm32-browser-three-native-scenario-controls-poc-result',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		commandId: command?.id,
+		commandLabel: command?.label,
+		pageLoadCount: loadCount,
+		timestamp: new Date().toISOString(),
+		location: window.location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: window.devicePixelRatio,
+		viewport: {
+			width: window.innerWidth,
+			height: window.innerHeight,
+		},
+		canvas: {
+			width: canvas.width,
+			height: canvas.height,
+		},
+		imageDataUrl: canvas.toDataURL('image/png'),
+		selectedPixels: [],
+		renders,
+		diagnostics: {
+			kind: 'browser-three-native-scenario-controls-poc-diagnostics',
+			status: summary.failed === 0 ? 'accepted' : 'rejected',
+			iteration:
+				command?.payload?.iteration ||
+				'37-scenario-controls-poc',
+			goal:
+				'Expose lab scenario and debug-view controls that update the same source/geometry config consumed by Three lights and Algorithm32AtmospherePass.',
+			criteria,
+			summary,
+		},
+		timings: {
+			pageDurationMs: completedAt - startedAt,
+		},
+	};
+}
+
+function threeNativeScenarioControlDefinitions() {
+	return [
+		{
+			id: 'distant-midday',
+			passMode: 'distant-first-order-atmosphere',
+			source: makeDistantSunSourcePacket(DIRECT_RADIANCE_SUN_CASE),
+			geometry: makeSphericalAtmosphereGeometryPacket(),
+		},
+		{
+			id: 'distant-sunset-behind-camera',
+			passMode: 'distant-first-order-atmosphere',
+			source: makeDistantSunSourcePacket(LOW_SUN_CASE),
+			geometry: makeSphericalAtmosphereGeometryPacket(),
+			cameraViewMode: 'source-behind-camera',
+		},
+		{
+			id: 'local-closest',
+			passMode: 'flat-local-first-order-atmosphere',
+			source: makeFlatLocalSunSourcePacket(0),
+			geometry: makeFlatAtmosphereGeometryPacket(),
+		},
+		{
+			id: 'local-090deg',
+			passMode: 'flat-local-first-order-atmosphere',
+			source: makeFlatLocalSunSourcePacket(90),
+			geometry: makeFlatAtmosphereGeometryPacket(),
+		},
+	];
+}
+
+function createThreeNativeScenarioControls({ scenarios, debugViews }) {
+	let container = document.getElementById('three-native-scenario-controls');
+	if (container) {
+		container.remove();
+	}
+	container = document.createElement('section');
+	container.id = 'three-native-scenario-controls';
+	container.style.display = 'grid';
+	container.style.gridTemplateColumns = 'auto auto';
+	container.style.gap = '8px';
+	container.style.alignItems = 'center';
+	const scenario = document.createElement('select');
+	scenario.id = 'scenario-select';
+	for (const item of scenarios) {
+		const option = document.createElement('option');
+		option.value = item.id;
+		option.textContent = item.id;
+		scenario.appendChild(option);
+	}
+	const debugView = document.createElement('select');
+	debugView.id = 'debug-view-select';
+	for (const item of debugViews) {
+		const option = document.createElement('option');
+		option.value = item;
+		option.textContent = item;
+		debugView.appendChild(option);
+	}
+	container.appendChild(scenario);
+	container.appendChild(debugView);
+	document.querySelector('main')?.prepend(container);
+	return { container, scenario, debugView };
+}
+
+async function drawLivePassSoftShaderContactSheet({ results }) {
+	const panelWidth = 320;
+	const panelHeight = 180;
+	const labelHeight = 24;
+	const canvas = document.createElement('canvas');
+	canvas.width = panelWidth * 2;
+	canvas.height = (panelHeight + labelHeight) * results.length;
+	const context = canvas.getContext('2d');
+	context.fillStyle = '#101318';
+	context.fillRect(0, 0, canvas.width, canvas.height);
+	context.font = '14px Arial';
+	context.textBaseline = 'middle';
+
+	for (let row = 0; row < results.length; row += 1) {
+		const result = results[row];
+		const y = row * (panelHeight + labelHeight);
+		context.fillStyle = '#e8edf5';
+		context.fillText(`${result.id} live`, 8, y + labelHeight * 0.5);
+		context.fillText(`${result.id} soft`, panelWidth + 8, y + labelHeight * 0.5);
+		const liveImage = await loadImageDataUrl(result.imageDataUrl);
+		const oracleImage = await loadImageDataUrl(
+			result.atmosphereParity?.oracleImageDataUrl
+		);
+		context.drawImage(liveImage, 0, y + labelHeight, panelWidth, panelHeight);
+		context.drawImage(
+			oracleImage,
+			panelWidth,
+			y + labelHeight,
+			panelWidth,
+			panelHeight
+		);
+	}
+
+	return {
+		dataUrl: canvas.toDataURL('image/png'),
+		width: canvas.width,
+		height: canvas.height,
+	};
+}
+
+function loadImageDataUrl(dataUrl) {
+	return new Promise((resolve, reject) => {
+		const image = new Image();
+		image.onload = () => resolve(image);
+		image.onerror = reject;
+		image.src = dataUrl;
+	});
+}
+
+function renderThreeNativeAdapterSwitchFrame({
+	id,
+	renderer,
+	scene,
+	camera,
+	pass,
+	canvas,
+	source,
+	geometry,
+	mode,
+	sceneLightPacket,
+}) {
+	pass.renderScene(scene, camera);
+	pass.render({ camera });
+	const rgba8 = readCanvasRgbaTopLeft(renderer, canvas.width, canvas.height);
+	return {
+		id,
+		mode,
+		passInstanceId: pass.instanceId,
+		rendererContext: renderer.getContext().getParameter(renderer.getContext().VERSION),
+		source,
+		geometry,
+		sceneLight: sceneLightPacket,
+		outputSummary: summarizeRgba8(rgba8),
+		rgba8: Array.from(rgba8),
+		imageDataUrl: canvas.toDataURL('image/png'),
+	};
+}
+
+function replaceMountainSourceLight({ scene, sourcePacket, targetMeters }) {
+	for (const child of [...scene.children]) {
+		if (child.userData?.algorithm32SourceLight) {
+			scene.remove(child);
+			child.dispose?.();
+		}
+	}
+	return addMountainSourceLight({ scene, sourcePacket, targetMeters });
+}
+
+async function renderThreeNativeLiveAtmosphereFrame({
+	id,
+	renderer,
+	scene,
+	camera,
+	controls,
+	pass,
+	canvas,
+}) {
+	controls.update();
+	pass.renderScene(scene, camera);
+	pass.render({ camera });
+	const rgba8 = readCanvasRgbaTopLeft(renderer, canvas.width, canvas.height);
+	await pageDelay(16);
+	return {
+		id,
+		camera: {
+			positionMeters: vectorToArray(camera.position),
+			verticalFovDegrees: camera.fov,
+			aspect: camera.aspect,
+			near: camera.near,
+			far: camera.far,
+			matrixWorld: camera.matrixWorld.toArray(),
+		},
+		outputSummary: summarizeRgba8(rgba8),
+		rgba8: Array.from(rgba8),
+		imageDataUrl: canvas.toDataURL('image/png'),
+	};
+}
+
+function defaultThreeNativePassCases({ passMode }) {
+	if (passMode === 'distant-first-order-atmosphere') {
+		return [
+			{
+				id: 'distant-midday',
+				width: 320,
+				height: 180,
+				sunCase: DIRECT_RADIANCE_SUN_CASE.id,
+				cameraAdjustment: 'none',
+				description: 'Distant high Sun with the default mountain view.',
+			},
+			{
+				id: 'distant-sunset-behind-camera',
+				width: 320,
+				height: 180,
+				sunCase: LOW_SUN_CASE.id,
+				cameraViewMode: 'source-behind-camera',
+				cameraAdjustment: 'none',
+				description:
+					'Distant low Sun source behind the camera, using the same Three light/source packet.',
+			},
+			{
+				id: 'distant-midday-resized-wide-fov',
+				width: 256,
+				height: 144,
+				sunCase: DIRECT_RADIANCE_SUN_CASE.id,
+				cameraAdjustment: 'wide-fov',
+				description:
+					'Distant high Sun resized/FOV variant to keep render-target refresh covered.',
+			},
+		];
+	}
+	if (passMode === 'flat-local-first-order-atmosphere') {
+		return [
+			{
+				id: 'local-closest',
+				width: 320,
+				height: 180,
+				localOffsetDegrees: 0,
+				cameraAdjustment: 'none',
+				description:
+					'Flat/local finite Sun at closest approach with source-driven PointLight.',
+			},
+			{
+				id: 'local-090deg',
+				width: 320,
+				height: 180,
+				localOffsetDegrees: 90,
+				cameraAdjustment: 'none',
+				description:
+					'Flat/local finite Sun 90 degrees around the configured orbit.',
+			},
+			{
+				id: 'local-closest-resized-wide-fov',
+				width: 256,
+				height: 144,
+				localOffsetDegrees: 0,
+				cameraAdjustment: 'wide-fov',
+				description:
+					'Flat/local closest source resized/FOV variant to keep render-target refresh covered.',
+			},
+		];
+	}
+	const cases = [
+		{
+			id: 'base-view',
+			width: 320,
+			height: 180,
+			cameraAdjustment: 'none',
+			description: 'Baseline mountain scene camera.',
+		},
+		{
+			id: 'moved-camera',
+			width: 320,
+			height: 180,
+			cameraAdjustment: 'raised-forward',
+			description: 'Camera moved and re-aimed to prove uniforms refresh.',
+		},
+		{
+			id: 'resized-wide-fov',
+			width: 256,
+			height: 144,
+			cameraAdjustment: 'wide-fov',
+			description: 'Smaller render target and wider FOV.',
+		},
+	];
+
+	return passMode === 'identity' ? cases : cases;
+}
+
+function resolveThreeNativeCaseSourcePacket({
+	payload,
+	caseConfig,
+	defaultSourcePacket,
+}) {
+	if (caseConfig.sourcePacket) {
+		return caseConfig.sourcePacket;
+	}
+	if (Number.isFinite(caseConfig.localOffsetDegrees)) {
+		return makeFlatLocalSunSourcePacket(caseConfig.localOffsetDegrees);
+	}
+	if (caseConfig.sunCase) {
+		return makeDistantSunSourcePacket(resolveDistantSunCase(caseConfig.sunCase));
+	}
+	return defaultSourcePacket || resolveMountainLitSourcePacket(payload);
+}
+
+function runThreeNativeAtmospherePassCase({
+	command,
+	payload,
+	caseConfig,
+	passMode,
+	sourcePacket,
+	geometryPacket,
+}) {
+	const canvas = document.getElementById('lab-canvas');
+	const width = positiveInteger(caseConfig.width, positiveInteger(payload.width, 320));
+	const height = positiveInteger(
+		caseConfig.height,
+		positiveInteger(payload.height, 180)
+	);
+	const sceneSetup = createMountainLitScene(canvas, {
+		width,
+		height,
+		mountainView: caseConfig.mountainView ||
+			payload.mountainView ||
+			MOUNTAIN_VIEW_MODES.frontHighSun,
+		cameraViewMode: caseConfig.cameraViewMode || payload.cameraViewMode || null,
+		sourcePacket,
+		sceneDetailSpec: payload.sceneDetailSpec || null,
+	});
+	const { renderer, scene, camera } = sceneSetup;
+	let directSceneRgba8;
+	let validationPacket = null;
+	let pass;
+	let outputRgba8;
+	let sceneTargetRgba8;
+	let debugChecks = [];
+	let outputImageDataUrl = null;
+	let atmosphereOracleResult = null;
+	let atmosphereSelectedChecks = [];
+	let atmosphereImageDeltaSummary = null;
+	let oracleImageDataUrl = null;
+
+	try {
+		applyThreeNativePassCameraAdjustment({
+			camera,
+			adjustment: caseConfig.cameraAdjustment,
+		});
+		applyThreeNativeDepthCameraPolicy({
+			camera,
+			passMode,
+			payload,
+		});
+		renderer.render(scene, camera);
+		directSceneRgba8 = readCanvasRgbaTopLeft(renderer, width, height);
+		validationPacket = captureSceneInputPacket({
+			captureId: `three-native-atmosphere-pass-${caseConfig.id}`,
+			sceneMode: 'mountain-ridges-lit',
+			sceneColorPolicy:
+				'Validation-only Raycaster oracle. The live pass reads Three render targets and depth texture, not this packet.',
+			canvas,
+			renderer,
+			camera,
+			meshes: sceneSetup.meshes,
+			sceneObjects: sceneSetup.sceneObjects,
+			ground: sceneSetup.ground,
+			sourcePacket,
+			sceneLightPacket: sceneSetup.sceneLightPacket,
+			geometryPacket,
+			sceneDetailPacket: sceneSetup.sceneDetailPacket,
+		});
+		pass = new Algorithm32AtmospherePass({
+			renderer,
+			width,
+			height,
+			camera,
+			config: {
+				source: sourcePacket,
+				geometry: geometryPacket,
+				atmosphere: { kind: 'algorithm32-earth-poc' },
+				display: { mode: 'identity-or-depth-debug' },
+			},
+			mode: passMode,
+			maxDistanceMeters: finitePositiveNumber(
+				payload.depthDebugMaxDistanceMeters,
+				camera.far
+			),
+		});
+		pass.renderScene(scene, camera);
+		sceneTargetRgba8 = pass.readSceneColorTargetTopLeft();
+		pass.render({ camera });
+		outputRgba8 = readCanvasRgbaTopLeft(renderer, width, height);
+		outputImageDataUrl = canvas.toDataURL('image/png');
+
+		if (passMode === 'depth-distance') {
+			debugChecks = threeNativeDepthSelectedChecks({
+				packet: validationPacket,
+				debugRgba8: outputRgba8,
+				maxDistanceMeters: pass.maxDistanceMeters,
+			});
+		}
+		if (
+			passMode === 'distant-first-order-atmosphere' ||
+			passMode === 'flat-local-first-order-atmosphere'
+		) {
+			atmosphereOracleResult =
+				passMode === 'flat-local-first-order-atmosphere'
+					? renderFlatLocalSoftShaderPostprocess({
+							renderer,
+							packet: validationPacket,
+							composeSceneColor: true,
+							surfacePolicy: 'captured-rgba8-display-domain',
+						})
+					: renderSoftShaderAtmospherePostprocess({
+							renderer,
+							camera,
+							packet: validationPacket,
+							includeSecondOrder: false,
+						});
+			atmosphereSelectedChecks = atmosphereParitySelectedChecks({
+				packet: validationPacket,
+				liveRgba8: outputRgba8,
+				oracleRgba8: atmosphereOracleResult.readbackRgba8,
+			});
+			atmosphereImageDeltaSummary = summarizeRgbaDelta(
+				outputRgba8,
+				atmosphereOracleResult.readbackRgba8
+			);
+			oracleImageDataUrl = canvas.toDataURL('image/png');
+		}
+	} finally {
+		pass?.dispose();
+		disposeSceneSetup(sceneSetup);
+	}
+
+	const directVsTargetMaxAbsDelta = maxAbsByteDelta(
+		directSceneRgba8,
+		sceneTargetRgba8
+	);
+	const directVsPassMaxAbsDelta =
+		passMode === 'identity'
+			? maxAbsByteDelta(directSceneRgba8, outputRgba8)
+			: null;
+	const targetVsPassMaxAbsDelta =
+		passMode === 'identity'
+			? maxAbsByteDelta(sceneTargetRgba8, outputRgba8)
+			: null;
+	const selectedPassthroughChecks =
+		passMode === 'identity'
+			? validationPacket.selectedPixels.map((sample) => {
+					const directRgba = rgbaAt(directSceneRgba8, width, sample.x, sample.y);
+					const passRgba = rgbaAt(outputRgba8, width, sample.x, sample.y);
+					const deltas = passRgba.map(
+						(value, index) => value - directRgba[index]
+					);
+					return {
+						id: sample.id,
+						x: sample.x,
+						y: sample.y,
+						classification: sample.classification,
+						hitDistanceMeters: sample.hitDistanceMeters,
+						directRgba,
+						passRgba,
+						deltas,
+						maxAbsRgbDelta: Math.max(
+							...deltas.slice(0, 3).map((value) => Math.abs(value))
+						),
+					};
+				})
+			: [];
+
+	return {
+		id: caseConfig.id,
+		description: caseConfig.description || null,
+		passMode,
+		canvas: { width, height },
+		camera: {
+			positionMeters: vectorToArray(camera.position),
+			verticalFovDegrees: camera.fov,
+			aspect: camera.aspect,
+			near: camera.near,
+			far: camera.far,
+			cameraAdjustment: caseConfig.cameraAdjustment || 'none',
+		},
+		selectedPixels: validationPacket.selectedPixels,
+		counts: validationPacket.counts,
+		sourcePacket,
+		sceneLight: sceneSetup.sceneLightPacket,
+		imageDataUrl: outputImageDataUrl,
+		renderTarget: {
+			colorTexture: {
+				width,
+				height,
+				format: 'RGBA/UNSIGNED_BYTE',
+			},
+			depthTexture: {
+				width,
+				height,
+				format: 'DepthFormat',
+				type: 'UnsignedIntType',
+			},
+		},
+		passthrough: {
+			directVsTargetMaxAbsDelta,
+			directVsPassMaxAbsDelta,
+			targetVsPassMaxAbsDelta,
+			selectedPassthroughChecks,
+			directSceneSummary: summarizeRgba8(directSceneRgba8),
+			outputSummary: summarizeRgba8(outputRgba8),
+		},
+		depthDiagnostics:
+			passMode === 'depth-distance'
+				? {
+						maxDistanceMeters: pass?.maxDistanceMeters ||
+							finitePositiveNumber(
+								payload.depthDebugMaxDistanceMeters,
+								camera.far
+							),
+						encoding:
+							'RGB24 normalized distance; magenta [255,0,255] marks clear-depth sky/no-hit.',
+						depthConvention:
+							'Three/WebGL depth texture samples are non-linear depth in [0,1], with 1.0 representing the cleared far/sky value. The shader maps uv/depth to clip space, multiplies by projectionMatrixInverse and cameraMatrixWorld, then measures world-space distance from cameraPosition.',
+						cameraDepthPolicy:
+							'Depth contract cases use an explicit lab near plane so 24-bit perspective depth has enough precision for kilometer-scale terrain.',
+						selectedChecks: debugChecks,
+						acceptanceSampleIds: THREE_NATIVE_DEPTH_ACCEPTANCE_SAMPLE_IDS,
+						distanceToleranceMeters: finitePositiveNumber(
+							payload.depthDistanceToleranceMeters,
+							50
+						),
+						maxAcceptanceHitDistanceDeltaMeters: maxFinite(
+							debugChecks
+								.filter(
+									(check) =>
+										check.acceptanceRole === 'gating' &&
+										check.expectedHit
+								)
+								.map((check) => check.distanceDeltaMeters)
+						),
+						maxHitDistanceDeltaMeters: maxFinite(
+							debugChecks
+								.filter((check) => check.expectedHit)
+								.map((check) => check.distanceDeltaMeters)
+						),
+						classificationMismatches: debugChecks.filter(
+							(check) =>
+								check.expectedHit !== check.shaderClassifiedHit &&
+								!check.edgeTolerance
+						).length,
+					}
+				: null,
+		atmosphereParity:
+			passMode === 'distant-first-order-atmosphere' ||
+			passMode === 'flat-local-first-order-atmosphere'
+				? {
+						oracleKind:
+							atmosphereOracleResult?.imageShaderDiagnostics?.kind || null,
+						oracleStatus:
+							atmosphereOracleResult?.imageShaderDiagnostics?.status || null,
+						scatteringPolicy:
+							passMode === 'flat-local-first-order-atmosphere'
+								? 'live Three-native pass uses first-order flat/local finite Sun only; oracle is existing flat/local packet soft shader with scene-color composition.'
+								: 'live Three-native pass uses first-order distant directional Sun only; oracle is existing packet soft shader with includeSecondOrder=false.',
+						imageDeltaSummary: atmosphereImageDeltaSummary,
+						oracleImageDataUrl,
+						selectedChecks: atmosphereSelectedChecks,
+						maxSelectedRgbDelta: Math.max(
+							0,
+							...atmosphereSelectedChecks.map(
+								(check) => check.maxAbsRgbDelta
+							)
+						),
+					}
+				: null,
+	};
+}
+
+function applyThreeNativePassCameraAdjustment({ camera, adjustment }) {
+	if (adjustment === 'raised-forward') {
+		camera.position.y += 850;
+		camera.position.z -= 900;
+		camera.lookAt(new THREE.Vector3(3000, 820, -30000));
+	} else if (adjustment === 'wide-fov') {
+		camera.fov = Math.min(camera.fov + 16, 78);
+		camera.lookAt(new THREE.Vector3(-2500, 560, -28000));
+	}
+	camera.updateMatrixWorld(true);
+	camera.updateProjectionMatrix();
+}
+
+function applyThreeNativeDepthCameraPolicy({ camera, passMode, payload }) {
+	if (
+		passMode !== 'depth-distance' &&
+		passMode !== 'distant-first-order-atmosphere'
+	) {
+		return;
+	}
+	const nearMeters = finitePositiveNumber(payload.depthContractNearMeters, 100);
+	const farMeters = finitePositiveNumber(payload.depthContractFarMeters, camera.far);
+	if (nearMeters >= farMeters) {
+		throw new Error(
+			`Invalid depth camera policy: near ${nearMeters} must be less than far ${farMeters}.`
+		);
+	}
+	camera.near = nearMeters;
+	camera.far = farMeters;
+	camera.updateProjectionMatrix();
+	camera.updateMatrixWorld(true);
+}
+
+class Algorithm32AtmospherePass {
+	constructor({
+		renderer,
+		width,
+		height,
+		camera,
+		config,
+		mode = 'identity',
+		maxDistanceMeters,
+	}) {
+		this.renderer = renderer;
+		this.instanceId = `algorithm32-atmosphere-pass-${++algorithm32AtmospherePassInstanceCounter}`;
+		this.width = width;
+		this.height = height;
+		this.mode = mode;
+		this.maxDistanceMeters = maxDistanceMeters;
+		this.config = config || {};
+		this.sceneRenderTarget = this.createSceneRenderTarget(width, height);
+		this.passScene = new THREE.Scene();
+		this.passCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+		this.material = this.createMaterial({ camera });
+		this.fullscreenQuad = new THREE.Mesh(
+			new THREE.PlaneGeometry(2, 2),
+			this.material
+		);
+		this.passScene.add(this.fullscreenQuad);
+	}
+
+	createSceneRenderTarget(width, height) {
+		const renderTarget = new THREE.WebGLRenderTarget(width, height, {
+			format: THREE.RGBAFormat,
+			type: THREE.UnsignedByteType,
+			minFilter: THREE.NearestFilter,
+			magFilter: THREE.NearestFilter,
+			depthBuffer: true,
+			stencilBuffer: false,
+		});
+		renderTarget.texture.name = 'Algorithm32AtmospherePass.sceneColor';
+		if ('colorSpace' in renderTarget.texture) {
+			renderTarget.texture.colorSpace =
+				this.renderer.outputColorSpace || THREE.SRGBColorSpace;
+		}
+		renderTarget.depthTexture = new THREE.DepthTexture(
+			width,
+			height,
+			THREE.UnsignedIntType
+		);
+		renderTarget.depthTexture.name = 'Algorithm32AtmospherePass.sceneDepth';
+		renderTarget.depthTexture.format = THREE.DepthFormat;
+		renderTarget.depthTexture.minFilter = THREE.NearestFilter;
+		renderTarget.depthTexture.magFilter = THREE.NearestFilter;
+		return renderTarget;
+	}
+
+	createMaterial({ camera }) {
+		return new THREE.ShaderMaterial({
+			glslVersion: THREE.GLSL3,
+			depthTest: false,
+			depthWrite: false,
+			toneMapped: false,
+			uniforms: {
+				sceneColorTexture: { value: this.sceneRenderTarget.texture },
+				sceneDepthTexture: { value: this.sceneRenderTarget.depthTexture },
+				sourceProjectionMatrixInverse: {
+					value: camera.projectionMatrixInverse.clone(),
+				},
+				sourceCameraMatrixWorld: { value: camera.matrixWorld.clone() },
+				sourceCameraPosition: { value: camera.position.clone() },
+				maxDistanceMeters: { value: this.maxDistanceMeters },
+				resolution: { value: new THREE.Vector2(this.width, this.height) },
+				sunRayAlgorithm: {
+					value: new THREE.Vector3(
+						...sourceSunDirectionForPassConfig(this.config)
+					),
+				},
+				localSourcePosition: {
+					value: new THREE.Vector3(
+						...localSourcePositionForPassConfig(this.config)
+					),
+				},
+				topAltitudeMeters: {
+					value: this.config?.geometry?.topAltitudeMeters ?? 100000,
+				},
+				sceneSkyRayLimitMeters: {
+					value: this.config?.geometry?.sceneSkyRayLimitMeters ?? 1926774,
+				},
+				referenceDistanceKm: {
+					value: this.config?.source?.referenceDistanceKm ?? 4800,
+				},
+				referenceSpectralIncidentScale: {
+					value:
+						this.config?.source?.referenceSpectralIncidentScale ?? 1,
+				},
+				distanceFalloff: {
+					value: this.config?.source?.distanceFalloff === false ? 0 : 1,
+				},
+				sourceColor: {
+					value: new THREE.Vector3(
+						this.config?.source?.color?.r ?? 1,
+						this.config?.source?.color?.g ?? 0.98,
+						this.config?.source?.color?.b ?? 0.95
+					),
+				},
+				debugViewMode: {
+					value: debugViewModeCode(this.config?.display?.debugView),
+				},
+				passMode: { value: threeNativePassModeCode(this.mode) },
+			},
+			vertexShader: `
+out vec2 vUv;
+
+void main() {
+	vUv = uv;
+	gl_Position = vec4(position.xy, 0.0, 1.0);
+}
+`,
+			fragmentShader: `
+precision highp float;
+precision highp sampler2D;
+
+uniform sampler2D sceneColorTexture;
+uniform sampler2D sceneDepthTexture;
+uniform mat4 sourceProjectionMatrixInverse;
+uniform mat4 sourceCameraMatrixWorld;
+uniform vec3 sourceCameraPosition;
+uniform float maxDistanceMeters;
+uniform vec2 resolution;
+uniform vec3 sunRayAlgorithm;
+uniform vec3 localSourcePosition;
+uniform float topAltitudeMeters;
+uniform float sceneSkyRayLimitMeters;
+uniform float referenceDistanceKm;
+uniform float referenceSpectralIncidentScale;
+uniform int distanceFalloff;
+uniform vec3 sourceColor;
+uniform int debugViewMode;
+uniform int passMode;
+
+in vec2 vUv;
+out vec4 outColor;
+
+const int CHANNEL_COUNT = 15;
+const int VIEW_SAMPLES = 20;
+const int SUN_TRANSMITTANCE_SAMPLES = 10;
+const float BOTTOM_RADIUS_METERS = 6360000.0;
+const float TOP_RADIUS_METERS = 6420000.0;
+const float RAYLEIGH_SCALE_HEIGHT_METERS = 8000.0;
+const float MIE_SCALE_HEIGHT_METERS = 1200.0;
+const float RAYLEIGH_COEFFICIENT_SCALE = 1.24062e-6;
+const float MIE_ANGSTROM_ALPHA = 0.8;
+const float MIE_ANGSTROM_BETA = 0.04;
+const float MIE_SINGLE_SCATTERING_ALBEDO = 0.8;
+const float MIE_PHASE_G = 0.7;
+const float PI = 3.141592653589793;
+const float SPECTRAL_DELTA_NM = 31.333333333333332;
+const float MAX_LUMINOUS_EFFICACY = 683.0;
+const float DISPLAY_TONE_MAP_K = 0.00029282576866764276;
+const float WAVELENGTHS_NM[CHANNEL_COUNT] = float[CHANNEL_COUNT](
+	375.666666666667,
+	407.0,
+	438.333333333333,
+	469.666666666667,
+	501.0,
+	532.333333333333,
+	563.666666666667,
+	595.0,
+	626.333333333333,
+	657.666666666667,
+	689.0,
+	720.333333333333,
+	751.666666666667,
+	783.0,
+	814.333333333333
+);
+const float SOLAR_IRRADIANCE[CHANNEL_COUNT] = float[CHANNEL_COUNT](
+	1.068866666667,
+	1.729673,
+	1.862071666667,
+	2.022063333333,
+	1.908154,
+	1.883391,
+	1.834246666667,
+	1.76744,
+	1.65952,
+	1.548102333333,
+	1.45078,
+	1.340960333333,
+	1.262433333333,
+	1.175208,
+	1.090824
+);
+const vec3 CIE[CHANNEL_COUNT] = vec3[CHANNEL_COUNT](
+	vec3(0.00082512, 0.000024284, 0.00388120013333),
+	vec3(0.031318, 0.000868, 0.14908),
+	vec3(0.341686666667, 0.0209466666667, 1.70569333333),
+	vec3(0.199076, 0.0898413333333, 1.30367066667),
+	vec3(0.0044, 0.33986, 0.26006),
+	vec3(0.19361662, 0.88666338, 0.0364106666667),
+	vec3(0.656026666667, 0.982973333333, 0.00305666593333),
+	vec3(1.0567, 0.6949, 0.001),
+	vec3(0.722333333333, 0.306066666667, 0.000086666664),
+	vec3(0.190006666667, 0.0706133333333, 0.0),
+	vec3(0.02474, 0.008952, 0.0),
+	vec3(0.0028426512, 0.00102653333333, 0.0),
+	vec3(0.000299809433333, 0.000108266666667, 0.0),
+	vec3(0.000034215932, 0.000012356, 0.0),
+	vec3(0.00000378221413333, 0.00000136582666667, 0.0)
+);
+
+vec3 linearToSrgb(vec3 value) {
+	vec3 low = value * 12.92;
+	vec3 high = 1.055 * pow(max(value, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055;
+	return mix(low, high, step(vec3(0.0031308), value));
+}
+
+float rayleighScatteringCoefficientAt(float wavelengthMicrometersValue) {
+	return RAYLEIGH_COEFFICIENT_SCALE * pow(wavelengthMicrometersValue, -4.0);
+}
+
+float mieExtinctionCoefficientAt(float wavelengthMicrometersValue) {
+	return (MIE_ANGSTROM_BETA / MIE_SCALE_HEIGHT_METERS) *
+		pow(wavelengthMicrometersValue, -MIE_ANGSTROM_ALPHA);
+}
+
+float mieScatteringCoefficientAt(float wavelengthMicrometersValue) {
+	return mieExtinctionCoefficientAt(wavelengthMicrometersValue) *
+		MIE_SINGLE_SCATTERING_ALBEDO;
+}
+
+float transmittanceAt(
+	float rayleighOpticalLength,
+	float mieOpticalLength,
+	float wavelengthMicrometersValue
+) {
+	float opticalDepth =
+		rayleighScatteringCoefficientAt(wavelengthMicrometersValue) *
+			rayleighOpticalLength +
+		mieExtinctionCoefficientAt(wavelengthMicrometersValue) *
+			mieOpticalLength;
+	return exp(-opticalDepth);
+}
+
+float rayleighPhaseFunction(float nu) {
+	return (3.0 / (16.0 * PI)) * (1.0 + nu * nu);
+}
+
+float miePhaseFunction(float g, float nu) {
+	float k = (3.0 / (8.0 * PI)) *
+		((1.0 - g * g) / (2.0 + g * g));
+
+	return (k * (1.0 + nu * nu)) /
+		pow(1.0 + g * g - 2.0 * g * nu, 1.5);
+}
+
+float distanceToTopAtmosphereBoundary(float radius, float mu) {
+	float discriminant =
+		radius * radius * (mu * mu - 1.0) +
+		TOP_RADIUS_METERS * TOP_RADIUS_METERS;
+
+	return max(0.0, -radius * mu + sqrt(max(0.0, discriminant)));
+}
+
+bool rayIntersectsGround(float radius, float mu) {
+	return
+		mu < 0.0 &&
+		radius * radius * (mu * mu - 1.0) +
+			BOTTOM_RADIUS_METERS * BOTTOM_RADIUS_METERS >=
+			0.0;
+}
+
+vec2 densityAtPosition(vec3 position) {
+	float altitudeMeters = length(position) - BOTTOM_RADIUS_METERS;
+	float rayleighDensity =
+		exp(-max(0.0, altitudeMeters) / RAYLEIGH_SCALE_HEIGHT_METERS);
+	float mieDensity =
+		exp(-max(0.0, altitudeMeters) / MIE_SCALE_HEIGHT_METERS);
+
+	return vec2(rayleighDensity, mieDensity);
+}
+
+float computeSunTransmittance(vec3 position, float wavelengthMicrometersValue) {
+	float radius = length(position);
+	float mu = dot(position, sunRayAlgorithm) / radius;
+
+	if (rayIntersectsGround(radius, mu)) {
+		return 0.0;
+	}
+
+	float distanceToTop = distanceToTopAtmosphereBoundary(radius, mu);
+	float stepSize = distanceToTop / float(SUN_TRANSMITTANCE_SAMPLES);
+	float rayleighOpticalLength = 0.0;
+	float mieOpticalLength = 0.0;
+
+	for (int sampleIndex = 0; sampleIndex <= SUN_TRANSMITTANCE_SAMPLES; sampleIndex++) {
+		float sampleDistance = float(sampleIndex) * stepSize;
+		vec3 samplePosition = position + sunRayAlgorithm * sampleDistance;
+		vec2 density = densityAtPosition(samplePosition);
+		float weight =
+			sampleIndex == 0 || sampleIndex == SUN_TRANSMITTANCE_SAMPLES
+				? 0.5
+				: 1.0;
+		rayleighOpticalLength += density.x * weight * stepSize;
+		mieOpticalLength += density.y * weight * stepSize;
+	}
+
+	return transmittanceAt(
+		rayleighOpticalLength,
+		mieOpticalLength,
+		wavelengthMicrometersValue
+	);
+}
+
+vec2 firstOrderPathAndViewT(
+	vec3 origin,
+	vec3 direction,
+	float distanceMeters,
+	float wavelengthMicrometersValue,
+	float solarIrradiance
+) {
+	float stepSize = distanceMeters / float(VIEW_SAMPLES);
+	float cumulativeRayleigh = 0.0;
+	float cumulativeMie = 0.0;
+	float previousRayleigh = 0.0;
+	float previousMie = 0.0;
+	float rayleighSum = 0.0;
+	float mieSum = 0.0;
+
+	for (int sampleIndex = 0; sampleIndex <= VIEW_SAMPLES; sampleIndex++) {
+		float sampleDistance = float(sampleIndex) * stepSize;
+		vec3 samplePosition = origin + direction * sampleDistance;
+		vec2 density = densityAtPosition(samplePosition);
+
+		if (sampleIndex > 0) {
+			cumulativeRayleigh +=
+				0.5 * (previousRayleigh + density.x) * stepSize;
+			cumulativeMie +=
+				0.5 * (previousMie + density.y) * stepSize;
+		}
+
+		float viewTransmittance = transmittanceAt(
+			cumulativeRayleigh,
+			cumulativeMie,
+			wavelengthMicrometersValue
+		);
+		float sunTransmittance =
+			computeSunTransmittance(samplePosition, wavelengthMicrometersValue);
+		float transmittance = viewTransmittance * sunTransmittance;
+		float weight =
+			sampleIndex == 0 || sampleIndex == VIEW_SAMPLES ? 0.5 : 1.0;
+		rayleighSum += transmittance * density.x * weight;
+		mieSum += transmittance * density.y * weight;
+		previousRayleigh = density.x;
+		previousMie = density.y;
+	}
+
+	float nu = dot(direction, sunRayAlgorithm);
+	float rayleigh =
+		rayleighSum *
+		stepSize *
+		solarIrradiance *
+		rayleighScatteringCoefficientAt(wavelengthMicrometersValue) *
+		rayleighPhaseFunction(nu);
+	float mie =
+		mieSum *
+		stepSize *
+		solarIrradiance *
+		mieScatteringCoefficientAt(wavelengthMicrometersValue) *
+		miePhaseFunction(MIE_PHASE_G, nu);
+	float viewTransmittance = transmittanceAt(
+		cumulativeRayleigh,
+		cumulativeMie,
+		wavelengthMicrometersValue
+	);
+
+	return vec2(rayleigh + mie, viewTransmittance);
+}
+
+vec3 displayPreview(vec3 xyz) {
+	vec3 linearSrgb = MAX_LUMINOUS_EFFICACY * vec3(
+		3.2406 * xyz.x + -1.5372 * xyz.y + -0.4986 * xyz.z,
+		-0.9689 * xyz.x + 1.8758 * xyz.y + 0.0415 * xyz.z,
+		0.0557 * xyz.x + -0.204 * xyz.y + 1.057 * xyz.z
+	);
+	return clamp(
+		vec3(1.0) - exp(-DISPLAY_TONE_MAP_K * max(vec3(0.0), linearSrgb)),
+		vec3(0.0),
+		vec3(1.0)
+	);
+}
+
+vec2 flatDensityAt(vec3 position) {
+	float altitudeMeters = position.z;
+	if (altitudeMeters < 0.0 || altitudeMeters > topAltitudeMeters) {
+		return vec2(0.0);
+	}
+	return vec2(
+		exp(-altitudeMeters / RAYLEIGH_SCALE_HEIGHT_METERS),
+		exp(-altitudeMeters / MIE_SCALE_HEIGHT_METERS)
+	);
+}
+
+float localSpectralScale(float incidentScale, int channelIndex) {
+	if (channelIndex < 4) {
+		return incidentScale * sourceColor.b;
+	}
+	if (channelIndex < 8) {
+		return incidentScale * sourceColor.g;
+	}
+	return incidentScale * sourceColor.r;
+}
+
+float localSourceTransmittance(
+	vec3 position,
+	vec3 sourceDirection,
+	float sourceDistance,
+	float wavelengthMicrometersValue
+) {
+	if (sourceDirection.z < 0.0) {
+		float groundDistance = max(0.0, -position.z / sourceDirection.z);
+		if (groundDistance < sourceDistance - 1e-9) {
+			return 0.0;
+		}
+	}
+	float topDistance = sourceDirection.z > 0.0
+		? max(0.0, (topAltitudeMeters - position.z) / sourceDirection.z)
+		: sourceDistance;
+	float atmosphereDistance = min(sourceDistance, topDistance);
+	if (atmosphereDistance <= 0.0) {
+		return 1.0;
+	}
+	float stepSize = atmosphereDistance / float(SUN_TRANSMITTANCE_SAMPLES);
+	float rayleighLength = 0.0;
+	float mieLength = 0.0;
+	for (int sampleIndex = 0; sampleIndex <= SUN_TRANSMITTANCE_SAMPLES; sampleIndex++) {
+		vec3 samplePosition =
+			position + sourceDirection * (float(sampleIndex) * stepSize);
+		vec2 density = flatDensityAt(samplePosition);
+		float weight =
+			sampleIndex == 0 || sampleIndex == SUN_TRANSMITTANCE_SAMPLES
+				? 0.5
+				: 1.0;
+		rayleighLength += density.x * weight * stepSize;
+		mieLength += density.y * weight * stepSize;
+	}
+	return transmittanceAt(
+		rayleighLength,
+		mieLength,
+		wavelengthMicrometersValue
+	);
+}
+
+vec2 localFirstOrderPathAndViewT(
+	vec3 origin,
+	vec3 direction,
+	float distanceMeters,
+	int channelIndex
+) {
+	if (distanceMeters <= 0.0) {
+		return vec2(0.0, 1.0);
+	}
+	float wavelengthNm = WAVELENGTHS_NM[channelIndex];
+	float wavelengthMicrometersValue = wavelengthNm * 0.001;
+	float stepSize = distanceMeters / float(VIEW_SAMPLES);
+	vec2 previousDensity = flatDensityAt(origin);
+	float cumulativeRayleigh = 0.0;
+	float cumulativeMie = 0.0;
+	float rayleighSum = 0.0;
+	float mieSum = 0.0;
+
+	for (int sampleIndex = 0; sampleIndex <= VIEW_SAMPLES; sampleIndex++) {
+		float sampleDistance = float(sampleIndex) * stepSize;
+		vec3 samplePosition = origin + direction * sampleDistance;
+		vec2 density = flatDensityAt(samplePosition);
+		if (sampleIndex > 0) {
+			cumulativeRayleigh +=
+				0.5 * (previousDensity.x + density.x) * stepSize;
+			cumulativeMie +=
+				0.5 * (previousDensity.y + density.y) * stepSize;
+		}
+		float viewT = transmittanceAt(
+			cumulativeRayleigh,
+			cumulativeMie,
+			wavelengthMicrometersValue
+		);
+		vec3 vectorToSource = localSourcePosition - samplePosition;
+		float sourceDistance = length(vectorToSource);
+		vec3 sourceDirection = sourceDistance == 0.0
+			? vec3(0.0, 0.0, 1.0)
+			: vectorToSource / sourceDistance;
+		float distanceKm = sourceDistance / 1000.0;
+		float falloff = distanceFalloff == 1
+			? pow(referenceDistanceKm / distanceKm, 2.0)
+			: 1.0;
+		float incidentScale = referenceSpectralIncidentScale * falloff;
+		float sourceScale = localSpectralScale(incidentScale, channelIndex);
+		float sourceT = localSourceTransmittance(
+			samplePosition,
+			sourceDirection,
+			sourceDistance,
+			wavelengthMicrometersValue
+		);
+		float transmittance = viewT * sourceT;
+		float nu = clamp(dot(direction, sourceDirection), -1.0, 1.0);
+		float weight = sampleIndex == 0 || sampleIndex == VIEW_SAMPLES
+			? 0.5
+			: 1.0;
+		float sourceIrradiance = SOLAR_IRRADIANCE[channelIndex] * sourceScale;
+		rayleighSum +=
+			transmittance *
+			density.x *
+			sourceIrradiance *
+			rayleighScatteringCoefficientAt(wavelengthMicrometersValue) *
+			rayleighPhaseFunction(nu) *
+			weight;
+		mieSum +=
+			transmittance *
+			density.y *
+			sourceIrradiance *
+			mieScatteringCoefficientAt(wavelengthMicrometersValue) *
+			miePhaseFunction(MIE_PHASE_G, nu) *
+			weight;
+		previousDensity = density;
+	}
+	float viewTransmittance = transmittanceAt(
+		cumulativeRayleigh,
+		cumulativeMie,
+		wavelengthMicrometersValue
+	);
+	return vec2((rayleighSum + mieSum) * stepSize, viewTransmittance);
+}
+
+vec3 encodeDistanceRgb24(float distanceMeters) {
+	float normalized = clamp(distanceMeters / maxDistanceMeters, 0.0, 1.0);
+	float encoded = floor(normalized * 16777215.0 + 0.5);
+	float r = floor(encoded / 65536.0);
+	float g = floor((encoded - r * 65536.0) / 256.0);
+	float b = encoded - r * 65536.0 - g * 256.0;
+	return vec3(r, g, b) / 255.0;
+}
+
+float reconstructedWorldDistance(float depth) {
+	vec2 ndc = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
+	vec4 clip = vec4(ndc, depth * 2.0 - 1.0, 1.0);
+	vec4 view = sourceProjectionMatrixInverse * clip;
+	view /= view.w;
+	vec4 world = sourceCameraMatrixWorld * view;
+	return length(world.xyz - sourceCameraPosition);
+}
+
+vec3 reconstructedWorldRayDirection() {
+	vec2 ndc = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
+	vec4 clip = vec4(ndc, 1.0, 1.0);
+	vec4 view = sourceProjectionMatrixInverse * clip;
+	view /= view.w;
+	vec4 world = sourceCameraMatrixWorld * view;
+	return normalize(world.xyz - sourceCameraPosition);
+}
+
+vec3 threeToAlgorithmPosition(vec3 position) {
+	return vec3(position.x, -position.z, BOTTOM_RADIUS_METERS + position.y);
+}
+
+vec3 threeToAlgorithmDirection(vec3 direction) {
+	return normalize(vec3(direction.x, -direction.z, direction.y));
+}
+
+vec3 threeToFlatAlgorithmPosition(vec3 position) {
+	return vec3(position.x, -position.z, position.y);
+}
+
+vec3 threeToFlatAlgorithmDirection(vec3 direction) {
+	return normalize(vec3(direction.x, -direction.z, direction.y));
+}
+
+float distanceToFlatSkyBoundary(vec3 origin, vec3 direction) {
+	float distance = sceneSkyRayLimitMeters;
+	if (direction.z < 0.0) {
+		float groundDistance = max(0.0, -origin.z / direction.z);
+		distance = min(distance, groundDistance);
+	}
+	if (direction.z > 0.0) {
+		float topDistance =
+			max(0.0, (topAltitudeMeters - origin.z) / direction.z);
+		distance = min(distance, topDistance);
+	}
+	return distance;
+}
+
+vec3 distantFirstOrderAtmosphere(vec2 pixelUv, bool hit, float hitDistanceMeters) {
+	vec3 rayDirectionThree = reconstructedWorldRayDirection();
+	vec3 algorithmOrigin = threeToAlgorithmPosition(sourceCameraPosition);
+	vec3 algorithmDirection = threeToAlgorithmDirection(rayDirectionThree);
+	float distanceMeters = hitDistanceMeters;
+
+	if (!hit) {
+		float radius = length(algorithmOrigin);
+		float mu = dot(algorithmOrigin, algorithmDirection) / radius;
+		distanceMeters = distanceToTopAtmosphereBoundary(radius, mu);
+	}
+
+	vec3 xyz = vec3(0.0);
+	float blueTransmittanceSum = 0.0;
+	float greenTransmittanceSum = 0.0;
+	float redTransmittanceSum = 0.0;
+
+	for (int channelIndex = 0; channelIndex < CHANNEL_COUNT; channelIndex++) {
+		float wavelengthNm = WAVELENGTHS_NM[channelIndex];
+		float wavelengthMicrometers = wavelengthNm * 0.001;
+		vec2 pathAndT = firstOrderPathAndViewT(
+			algorithmOrigin,
+			algorithmDirection,
+			distanceMeters,
+			wavelengthMicrometers,
+			SOLAR_IRRADIANCE[channelIndex]
+		);
+		xyz += CIE[channelIndex] * pathAndT.x * SPECTRAL_DELTA_NM;
+		if (channelIndex < 5) {
+			blueTransmittanceSum += pathAndT.y;
+		}
+		if (channelIndex >= 4 && channelIndex < 9) {
+			greenTransmittanceSum += pathAndT.y;
+		}
+		if (channelIndex >= 8) {
+			redTransmittanceSum += pathAndT.y;
+		}
+	}
+
+	vec3 displayRgb = displayPreview(xyz);
+	vec3 transmittanceRgb = vec3(
+		redTransmittanceSum / 7.0,
+		greenTransmittanceSum / 5.0,
+		blueTransmittanceSum / 5.0
+	);
+	if (debugViewMode == 1) {
+		return transmittanceRgb;
+	}
+	if (debugViewMode == 2) {
+		return displayRgb;
+	}
+	if (hit) {
+		vec3 sceneRgb = linearToSrgb(texture(sceneColorTexture, pixelUv).rgb);
+		displayRgb = clamp(
+			sceneRgb * transmittanceRgb + displayRgb,
+			vec3(0.0),
+			vec3(1.0)
+		);
+	}
+	return displayRgb;
+}
+
+vec3 localFirstOrderAtmosphere(vec2 pixelUv, bool hit, float hitDistanceMeters) {
+	vec3 rayDirectionThree = reconstructedWorldRayDirection();
+	vec3 algorithmOrigin = threeToFlatAlgorithmPosition(sourceCameraPosition);
+	vec3 algorithmDirection = threeToFlatAlgorithmDirection(rayDirectionThree);
+	float distanceMeters = hit
+		? hitDistanceMeters
+		: distanceToFlatSkyBoundary(algorithmOrigin, algorithmDirection);
+
+	vec3 xyz = vec3(0.0);
+	float blueTransmittanceSum = 0.0;
+	float greenTransmittanceSum = 0.0;
+	float redTransmittanceSum = 0.0;
+
+	for (int channelIndex = 0; channelIndex < CHANNEL_COUNT; channelIndex++) {
+		vec2 pathAndT = localFirstOrderPathAndViewT(
+			algorithmOrigin,
+			algorithmDirection,
+			distanceMeters,
+			channelIndex
+		);
+		xyz += CIE[channelIndex] * pathAndT.x * SPECTRAL_DELTA_NM;
+		if (channelIndex < 5) {
+			blueTransmittanceSum += pathAndT.y;
+		}
+		if (channelIndex >= 4 && channelIndex < 9) {
+			greenTransmittanceSum += pathAndT.y;
+		}
+		if (channelIndex >= 8) {
+			redTransmittanceSum += pathAndT.y;
+		}
+	}
+
+	vec3 displayRgb = displayPreview(xyz);
+	vec3 transmittanceRgb = vec3(
+		redTransmittanceSum / 7.0,
+		greenTransmittanceSum / 5.0,
+		blueTransmittanceSum / 5.0
+	);
+	if (debugViewMode == 1) {
+		return transmittanceRgb;
+	}
+	if (debugViewMode == 2) {
+		return displayRgb;
+	}
+	if (hit) {
+		vec3 sceneRgb = linearToSrgb(texture(sceneColorTexture, pixelUv).rgb);
+		displayRgb = clamp(
+			sceneRgb * transmittanceRgb + displayRgb,
+			vec3(0.0),
+			vec3(1.0)
+		);
+	}
+	return displayRgb;
+}
+
+void main() {
+	vec2 pixelUv = gl_FragCoord.xy / resolution;
+	if (passMode == 0) {
+		vec4 sceneColor = texture(sceneColorTexture, pixelUv);
+		outColor = vec4(linearToSrgb(sceneColor.rgb), sceneColor.a);
+		return;
+	}
+
+	float depth = texture(sceneDepthTexture, pixelUv).x;
+	if (passMode == 2) {
+		bool hit = depth < 0.999999;
+		float distanceMeters = hit ? reconstructedWorldDistance(depth) : 0.0;
+		outColor = vec4(
+			distantFirstOrderAtmosphere(pixelUv, hit, distanceMeters),
+			1.0
+		);
+		return;
+	}
+	if (passMode == 3) {
+		bool hit = depth < 0.999999;
+		float distanceMeters = hit ? reconstructedWorldDistance(depth) : 0.0;
+		outColor = vec4(
+			localFirstOrderAtmosphere(pixelUv, hit, distanceMeters),
+			1.0
+		);
+		return;
+	}
+
+	if (depth >= 0.999999) {
+		outColor = vec4(1.0, 0.0, 1.0, 1.0);
+		return;
+	}
+
+	outColor = vec4(encodeDistanceRgb24(reconstructedWorldDistance(depth)), 1.0);
+}
+`,
+		});
+	}
+
+	setConfig(config) {
+		this.config = config || {};
+	}
+
+	setSize(width, height) {
+		if (this.width === width && this.height === height) {
+			return;
+		}
+		this.width = width;
+		this.height = height;
+		this.sceneRenderTarget.setSize(width, height);
+		this.material.uniforms.resolution.value.set(width, height);
+	}
+
+	updateCameraUniforms(camera) {
+		camera.updateMatrixWorld(true);
+		camera.updateProjectionMatrix();
+		this.material.uniforms.sourceProjectionMatrixInverse.value.copy(
+			camera.projectionMatrixInverse
+		);
+		this.material.uniforms.sourceCameraMatrixWorld.value.copy(
+			camera.matrixWorld
+		);
+		this.material.uniforms.sourceCameraPosition.value.copy(camera.position);
+	}
+
+	renderScene(scene, camera) {
+		const originalTarget = this.renderer.getRenderTarget();
+		this.renderer.setRenderTarget(this.sceneRenderTarget);
+		this.renderer.clear(true, true, true);
+		this.renderer.render(scene, camera);
+		this.renderer.setRenderTarget(originalTarget);
+	}
+
+	render({ camera }) {
+		this.updateCameraUniforms(camera);
+		this.material.uniforms.passMode.value = threeNativePassModeCode(this.mode);
+		this.material.uniforms.maxDistanceMeters.value = this.maxDistanceMeters;
+		this.material.uniforms.resolution.value.set(this.width, this.height);
+		this.material.uniforms.sunRayAlgorithm.value.fromArray(
+			sourceSunDirectionForPassConfig(this.config)
+		);
+		this.material.uniforms.localSourcePosition.value.fromArray(
+			localSourcePositionForPassConfig(this.config)
+		);
+		this.material.uniforms.topAltitudeMeters.value =
+			this.config?.geometry?.topAltitudeMeters ?? 100000;
+		this.material.uniforms.sceneSkyRayLimitMeters.value =
+			this.config?.geometry?.sceneSkyRayLimitMeters ?? 1926774;
+		this.material.uniforms.referenceDistanceKm.value =
+			this.config?.source?.referenceDistanceKm ?? 4800;
+		this.material.uniforms.referenceSpectralIncidentScale.value =
+			this.config?.source?.referenceSpectralIncidentScale ?? 1;
+		this.material.uniforms.distanceFalloff.value =
+			this.config?.source?.distanceFalloff === false ? 0 : 1;
+		this.material.uniforms.sourceColor.value.set(
+			this.config?.source?.color?.r ?? 1,
+			this.config?.source?.color?.g ?? 0.98,
+			this.config?.source?.color?.b ?? 0.95
+		);
+		this.material.uniforms.debugViewMode.value = debugViewModeCode(
+			this.config?.display?.debugView
+		);
+		const originalTarget = this.renderer.getRenderTarget();
+		this.renderer.setRenderTarget(null);
+		this.renderer.clear(true, true, true);
+		this.renderer.render(this.passScene, this.passCamera);
+		this.renderer.setRenderTarget(originalTarget);
+	}
+
+	readSceneColorTargetTopLeft() {
+		return readRenderTargetRgbaTopLeft(
+			this.renderer,
+			this.sceneRenderTarget,
+			this.width,
+			this.height
+		);
+	}
+
+	dispose() {
+		this.fullscreenQuad.geometry.dispose();
+		this.material.dispose();
+		this.sceneRenderTarget.dispose();
+	}
+}
+
+function readRenderTargetRgbaTopLeft(renderer, renderTarget, width, height) {
+	const bottomLeft = new Uint8Array(width * height * 4);
+	const topLeft = new Uint8Array(width * height * 4);
+	renderer.readRenderTargetPixels(
+		renderTarget,
+		0,
+		0,
+		width,
+		height,
+		bottomLeft
+	);
+
+	for (let y = 0; y < height; y += 1) {
+		const sourceY = height - y - 1;
+		for (let x = 0; x < width; x += 1) {
+			const sourceOffset = (sourceY * width + x) * 4;
+			const targetOffset = (y * width + x) * 4;
+			topLeft[targetOffset] = bottomLeft[sourceOffset];
+			topLeft[targetOffset + 1] = bottomLeft[sourceOffset + 1];
+			topLeft[targetOffset + 2] = bottomLeft[sourceOffset + 2];
+			topLeft[targetOffset + 3] = bottomLeft[sourceOffset + 3];
+		}
+	}
+
+	return topLeft;
+}
+
+function threeNativeDepthSelectedChecks({
+	packet,
+	debugRgba8,
+	maxDistanceMeters,
+}) {
+	return packet.selectedPixels.map((sample) => {
+		const encodedRgba = rgbaAt(debugRgba8, packet.width, sample.x, sample.y);
+		const decoded = decodeDepthDistanceDebugRgba({
+			rgba: encodedRgba,
+			maxDistanceMeters,
+		});
+		const expectedHit = sample.classification !== 'sky';
+		const distanceDeltaMeters =
+			expectedHit && decoded.hit
+				? Math.abs(decoded.distanceMeters - sample.hitDistanceMeters)
+				: null;
+		const edgeTolerance =
+			expectedHit !== decoded.hit &&
+			sample.x > 0 &&
+			sample.x < packet.width - 1 &&
+			sample.y > 0 &&
+			sample.y < packet.height - 1
+				? 'possible raster/depth silhouette edge'
+				: null;
+
+		return {
+			id: sample.id,
+			x: sample.x,
+			y: sample.y,
+			acceptanceRole: THREE_NATIVE_DEPTH_ACCEPTANCE_SAMPLE_IDS.includes(
+				sample.id
+			)
+				? 'gating'
+				: 'diagnostic-only',
+			classification: sample.classification,
+			expectedHit,
+			shaderClassifiedHit: decoded.hit,
+			expectedDistanceMeters: expectedHit ? sample.hitDistanceMeters : null,
+			shaderDistanceMeters: decoded.hit ? decoded.distanceMeters : null,
+			distanceDeltaMeters,
+			encodedRgba,
+			edgeTolerance,
+		};
+	});
+}
+
+function decodeDepthDistanceDebugRgba({ rgba, maxDistanceMeters }) {
+	if (rgba[0] === 255 && rgba[1] === 0 && rgba[2] === 255) {
+		return {
+			hit: false,
+			distanceMeters: null,
+		};
+	}
+
+	const encoded = rgba[0] * 65536 + rgba[1] * 256 + rgba[2];
+	return {
+		hit: true,
+		distanceMeters: (encoded / 16777215) * maxDistanceMeters,
+	};
+}
+
+function atmosphereParitySelectedChecks({ packet, liveRgba8, oracleRgba8 }) {
+	return packet.selectedPixels.map((sample) => {
+		const liveRgba = rgbaAt(liveRgba8, packet.width, sample.x, sample.y);
+		const oracleRgba = rgbaAt(oracleRgba8, packet.width, sample.x, sample.y);
+		const deltas = liveRgba.map((value, index) => value - oracleRgba[index]);
+		return {
+			id: sample.id,
+			x: sample.x,
+			y: sample.y,
+			acceptanceRole: THREE_NATIVE_DEPTH_ACCEPTANCE_SAMPLE_IDS.includes(
+				sample.id
+			)
+				? 'gating'
+				: 'diagnostic-only',
+			classification: sample.classification,
+			hitDistanceMeters: sample.hitDistanceMeters,
+			liveRgba,
+			oracleRgba,
+			deltas,
+			maxAbsRgbDelta: Math.max(
+				...deltas.slice(0, 3).map((value) => Math.abs(value))
+			),
+		};
+	});
+}
+
+function summarizeRgbaDelta(left, right) {
+	const pixelCount = Math.min(left.length, right.length) / 4;
+	const rgbDeltas = [];
+	let maxAbsRgbDelta = 0;
+	let sumAbsRgbDelta = 0;
+
+	for (let index = 0; index < pixelCount; index += 1) {
+		const offset = index * 4;
+		let pixelMax = 0;
+		for (let channel = 0; channel < 3; channel += 1) {
+			const delta = Math.abs(left[offset + channel] - right[offset + channel]);
+			pixelMax = Math.max(pixelMax, delta);
+			sumAbsRgbDelta += delta;
+		}
+		maxAbsRgbDelta = Math.max(maxAbsRgbDelta, pixelMax);
+		rgbDeltas.push(pixelMax);
+	}
+
+	const sorted = rgbDeltas.sort((a, b) => a - b);
+	return {
+		pixelCount,
+		maxAbsRgbDelta,
+		meanAbsRgbDelta:
+			pixelCount > 0 ? sumAbsRgbDelta / (pixelCount * 3) : 0,
+		p95AbsRgbDelta:
+			sorted.length > 0 ? percentileSorted(sorted, 0.95) : 0,
+		p99AbsRgbDelta:
+			sorted.length > 0 ? percentileSorted(sorted, 0.99) : 0,
+		lengthMismatch: left.length !== right.length,
+	};
+}
+
+function threeNativeAtmospherePassCriteria({ passMode, results }) {
+	const criteria = [
+		{
+			id: 'live-three-render-target-path',
+			status:
+				results.length > 0 &&
+				results.every(
+					(result) =>
+						result.renderTarget?.colorTexture &&
+						result.renderTarget?.depthTexture
+				)
+					? 'passed'
+					: 'failed',
+			measured: results.map((result) => ({
+				id: result.id,
+				renderTarget: result.renderTarget,
+			})),
+		},
+		{
+			id: 'validation-packet-not-normal-input',
+			status:
+				results.every((result) => result.counts.skyPixels > 0 && result.counts.hitPixels > 0)
+					? 'passed'
+					: 'failed',
+			measured: results.map((result) => ({
+				id: result.id,
+				counts: result.counts,
+			})),
+		},
+		{
+			id: 'camera-resize-coverage',
+			status:
+				new Set(results.map((result) => `${result.canvas.width}x${result.canvas.height}`)).size >= 2 &&
+				results.some(
+					(result) => result.camera.cameraAdjustment !== 'none'
+				)
+					? 'passed'
+					: 'failed',
+			measured: results.map((result) => ({
+				id: result.id,
+				canvas: result.canvas,
+				camera: result.camera,
+			})),
+		},
+	];
+
+	if (passMode === 'identity') {
+		criteria.push(
+			{
+				id: 'identity-pass-matches-render-target',
+				status:
+					results.every(
+						(result) =>
+							result.passthrough.targetVsPassMaxAbsDelta !== null &&
+							result.passthrough.targetVsPassMaxAbsDelta <= 1
+					)
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					targetVsPassMaxAbsDelta:
+						result.passthrough.targetVsPassMaxAbsDelta,
+				})),
+			},
+			{
+				id: 'identity-pass-matches-direct-three-render',
+				status:
+					results.every(
+						(result) =>
+							result.passthrough.directVsPassMaxAbsDelta !== null &&
+							result.passthrough.directVsPassMaxAbsDelta <= 1
+					)
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					directVsTargetMaxAbsDelta:
+						result.passthrough.directVsTargetMaxAbsDelta,
+					directVsPassMaxAbsDelta:
+						result.passthrough.directVsPassMaxAbsDelta,
+				})),
+			}
+		);
+	} else if (passMode === 'depth-distance') {
+		criteria.push(
+			{
+				id: 'depth-selected-hit-distances-match-raycaster',
+				status:
+					results.every(
+						(result) =>
+							(result.depthDiagnostics
+								?.maxAcceptanceHitDistanceDeltaMeters ?? 0) <=
+							(result.depthDiagnostics?.distanceToleranceMeters ?? 50)
+					)
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					distanceToleranceMeters:
+						result.depthDiagnostics?.distanceToleranceMeters ?? null,
+					acceptanceSampleIds:
+						result.depthDiagnostics?.acceptanceSampleIds ?? [],
+					maxAcceptanceHitDistanceDeltaMeters:
+						result.depthDiagnostics
+							?.maxAcceptanceHitDistanceDeltaMeters ?? null,
+					maxHitDistanceDeltaMeters:
+						result.depthDiagnostics?.maxHitDistanceDeltaMeters ?? null,
+					selectedChecks: result.depthDiagnostics?.selectedChecks || [],
+				})),
+			},
+			{
+				id: 'depth-selected-classification-matches-raycaster',
+				status:
+					results.every(
+						(result) =>
+							(result.depthDiagnostics?.classificationMismatches ?? 0) === 0
+					)
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					classificationMismatches:
+						result.depthDiagnostics?.classificationMismatches ?? null,
+					selectedChecks: result.depthDiagnostics?.selectedChecks || [],
+				})),
+			}
+		);
+	} else if (passMode === 'distant-first-order-atmosphere') {
+		criteria.push(
+			{
+				id: 'distant-first-order-oracle-ran',
+				status:
+					results.every(
+						(result) =>
+							result.atmosphereParity?.oracleStatus === 'accepted'
+					)
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					oracleKind: result.atmosphereParity?.oracleKind || null,
+					oracleStatus: result.atmosphereParity?.oracleStatus || null,
+					scatteringPolicy:
+						result.atmosphereParity?.scatteringPolicy || null,
+				})),
+			},
+			{
+				id: 'selected-live-pass-matches-first-order-soft-shader',
+				status:
+					results.every((result) => {
+						const gatingChecks =
+							result.atmosphereParity?.selectedChecks?.filter(
+								(check) => check.acceptanceRole === 'gating'
+							) || [];
+						return (
+							gatingChecks.length >= 3 &&
+							Math.max(
+								0,
+								...gatingChecks.map((check) => check.maxAbsRgbDelta)
+							) <= 3
+						);
+					})
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					maxSelectedRgbDelta:
+						result.atmosphereParity?.maxSelectedRgbDelta ?? null,
+					selectedChecks:
+						result.atmosphereParity?.selectedChecks || [],
+				})),
+			},
+			{
+				id: 'full-image-delta-recorded',
+				status:
+					results.every(
+						(result) =>
+							result.atmosphereParity?.imageDeltaSummary &&
+							!result.atmosphereParity.imageDeltaSummary.lengthMismatch
+					)
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					imageDeltaSummary:
+						result.atmosphereParity?.imageDeltaSummary || null,
+				})),
+			},
+			{
+				id: 'source-light-and-shader-config-agree',
+				status:
+					results.every(
+						(result) =>
+							result.sceneLight?.sourceLightAgreement
+								?.lightTravelDirectionDelta <= 1e-6
+					)
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					sceneLight: result.sceneLight,
+				})),
+			}
+		);
+	} else if (passMode === 'flat-local-first-order-atmosphere') {
+		const closest = results.find((result) => result.sourcePacket?.offsetDegrees === 0);
+		const ninety = results.find((result) => result.sourcePacket?.offsetDegrees === 90);
+		criteria.push(
+			{
+				id: 'local-first-order-oracle-ran',
+				status:
+					results.every(
+						(result) =>
+							result.atmosphereParity?.oracleStatus === 'accepted'
+					)
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					oracleKind: result.atmosphereParity?.oracleKind || null,
+					oracleStatus: result.atmosphereParity?.oracleStatus || null,
+					scatteringPolicy:
+						result.atmosphereParity?.scatteringPolicy || null,
+				})),
+			},
+			{
+				id: 'selected-live-pass-matches-local-soft-shader',
+				status:
+					results.every((result) => {
+						const gatingChecks =
+							result.atmosphereParity?.selectedChecks?.filter(
+								(check) => check.acceptanceRole === 'gating'
+							) || [];
+						return (
+							gatingChecks.length >= 3 &&
+							Math.max(
+								0,
+								...gatingChecks.map((check) => check.maxAbsRgbDelta)
+							) <= 3
+						);
+					})
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					maxSelectedRgbDelta:
+						result.atmosphereParity?.maxSelectedRgbDelta ?? null,
+					selectedChecks:
+						result.atmosphereParity?.selectedChecks || [],
+				})),
+			},
+			{
+				id: 'source-driven-point-light-used',
+				status:
+					results.every(
+						(result) =>
+							result.sourcePacket?.kind === 'flat-local-point-sun' &&
+							result.sceneLight?.mode === 'flat-local-point-sun'
+					)
+						? 'passed'
+						: 'failed',
+				measured: results.map((result) => ({
+					id: result.id,
+					sourcePacket: result.sourcePacket,
+					sceneLight: result.sceneLight,
+				})),
+			},
+			{
+				id: 'closest-brighter-than-090deg',
+				status:
+					closest &&
+					ninety &&
+					closest.passthrough.outputSummary.meanLuminance >
+						ninety.passthrough.outputSummary.meanLuminance
+						? 'passed'
+						: 'failed',
+				measured: {
+					closest: closest
+						? {
+								id: closest.id,
+								meanLuminance:
+									closest.passthrough.outputSummary.meanLuminance,
+								source: closest.sourcePacket,
+							}
+						: null,
+					ninety: ninety
+						? {
+								id: ninety.id,
+								meanLuminance:
+									ninety.passthrough.outputSummary.meanLuminance,
+								source: ninety.sourcePacket,
+							}
+						: null,
+				},
+			},
+			{
+				id: 'local-first-order-scope-recorded',
+				status: 'passed',
+				measured: {
+					localSecondOrder: 'unsupported in this POC milestone',
+					localSolarDiscCameraRadiance: 'unsupported',
+					localGroundBounce: 'unsupported',
+				},
+			}
+		);
+	}
+
+	return criteria;
+}
+
+function summarizeCriteria(criteria) {
+	return {
+		passed: criteria.filter((criterion) => criterion.status === 'passed').length,
+		failed: criteria.filter((criterion) => criterion.status === 'failed').length,
+	};
+}
+
+function maxFinite(values) {
+	const finite = values.filter((value) => Number.isFinite(value));
+	return finite.length > 0 ? Math.max(...finite) : 0;
+}
+
+function threeNativePassModeCode(mode) {
+	if (mode === 'depth-distance') {
+		return 1;
+	}
+	if (mode === 'distant-first-order-atmosphere') {
+		return 2;
+	}
+	if (mode === 'flat-local-first-order-atmosphere') {
+		return 3;
+	}
+	return 0;
+}
+
+function debugViewModeCode(debugView) {
+	if (debugView === 'transmittance') {
+		return 1;
+	}
+	if (debugView === 'path-radiance') {
+		return 2;
+	}
+	return 0;
+}
+
+function sourceSunDirectionForPassConfig(config) {
+	const source = config?.source;
+	if (source?.kind === 'distant-directional-sun' && source.sunDirection) {
+		return source.sunDirection;
+	}
+	return sunDirection(DIRECT_RADIANCE_SUN_CASE);
+}
+
+function localSourcePositionForPassConfig(config) {
+	const source = config?.source;
+	if (source?.kind === 'flat-local-point-sun' && source.positionMeters) {
+		return source.positionMeters;
+	}
+	return [0, 0, 1];
+}
+
+function makeSphericalAtmosphereGeometryPacket() {
+	return {
+		kind: 'spherical-atmosphere-geometry',
+		bottomRadiusMeters: ATMOSPHERE.bottomRadiusMeters,
+		topRadiusMeters: ATMOSPHERE.topRadiusMeters,
+		threeToAlgorithmDirection: '[x, y, z] -> [x, -z, y]',
+		threeToAlgorithmPosition: '[x, y, z] -> [x, -z, bottomRadiusMeters + y]',
+		noHitDistancePolicy:
+			'sky/no-hit rays use the spherical top-atmosphere boundary in the atmosphere shader; this milestone only validates depth clear classification.',
+	};
+}
+
+function makeFlatAtmosphereGeometryPacket() {
+	return {
+		kind: 'flat-z-up-atmosphere',
+		observerPositionMeters: [0, 0, 2],
+		topAltitudeMeters: 100000,
+		sceneSkyRayLimitMeters: 1926774,
+		sceneSkyRayLimitPolicy:
+			'accepted-062-flat-visibility-100-percent-lost-poc-default',
+		threeToAlgorithmDirection: '[x, y, z] -> [x, -z, y]',
+		threeToAlgorithmPosition: '[x, y, z] -> [x, -z, y]',
+	};
+}
+
+function makeFlatLocalSunSourcePacket(offsetDegrees) {
+	const cases = {
+		0: {
+			id: 'san-jose-000deg-closest-algorithm32-flat-cap-first-order',
+			flatSceneKey: 'san-jose-000deg-closest',
+			role: 'closest-approach',
+			positionMeters: [-1259333.1191633441, -783448.107576714, 4828003.52],
+			observerIncidentScale: 1,
+		},
+		90: {
+			id: 'san-jose-090deg-from-closest-algorithm32-flat-cap-first-order',
+			flatSceneKey: 'san-jose-090deg-from-closest',
+			role: '90-degree-orbit-offset',
+			positionMeters: [
+				1095438.1966602097,
+				9324629.516453793,
+				4828003.5200000005,
+			],
+			observerIncidentScale: 0.22886864160388085,
+		},
+	};
+	const selected = cases[offsetDegrees] || cases[0];
+	return {
+		kind: 'flat-local-point-sun',
+		id: selected.id,
+		sunCase: selected.id,
+		sceneKey: selected.id,
+		flatSceneKey: selected.flatSceneKey,
+		offsetDegrees,
+		role: selected.role,
+		positionMeters: selected.positionMeters,
+		observerPositionMeters: [0, 0, 2],
+		radiusKm: 25.749504,
+		referenceDistanceKm: 4800,
+		referenceSpectralIncidentScale: 1.1071748923354825,
+		observerIncidentScale: selected.observerIncidentScale,
+		distanceFalloff: true,
+		color: {
+			r: 1,
+			g: 0.98,
+			b: 0.95,
+		},
+		provenance: {
+			sourceArtifact:
+				'tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes',
+			calibratedSolarIrradianceScale: 1.1071748923354825,
+			brightnessCalibration:
+				'match-distant-solar-noon-unit-incident-scale-at-closest-approach',
+		},
+	};
+}
+
 function createBaselineScene(canvas, options = {}) {
 	canvas.width = options.width || 640;
 	canvas.height = options.height || 320;
@@ -1211,6 +5156,2745 @@ function baselineCardDefinitions() {
 			materialColor: 0x2b68c0,
 		},
 	];
+}
+
+function createShadowCardFloorScene(canvas, options = {}) {
+	canvas.width = options.width || 160;
+	canvas.height = options.height || 90;
+
+	const renderer = new THREE.WebGLRenderer({
+		canvas,
+		antialias: false,
+		preserveDrawingBuffer: true,
+	});
+	renderer.setSize(canvas.width, canvas.height, false);
+	renderer.setPixelRatio(1);
+	renderer.setClearColor(0x87a9d8, 1);
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+	if ('toneMapping' in renderer) {
+		renderer.toneMapping = THREE.NoToneMapping;
+	}
+
+	const scene = new THREE.Scene();
+	scene.background = new THREE.Color(0x87a9d8);
+	const camera = new THREE.PerspectiveCamera(
+		48,
+		canvas.width / canvas.height,
+		0.1,
+		50000
+	);
+	camera.position.set(0, 160, 650);
+	camera.lookAt(new THREE.Vector3(0, 90, -1200));
+	camera.updateMatrixWorld(true);
+	camera.updateProjectionMatrix();
+
+	const ambient = new THREE.AmbientLight(0xffffff, 0.18);
+	scene.add(ambient);
+	const sceneLightConfig =
+		options.sceneLightConfig || makeHardcodedSceneLightConfig();
+	const sunLight = new THREE.DirectionalLight(
+		sceneLightConfig.color ?? 0xffffff,
+		sceneLightConfig.intensity
+	);
+	sunLight.position.fromArray(sceneLightConfig.positionMeters);
+	sunLight.target.position.fromArray(sceneLightConfig.targetMeters);
+	sunLight.castShadow = true;
+	sunLight.shadow.mapSize.width = 1024;
+	sunLight.shadow.mapSize.height = 1024;
+	sunLight.shadow.camera.near = 10;
+	sunLight.shadow.camera.far = 5000;
+	sunLight.shadow.camera.left = -1600;
+	sunLight.shadow.camera.right = 1600;
+	sunLight.shadow.camera.top = 1600;
+	sunLight.shadow.camera.bottom = -1600;
+	scene.add(sunLight);
+	scene.add(sunLight.target);
+
+	const meshes = [];
+	const sceneObjects = [];
+	const floorGeometry = new THREE.PlaneGeometry(3600, 4200);
+	const floorMaterial = new THREE.MeshStandardMaterial({
+		color: 0x3a513c,
+		roughness: 0.9,
+		metalness: 0,
+		side: THREE.DoubleSide,
+	});
+	const ground = new THREE.Mesh(floorGeometry, floorMaterial);
+	ground.name = 'shadow-floor';
+	ground.rotation.x = -Math.PI / 2;
+	ground.position.set(0, 0, -1450);
+	ground.receiveShadow = true;
+	ground.userData = {
+		kind: 'ground',
+		spectrumId: 'ground',
+	};
+	ground.updateMatrixWorld(true);
+	scene.add(ground);
+	meshes.push(ground);
+
+	const blockGeometry = new THREE.BoxGeometry(360, 360, 360);
+	const blockMaterial = new THREE.MeshStandardMaterial({
+		color: 0x9f3b35,
+		roughness: 0.72,
+		metalness: 0,
+	});
+	const block = new THREE.Mesh(blockGeometry, blockMaterial);
+	block.name = 'shadow-red-block';
+	block.position.set(-180, 180, -1120);
+	block.castShadow = true;
+	block.receiveShadow = true;
+	block.userData = {
+		kind: 'card',
+		spectrumId: 'red',
+	};
+	block.updateMatrixWorld(true);
+	scene.add(block);
+	meshes.push(block);
+
+	const blueGeometry = new THREE.PlaneGeometry(620, 420);
+	const blueMaterial = new THREE.MeshStandardMaterial({
+		color: 0x2b68c0,
+		roughness: 0.8,
+		metalness: 0,
+		side: THREE.FrontSide,
+	});
+	const blueCard = new THREE.Mesh(blueGeometry, blueMaterial);
+	blueCard.name = 'lit-blue-card';
+	blueCard.position.set(560, 240, -1800);
+	blueCard.castShadow = true;
+	blueCard.receiveShadow = true;
+	blueCard.userData = {
+		kind: 'card',
+		spectrumId: 'blue',
+	};
+	blueCard.updateMatrixWorld(true);
+	scene.add(blueCard);
+	meshes.push(blueCard);
+
+	for (const mesh of meshes) {
+		sceneObjects.push({
+			id: mesh.name,
+			kind: mesh.userData.kind,
+			spectrumId: mesh.userData.spectrumId,
+			positionMeters: vectorToArray(mesh.position),
+			castShadow: mesh.castShadow === true,
+			receiveShadow: mesh.receiveShadow === true,
+		});
+	}
+
+	return {
+		renderer,
+		scene,
+		camera,
+		meshes,
+		sceneObjects,
+		ground: {
+			id: ground.name,
+			kind: ground.userData.kind,
+			spectrumId: ground.userData.spectrumId,
+			positionMeters: vectorToArray(ground.position),
+			receiveShadow: true,
+		},
+		lights: {
+			ambientIntensity: ambient.intensity,
+			directionalIntensity: sunLight.intensity,
+			directionalPositionMeters: vectorToArray(sunLight.position),
+			directionalTargetMeters: vectorToArray(sunLight.target.position),
+		},
+		sceneLightPacket: {
+			...sceneLightConfig,
+			ambientIntensity: ambient.intensity,
+			actualDirectionalPositionMeters: vectorToArray(sunLight.position),
+			actualDirectionalTargetMeters: vectorToArray(sunLight.target.position),
+		},
+	};
+}
+
+function makeHardcodedSceneLightConfig() {
+	const positionMeters = [-900, 1600, 800];
+	const targetMeters = [0, 0, -1200];
+	const lightTravelDirectionThree = normalize(
+		subtractArrays(targetMeters, positionMeters)
+	);
+	return {
+		kind: 'hardcoded-browser-directional-light',
+		mode: 'hardcoded-browser-light',
+		color: 0xffffff,
+		colorRgb: [1, 1, 1],
+		intensity: 2.4,
+		calibrationScalar: 2.4,
+		positionMeters,
+		targetMeters,
+		lightTravelDirectionThree,
+		directionConvention:
+			'DirectionalLight travels from position toward target; this legacy light is not derived from the Algorithm32 source packet.',
+	};
+}
+
+function makeDistantSunSceneLightConfig({ sunCase }) {
+	const sourceDirectionAlgorithm = sunDirection(sunCase);
+	const directionToSourceThree = algorithmDirectionToThreeArray(
+		sourceDirectionAlgorithm
+	);
+	const targetMeters = [0, 0, -1200];
+	const distanceMeters = 3200;
+	const positionMeters = addArrays(
+		targetMeters,
+		directionToSourceThree.map((value) => value * distanceMeters)
+	);
+	const lightTravelDirectionThree = normalize(
+		subtractArrays(targetMeters, positionMeters)
+	);
+	const sourceLightAgreement = {
+		expectedLightTravelDirectionThree: directionToSourceThree.map(
+			(value) => -value
+		),
+		lightTravelDirectionDelta: maxAbsArrayDelta(
+			lightTravelDirectionThree,
+			directionToSourceThree.map((value) => -value)
+		),
+		directionToSourceThree,
+	};
+
+	return {
+		kind: 'source-driven-distant-directional-light',
+		mode: 'distant-directional-sun',
+		sunCase: sunCase.id,
+		color: 0xffffff,
+		colorRgb: [1, 1, 1],
+		intensity: 2.4,
+		calibrationScalar: 2.4,
+		calibrationPolicy:
+			'Milestone 16 keeps the accepted Milestone 13 high-Sun intensity scalar while deriving direction from the source packet.',
+		positionMeters,
+		targetMeters,
+		sourceDirectionAlgorithm,
+		directionToSourceThree,
+		lightTravelDirectionThree,
+		sourceLightAgreement,
+		directionConvention:
+			'Algorithm32 sunDirection points from sample toward Sun. Three DirectionalLight travels from position toward target, so lightTravelDirectionThree must equal -directionToSourceThree.',
+	};
+}
+
+function resolveDistantSunCase(sunCaseInput) {
+	if (sunCaseInput && typeof sunCaseInput === 'object') {
+		return sunCaseInput;
+	}
+	if (sunCaseInput === LOW_SUN_CASE.id) {
+		return LOW_SUN_CASE;
+	}
+	return DIRECT_RADIANCE_SUN_CASE;
+}
+
+function makeDistantSunSourcePacket(sunCase) {
+	return {
+		kind: 'distant-directional-sun',
+		sunCase: sunCase.id,
+		sunDirection: sunDirection(sunCase),
+		sourceTimeOfDay: sunCase.sourceTimeOfDay || null,
+		sourceSunZenithDegrees: sunCase.sourceSunZenithDegrees || null,
+		sunAltitudeDegrees: sunCase.sunAltitudeDegrees,
+		sunAzimuthDegrees: sunCase.sunAzimuthDegrees,
+	};
+}
+
+function captureSceneInputPacket({
+	captureId,
+	sceneMode,
+	sceneColorPolicy,
+	canvas,
+	renderer,
+	camera,
+	meshes,
+	sceneObjects,
+	ground,
+	sourcePacket,
+	sceneLightPacket,
+	geometryPacket,
+	sceneDetailPacket,
+}) {
+	const width = canvas.width;
+	const height = canvas.height;
+	const sceneColorRgba8 = readCanvasRgbaTopLeft(renderer, width, height);
+	const raycaster = new THREE.Raycaster();
+	const hitDistanceMeters = new Array(width * height);
+	const hitMask = new Array(width * height);
+	const spectrumNumericIds = new Array(width * height);
+	const rayDirections = new Array(width * height * 3);
+	const classificationIds = new Array(width * height);
+	const selectedCandidates = [];
+	const countsBySpectrumId = new Map();
+	const countsByClassification = new Map();
+	let skyPixels = 0;
+	let hitPixels = 0;
+	let minHitDistanceMeters = Number.POSITIVE_INFINITY;
+	let maxHitDistanceMeters = 0;
+	let darkestGround = null;
+	let brightestGround = null;
+
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const pixelIndex = y * width + x;
+			const ndc = pixelToNdc(x, y, width, height);
+			raycaster.setFromCamera(ndc, camera);
+			const ray = raycaster.ray.clone();
+			const hit = firstSceneInputHit(raycaster, meshes);
+			const rgba = Array.from(
+				sceneColorRgba8.slice(pixelIndex * 4, pixelIndex * 4 + 4)
+			);
+			const luminance = rgba[0] * 0.2126 + rgba[1] * 0.7152 + rgba[2] * 0.0722;
+
+			rayDirections[pixelIndex * 3] = ray.direction.x;
+			rayDirections[pixelIndex * 3 + 1] = ray.direction.y;
+			rayDirections[pixelIndex * 3 + 2] = ray.direction.z;
+
+			if (hit) {
+				const spectrumId = hit.object.userData?.spectrumId || 'unknown';
+				const numericSpectrumId = spectrumNumericId(spectrumId);
+				const classification = hit.object.userData?.kind || 'object';
+				hitDistanceMeters[pixelIndex] = hit.distance;
+				hitMask[pixelIndex] = 1;
+				spectrumNumericIds[pixelIndex] = numericSpectrumId;
+				classificationIds[pixelIndex] = classification;
+				hitPixels += 1;
+				minHitDistanceMeters = Math.min(minHitDistanceMeters, hit.distance);
+				maxHitDistanceMeters = Math.max(maxHitDistanceMeters, hit.distance);
+				countsBySpectrumId.set(
+					numericSpectrumId,
+					(countsBySpectrumId.get(numericSpectrumId) || 0) + 1
+				);
+				countsByClassification.set(
+					classification,
+					(countsByClassification.get(classification) || 0) + 1
+				);
+
+				if (classification === 'ground') {
+					const sample = makeSceneInputSample({
+						id: luminance < 80 ? 'shadow-candidate' : 'lit-candidate',
+						x,
+						y,
+						ndc,
+						ray,
+						hit,
+						rgba,
+						luminance,
+					});
+					if (!darkestGround || luminance < darkestGround.luminance) {
+						darkestGround = sample;
+					}
+					if (!brightestGround || luminance > brightestGround.luminance) {
+						brightestGround = sample;
+					}
+				}
+			} else {
+				hitDistanceMeters[pixelIndex] = -1;
+				hitMask[pixelIndex] = 0;
+				spectrumNumericIds[pixelIndex] = 0;
+				classificationIds[pixelIndex] = 'sky';
+				skyPixels += 1;
+			}
+		}
+	}
+
+	selectedCandidates.push(
+		sceneInputSampleAt({
+			id: 'upper-sky',
+			x: Math.floor(width * 0.5),
+			y: Math.floor(height * 0.16),
+			width,
+			height,
+			camera,
+			meshes,
+			sceneColorRgba8,
+		}),
+		sceneInputSampleAt({
+			id: 'center',
+			x: Math.floor(width * 0.5),
+			y: Math.floor(height * 0.5),
+			width,
+			height,
+			camera,
+			meshes,
+			sceneColorRgba8,
+		}),
+		sceneInputSampleAt({
+			id: 'lower-center',
+			x: Math.floor(width * 0.5),
+			y: Math.floor(height * 0.78),
+			width,
+			height,
+			camera,
+			meshes,
+			sceneColorRgba8,
+		})
+	);
+	if (darkestGround) {
+		selectedCandidates.push({ ...darkestGround, id: 'darkest-ground' });
+	}
+	if (brightestGround) {
+		selectedCandidates.push({ ...brightestGround, id: 'brightest-ground' });
+	}
+
+	const selectedPixels = dedupeSceneInputSamples(selectedCandidates);
+	const shadowCheck =
+		darkestGround && brightestGround
+			? {
+					status:
+						brightestGround.luminance - darkestGround.luminance >= 8
+							? 'accepted'
+							: 'rejected',
+					darkestGround,
+					brightestGround,
+					luminanceDelta:
+						brightestGround.luminance - darkestGround.luminance,
+				}
+			: {
+					status: 'rejected',
+					reason: 'Did not find both darkest and brightest ground samples.',
+				};
+
+	return {
+		kind: 'algorithm32-browser-scene-input-packet',
+		version: 1,
+		captureId,
+		sceneMode,
+		sceneColorPolicy,
+		width,
+		height,
+		rowOrder: 'top-left-row-major',
+		colorEncoding: 'rgba8-no-tonemapping-recorded',
+		distanceUnits: 'meters',
+		hitMaskMeaning: '1 = raycaster hit, 0 = sky/no-hit',
+		camera: {
+			type: 'THREE.PerspectiveCamera',
+			positionMeters: vectorToArray(camera.position),
+			verticalFovDegrees: camera.fov,
+			aspect: camera.aspect,
+			near: camera.near,
+			far: camera.far,
+			projectionMatrix: camera.projectionMatrix.toArray(),
+			matrixWorld: camera.matrixWorld.toArray(),
+		},
+		source: sourcePacket || makeDistantSunSourcePacket(DIRECT_RADIANCE_SUN_CASE),
+		sceneLight: sceneLightPacket || null,
+		geometry: geometryPacket || {
+			kind: 'spherical-atmosphere-geometry',
+			threeToAlgorithmDirection: '[x, y, z] -> [x, -z, y]',
+			threeToAlgorithmPosition:
+				'[x, y, z] -> [x, -z, bottomRadiusMeters + y]',
+		},
+		sceneObjects,
+		ground,
+		sceneDetail: sceneDetailPacket || null,
+		spectrumNumericIdMap: {
+			0: null,
+			1: 'red',
+			2: 'green',
+			3: 'blue',
+			4: 'ground',
+			5: 'mountainRidgeGreen',
+		},
+		sceneColorRgba8: Array.from(sceneColorRgba8),
+		hitDistanceMeters,
+		hitMask,
+		spectrumNumericIds,
+		rayDirections,
+		counts: {
+			skyPixels,
+			hitPixels,
+			bySpectrumNumericId: Object.fromEntries(
+				[...countsBySpectrumId.entries()].sort((a, b) => a[0] - b[0])
+			),
+			byClassification: Object.fromEntries(
+				[...countsByClassification.entries()].sort((a, b) =>
+					String(a[0]).localeCompare(String(b[0]))
+				)
+			),
+		},
+		hitDistanceMetersSummary: {
+			min: hitPixels > 0 ? minHitDistanceMeters : null,
+			max: hitPixels > 0 ? maxHitDistanceMeters : null,
+		},
+		selectedPixels,
+		shadowCheck,
+		knownLimitations: [
+			'First POC uses JSON-carried RGBA8 scene color rather than HDR or float attachments.',
+			'The CPU postprocessor owns spectral Algorithm32 transport; lit RGB scene composition is a display-domain approximation until shader/HDR packet work.',
+		],
+	};
+}
+
+function readCanvasRgbaTopLeft(renderer, width, height) {
+	const gl = renderer.getContext();
+	const bottomLeft = new Uint8Array(width * height * 4);
+	const topLeft = new Uint8Array(width * height * 4);
+	gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, bottomLeft);
+
+	for (let y = 0; y < height; y += 1) {
+		const sourceY = height - y - 1;
+		for (let x = 0; x < width; x += 1) {
+			const sourceOffset = (sourceY * width + x) * 4;
+			const targetOffset = (y * width + x) * 4;
+			topLeft[targetOffset] = bottomLeft[sourceOffset];
+			topLeft[targetOffset + 1] = bottomLeft[sourceOffset + 1];
+			topLeft[targetOffset + 2] = bottomLeft[sourceOffset + 2];
+			topLeft[targetOffset + 3] = bottomLeft[sourceOffset + 3];
+		}
+	}
+
+	return topLeft;
+}
+
+function sceneInputSampleAt({
+	id,
+	x,
+	y,
+	width,
+	height,
+	camera,
+	meshes,
+	sceneColorRgba8,
+}) {
+	const raycaster = new THREE.Raycaster();
+	const ndc = pixelToNdc(x, y, width, height);
+	raycaster.setFromCamera(ndc, camera);
+	const ray = raycaster.ray.clone();
+	const hit = firstSceneInputHit(raycaster, meshes);
+	const offset = (y * width + x) * 4;
+	const rgba = Array.from(sceneColorRgba8.slice(offset, offset + 4));
+	const luminance = rgba[0] * 0.2126 + rgba[1] * 0.7152 + rgba[2] * 0.0722;
+
+	return makeSceneInputSample({
+		id,
+		x,
+		y,
+		ndc,
+		ray,
+		hit,
+		rgba,
+		luminance,
+	});
+}
+
+function makeSceneInputSample({ id, x, y, ndc, ray, hit, rgba, luminance }) {
+	return {
+		id,
+		x,
+		y,
+		ndc,
+		rgba,
+		luminance,
+		classification: hit ? hit.object.userData.kind : 'sky',
+		hitObject: hit?.object?.name || null,
+		spectrumId: hit?.object?.userData?.spectrumId || null,
+		spectrumNumericId: hit
+			? spectrumNumericId(hit.object.userData?.spectrumId)
+			: 0,
+		hitDistanceMeters: hit?.distance || null,
+		threeRay: {
+			origin: vectorToArray(ray.origin),
+			direction: vectorToArray(ray.direction),
+		},
+	};
+}
+
+function dedupeSceneInputSamples(samples) {
+	const seen = new Set();
+	const result = [];
+
+	for (const sample of samples.filter(Boolean)) {
+		const key = `${sample.x},${sample.y},${sample.id}`;
+		if (seen.has(key)) {
+			continue;
+		}
+		seen.add(key);
+		result.push(sample);
+	}
+
+	return result;
+}
+
+function firstSceneInputHit(raycaster, meshes) {
+	const hits = raycaster.intersectObjects(meshes, false);
+	return hits.length > 0 ? hits[0] : null;
+}
+
+function litSceneInputCaptureDiagnostics({ command, width, height, captures }) {
+	const unlit = captures.unlitMaterialControl;
+	const lit = captures.litShadowScene;
+	const criteria = [
+		{
+			id: 'unlit-packet-has-sky-and-hit',
+			status:
+				unlit.counts.skyPixels > 0 && unlit.counts.hitPixels > 0
+					? 'passed'
+					: 'failed',
+			measured: unlit.counts,
+		},
+		{
+			id: 'lit-packet-has-sky-and-hit',
+			status:
+				lit.counts.skyPixels > 0 && lit.counts.hitPixels > 0
+					? 'passed'
+					: 'failed',
+			measured: lit.counts,
+		},
+		{
+			id: 'lit-shadow-luminance-separation',
+			status: lit.shadowCheck.status === 'accepted' ? 'passed' : 'failed',
+			measured: lit.shadowCheck,
+		},
+		{
+			id: 'packet-dimensions',
+			status:
+				unlit.width === width &&
+				unlit.height === height &&
+				lit.width === width &&
+				lit.height === height
+					? 'passed'
+					: 'failed',
+			measured: {
+				expected: { width, height },
+				unlit: { width: unlit.width, height: unlit.height },
+				lit: { width: lit.width, height: lit.height },
+			},
+		},
+	];
+	const summary = {
+		passed: criteria.filter((criterion) => criterion.status === 'passed').length,
+		failed: criteria.filter((criterion) => criterion.status === 'failed').length,
+	};
+
+	return {
+		kind: 'browser-lit-scene-input-capture-diagnostics',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		iteration: command?.payload?.iteration ||
+			'13-browser-lit-scene-input-cpu-postprocessor',
+		goal:
+			'Capture browser scene-color plus hit/ray packets for CPU Algorithm32 postprocessing, including an unlit control and a lit shadow scene.',
+		commandPayload: command?.payload || null,
+		threeRevision: THREE.REVISION,
+		width,
+		height,
+		captures,
+		criteria,
+		summary,
+	};
+}
+
+function softShaderPacketPassthroughDiagnostics({
+	command,
+	packet,
+	shaderResult,
+	selectedChecks,
+	maxAbsDelta,
+}) {
+	const criteria = [
+		{
+			id: 'scene-color-passthrough-exact',
+			status: maxAbsDelta === 0 ? 'passed' : 'failed',
+			measured: { maxAbsDelta },
+		},
+		{
+			id: 'packet-has-sky-and-hit',
+			status:
+				packet.counts.skyPixels > 0 && packet.counts.hitPixels > 0
+					? 'passed'
+					: 'failed',
+			measured: packet.counts,
+		},
+		{
+			id: 'selected-samples-match',
+			status: selectedChecks.every((sample) => sample.maxAbsRgbDelta === 0)
+				? 'passed'
+				: 'failed',
+			measured: selectedChecks.map((sample) => ({
+				id: sample.id,
+				classification: sample.classification,
+				maxAbsRgbDelta: sample.maxAbsRgbDelta,
+				expectedRgba: sample.expectedRgba,
+				shaderRgba: sample.shaderRgba,
+			})),
+		},
+		{
+			id: 'packet-contract-recorded',
+			status:
+				packet.rowOrder === 'top-left-row-major' &&
+				packet.distanceUnits === 'meters' &&
+				packet.hitMaskMeaning === '1 = raycaster hit, 0 = sky/no-hit'
+					? 'passed'
+					: 'failed',
+			measured: {
+				rowOrder: packet.rowOrder,
+				distanceUnits: packet.distanceUnits,
+				hitMaskMeaning: packet.hitMaskMeaning,
+				textureInputs: shaderResult.textureInputs,
+			},
+		},
+	];
+	const summary = {
+		passed: criteria.filter((criterion) => criterion.status === 'passed').length,
+		failed: criteria.filter((criterion) => criterion.status === 'failed').length,
+	};
+
+	return {
+		kind: 'browser-soft-shader-packet-passthrough-diagnostics',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		iteration: command?.payload?.iteration ||
+			'21-gpu-packet-input-parity-no-atmosphere-passthrough',
+		goal:
+			'Upload the browser scene-color packet to a GPU fullscreen pass and verify no-atmosphere passthrough before shader-side Algorithm32 transport.',
+		commandPayload: command?.payload || null,
+		threeRevision: THREE.REVISION,
+		webgl: shaderResult.webgl,
+		packetSummary: {
+			width: packet.width,
+			height: packet.height,
+			captureId: packet.captureId,
+			sceneMode: packet.sceneMode,
+			sceneColorPolicy: packet.sceneColorPolicy,
+			counts: packet.counts,
+			source: packet.source,
+			sceneLight: packet.sceneLight,
+			geometry: packet.geometry,
+		},
+		maxAbsDelta,
+		selectedChecks,
+		criteria,
+		summary,
+	};
+}
+
+function packetDrivenDistantSunShaderDiagnostics({
+	command,
+	canvas,
+	camera,
+	cards,
+	ground,
+	sourcePacket,
+	sunCase,
+	selectedPixels,
+	imageShaderDiagnostics,
+	secondOrderRadianceSpectralDiagnostics,
+	selectedDisplayChecks,
+	sceneInputTextureData,
+	outputRgba8,
+}) {
+	const maxSelectedRgbDelta = Math.max(
+		0,
+		...selectedDisplayChecks.map((item) => item.maxAbsRgbDelta)
+	);
+	const shaderSunRay = imageShaderDiagnostics?.sunRay || null;
+	const hasShaderSunRay =
+		Array.isArray(shaderSunRay) && shaderSunRay.length === sourcePacket.sunDirection.length;
+	const sunUniformDelta = hasShaderSunRay
+		? maxAbsArrayDelta(shaderSunRay, sourcePacket.sunDirection)
+		: Number.POSITIVE_INFINITY;
+	const selectedSunCases = secondOrderRadianceSpectralDiagnostics.map(
+		(item) => item.sunCase.id
+	);
+	const criteria = [
+		{
+			id: 'shader-render-accepted',
+			status: imageShaderDiagnostics?.status === 'accepted' ? 'passed' : 'failed',
+			measured: {
+				status: imageShaderDiagnostics?.status || null,
+				scatteringPolicy: imageShaderDiagnostics?.scatteringPolicy || null,
+			},
+		},
+		{
+			id: 'source-packet-drives-sun-uniform',
+			status: hasShaderSunRay && sunUniformDelta <= 1e-6 ? 'passed' : 'failed',
+			measured: {
+				sourceSunCase: sourcePacket.sunCase,
+				sourceSunDirection: sourcePacket.sunDirection,
+				shaderSunRay,
+				maxAbsDelta: sunUniformDelta,
+			},
+		},
+		{
+			id: 'selected-cpu-preview-uses-same-sun-case',
+			status: selectedSunCases.every((id) => id === sunCase.id)
+				? 'passed'
+				: 'failed',
+			measured: {
+				expectedSunCase: sunCase.id,
+				selectedSunCases,
+			},
+		},
+		{
+			id: 'selected-display-parity',
+			status: maxSelectedRgbDelta <= 2 ? 'passed' : 'failed',
+			measured: {
+				maxSelectedRgbDelta,
+				selectedDisplayChecks,
+			},
+		},
+		{
+			id: 'scene-input-texture-has-sky-and-hit',
+			status:
+				sceneInputTextureData?.counts?.skyPixels > 0 &&
+				sceneInputTextureData?.counts?.hitPixels > 0
+					? 'passed'
+					: 'failed',
+			measured: sceneInputTextureData?.counts || null,
+		},
+	];
+	const summary = {
+		passed: criteria.filter((criterion) => criterion.status === 'passed').length,
+		failed: criteria.filter((criterion) => criterion.status === 'failed').length,
+	};
+
+	return {
+		kind: 'browser-packet-driven-distant-sun-shader-diagnostics',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		iteration: command?.payload?.iteration ||
+			'22-packet-driven-distant-sun-shader',
+		goal:
+			'Render the existing second-order scene-input atmosphere shader from an explicit distant-Sun source packet instead of an implicit default Sun.',
+		commandPayload: command?.payload || null,
+		threeRevision: THREE.REVISION,
+		canvas: {
+			width: canvas.width,
+			height: canvas.height,
+		},
+		camera: {
+			type: 'THREE.PerspectiveCamera',
+			positionMeters: vectorToArray(camera.position),
+			lookAtMeters: [0, 420, -5000],
+			verticalFovDegrees: camera.fov,
+			aspect: camera.aspect,
+			near: camera.near,
+			far: camera.far,
+		},
+		sceneObjects: cards,
+		ground,
+		sourcePacket,
+		imageShaderDiagnostics,
+		sceneInputTexture: {
+			width: sceneInputTextureData.width,
+			height: sceneInputTextureData.height,
+			policy: sceneInputTextureData.policy,
+			channels: sceneInputTextureData.channels,
+			counts: sceneInputTextureData.counts,
+			hitDistanceMeters: sceneInputTextureData.hitDistanceMeters,
+			textureRowOrder:
+				'bottom-left rows for WebGL texelFetch compatibility; packet/display summaries remain top-left row-major',
+		},
+		secondOrderRadianceSpectralSummary:
+			summarizeSecondOrderRadianceSpectralDiagnostics(
+				secondOrderRadianceSpectralDiagnostics
+			),
+		selectedDisplayChecks,
+		maxSelectedRgbDelta,
+		outputSummary: summarizeRgba8(outputRgba8),
+		criteria,
+		summary,
+	};
+}
+
+function litSceneSoftShaderCompositionDiagnostics({
+	command,
+	packet,
+	passthroughResult,
+	atmosphereResult,
+	passthroughMaxAbsDelta,
+	selectedChecks,
+	shadowCheck,
+	skyReplacementCheck,
+}) {
+	const maxSelectedRgbDelta = Math.max(
+		0,
+		...selectedChecks.map((item) => item.maxAbsRgbDelta)
+	);
+	const criteria = [
+		{
+			id: 'no-atmosphere-passthrough-exact',
+			status: passthroughMaxAbsDelta === 0 ? 'passed' : 'failed',
+			measured: { maxAbsDelta: passthroughMaxAbsDelta },
+		},
+		{
+			id: 'atmosphere-shader-run-accepted',
+			status:
+				atmosphereResult.imageShaderDiagnostics?.status === 'accepted'
+					? 'passed'
+					: 'failed',
+			measured: {
+				status: atmosphereResult.imageShaderDiagnostics?.status || null,
+				composeSceneColor:
+					atmosphereResult.imageShaderDiagnostics?.composeSceneColor || false,
+				textureInputs: atmosphereResult.textureInputs,
+			},
+		},
+		{
+			id: 'shadow-separation-preserved',
+			status: shadowCheck.status === 'accepted' ? 'passed' : 'failed',
+			measured: shadowCheck,
+		},
+		{
+			id: 'sky-replaced-by-atmosphere',
+			status: skyReplacementCheck.status === 'accepted' ? 'passed' : 'failed',
+			measured: skyReplacementCheck,
+		},
+		{
+			id: 'selected-diagnostics-match-preview',
+			status: maxSelectedRgbDelta <= 2 ? 'passed' : 'failed',
+			measured: {
+				maxSelectedRgbDelta,
+				selectedChecks,
+			},
+		},
+		{
+			id: 'packet-has-sky-hit-and-source-light',
+			status:
+				packet.counts.skyPixels > 0 &&
+				packet.counts.hitPixels > 0 &&
+				packet.sceneLight?.mode === 'distant-directional-sun'
+					? 'passed'
+					: 'failed',
+			measured: {
+				counts: packet.counts,
+				source: packet.source,
+				sceneLight: packet.sceneLight,
+			},
+		},
+	];
+	const summary = {
+		passed: criteria.filter((criterion) => criterion.status === 'passed').length,
+		failed: criteria.filter((criterion) => criterion.status === 'failed').length,
+	};
+
+	return {
+		kind: 'browser-lit-scene-soft-shader-composition-diagnostics',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		iteration: command?.payload?.iteration ||
+			'24-lit-scene-shader-composition',
+		goal:
+			'Compose browser-rendered Three scene color with Algorithm32 atmosphere in the GPU soft-shader path.',
+		commandPayload: command?.payload || null,
+		threeRevision: THREE.REVISION,
+		webgl: atmosphereResult.webgl || passthroughResult.webgl,
+		packetSummary: {
+			width: packet.width,
+			height: packet.height,
+			captureId: packet.captureId,
+			sceneMode: packet.sceneMode,
+			counts: packet.counts,
+			source: packet.source,
+			sceneLight: packet.sceneLight,
+			geometry: packet.geometry,
+		},
+		passthroughMaxAbsDelta,
+		outputSummary: summarizeRgba8(atmosphereResult.readbackRgba8),
+		selectedChecks,
+		shadowCheck,
+		skyReplacementCheck,
+		criteria,
+		summary,
+	};
+}
+
+function softShaderCompositionSelectedCheck({ packet, sample, sunCase, shaderRgba }) {
+	const spectral = computeSecondOrderRadianceSpectralDiagnostic(
+		sample,
+		new Map(),
+		sunCase
+	);
+	const pathRgb = spectralToDisplayPreview(
+		spectral.pathRadianceByWavelength
+	).encodedRgb;
+	const transmittanceRgb = rgbTransmittanceBands(
+		spectral.transmittanceByWavelength
+	);
+	const expectedRgb = sample.classification === 'sky'
+		? pathRgb
+		: sample.rgba.slice(0, 3).map((value, index) =>
+				clampByte(value * transmittanceRgb[index] + pathRgb[index])
+			);
+	const expectedRgba = [...expectedRgb, 255];
+	const deltas = shaderRgba.map((value, index) => value - expectedRgba[index]);
+
+	return {
+		id: sample.id,
+		x: sample.x,
+		y: sample.y,
+		classification: sample.classification,
+		sceneColorRgba8: sample.rgba,
+		transmittanceRgb,
+		meanTransmittance: mean(spectral.transmittanceByWavelength),
+		pathRadiancePreviewRgba8: [...pathRgb, 255],
+		expectedRgba,
+		shaderRgba,
+		deltas,
+		maxAbsRgbDelta: Math.max(
+			...deltas.slice(0, 3).map((value) => Math.abs(value))
+		),
+	};
+}
+
+function softShaderShadowCheck({ packet, outputRgba8 }) {
+	const before = packet.shadowCheck;
+	if (!before || before.status !== 'accepted') {
+		return {
+			status: 'rejected',
+			reason: 'No accepted pre-atmosphere shadow check in packet.',
+		};
+	}
+	const darkAfter = rgbaAt(
+		outputRgba8,
+		packet.width,
+		before.darkestGround.x,
+		before.darkestGround.y
+	);
+	const brightAfter = rgbaAt(
+		outputRgba8,
+		packet.width,
+		before.brightestGround.x,
+		before.brightestGround.y
+	);
+	const darkAfterLuminance = luminanceRgb(darkAfter);
+	const brightAfterLuminance = luminanceRgb(brightAfter);
+	const afterDelta = brightAfterLuminance - darkAfterLuminance;
+
+	return {
+		status: afterDelta > 0 ? 'accepted' : 'rejected',
+		beforeDelta: before.luminanceDelta,
+		afterDelta,
+		darkestGround: {
+			id: before.darkestGround.id,
+			x: before.darkestGround.x,
+			y: before.darkestGround.y,
+			beforeRgba: before.darkestGround.rgba,
+			afterRgba: darkAfter,
+			beforeLuminance: before.darkestGround.luminance,
+			afterLuminance: darkAfterLuminance,
+		},
+		brightestGround: {
+			id: before.brightestGround.id,
+			x: before.brightestGround.x,
+			y: before.brightestGround.y,
+			beforeRgba: before.brightestGround.rgba,
+			afterRgba: brightAfter,
+			beforeLuminance: before.brightestGround.luminance,
+			afterLuminance: brightAfterLuminance,
+		},
+	};
+}
+
+function softShaderSkyReplacementCheck({ packet, outputRgba8 }) {
+	const skySample =
+		packet.selectedPixels.find((sample) => sample.classification === 'sky') ||
+		null;
+	if (!skySample) {
+		return {
+			status: 'rejected',
+			reason: 'No selected sky sample in packet.',
+		};
+	}
+	const outputRgba = rgbaAt(outputRgba8, packet.width, skySample.x, skySample.y);
+	const maxAbsRgbDelta = Math.max(
+		...outputRgba
+			.slice(0, 3)
+			.map((value, index) => Math.abs(value - skySample.rgba[index]))
+	);
+
+	return {
+		status: maxAbsRgbDelta > 2 ? 'accepted' : 'rejected',
+		id: skySample.id,
+		x: skySample.x,
+		y: skySample.y,
+		sceneColorRgba8: skySample.rgba,
+		shaderRgba: outputRgba,
+		maxAbsRgbDelta,
+	};
+}
+
+function rgbTransmittanceBands(transmittanceByWavelength) {
+	const blue = mean(transmittanceByWavelength.slice(0, 5));
+	const green = mean(transmittanceByWavelength.slice(4, 9));
+	const red = mean(transmittanceByWavelength.slice(8));
+
+	return [red, green, blue];
+}
+
+function rgbaAt(rgba8, width, x, y) {
+	const offset = (y * width + x) * 4;
+	return Array.from(rgba8.slice(offset, offset + 4));
+}
+
+function localFullImageSelectedChecks({
+	packet,
+	outputRgba8,
+	expectedSelectedPixels,
+}) {
+	const expectedById = new Map(
+		expectedSelectedPixels.map((sample) => [sample.id, sample])
+	);
+	return (packet.selectedPixels || []).map((sample) => {
+		const expected = expectedById.get(sample.id) || null;
+		const shaderRgba = rgbaAt(outputRgba8, packet.width, sample.x, sample.y);
+		const expectedRgba = expected?.postprocessRgba8 || null;
+		const deltas = expectedRgba
+			? shaderRgba.map((value, index) => value - expectedRgba[index])
+			: null;
+		return {
+			id: sample.id,
+			x: sample.x,
+			y: sample.y,
+			hit: sample.hit,
+			spectrumId: sample.spectrumId,
+			sceneColorRgba8: sample.sceneColorRgba8,
+			expectedRgba,
+			shaderRgba,
+			deltas,
+			maxAbsRgbDelta: deltas
+				? Math.max(...deltas.slice(0, 3).map((value) => Math.abs(value)))
+				: null,
+		};
+	});
+}
+
+function scenePacketSoftShaderSelectedChecks({
+	packet,
+	expectedSelectedPixels,
+	shaderRgba8,
+}) {
+	return expectedSelectedPixels.map((sample) => {
+		const shaderRgba = rgbaAt(shaderRgba8, packet.width, sample.x, sample.y);
+		const expectedRgba = sample.postprocessRgba8 || sample.expectedRgba || null;
+		const deltas = expectedRgba
+			? shaderRgba.map((value, index) => value - expectedRgba[index])
+			: null;
+		return {
+			id: sample.id,
+			x: sample.x,
+			y: sample.y,
+			hit: sample.hit,
+			classification: sample.classification,
+			spectrumId: sample.spectrumId,
+			sceneColorRgba8: sample.sceneColorRgba8,
+			shaderRgba,
+			expectedRgba,
+			deltas,
+			maxAbsRgbDelta: deltas
+				? Math.max(...deltas.slice(0, 3).map((value) => Math.abs(value)))
+				: null,
+		};
+	});
+}
+
+function luminanceRgb(rgba) {
+	return rgba[0] * 0.2126 + rgba[1] * 0.7152 + rgba[2] * 0.0722;
+}
+
+function localSunDiagnosticSamples({
+	sourceCase,
+	observerPositionMeters,
+	topAltitudeMeters,
+}) {
+	const observer = observerPositionMeters;
+	const sourceDirection = normalize(
+		subtractArrays(sourceCase.positionMeters, observer)
+	);
+	const zenith = [0, 0, 1];
+	const oblique = normalize([1, 0, 0.35]);
+	const samples = [
+		{ id: 'toward-source', direction: sourceDirection },
+		{ id: 'zenith', direction: zenith },
+		{ id: 'oblique-up', direction: oblique },
+	];
+
+	return samples.map((sample) => ({
+		...sample,
+		origin: observer,
+		distanceMeters: distanceToFlatTopForLocalDiagnostic({
+			origin: observer,
+			direction: sample.direction,
+			topAltitudeMeters,
+		}),
+	}));
+}
+
+function computeFlatLocalFirstOrderDisplayDiagnostic({
+	sample,
+	sourceCase,
+	topAltitudeMeters,
+}) {
+	const pathRadianceByWavelength = SPECTRAL_CHANNELS.map((channel, channelIndex) =>
+		computeFlatLocalFirstOrderChannel({
+			origin: sample.origin,
+			direction: sample.direction,
+			distance: sample.distanceMeters,
+			sourceCase,
+			topAltitudeMeters,
+			channel,
+			channelIndex,
+		})
+	);
+	const display = spectralToDisplayPreview(pathRadianceByWavelength);
+	const sourceSampleAtOrigin = flatLocalSourceSample({
+		sourceCase,
+		position: sample.origin,
+	});
+	const sourceSampleAtMidpoint = flatLocalSourceSample({
+		sourceCase,
+		position: addScaled(
+			sample.origin,
+			sample.direction,
+			sample.distanceMeters * 0.5
+		),
+	});
+
+	return {
+		id: sample.id,
+		origin: sample.origin,
+		direction: sample.direction,
+		distanceMeters: sample.distanceMeters,
+		pathRadianceByWavelength,
+		encodedRgba: [...display.encodedRgb, 255],
+		sourceDistanceMetersAtOrigin: sourceSampleAtOrigin.distanceMeters,
+		incidentScaleAtOrigin: sourceSampleAtOrigin.incidentScale,
+		sourceDistanceMetersAtMidpoint: sourceSampleAtMidpoint.distanceMeters,
+		incidentScaleAtMidpoint: sourceSampleAtMidpoint.incidentScale,
+		sourceTransmittanceAtMidpoint532:
+			computeFlatLocalSourceTransmittanceAtWavelength({
+				position: sourceSampleAtMidpoint.samplePositionMeters,
+				sourceSample: sourceSampleAtMidpoint,
+				topAltitudeMeters,
+				wavelengthNanometers: ATMOSPHERE.diagnosticWavelengthNanometers,
+			}),
+		phaseNuAtMidpoint: dot(sample.direction, sourceSampleAtMidpoint.direction),
+	};
+}
+
+function computeFlatLocalFirstOrderChannel({
+	origin,
+	direction,
+	distance,
+	sourceCase,
+	topAltitudeMeters,
+	channel,
+	channelIndex,
+}) {
+	if (distance <= 0) {
+		return 0;
+	}
+	const sampleCount = ATMOSPHERE.directRadianceViewSamples;
+	const step = distance / sampleCount;
+	let previousDensity = flatDensityAtPosition(origin);
+	let cumulativeRayleigh = 0;
+	let cumulativeMie = 0;
+	let rayleighSum = 0;
+	let mieSum = 0;
+	const wavelengthMicrometers = channel.wavelengthNanometers * 0.001;
+
+	for (let sampleIndex = 0; sampleIndex <= sampleCount; sampleIndex += 1) {
+		const sampleDistance = sampleIndex * step;
+		const position = addScaled(origin, direction, sampleDistance);
+		const density = flatDensityAtPosition(position);
+		if (sampleIndex > 0) {
+			cumulativeRayleigh +=
+				0.5 * (previousDensity.rayleigh + density.rayleigh) * step;
+			cumulativeMie += 0.5 * (previousDensity.mie + density.mie) * step;
+		}
+		const viewTransmittance = computeTransmittanceAtWavelength(
+			{
+				rayleighOpticalLength: cumulativeRayleigh,
+				mieOpticalLength: cumulativeMie,
+				absorptionOpticalLength: 0,
+			},
+			channel.wavelengthNanometers
+		);
+		const sourceSample = flatLocalSourceSample({ sourceCase, position });
+		const sourceTransmittance = computeFlatLocalSourceTransmittanceAtWavelength({
+			position,
+			sourceSample,
+			topAltitudeMeters,
+			wavelengthNanometers: channel.wavelengthNanometers,
+		});
+		const transmittance = viewTransmittance * sourceTransmittance;
+		const sourceIncidentScale = flatLocalSpectralIncidentScale({
+			sourceSample,
+			sourceCase,
+			channelIndex,
+		});
+		const sourceIrradiance = channel.solarIrradiance * sourceIncidentScale;
+		const nu = clamp(dot(direction, sourceSample.direction), -1, 1);
+		const weight = sampleIndex === 0 || sampleIndex === sampleCount ? 0.5 : 1;
+		rayleighSum +=
+			transmittance *
+			density.rayleigh *
+			sourceIrradiance *
+			rayleighScatteringCoefficientAt(wavelengthMicrometers) *
+			rayleighPhaseFunction(nu) *
+			weight;
+		mieSum +=
+			transmittance *
+			density.mie *
+			sourceIrradiance *
+			mieScatteringCoefficientAt(wavelengthMicrometers) *
+			miePhaseFunction(ATMOSPHERE.miePhaseFunctionG, nu) *
+			weight;
+		previousDensity = density;
+	}
+
+	return (rayleighSum + mieSum) * step;
+}
+
+function flatLocalSourceSample({ sourceCase, position }) {
+	const vectorToSource = subtractArrays(sourceCase.positionMeters, position);
+	const distanceMeters = length(vectorToSource);
+	const distanceKm = distanceMeters / 1000;
+	const direction = distanceMeters === 0
+		? [0, 0, 1]
+		: vectorToSource.map((value) => value / distanceMeters);
+	const distanceFalloffScale = sourceCase.distanceFalloff
+		? (sourceCase.referenceDistanceKm / distanceKm) ** 2
+		: 1;
+	const incidentScale =
+		sourceCase.referenceSpectralIncidentScale * distanceFalloffScale;
+
+	return {
+		kind: 'flat-local-point-sun',
+		samplePositionMeters: position,
+		positionMeters: sourceCase.positionMeters,
+		direction,
+		distanceKind: 'finite',
+		distanceMeters,
+		distanceKm,
+		distanceFalloffScale,
+		incidentScale,
+	};
+}
+
+function flatLocalSpectralIncidentScale({ sourceSample, sourceCase, channelIndex }) {
+	const color = sourceCase.color || { r: 1, g: 0.98, b: 0.95 };
+	if (channelIndex < 4) {
+		return sourceSample.incidentScale * color.b;
+	}
+	if (channelIndex < 8) {
+		return sourceSample.incidentScale * color.g;
+	}
+	return sourceSample.incidentScale * color.r;
+}
+
+function computeFlatLocalSourceTransmittanceAtWavelength({
+	position,
+	sourceSample,
+	topAltitudeMeters,
+	wavelengthNanometers,
+}) {
+	const groundDistance = sourceSample.direction[2] < 0
+		? Math.max(0, -position[2] / sourceSample.direction[2])
+		: null;
+	if (
+		groundDistance !== null &&
+		groundDistance < sourceSample.distanceMeters - 1e-9
+	) {
+		return 0;
+	}
+	const topDistance = sourceSample.direction[2] > 0
+		? Math.max(0, (topAltitudeMeters - position[2]) / sourceSample.direction[2])
+		: null;
+	const atmosphereDistance = topDistance === null
+		? sourceSample.distanceMeters
+		: Math.min(sourceSample.distanceMeters, topDistance);
+	if (atmosphereDistance <= 0) {
+		return 1;
+	}
+	const opticalLengths = computeFlatOpticalLengthsAlongDistance({
+		origin: position,
+		direction: sourceSample.direction,
+		distance: atmosphereDistance,
+		sampleCount: ATMOSPHERE.directRadianceSunTransmittanceSamples,
+	});
+	return computeTransmittanceAtWavelength(opticalLengths, wavelengthNanometers);
+}
+
+function computeFlatOpticalLengthsAlongDistance({
+	origin,
+	direction,
+	distance,
+	sampleCount,
+}) {
+	const step = distance / sampleCount;
+	let rayleighOpticalLength = 0;
+	let mieOpticalLength = 0;
+	for (let sampleIndex = 0; sampleIndex <= sampleCount; sampleIndex += 1) {
+		const position = addScaled(origin, direction, sampleIndex * step);
+		const density = flatDensityAtPosition(position);
+		const weight = sampleIndex === 0 || sampleIndex === sampleCount ? 0.5 : 1;
+		rayleighOpticalLength += density.rayleigh * weight * step;
+		mieOpticalLength += density.mie * weight * step;
+	}
+	return {
+		rayleighOpticalLength,
+		mieOpticalLength,
+		absorptionOpticalLength: 0,
+	};
+}
+
+function flatDensityAtPosition(position) {
+	const altitudeMeters = Math.max(0, position[2]);
+	return {
+		altitudeMeters,
+		rayleigh: Math.exp(-altitudeMeters / ATMOSPHERE.rayleighScaleHeightMeters),
+		mie: Math.exp(-altitudeMeters / ATMOSPHERE.mieScaleHeightMeters),
+		absorption: 0,
+	};
+}
+
+function distanceToFlatTopForLocalDiagnostic({
+	origin,
+	direction,
+	topAltitudeMeters,
+}) {
+	if (direction[2] <= 0) {
+		return 0;
+	}
+	return Math.max(0, (topAltitudeMeters - origin[2]) / direction[2]);
+}
+
+function runFlatLocalFirstOrderDiagnosticShader({
+	samples,
+	sourceCase,
+	topAltitudeMeters,
+}) {
+	const canvas = document.createElement('canvas');
+	canvas.width = Math.max(1, samples.length);
+	canvas.height = 1;
+	const gl = canvas.getContext('webgl2');
+	if (!gl) {
+		return {
+			status: 'rejected',
+			reason: 'WebGL2 unavailable for local first-order diagnostic shader.',
+			samples: [],
+		};
+	}
+	const program = createFlatLocalFirstOrderDiagnosticProgram(gl);
+	const buffer = gl.createBuffer();
+	const origins = [];
+	const directions = [];
+	const distances = [];
+	for (let index = 0; index < 8; index += 1) {
+		const sample = samples[index] || samples[0];
+		origins.push(...sample.origin);
+		directions.push(...sample.direction);
+		distances.push(sample.distanceMeters);
+	}
+
+	gl.viewport(0, 0, canvas.width, canvas.height);
+	gl.disable(gl.DEPTH_TEST);
+	gl.useProgram(program);
+	gl.uniform1i(gl.getUniformLocation(program, 'sampleCount'), samples.length);
+	gl.uniform3fv(gl.getUniformLocation(program, 'origins'), new Float32Array(origins));
+	gl.uniform3fv(
+		gl.getUniformLocation(program, 'directions'),
+		new Float32Array(directions)
+	);
+	gl.uniform1fv(gl.getUniformLocation(program, 'distances'), new Float32Array(distances));
+	gl.uniform3fv(
+		gl.getUniformLocation(program, 'sourcePosition'),
+		new Float32Array(sourceCase.positionMeters)
+	);
+	gl.uniform1f(
+		gl.getUniformLocation(program, 'topAltitudeMeters'),
+		topAltitudeMeters
+	);
+	gl.uniform1f(
+		gl.getUniformLocation(program, 'referenceDistanceKm'),
+		sourceCase.referenceDistanceKm
+	);
+	gl.uniform1f(
+		gl.getUniformLocation(program, 'referenceSpectralIncidentScale'),
+		sourceCase.referenceSpectralIncidentScale
+	);
+	gl.uniform1i(
+		gl.getUniformLocation(program, 'distanceFalloff'),
+		sourceCase.distanceFalloff ? 1 : 0
+	);
+	gl.uniform3f(
+		gl.getUniformLocation(program, 'sourceColor'),
+		sourceCase.color?.r ?? 1,
+		sourceCase.color?.g ?? 0.98,
+		sourceCase.color?.b ?? 0.95
+	);
+	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+	gl.bufferData(
+		gl.ARRAY_BUFFER,
+		new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+		gl.STATIC_DRAW
+	);
+	const positionLocation = gl.getAttribLocation(program, 'position');
+	gl.enableVertexAttribArray(positionLocation);
+	gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+	const pixels = new Uint8Array(canvas.width * 4);
+	gl.readPixels(0, 0, canvas.width, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+	const shaderSamples = samples.map((sample, index) => ({
+		id: sample.id,
+		rgba: Array.from(pixels.slice(index * 4, index * 4 + 4)),
+	}));
+	gl.deleteBuffer(buffer);
+	gl.deleteProgram(program);
+
+	return {
+		status: 'accepted',
+		webglVersion: gl.getParameter(gl.VERSION),
+		samples: shaderSamples,
+		summary: {
+			sampleCount: samples.length,
+			sourceKind: 'flat-local-point-sun',
+			includeSecondOrder: false,
+		},
+	};
+}
+
+function createFlatLocalFirstOrderDiagnosticProgram(gl) {
+	const vertexShader = compileShader(gl, gl.VERTEX_SHADER, `#version 300 es
+in vec2 position;
+
+void main() {
+	gl_Position = vec4(position, 0.0, 1.0);
+}
+`);
+	const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, `#version 300 es
+precision highp float;
+
+const int CHANNEL_COUNT = 15;
+const int MAX_SAMPLES = 8;
+const int VIEW_SAMPLES = 20;
+const int SOURCE_TRANSMITTANCE_SAMPLES = 10;
+const float RAYLEIGH_SCALE_HEIGHT_METERS = 8000.0;
+const float MIE_SCALE_HEIGHT_METERS = 1200.0;
+const float RAYLEIGH_COEFFICIENT_SCALE = 1.24062e-6;
+const float MIE_ANGSTROM_ALPHA = 0.8;
+const float MIE_ANGSTROM_BETA = 0.04;
+const float MIE_SINGLE_SCATTERING_ALBEDO = 0.8;
+const float MIE_PHASE_G = 0.7;
+const float PI = 3.141592653589793;
+const float SPECTRAL_DELTA_NM = 31.333333333333332;
+const float MAX_LUMINOUS_EFFICACY = 683.0;
+const float DISPLAY_TONE_MAP_K = 0.00029282576866764276;
+const float WAVELENGTHS_NM[CHANNEL_COUNT] = float[CHANNEL_COUNT](
+	375.666666666667, 407.0, 438.333333333333, 469.666666666667, 501.0,
+	532.333333333333, 563.666666666667, 595.0, 626.333333333333,
+	657.666666666667, 689.0, 720.333333333333, 751.666666666667,
+	783.0, 814.333333333333
+);
+const float SOLAR_IRRADIANCE[CHANNEL_COUNT] = float[CHANNEL_COUNT](
+	1.068866666667, 1.729673, 1.862071666667, 2.022063333333, 1.908154,
+	1.883391, 1.834246666667, 1.76744, 1.65952, 1.548102333333,
+	1.45078, 1.340960333333, 1.262433333333, 1.175208, 1.090824
+);
+const vec3 CIE[CHANNEL_COUNT] = vec3[CHANNEL_COUNT](
+	vec3(0.00082512, 0.000024284, 0.00388120013333),
+	vec3(0.031318, 0.000868, 0.14908),
+	vec3(0.341686666667, 0.0209466666667, 1.70569333333),
+	vec3(0.199076, 0.0898413333333, 1.30367066667),
+	vec3(0.0044, 0.33986, 0.26006),
+	vec3(0.19361662, 0.88666338, 0.0364106666667),
+	vec3(0.656026666667, 0.982973333333, 0.00305666593333),
+	vec3(1.0567, 0.6949, 0.001),
+	vec3(0.722333333333, 0.306066666667, 0.000086666664),
+	vec3(0.190006666667, 0.0706133333333, 0.0),
+	vec3(0.02474, 0.008952, 0.0),
+	vec3(0.0028426512, 0.00102653333333, 0.0),
+	vec3(0.000299809433333, 0.000108266666667, 0.0),
+	vec3(0.000034215932, 0.000012356, 0.0),
+	vec3(0.00000378221413333, 0.00000136582666667, 0.0)
+);
+
+uniform int sampleCount;
+uniform vec3 origins[MAX_SAMPLES];
+uniform vec3 directions[MAX_SAMPLES];
+uniform float distances[MAX_SAMPLES];
+uniform vec3 sourcePosition;
+uniform float topAltitudeMeters;
+uniform float referenceDistanceKm;
+uniform float referenceSpectralIncidentScale;
+uniform bool distanceFalloff;
+uniform vec3 sourceColor;
+
+out vec4 outColor;
+
+float rayleighScatteringCoefficientAt(float wavelengthMicrometersValue) {
+	return RAYLEIGH_COEFFICIENT_SCALE * pow(wavelengthMicrometersValue, -4.0);
+}
+
+float mieExtinctionCoefficientAt(float wavelengthMicrometersValue) {
+	return (MIE_ANGSTROM_BETA / MIE_SCALE_HEIGHT_METERS) *
+		pow(wavelengthMicrometersValue, -MIE_ANGSTROM_ALPHA);
+}
+
+float mieScatteringCoefficientAt(float wavelengthMicrometersValue) {
+	return mieExtinctionCoefficientAt(wavelengthMicrometersValue) *
+		MIE_SINGLE_SCATTERING_ALBEDO;
+}
+
+float transmittanceAt(float rayleighOpticalLength, float mieOpticalLength, float wavelengthMicrometersValue) {
+	float opticalDepth =
+		rayleighScatteringCoefficientAt(wavelengthMicrometersValue) * rayleighOpticalLength +
+		mieExtinctionCoefficientAt(wavelengthMicrometersValue) * mieOpticalLength;
+	return exp(-opticalDepth);
+}
+
+vec2 flatDensityAt(vec3 position) {
+	float altitudeMeters = max(0.0, position.z);
+	return vec2(
+		exp(-altitudeMeters / RAYLEIGH_SCALE_HEIGHT_METERS),
+		exp(-altitudeMeters / MIE_SCALE_HEIGHT_METERS)
+	);
+}
+
+float rayleighPhaseFunction(float nu) {
+	return (3.0 / (16.0 * PI)) * (1.0 + nu * nu);
+}
+
+float miePhaseFunction(float g, float nu) {
+	float k = (3.0 / (8.0 * PI)) * ((1.0 - g * g) / (2.0 + g * g));
+	return (k * (1.0 + nu * nu)) /
+		pow(1.0 + g * g - 2.0 * g * nu, 1.5);
+}
+
+float localSpectralScale(float incidentScale, int channelIndex) {
+	if (channelIndex < 4) {
+		return incidentScale * sourceColor.b;
+	}
+	if (channelIndex < 8) {
+		return incidentScale * sourceColor.g;
+	}
+	return incidentScale * sourceColor.r;
+}
+
+float sourceTransmittance(vec3 position, vec3 sourceDirection, float sourceDistance, float wavelengthMicrometersValue) {
+	if (sourceDirection.z < 0.0) {
+		float groundDistance = max(0.0, -position.z / sourceDirection.z);
+		if (groundDistance < sourceDistance - 1e-9) {
+			return 0.0;
+		}
+	}
+	float topDistance = sourceDirection.z > 0.0
+		? max(0.0, (topAltitudeMeters - position.z) / sourceDirection.z)
+		: sourceDistance;
+	float atmosphereDistance = min(sourceDistance, topDistance);
+	if (atmosphereDistance <= 0.0) {
+		return 1.0;
+	}
+	float stepSize = atmosphereDistance / float(SOURCE_TRANSMITTANCE_SAMPLES);
+	float rayleighLength = 0.0;
+	float mieLength = 0.0;
+	for (int sampleIndex = 0; sampleIndex <= SOURCE_TRANSMITTANCE_SAMPLES; sampleIndex++) {
+		vec3 samplePosition = position + sourceDirection * (float(sampleIndex) * stepSize);
+		vec2 density = flatDensityAt(samplePosition);
+		float weight = sampleIndex == 0 || sampleIndex == SOURCE_TRANSMITTANCE_SAMPLES ? 0.5 : 1.0;
+		rayleighLength += density.x * weight * stepSize;
+		mieLength += density.y * weight * stepSize;
+	}
+	return transmittanceAt(rayleighLength, mieLength, wavelengthMicrometersValue);
+}
+
+float localFirstOrderChannel(vec3 origin, vec3 direction, float distanceMeters, int channelIndex) {
+	if (distanceMeters <= 0.0) {
+		return 0.0;
+	}
+	float wavelengthNm = WAVELENGTHS_NM[channelIndex];
+	float wavelengthMicrometersValue = wavelengthNm * 0.001;
+	float stepSize = distanceMeters / float(VIEW_SAMPLES);
+	vec2 previousDensity = flatDensityAt(origin);
+	float cumulativeRayleigh = 0.0;
+	float cumulativeMie = 0.0;
+	float rayleighSum = 0.0;
+	float mieSum = 0.0;
+
+	for (int sampleIndex = 0; sampleIndex <= VIEW_SAMPLES; sampleIndex++) {
+		float sampleDistance = float(sampleIndex) * stepSize;
+		vec3 samplePosition = origin + direction * sampleDistance;
+		vec2 density = flatDensityAt(samplePosition);
+		if (sampleIndex > 0) {
+			cumulativeRayleigh += 0.5 * (previousDensity.x + density.x) * stepSize;
+			cumulativeMie += 0.5 * (previousDensity.y + density.y) * stepSize;
+		}
+		float viewT = transmittanceAt(cumulativeRayleigh, cumulativeMie, wavelengthMicrometersValue);
+		vec3 vectorToSource = sourcePosition - samplePosition;
+		float sourceDistance = length(vectorToSource);
+		vec3 sourceDirection = sourceDistance == 0.0 ? vec3(0.0, 0.0, 1.0) : vectorToSource / sourceDistance;
+		float distanceKm = sourceDistance / 1000.0;
+		float falloff = distanceFalloff ? pow(referenceDistanceKm / distanceKm, 2.0) : 1.0;
+		float incidentScale = referenceSpectralIncidentScale * falloff;
+		float sourceScale = localSpectralScale(incidentScale, channelIndex);
+		float sourceT = sourceTransmittance(samplePosition, sourceDirection, sourceDistance, wavelengthMicrometersValue);
+		float transmittance = viewT * sourceT;
+		float nu = clamp(dot(direction, sourceDirection), -1.0, 1.0);
+		float weight = sampleIndex == 0 || sampleIndex == VIEW_SAMPLES ? 0.5 : 1.0;
+		float sourceIrradiance = SOLAR_IRRADIANCE[channelIndex] * sourceScale;
+		rayleighSum += transmittance * density.x * sourceIrradiance *
+			rayleighScatteringCoefficientAt(wavelengthMicrometersValue) *
+			rayleighPhaseFunction(nu) * weight;
+		mieSum += transmittance * density.y * sourceIrradiance *
+			mieScatteringCoefficientAt(wavelengthMicrometersValue) *
+			miePhaseFunction(MIE_PHASE_G, nu) * weight;
+		previousDensity = density;
+	}
+	return (rayleighSum + mieSum) * stepSize;
+}
+
+void main() {
+	int index = int(floor(gl_FragCoord.x));
+	if (index < 0 || index >= sampleCount) {
+		outColor = vec4(0.0, 0.0, 0.0, 1.0);
+		return;
+	}
+	vec3 origin = origins[index];
+	vec3 direction = normalize(directions[index]);
+	float distanceMeters = distances[index];
+	vec3 xyz = vec3(0.0);
+	for (int channelIndex = 0; channelIndex < CHANNEL_COUNT; channelIndex++) {
+		float radiance = localFirstOrderChannel(origin, direction, distanceMeters, channelIndex);
+		xyz += CIE[channelIndex] * radiance * SPECTRAL_DELTA_NM;
+	}
+	vec3 linearSrgb = MAX_LUMINOUS_EFFICACY * vec3(
+		3.2406 * xyz.x + -1.5372 * xyz.y + -0.4986 * xyz.z,
+		-0.9689 * xyz.x + 1.8758 * xyz.y + 0.0415 * xyz.z,
+		0.0557 * xyz.x + -0.204 * xyz.y + 1.057 * xyz.z
+	);
+	vec3 displayRgb = clamp(
+		vec3(1.0) - exp(-DISPLAY_TONE_MAP_K * max(vec3(0.0), linearSrgb)),
+		vec3(0.0),
+		vec3(1.0)
+	);
+	outColor = vec4(displayRgb, 1.0);
+}
+`);
+	const program = gl.createProgram();
+	gl.attachShader(program, vertexShader);
+	gl.attachShader(program, fragmentShader);
+	gl.linkProgram(program);
+
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+		throw new Error(gl.getProgramInfoLog(program) || 'Flat local first-order diagnostic shader link failed.');
+	}
+
+	return program;
+}
+
+function createFlatLocalFullImageShaderProgram(gl) {
+	const vertexShader = compileShader(gl, gl.VERTEX_SHADER, `#version 300 es
+in vec2 position;
+
+void main() {
+	gl_Position = vec4(position, 0.0, 1.0);
+}
+`);
+	const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, `#version 300 es
+precision highp float;
+precision highp sampler2D;
+
+const int CHANNEL_COUNT = 15;
+const int VIEW_SAMPLES = 20;
+const int SOURCE_TRANSMITTANCE_SAMPLES = 10;
+const float RAYLEIGH_SCALE_HEIGHT_METERS = 8000.0;
+const float MIE_SCALE_HEIGHT_METERS = 1200.0;
+const float RAYLEIGH_COEFFICIENT_SCALE = 1.24062e-6;
+const float MIE_ANGSTROM_ALPHA = 0.8;
+const float MIE_ANGSTROM_BETA = 0.04;
+const float MIE_SINGLE_SCATTERING_ALBEDO = 0.8;
+const float MIE_PHASE_G = 0.7;
+const float PI = 3.141592653589793;
+const float SPECTRAL_DELTA_NM = 31.333333333333332;
+const float MAX_LUMINOUS_EFFICACY = 683.0;
+const float DISPLAY_TONE_MAP_K = 0.00029282576866764276;
+const float WAVELENGTHS_NM[CHANNEL_COUNT] = float[CHANNEL_COUNT](
+	375.666666666667, 407.0, 438.333333333333, 469.666666666667, 501.0,
+	532.333333333333, 563.666666666667, 595.0, 626.333333333333,
+	657.666666666667, 689.0, 720.333333333333, 751.666666666667,
+	783.0, 814.333333333333
+);
+const float SOLAR_IRRADIANCE[CHANNEL_COUNT] = float[CHANNEL_COUNT](
+	1.068866666667, 1.729673, 1.862071666667, 2.022063333333, 1.908154,
+	1.883391, 1.834246666667, 1.76744, 1.65952, 1.548102333333,
+	1.45078, 1.340960333333, 1.262433333333, 1.175208, 1.090824
+);
+const vec3 CIE[CHANNEL_COUNT] = vec3[CHANNEL_COUNT](
+	vec3(0.00082512, 0.000024284, 0.00388120013333),
+	vec3(0.031318, 0.000868, 0.14908),
+	vec3(0.341686666667, 0.0209466666667, 1.70569333333),
+	vec3(0.199076, 0.0898413333333, 1.30367066667),
+	vec3(0.0044, 0.33986, 0.26006),
+	vec3(0.19361662, 0.88666338, 0.0364106666667),
+	vec3(0.656026666667, 0.982973333333, 0.00305666593333),
+	vec3(1.0567, 0.6949, 0.001),
+	vec3(0.722333333333, 0.306066666667, 0.000086666664),
+	vec3(0.190006666667, 0.0706133333333, 0.0),
+	vec3(0.02474, 0.008952, 0.0),
+	vec3(0.0028426512, 0.00102653333333, 0.0),
+	vec3(0.000299809433333, 0.000108266666667, 0.0),
+	vec3(0.000034215932, 0.000012356, 0.0),
+	vec3(0.00000378221413333, 0.00000136582666667, 0.0)
+);
+
+uniform vec2 resolution;
+uniform sampler2D sceneInputTexture;
+uniform sampler2D sceneColorTexture;
+uniform sampler2D rayDirectionTexture;
+uniform vec3 cameraPositionAlgorithm;
+uniform vec3 sourcePosition;
+uniform float topAltitudeMeters;
+uniform float sceneSkyRayLimitMeters;
+uniform float referenceDistanceKm;
+uniform float referenceSpectralIncidentScale;
+uniform bool distanceFalloff;
+uniform vec3 sourceColor;
+uniform bool composeSceneColor;
+
+out vec4 outColor;
+
+float rayleighScatteringCoefficientAt(float wavelengthMicrometersValue) {
+	return RAYLEIGH_COEFFICIENT_SCALE * pow(wavelengthMicrometersValue, -4.0);
+}
+
+float mieExtinctionCoefficientAt(float wavelengthMicrometersValue) {
+	return (MIE_ANGSTROM_BETA / MIE_SCALE_HEIGHT_METERS) *
+		pow(wavelengthMicrometersValue, -MIE_ANGSTROM_ALPHA);
+}
+
+float mieScatteringCoefficientAt(float wavelengthMicrometersValue) {
+	return mieExtinctionCoefficientAt(wavelengthMicrometersValue) *
+		MIE_SINGLE_SCATTERING_ALBEDO;
+}
+
+float transmittanceAt(float rayleighOpticalLength, float mieOpticalLength, float wavelengthMicrometersValue) {
+	float opticalDepth =
+		rayleighScatteringCoefficientAt(wavelengthMicrometersValue) * rayleighOpticalLength +
+		mieExtinctionCoefficientAt(wavelengthMicrometersValue) * mieOpticalLength;
+	return exp(-opticalDepth);
+}
+
+vec2 flatDensityAt(vec3 position) {
+	float altitudeMeters = position.z;
+	if (altitudeMeters < 0.0 || altitudeMeters > topAltitudeMeters) {
+		return vec2(0.0);
+	}
+	return vec2(
+		exp(-altitudeMeters / RAYLEIGH_SCALE_HEIGHT_METERS),
+		exp(-altitudeMeters / MIE_SCALE_HEIGHT_METERS)
+	);
+}
+
+float rayleighPhaseFunction(float nu) {
+	return (3.0 / (16.0 * PI)) * (1.0 + nu * nu);
+}
+
+float miePhaseFunction(float g, float nu) {
+	float k = (3.0 / (8.0 * PI)) * ((1.0 - g * g) / (2.0 + g * g));
+	return (k * (1.0 + nu * nu)) /
+		pow(1.0 + g * g - 2.0 * g * nu, 1.5);
+}
+
+float localSpectralScale(float incidentScale, int channelIndex) {
+	if (channelIndex < 4) {
+		return incidentScale * sourceColor.b;
+	}
+	if (channelIndex < 8) {
+		return incidentScale * sourceColor.g;
+	}
+	return incidentScale * sourceColor.r;
+}
+
+float sourceTransmittance(vec3 position, vec3 sourceDirection, float sourceDistance, float wavelengthMicrometersValue) {
+	if (sourceDirection.z < 0.0) {
+		float groundDistance = max(0.0, -position.z / sourceDirection.z);
+		if (groundDistance < sourceDistance - 1e-9) {
+			return 0.0;
+		}
+	}
+	float topDistance = sourceDirection.z > 0.0
+		? max(0.0, (topAltitudeMeters - position.z) / sourceDirection.z)
+		: sourceDistance;
+	float atmosphereDistance = min(sourceDistance, topDistance);
+	if (atmosphereDistance <= 0.0) {
+		return 1.0;
+	}
+	float stepSize = atmosphereDistance / float(SOURCE_TRANSMITTANCE_SAMPLES);
+	float rayleighLength = 0.0;
+	float mieLength = 0.0;
+	for (int sampleIndex = 0; sampleIndex <= SOURCE_TRANSMITTANCE_SAMPLES; sampleIndex++) {
+		vec3 samplePosition = position + sourceDirection * (float(sampleIndex) * stepSize);
+		vec2 density = flatDensityAt(samplePosition);
+		float weight = sampleIndex == 0 || sampleIndex == SOURCE_TRANSMITTANCE_SAMPLES ? 0.5 : 1.0;
+		rayleighLength += density.x * weight * stepSize;
+		mieLength += density.y * weight * stepSize;
+	}
+	return transmittanceAt(rayleighLength, mieLength, wavelengthMicrometersValue);
+}
+
+vec2 localFirstOrderPathAndViewT(vec3 origin, vec3 direction, float distanceMeters, int channelIndex) {
+	if (distanceMeters <= 0.0) {
+		return vec2(0.0, 1.0);
+	}
+	float wavelengthNm = WAVELENGTHS_NM[channelIndex];
+	float wavelengthMicrometersValue = wavelengthNm * 0.001;
+	float stepSize = distanceMeters / float(VIEW_SAMPLES);
+	vec2 previousDensity = flatDensityAt(origin);
+	float cumulativeRayleigh = 0.0;
+	float cumulativeMie = 0.0;
+	float rayleighSum = 0.0;
+	float mieSum = 0.0;
+
+	for (int sampleIndex = 0; sampleIndex <= VIEW_SAMPLES; sampleIndex++) {
+		float sampleDistance = float(sampleIndex) * stepSize;
+		vec3 samplePosition = origin + direction * sampleDistance;
+		vec2 density = flatDensityAt(samplePosition);
+		if (sampleIndex > 0) {
+			cumulativeRayleigh += 0.5 * (previousDensity.x + density.x) * stepSize;
+			cumulativeMie += 0.5 * (previousDensity.y + density.y) * stepSize;
+		}
+		float viewT = transmittanceAt(cumulativeRayleigh, cumulativeMie, wavelengthMicrometersValue);
+		vec3 vectorToSource = sourcePosition - samplePosition;
+		float sourceDistance = length(vectorToSource);
+		vec3 sourceDirection = sourceDistance == 0.0 ? vec3(0.0, 0.0, 1.0) : vectorToSource / sourceDistance;
+		float distanceKm = sourceDistance / 1000.0;
+		float falloff = distanceFalloff ? pow(referenceDistanceKm / distanceKm, 2.0) : 1.0;
+		float incidentScale = referenceSpectralIncidentScale * falloff;
+		float sourceScale = localSpectralScale(incidentScale, channelIndex);
+		float sourceT = sourceTransmittance(samplePosition, sourceDirection, sourceDistance, wavelengthMicrometersValue);
+		float transmittance = viewT * sourceT;
+		float nu = clamp(dot(direction, sourceDirection), -1.0, 1.0);
+		float weight = sampleIndex == 0 || sampleIndex == VIEW_SAMPLES ? 0.5 : 1.0;
+		float sourceIrradiance = SOLAR_IRRADIANCE[channelIndex] * sourceScale;
+		rayleighSum += transmittance * density.x * sourceIrradiance *
+			rayleighScatteringCoefficientAt(wavelengthMicrometersValue) *
+			rayleighPhaseFunction(nu) * weight;
+		mieSum += transmittance * density.y * sourceIrradiance *
+			mieScatteringCoefficientAt(wavelengthMicrometersValue) *
+			miePhaseFunction(MIE_PHASE_G, nu) * weight;
+		previousDensity = density;
+	}
+	float viewTransmittance = transmittanceAt(cumulativeRayleigh, cumulativeMie, wavelengthMicrometersValue);
+	return vec2((rayleighSum + mieSum) * stepSize, viewTransmittance);
+}
+
+float triangularSpectrumWeight(float lambdaNm, float centerNm, float halfWidthNm) {
+	return max(0.0, 1.0 - abs(lambdaNm - centerNm) / halfWidthNm);
+}
+
+float objectRadianceAt(int spectrumId, float wavelengthNm) {
+	if (spectrumId == 1) {
+		return wavelengthNm >= 626.333333333333 ? 0.045 : 0.003;
+	}
+	if (spectrumId == 2) {
+		return
+			0.002 +
+			0.05 * triangularSpectrumWeight(wavelengthNm, 532.333333333333, 65.0) +
+			0.012 * triangularSpectrumWeight(wavelengthNm, 563.666666666667, 60.0);
+	}
+	if (spectrumId == 3) {
+		return wavelengthNm <= 501.0 ? 0.045 : 0.003;
+	}
+	if (spectrumId == 4) {
+		return 0.012;
+	}
+	return 0.0;
+}
+
+float distanceToFlatSkyBoundary(vec3 origin, vec3 direction) {
+	float distance = sceneSkyRayLimitMeters;
+	if (direction.z < 0.0) {
+		float groundDistance = max(0.0, -origin.z / direction.z);
+		distance = min(distance, groundDistance);
+	}
+	if (direction.z > 0.0) {
+		float topDistance = max(0.0, (topAltitudeMeters - origin.z) / direction.z);
+		distance = min(distance, topDistance);
+	}
+	return distance;
+}
+
+vec3 displayPreview(vec3 xyz) {
+	vec3 linearSrgb = MAX_LUMINOUS_EFFICACY * vec3(
+		3.2406 * xyz.x + -1.5372 * xyz.y + -0.4986 * xyz.z,
+		-0.9689 * xyz.x + 1.8758 * xyz.y + 0.0415 * xyz.z,
+		0.0557 * xyz.x + -0.204 * xyz.y + 1.057 * xyz.z
+	);
+	return clamp(
+		vec3(1.0) - exp(-DISPLAY_TONE_MAP_K * max(vec3(0.0), linearSrgb)),
+		vec3(0.0),
+		vec3(1.0)
+	);
+}
+
+void main() {
+	ivec2 pixelCoord = ivec2(int(gl_FragCoord.x), int(gl_FragCoord.y));
+	vec4 sceneInput = texelFetch(sceneInputTexture, pixelCoord, 0);
+	bool hit = sceneInput.z > 0.5;
+	float distanceMeters = sceneInput.x;
+	int spectrumId = hit ? int(floor(sceneInput.y + 0.5)) : 0;
+	vec3 threeDirection = normalize(texelFetch(rayDirectionTexture, pixelCoord, 0).xyz);
+	vec3 algorithmDirection = normalize(vec3(threeDirection.x, -threeDirection.z, threeDirection.y));
+	if (!hit) {
+		distanceMeters = distanceToFlatSkyBoundary(cameraPositionAlgorithm, algorithmDirection);
+	}
+
+	vec3 xyz = vec3(0.0);
+	float blueTransmittanceSum = 0.0;
+	float greenTransmittanceSum = 0.0;
+	float redTransmittanceSum = 0.0;
+
+	for (int channelIndex = 0; channelIndex < CHANNEL_COUNT; channelIndex++) {
+		float wavelengthNm = WAVELENGTHS_NM[channelIndex];
+		vec2 pathAndT = localFirstOrderPathAndViewT(
+			cameraPositionAlgorithm,
+			algorithmDirection,
+			distanceMeters,
+			channelIndex
+		);
+		float objectRadiance = composeSceneColor
+			? 0.0
+			: objectRadianceAt(spectrumId, wavelengthNm) * pathAndT.y;
+		float finalRadiance = objectRadiance + pathAndT.x;
+		xyz += CIE[channelIndex] * finalRadiance * SPECTRAL_DELTA_NM;
+		if (channelIndex < 5) {
+			blueTransmittanceSum += pathAndT.y;
+		}
+		if (channelIndex >= 4 && channelIndex < 9) {
+			greenTransmittanceSum += pathAndT.y;
+		}
+		if (channelIndex >= 8) {
+			redTransmittanceSum += pathAndT.y;
+		}
+	}
+
+	vec3 displayRgb = displayPreview(xyz);
+	if (composeSceneColor && hit) {
+		vec3 sceneRgb = texelFetch(sceneColorTexture, pixelCoord, 0).rgb;
+		vec3 transmittanceRgb = vec3(
+			redTransmittanceSum / 7.0,
+			greenTransmittanceSum / 5.0,
+			blueTransmittanceSum / 5.0
+		);
+		displayRgb = clamp(sceneRgb * transmittanceRgb + displayRgb, vec3(0.0), vec3(1.0));
+	}
+	outColor = vec4(displayRgb, 1.0);
+}
+`);
+	const program = gl.createProgram();
+	gl.attachShader(program, vertexShader);
+	gl.attachShader(program, fragmentShader);
+	gl.linkProgram(program);
+
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+		throw new Error(gl.getProgramInfoLog(program) || 'Flat local full-image shader link failed.');
+	}
+
+	return program;
+}
+
+function meanCaseLuminance(caseResult) {
+	return mean(
+		caseResult.selectedChecks.map((check) => luminanceRgb(check.rgba))
+	);
+}
+
+function mountainLitSceneInputDiagnostics({
+	command,
+	capture,
+	sceneLightPacket,
+}) {
+	const criteria = [
+		{
+			id: 'mountain-lit-packet-present',
+			status: capture ? 'passed' : 'failed',
+			measured: {
+				hasCapture: Boolean(capture),
+			},
+		},
+		{
+			id: 'mountain-lit-packet-has-sky-and-hit',
+			status:
+				capture?.counts?.skyPixels > 0 && capture?.counts?.hitPixels > 0
+					? 'passed'
+					: 'failed',
+			measured: capture?.counts || null,
+		},
+		{
+			id: 'source-driven-three-light-recorded',
+			status:
+				sceneLightPacket?.kind &&
+				(sceneLightPacket.mode === 'distant-directional-sun' ||
+					sceneLightPacket.mode === 'flat-local-point-sun')
+					? 'passed'
+					: 'failed',
+			measured: sceneLightPacket || null,
+		},
+		{
+			id: 'source-packet-recorded',
+			status: capture?.source?.kind ? 'passed' : 'failed',
+			measured: capture?.source || null,
+		},
+	];
+	const summary = {
+		passed: criteria.filter((criterion) => criterion.status === 'passed').length,
+		failed: criteria.filter((criterion) => criterion.status === 'failed').length,
+	};
+
+	return {
+		kind: 'browser-mountain-lit-scene-input-diagnostics',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		iteration: command?.payload?.iteration ||
+			'subjective-three-lit-source-scenes',
+		goal:
+			'Capture a subjective mountain scene rendered with real white Three.js source lights for CPU Algorithm32 atmosphere postprocessing.',
+		commandPayload: command?.payload || null,
+		threeRevision: THREE.REVISION,
+		capture,
+		sceneLightPacket,
+		criteria,
+		summary,
+	};
+}
+
+function renderSceneColorPassthroughShader({ renderer, packet }) {
+	const gl = renderer.getContext();
+	const program = createSceneColorPassthroughProgram(gl);
+	const texture = gl.createTexture();
+	const readbackRgba8 = new Uint8Array(packet.width * packet.height * 4);
+
+	renderer.resetState();
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	gl.viewport(0, 0, packet.width, packet.height);
+	gl.disable(gl.DEPTH_TEST);
+	gl.disable(gl.CULL_FACE);
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	gl.texImage2D(
+		gl.TEXTURE_2D,
+		0,
+		gl.RGBA,
+		packet.width,
+		packet.height,
+		0,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		new Uint8Array(packet.sceneColorRgba8)
+	);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.useProgram(program);
+	gl.uniform1i(gl.getUniformLocation(program, 'sceneColorTexture'), 0);
+	gl.uniform2f(
+		gl.getUniformLocation(program, 'resolution'),
+		packet.width,
+		packet.height
+	);
+
+	const buffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+	gl.bufferData(
+		gl.ARRAY_BUFFER,
+		new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+		gl.STATIC_DRAW
+	);
+	const positionLocation = gl.getAttribLocation(program, 'position');
+	gl.enableVertexAttribArray(positionLocation);
+	gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+	const bottomLeft = new Uint8Array(packet.width * packet.height * 4);
+	gl.readPixels(0, 0, packet.width, packet.height, gl.RGBA, gl.UNSIGNED_BYTE, bottomLeft);
+	for (let y = 0; y < packet.height; y += 1) {
+		const sourceY = packet.height - y - 1;
+		for (let x = 0; x < packet.width; x += 1) {
+			const sourceOffset = (sourceY * packet.width + x) * 4;
+			const targetOffset = (y * packet.width + x) * 4;
+			readbackRgba8[targetOffset] = bottomLeft[sourceOffset];
+			readbackRgba8[targetOffset + 1] = bottomLeft[sourceOffset + 1];
+			readbackRgba8[targetOffset + 2] = bottomLeft[sourceOffset + 2];
+			readbackRgba8[targetOffset + 3] = bottomLeft[sourceOffset + 3];
+		}
+	}
+
+	const result = {
+		readbackRgba8,
+		textureInputs: {
+			sceneColorTexture: {
+				format: 'RGBA',
+				type: 'UNSIGNED_BYTE',
+				width: packet.width,
+				height: packet.height,
+				rowOrder: packet.rowOrder,
+				filter: 'NEAREST',
+			},
+		},
+		webgl: {
+			version: gl.getParameter(gl.VERSION),
+			shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
+			vendor: gl.getParameter(gl.VENDOR),
+			renderer: gl.getParameter(gl.RENDERER),
+		},
+	};
+
+	gl.deleteBuffer(buffer);
+	gl.deleteTexture(texture);
+	gl.deleteProgram(program);
+	return result;
+}
+
+function renderSoftShaderAtmospherePostprocess({
+	renderer,
+	camera,
+	packet,
+	includeSecondOrder = true,
+}) {
+	const textureData = buildSoftShaderPacketTextureData(packet);
+	const pass = setupFirstOrderImageShaderPass({
+		renderer,
+		camera,
+		sunRay: packet.source.sunDirection,
+		includeSecondOrder,
+		sceneInputTextureData: textureData.sceneInputTextureData,
+		sceneColorTextureData: textureData.sceneColorTextureData,
+		rayDirectionTextureData: textureData.rayDirectionTextureData,
+		composeSceneColor: true,
+	});
+
+	try {
+		pass.draw();
+		return {
+			readbackRgba8: readCurrentFramebufferTopLeft(
+				pass.gl,
+				packet.width,
+				packet.height
+			),
+			imageShaderDiagnostics: pass.diagnostics,
+			textureInputs: textureData.summary,
+			webgl: {
+				version: pass.gl.getParameter(pass.gl.VERSION),
+				shadingLanguageVersion: pass.gl.getParameter(
+					pass.gl.SHADING_LANGUAGE_VERSION
+				),
+				vendor: pass.gl.getParameter(pass.gl.VENDOR),
+				renderer: pass.gl.getParameter(pass.gl.RENDERER),
+			},
+		};
+	} finally {
+		pass.dispose();
+	}
+}
+
+function renderFlatLocalSoftShaderPostprocess({
+	renderer,
+	packet,
+	composeSceneColor = false,
+	surfacePolicy = 'spectrum-id-reference-radiance',
+}) {
+	const textureData = buildSoftShaderPacketTextureData(packet);
+	const gl = renderer.getContext();
+	const program = createFlatLocalFullImageShaderProgram(gl);
+	const sceneInputTexture = gl.createTexture();
+	const sceneColorTexture = gl.createTexture();
+	const rayDirectionTexture = gl.createTexture();
+	const sourceColor = packet.source?.color || { r: 1, g: 0.98, b: 0.95 };
+	const cameraPosition = packet.camera?.positionMeters || [0, 2, 0];
+	const cameraPositionAlgorithm = [
+		cameraPosition[0] || 0,
+		-(cameraPosition[2] || 0),
+		cameraPosition[1] || 0,
+	];
+
+	renderer.resetState();
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	gl.viewport(0, 0, packet.width, packet.height);
+	gl.disable(gl.DEPTH_TEST);
+	gl.disable(gl.CULL_FACE);
+
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, sceneInputTexture);
+	gl.texImage2D(
+		gl.TEXTURE_2D,
+		0,
+		gl.RGBA32F,
+		textureData.sceneInputTextureData.width,
+		textureData.sceneInputTextureData.height,
+		0,
+		gl.RGBA,
+		gl.FLOAT,
+		textureData.sceneInputTextureData.data
+	);
+	setNearestClampTexture(gl);
+
+	gl.activeTexture(gl.TEXTURE1);
+	gl.bindTexture(gl.TEXTURE_2D, sceneColorTexture);
+	gl.texImage2D(
+		gl.TEXTURE_2D,
+		0,
+		gl.RGBA,
+		textureData.sceneColorTextureData.width,
+		textureData.sceneColorTextureData.height,
+		0,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		textureData.sceneColorTextureData.data
+	);
+	setNearestClampTexture(gl);
+
+	gl.activeTexture(gl.TEXTURE2);
+	gl.bindTexture(gl.TEXTURE_2D, rayDirectionTexture);
+	gl.texImage2D(
+		gl.TEXTURE_2D,
+		0,
+		gl.RGBA32F,
+		textureData.rayDirectionTextureData.width,
+		textureData.rayDirectionTextureData.height,
+		0,
+		gl.RGBA,
+		gl.FLOAT,
+		textureData.rayDirectionTextureData.data
+	);
+	setNearestClampTexture(gl);
+
+	gl.useProgram(program);
+	gl.uniform2f(
+		gl.getUniformLocation(program, 'resolution'),
+		packet.width,
+		packet.height
+	);
+	gl.uniform1i(gl.getUniformLocation(program, 'sceneInputTexture'), 0);
+	gl.uniform1i(gl.getUniformLocation(program, 'sceneColorTexture'), 1);
+	gl.uniform1i(gl.getUniformLocation(program, 'rayDirectionTexture'), 2);
+	gl.uniform3fv(
+		gl.getUniformLocation(program, 'cameraPositionAlgorithm'),
+		new Float32Array(cameraPositionAlgorithm)
+	);
+	gl.uniform3fv(
+		gl.getUniformLocation(program, 'sourcePosition'),
+		new Float32Array(packet.source.positionMeters)
+	);
+	gl.uniform1f(
+		gl.getUniformLocation(program, 'topAltitudeMeters'),
+		packet.geometry?.topAltitudeMeters ?? 100000
+	);
+	gl.uniform1f(
+		gl.getUniformLocation(program, 'sceneSkyRayLimitMeters'),
+		packet.geometry?.sceneSkyRayLimitMeters ?? 1926774
+	);
+	gl.uniform1f(
+		gl.getUniformLocation(program, 'referenceDistanceKm'),
+		packet.source.referenceDistanceKm ?? 4800
+	);
+	gl.uniform1f(
+		gl.getUniformLocation(program, 'referenceSpectralIncidentScale'),
+		packet.source.referenceSpectralIncidentScale ?? 1
+	);
+	gl.uniform1i(
+		gl.getUniformLocation(program, 'distanceFalloff'),
+		packet.source.distanceFalloff === false ? 0 : 1
+	);
+	gl.uniform3f(
+		gl.getUniformLocation(program, 'sourceColor'),
+		sourceColor.r ?? 1,
+		sourceColor.g ?? 0.98,
+		sourceColor.b ?? 0.95
+	);
+	gl.uniform1i(
+		gl.getUniformLocation(program, 'composeSceneColor'),
+		composeSceneColor ? 1 : 0
+	);
+
+	const buffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+	gl.bufferData(
+		gl.ARRAY_BUFFER,
+		new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+		gl.STATIC_DRAW
+	);
+	const positionLocation = gl.getAttribLocation(program, 'position');
+	gl.enableVertexAttribArray(positionLocation);
+	gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+	const readbackRgba8 = readCurrentFramebufferTopLeft(
+		gl,
+		packet.width,
+		packet.height
+	);
+	const result = {
+		readbackRgba8,
+		imageShaderDiagnostics: {
+			status: 'accepted',
+			kind: 'browser-flat-local-full-image-shader-diagnostics',
+			width: packet.width,
+			height: packet.height,
+			sourceKind: packet.source.kind,
+			sourceId: packet.source.id,
+			offsetDegrees: packet.source.offsetDegrees ?? null,
+			geometryKind: packet.geometry?.kind || null,
+			surfacePolicy,
+			composeSceneColor,
+			scatteringPolicy:
+				'15-channel flat/local point-Sun first-order radiance; local second-order cache unsupported.',
+			cameraPositionAlgorithm,
+		},
+		textureInputs: textureData.summary,
+		webgl: {
+			version: gl.getParameter(gl.VERSION),
+			shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
+			vendor: gl.getParameter(gl.VENDOR),
+			renderer: gl.getParameter(gl.RENDERER),
+		},
+	};
+
+	gl.deleteBuffer(buffer);
+	gl.deleteTexture(sceneInputTexture);
+	gl.deleteTexture(sceneColorTexture);
+	gl.deleteTexture(rayDirectionTexture);
+	gl.deleteProgram(program);
+	return result;
+}
+
+function buildSoftShaderPacketTextureData(packet) {
+	const sceneInputData = new Float32Array(packet.width * packet.height * 4);
+	const rayDirectionData = new Float32Array(packet.width * packet.height * 4);
+	const sceneColorData = new Uint8Array(packet.width * packet.height * 4);
+
+	for (let y = 0; y < packet.height; y += 1) {
+		const textureY = packet.height - y - 1;
+		for (let x = 0; x < packet.width; x += 1) {
+			const pixelIndex = y * packet.width + x;
+			const textureIndex = textureY * packet.width + x;
+			const packetOffset = pixelIndex * 4;
+			const textureOffset = textureIndex * 4;
+			const directionOffset = pixelIndex * 3;
+
+			sceneInputData[textureOffset] = packet.hitDistanceMeters[pixelIndex];
+			sceneInputData[textureOffset + 1] = packet.spectrumNumericIds[pixelIndex];
+			sceneInputData[textureOffset + 2] = packet.hitMask[pixelIndex];
+			sceneInputData[textureOffset + 3] = 0;
+
+			rayDirectionData[textureOffset] = packet.rayDirections[directionOffset];
+			rayDirectionData[textureOffset + 1] =
+				packet.rayDirections[directionOffset + 1];
+			rayDirectionData[textureOffset + 2] =
+				packet.rayDirections[directionOffset + 2];
+			rayDirectionData[textureOffset + 3] = 0;
+
+			sceneColorData[textureOffset] = packet.sceneColorRgba8[packetOffset];
+			sceneColorData[textureOffset + 1] =
+				packet.sceneColorRgba8[packetOffset + 1];
+			sceneColorData[textureOffset + 2] =
+				packet.sceneColorRgba8[packetOffset + 2];
+			sceneColorData[textureOffset + 3] =
+				packet.sceneColorRgba8[packetOffset + 3];
+		}
+	}
+
+	return {
+		sceneInputTextureData: {
+			width: packet.width,
+			height: packet.height,
+			data: sceneInputData,
+			policy:
+				'packet hit distance, numeric material id, and hit mask for soft-shader atmosphere composition',
+			channels: {
+				r: 'hit distance in meters, or -1 for sky',
+				g: 'numeric spectrum/material id',
+				b: 'hit mask, 1 for hit and 0 for sky',
+				a: 'reserved',
+			},
+			counts: packet.counts,
+			hitDistanceMeters: packet.hitDistanceMetersSummary || null,
+			rowOrder: 'bottom-left-for-webgl-texture',
+			source: packet.captureId,
+		},
+		sceneColorTextureData: {
+			width: packet.width,
+			height: packet.height,
+			data: sceneColorData,
+			rowOrder: 'bottom-left-for-webgl-texture',
+		},
+		rayDirectionTextureData: {
+			width: packet.width,
+			height: packet.height,
+			data: rayDirectionData,
+			rowOrder: 'bottom-left-for-webgl-texture',
+		},
+		summary: {
+			sceneInputTexture: {
+				format: 'RGBA32F',
+				rowOrder: 'bottom-left-for-webgl-texture',
+			},
+			sceneColorTexture: {
+				format: 'RGBA/UNSIGNED_BYTE',
+				rowOrder: 'bottom-left-for-webgl-texture',
+			},
+			rayDirectionTexture: {
+				format: 'RGBA32F',
+				rowOrder: 'bottom-left-for-webgl-texture',
+			},
+		},
+	};
+}
+
+function setNearestClampTexture(gl) {
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+}
+
+function readCurrentFramebufferTopLeft(gl, width, height) {
+	const bottomLeft = new Uint8Array(width * height * 4);
+	const topLeft = new Uint8Array(width * height * 4);
+	gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, bottomLeft);
+	for (let y = 0; y < height; y += 1) {
+		const sourceY = height - y - 1;
+		for (let x = 0; x < width; x += 1) {
+			const sourceOffset = (sourceY * width + x) * 4;
+			const targetOffset = (y * width + x) * 4;
+			topLeft[targetOffset] = bottomLeft[sourceOffset];
+			topLeft[targetOffset + 1] = bottomLeft[sourceOffset + 1];
+			topLeft[targetOffset + 2] = bottomLeft[sourceOffset + 2];
+			topLeft[targetOffset + 3] = bottomLeft[sourceOffset + 3];
+		}
+	}
+	return topLeft;
+}
+
+function createSceneColorPassthroughProgram(gl) {
+	const vertexShader = compileShader(gl, gl.VERTEX_SHADER, `#version 300 es
+in vec2 position;
+
+void main() {
+	gl_Position = vec4(position, 0.0, 1.0);
+}
+`);
+	const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, `#version 300 es
+precision highp float;
+precision highp sampler2D;
+
+uniform sampler2D sceneColorTexture;
+uniform vec2 resolution;
+
+out vec4 outColor;
+
+void main() {
+	ivec2 coord = ivec2(int(gl_FragCoord.x), int(resolution.y - gl_FragCoord.y));
+	outColor = texelFetch(sceneColorTexture, coord, 0);
+}
+`);
+	const program = gl.createProgram();
+	gl.attachShader(program, vertexShader);
+	gl.attachShader(program, fragmentShader);
+	gl.linkProgram(program);
+
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+		throw new Error(gl.getProgramInfoLog(program) || 'Scene color passthrough shader link failed.');
+	}
+
+	return program;
+}
+
+function maxAbsByteDelta(left, right) {
+	let maxDelta = 0;
+	const length = Math.min(left.length, right.length);
+	for (let index = 0; index < length; index += 1) {
+		maxDelta = Math.max(maxDelta, Math.abs(left[index] - right[index]));
+	}
+	return Math.max(maxDelta, Math.abs(left.length - right.length) > 0 ? 255 : 0);
+}
+
+function createPacketPostprocessRenderer(packet) {
+	const canvas = document.getElementById('lab-canvas');
+	canvas.width = packet.width;
+	canvas.height = packet.height;
+	const renderer = new THREE.WebGLRenderer({
+		canvas,
+		antialias: false,
+		preserveDrawingBuffer: true,
+	});
+	renderer.setPixelRatio(1);
+	renderer.setSize(packet.width, packet.height, false);
+	if ('toneMapping' in renderer) {
+		renderer.toneMapping = THREE.NoToneMapping;
+	}
+
+	const cameraInfo = packet.camera || {};
+	const camera = new THREE.PerspectiveCamera(
+		cameraInfo.verticalFovDegrees || 60,
+		cameraInfo.aspect || packet.width / packet.height,
+		cameraInfo.near || 0.1,
+		cameraInfo.far || 100000
+	);
+	if (Array.isArray(cameraInfo.positionMeters)) {
+		camera.position.fromArray(cameraInfo.positionMeters);
+	}
+	if (Array.isArray(cameraInfo.matrixWorld)) {
+		camera.matrixWorld.fromArray(cameraInfo.matrixWorld);
+		camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+	} else {
+		camera.updateMatrixWorld(true);
+	}
+	if (Array.isArray(cameraInfo.projectionMatrix)) {
+		camera.projectionMatrix.fromArray(cameraInfo.projectionMatrix);
+		camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+	} else {
+		camera.updateProjectionMatrix();
+	}
+
+	return { canvas, renderer, camera };
+}
+
+function scenePacketSoftShaderImageDiagnostics({
+	command,
+	packet,
+	shaderResult,
+	selectedChecks,
+	maxSelectedRgbDelta,
+	surfacePolicy,
+	composeSceneColor,
+	includeSecondOrder,
+}) {
+	const criteria = [
+		{
+			id: 'source-packet-supported',
+			status:
+				packet.source?.kind === 'distant-directional-sun' ||
+				packet.source?.kind === 'flat-local-point-sun'
+					? 'passed'
+					: 'failed',
+			measured: packet.source || null,
+		},
+		{
+			id: 'packet-has-sky-and-hit',
+			status:
+				packet.counts?.skyPixels > 0 && packet.counts?.hitPixels > 0
+					? 'passed'
+					: 'failed',
+			measured: packet.counts || null,
+		},
+		{
+			id: 'shader-run-accepted',
+			status: shaderResult.imageShaderDiagnostics?.status === 'accepted'
+				? 'passed'
+				: 'failed',
+			measured: shaderResult.imageShaderDiagnostics,
+		},
+		{
+			id: 'selected-pixels-match-cpu-soft-shader',
+			status:
+				selectedChecks.length > 0 && maxSelectedRgbDelta <= 2
+					? 'passed'
+					: 'failed',
+			measured: {
+				maxSelectedRgbDelta,
+				selectedChecks,
+			},
+		},
+		{
+			id: 'composition-policy-recorded',
+			status: composeSceneColor ? 'passed' : 'failed',
+			measured: {
+				surfacePolicy,
+				composeSceneColor,
+				includeSecondOrder,
+			},
+		},
+	];
+	const summary = {
+		passed: criteria.filter((criterion) => criterion.status === 'passed').length,
+		failed: criteria.filter((criterion) => criterion.status === 'failed').length,
+	};
+
+	return {
+		kind: 'browser-scene-packet-soft-shader-image-diagnostics',
+		status: summary.failed === 0 ? 'accepted' : 'rejected',
+		iteration:
+			command?.payload?.iteration || 'subjective-scene-packet-soft-shader-image',
+		goal:
+			'Render an externally captured scene-input packet through the browser GPU soft-shader path for CPU soft-shader comparison.',
+		commandPayload: {
+			...(command?.payload || {}),
+			sceneInputPacket: {
+				width: packet.width,
+				height: packet.height,
+				captureId: packet.captureId,
+				sceneMode: packet.sceneMode,
+				counts: packet.counts,
+				source: packet.source,
+				geometry: packet.geometry,
+				sceneColorPolicy: packet.sceneColorPolicy,
+			},
+		},
+		threeRevision: THREE.REVISION,
+		webgl: shaderResult.webgl,
+		packetSummary: {
+			width: packet.width,
+			height: packet.height,
+			captureId: packet.captureId,
+			sceneMode: packet.sceneMode,
+			rowOrder: packet.rowOrder,
+			counts: packet.counts,
+			source: packet.source,
+			geometry: packet.geometry,
+		},
+		surfacePolicy,
+		composeSceneColor,
+		includeSecondOrder,
+		textureInputs: shaderResult.textureInputs,
+		outputSummary: summarizeRgba8(shaderResult.readbackRgba8),
+		selectedChecks,
+		maxSelectedRgbDelta,
+		criteria,
+		summary,
+	};
+}
+
+function summarizeRgba8(rgba8) {
+	let minByte = 255;
+	let maxByte = 0;
+	let luminanceSum = 0;
+	let alphaMin = 255;
+	let alphaMax = 0;
+	const pixelCount = Math.floor(rgba8.length / 4);
+
+	for (let index = 0; index < pixelCount; index += 1) {
+		const offset = index * 4;
+		const r = rgba8[offset];
+		const g = rgba8[offset + 1];
+		const b = rgba8[offset + 2];
+		const a = rgba8[offset + 3];
+		minByte = Math.min(minByte, r, g, b);
+		maxByte = Math.max(maxByte, r, g, b);
+		alphaMin = Math.min(alphaMin, a);
+		alphaMax = Math.max(alphaMax, a);
+		luminanceSum += r * 0.2126 + g * 0.7152 + b * 0.0722;
+	}
+
+	return {
+		pixelCount,
+		minByte,
+		maxByte,
+		alphaMin,
+		alphaMax,
+		meanLuminance: pixelCount > 0 ? luminanceSum / pixelCount : 0,
+	};
+}
+
+function disposeSceneSetup(sceneSetup) {
+	if (!sceneSetup) {
+		return;
+	}
+	for (const mesh of sceneSetup.meshes || []) {
+		mesh.geometry?.dispose?.();
+		const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+		for (const material of materials) {
+			material?.dispose?.();
+		}
+	}
+	sceneSetup.renderer?.dispose?.();
 }
 
 const MOUNTAIN_VIEW_MODES = Object.freeze({
@@ -1382,6 +8066,468 @@ function createMountainShaderScene(canvas, options = {}) {
 			depthMeters: MOUNTAIN_RIDGE_SCENE.valleyFloor.depthMeters,
 		},
 	};
+}
+
+function createMountainLitScene(canvas, options = {}) {
+	canvas.width = options.width || 320;
+	canvas.height = options.height || 180;
+
+	const renderer = new THREE.WebGLRenderer({
+		canvas,
+		antialias: false,
+		preserveDrawingBuffer: true,
+	});
+	renderer.setSize(canvas.width, canvas.height, false);
+	renderer.setPixelRatio(1);
+	renderer.setClearColor(0x87a9d8, 1);
+	if ('toneMapping' in renderer) {
+		renderer.toneMapping = THREE.NoToneMapping;
+	}
+
+	const mountainView = mountainLitCameraConfig({
+		mountainViewId: options.mountainView,
+		cameraViewMode: options.cameraViewMode,
+		sourcePacket: options.sourcePacket,
+		sceneDetailSpec: options.sceneDetailSpec,
+	});
+	const camera = new THREE.PerspectiveCamera(
+		mountainView.verticalFovDegrees,
+		canvas.width / canvas.height,
+		MOUNTAIN_RIDGE_SCENE.nearMeters,
+		MOUNTAIN_RIDGE_SCENE.farMeters
+	);
+	camera.position.fromArray(mountainView.cameraPositionMeters);
+	camera.lookAt(new THREE.Vector3(...mountainView.lookAtMeters));
+	camera.updateMatrixWorld(true);
+	camera.updateProjectionMatrix();
+
+	const scene = new THREE.Scene();
+	scene.background = new THREE.Color(0x87a9d8);
+	const meshes = [];
+	const sceneObjects = [];
+	const detailSetup =
+		options.sceneDetailSpec?.kind === 'mountain-detail-v1'
+			? addDetailedMountainTerrain({
+					scene,
+					meshes,
+					sceneObjects,
+					detailSpec: options.sceneDetailSpec,
+				})
+			: addDefaultMountainLitRidges({
+					scene,
+					meshes,
+					sceneObjects,
+				});
+
+	const ambient = new THREE.AmbientLight(
+		0xffffff,
+		options.sceneDetailSpec?.ambientIntensity ?? 0.04
+	);
+	scene.add(ambient);
+	const sceneLightPacket = addMountainSourceLight({
+		scene,
+		sourcePacket: options.sourcePacket,
+		targetMeters: mountainView.lookAtMeters,
+	});
+
+	return {
+		renderer,
+		scene,
+		camera,
+		meshes,
+		mountainView,
+		sceneObjects,
+		ground: detailSetup.ground,
+		sceneDetailPacket: detailSetup.sceneDetailPacket,
+		sceneLightPacket: {
+			...sceneLightPacket,
+			ambientIntensity: ambient.intensity,
+		},
+	};
+}
+
+function addDefaultMountainLitRidges({ scene, meshes, sceneObjects }) {
+	const floorDefinition = MOUNTAIN_RIDGE_SCENE.valleyFloor;
+	const floorGeometry = new THREE.PlaneGeometry(
+		floorDefinition.widthMeters,
+		floorDefinition.depthMeters
+	);
+	const floorMaterial = new THREE.MeshStandardMaterial({
+		color: 0x596a50,
+		roughness: 0.96,
+		metalness: 0,
+		side: THREE.DoubleSide,
+	});
+	const groundMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+	groundMesh.name = floorDefinition.id;
+	groundMesh.rotation.x = -Math.PI / 2;
+	groundMesh.position.fromArray(floorDefinition.centerMeters);
+	groundMesh.userData = {
+		kind: 'ground',
+		spectrumId: floorDefinition.spectrumId,
+		normal: [0, 1, 0],
+	};
+	groundMesh.updateMatrixWorld(true);
+	scene.add(groundMesh);
+	meshes.push(groundMesh);
+
+	for (let index = 0; index < MOUNTAIN_RIDGE_DEFINITIONS.length; index += 1) {
+		const definition = MOUNTAIN_RIDGE_DEFINITIONS[index];
+		const geometry = createMountainLitRidgeGeometry(definition);
+		const material = new THREE.MeshStandardMaterial({
+			color: mountainLitRidgeColor(index),
+			roughness: 0.92,
+			metalness: 0,
+			side: THREE.DoubleSide,
+		});
+		const mesh = new THREE.Mesh(geometry, material);
+		mesh.name = definition.id;
+		mesh.position.set(0, 0, definition.zMeters);
+		mesh.userData = {
+			kind: 'mountain-ridge',
+			spectrumId: 'mountainRidgeGreen',
+			zMeters: definition.zMeters,
+		};
+		mesh.updateMatrixWorld(true);
+		scene.add(mesh);
+		meshes.push(mesh);
+		sceneObjects.push({
+			id: definition.id,
+			kind: 'mountain-ridge',
+			spectrumId: 'mountainRidgeGreen',
+			zMeters: definition.zMeters,
+			xMinMeters: definition.xMinMeters,
+			xMaxMeters: definition.xMaxMeters,
+		});
+	}
+
+	return {
+		ground: {
+			id: groundMesh.name,
+			kind: groundMesh.userData.kind,
+			spectrumId: groundMesh.userData.spectrumId,
+			centerMeters: floorDefinition.centerMeters,
+			widthMeters: floorDefinition.widthMeters,
+			depthMeters: floorDefinition.depthMeters,
+		},
+		sceneDetailPacket: null,
+	};
+}
+
+function addDetailedMountainTerrain({ scene, meshes, sceneObjects, detailSpec }) {
+	let bottomGround = null;
+	if (detailSpec.bottomGround) {
+		bottomGround = detailedBottomGroundMesh(detailSpec.bottomGround);
+		scene.add(bottomGround);
+		meshes.push(bottomGround);
+		sceneObjects.push({
+			id: detailSpec.bottomGround.id,
+			kind: detailSpec.bottomGround.kind,
+			spectrumId: detailSpec.bottomGround.spectrumId,
+			centerMeters: detailSpec.bottomGround.centerMeters,
+			widthMeters: detailSpec.bottomGround.widthMeters,
+			depthMeters: detailSpec.bottomGround.depthMeters,
+			bounds: detailSpec.bottomGround.bounds,
+		});
+	}
+
+	const groundMesh = detailedTerrainMesh({
+		meshSpec: detailSpec.floor,
+		kind: 'ground',
+	});
+	scene.add(groundMesh);
+	meshes.push(groundMesh);
+	sceneObjects.push({
+		id: detailSpec.floor.id,
+		kind: detailSpec.floor.kind,
+		spectrumId: detailSpec.floor.spectrumId,
+		bounds: detailSpec.floor.bounds,
+		vertexCount: detailSpec.floor.vertexCount,
+		triangleCount: detailSpec.floor.triangleCount,
+		topology: detailSpec.summary?.meshTopology || 'terrain-heightfield',
+	});
+
+	for (const band of detailSpec.terrainBands) {
+		const mesh = detailedTerrainMesh({
+			meshSpec: band,
+			kind: 'mountain-detail-terrain',
+		});
+		scene.add(mesh);
+		meshes.push(mesh);
+		sceneObjects.push({
+			id: band.id,
+			kind: band.kind,
+			spectrumId: band.spectrumId,
+			bounds: band.bounds,
+			vertexCount: band.vertexCount,
+			triangleCount: band.triangleCount,
+		});
+	}
+
+	return {
+		ground: {
+			id: groundMesh.name,
+			kind: groundMesh.userData.kind,
+			spectrumId: groundMesh.userData.spectrumId,
+			bounds: detailSpec.floor.bounds,
+			vertexCount: detailSpec.floor.vertexCount,
+			triangleCount: detailSpec.floor.triangleCount,
+			bottomGround: bottomGround
+				? {
+						id: bottomGround.name,
+						kind: bottomGround.userData.kind,
+						spectrumId: bottomGround.userData.spectrumId,
+						bounds: detailSpec.bottomGround.bounds,
+					}
+				: null,
+		},
+		sceneDetailPacket: {
+			kind: detailSpec.kind,
+			seed: detailSpec.seed,
+			numericSeed: detailSpec.numericSeed,
+			generatedBy: detailSpec.generatedBy,
+			coordinateSystem: detailSpec.coordinateSystem,
+			summary: detailSpec.summary,
+		},
+	};
+}
+
+function detailedBottomGroundMesh(groundSpec) {
+	const geometry = new THREE.PlaneGeometry(
+		groundSpec.widthMeters,
+		groundSpec.depthMeters
+	);
+	const material = new THREE.MeshStandardMaterial({
+		color: new THREE.Color(
+			groundSpec.color?.[0] ?? 0.055,
+			groundSpec.color?.[1] ?? 0.115,
+			groundSpec.color?.[2] ?? 0.055
+		),
+		roughness: groundSpec.material?.roughness ?? 0.98,
+		metalness: groundSpec.material?.metalness ?? 0,
+		side: THREE.DoubleSide,
+		polygonOffset: true,
+		polygonOffsetFactor: 1,
+		polygonOffsetUnits: 1,
+	});
+	const mesh = new THREE.Mesh(geometry, material);
+	mesh.name = groundSpec.id;
+	mesh.rotation.x = -Math.PI / 2;
+	mesh.position.fromArray(groundSpec.centerMeters);
+	mesh.userData = {
+		kind: 'ground',
+		spectrumId: groundSpec.spectrumId,
+		detailKind: groundSpec.kind,
+		bounds: groundSpec.bounds,
+		normal: [0, 1, 0],
+	};
+	mesh.updateMatrixWorld(true);
+	return mesh;
+}
+
+function detailedTerrainMesh({ meshSpec, kind }) {
+	const geometry = new THREE.BufferGeometry();
+	geometry.setAttribute(
+		'position',
+		new THREE.Float32BufferAttribute(meshSpec.positions, 3)
+	);
+	geometry.setAttribute(
+		'color',
+		new THREE.Float32BufferAttribute(meshSpec.colors, 3)
+	);
+	geometry.setIndex(meshSpec.indices);
+	geometry.computeVertexNormals();
+	geometry.computeBoundingSphere();
+
+	const material = new THREE.MeshStandardMaterial({
+		vertexColors: true,
+		roughness: meshSpec.material?.roughness ?? 0.94,
+		metalness: meshSpec.material?.metalness ?? 0,
+		side: THREE.DoubleSide,
+	});
+	const mesh = new THREE.Mesh(geometry, material);
+	mesh.name = meshSpec.id;
+	mesh.userData = {
+		kind,
+		spectrumId: meshSpec.spectrumId,
+		detailKind: meshSpec.kind,
+		bounds: meshSpec.bounds,
+	};
+	mesh.updateMatrixWorld(true);
+	return mesh;
+}
+
+function mountainLitCameraConfig({
+	mountainViewId,
+	cameraViewMode,
+	sourcePacket,
+	sceneDetailSpec,
+}) {
+	if (cameraViewMode === 'source-behind-camera' && sourcePacket) {
+		const directionToSourceThree = directionToSourceThreeFromSourcePacket(
+			sourcePacket
+		);
+		const horizontal = new THREE.Vector3(
+			directionToSourceThree[0],
+			0,
+			directionToSourceThree[2]
+		).normalize();
+		const cameraPosition = new THREE.Vector3(
+			...MOUNTAIN_RIDGE_SCENE.cameraPositionMeters
+		);
+		const lookAt = cameraPosition
+			.clone()
+			.add(horizontal.clone().multiplyScalar(-36000));
+		lookAt.y = MOUNTAIN_RIDGE_SCENE.lookAtMeters[1];
+		return {
+			id: 'source-behind-camera',
+			cameraPositionMeters: vectorToArray(cameraPosition),
+			lookAtMeters: vectorToArray(lookAt),
+			verticalFovDegrees: MOUNTAIN_RIDGE_SCENE.verticalFovDegrees,
+			description:
+				'Mountain view rotated so the configured source is behind the camera.',
+			sourceDirectionThree: directionToSourceThree,
+		};
+	}
+
+	const baseView = mountainShaderCameraConfig(mountainViewId);
+	if (sceneDetailSpec?.kind === 'mountain-detail-v1') {
+		return {
+			...baseView,
+			id: `${baseView.id || mountainViewId}-detail-elevated`,
+			cameraPositionMeters: [
+				baseView.cameraPositionMeters[0],
+				6200,
+				baseView.cameraPositionMeters[2],
+			],
+			lookAtMeters: [baseView.lookAtMeters[0], 6200, -15000],
+			description:
+				'Detail terrain view with elevated camera and near-level sightline.',
+		};
+	}
+
+	return baseView;
+}
+
+function createMountainLitRidgeGeometry(definition) {
+	const shape = new THREE.Shape();
+	const segmentCount = 72;
+	shape.moveTo(definition.xMinMeters, definition.bottomMeters);
+	for (let index = 0; index <= segmentCount; index += 1) {
+		const t = index / segmentCount;
+		shape.lineTo(
+			interpolateLinear(definition.xMinMeters, definition.xMaxMeters, t),
+			ridgeHeightAt(definition, t)
+		);
+	}
+	shape.lineTo(definition.xMaxMeters, definition.bottomMeters);
+	shape.lineTo(definition.xMinMeters, definition.bottomMeters);
+	return new THREE.ShapeGeometry(shape);
+}
+
+function interpolateLinear(a, b, t) {
+	return a + (b - a) * t;
+}
+
+function mountainLitRidgeColor(index) {
+	const colors = [0x4f5d49, 0x58684f, 0x617258, 0x687a5d, 0x708164, 0x78886c];
+	return colors[Math.min(index, colors.length - 1)];
+}
+
+function addMountainSourceLight({ scene, sourcePacket, targetMeters }) {
+	if (sourcePacket?.kind === 'flat-local-point-sun') {
+		const positionMeters = algorithmPositionToThreeArray(
+			sourcePacket.positionMeters
+		);
+		const intensity = 2.4 * (sourcePacket.observerIncidentScale ?? 1);
+		const light = new THREE.PointLight(0xffffff, intensity, 0, 0);
+		light.position.fromArray(positionMeters);
+		light.userData.algorithm32SourceLight = true;
+		scene.add(light);
+		return {
+			kind: 'source-driven-flat-local-point-light',
+			mode: 'flat-local-point-sun',
+			color: 0xffffff,
+			colorRgb: [1, 1, 1],
+			intensity,
+			calibrationScalar: 2.4,
+			observerIncidentScale: sourcePacket.observerIncidentScale ?? 1,
+			positionMeters,
+			configuredAlgorithmPositionMeters: sourcePacket.positionMeters,
+			distanceAttenuationPolicy:
+				'PointLight uses decay=0 for this subjective scene; configured local source distance/falloff is already folded into observerIncidentScale for scene brightness, while Algorithm32 still samples the true finite source.',
+		};
+	}
+
+	const sourceDirectionAlgorithm =
+		sourcePacket?.sunDirection || sunDirection(DIRECT_RADIANCE_SUN_CASE);
+	const directionToSourceThree = algorithmDirectionToThreeArray(
+		sourceDirectionAlgorithm
+	);
+	const target = targetMeters || [0, 0, -36000];
+	const positionMeters = addArrays(
+		target,
+		directionToSourceThree.map((value) => value * 120000)
+	);
+	const lightTravelDirectionThree = normalize(
+		subtractArrays(target, positionMeters)
+	);
+	const light = new THREE.DirectionalLight(0xffffff, 2.4);
+	light.position.fromArray(positionMeters);
+	light.target.position.fromArray(target);
+	light.userData.algorithm32SourceLight = true;
+	light.target.userData.algorithm32SourceLight = true;
+	scene.add(light);
+	scene.add(light.target);
+	return {
+		kind: 'source-driven-distant-directional-light',
+		mode: 'distant-directional-sun',
+		sunCase: sourcePacket?.sunCase || DIRECT_RADIANCE_SUN_CASE.id,
+		color: 0xffffff,
+		colorRgb: [1, 1, 1],
+		intensity: light.intensity,
+		calibrationScalar: 2.4,
+		positionMeters,
+		targetMeters: target,
+		sourceDirectionAlgorithm,
+		directionToSourceThree,
+		lightTravelDirectionThree,
+		sourceLightAgreement: {
+			expectedLightTravelDirectionThree: directionToSourceThree.map(
+				(value) => -value
+			),
+			lightTravelDirectionDelta: maxAbsArrayDelta(
+				lightTravelDirectionThree,
+				directionToSourceThree.map((value) => -value)
+			),
+			directionToSourceThree,
+		},
+	};
+}
+
+function resolveMountainLitSourcePacket(payload) {
+	if (payload.sourcePacket) {
+		return payload.sourcePacket;
+	}
+	const sunCase = resolveDistantSunCase(payload.sunCase);
+	return makeDistantSunSourcePacket(sunCase);
+}
+
+function directionToSourceThreeFromSourcePacket(sourcePacket) {
+	if (sourcePacket.kind === 'flat-local-point-sun') {
+		const position = sourcePacket.positionMeters || [0, 0, 1];
+		const observer = sourcePacket.observerPositionMeters || [0, 0, 2];
+		return algorithmDirectionToThreeArray(
+			normalize(subtractArrays(position, observer))
+		);
+	}
+	return algorithmDirectionToThreeArray(
+		sourcePacket.sunDirection || sunDirection(DIRECT_RADIANCE_SUN_CASE)
+	);
+}
+
+function algorithmPositionToThreeArray(position) {
+	return [position[0], position[2], -position[1]];
 }
 
 function mountainShaderCameraConfig(mountainViewId) {
@@ -3799,12 +10945,12 @@ function computeAtmosphereComponents(sample) {
 	};
 }
 
-function computeDirectRadianceDiagnostic(sample) {
+function computeDirectRadianceDiagnostic(sample, sunCase = DIRECT_RADIANCE_SUN_CASE) {
 	const channel = SPECTRAL_CHANNELS.find(
 		(item) =>
 			item.wavelengthNanometers === ATMOSPHERE.diagnosticWavelengthNanometers
 	);
-	const packet = computeDirectRadianceChannelPacket(sample, channel);
+	const packet = computeDirectRadianceChannelPacket(sample, channel, sunCase);
 
 	return {
 		kind: 'browser-direct-radiance-diagnostic',
@@ -3821,7 +10967,11 @@ function computeDirectRadianceDiagnostic(sample) {
 	};
 }
 
-function computeSecondOrderRadianceDiagnostic(sample, incidentSkyCache) {
+function computeSecondOrderRadianceDiagnostic(
+	sample,
+	incidentSkyCache,
+	sunCase = DIRECT_RADIANCE_SUN_CASE
+) {
 	const channel = SPECTRAL_CHANNELS.find(
 		(item) =>
 			item.wavelengthNanometers === ATMOSPHERE.diagnosticWavelengthNanometers
@@ -3829,7 +10979,8 @@ function computeSecondOrderRadianceDiagnostic(sample, incidentSkyCache) {
 	const packet = computeSecondOrderRadianceChannelPacket(
 		sample,
 		channel,
-		incidentSkyCache
+		incidentSkyCache,
+		sunCase
 	);
 
 	return {
@@ -3852,9 +11003,14 @@ function computeSecondOrderRadianceDiagnostic(sample, incidentSkyCache) {
 function computeSecondOrderRadianceChannelPacket(
 	sample,
 	channel,
-	incidentSkyCache
+	incidentSkyCache,
+	sunCase = DIRECT_RADIANCE_SUN_CASE
 ) {
-	const firstOrderPacket = computeDirectRadianceChannelPacket(sample, channel);
+	const firstOrderPacket = computeDirectRadianceChannelPacket(
+		sample,
+		channel,
+		sunCase
+	);
 	const secondOrderPathRadiance = computeSecondOrderPathRadianceAtWavelength({
 		origin: firstOrderPacket.algorithm32Ray.origin,
 		direction: firstOrderPacket.algorithm32Ray.direction,
@@ -3863,6 +11019,7 @@ function computeSecondOrderRadianceChannelPacket(
 		wavelengthMicrometers: channel.wavelengthNanometers * 1e-3,
 		solarIrradiance: channel.solarIrradiance,
 		sunRay: firstOrderPacket.sunCase.sunDirection,
+		sunCaseId: firstOrderPacket.sunCase.id,
 		incidentSkyCache,
 	});
 	const pathRadiance =
@@ -3877,9 +11034,12 @@ function computeSecondOrderRadianceChannelPacket(
 	};
 }
 
-function computeDirectRadianceSpectralDiagnostic(sample) {
+function computeDirectRadianceSpectralDiagnostic(
+	sample,
+	sunCase = DIRECT_RADIANCE_SUN_CASE
+) {
 	const channels = SPECTRAL_CHANNELS.map((channel) =>
-		computeDirectRadianceChannelPacket(sample, channel)
+		computeDirectRadianceChannelPacket(sample, channel, sunCase)
 	);
 	const first = channels[0];
 
@@ -3922,12 +11082,17 @@ function computeDirectRadianceSpectralDiagnostic(sample) {
 	};
 }
 
-function computeSecondOrderRadianceSpectralDiagnostic(sample, incidentSkyCache) {
+function computeSecondOrderRadianceSpectralDiagnostic(
+	sample,
+	incidentSkyCache,
+	sunCase = DIRECT_RADIANCE_SUN_CASE
+) {
 	const channels = SPECTRAL_CHANNELS.map((channel) =>
 		computeSecondOrderRadianceChannelPacket(
 			sample,
 			channel,
-			incidentSkyCache
+			incidentSkyCache,
+			sunCase
 		)
 	);
 	const first = channels[0];
@@ -3975,7 +11140,11 @@ function computeSecondOrderRadianceSpectralDiagnostic(sample, incidentSkyCache) 
 	};
 }
 
-function computeDirectRadianceChannelPacket(sample, channel) {
+function computeDirectRadianceChannelPacket(
+	sample,
+	channel,
+	sunCase = DIRECT_RADIANCE_SUN_CASE
+) {
 	const origin = threeToAlgorithmWorld(sample.threeRay.origin);
 	const direction = normalize(threeDirectionToAlgorithm(sample.threeRay.direction));
 	const pathDistanceMeters = sample.classification === 'sky'
@@ -3983,7 +11152,7 @@ function computeDirectRadianceChannelPacket(sample, channel) {
 		: sample.hitDistanceMeters;
 	const wavelengthNanometers = channel.wavelengthNanometers;
 	const wavelengthMicrometers = wavelengthNanometers * 1e-3;
-	const sunRay = sunDirection(DIRECT_RADIANCE_SUN_CASE);
+	const sunRay = sunDirection(sunCase);
 	const fullOpticalLengths = computeOpticalLengthsAlongDistance({
 		origin,
 		direction,
@@ -4020,7 +11189,7 @@ function computeDirectRadianceChannelPacket(sample, channel) {
 		wavelengthNanometers,
 		solarIrradiance: channel.solarIrradiance,
 		sunCase: {
-			...DIRECT_RADIANCE_SUN_CASE,
+			...sunCase,
 			sunDirection: sunRay,
 		},
 		algorithm32Ray: {
@@ -4132,6 +11301,7 @@ function computeSecondOrderPathRadianceAtWavelength({
 	wavelengthMicrometers,
 	solarIrradiance,
 	sunRay,
+	sunCaseId = DIRECT_RADIANCE_SUN_CASE.id,
 	incidentSkyCache,
 }) {
 	if (distance === 0) {
@@ -4176,6 +11346,7 @@ function computeSecondOrderPathRadianceAtWavelength({
 				position: sample.position,
 				viewRay: direction,
 				sunRay,
+				sunCaseId,
 				density: sample.density,
 				viewTransmittance,
 				wavelengthNanometers,
@@ -4192,6 +11363,7 @@ function computeSecondOrderAtSampleAtWavelength({
 	position,
 	viewRay,
 	sunRay,
+	sunCaseId = DIRECT_RADIANCE_SUN_CASE.id,
 	density,
 	viewTransmittance,
 	wavelengthNanometers,
@@ -4210,6 +11382,7 @@ function computeSecondOrderAtSampleAtWavelength({
 		const incomingDirection = incomingDirections[directionIndex];
 		const incidentRadiance = incidentSkyRadianceForSecondOrderAtWavelength({
 			sunRay,
+			sunCaseId,
 			incomingDirection,
 			directionIndex,
 			position,
@@ -4239,6 +11412,7 @@ function computeSecondOrderAtSampleAtWavelength({
 
 function incidentSkyRadianceForSecondOrderAtWavelength({
 	sunRay,
+	sunCaseId = DIRECT_RADIANCE_SUN_CASE.id,
 	incomingDirection,
 	directionIndex,
 	position,
@@ -4261,7 +11435,7 @@ function incidentSkyRadianceForSecondOrderAtWavelength({
 		ATMOSPHERE.secondOrderIncidentAltitudeBins - 1
 	);
 	const key = [
-		DIRECT_RADIANCE_SUN_CASE.id,
+		sunCaseId,
 		wavelengthNanometers,
 		directionIndex,
 		binIndex,
@@ -6714,6 +13888,9 @@ function renderFirstOrderImageShader({
 	sceneInputTextureData = null,
 	sceneInputTextureHandle = null,
 	sceneInputTextureMetadata = null,
+	sceneColorTextureData = null,
+	rayDirectionTextureData = null,
+	composeSceneColor = false,
 }) {
 	const pass = setupFirstOrderImageShaderPass({
 		renderer,
@@ -6724,6 +13901,9 @@ function renderFirstOrderImageShader({
 		sceneInputTextureData,
 		sceneInputTextureHandle,
 		sceneInputTextureMetadata,
+		sceneColorTextureData,
+		rayDirectionTextureData,
+		composeSceneColor,
 	});
 	pass.draw();
 
@@ -6739,6 +13919,9 @@ function setupFirstOrderImageShaderPass({
 	sceneInputTextureData = null,
 	sceneInputTextureHandle = null,
 	sceneInputTextureMetadata = null,
+	sceneColorTextureData = null,
+	rayDirectionTextureData = null,
+	composeSceneColor = false,
 }) {
 	const gl = renderer.getContext();
 	const program = createFirstOrderImageShaderProgram(gl);
@@ -6750,6 +13933,8 @@ function setupFirstOrderImageShaderPass({
 		: null;
 	const incidentTexture = includeSecondOrder ? gl.createTexture() : null;
 	const sceneInputTexture = sceneInputTextureData ? gl.createTexture() : null;
+	const sceneColorTexture = sceneColorTextureData ? gl.createTexture() : null;
+	const rayDirectionTexture = rayDirectionTextureData ? gl.createTexture() : null;
 
 	if (includeSecondOrder) {
 		gl.activeTexture(gl.TEXTURE0);
@@ -6789,6 +13974,44 @@ function setupFirstOrderImageShaderPass({
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 	}
+	if (sceneColorTextureData) {
+		gl.activeTexture(gl.TEXTURE2);
+		gl.bindTexture(gl.TEXTURE_2D, sceneColorTexture);
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			0,
+			gl.RGBA,
+			sceneColorTextureData.width,
+			sceneColorTextureData.height,
+			0,
+			gl.RGBA,
+			gl.UNSIGNED_BYTE,
+			sceneColorTextureData.data
+		);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	}
+	if (rayDirectionTextureData) {
+		gl.activeTexture(gl.TEXTURE3);
+		gl.bindTexture(gl.TEXTURE_2D, rayDirectionTexture);
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			0,
+			gl.RGBA32F,
+			rayDirectionTextureData.width,
+			rayDirectionTextureData.height,
+			0,
+			gl.RGBA,
+			gl.FLOAT,
+			rayDirectionTextureData.data
+		);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	}
 
 	renderer.resetState();
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -6806,6 +14029,14 @@ function setupFirstOrderImageShaderPass({
 	} else if (sceneInputTextureHandle) {
 		gl.activeTexture(gl.TEXTURE1);
 		gl.bindTexture(gl.TEXTURE_2D, sceneInputTextureHandle);
+	}
+	if (sceneColorTextureData) {
+		gl.activeTexture(gl.TEXTURE2);
+		gl.bindTexture(gl.TEXTURE_2D, sceneColorTexture);
+	}
+	if (rayDirectionTextureData) {
+		gl.activeTexture(gl.TEXTURE3);
+		gl.bindTexture(gl.TEXTURE_2D, rayDirectionTexture);
 	}
 	gl.uniform2f(
 		gl.getUniformLocation(program, 'resolution'),
@@ -6840,6 +14071,20 @@ function setupFirstOrderImageShaderPass({
 		usesSceneInputTexture ? 1 : 0
 	);
 	gl.uniform1i(gl.getUniformLocation(program, 'sceneInputTexture'), 1);
+	gl.uniform1i(
+		gl.getUniformLocation(program, 'useSceneColorTexture'),
+		sceneColorTextureData ? 1 : 0
+	);
+	gl.uniform1i(
+		gl.getUniformLocation(program, 'useRayDirectionTexture'),
+		rayDirectionTextureData ? 1 : 0
+	);
+	gl.uniform1i(
+		gl.getUniformLocation(program, 'composeSceneColor'),
+		composeSceneColor ? 1 : 0
+	);
+	gl.uniform1i(gl.getUniformLocation(program, 'sceneColorTexture'), 2);
+	gl.uniform1i(gl.getUniformLocation(program, 'rayDirectionTexture'), 3);
 	const buffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 	gl.bufferData(
@@ -6864,6 +14109,12 @@ function setupFirstOrderImageShaderPass({
 			}
 			if (sceneInputTexture) {
 				gl.deleteTexture(sceneInputTexture);
+			}
+			if (sceneColorTexture) {
+				gl.deleteTexture(sceneColorTexture);
+			}
+			if (rayDirectionTexture) {
+				gl.deleteTexture(rayDirectionTexture);
 			}
 		},
 		diagnostics: {
@@ -6896,6 +14147,23 @@ function setupFirstOrderImageShaderPass({
 						source: sceneInputMetadata.source || null,
 					}
 				: null,
+			sceneColorTexture: sceneColorTextureData
+				? {
+						width: sceneColorTextureData.width,
+						height: sceneColorTextureData.height,
+						format: 'RGBA/UNSIGNED_BYTE',
+						rowOrder: sceneColorTextureData.rowOrder,
+					}
+				: null,
+			rayDirectionTexture: rayDirectionTextureData
+				? {
+						width: rayDirectionTextureData.width,
+						height: rayDirectionTextureData.height,
+						format: 'RGBA32F',
+						rowOrder: rayDirectionTextureData.rowOrder,
+					}
+				: null,
+			composeSceneColor,
 			secondOrderIncidentSkyCache: incidentSkyCache
 				? {
 						width: incidentSkyCache.width,
@@ -7002,8 +14270,13 @@ uniform vec3 sunRay;
 uniform int sceneMode;
 uniform bool includeSecondOrder;
 uniform bool useSceneInputTexture;
+uniform bool useSceneColorTexture;
+uniform bool useRayDirectionTexture;
+uniform bool composeSceneColor;
 uniform sampler2D incidentSkyRadiance;
 uniform sampler2D sceneInputTexture;
+uniform sampler2D sceneColorTexture;
+uniform sampler2D rayDirectionTexture;
 
 out vec4 outColor;
 
@@ -7550,6 +14823,7 @@ void intersectScene(vec3 origin, vec3 direction, out float distanceMeters, out i
 }
 
 void main() {
+	ivec2 pixelCoord = ivec2(int(gl_FragCoord.x), int(gl_FragCoord.y));
 	vec2 ndc = vec2(
 		(gl_FragCoord.x / resolution.x) * 2.0 - 1.0,
 		(gl_FragCoord.y / resolution.y) * 2.0 - 1.0
@@ -7558,6 +14832,10 @@ void main() {
 	viewPosition /= viewPosition.w;
 	vec3 rayOrigin = cameraMatrixWorld[3].xyz;
 	vec3 rayDirection = normalize((cameraMatrixWorld * vec4(viewPosition.xyz, 0.0)).xyz);
+	if (useRayDirectionTexture) {
+		vec4 rayInput = texelFetch(rayDirectionTexture, pixelCoord, 0);
+		rayDirection = normalize(rayInput.xyz);
+	}
 	vec3 algorithmOrigin = vec3(
 		rayOrigin.x,
 		-rayOrigin.z,
@@ -7574,7 +14852,7 @@ void main() {
 	if (useSceneInputTexture) {
 		vec4 sceneInput = texelFetch(
 			sceneInputTexture,
-			ivec2(int(gl_FragCoord.x), int(gl_FragCoord.y)),
+			pixelCoord,
 			0
 		);
 
@@ -7592,6 +14870,9 @@ void main() {
 	}
 
 	vec3 xyz = vec3(0.0);
+	float blueTransmittanceSum = 0.0;
+	float greenTransmittanceSum = 0.0;
+	float redTransmittanceSum = 0.0;
 
 	for (int channelIndex = 0; channelIndex < CHANNEL_COUNT; channelIndex++) {
 		float wavelengthNm = WAVELENGTHS_NM[channelIndex];
@@ -7612,10 +14893,21 @@ void main() {
 					channelIndex
 				)
 			: 0.0;
-		float objectRadiance =
-			objectRadianceAt(spectrumId, wavelengthNm) * pathAndT.y;
-		float finalRadiance = objectRadiance + pathAndT.x + secondOrderPath;
+		float pathRadiance = pathAndT.x + secondOrderPath;
+		float objectRadiance = composeSceneColor
+			? 0.0
+			: objectRadianceAt(spectrumId, wavelengthNm) * pathAndT.y;
+		float finalRadiance = objectRadiance + pathRadiance;
 		xyz += CIE[channelIndex] * finalRadiance * SPECTRAL_DELTA_NM;
+		if (channelIndex < 5) {
+			blueTransmittanceSum += pathAndT.y;
+		}
+		if (channelIndex >= 4 && channelIndex < 9) {
+			greenTransmittanceSum += pathAndT.y;
+		}
+		if (channelIndex >= 8) {
+			redTransmittanceSum += pathAndT.y;
+		}
 	}
 
 	vec3 linearSrgb = MAX_LUMINOUS_EFFICACY * vec3(
@@ -7628,6 +14920,15 @@ void main() {
 		vec3(0.0),
 		vec3(1.0)
 	);
+	if (composeSceneColor && spectrumId != 0 && useSceneColorTexture) {
+		vec3 sceneRgb = texelFetch(sceneColorTexture, pixelCoord, 0).rgb;
+		vec3 transmittanceRgb = vec3(
+			redTransmittanceSum / 7.0,
+			greenTransmittanceSum / 5.0,
+			blueTransmittanceSum / 5.0
+		);
+		displayRgb = clamp(sceneRgb * transmittanceRgb + displayRgb, vec3(0.0), vec3(1.0));
+	}
 	outColor = vec4(displayRgb, 1.0);
 }
 `);
@@ -8240,6 +15541,22 @@ function normalize(vector) {
 
 function addVectors(a, b) {
 	return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+}
+
+function addArrays(left, right) {
+	return addVectors(left, right);
+}
+
+function subtractArrays(left, right) {
+	return [left[0] - right[0], left[1] - right[1], left[2] - right[2]];
+}
+
+function maxAbsArrayDelta(left, right) {
+	let maxDelta = 0;
+	for (let index = 0; index < left.length; index += 1) {
+		maxDelta = Math.max(maxDelta, Math.abs(left[index] - right[index]));
+	}
+	return maxDelta;
 }
 
 function scaleVector(vector, scalar) {

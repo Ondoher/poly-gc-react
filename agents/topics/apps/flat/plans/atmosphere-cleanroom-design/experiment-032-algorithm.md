@@ -35,6 +35,76 @@ sphere paper.
 Local generated files under `tmp/atmosphere/bruneton_start_fresh/032-.../` are
 evidence for what experiment 032 ran. They are not independent physics sources.
 
+## Post-032 Source Abstraction
+
+Experiment 032 itself used a fixed distant directional Sun. The later
+`atmosflat32` lane keeps that historical behavior intact while carrying the
+Algorithm32 transport forward through explicit source and geometry
+abstractions.
+
+Accepted evidence:
+
+- `tmp/atmosphere/atmosflat32/019-distant-source-abstraction-baseline/`
+  revalidates the default `distant-directional-sun` adapter after the
+  renderer-scoped flat sky ray-limit/source-configuration cleanup. It passes
+  `9` criteria, reproduces the four step-032 Figure 1 PNGs byte-for-byte, and
+  records zero selected-ray deltas for spectral radiance, direct Sun
+  transmittance, and the distant-Sun second-order contribution.
+- `tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes/` proves the same
+  source-sample boundary can drive first-order flat/local finite-source
+  observer sky images. It passes `13` criteria for five pure angular sky PNGs
+  at `0`, `45`, `90`, `135`, and `180` degrees from closest San Jose approach.
+
+The carried-forward runtime source contract is:
+
+```js
+sourceSamplesAt(position, geometry) -> [
+  {
+    kind,
+    direction,
+    distanceKind,
+    distanceMeters,
+    spectralIncidentScaleByWavelength,
+    visibilityPath,
+    diagnostics
+  }
+]
+```
+
+For the default source, `kind` is `distant-directional-sun`, `distanceKind` is
+`infinite`, `direction` is constant for the scene, and
+`visibilityPath` preserves experiment 032's sample-to-top-atmosphere
+transmittance meaning.
+
+For the accepted flat local source, `kind` is `flat-local-point-sun`,
+`distanceKind` is `finite`, `direction` and distance vary with the atmosphere
+sample position, and `spectralIncidentScaleByWavelength` includes the
+configured finite-distance falloff and color scale. Future source-owned
+emission profiles, such as a flashlight/spotlight Sun, should multiply into
+this same incident-scale field before transport rather than changing the
+atmosphere loop or darkening the final image.
+
+The carried-forward geometry split is:
+
+- spherical/distant Algorithm32 geometry uses the experiment-032 spherical
+  shell and top-atmosphere boundary;
+- flat/local first-order transport uses an `atmosphereGeometry` record for
+  flat z-up density, the flat top plane, source kind/sample kind,
+  finite-distance policy, and source-path visibility;
+- the round-equivalent artificial cap is recorded separately as
+  `skyViewRayLengthLimit` owned by the observer skydome renderer. It limits
+  only skydome view-ray length and must not cap source transmittance or
+  scene-renderer object rays.
+
+Algorithm32's transport integration should stay source-agnostic. It asks the
+active source for incident samples at each atmosphere sample, computes
+geometry-appropriate source transmittance, multiplies by the source sample's
+spectral incident scale, and applies the same density, optical-depth,
+transmittance, and phase-function math recorded below. Distant-Sun second-order
+cache behavior remains unchanged; local-source second-order cache design,
+direct solar-disc camera radiance, and ground bounce remain deferred for the
+flat/local branch.
+
 ## Algorithm
 
 For each of the four Figure 1 scenes, experiment 032 renders a `320 x 320`
@@ -194,6 +264,32 @@ dL_1(lambda) =
 ```
 
 Reference: `bruneton-single-scattering`.
+
+Post-032 source-abstraction form:
+
+```text
+sourceSample = sourceSamplesAt(position, geometry)[0]
+omega_s = sourceSample.direction
+E_source(lambda, position) =
+  E_baseline(lambda) * sourceSample.spectralIncidentScaleByWavelength(lambda)
+
+dL_1(lambda) =
+  T_view(lambda) *
+  T_source(lambda, position, omega_s, geometry) *
+  E_source(lambda, position) *
+  (
+    rho_R(h) * beta_R(lambda) * P_R(dot(view, omega_s)) +
+    rho_M(h) * beta_M_sca(lambda) * P_M(g, dot(view, omega_s))
+  ) *
+  ds
+```
+
+This reduces to the experiment-032 equation for the default
+`distant-directional-sun` because the source direction and incident scale are
+constant and `T_source` is the original sample-to-top-atmosphere Sun
+transmittance. For a finite flat local source, `omega_s`, distance,
+incident-scale falloff, and source-path transmittance are source/geometry
+outputs evaluated at each atmosphere sample.
 
 ### Second-Order Sky Radiance
 
@@ -425,12 +521,17 @@ The IDs below match `equations-and-constants.json`.
 Carry forward these parts:
 
 - spectral transport endpoint;
+- source-sample abstraction for incident light fields;
+- explicit geometry records for spherical/default and flat/local transport;
+- renderer-owned view segment lengths, such as skydome ray limits, as inputs
+  to traces rather than hidden transport globals;
 - no-ozone Figure 1 comparison profile;
 - Bruneton 2016 aerosol constants for this profile;
 - full-sphere second-order scattering as an explicit source-backed requirement;
 - source-derived Figure 1 display `k` as a comparison/display consumer;
 - explicit diagnostics for direct-sun omission, ground omission, spectral grid,
-  sample counts, and second-order approximation.
+  sample counts, source configuration, geometry configuration, renderer ray
+  limits, and second-order approximation.
 
 Do not carry forward these as physics truths:
 
@@ -440,3 +541,5 @@ Do not carry forward these as physics truths:
 - red-cross-derived azimuths except for recreating the Figure 1 comparison;
 - the 15-wavelength grid as the final production spectral grid;
 - source-derived `k` as a transport constant.
+- the flat skydome artificial cap as a source-transmittance or scene-renderer
+  distance limit.

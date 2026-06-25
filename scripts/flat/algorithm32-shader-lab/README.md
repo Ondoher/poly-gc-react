@@ -86,6 +86,11 @@ Artifact `069-browser-shader-benchmark` used aggressive batching and should be
 treated as a cautionary artifact only; it led to conservative benchmark
 defaults, an async yield between samples, and no `gl.finish()` fallback unless
 explicitly requested.
+Milestone 13 is accepted in `080-browser-lit-scene-input-capture` and
+`081-browser-lit-scene-input-cpu-postprocessor`: the existing watch harness
+captured unlit and lit/shadow browser scene-input packets, and the CPU
+software-shader postprocessor reproduced the original unlit CPU renderer with
+`maxAbsRgbDelta = 0` before rendering the lit/shadow packet.
 
 ## Commands
 
@@ -99,6 +104,14 @@ Run a long-lived harness that watches a command file:
 
 ```text
 node scripts/flat/algorithm32-shader-lab/harness.js --watch
+```
+
+The harness defaults to a `300000 ms` browser navigation/evaluation timeout so
+heavier subjective captures, such as detailed mountain Raycaster packets, can
+finish without relaunching with special flags. Override it when needed:
+
+```text
+node scripts/flat/algorithm32-shader-lab/harness.js --watch --page-timeout-ms 420000
 ```
 
 Run the shader benchmark smoke command:
@@ -177,6 +190,19 @@ tmp/atmosphere/algorithm32_shader_lab/command.json
 ```
 
 Each command change reloads the page and writes a new numbered run folder.
+When a user-owned harness is already running with an explicit `--command`
+argument, read:
+
+```text
+tmp/atmosphere/algorithm32_shader_lab/harness-heartbeat.json
+```
+
+and write the command to its `commandPath` instead of assuming the default
+`command.json`. In the current lab session, that path is:
+
+```text
+tmp/atmosphere/algorithm32_shader_lab/browser-three-baseline-command.json
+```
 
 The accepted Node/Three reference artifact is:
 
@@ -382,6 +408,329 @@ private Three texture handle. It does not use scene-input readback/upload for
 shader input. It has selected-pixel `maxSelectedRgbDelta = 1` and the same
 image diff against `037` as `053`.
 
+The accepted CPU source-contract runway is:
+
+```text
+tmp/atmosphere/algorithm32_shader_lab/071-cpu-source-contract-distant-sun/
+tmp/atmosphere/algorithm32_shader_lab/074-cpu-source-contract-distant-sun-matrix/
+tmp/atmosphere/algorithm32_shader_lab/075-cpu-local-source-first-order-diagnostics/
+tmp/atmosphere/algorithm32_shader_lab/076-cpu-source-contract-shader-packet/
+tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render/
+```
+
+`071` routes `node-three-reference.js` through the source/geometry abstraction
+for the default spherical `distant-directional-sun` and proves exact parity
+against `037-algorithm32-simple-card-reference`. `074` runs the CPU distant-Sun
+matrix as one aggregate artifact with nested `cases/` folders; the nested
+folders are supporting evidence inside `074`, not top-level experiment
+replacements. `075` validates the flat/local point-Sun source diagnostics
+against accepted `atmosflat32` artifact `018` for the required `0`, `90`, and
+`180` degree offsets. `076` writes pure JSON distant and local source packets;
+the distant packet rehydrates into the CPU renderer with exact raw image,
+selected diagnostics, and source-sample trace parity against Milestone 8. The
+local packet marks local second-order cache, direct local solar-disc camera
+radiance, and local ground bounce as unsupported or deferred. `078` reruns the
+default spherical distant-Sun control and preserves exact parity against
+`037-algorithm32-simple-card-reference`, then renders flat/local point-Sun CPU
+images through the same `node-three-reference.js` image path. The closest/day
+image is `local-source-closest-day.png`; the `90` degree orbit-offset
+rise/sunset image is `local-source-090deg-rise-sunset.png`. Local first-order
+scattering now samples source direction, source distance/falloff, spectral
+incident scale, source-path transmittance, and phase per view-path sample. The
+flat scene no-hit sky ray limit is explicit configuration seeded by accepted
+visibility artifact `062` (`1,926.774 km` by default), not an Algorithm32
+atmosphere constant and not the older atmosflat skydome cap.
+
+CPU source-contract commands:
+
+```text
+node scripts/flat/algorithm32-shader-lab/node-three-reference.js --width 240 --height 120 --label cpu-source-contract-distant-sun --compare-reference tmp/atmosphere/algorithm32_shader_lab/037-algorithm32-simple-card-reference
+node scripts/flat/algorithm32-shader-lab/cpu-source-contract-regression-matrix.js
+node scripts/flat/algorithm32-shader-lab/cpu-local-source-first-order-diagnostics.js
+node scripts/flat/algorithm32-shader-lab/cpu-source-contract-shader-packet.js
+node scripts/flat/algorithm32-shader-lab/cpu-local-source-integrated-render.js
+node scripts/flat/algorithm32-shader-lab/cpu-source-subjective-gallery.js
+```
+
+These CPU runners now execute without per-command escalation. The matrix
+runner calls the shared CPU reference code in-process rather than spawning
+child Node processes.
+
+Milestone 13, Browser Lit Scene Input CPU Postprocessor, is accepted:
+
+```text
+tmp/atmosphere/algorithm32_shader_lab/080-browser-lit-scene-input-capture/
+tmp/atmosphere/algorithm32_shader_lab/081-browser-lit-scene-input-cpu-postprocessor/
+```
+
+`080` used the currently running user-owned `harness.js --watch` process with
+no relaunch. It captured a small browser scene-input packet for both
+`unlit-material-control` and `lit-shadow-scene` through existing harness
+outputs (`diagnostics.json`, `selected-pixels.json`, and `canvas-image.png`).
+It passed `4/4` browser criteria and found a lit/shadow ground luminance delta
+of `49.0064`.
+
+`081` runs CPU Algorithm32 over the browser packet pixel by pixel. The unlit
+control compares the original `node-three-reference.js` renderer against the
+new CPU postprocessor with no Three lighting or shadows; it passed
+byte-for-byte with `maxAbsRgbDelta = 0` and `meanAbsRgbDelta = 0`. The
+zero-density scene-color passthrough also passed with `maxAbsDelta = 0`, and
+the lit postprocess produced finite RGBA over all `14400` pixels. The lit RGB
+composition is a first-POC display-domain pass over RGBA8 scene color; binary
+or HDR packet output remains deferred unless precision becomes the blocker.
+
+Milestone 14 is accepted in
+`083-cpu-soft-shader-unlit-parity-matrix`. It ran the CPU soft-shader unlit
+parity matrix for `simple-card-algorithm32`, `simple-card-first-order`, and
+`sunset-floor-algorithm32`; aggregate criteria passed `4/4`, every case
+passed `5/5`, and every old-renderer/soft-shader image comparison had
+`maxAbsRgbDelta = 0`. Rejected diagnostic `082` had exact image parity but
+failed selected-pixel bookkeeping before the selected-sample overwrite was
+fixed.
+
+Milestone 15 is accepted in `084-cpu-soft-shader-lit-scene-matrix`. It reused
+browser capture `080` and passed `6/6` criteria: lit packet coverage,
+zero-density scene-color passthrough with `maxAbsDelta = 0`, sky replacement,
+post-atmosphere shadow/lit separation (`58.7244` luminance delta), and finite
+RGBA over all `14400` pixels.
+
+Milestone 16 is accepted in `085-browser-source-light-coupling` and
+`086-cpu-source-light-coupling-validation`. The accepted browser packet uses
+`sourceLightMode = distant-directional-sun` for `figure1-13h15-z21`, and the
+CPU validation passed `8/8`: source/light direction delta
+`3.46944695195361e-18`, no default-Sun fallback, calibration scalar and
+directional intensity both `2.4`, exact zero-density passthrough, and
+postprocess shadow/lit separation preserved.
+
+Milestone 17 is accepted in browser captures `087` through `090` and aggregate
+CPU artifact `091-cpu-distant-sun-position-matrix`. It passed `39/39`
+criteria across high, low, synthetic side, and synthetic behind-camera distant
+Sun cases. The CPU postprocessor now resolves packet-supplied distant Sun
+altitude/azimuth into Algorithm32, so synthetic Sun packets no longer fall
+back to the high-Sun default.
+
+Milestone 18 is accepted in
+`093-cpu-local-sun-soft-shader-source-matrix`. It passed `57/57` criteria:
+aggregate `7/7`, distant control `5/5`, and each local offset case `9/9`.
+Local offsets `0`, `45`, `90`, `135`, and `180` degrees all resolved as
+`packet-supplied-flat-local-point-sun`, matched the original CPU local
+renderer exactly, and preserved finite source traces.
+
+Milestone 19 is accepted in
+`094-cpu-unified-source-driven-soft-shader-matrix`. It passed `56/56`
+criteria across distant high, distant low, and local `0`, `45`, `90`, `135`,
+and `180` degree cases, all reprocessed through the same
+`postprocessSceneInput` CPU soft-shader kernel. Distant cases use browser
+lit/shadow packets and the source-driven `DirectionalLight`; local cases use
+CPU-synthesized unlit packets and explicitly defer browser point-light/proxy
+behavior.
+
+Milestones 20 through 29 are accepted, with current endpoint
+`193-soft-shader-capability-parity-matrix`. The accepted shader runway is:
+
+```text
+tmp/atmosphere/algorithm32_shader_lab/162-shader-oracle-packet-inventory/
+tmp/atmosphere/algorithm32_shader_lab/167-gpu-packet-input-parity-no-atmosphere-passthrough/
+tmp/atmosphere/algorithm32_shader_lab/171-packet-driven-distant-sun-shader/
+tmp/atmosphere/algorithm32_shader_lab/172-distant-soft-shader-gpu-parity/
+tmp/atmosphere/algorithm32_shader_lab/174-lit-scene-shader-composition/
+tmp/atmosphere/algorithm32_shader_lab/176-local-sun-first-order-shader/
+tmp/atmosphere/algorithm32_shader_lab/177-unified-source-driven-shader-matrix/
+tmp/atmosphere/algorithm32_shader_lab/185-local-sun-full-image-shader-parity/
+tmp/atmosphere/algorithm32_shader_lab/192-local-sun-scene-color-composition-parity/
+tmp/atmosphere/algorithm32_shader_lab/193-soft-shader-capability-parity-matrix/
+```
+
+Browser evidence for those milestones includes
+`166-browser-soft-shader-packet-passthrough`,
+`169-browser-packet-driven-distant-sun-shader-distant-high`,
+`170-browser-packet-driven-distant-sun-shader-distant-low`,
+`173-browser-lit-scene-soft-shader-composition`, and
+`175-browser-local-sun-first-order-diagnostics`, plus local full-image browser
+runs `180` through `184` and local scene-color-composition browser runs `187`
+through `191`. `167` records exact no-atmosphere scene-color passthrough
+(`maxAbsDelta = 0`). `172` records full-image distant high/low CPU-vs-GPU
+parity with `maxAbsRgbDelta = 1`, mean delta `0.0013020833333333333`, and p99
+`0` for both cases. `174` records lit Three scene composition with exact
+no-atmosphere passthrough, preserved shadow separation, and sky replacement.
+`176` records local closest and local `90` degree first-order finite-source
+diagnostics with max selected RGB delta `0`. `177` aggregates the distant,
+lit-composition, and local diagnostic evidence into the first unified
+source-driven shader matrix and passed `7/7`, but its local coverage was
+selected diagnostics only. `185` closes local full-image spectrum-mode parity
+for offsets `0`, `45`, `90`, `135`, and `180` degrees with `33/33` criteria,
+full-image `maxAbsRgbDelta = 1`, p99 `0`, and selected delta `0`. `192`
+closes local scene-color-composition parity for the same five offsets with
+`33/33` criteria, full-image `maxAbsRgbDelta = 1`, p99 `1`, and selected
+delta `0` or `1`. `193` aggregates `172`, `174`, `185`, and `192` into the
+corrected soft-shader capability parity matrix and passed `6/6`.
+
+Superseded diagnostic `168-packet-driven-distant-sun-shader` is incomplete
+because nested child-process harness spawning failed with `spawn EPERM`.
+Rerun browser evidence with the direct shell-level harness command instead:
+
+```text
+node scripts/flat/algorithm32-shader-lab/harness.js --once --command tmp/atmosphere/algorithm32_shader_lab/<command-file>.json --page-timeout-ms 300000
+```
+
+Remaining deferred work is explicit and beyond the current CPU soft-shader
+capability: local second-order cache support, direct local solar-disc camera
+radiance, local ground bounce, HDR/binary packet transport, and production
+promotion into the official Algorithm32 implementation.
+
+The Three-native atmosphere-pass runway is accepted through Milestone 38. It
+turns the packet-based GPU proof into the actual target POC: a live Three
+scene with camera controls, Three lights/shadows, scene color and depth render
+targets, and a Three-native `Algorithm32AtmospherePass` fullscreen shader
+that colors the final view. JSON scene packets are validation/oracle artifacts
+only; the normal render input is Three-owned render targets and live
+camera/source/geometry uniforms. Evidence chain: `218` pass shell and
+identity passthrough, `212` depth-to-ray reconstruction, `216` distant
+first-order atmosphere, `217` live camera controls, `220` flat/local
+first-order atmosphere, `222` unified source/geometry adapter switching,
+`224` live-pass-vs-soft-shader matrix, `225` scenario/debug controls, and
+`226` production-shape review. Use `226-three-native-production-shape-review`
+as the current shader-lab endpoint and `224` as the current objective
+live-pass parity evidence.
+
+Subjective Three-light source scenes are accepted in
+`104-three-lit-subjective-source-scenes`, superseding `099` because the first
+local `90` degree view pointed away from the mountain composition. They render
+the mountain scene in the browser with real white Three lights first, then
+apply the CPU Algorithm32 postprocess over the captured scene color. The four
+requested views are distant midday, distant sunset behind camera, local
+closest approach, and local `90` degree orbit. Distant cases use source-driven
+Three `DirectionalLight`; local cases use source-driven Three `PointLight` at
+the configured flat/local Sun position. For the local subjective scene,
+PointLight decay is disabled and intensity is scaled by the accepted observer
+incident scale; Algorithm32 atmospheric transport still samples the true
+finite local source position, distance/falloff, and source-path transmittance.
+Treat `104` as visual inspection, not an objective shader acceptance
+milestone.
+
+The next subjective-detail runner is
+`cpu-three-lit-subjective-source-scenes.js` with default label
+`three-lit-detailed-subjective-source-scenes`. It builds a deterministic
+`mountain-detail-v1` scene spec from `src/gc/utils/random.js`, sends that spec
+to the browser, renders vertex-colored terrain meshes with real Three lights,
+and postprocesses the captured scene through Algorithm32. Restart the harness
+after the `--page-timeout-ms` change if its heartbeat does not record
+`pageTimeoutMs: 300000`; the current user-owned process records the larger
+timeout and can run the detailed `480 x 270` gallery.
+The current detailed terrain generator uses one continuous indexed heightfield
+mesh for the valley and mountains. It intentionally disables the older
+independent terrain bands because those separate strips could leave visible
+gaps at their boundaries.
+Accepted single-mesh subjective artifact:
+`157-three-lit-detailed-subjective-source-scenes`, superseding `119`, `124`,
+`129`, `137`, rejected diagnostic `147`, and `152`. It passed `3/3` aggregate
+criteria and all four cases passed `4/4`. The scene is gap-free, uses a single
+darker uniform forest-green terrain mesh, raises the detailed-scene camera to
+`6200 m`, and keeps the original `sky-and-hit-selected-samples` criterion
+intact. `147` is rejected because all selected diagnostics hit terrain; `152`
+fixes that by camera placement, not by changing criteria. `157` adds a broad
+scene-bottom ground plane at `y = 0` so rays beyond the finite mountain mesh
+hit ground instead of being rendered as sky. Future subjective tuning should
+start from `157` and focus on camera/material/detail rather than returning to
+independent terrain strips or weakening validation criteria.
+Visual-only artifact `194-subjective-soft-vs-gpu-source-scenes` adds
+side-by-side CPU soft-shader and current GPU shader subjective outputs for
+distant midday, distant sunset behind camera, local closest, and local `90`.
+It is useful inspection material, but it still replays captured scene packets
+and is superseded by the accepted Three-native pass runway for integration
+evidence.
+Visual-only artifact
+`227-postprocess-gpu-vs-integrated-shader-subjective-scenes` adds the direct
+comparison requested after the Three-native pass runway: the existing
+packet/postprocess GPU shader on the left and the integrated Three-native
+`Algorithm32AtmospherePass` shader on the right for distant midday, distant
+sunset behind camera, local closest, and local `90`. It writes
+`postprocess-vs-integrated-gallery.png`, per-case postprocess GPU PNGs,
+per-case integrated shader PNGs, diffs, and side-by-side panels. The run
+passed `5/5` generation criteria; recorded deltas are for inspection, not a
+new parity gate.
+
+Terrain package reconnaissance for fixing subjective mountain gaps:
+`three.terrain.js` is the best near-term fit for the lab because it generates
+real Three mesh geometry from procedural terrain methods, supports ES module
+imports, and only requires `three >=0.160.0`, while this repo currently uses
+`three@0.180.0`. `@interverse/three-terrain-lod` is more suitable for a later
+terrain subsystem or app scene because it brings quadtree LOD, edge skirts,
+heightmap editing, and collision data, but its current peer dependency is
+`three >=0.183.0` and shader/LOD displacement would need care so CPU
+Raycaster packets match what the browser renders. `fractal-terrain-generator`
+is an old diamond-square height-array utility and is better treated as an
+algorithm reference than a dependency. `three-geo` is useful later for real
+DEM/satellite terrain experiments, but it depends on geospatial tile services
+and is not a good offline deterministic subjective-scene source.
+
+The CPU/browser postprocessor runway is complete through Milestone 19, the
+browser shader/soft-shader parity runway is complete through Milestone 29, and
+the Three-native atmosphere-pass runway is complete through Milestone 38. Use
+`226` as the current shader-lab endpoint, `224` as the current objective
+live-pass parity evidence, `094` as the unified source-driven CPU oracle, and
+`054` only as the prior fixed distant-Sun browser shader endpoint. The shared
+packet contract is documented in `Shared
+Soft-Shader Contract` in the iteration plan: scene packets feed the CPU soft
+shader and the GPU postprocess shader through the same conceptual input shape.
+That section also resolves the current packet defaults: top-left row-major
+arrays, meter distances, `hitMask` semantics, RGBA8 display-domain POC limits,
+source-packet ownership, and the required source/light direction convention
+note. For Three-native work, use scene packets only for validation and keep the
+normal render path as a Three-native atmosphere pass over live scene color and
+depth render targets. Subjective artifacts `157`, `194`, and `227` are
+visual-only context, not objective shader acceptance gates. This remains POC lab work in
+`scripts/flat/algorithm32-shader-lab/`; the next step is production promotion
+of the accepted pass shape, not another packet replay milestone.
+
+Milestone 13 browser command seed:
+
+```json
+{
+  "id": "browser-lit-scene-input-capture-milestone-13",
+  "label": "browser-lit-scene-input-capture",
+  "payload": {
+    "mode": "browser-lit-scene-input-capture",
+    "width": 160,
+    "height": 90,
+    "sceneMode": "shadow-card-floor",
+    "sourceKind": "distant-directional-sun",
+    "sunCase": "figure1-13h15-z21",
+    "capturePacketEncoding": "diagnostics-json",
+    "toneMapping": "none",
+    "outputColorSpace": "rgba8-no-tonemapping-recorded",
+    "includeShadowCheck": true,
+    "validationModes": [
+      "unlit-material-control",
+      "lit-shadow-scene"
+    ]
+  }
+}
+```
+
+Milestone 13 CPU command shape:
+
+```text
+node scripts/flat/algorithm32-shader-lab/cpu-scene-input-postprocessor.js --browser-run tmp/atmosphere/algorithm32_shader_lab/<NNN-browser-lit-scene-input-capture> --label browser-lit-scene-input-cpu-postprocessor
+```
+
+Accepted Milestone 13 CPU command:
+
+```text
+node scripts/flat/algorithm32-shader-lab/cpu-scene-input-postprocessor.js --browser-run tmp/atmosphere/algorithm32_shader_lab/080-browser-lit-scene-input-capture --label browser-lit-scene-input-cpu-postprocessor
+```
+
+The latest visual-only source gallery is:
+
+```text
+tmp/atmosphere/algorithm32_shader_lab/079-cpu-source-subjective-gallery/
+```
+
+It writes `subjective-gallery.png` plus individual panels for first-order
+distant high Sun, distant low Sun, and flat/local Sun orbit offsets `0`, `45`,
+`90`, `135`, and `180` degrees. It is for subjective inspection only; objective
+CPU local-source integration remains accepted by `078`.
+
 The accepted flat-earth visibility-search artifact is:
 
 ```text
@@ -487,4 +836,11 @@ The broader harness/background plan is:
 
 ```text
 agents/topics/apps/flat/plans/atmosphere-cleanroom-design/algorithm32-shader-lab-plan.md
+```
+
+The source-contract, CPU-postprocessor, and POC browser-shader implementation
+loop is documented as accepted Milestones 8 through 29 in:
+
+```text
+agents/topics/apps/flat/plans/atmosphere-cleanroom-design/algorithm32-shader-iteration-plan.md
 ```

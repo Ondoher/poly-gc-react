@@ -213,6 +213,128 @@ the same canonical Sun config. They are still separate consumers: the visible
 body is rendered and attenuated like an emissive object, while the atmosphere
 pass samples the same source for in-scattering.
 
+## Unified Source Sampling Contract
+
+The CPU reference and shader should converge on one source-sampling idea rather
+than separate distant-Sun and local-Sun integrators. The atmosphere integrator
+should ask the active source for incident source samples at each atmosphere
+sample position:
+
+```js
+sourceSamplesAt(position, geometry) -> [
+  {
+    kind,
+    direction,
+    distance,
+    spectralIncidentScaleByWavelength,
+    angularRadiusRad,
+    visibilityPath,
+    diagnostics
+  }
+]
+```
+
+The first implementation can return a single source sample. A distant Sun is
+the infinite-distance/directional case:
+
+```js
+{
+  kind: "distant-directional-sun",
+  direction: sunDirection,
+  distance: Infinity,
+  spectralIncidentScaleByWavelength: solarIrradianceByWavelength,
+  visibilityPath: "to-atmosphere-boundary"
+}
+```
+
+A local Sun is a finite-distance source sample:
+
+```js
+{
+  kind: "local-point-sun",
+  direction: normalize(sunPosition - position),
+  distance: length(sunPosition - position),
+  spectralIncidentScaleByWavelength:
+    calibratedSpectrumByWavelength * sourceFalloffOrSolidAngleRatio,
+  angularRadiusRad: asin(radius / distance),
+  visibilityPath: "to-source-or-boundary"
+}
+```
+
+Then the first-order scattering loop is shared:
+
+```text
+viewTransmittance(lambda)
+  * sourceTransmittance(lambda)
+  * sourceIncidentScale(lambda)
+  * density
+  * scatteringCoefficient(lambda)
+  * phase(dot(viewRay, source.direction))
+```
+
+This keeps distant Sun, flat local Sun, and future finite-disk sampling as
+source adapters over one transport contract. Do not bake distant/local source
+differences into unrelated RGB scaling or display exposure.
+
+## Shader Texture Strategy
+
+The shader should share the source-sampling abstraction, but it should not force
+distant and local Suns into one lookup texture shape. The common contract is the
+shader output and integrator interface, not a universal cache coordinate
+system. Algorithm32 should own the cache spec or cache build plan that defines
+texture coordinates, stored quantities, cache keys, units, and validation
+samples; the app/renderer should own scheduling, GPU upload, texture lifetime,
+and shader binding.
+
+Shader-side source sampling can be expressed as:
+
+```glsl
+SourceSample sampleSourceAt(vec3 position);
+```
+
+where the returned source sample carries source direction, distance, incident
+scale, source-path transmittance, visibility, and angular radius. Distant and
+local source adapters can populate that structure differently:
+
+- distant source adapter: uniform direction and spectrum, plus direct
+  sample-to-top transmittance or a transmittance LUT;
+- local source adapter: uniform position/radius/brightness policy, computed
+  per-sample direction and distance, inverse-square or solid-angle source
+  scale, and sample-to-source/top/boundary transmittance.
+
+Prefer these cache layers:
+
+- source-independent view transmittance, keyed by flat altitude, direction
+  vertical component, and segment distance or end altitude when it is not cheap
+  enough to compute analytically;
+- source-field data for local Sun transmittance or incident scale when direct
+  per-sample evaluation becomes too expensive;
+- a lower-resolution per-frame atmosphere output buffer for path radiance and
+  transmittance, composed back over the depth/material scene input.
+
+Avoid starting with a giant path-radiance LUT keyed by camera position, view
+direction, object distance, Sun position, altitude, radius, phase, and channel
+policy. For the first shader parity run, compute directly:
+
+- local direction per atmosphere sample;
+- inverse-square or small-disk source scale;
+- flat sample-to-source transmittance with an analytic expression or a small
+  loop;
+- first-order path radiance only.
+
+Then optimize one piece at a time: source-path transmittance LUT, reduced
+atmosphere buffer, source-field cache, reduced channels, and only later
+second-order/local-source cache approximations.
+
+See [Algorithm32 Module Design](algorithm32-module-design.md) for the planned
+`describeCachePlan()` / `buildCache()` boundary.
+
+Before implementing local-Sun shader behavior, first refactor Algorithm32 to
+use the source-sampling abstraction with the existing distant directional Sun
+only, and prove the accepted experiment 032 / Figure 1 dome output is
+unchanged. Local Sun shader work should not begin until that no-behavior-change
+source abstraction milestone is accepted.
+
 ## Sun Transmittance
 
 For the current distant directional Sun case:

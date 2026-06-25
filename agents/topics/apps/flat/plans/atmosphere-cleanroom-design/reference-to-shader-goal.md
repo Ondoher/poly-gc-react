@@ -43,6 +43,13 @@ The production path should end in a shader-driven atmosphere system that can:
 The reference owns correctness evidence. The shader owns real-time or
 interactive delivery.
 
+Long term, this same reference-to-shader shape should be able to support
+non-Earth atmosphere scenes, including a possible Mars scene. That goal should
+guide separation of profile, geometry, source, cache plan, and renderer
+responsibilities, but it is not a current acceptance target and should not
+introduce Mars constants or visual claims without a separate source-backed
+profile and validation plan.
+
 ## Reference Responsibilities
 
 The reference project should provide:
@@ -120,6 +127,23 @@ progress reporting, cancellation, worker or GPU dispatch, texture upload, and
 renderer integration. The promoted transport/cache code should own only the
 canonicalized physical inputs, cache-key-relevant assumptions, texture
 coordinate mapping, spectral transport calculation, and diagnostics.
+The runtime Sun configuration may be a behavior-bearing object or adapter, but
+cache keys, accepted app settings, and generated artifacts must serialize the
+plain canonical inputs needed to recreate it.
+Keep the promoted Algorithm32 transport/cache code small: prefer source
+objects, geometry helpers, and cache-plan adapters for local-vs-distant Sun
+differences instead of adding those policies directly to the core transport
+loops.
+The promoted Algorithm32 code should stay focused on transporting the incident
+light field through the atmosphere, not constructing each possible light field.
+If the flat local Sun later needs a "flashlight" or spotlight emission model,
+that should be another source-owned angular emission profile. The reference
+and shader should evaluate it before transport as part of the incident light
+sample; they should not fake the effect by darkening the final rendered image.
+The key model choices are beam-axis policy and energy policy: whether the cone
+points by configured vector, flat-center/sub-source geometry, or diagnostic
+observer targeting, and whether narrowing the cone keeps peak brightness fixed
+or conserves total emitted power by brightening the beam.
 
 This keeps one source of truth for the cleanroom algorithm while still allowing
 the app to rebuild flat/local-Sun textures when accepted Sun or atmosphere
@@ -136,6 +160,58 @@ shader requirements.
 
 ## Milestones
 
+0. Refactor Algorithm32 around a source-sampling abstraction with no behavior
+   change. Implement only the current default `distant-directional-sun` source
+   adapter first, then prove it still reproduces the accepted Algorithm32 sky
+   domes before adding local Sun support. The adapter should return the
+   existing constant Sun direction, infinite source distance, current spectral
+   solar irradiance, and the same sample-to-top-atmosphere
+   visibility/transmittance meaning used by experiment 032. Acceptance should
+   include rerunning the current Figure 1 / experiment 032 dome path, matching
+   pre-refactor spectral diagnostics within tight floating tolerance,
+   preserving the no-direct-solar-disc camera policy, preserving distant-Sun
+   second-order cache behavior, and matching encoded RGB dome images exactly
+   or within a documented `maxAbsRgbDelta <= 1` float-ordering tolerance. Run
+   this as a new focused Algorithm32 source-abstraction lane that borrows the
+   sky-dome generator from the original experiment only as a fixture, not as a
+   continuation of the original `bruneton_start_fresh` artifact sequence. Use
+   `scripts/flat/atmosflat32/` for lane scripts and
+   `tmp/atmosphere/atmosflat32/` for append-only artifacts.
+   Accepted first in
+   `tmp/atmosphere/atmosflat32/002-distant-source-abstraction-baseline/`, then
+   revalidated after the renderer-scoped flat sky ray-limit/source-
+   configuration cleanup in
+   `tmp/atmosphere/atmosflat32/019-distant-source-abstraction-baseline/`: the
+   default `distant-directional-sun` source object reproduces the four step-032
+   Figure 1 sky domes with exact PNG byte parity, `9` passing criteria, and
+   zero selected-ray spectral deltas. `017` remains the previous calibrated
+   observer-sky regression and `015` remains the previous artificial-cap
+   regression.
+   Follow-up source-placement fixture accepted in
+   `tmp/atmosphere/atmosflat32/005-flat-app-closest-san-jose-position/`: the
+   POC reads app configuration only, independently computes closest San Jose
+   approach for a `flat-local-point-sun`, and records finite direction,
+   distance, apparent-size diagnostics, and map/sky-marker PNGs. This is not
+   local Sun scattering validation.
+   Rotation-offset first-order observer sky fixture accepted in
+   `tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes/`: five pure
+   Algorithm32 flat/local first-order observer angular sky PNGs for the same
+   local false-Sun placement at `0`, `45`, `90`, `135`, and `180` degrees from
+   closest San Jose approach. The image loop matches the round distant-Sun dome
+   method; transport uses flat altitude/density on z and validates local-source
+   behavior through `atmosphereGeometry` configuration. A round-equivalent
+   artificial cap centered at `[0, 0, -6360000]` meters with radius `6420000`
+   meters and observer-level footprint radius `875.656645 km` is now a
+   skydome-renderer `skyViewRayLengthLimit`, not a source-transmittance or
+   scene-renderer distance. Source transmittance uses the configured flat top
+   atmosphere plane and finite source distance. Transport brightness is
+   calibrated so closest approach equals `1x` distant-Sun incident scale,
+   replacing raw app `solarIrradianceScale: 58` with calibrated transport
+   `solarIrradianceScale: 1.1071748923354825`; the 180-degree case still has
+   incident scale `0.12922172063575063` and remains lit because the source is
+   above the flat horizon. Direct solar-disc camera radiance, ground bounce,
+   and local-source second-order cache behavior remain deferred. `018`
+   supersedes `016`, `014`, `012`, and `010`.
 1. Define the production reference API and packet contracts around sky rays,
    finite object segments, and diagnostics.
 2. Define the cache-builder inputs, outputs, cache keys, and texture coordinate

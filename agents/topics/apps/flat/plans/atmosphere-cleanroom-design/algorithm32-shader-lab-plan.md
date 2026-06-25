@@ -147,9 +147,12 @@ Current subjective progress snapshots
 pair through the current second-order shader path and include side-by-side CPU
 Algorithm32 reference images from `033` and `034`. The user clarified that
 these side-by-side mountain images are for progress visibility only. The next
-serious spherical shader-lab work is formalizing a production-style
-depth/material texture contract or a Three-owned composition pass; the flat
-visibility branch should continue only when the user asks for that model.
+serious spherical shader-lab work is browser packed distant-Sun source
+contract parity. The CPU-only source-contract runway is accepted through
+`071`, `074`, `075`, and `076`; formalizing a production-style depth/material
+texture contract or a Three-owned composition pass follows the browser
+distant-Sun source packet parity gate. The flat visibility branch should
+continue only when the user asks for that model.
 
 ## Layered Build Plan
 
@@ -374,7 +377,7 @@ The browser pipeline should own:
 - scene color/radiance target;
 - depth target or object-hit equivalent;
 - camera matrices and ray reconstruction;
-- Sun/profile/numerical config upload;
+- Algorithm32 source/geometry/profile/numerical config upload;
 - atmosphere pass invocation;
 - composition;
 - display conversion;
@@ -396,14 +399,20 @@ The atmosphere implementation should be swappable through adapters:
 Initial adapters:
 
 - `cpu-reference`: not a shader; consumes Three geometry and CPU Algorithm32
-  output for oracle images and selected-pixel diagnostics.
+  output for oracle images and selected-pixel diagnostics. It now routes
+  through
+  `createAlgorithm32Model({ geometry, source, spectralProfile, numericalConfig })`
+  for the default spherical `distant-directional-sun`, and the accepted CPU
+  runway proves no output change.
 - `experimental-shader-v1`: first shader path to compare against CPU
-  Algorithm32.
+  Algorithm32. Its next source-contract task is to consume the packed distant
+  Sun shader form from the accepted dry-run packet rather than a separate
+  hard-coded Sun path. Local source shader behavior remains deferred.
 - optional `raw-algorithm32-shader`: slow direct shader port or debug
   implementation if useful.
 
-All adapters should consume the same scene/camera/Sun/profile inputs and
-produce comparable outputs:
+All adapters should consume the same scene/camera/source/geometry/profile
+inputs and produce comparable outputs:
 
 ```text
 T_view
@@ -411,6 +420,14 @@ L_path
 final radiance or documented reduced-channel/display output
 diagnostics when available
 ```
+
+The source/geometry contract should remain CPU-object-shaped at the lab API
+boundary and compile down to shader-friendly data only at the adapter boundary:
+distant Sun as a constant direction/irradiance policy first, local finite Sun
+as a later source kind with position, finite distance, falloff, and
+source-path termination. Renderer-only limits such as flat skydome caps are
+not part of Algorithm32 transport and should not be included in shared adapter
+inputs.
 
 ### 5. Optional Raw Algorithm32 Shader
 

@@ -5,6 +5,15 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import * as THREE from 'three';
 
+import {
+	createAlgorithm32Model,
+	createDistantDirectionalSunSource,
+	createSphericalAtmosphereGeometry,
+	GEOMETRY_KINDS,
+	makeSourceContractSummary,
+	SOURCE_KINDS,
+} from './algorithm32-source-contract.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '../../..');
@@ -19,7 +28,7 @@ const ALGORITHM32_DOC_PATH =
 const PLAN_DOC_PATH =
 	'agents/topics/apps/flat/plans/atmosphere-cleanroom-design/algorithm32-shader-lab-plan.md';
 
-const ATMOSPHERE = Object.freeze({
+export const ATMOSPHERE = Object.freeze({
 	bottomRadiusMeters: 6360000,
 	topRadiusMeters: 6420000,
 	observerHeightMeters: 2,
@@ -33,18 +42,22 @@ const ATMOSPHERE = Object.freeze({
 	ozoneAbsorption: 0,
 });
 
-const NUMERICAL_CONTROLS = Object.freeze({
+export const NUMERICAL_CONTROLS = Object.freeze({
 	viewRayScatteringIntervals: 20,
 	sampleToSunTransmittanceIntervals: 10,
 	secondOrderIncomingDirections: 17,
 	secondOrderIncidentAltitudeBins: 24,
 });
 
+export const FLAT_SCENE_SKY_RAY_LIMIT_METERS = 1926774;
+export const FLAT_SCENE_SKY_RAY_LIMIT_POLICY =
+	'accepted-062-flat-visibility-100-percent-lost-poc-default';
+
 const IMAGE_DEFAULTS = Object.freeze({
 	width: 96,
 	height: 54,
 });
-const SCENE_MODES = Object.freeze({
+export const SCENE_MODES = Object.freeze({
 	threeCardReference: 'three-card-reference',
 	sunsetFloor: 'sunset-floor',
 	mountainRidges: 'mountain-ridges',
@@ -79,13 +92,13 @@ const MOUNTAIN_VIEW_MODES = Object.freeze({
 	frontHighSun: 'front-high-sun',
 	sunsetBehindCamera: 'sunset-behind-camera',
 });
-const SCATTERING_ORDERS = Object.freeze({
+export const SCATTERING_ORDERS = Object.freeze({
 	algorithm32: 'algorithm32',
 	firstOrder: 'first-order',
 });
 
 const SPECTRAL_DELTA_NM = (830 - 360) / 15;
-const SPECTRAL_CHANNELS = [
+export const SPECTRAL_CHANNELS = [
 	{
 		wavelengthNanometers: 375.666666666667,
 		solarIrradiance: 1.068866666667,
@@ -176,7 +189,7 @@ const BRUNETON_COMPARISON_TONE_MAP_EXPOSURE_SCALE = 5;
 const DISPLAY_TONE_MAP_K =
 	1 / (BRUNETON_COMPARISON_TONE_MAP_EXPOSURE_SCALE * MAX_LUMINOUS_EFFICACY);
 
-const SUN_CASES = [
+export const SUN_CASES = [
 	{
 		id: 'figure1-06h00-z87',
 		sourceTimeOfDay: '06h00',
@@ -284,7 +297,7 @@ const SOURCE_REFERENCES = [
 	},
 ];
 
-const SPECTRA = {
+export const SPECTRA = {
 	black: {
 		id: 'black',
 		label: 'Black zero-radiance object',
@@ -503,6 +516,7 @@ function parseArgs(argv) {
 		sunsetFraming: SUNSET_FLOOR_FRAMINGS.balanced.id,
 		mountainView: MOUNTAIN_VIEW_MODES.frontHighSun,
 		scatteringOrder: SCATTERING_ORDERS.algorithm32,
+		compareReference: null,
 	};
 
 	for (let index = 0; index < argv.length; index += 1) {
@@ -531,6 +545,9 @@ function parseArgs(argv) {
 			index += 1;
 		} else if (arg === '--scattering-order') {
 			options.scatteringOrder = argv[index + 1];
+			index += 1;
+		} else if (arg === '--compare-reference') {
+			options.compareReference = path.resolve(argv[index + 1]);
 			index += 1;
 		} else if (arg === '--help' || arg === '-h') {
 			options.help = true;
@@ -593,15 +610,27 @@ Options:
                       ${Object.values(MOUNTAIN_VIEW_MODES).join(', ')}. Used only with --scene mountain-ridges.
   --scattering-order <id>
                       ${Object.values(SCATTERING_ORDERS).join(', ')}. Default: ${SCATTERING_ORDERS.algorithm32}.
+  --compare-reference <artifact-folder>
+                      Optional accepted artifact folder for stable parity comparison.
 `);
 }
 
-async function main() {
-	const options = parseArgs(process.argv.slice(2));
+export async function runNodeThreeReference(argv = [], runOptions = {}) {
+	const options = parseArgs(argv);
+	const logToConsole = runOptions.logToConsole === true;
+	options.renderSunCaseOverride = runOptions.sunCaseOverride || null;
+	options.sourceRunLabel = runOptions.sourceRunLabel || null;
+	options.surfaceLightingMode =
+		runOptions.surfaceLightingMode || 'emissive-radiance';
+	options.surfaceAlbedoReferenceRadiance =
+		runOptions.surfaceAlbedoReferenceRadiance ?? 0.05;
 
 	if (options.help) {
 		printHelp();
-		return;
+		return {
+			help: true,
+			options,
+		};
 	}
 
 	const startedAt = new Date();
@@ -623,13 +652,20 @@ async function main() {
 			: 'Validated manual camera rays against Three Raycaster rays.'
 	);
 
+	const algorithm32ModelOverride = runOptions.algorithm32Model || null;
 	const renderSunCase = renderSunCaseForScene(sceneSetup);
-	const renderResult = renderReferenceImage(sceneSetup, renderSunCase, runLog);
+	const renderResult = renderReferenceImage(
+		sceneSetup,
+		renderSunCase,
+		runLog,
+		algorithm32ModelOverride
+	);
 	log(runLog, 'Rendered low-resolution CPU reference image from Three ray hits.');
 
 	const transportDiagnostics = transportDiagnosticsForScene(
 		sceneSetup,
-		renderResult
+		renderResult,
+		algorithm32ModelOverride
 	);
 	log(
 		runLog,
@@ -644,6 +680,21 @@ async function main() {
 		transportDiagnostics,
 		sceneMode: sceneSetup.sceneMode,
 	});
+
+	const referenceComparison = options.compareReference
+		? await compareReferenceArtifact({
+				referenceDirectory: options.compareReference,
+				renderResult,
+				geometryDiagnostics,
+				transportDiagnostics,
+				criteria,
+			})
+		: null;
+
+	if (referenceComparison) {
+		criteria.push(...referenceComparison.criteria);
+	}
+
 	const summary = summarizeCriteria(criteria);
 	const endedAt = new Date();
 
@@ -664,21 +715,35 @@ async function main() {
 		geometryDiagnostics,
 		renderResult,
 		transportDiagnostics,
+		referenceComparison,
 		criteria,
 		summary,
 		packet,
 		runLog,
 	});
 
-	console.log(
-		`Node/Three Algorithm32 reference run ${packet.status}: ${artifact.directory}`
-	);
-	console.log(
-		`Criteria: ${summary.passed} passed, ${summary.failed} failed, ${summary.unresolved} unresolved`
-	);
+	if (logToConsole) {
+		console.log(
+			`Node/Three Algorithm32 reference run ${packet.status}: ${artifact.directory}`
+		);
+		console.log(
+			`Criteria: ${summary.passed} passed, ${summary.failed} failed, ${summary.unresolved} unresolved`
+		);
+	}
+
+	return {
+		artifact,
+		options,
+		packet,
+		summary,
+	};
 }
 
-function createThreeScene(options) {
+async function main() {
+	await runNodeThreeReference(process.argv.slice(2), { logToConsole: true });
+}
+
+export function createThreeScene(options) {
 	if (options.sceneMode === SCENE_MODES.sunsetFloor) {
 		return createSunsetFloorScene(options);
 	}
@@ -754,6 +819,9 @@ function createThreeScene(options) {
 		ground,
 		width: options.width,
 		height: options.height,
+		renderSunCase: options.renderSunCaseOverride || null,
+		surfaceLightingMode: options.surfaceLightingMode,
+		surfaceAlbedoReferenceRadiance: options.surfaceAlbedoReferenceRadiance,
 		scatteringOrder: options.scatteringOrder,
 		includeSecondOrder: options.scatteringOrder !== SCATTERING_ORDERS.firstOrder,
 	};
@@ -900,7 +968,9 @@ function mountainRidgeCameraConfig(mountainViewId) {
 
 function createSunsetFloorScene(options) {
 	const scene = new THREE.Scene();
-	const lowSunCase = SUN_CASES.find((sunCase) => sunCase.id === 'figure1-06h00-z87');
+	const lowSunCase =
+		options.renderSunCaseOverride ||
+		SUN_CASES.find((sunCase) => sunCase.id === 'figure1-06h00-z87');
 	const sunRay = sunDirection(lowSunCase);
 	const framing =
 		Object.values(SUNSET_FLOOR_FRAMINGS).find(
@@ -958,6 +1028,9 @@ function createSunsetFloorScene(options) {
 		width: options.width,
 		height: options.height,
 		sunsetFraming: framing,
+		renderSunCase: lowSunCase,
+		surfaceLightingMode: options.surfaceLightingMode,
+		surfaceAlbedoReferenceRadiance: options.surfaceAlbedoReferenceRadiance,
 		lookAtMeters: [
 			camera.position.x + sunRay[0] * lookDistance,
 			framing.cameraHeightMeters + framing.lookUpRatio * lookDistance,
@@ -1005,7 +1078,11 @@ function ridgeHeightAt(definition, t) {
 	return definition.baseHeightMeters + primary + secondary + broadPeak;
 }
 
-function renderSunCaseForScene(sceneSetup) {
+export function renderSunCaseForScene(sceneSetup) {
+	if (sceneSetup.renderSunCase) {
+		return sceneSetup.renderSunCase;
+	}
+
 	const sunCaseId =
 		sceneSetup.renderSunCaseId ||
 		(sceneSetup.sceneMode === SCENE_MODES.sunsetFloor
@@ -1015,12 +1092,38 @@ function renderSunCaseForScene(sceneSetup) {
 	return SUN_CASES.find((sunCase) => sunCase.id === sunCaseId);
 }
 
-function renderReferenceImage(sceneSetup, sunCase, runLog) {
+export function createDistantSunAlgorithm32Model(sunCase) {
+	return createAlgorithm32Model({
+		geometry: createSphericalAtmosphereGeometry({ atmosphere: ATMOSPHERE }),
+		source: createDistantDirectionalSunSource({
+			sunCase,
+			direction: sunDirection(sunCase),
+			spectralChannels: SPECTRAL_CHANNELS,
+		}),
+		spectralProfile: {
+			kind: 'algorithm32-15-channel-profile',
+			channels: SPECTRAL_CHANNELS.map((channel) => ({
+				wavelengthNanometers: channel.wavelengthNanometers,
+				solarIrradiance: channel.solarIrradiance,
+			})),
+		},
+		numericalConfig: NUMERICAL_CONTROLS,
+	});
+}
+
+function renderReferenceImage(
+	sceneSetup,
+	sunCase,
+	runLog,
+	algorithm32ModelOverride = null
+) {
 	const { width, height, camera, meshes } = sceneSetup;
 	const pixels = Buffer.alloc(width * height * 4);
 	const maskPixels = Buffer.alloc(width * height * 4);
 	const raycaster = new THREE.Raycaster();
-	const sunRay = sunDirection(sunCase);
+	const algorithm32Model =
+		algorithm32ModelOverride || createDistantSunAlgorithm32Model(sunCase);
+	const sunRay = algorithm32Model.source.direction || sunDirection(sunCase);
 	const incidentSkyCache = new Map();
 	const objectCounts = new Map();
 	const selectedPixelDiagnostics = [];
@@ -1057,6 +1160,7 @@ function renderReferenceImage(sceneSetup, sunCase, runLog) {
 					distance: hit.distance,
 					sunCase,
 					sunRay,
+					algorithm32Model,
 					incidentSkyCache,
 					includeSecondOrder: sceneSetup.includeSecondOrder,
 				});
@@ -1079,6 +1183,7 @@ function renderReferenceImage(sceneSetup, sunCase, runLog) {
 						transfer,
 						objectRadiance,
 						finalRadiance,
+						geometry: algorithm32Model.geometry,
 					});
 				}
 			} else {
@@ -1088,6 +1193,7 @@ function renderReferenceImage(sceneSetup, sunCase, runLog) {
 					ray,
 					sunCase,
 					sunRay,
+					algorithm32Model,
 					incidentSkyCache,
 					includeSecondOrder: sceneSetup.includeSecondOrder,
 				});
@@ -1112,6 +1218,12 @@ function renderReferenceImage(sceneSetup, sunCase, runLog) {
 			...sunCase,
 			sunDirection: sunRay,
 		},
+		sourceContract: makeSourceContractSummary(algorithm32Model),
+		sourceSampleTraces: buildSourceSampleTraces({
+			model: algorithm32Model,
+			sceneSetup,
+			sunCase,
+		}),
 		width,
 		height,
 		pixels,
@@ -1129,7 +1241,66 @@ function isSubjectiveScene(sceneMode) {
 	return sceneMode === SCENE_MODES.mountainRidges;
 }
 
-function transportDiagnosticsForScene(sceneSetup, renderResult) {
+function buildSourceSampleTraces({ model, sceneSetup, sunCase }) {
+	const tracePoints = [
+		{
+			id: 'observer',
+			positionMeters: observerPositionForGeometry(model.geometry),
+		},
+		{
+			id: 'ten-km-altitude',
+			positionMeters: tenKmPositionForGeometry(model.geometry),
+		},
+		{
+			id: 'camera-position',
+			positionMeters: threeToAlgorithmWorld(
+				sceneSetup.camera.position,
+				model.geometry
+			),
+		},
+	];
+
+	return {
+		kind: 'algorithm32-source-sample-traces',
+		sourceKind: model.source.kind,
+		sourceId: model.source.id,
+		geometryKind: model.geometry.kind,
+		sunCaseId: sunCase.id,
+		samples: tracePoints.map((tracePoint) => {
+			const sourceSample = model.sampleSource(tracePoint.positionMeters);
+			const sourceTransmittance = computeTransmittanceToSourceSpectrum(
+				tracePoint.positionMeters,
+				sourceSample,
+				NUMERICAL_CONTROLS,
+				model.geometry
+			);
+
+			return {
+				id: tracePoint.id,
+				positionMeters: tracePoint.positionMeters,
+				sourceSample: summarizeSourceSample(sourceSample),
+				meanSourceTransmittance: mean(sourceTransmittance),
+				sourceTransmittanceByWavelength: sourceTransmittance,
+			};
+		}),
+	};
+}
+
+function transportDiagnosticsForScene(
+	sceneSetup,
+	renderResult,
+	algorithm32ModelOverride = null
+) {
+	if (
+		algorithm32ModelOverride?.source?.kind === SOURCE_KINDS.flatLocalPointSun
+	) {
+		return validateActiveSourceTransport({
+			sceneSetup,
+			renderResult,
+			algorithm32Model: algorithm32ModelOverride,
+		});
+	}
+
 	if (sceneSetup.sceneMode === SCENE_MODES.sunsetFloor) {
 		return validateSunsetFloorTransport(sceneSetup, renderResult);
 	}
@@ -1165,6 +1336,127 @@ function describeSubjectiveScene(sceneSetup, renderResult) {
 		objectCounts: renderResult.objectCounts,
 		radianceStats: renderResult.radianceStats,
 		cacheDiagnostics: renderResult.cacheDiagnostics,
+	};
+}
+
+function validateActiveSourceTransport({
+	sceneSetup,
+	renderResult,
+	algorithm32Model,
+}) {
+	const { camera, meshes, width, height } = sceneSetup;
+	const raycaster = new THREE.Raycaster();
+	const sunCase = renderSunCaseForScene(sceneSetup);
+	const sunRay = algorithm32Model.source.direction || sunDirection(sunCase);
+	const incidentSkyCache = new Map();
+	const sampleDefinitions = [
+		{ id: 'upper-sky', x: Math.floor(width * 0.5), y: Math.floor(height * 0.18) },
+		{ id: 'center', x: Math.floor(width * 0.5), y: Math.floor(height * 0.5) },
+		{ id: 'lower-center', x: Math.floor(width * 0.5), y: Math.floor(height * 0.78) },
+		{ id: 'left-lower', x: Math.floor(width * 0.25), y: Math.floor(height * 0.72) },
+		{ id: 'right-lower', x: Math.floor(width * 0.75), y: Math.floor(height * 0.72) },
+	];
+	const samplePackets = [];
+	const beerLambertSamples = [];
+
+	for (const sampleDefinition of sampleDefinitions) {
+		const ndc = pixelToNdc(
+			sampleDefinition.x,
+			sampleDefinition.y,
+			width,
+			height
+		);
+		raycaster.setFromCamera(ndc, camera);
+		const ray = raycaster.ray.clone();
+		const hit = firstHit(raycaster, meshes);
+		const transfer = hit
+			? traceSegmentForThreeHit({
+					camera,
+					ray,
+					distance: hit.distance,
+					sunCase,
+					sunRay,
+					algorithm32Model,
+					incidentSkyCache,
+					includeSecondOrder: sceneSetup.includeSecondOrder,
+				})
+			: traceSkyForThreeRay({
+					camera,
+					ray,
+					sunCase,
+					sunRay,
+					algorithm32Model,
+					incidentSkyCache,
+					includeSecondOrder: sceneSetup.includeSecondOrder,
+				});
+		const objectRadiance = hit
+			? objectRadianceSpectrum(SPECTRA[hit.object.userData.spectrumId])
+			: zeroSpectrum();
+		const finalRadiance = hit
+			? composeObjectRadiance(objectRadiance, transfer)
+			: transfer.pathRadianceByWavelength;
+		const algorithmOrigin = threeToAlgorithmWorld(
+			ray.origin,
+			algorithm32Model.geometry
+		);
+		const algorithmDirection = threeDirectionToAlgorithm(
+			ray.direction,
+			algorithm32Model.geometry
+		);
+		const sourceSample = algorithm32Model.sampleSource(algorithmOrigin);
+
+		for (let index = 0; index < SPECTRAL_CHANNELS.length; index += 1) {
+			beerLambertSamples.push({
+				sampleId: sampleDefinition.id,
+				wavelengthNanometers: SPECTRAL_CHANNELS[index].wavelengthNanometers,
+				opticalDepth: transfer.opticalDepthByWavelength[index],
+				transmittance: transfer.transmittanceByWavelength[index],
+				error: Math.abs(
+					transfer.transmittanceByWavelength[index] -
+						Math.exp(-transfer.opticalDepthByWavelength[index])
+				),
+			});
+		}
+
+		samplePackets.push({
+			sampleId: sampleDefinition.id,
+			x: sampleDefinition.x,
+			y: sampleDefinition.y,
+			classification: hit ? hit.object.userData.kind : 'sky',
+			hitObject: hit?.object?.name || null,
+			hitDistanceMeters: hit?.distance || null,
+			threeRay: {
+				origin: vectorToArray(ray.origin),
+				direction: vectorToArray(ray.direction),
+			},
+			algorithm32Ray: {
+				origin: algorithmOrigin,
+				direction: algorithmDirection,
+				distanceMeters: hit?.distance || null,
+			},
+			sourceSampleAtRayOrigin: summarizeSourceSample(sourceSample),
+			objectRadianceByWavelength: objectRadiance,
+			finalRadianceByWavelength: finalRadiance,
+			displayPreview: spectralToDisplayPreview(finalRadiance),
+			transfer: summarizeTransfer(transfer),
+		});
+	}
+
+	return {
+		kind: 'algorithm32-active-source-transport-diagnostics',
+		sceneMode: sceneSetup.sceneMode,
+		sourceKind: algorithm32Model.source.kind,
+		geometryKind: algorithm32Model.geometry.kind,
+		sourceContract: renderResult.sourceContract,
+		sunCase: {
+			...sunCase,
+			sunDirection: sunRay,
+		},
+		samplePackets,
+		beerLambertSamples,
+		cacheDiagnostics: {
+			incidentSkyCacheEntries: incidentSkyCache.size,
+		},
 	};
 }
 
@@ -1603,6 +1895,14 @@ function evaluateCriteria({
 		})
 	);
 
+	if (renderResult.sourceContract.source.kind === SOURCE_KINDS.flatLocalPointSun) {
+		criteria.push(...evaluateLocalSourceRenderCriteria({
+			renderResult,
+			transportDiagnostics,
+		}));
+		return criteria;
+	}
+
 	if (sceneMode === SCENE_MODES.sunsetFloor) {
 		criteria.push(...evaluateSunsetFloorCriteria({
 			renderResult,
@@ -1825,6 +2125,377 @@ function evaluateCriteria({
 	return criteria;
 }
 
+function evaluateLocalSourceRenderCriteria({ renderResult, transportDiagnostics }) {
+	const criteria = [];
+	const sampleTransfers = transportDiagnostics.samplePackets.map(
+		(packet) => packet.transfer
+	);
+	const allValues = sampleTransfers.flatMap((transfer) => [
+		...transfer.opticalDepthByWavelength,
+		...transfer.transmittanceByWavelength,
+		...transfer.pathRadianceByWavelength,
+		...transfer.firstOrderPathRadianceByWavelength,
+		...transfer.secondOrderPathRadianceByWavelength,
+	]);
+	const allTransmittances = sampleTransfers.flatMap(
+		(transfer) => transfer.transmittanceByWavelength
+	);
+	const nonfiniteTransferValues = allValues.filter(
+		(value) => !Number.isFinite(value) || value < -1e-12
+	).length;
+	const minTransmittance = Math.min(...allTransmittances);
+	const maxTransmittance = Math.max(...allTransmittances);
+	const finiteSourceSamples = transportDiagnostics.samplePackets.every(
+		(packet) =>
+			packet.sourceSampleAtRayOrigin.distanceKind === 'finite' &&
+			Number.isFinite(packet.sourceSampleAtRayOrigin.distanceMeters) &&
+			packet.sourceSampleAtRayOrigin.distanceMeters > 0 &&
+			Number.isFinite(packet.sourceSampleAtRayOrigin.incidentScale) &&
+			packet.sourceSampleAtRayOrigin.incidentScale >= 0
+	);
+	const secondOrderMax = Math.max(
+		...sampleTransfers.flatMap(
+			(transfer) => transfer.secondOrderPathRadianceByWavelength
+		),
+		0
+	);
+	const maxBeerLambertError = Math.max(
+		...transportDiagnostics.beerLambertSamples.map((sample) => sample.error)
+	);
+	const skyPackets = transportDiagnostics.samplePackets.filter(
+		(packet) => packet.classification === 'sky'
+	);
+	const maxSkyPathRadiance = Math.max(
+		...skyPackets.flatMap((packet) => packet.transfer.pathRadianceByWavelength),
+		0
+	);
+
+	criteria.push(
+		criterion({
+			id: 'local-source-contract-active',
+			status:
+				renderResult.sourceContract.source.kind ===
+					SOURCE_KINDS.flatLocalPointSun &&
+				renderResult.sourceContract.geometry.kind ===
+					GEOMETRY_KINDS.flatZUpAtmosphere
+					? 'pass'
+					: 'fail',
+			tolerance: {
+				sourceKind: SOURCE_KINDS.flatLocalPointSun,
+				geometryKind: GEOMETRY_KINDS.flatZUpAtmosphere,
+			},
+			measured: {
+				sourceKind: renderResult.sourceContract.source.kind,
+				geometryKind: renderResult.sourceContract.geometry.kind,
+			},
+			notes:
+				'The CPU renderer is using the configured flat/local source and geometry contract for this image.',
+		})
+	);
+	criteria.push(
+		criterion({
+			id: 'local-source-image-shape',
+			status:
+				renderResult.radianceStats.skyPixels > 0 &&
+				renderResult.radianceStats.hitPixels > 0
+					? 'pass'
+					: 'fail',
+			tolerance: {
+				skyPixels: 'positive',
+				hitPixels: 'positive',
+			},
+			measured: {
+				skyPixels: renderResult.radianceStats.skyPixels,
+				hitPixels: renderResult.radianceStats.hitPixels,
+				objectCounts: renderResult.objectCounts,
+			},
+			notes:
+				'The local-source image includes both atmosphere-only sky rays and Three scene hit segments.',
+		})
+	);
+	criteria.push(
+		criterion({
+			id: 'local-source-samples-finite',
+			status: finiteSourceSamples ? 'pass' : 'fail',
+			tolerance: {
+				distanceKind: 'finite',
+				distanceMeters: 'finite positive',
+				incidentScale: 'finite nonnegative',
+			},
+			measured: transportDiagnostics.samplePackets.map((packet) => ({
+				sampleId: packet.sampleId,
+				sourceSampleAtRayOrigin: packet.sourceSampleAtRayOrigin,
+			})),
+			notes:
+				'Each selected ray samples the configured finite source rather than reusing a global distant direction.',
+		})
+	);
+	criteria.push(
+		criterion({
+			id: 'local-source-finite-nonnegative-transfer',
+			status:
+				nonfiniteTransferValues === 0 &&
+				minTransmittance >= -1e-12 &&
+				maxTransmittance <= 1 + 1e-12
+					? 'pass'
+					: 'fail',
+			tolerance: { transmittanceRange: [0, 1], slack: 1e-12 },
+			measured: {
+				nonfiniteTransferValues,
+				minTransmittance,
+				maxTransmittance,
+			},
+			notes:
+				'Configured local-source spectral transfer remains finite, nonnegative, and bounded.',
+		})
+	);
+	criteria.push(
+		criterion({
+			id: 'local-source-beer-lambert-identity',
+			status: maxBeerLambertError <= 1e-12 ? 'pass' : 'fail',
+			tolerance: { absolute: 1e-12 },
+			measured: { maxBeerLambertError },
+			notes: 'Stored local-source spectral transmittance equals exp(-opticalDepth).',
+		})
+	);
+	criteria.push(
+		criterion({
+			id: 'local-source-sky-radiance-present',
+			status: skyPackets.length > 0 && maxSkyPathRadiance > 0 ? 'pass' : 'fail',
+			tolerance: { skySamples: 'positive', pathRadiance: 'positive' },
+			measured: {
+				skySampleCount: skyPackets.length,
+				maxSkyPathRadiance,
+			},
+			notes:
+				'Sky pixels are lit by the configured local source through CPU Algorithm32 first-order scattering.',
+		})
+	);
+	criteria.push(
+		criterion({
+			id: 'local-source-second-order-deferred',
+			status:
+				secondOrderMax === 0 &&
+				renderResult.cacheDiagnostics.incidentSkyCacheEntries === 0
+					? 'pass'
+					: 'fail',
+			tolerance: {
+				secondOrderPathRadianceMax: 0,
+				incidentSkyCacheEntries: 0,
+			},
+			measured: {
+				secondOrderMax,
+				incidentSkyCacheEntries:
+					renderResult.cacheDiagnostics.incidentSkyCacheEntries,
+			},
+			notes:
+				'The local-source render is first-order only; distant-Sun second-order cache behavior remains deferred for local sources.',
+		})
+	);
+
+	return criteria;
+}
+
+async function compareReferenceArtifact({
+	referenceDirectory,
+	renderResult,
+	geometryDiagnostics,
+	transportDiagnostics,
+	criteria,
+}) {
+	const referenceRoot = path.resolve(referenceDirectory);
+	const imageComparison = await compareReferenceImage({
+		referenceImagePath: path.join(referenceRoot, 'reference-image.png'),
+		renderResult,
+	});
+	const selectedComparison = await compareJsonArtifact({
+		referencePath: path.join(referenceRoot, 'selected-pixels.json'),
+		currentValue: {
+			kind: 'algorithm32-node-three-reference-selected-pixels',
+			selectedPixelDiagnostics: renderResult.selectedPixelDiagnostics,
+		},
+	});
+	const geometryComparison = await compareJsonArtifact({
+		referencePath: path.join(referenceRoot, 'geometry-diagnostics.json'),
+		currentValue: geometryDiagnostics,
+	});
+	const transportComparison = await compareJsonArtifact({
+		referencePath: path.join(referenceRoot, 'transport-diagnostics.json'),
+		currentValue: transportDiagnostics,
+		allowAdditiveCurrentFields: true,
+	});
+	const criteriaComparison = await compareJsonArtifact({
+		referencePath: path.join(referenceRoot, 'criteria-results.json'),
+		currentValue: {
+			kind: 'algorithm32-node-three-reference-criteria',
+			summary: summarizeCriteria(criteria),
+			criteria,
+		},
+		allowAdditiveCurrentFields: true,
+	});
+
+	const comparisons = {
+		referenceDirectory: path.relative(REPO_ROOT, referenceRoot).replaceAll('\\', '/'),
+		imageComparison,
+		selectedComparison,
+		geometryComparison,
+		transportComparison,
+		criteriaComparison,
+	};
+
+	return {
+		kind: 'algorithm32-reference-parity-comparison',
+		...comparisons,
+		criteria: [
+			criterion({
+				id: 'reference-image-pixel-parity',
+				status: imageComparison.matches ? 'pass' : 'fail',
+				tolerance: { maxAbsByteDelta: 0 },
+				measured: imageComparison,
+				notes:
+					'Rendered CPU source-contract image matches the accepted reference image pixel-for-pixel.',
+			}),
+			criterion({
+				id: 'selected-pixels-json-parity',
+				status: selectedComparison.matches ? 'pass' : 'fail',
+				tolerance: { canonicalJson: 'exact' },
+				measured: selectedComparison.summary,
+				notes:
+					'Selected-pixel spectral diagnostics match the accepted reference artifact.',
+			}),
+			criterion({
+				id: 'geometry-diagnostics-json-parity',
+				status: geometryComparison.matches ? 'pass' : 'fail',
+				tolerance: { canonicalJson: 'exact' },
+				measured: geometryComparison.summary,
+				notes:
+					'Geometry diagnostics match the accepted reference artifact.',
+			}),
+			criterion({
+				id: 'transport-diagnostics-json-parity',
+				status: transportComparison.matches ? 'pass' : 'fail',
+				tolerance: transportComparison.tolerance,
+				measured: transportComparison.summary,
+				notes:
+					'Transport diagnostics match the accepted reference artifact for all fields owned by that reference artifact.',
+			}),
+			criterion({
+				id: 'criteria-results-json-parity',
+				status: criteriaComparison.matches ? 'pass' : 'fail',
+				tolerance: criteriaComparison.tolerance,
+				measured: criteriaComparison.summary,
+				notes:
+					'Original criteria results match the accepted reference artifact for all fields owned by that reference artifact, before source-contract parity criteria are added.',
+			}),
+		],
+	};
+}
+
+async function compareReferenceImage({ referenceImagePath, renderResult }) {
+	const { data, info } = await sharp(referenceImagePath)
+		.ensureAlpha()
+		.raw()
+		.toBuffer({ resolveWithObject: true });
+	let maxAbsByteDelta = 0;
+	let differentBytes = 0;
+
+	const sameShape =
+		info.width === renderResult.width &&
+		info.height === renderResult.height &&
+		info.channels === 4 &&
+		data.length === renderResult.pixels.length;
+
+	if (sameShape) {
+		for (let index = 0; index < data.length; index += 1) {
+			const delta = Math.abs(data[index] - renderResult.pixels[index]);
+			if (delta !== 0) {
+				differentBytes += 1;
+				maxAbsByteDelta = Math.max(maxAbsByteDelta, delta);
+			}
+		}
+	}
+
+	return {
+		referenceImagePath: path.relative(REPO_ROOT, referenceImagePath).replaceAll('\\', '/'),
+		width: renderResult.width,
+		height: renderResult.height,
+		referenceWidth: info.width,
+		referenceHeight: info.height,
+		sameShape,
+		differentBytes: sameShape ? differentBytes : null,
+		maxAbsByteDelta: sameShape ? maxAbsByteDelta : null,
+		matches: sameShape && differentBytes === 0,
+	};
+}
+
+async function compareJsonArtifact({
+	referencePath,
+	currentValue,
+	allowAdditiveCurrentFields = false,
+}) {
+	const referenceValue = JSON.parse(await fs.readFile(referencePath, 'utf8'));
+	const referenceCanonical = stableJson(referenceValue);
+	const currentCanonical = stableJson(currentValue);
+	const exactMatch = referenceCanonical === currentCanonical;
+	const currentReferenceShapeCanonical = allowAdditiveCurrentFields
+		? stableJson(projectToReferenceShape(referenceValue, currentValue))
+		: currentCanonical;
+	const referenceShapeMatch =
+		allowAdditiveCurrentFields &&
+		referenceCanonical === currentReferenceShapeCanonical;
+	const matches = exactMatch || referenceShapeMatch;
+
+	return {
+		referencePath: path.relative(REPO_ROOT, referencePath).replaceAll('\\', '/'),
+		matches,
+		tolerance: {
+			canonicalJson: exactMatch
+				? 'exact'
+				: allowAdditiveCurrentFields
+					? 'exact over reference-owned fields; additive current fields allowed'
+					: 'exact',
+		},
+		summary: {
+			referenceBytes: referenceCanonical.length,
+			currentBytes: currentCanonical.length,
+			sameCanonicalJson: exactMatch,
+			sameReferenceShapeCanonicalJson: allowAdditiveCurrentFields
+				? referenceShapeMatch
+				: exactMatch,
+			additiveCurrentFieldsAllowed: allowAdditiveCurrentFields,
+		},
+	};
+}
+
+function projectToReferenceShape(referenceValue, currentValue) {
+	if (Array.isArray(referenceValue)) {
+		if (!Array.isArray(currentValue) || currentValue.length !== referenceValue.length) {
+			return currentValue;
+		}
+
+		return referenceValue.map((referenceItem, index) =>
+			projectToReferenceShape(referenceItem, currentValue[index])
+		);
+	}
+
+	if (
+		referenceValue &&
+		typeof referenceValue === 'object' &&
+		currentValue &&
+		typeof currentValue === 'object' &&
+		!Array.isArray(currentValue)
+	) {
+		return Object.fromEntries(
+			Object.keys(referenceValue).map((key) => [
+				key,
+				projectToReferenceShape(referenceValue[key], currentValue[key]),
+			])
+		);
+	}
+
+	return currentValue;
+}
+
 function evaluateSunsetFloorCriteria({ renderResult, transportDiagnostics }) {
 	const criteria = [];
 	const cardObjectNames = Object.keys(renderResult.objectCounts).filter((name) =>
@@ -2014,11 +2685,29 @@ async function writeReferenceArtifacts({
 	geometryDiagnostics,
 	renderResult,
 	transportDiagnostics,
+	referenceComparison,
 	criteria,
 	summary,
 	packet,
 	runLog,
 }) {
+	await writeJson(path.join(artifact.directory, 'command.json'), {
+		kind: 'algorithm32-node-three-reference-command',
+		scriptPath: SCRIPT_PATH,
+		options: {
+			width: options.width,
+			height: options.height,
+			label: options.label,
+			sceneMode: options.sceneMode,
+			sunsetFraming: options.sunsetFraming,
+			mountainView: options.mountainView,
+			scatteringOrder: options.scatteringOrder,
+			sourceRunLabel: options.sourceRunLabel,
+			compareReference: options.compareReference
+				? path.relative(REPO_ROOT, options.compareReference).replaceAll('\\', '/')
+				: null,
+		},
+	});
 	await writeJson(path.join(artifact.directory, 'inputs.json'), {
 		kind: 'algorithm32-node-three-reference-inputs',
 		options: {
@@ -2029,6 +2718,7 @@ async function writeReferenceArtifacts({
 			sunsetFraming: options.sunsetFraming,
 			mountainView: options.mountainView,
 			scatteringOrder: options.scatteringOrder,
+			sourceRunLabel: options.sourceRunLabel,
 		},
 		sourceBoundary: {
 			authority:
@@ -2063,6 +2753,7 @@ async function writeReferenceArtifacts({
 		renderSunCaseId: renderResult.sunCase.id,
 		scatteringOrder: sceneSetup.scatteringOrder,
 		includeSecondOrder: sceneSetup.includeSecondOrder,
+		sourceContract: renderResult.sourceContract,
 		algorithmicDecisions: [
 			{
 				id: 'three-diagnostic-scene',
@@ -2160,9 +2851,23 @@ async function writeReferenceArtifacts({
 
 	await writeJson(path.join(artifact.directory, 'geometry-diagnostics.json'), geometryDiagnostics);
 	await writeJson(
+		path.join(artifact.directory, 'source-contract.json'),
+		renderResult.sourceContract
+	);
+	await writeJson(
+		path.join(artifact.directory, 'source-sample-traces.json'),
+		renderResult.sourceSampleTraces
+	);
+	await writeJson(
 		path.join(artifact.directory, 'transport-diagnostics.json'),
 		transportDiagnostics
 	);
+	if (referenceComparison) {
+		await writeJson(
+			path.join(artifact.directory, 'source-contract-comparison.json'),
+			referenceComparison
+		);
+	}
 	await writeJson(path.join(artifact.directory, 'criteria-results.json'), {
 		kind: 'algorithm32-node-three-reference-criteria',
 		summary,
@@ -2219,6 +2924,15 @@ async function writeReferenceArtifacts({
 }
 
 function makeReport({ artifact, summary, renderResult, transportDiagnostics }) {
+	if (transportDiagnostics.sourceKind === SOURCE_KINDS.flatLocalPointSun) {
+		return makeLocalSourceReport({
+			artifact,
+			summary,
+			renderResult,
+			transportDiagnostics,
+		});
+	}
+
 	if (transportDiagnostics.sceneMode === SCENE_MODES.sunsetFloor) {
 		return makeSunsetFloorReport({
 			artifact,
@@ -2268,6 +2982,56 @@ function makeReport({ artifact, summary, renderResult, transportDiagnostics }) {
 		'## Interpretation',
 		'',
 		'The baseline bootstrap problem is solved for the CPU side: Three can provide the camera rays, hit distances, and object metadata needed by Algorithm32. The next shader-lab step can reuse this scene definition as the oracle path when a browser shader adapter is added.',
+		'',
+	].join('\n');
+}
+
+function makeLocalSourceReport({
+	artifact,
+	summary,
+	renderResult,
+	transportDiagnostics,
+}) {
+	const source = renderResult.sourceContract.source;
+	const geometry = renderResult.sourceContract.geometry;
+
+	return [
+		'# Algorithm32 Local-Source CPU Render',
+		'',
+		`Artifact: \`${artifact.relativeFolder}\``,
+		'',
+		`Status: ${summary.failed === 0 ? 'accepted' : 'rejected'} (${summary.passed} passed, ${summary.failed} failed, ${summary.unresolved} unresolved).`,
+		'',
+		'This run renders a Three scene through the CPU Algorithm32 transport path using the configured flat/local point Sun source contract. It is first-order local-source POC work; direct solar-disc camera radiance, ground bounce, local second-order caches, and shader work remain deferred.',
+		'',
+		'## Source',
+		'',
+		`- Source id: ${source.id}`,
+		`- Source kind: ${source.kind}`,
+		`- Geometry kind: ${geometry.kind}`,
+		`- Scene sky-ray limit: ${geometry.sceneSkyRayLimitMeters ?? 'not configured'} m`,
+		`- Scene sky-ray policy: ${geometry.sceneSkyRayLimitPolicy || 'not configured'}`,
+		'',
+		'## Outputs',
+		'',
+		'- `reference-image.png`: CPU local-source Algorithm32 preview assembled from Three rays.',
+		'- `object-mask.png`: Three hit classification mask.',
+		'- `source-contract.json`: active source/geometry contract.',
+		'- `source-sample-traces.json`: source samples at observer, 10 km, and camera positions.',
+		'- `transport-diagnostics.json`: selected-ray spectral transport using the active local source.',
+		'- `criteria-results.json`: local-source acceptance criteria.',
+		'',
+		'## Key Measurements',
+		'',
+		`- Sky pixels: ${renderResult.radianceStats.skyPixels}`,
+		`- Hit pixels: ${renderResult.radianceStats.hitPixels}`,
+		`- Max path-radiance mean: ${renderResult.radianceStats.maxPathRadianceMean}`,
+		`- Incident sky cache entries: ${renderResult.cacheDiagnostics.incidentSkyCacheEntries}`,
+		`- Selected source samples: ${transportDiagnostics.samplePackets.length}`,
+		'',
+		'## Interpretation',
+		'',
+		'The local source is now integrated into the CPU path-radiance integrator itself: source direction, distance falloff, spectral incident scale, and source-path transmittance are evaluated per sample. The configured scene sky-ray limit is a renderer policy seeded by the accepted flat visibility experiments, not an atmosphere constant; shorter practical-resolution caps can be tried later without changing the source contract.',
 		'',
 	].join('\n');
 }
@@ -2420,40 +3184,46 @@ function stateGoalSuccessText(sceneSetup) {
 	return 'The run succeeds when Three camera rays and Raycaster hits can drive Algorithm32 sky/object transfer packets, and when geometry and spectral-transfer identities pass on the generated scene.';
 }
 
-function traceSegmentForThreeHit({
+export function traceSegmentForThreeHit({
 	camera,
 	ray,
 	distance,
 	sunCase,
 	sunRay,
+	algorithm32Model,
 	incidentSkyCache,
 	includeSecondOrder,
 }) {
+	const geometry =
+		algorithm32Model?.geometry || createDistantSunAlgorithm32Model(sunCase).geometry;
+
 	return computePathRadianceSegment({
-		origin: threeToAlgorithmWorld(camera.position),
-		direction: threeDirectionToAlgorithm(ray.direction),
+		origin: threeToAlgorithmWorld(camera.position, geometry),
+		direction: threeDirectionToAlgorithm(ray.direction, geometry),
 		distance,
 		sunCase,
 		sunRay,
+		algorithm32Model,
 		controls: NUMERICAL_CONTROLS,
 		includeSecondOrder,
 		incidentSkyCache,
 	});
 }
 
-function traceSkyForThreeRay({
+export function traceSkyForThreeRay({
 	camera,
 	ray,
 	sunCase,
 	sunRay,
+	algorithm32Model,
 	incidentSkyCache,
 	includeSecondOrder = true,
 }) {
-	const origin = threeToAlgorithmWorld(camera.position);
-	const direction = threeDirectionToAlgorithm(ray.direction);
-	const radius = length(origin);
-	const mu = dot(origin, direction) / radius;
-	const distance = distanceToTopAtmosphereBoundary(radius, mu);
+	const geometry =
+		algorithm32Model?.geometry || createDistantSunAlgorithm32Model(sunCase).geometry;
+	const origin = threeToAlgorithmWorld(camera.position, geometry);
+	const direction = threeDirectionToAlgorithm(ray.direction, geometry);
+	const distance = distanceToSkyBoundary(origin, direction, geometry);
 
 	return computePathRadianceSegment({
 		origin,
@@ -2461,6 +3231,7 @@ function traceSkyForThreeRay({
 		distance,
 		sunCase,
 		sunRay,
+		algorithm32Model,
 		controls: NUMERICAL_CONTROLS,
 		includeSecondOrder,
 		incidentSkyCache,
@@ -2473,19 +3244,32 @@ function computePathRadianceSegment({
 	distance,
 	sunCase,
 	sunRay,
+	algorithm32Model,
 	controls,
 	includeSecondOrder,
 	incidentSkyCache,
 }) {
+	const activeModel =
+		algorithm32Model || createDistantSunAlgorithm32Model(sunCase);
+	const geometry = activeModel.geometry;
+	const isFiniteSource =
+		activeModel.source.distanceKind === 'finite' ||
+		activeModel.source.kind === SOURCE_KINDS.flatLocalPointSun;
+	const sourceDirection =
+		activeModel.source.direction || sunRay || activeModel.sampleSource(origin).direction;
+	const includeSecondOrderForModel = includeSecondOrder && !isFiniteSource;
 	const fullOpticalLengths = computeOpticalLengthsAlongDistance(
 		origin,
 		direction,
 		distance,
-		controls.viewRayScatteringIntervals
+		controls.viewRayScatteringIntervals,
+		geometry
 	);
 	const fullTransmittance = computeTransmittanceSpectrum(fullOpticalLengths);
 
 	if (distance === 0) {
+		const altitudeMeters = altitudeAtPosition(origin, geometry);
+
 		return {
 			opticalDepthByWavelength: fullTransmittance.opticalDepthByWavelength,
 			transmittanceByWavelength: fullTransmittance.transmittanceByWavelength,
@@ -2494,8 +3278,8 @@ function computePathRadianceSegment({
 			secondOrderPathRadianceByWavelength: zeroSpectrum(),
 			diagnostics: {
 				sampleCount: controls.viewRayScatteringIntervals,
-				minAltitudeMeters: ATMOSPHERE.observerHeightMeters,
-				maxAltitudeMeters: ATMOSPHERE.observerHeightMeters,
+				minAltitudeMeters: altitudeMeters,
+				maxAltitudeMeters: altitudeMeters,
 				rayleighOpticalLength: 0,
 				mieOpticalLength: 0,
 				absorptionOpticalLength: 0,
@@ -2518,7 +3302,7 @@ function computePathRadianceSegment({
 	for (let sampleIndex = 0; sampleIndex <= sampleCount; sampleIndex += 1) {
 		const sampleDistance = sampleIndex * step;
 		const position = addScaled(origin, direction, sampleDistance);
-		const density = densityAtPosition(position);
+		const density = densityAtPosition(position, geometry);
 
 		minAltitudeMeters = Math.min(minAltitudeMeters, density.altitudeMeters);
 		maxAltitudeMeters = Math.max(maxAltitudeMeters, density.altitudeMeters);
@@ -2541,32 +3325,68 @@ function computePathRadianceSegment({
 	for (let sampleIndex = 0; sampleIndex <= sampleCount; sampleIndex += 1) {
 		const sample = samples[sampleIndex];
 		const weight = sampleIndex === 0 || sampleIndex === sampleCount ? 0.5 : 1;
+		const sourceSample = activeModel.sampleSource(sample.position);
 		const viewTransmittance = computeTransmittanceSpectrum({
 			rayleighOpticalLength: cumulativeRayleigh[sampleIndex],
 			mieOpticalLength: cumulativeMie[sampleIndex],
 			absorptionOpticalLength: cumulativeAbsorption[sampleIndex],
 		}).transmittanceByWavelength;
-		const sunTransmittance = computeTransmittanceToSunSpectrum(
+		const sunTransmittance = computeTransmittanceToSourceSpectrum(
 			sample.position,
-			sunRay,
-			controls
+			sourceSample,
+			controls,
+			geometry
 		);
 
 		for (let channelIndex = 0; channelIndex < SPECTRAL_CHANNELS.length; channelIndex += 1) {
 			const transmittance =
 				viewTransmittance[channelIndex] * sunTransmittance[channelIndex];
 
-			rayleighSum[channelIndex] +=
-				transmittance * sample.density.rayleigh * weight;
-			mieSum[channelIndex] += transmittance * sample.density.mie * weight;
+			if (isFiniteSource) {
+				const channel = SPECTRAL_CHANNELS[channelIndex];
+				const wavelengthMicrometers = wavelengthNanometersToMicrometers(
+					channel.wavelengthNanometers
+				);
+				const sampleNu = clamp(dot(direction, sourceSample.direction), -1, 1);
+				const rayleighPhase = rayleighPhaseFunction(sampleNu);
+				const miePhase = miePhaseFunction(
+					ATMOSPHERE.miePhaseFunctionG,
+					sampleNu
+				);
+				const sourceIncidentScale =
+					sourceSample.spectralIncidentScaleByWavelength?.[channelIndex] ??
+					sourceSample.incidentScale ??
+					1;
+				const sourceIrradiance =
+					channel.solarIrradiance * sourceIncidentScale;
+
+				rayleighSum[channelIndex] +=
+					transmittance *
+					sample.density.rayleigh *
+					sourceIrradiance *
+					rayleighScatteringCoefficientAt(wavelengthMicrometers) *
+					rayleighPhase *
+					weight;
+				mieSum[channelIndex] +=
+					transmittance *
+					sample.density.mie *
+					sourceIrradiance *
+					mieScatteringCoefficientAt(wavelengthMicrometers) *
+					miePhase *
+					weight;
+			} else {
+				rayleighSum[channelIndex] +=
+					transmittance * sample.density.rayleigh * weight;
+				mieSum[channelIndex] += transmittance * sample.density.mie * weight;
+			}
 		}
 
-		if (includeSecondOrder) {
+		if (includeSecondOrderForModel) {
 			const secondOrder = computeSecondOrderAtSample({
 				sunCase,
 				position: sample.position,
 				viewRay: direction,
-				sunRay,
+				sunRay: sourceDirection,
 				density: sample.density,
 				viewTransmittance,
 				controls,
@@ -2579,30 +3399,17 @@ function computePathRadianceSegment({
 		}
 	}
 
-	const nu = dot(direction, sunRay);
-	const rayleighPhase = rayleighPhaseFunction(nu);
-	const miePhase = miePhaseFunction(ATMOSPHERE.miePhaseFunctionG, nu);
-	const firstOrderPathRadianceByWavelength = SPECTRAL_CHANNELS.map(
-		(channel, channelIndex) => {
-			const wavelengthMicrometers = wavelengthNanometersToMicrometers(
-				channel.wavelengthNanometers
-			);
-			const rayleigh =
-				rayleighSum[channelIndex] *
-				step *
-				channel.solarIrradiance *
-				rayleighScatteringCoefficientAt(wavelengthMicrometers) *
-				rayleighPhase;
-			const mie =
-				mieSum[channelIndex] *
-				step *
-				channel.solarIrradiance *
-				mieScatteringCoefficientAt(wavelengthMicrometers) *
-				miePhase;
-
-			return rayleigh + mie;
-		}
-	);
+	const firstOrderPathRadianceByWavelength = isFiniteSource
+		? rayleighSum.map((value, channelIndex) => {
+				return (value + mieSum[channelIndex]) * step;
+			})
+		: distantFirstOrderPathRadiance({
+				direction,
+				sourceDirection,
+				rayleighSum,
+				mieSum,
+				step,
+			});
 	const secondOrderPathRadianceByWavelength = secondOrderSum.map(
 		(value) => value * step
 	);
@@ -2626,6 +3433,38 @@ function computePathRadianceSegment({
 			absorptionOpticalLength: fullOpticalLengths.absorptionOpticalLength,
 		},
 	};
+}
+
+function distantFirstOrderPathRadiance({
+	direction,
+	sourceDirection,
+	rayleighSum,
+	mieSum,
+	step,
+}) {
+	const nu = dot(direction, sourceDirection);
+	const rayleighPhase = rayleighPhaseFunction(nu);
+	const miePhase = miePhaseFunction(ATMOSPHERE.miePhaseFunctionG, nu);
+
+	return SPECTRAL_CHANNELS.map((channel, channelIndex) => {
+		const wavelengthMicrometers = wavelengthNanometersToMicrometers(
+			channel.wavelengthNanometers
+		);
+		const rayleigh =
+			rayleighSum[channelIndex] *
+			step *
+			channel.solarIrradiance *
+			rayleighScatteringCoefficientAt(wavelengthMicrometers) *
+			rayleighPhase;
+		const mie =
+			mieSum[channelIndex] *
+			step *
+			channel.solarIrradiance *
+			mieScatteringCoefficientAt(wavelengthMicrometers) *
+			miePhase;
+
+		return rayleigh + mie;
+	});
 }
 
 function computeSecondOrderAtSample({
@@ -2735,7 +3574,13 @@ function incidentSkyRadianceForSecondOrder({
 	return incidentSkyCache.get(key);
 }
 
-function computeOpticalLengthsAlongDistance(origin, direction, distance, sampleCount) {
+function computeOpticalLengthsAlongDistance(
+	origin,
+	direction,
+	distance,
+	sampleCount,
+	geometry = null
+) {
 	if (distance === 0 || sampleCount === 0) {
 		return {
 			distance,
@@ -2753,7 +3598,7 @@ function computeOpticalLengthsAlongDistance(origin, direction, distance, sampleC
 	for (let sampleIndex = 0; sampleIndex <= sampleCount; sampleIndex += 1) {
 		const sampleDistance = sampleIndex * step;
 		const samplePosition = addScaled(origin, direction, sampleDistance);
-		const density = densityAtPosition(samplePosition);
+		const density = densityAtPosition(samplePosition, geometry);
 		const weight = sampleIndex === 0 || sampleIndex === sampleCount ? 0.5 : 1;
 
 		rayleighOpticalLength += density.rayleigh * weight * step;
@@ -2769,7 +3614,24 @@ function computeOpticalLengthsAlongDistance(origin, direction, distance, sampleC
 	};
 }
 
-function computeOpticalLengthsToTop(origin, direction, sampleCount) {
+function computeOpticalLengthsToTop(
+	origin,
+	direction,
+	sampleCount,
+	geometry = null
+) {
+	if (isFlatGeometry(geometry)) {
+		const distanceToTop = distanceToFlatTopBoundary(origin, direction, geometry);
+
+		return computeOpticalLengthsAlongDistance(
+			origin,
+			direction,
+			distanceToTop ?? 0,
+			sampleCount,
+			geometry
+		);
+	}
+
 	const radius = length(origin);
 	const mu = dot(origin, direction) / radius;
 	const distanceToTop = distanceToTopAtmosphereBoundary(radius, mu);
@@ -2778,7 +3640,8 @@ function computeOpticalLengthsToTop(origin, direction, sampleCount) {
 		origin,
 		direction,
 		distanceToTop,
-		sampleCount
+		sampleCount,
+		geometry
 	);
 }
 
@@ -2806,9 +3669,84 @@ function computeTransmittanceSpectrum(opticalLengths) {
 	};
 }
 
-function computeTransmittanceToSunSpectrum(position, sunRay, controls) {
+function computeTransmittanceToSourceSpectrum(
+	position,
+	sourceSample,
+	controls,
+	geometry = null
+) {
+	if (sourceSample.distanceKind === 'finite') {
+		if (isFlatGeometry(geometry)) {
+			const groundDistance = distanceToFlatGroundBoundary(
+				position,
+				sourceSample.direction
+			);
+
+			if (
+				groundDistance !== null &&
+				groundDistance < sourceSample.distanceMeters - 1e-9
+			) {
+				return zeroSpectrum();
+			}
+
+			const topDistance = distanceToFlatTopBoundary(
+				position,
+				sourceSample.direction,
+				geometry
+			);
+			const atmosphereDistance =
+				topDistance === null
+					? sourceSample.distanceMeters
+					: Math.min(sourceSample.distanceMeters, topDistance);
+
+			if (atmosphereDistance <= 0) {
+				return SPECTRAL_CHANNELS.map(() => 1);
+			}
+
+			return computeTransmittanceSpectrum(
+				computeOpticalLengthsAlongDistance(
+					position,
+					sourceSample.direction,
+					atmosphereDistance,
+					controls.sampleToSunTransmittanceIntervals,
+					geometry
+				)
+			).transmittanceByWavelength;
+		}
+
+		return computeTransmittanceSpectrum(
+			computeOpticalLengthsAlongDistance(
+				position,
+				sourceSample.direction,
+				sourceSample.distanceMeters,
+				controls.sampleToSunTransmittanceIntervals,
+				geometry
+			)
+		).transmittanceByWavelength;
+	}
+
+	if (isFlatGeometry(geometry)) {
+		const groundDistance = distanceToFlatGroundBoundary(
+			position,
+			sourceSample.direction
+		);
+
+		if (groundDistance !== null) {
+			return zeroSpectrum();
+		}
+
+		return computeTransmittanceSpectrum(
+			computeOpticalLengthsToTop(
+				position,
+				sourceSample.direction,
+				controls.sampleToSunTransmittanceIntervals,
+				geometry
+			)
+		).transmittanceByWavelength;
+	}
+
 	const radius = length(position);
-	const mu = dot(position, sunRay) / radius;
+	const mu = dot(position, sourceSample.direction) / radius;
 
 	if (rayIntersectsGround(radius, mu)) {
 		return SPECTRAL_CHANNELS.map(() => 0);
@@ -2817,13 +3755,34 @@ function computeTransmittanceToSunSpectrum(position, sunRay, controls) {
 	return computeTransmittanceSpectrum(
 		computeOpticalLengthsToTop(
 			position,
-			sunRay,
-			controls.sampleToSunTransmittanceIntervals
+			sourceSample.direction,
+			controls.sampleToSunTransmittanceIntervals,
+			geometry
 		)
 	).transmittanceByWavelength;
 }
 
-function densityAtPosition(position) {
+function densityAtPosition(position, geometry = null) {
+	if (isFlatGeometry(geometry)) {
+		const altitude = position[2];
+
+		if (altitude < 0 || altitude > geometry.topAltitudeMeters) {
+			return {
+				altitudeMeters: altitude,
+				rayleigh: 0,
+				mie: 0,
+				absorption: 0,
+			};
+		}
+
+		return {
+			altitudeMeters: altitude,
+			rayleigh: exponentialDensity(altitude, ATMOSPHERE.rayleighScaleHeightMeters),
+			mie: exponentialDensity(altitude, ATMOSPHERE.mieScaleHeightMeters),
+			absorption: 0,
+		};
+	}
+
 	const altitude = length(position) - ATMOSPHERE.bottomRadiusMeters;
 
 	return {
@@ -2832,6 +3791,79 @@ function densityAtPosition(position) {
 		mie: exponentialDensity(altitude, ATMOSPHERE.mieScaleHeightMeters),
 		absorption: 0,
 	};
+}
+
+function isFlatGeometry(geometry) {
+	return geometry?.kind === GEOMETRY_KINDS.flatZUpAtmosphere;
+}
+
+function altitudeAtPosition(position, geometry = null) {
+	if (isFlatGeometry(geometry)) {
+		return position[2];
+	}
+
+	return length(position) - ATMOSPHERE.bottomRadiusMeters;
+}
+
+function observerPositionForGeometry(geometry = null) {
+	if (isFlatGeometry(geometry)) {
+		return [...geometry.observerPositionMeters];
+	}
+
+	return observerPosition();
+}
+
+function tenKmPositionForGeometry(geometry = null) {
+	if (isFlatGeometry(geometry)) {
+		const observer = observerPositionForGeometry(geometry);
+
+		return [observer[0], observer[1], 10000];
+	}
+
+	return [
+		0,
+		0,
+		ATMOSPHERE.bottomRadiusMeters + 10000,
+	];
+}
+
+function distanceToSkyBoundary(origin, direction, geometry = null) {
+	if (isFlatGeometry(geometry)) {
+		const topDistance = distanceToFlatTopBoundary(origin, direction, geometry);
+		const groundDistance = distanceToFlatGroundBoundary(origin, direction);
+		const skyLimit =
+			geometry.sceneSkyRayLimitMeters ?? FLAT_SCENE_SKY_RAY_LIMIT_METERS;
+
+		if (groundDistance !== null) {
+			return Math.min(groundDistance, skyLimit);
+		}
+		if (topDistance !== null) {
+			return Math.min(topDistance, skyLimit);
+		}
+
+		return skyLimit;
+	}
+
+	const radius = length(origin);
+	const mu = dot(origin, direction) / radius;
+
+	return distanceToTopAtmosphereBoundary(radius, mu);
+}
+
+function distanceToFlatTopBoundary(origin, direction, geometry) {
+	if (direction[2] <= 0) {
+		return null;
+	}
+
+	return Math.max(0, (geometry.topAltitudeMeters - origin[2]) / direction[2]);
+}
+
+function distanceToFlatGroundBoundary(origin, direction) {
+	if (direction[2] >= 0) {
+		return null;
+	}
+
+	return Math.max(0, -origin[2] / direction[2]);
 }
 
 function distanceToTopAtmosphereBoundary(radius, mu) {
@@ -2851,7 +3883,7 @@ function rayIntersectsGround(radius, mu) {
 	);
 }
 
-function spectralToDisplayPreview(radianceByWavelength) {
+export function spectralToDisplayPreview(radianceByWavelength) {
 	let x = 0;
 	let y = 0;
 	let z = 0;
@@ -2886,20 +3918,24 @@ function spectralToDisplayPreview(radianceByWavelength) {
 	};
 }
 
-function objectRadianceSpectrum(spectrum) {
+export function objectRadianceSpectrum(spectrum) {
 	return SPECTRAL_CHANNELS.map((channel) =>
 		spectrum.evaluate(channel.wavelengthNanometers)
 	);
 }
 
-function composeObjectRadiance(objectRadiance, transfer) {
+export function composeObjectRadiance(objectRadiance, transfer) {
 	return addArrays(
 		multiplyArrays(objectRadiance, transfer.transmittanceByWavelength),
 		transfer.pathRadianceByWavelength
 	);
 }
 
-function sunDirection(sunCase) {
+export function sunDirection(sunCase) {
+	if (sunCase.sunDirection) {
+		return normalize(sunCase.sunDirection);
+	}
+
 	const altitude = degreesToRadians(sunCase.sunAltitudeDegrees);
 	const azimuth = degreesToRadians(sunCase.sunAzimuthDegrees);
 	const horizontalLength = Math.cos(altitude);
@@ -2920,7 +3956,7 @@ function manualCameraRay(camera, ndc) {
 	return new THREE.Ray(origin, direction);
 }
 
-function firstHit(raycaster, meshes) {
+export function firstHit(raycaster, meshes) {
 	const hits = raycaster.intersectObjects(meshes, false);
 	return hits.length > 0 ? hits[0] : null;
 }
@@ -2946,14 +3982,22 @@ function analyticDistanceToZPlane(ray, planeZ) {
 	return (planeZ - ray.origin.z) / denominator;
 }
 
-function pixelToNdc(x, y, width, height) {
+export function pixelToNdc(x, y, width, height) {
 	return {
 		x: ((x + 0.5) / width) * 2 - 1,
 		y: -(((y + 0.5) / height) * 2 - 1),
 	};
 }
 
-function threeToAlgorithmWorld(vector) {
+export function threeToAlgorithmWorld(vector, geometry = null) {
+	if (isFlatGeometry(geometry)) {
+		return [
+			vector.x,
+			-vector.z,
+			vector.y,
+		];
+	}
+
 	return [
 		vector.x,
 		-vector.z,
@@ -2961,7 +4005,7 @@ function threeToAlgorithmWorld(vector) {
 	];
 }
 
-function threeDirectionToAlgorithm(vector) {
+export function threeDirectionToAlgorithm(vector, geometry = null) {
 	return normalize([vector.x, -vector.z, vector.y]);
 }
 
@@ -2969,7 +4013,7 @@ function algorithmDirectionToThree(vector) {
 	return new THREE.Vector3(vector[0], vector[2], -vector[1]);
 }
 
-function summarizeTransfer(transfer) {
+export function summarizeTransfer(transfer) {
 	return {
 		opticalDepthByWavelength: transfer.opticalDepthByWavelength,
 		transmittanceByWavelength: transfer.transmittanceByWavelength,
@@ -2984,6 +4028,23 @@ function summarizeTransfer(transfer) {
 	};
 }
 
+function summarizeSourceSample(sourceSample) {
+	return {
+		kind: sourceSample.kind,
+		sourceId: sourceSample.sourceId,
+		direction: sourceSample.direction,
+		distanceKind: sourceSample.distanceKind,
+		distanceMeters: sourceSample.distanceMeters,
+		distanceKm: sourceSample.distanceKm || null,
+		incidentScale: sourceSample.incidentScale,
+		distanceFalloffScale: sourceSample.distanceFalloffScale || null,
+		sourcePathPolicy: sourceSample.sourcePathPolicy,
+		transmittancePath: sourceSample.transmittancePath,
+		spectralIncidentScaleByWavelength:
+			sourceSample.spectralIncidentScaleByWavelength,
+	};
+}
+
 function makePixelDiagnostic({
 	x,
 	y,
@@ -2993,6 +4054,7 @@ function makePixelDiagnostic({
 	transfer,
 	objectRadiance,
 	finalRadiance,
+	geometry = null,
 }) {
 	return {
 		x,
@@ -3006,8 +4068,8 @@ function makePixelDiagnostic({
 			direction: vectorToArray(ray.direction),
 		},
 		algorithm32Ray: {
-			origin: threeToAlgorithmWorld(ray.origin),
-			direction: threeDirectionToAlgorithm(ray.direction),
+			origin: threeToAlgorithmWorld(ray.origin, geometry),
+			direction: threeDirectionToAlgorithm(ray.direction, geometry),
 			distanceMeters: hit.distance,
 		},
 		objectRadianceByWavelength: objectRadiance,
@@ -3314,6 +4376,25 @@ function summarizeCriteria(criteria) {
 	};
 }
 
+function stableJson(value) {
+	return JSON.stringify(sortJson(value));
+}
+
+function sortJson(value) {
+	if (Array.isArray(value)) {
+		return value.map(sortJson);
+	}
+	if (value && typeof value === 'object') {
+		return Object.fromEntries(
+			Object.keys(value)
+				.sort()
+				.map((key) => [key, sortJson(value[key])])
+		);
+	}
+
+	return value;
+}
+
 async function nextArtifactDirectory(outRoot, label) {
 	await fs.mkdir(outRoot, { recursive: true });
 	const entries = await fs.readdir(outRoot, { withFileTypes: true });
@@ -3365,7 +4446,9 @@ function log(runLog, message) {
 	runLog.push(`${new Date().toISOString()} ${message}`);
 }
 
-main().catch((error) => {
-	console.error(error);
-	process.exitCode = 1;
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+	main().catch((error) => {
+		console.error(error);
+		process.exitCode = 1;
+	});
+}

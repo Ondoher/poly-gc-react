@@ -4,54 +4,136 @@ Deployable Flat app documentation for the false-sky / sky-comparison project.
 
 ## Current Active Task
 
-Active bootstrap record: Algorithm32 shader iteration ladder. The accepted
-fixed spherical, distant-Sun browser shader endpoint is `054`. Shader
-performance benchmark scaffolding now exists as `browser-shader-benchmark`;
-artifact `067-browser-shader-benchmark` proves structured diagnostics, but no
-isolated GPU timing baseline exists because this Chromium/WebGL backend did
-not expose `EXT_disjoint_timer_query_webgl2`. Treat
-`069-browser-shader-benchmark` only as a cautionary aggressive-batching
-artifact. Resume performance work from
-`tmp/atmosphere/algorithm32_shader_lab/browser-shader-benchmark-command.json`
-using a dedicated user-owned browser/harness process or exact process
-ownership. Do not clean up by killing generic `chrome` processes. The earlier
-flat-earth visibility offshoot remains accepted in artifacts `056`, `062`, and
-`065`.
-Local Sun behavior, changing Sun configuration, clouds, app texture rebuilds,
-and production integration remain deferred unless the user explicitly
-redirects to them.
+Active bootstrap record: production promotion from the accepted Algorithm32
+shader-lab POC. Use this README only as a routing marker. A new or compacted
+agent should start with the canonical reference, then continue to the minimal
+source-contract sections only when implementation detail is needed:
 
-For this active task, use this README only as a routing marker. Do not read the
-older Flat status/design/plan links below for physics, constants, color,
-sampling, or visual targets. Continue directly to:
-
-- [Atmosphere Cleanroom Design](plans/atmosphere-cleanroom-design/README.md)
-- [Environment Object Color Closeout](plans/atmosphere-cleanroom-design/environment-object-color-closeout.md)
-- [Object Color Transport](plans/atmosphere-cleanroom-design/object-color-transport.md)
-- [Experiment 032 Algorithm](plans/atmosphere-cleanroom-design/experiment-032-algorithm.md)
-- [Reference To Shader Goal](plans/atmosphere-cleanroom-design/reference-to-shader-goal.md)
-- [Algorithm32 Module Design](plans/atmosphere-cleanroom-design/algorithm32-module-design.md)
+- [Algorithm32 Canonical Reference](plans/atmosphere-cleanroom-design/algorithm32-canonical-reference.md)
 - [Algorithm32 Shader Iteration Plan](plans/atmosphere-cleanroom-design/algorithm32-shader-iteration-plan.md)
-- [Algorithm32 Shader Lab Plan](plans/atmosphere-cleanroom-design/algorithm32-shader-lab-plan.md)
-- [Production Flat Shader Differences](plans/atmosphere-cleanroom-design/production-flat-shader-differences.md)
+- [Shader Lab README](../../../../scripts/flat/algorithm32-shader-lab/README.md)
 
-Then inspect only when needed:
+Treat the canonical reference as the current source of truth for Algorithm32
+steps, abstractions, accepted endpoints, open issues, and production followups.
+In the iteration plan, read only the accepted Milestone 8 through Milestone 13
+summary, `Shared Soft-Shader Contract`, the accepted Milestone 14 through
+Milestone 29 soft-shader/shader runway, the accepted Milestone 30 through
+Milestone 38 Three-native atmosphere-pass runway, and `Current Next
+Iteration`. In the shader-lab README, read only the
+source-contract block beginning with `The accepted CPU source-contract runway
+is`, plus command examples only when needed. Do not load the older Flat
+status/design/plan links
+below, the detailed shader-lab plan, production flat shader notes, closed
+object-color docs, rejected atmosphere pipeline, `atmosflat32` local-Sun docs,
+or historical artifacts unless the prompt or user explicitly asks.
 
-- `scripts/flat/algorithm32-shader-lab/README.md`
-- `scripts/flat/algorithm32-shader-lab/`
-- `scripts/flat/experimental/bruneton-start-fresh.js`, only when Algorithm32
-  equation/constant implementation detail is needed
+Current shader-lab endpoint:
+`tmp/atmosphere/algorithm32_shader_lab/226-three-native-production-shape-review/`
+is accepted as the current Three-native production-shape endpoint. It records
+the live Three render path: scene color render target plus depth texture into
+`Algorithm32AtmospherePass`. The objective live-pass parity evidence is
+`tmp/atmosphere/algorithm32_shader_lab/224-three-native-live-pass-soft-shader-matrix/`.
+`193-soft-shader-capability-parity-matrix` remains accepted as the corrected
+packet-based soft-shader/GPU parity endpoint, but it is not the current
+integration target. The older `054-browser-gpu-direct-scene-input-second-order-image`
+remains accepted only as the prior fixed spherical distant-Sun browser shader
+endpoint.
 
-For source audits or architecture comparison, explicitly requested older
-skydome/rejected-reference docs may be loaded. Otherwise, keep the environment
-closeout and pipeline handoff docs above as the minimal reload set.
+The CPU source-contract runway is accepted through Milestone 12:
+`071-cpu-source-contract-distant-sun`, `074-cpu-source-contract-distant-sun-matrix`,
+`075-cpu-local-source-first-order-diagnostics`, and
+`076-cpu-source-contract-shader-packet`, plus
+`078-cpu-local-source-integrated-render`. The `076` packet round-trip
+preserved the Milestone 8 distant-Sun raw image, selected diagnostics, and
+source-sample trace exactly, and the local packet marks local second-order
+cache, direct local solar-disc camera radiance, and local ground bounce as
+unsupported or deferred. `078` proves the CPU image renderer now uses the
+flat/local point Sun in the first-order scattering integral while the default
+spherical distant-Sun control still matches `037` exactly. Milestone 13 is
+accepted by `080-browser-lit-scene-input-capture` and
+`081-browser-lit-scene-input-cpu-postprocessor`: the browser captured
+unlit/material-control and lit/shadow scene packets, then the CPU
+postprocessor ran Algorithm32 over those packets pixel by pixel. The required
+old-renderer validation passed byte-for-byte (`maxAbsRgbDelta = 0`), and the
+zero-density scene-color passthrough also had `maxAbsDelta = 0`. Milestone 14
+is accepted by `083-cpu-soft-shader-unlit-parity-matrix`: three unlit cases
+matched the original CPU renderer exactly (`maxAbsRgbDelta = 0` for every
+case), including full Algorithm32, first-order isolation, and sunset floor.
+Milestone 15 is accepted by `084-cpu-soft-shader-lit-scene-matrix`: the lit
+packet kept exact zero-density passthrough, replaced sky with Algorithm32
+radiance, preserved shadow/lit separation after atmosphere, and produced
+finite RGBA over all pixels. Milestone 16 is accepted by
+`085-browser-source-light-coupling` and
+`086-cpu-source-light-coupling-validation`: the distant Sun packet now drives
+both Algorithm32 and the Three `DirectionalLight`, direction agreement is
+`3.46944695195361e-18`, no default-Sun fallback was used, zero-density
+passthrough stayed exact, and shadow/lit separation survived the postprocess.
+Milestone 17 is accepted by browser captures `087` through `090` and
+aggregate artifact `091-cpu-distant-sun-position-matrix`: high, low,
+synthetic side, and synthetic behind-camera distant Sun cases passed `39/39`,
+and packet-supplied synthetic Sun cases now drive Algorithm32 without a
+default high-Sun fallback. Milestone 18 is accepted by
+`093-cpu-local-sun-soft-shader-source-matrix`: local offsets `0`, `45`, `90`,
+`135`, and `180` degrees all resolved as `packet-supplied-flat-local-point-sun`,
+matched the original CPU local renderer exactly, and passed finite-source
+trace checks. Milestone 19 is accepted by
+`094-cpu-unified-source-driven-soft-shader-matrix`: distant high, distant low,
+and the five local offsets all reprocessed through the same
+`postprocessSceneInput` CPU soft-shader kernel and passed `56/56` criteria.
+Milestones 20 through 29 are accepted by `162`, `167`, `171`, `172`, `174`,
+`176`, `177`, `185`, `192`, and `193`, with browser evidence in `166`, `169`,
+`170`, `173`, `175`, `180` through `184`, and `187` through `191`. The
+accepted shader runway froze the GPU packet inventory, proved exact
+no-atmosphere passthrough, made distant Sun uniforms packet-driven, matched
+distant high/low CPU soft-shader output with `maxAbsRgbDelta = 1`, preserved
+lit Three scene shadows through shader composition, matched local
+closest/`90` first-order selected diagnostics with max RGB delta `0`, and
+then closed local full-image parity. Milestone 27 accepted local spectrum-mode
+full-image parity for offsets `0`, `45`, `90`, `135`, and `180` degrees with
+`33/33` criteria. Milestone 28 accepted local scene-color-composition parity
+for the same five offsets with `33/33` criteria. Milestone 29 accepted the
+corrected capability matrix with `6/6` criteria.
+Subjective Three-light source inspection is accepted by
+`104-three-lit-subjective-source-scenes`, superseding `099` because the first
+local `90` degree view pointed away from the mountain composition. Distant
+midday and distant sunset use source-driven white Three `DirectionalLight`,
+while local closest approach and local `90` degree orbit use source-driven
+white Three `PointLight` at the configured flat/local Sun position before
+Algorithm32 postprocessing. Treat `104` as visual inspection only, not an
+objective shader milestone.
+The CPU/browser postprocessor runway and POC browser shader runway are
+complete through Milestone 29, and the Three-native atmosphere-pass runway is
+complete through Milestone 38. Use
+`226-three-native-production-shape-review` as the current shader-lab endpoint
+and `224-three-native-live-pass-soft-shader-matrix` as the current objective
+live-pass parity evidence. Milestones 30 through 38 turned the packet-based
+GPU proof into a Three-native `Algorithm32AtmospherePass` that runs in a live
+Three render loop over scene color and depth render targets. Normal rendering
+does not depend on JSON scene packets; packets are validation/oracle artifacts
+only. Evidence: `218` pass shell, `212` depth-to-ray reconstruction, `216`
+distant first-order atmosphere, `217` live camera controls, `220` flat/local
+first-order atmosphere, `222` unified source/geometry adapter switching,
+`224` live-pass-vs-soft-shader matrix, `225` scenario/debug controls, and
+`226` production-shape review. Remaining physics work beyond the current CPU
+soft shader includes local second-order cache support, direct local
+solar-disc camera radiance, local ground bounce, Mars/non-Earth presets, and
+HDR/float transport policy. The next implementation step is production
+promotion of the accepted pass shape into the official Algorithm32
+implementation. Keep using the user-owned watch harness for browser artifacts
+when its heartbeat is current. If it is stale or unavailable, use the approved
+direct one-shot `harness.js --once --command ...` shell command; do not launch
+Chrome from nested experiment code or the agent path unless explicitly asked.
 
-For this active task, repository docs may guide only file placement and
-avoiding unrelated churn. Atmosphere physics, rendering equations, constants,
-color, sampling, and visual targets must trace to direct external sources. The
-current implementation work should use Algorithm32 as the CPU oracle for
-shader parity rather than continuing closed artifact lanes by default. Do not
-delete any file that is not tracked by Git.
+Visual-only artifact
+`227-postprocess-gpu-vs-integrated-shader-subjective-scenes` compares the
+packet/postprocess GPU shader against the integrated Three-native shader for
+distant midday, distant sunset behind camera, local closest, and local `90`;
+it is inspection material, not a new objective acceptance milestone.
+
+Recent background only: the `atmosflat32` source-abstraction POC is accepted at
+`019` for default distant-Sun parity and `018` for first-order flat/local
+rotation skydomes. Reload it only when work returns to configurable local Sun
+behavior.
 
 ## Documents
 
@@ -68,6 +150,7 @@ delete any file that is not tracked by Git.
 - [Object Color Transport](plans/atmosphere-cleanroom-design/object-color-transport.md)
 - [Reference To Shader Goal](plans/atmosphere-cleanroom-design/reference-to-shader-goal.md)
 - [Algorithm32 Module Design](plans/atmosphere-cleanroom-design/algorithm32-module-design.md)
+- [Algorithm32 Canonical Reference](plans/atmosphere-cleanroom-design/algorithm32-canonical-reference.md)
 - [Algorithm32 Shader Iteration Plan](plans/atmosphere-cleanroom-design/algorithm32-shader-iteration-plan.md)
 - [Algorithm32 Shader Lab Plan](plans/atmosphere-cleanroom-design/algorithm32-shader-lab-plan.md)
 - [Production Flat Shader Differences](plans/atmosphere-cleanroom-design/production-flat-shader-differences.md)

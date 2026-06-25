@@ -16,7 +16,7 @@ const DEFAULT_VIEWPORT = Object.freeze({
 	height: 360,
 	deviceScaleFactor: 1,
 });
-const PAGE_TIMEOUT_MS = 60000;
+const DEFAULT_PAGE_TIMEOUT_MS = 300000;
 
 function parseArgs(argv) {
 	const options = {
@@ -26,6 +26,7 @@ function parseArgs(argv) {
 		commandPath: null,
 		pollMs: 750,
 		port: 0,
+		pageTimeoutMs: DEFAULT_PAGE_TIMEOUT_MS,
 	};
 
 	for (let index = 0; index < argv.length; index += 1) {
@@ -45,6 +46,9 @@ function parseArgs(argv) {
 			index += 1;
 		} else if (arg === '--poll-ms') {
 			options.pollMs = Number(argv[index + 1]);
+			index += 1;
+		} else if (arg === '--page-timeout-ms') {
+			options.pageTimeoutMs = Number(argv[index + 1]);
 			index += 1;
 		} else if (arg === '--port') {
 			options.port = Number(argv[index + 1]);
@@ -68,6 +72,13 @@ function parseArgs(argv) {
 		throw new Error('--port must be a nonnegative integer');
 	}
 
+	if (
+		!Number.isFinite(options.pageTimeoutMs) ||
+		options.pageTimeoutMs < 1000
+	) {
+		throw new Error('--page-timeout-ms must be a finite number >= 1000');
+	}
+
 	return options;
 }
 
@@ -85,6 +96,8 @@ Options:
   --out-root <path>   Output root. Default: tmp/atmosphere/algorithm32_shader_lab
   --command <path>    Command JSON path. Default: <out-root>/command.json
   --poll-ms <ms>      Watch polling interval. Default: 750
+  --page-timeout-ms <ms>
+                      Browser navigation/evaluation timeout. Default: 300000
   --port <port>       Static server port, or 0 for an ephemeral port.
 `);
 }
@@ -121,14 +134,22 @@ async function main() {
 
 	try {
 		await page.setViewport(DEFAULT_VIEWPORT);
-		page.setDefaultTimeout(PAGE_TIMEOUT_MS);
-		page.setDefaultNavigationTimeout(PAGE_TIMEOUT_MS);
+		page.setDefaultTimeout(options.pageTimeoutMs);
+		page.setDefaultNavigationTimeout(options.pageTimeoutMs);
 		const labUrl = `http://127.0.0.1:${server.address().port}/index.html`;
-		await page.goto(labUrl, { waitUntil: 'load', timeout: PAGE_TIMEOUT_MS });
+		await page.goto(labUrl, {
+			waitUntil: 'load',
+			timeout: options.pageTimeoutMs,
+		});
 
 		if (options.mode === 'once') {
 			const command = await readOrCreateCommand(options.commandPath);
-			const run = await runCommand({ page, command, outRoot: options.outRoot });
+			const run = await runCommand({
+				page,
+				command,
+				outRoot: options.outRoot,
+				pageTimeoutMs: options.pageTimeoutMs,
+			});
 			console.log(`Shader lab smoke run written to ${run.runDir}`);
 		} else {
 			await runWatchLoop({ page, options });
@@ -158,13 +179,18 @@ async function runWatchLoop({ page, options }) {
 	let lastFingerprint = '';
 
 	for (;;) {
-		await writeHeartbeat(options.outRoot, options.commandPath);
+		await writeHeartbeat(options.outRoot, options.commandPath, options);
 		const command = await readOrCreateCommand(options.commandPath);
 		const fingerprint = await commandFingerprint(options.commandPath, command);
 
 		if (fingerprint !== lastFingerprint) {
 			lastFingerprint = fingerprint;
-			const run = await runCommand({ page, command, outRoot: options.outRoot });
+			const run = await runCommand({
+				page,
+				command,
+				outRoot: options.outRoot,
+				pageTimeoutMs: options.pageTimeoutMs,
+			});
 			console.log(`Completed ${path.basename(run.runDir)}`);
 		}
 
@@ -172,7 +198,7 @@ async function runWatchLoop({ page, options }) {
 	}
 }
 
-async function runCommand({ page, command, outRoot }) {
+async function runCommand({ page, command, outRoot, pageTimeoutMs }) {
 	const normalizedCommand = normalizeCommand(command);
 	const runDir = await createRunDirectory(outRoot, normalizedCommand.label);
 	const resultPath = path.join(runDir, 'result.json');
@@ -207,12 +233,12 @@ async function runCommand({ page, command, outRoot }) {
 
 	try {
 		await fs.writeFile(commandPath, JSON.stringify(normalizedCommand, null, 2));
-		await page.reload({ waitUntil: 'load', timeout: PAGE_TIMEOUT_MS });
+		await page.reload({ waitUntil: 'load', timeout: pageTimeoutMs });
 		const result = await withTimeout(
 			page.evaluate(async (browserCommand) => {
 				return window.runShaderLabSmoke(browserCommand);
 			}, normalizedCommand),
-			PAGE_TIMEOUT_MS,
+			pageTimeoutMs,
 			'Browser command evaluation timed out.'
 		);
 		await page.screenshot({ path: screenshotPath });
@@ -344,11 +370,12 @@ async function commandFingerprint(commandPath, command) {
 	});
 }
 
-async function writeHeartbeat(outRoot, commandPath) {
+async function writeHeartbeat(outRoot, commandPath, options = {}) {
 	await fs.writeFile(path.join(outRoot, 'harness-heartbeat.json'), JSON.stringify({
 		kind: 'algorithm32-shader-lab-heartbeat',
 		updatedAt: new Date().toISOString(),
 		commandPath,
+		pageTimeoutMs: options.pageTimeoutMs || DEFAULT_PAGE_TIMEOUT_MS,
 		pid: process.pid,
 	}, null, 2));
 }
