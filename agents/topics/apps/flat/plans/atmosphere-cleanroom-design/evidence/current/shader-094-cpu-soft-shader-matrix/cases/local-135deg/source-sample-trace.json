@@ -1,0 +1,561 @@
+{
+  "kind": "cpu-unified-source-driven-local-source-trace",
+  "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+  "source": {
+    "kind": "flat-local-point-sun",
+    "id": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+    "sunCase": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+    "sceneKey": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+    "flatSceneKey": "san-jose-135deg-from-closest",
+    "offsetDegrees": 135,
+    "role": "135-degree-orbit-offset",
+    "positionMeters": [
+      6637166.116326089,
+      10240695.279238738,
+      4828003.52
+    ],
+    "observerPositionMeters": [
+      0,
+      0,
+      2
+    ],
+    "radiusKm": 25.749504,
+    "referenceDistanceKm": 4800,
+    "referenceSpectralIncidentScale": 1.1071748923354825,
+    "distanceFalloff": true,
+    "color": {
+      "r": 1,
+      "g": 0.98,
+      "b": 0.95
+    },
+    "provenance": {
+      "sourceArtifact": "tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes",
+      "flatSceneKey": "san-jose-135deg-from-closest",
+      "appSolarIrradianceScale": 58,
+      "calibratedSolarIrradianceScale": 1.1071748923354825,
+      "brightnessCalibration": {
+        "kind": "match-distant-solar-noon-unit-incident-scale-at-closest-approach",
+        "distantSceneKey": "figure1-13h15-z21",
+        "targetIncidentScaleAtClosest": 1,
+        "targetIncidentScaleUnits": "multiple of Algorithm32 distant-directional-sun top-of-atmosphere solar irradiance",
+        "closestOffsetDegrees": 0,
+        "closestConfiguredDistanceKm": 5050.674164842701,
+        "closestDistanceFalloffScale": 0.9031996723576281,
+        "originalSolarIrradianceScale": 58,
+        "originalReferenceSpectralIncidentScale": 58,
+        "originalIncidentScaleAtClosest": 52.38558099674243,
+        "calibratedSolarIrradianceScale": 1.1071748923354825,
+        "calibratedReferenceSpectralIncidentScale": 1.1071748923354825,
+        "calibratedIncidentScaleAtClosest": 1,
+        "calibrationMultiplier": 0.01908922228164625
+      }
+    }
+  },
+  "geometry": {
+    "kind": "flat-z-up-atmosphere",
+    "observerPositionMeters": [
+      0,
+      0,
+      2
+    ],
+    "topAltitudeMeters": 100000,
+    "sceneSkyRayLimitMeters": 1926774,
+    "sceneSkyRayLimitPolicy": "accepted-062-flat-visibility-100-percent-lost-poc-default",
+    "threeToAlgorithmDirection": "[x, y, z] -> [x, -z, y]",
+    "threeToAlgorithmPosition": "[x, y, z] -> [x, -z, y]"
+  },
+  "postprocessSunCase": {
+    "id": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+    "role": "135-degree-orbit-offset",
+    "sourceKind": "flat-local-point-sun",
+    "offsetDegrees": 135,
+    "sunAltitudeDegrees": 21.585062048036985,
+    "sunAzimuthDegrees": 57.052051805820305,
+    "sunDirection": [
+      0.5057361337257149,
+      0.7803164101085046,
+      0.36788213215586063
+    ],
+    "sourceDistanceMeters": 13123772.80110609,
+    "incidentScale": 0.14810894787454787
+  },
+  "sourceResolution": {
+    "status": "packet-supplied-flat-local-point-sun",
+    "requestedSource": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+    "observerSourceDistanceMeters": 13123772.80110609,
+    "observerIncidentScale": 0.14810894787454787
+  },
+  "priorTraceSummary": {
+    "observerDistanceMeters": 13123772.80110609,
+    "observerIncidentScale": 0.14810894787454787,
+    "observerDistanceFalloffScale": 0.13377195319352467,
+    "observerMeanSourceTransmittance": 0.3621216165080854,
+    "transportSamplesHaveFiniteSource": true,
+    "minTransportSourceDistanceMeters": 13123772.80110609,
+    "maxTransportSourceDistanceMeters": 13123772.80110609,
+    "minTransportIncidentScale": 0.14810894787454787,
+    "maxTransportIncidentScale": 0.14810894787454787,
+    "maxSecondOrderPathRadiance": 0,
+    "maxMeanPathRadiance": 0.009070798054566226
+  },
+  "priorSourceSampleTraces": {
+    "kind": "algorithm32-source-sample-traces",
+    "sourceKind": "flat-local-point-sun",
+    "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+    "geometryKind": "flat-z-up-atmosphere",
+    "sunCaseId": "local-135deg",
+    "samples": [
+      {
+        "id": "observer",
+        "positionMeters": [
+          0,
+          0,
+          2
+        ],
+        "sourceSample": {
+          "kind": "flat-local-point-sun",
+          "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+          "direction": [
+            0.5057361337257149,
+            0.7803164101085046,
+            0.36788213215586063
+          ],
+          "distanceKind": "finite",
+          "distanceMeters": 13123772.80110609,
+          "distanceKm": 13123.77280110609,
+          "incidentScale": 0.14810894787454787,
+          "distanceFalloffScale": 0.13377195319352467,
+          "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+          "transmittancePath": {
+            "kind": "finite-source-distance",
+            "direction": [
+              0.5057361337257149,
+              0.7803164101085046,
+              0.36788213215586063
+            ],
+            "distanceMeters": 13123772.80110609
+          },
+          "spectralIncidentScaleByWavelength": [
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787
+          ]
+        },
+        "meanSourceTransmittance": 0.3621216165080854,
+        "sourceTransmittanceByWavelength": [
+          0.0807442394405385,
+          0.1304765662546218,
+          0.18292244414522624,
+          0.23387645146383992,
+          0.28110088959771745,
+          0.32373485608198777,
+          0.3617084242981315,
+          0.39534017850321607,
+          0.4251016487003605,
+          0.45149335474326796,
+          0.47498625142104894,
+          0.49599853862337234,
+          0.51489033075771,
+          0.531966608933724,
+          0.5474834646565176
+        ]
+      },
+      {
+        "id": "ten-km-altitude",
+        "positionMeters": [
+          0,
+          0,
+          10000
+        ],
+        "sourceSample": {
+          "kind": "flat-local-point-sun",
+          "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+          "direction": [
+            0.5058777847210533,
+            0.7805349679468708,
+            0.36722313480756785
+          ],
+          "distanceKind": "finite",
+          "distanceMeters": 13120098.009415252,
+          "distanceKm": 13120.098009415253,
+          "incidentScale": 0.14819192679017495,
+          "distanceFalloffScale": 0.13384689972293162,
+          "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+          "transmittancePath": {
+            "kind": "finite-source-distance",
+            "direction": [
+              0.5058777847210533,
+              0.7805349679468708,
+              0.36722313480756785
+            ],
+            "distanceMeters": 13120098.009415252
+          },
+          "spectralIncidentScaleByWavelength": [
+            0.1407823304506662,
+            0.1407823304506662,
+            0.1407823304506662,
+            0.1407823304506662,
+            0.14522808825437145,
+            0.14522808825437145,
+            0.14522808825437145,
+            0.14522808825437145,
+            0.14819192679017495,
+            0.14819192679017495,
+            0.14819192679017495,
+            0.14819192679017495,
+            0.14819192679017495,
+            0.14819192679017495,
+            0.14819192679017495
+          ]
+        },
+        "meanSourceTransmittance": 0.8936015695960126,
+        "sourceTransmittanceByWavelength": [
+          0.6510493167326034,
+          0.7323119932043101,
+          0.7932539420397917,
+          0.8388233602077941,
+          0.8730395067984273,
+          0.8989305421460001,
+          0.9187078334139535,
+          0.9339683007476207,
+          0.9458638921472762,
+          0.9552291153888732,
+          0.9626728226161756,
+          0.9686430485755615,
+          0.9734725438686826,
+          0.9774107793950619,
+          0.980646546658056
+        ]
+      },
+      {
+        "id": "camera-position",
+        "positionMeters": [
+          0,
+          0,
+          2
+        ],
+        "sourceSample": {
+          "kind": "flat-local-point-sun",
+          "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+          "direction": [
+            0.5057361337257149,
+            0.7803164101085046,
+            0.36788213215586063
+          ],
+          "distanceKind": "finite",
+          "distanceMeters": 13123772.80110609,
+          "distanceKm": 13123.77280110609,
+          "incidentScale": 0.14810894787454787,
+          "distanceFalloffScale": 0.13377195319352467,
+          "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+          "transmittancePath": {
+            "kind": "finite-source-distance",
+            "direction": [
+              0.5057361337257149,
+              0.7803164101085046,
+              0.36788213215586063
+            ],
+            "distanceMeters": 13123772.80110609
+          },
+          "spectralIncidentScaleByWavelength": [
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787
+          ]
+        },
+        "meanSourceTransmittance": 0.3621216165080854,
+        "sourceTransmittanceByWavelength": [
+          0.0807442394405385,
+          0.1304765662546218,
+          0.18292244414522624,
+          0.23387645146383992,
+          0.28110088959771745,
+          0.32373485608198777,
+          0.3617084242981315,
+          0.39534017850321607,
+          0.4251016487003605,
+          0.45149335474326796,
+          0.47498625142104894,
+          0.49599853862337234,
+          0.51489033075771,
+          0.531966608933724,
+          0.5474834646565176
+        ]
+      }
+    ]
+  },
+  "priorTransportDiagnostics": {
+    "sourceKind": "flat-local-point-sun",
+    "geometryKind": "flat-z-up-atmosphere",
+    "sampleCount": 5,
+    "samplePackets": [
+      {
+        "sampleId": "upper-sky",
+        "classification": "sky",
+        "hitObject": null,
+        "sourceSampleAtRayOrigin": {
+          "kind": "flat-local-point-sun",
+          "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+          "direction": [
+            0.5057361337257149,
+            0.7803164101085046,
+            0.36788213215586063
+          ],
+          "distanceKind": "finite",
+          "distanceMeters": 13123772.80110609,
+          "distanceKm": 13123.77280110609,
+          "incidentScale": 0.14810894787454787,
+          "distanceFalloffScale": 0.13377195319352467,
+          "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+          "transmittancePath": {
+            "kind": "finite-source-distance",
+            "direction": [
+              0.5057361337257149,
+              0.7803164101085046,
+              0.36788213215586063
+            ],
+            "distanceMeters": 13123772.80110609
+          },
+          "spectralIncidentScaleByWavelength": [
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787
+          ]
+        },
+        "meanPathRadiance": 0.009328762595747197,
+        "meanTransmittance": 0.5204933220083491
+      },
+      {
+        "sampleId": "center",
+        "classification": "card",
+        "hitObject": "middle-green-card",
+        "sourceSampleAtRayOrigin": {
+          "kind": "flat-local-point-sun",
+          "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+          "direction": [
+            0.5057361337257149,
+            0.7803164101085046,
+            0.36788213215586063
+          ],
+          "distanceKind": "finite",
+          "distanceMeters": 13123772.80110609,
+          "distanceKm": 13123.77280110609,
+          "incidentScale": 0.14810894787454787,
+          "distanceFalloffScale": 0.13377195319352467,
+          "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+          "transmittancePath": {
+            "kind": "finite-source-distance",
+            "direction": [
+              0.5057361337257149,
+              0.7803164101085046,
+              0.36788213215586063
+            ],
+            "distanceMeters": 13123772.80110609
+          },
+          "spectralIncidentScaleByWavelength": [
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787
+          ]
+        },
+        "meanPathRadiance": 0.0029438052108307065,
+        "meanTransmittance": 0.738498860794173
+      },
+      {
+        "sampleId": "lower-center",
+        "classification": "ground",
+        "hitObject": "ground-plane",
+        "sourceSampleAtRayOrigin": {
+          "kind": "flat-local-point-sun",
+          "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+          "direction": [
+            0.5057361337257149,
+            0.7803164101085046,
+            0.36788213215586063
+          ],
+          "distanceKind": "finite",
+          "distanceMeters": 13123772.80110609,
+          "distanceKm": 13123.77280110609,
+          "incidentScale": 0.14810894787454787,
+          "distanceFalloffScale": 0.13377195319352467,
+          "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+          "transmittancePath": {
+            "kind": "finite-source-distance",
+            "direction": [
+              0.5057361337257149,
+              0.7803164101085046,
+              0.36788213215586063
+            ],
+            "distanceMeters": 13123772.80110609
+          },
+          "spectralIncidentScaleByWavelength": [
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787
+          ]
+        },
+        "meanPathRadiance": 0.000004180762433561116,
+        "meanTransmittance": 0.999278536737593
+      },
+      {
+        "sampleId": "left-lower",
+        "classification": "ground",
+        "hitObject": "ground-plane",
+        "sourceSampleAtRayOrigin": {
+          "kind": "flat-local-point-sun",
+          "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+          "direction": [
+            0.5057361337257149,
+            0.7803164101085046,
+            0.36788213215586063
+          ],
+          "distanceKind": "finite",
+          "distanceMeters": 13123772.80110609,
+          "distanceKm": 13123.77280110609,
+          "incidentScale": 0.14810894787454787,
+          "distanceFalloffScale": 0.13377195319352467,
+          "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+          "transmittancePath": {
+            "kind": "finite-source-distance",
+            "direction": [
+              0.5057361337257149,
+              0.7803164101085046,
+              0.36788213215586063
+            ],
+            "distanceMeters": 13123772.80110609
+          },
+          "spectralIncidentScaleByWavelength": [
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787
+          ]
+        },
+        "meanPathRadiance": 0.0000034550111616610704,
+        "meanTransmittance": 0.9987846878521097
+      },
+      {
+        "sampleId": "right-lower",
+        "classification": "ground",
+        "hitObject": "ground-plane",
+        "sourceSampleAtRayOrigin": {
+          "kind": "flat-local-point-sun",
+          "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+          "direction": [
+            0.5057361337257149,
+            0.7803164101085046,
+            0.36788213215586063
+          ],
+          "distanceKind": "finite",
+          "distanceMeters": 13123772.80110609,
+          "distanceKm": 13123.77280110609,
+          "incidentScale": 0.14810894787454787,
+          "distanceFalloffScale": 0.13377195319352467,
+          "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+          "transmittancePath": {
+            "kind": "finite-source-distance",
+            "direction": [
+              0.5057361337257149,
+              0.7803164101085046,
+              0.36788213215586063
+            ],
+            "distanceMeters": 13123772.80110609
+          },
+          "spectralIncidentScaleByWavelength": [
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.14070350048082048,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.1451467689170569,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787,
+            0.14810894787454787
+          ]
+        },
+        "meanPathRadiance": 0.00001877075387759921,
+        "meanTransmittance": 0.9987769380320415
+      }
+    ],
+    "cacheDiagnostics": {
+      "incidentSkyCacheEntries": 0
+    }
+  }
+}

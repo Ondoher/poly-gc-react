@@ -1,0 +1,14 @@
+{
+  "kind": "algorithm32-cpu-local-source-integrated-render-result",
+  "status": "accepted",
+  "createdAt": "2026-06-24T18:55:04.828Z",
+  "completedAt": "2026-06-24T18:55:32.527Z",
+  "durationMs": 27699,
+  "artifactFolder": "tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render",
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0,
+    "unresolved": 0
+  }
+}

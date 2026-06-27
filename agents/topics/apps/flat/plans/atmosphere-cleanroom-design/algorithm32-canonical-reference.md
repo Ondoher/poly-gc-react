@@ -28,6 +28,17 @@ Latest visual-only shader comparison:
 tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/
 ```
 
+Compact evidence copied out of `tmp/atmosphere`:
+
+```text
+agents/topics/apps/flat/plans/atmosphere-cleanroom-design/evidence/current/
+```
+
+Use the copied evidence package if `tmp/atmosphere` has been emptied. The
+package preserves reports, criteria, diagnostics, selected images, and
+comparison JSON for the current accepted endpoints; it intentionally omits
+superseded historical artifacts and temporary script snapshots.
+
 The accepted production target shape is:
 
 ```text
@@ -39,6 +50,15 @@ Three scene render
 
 JSON scene packets are validation/oracle artifacts only. They are not the
 normal render input for the integrated shader.
+
+Production placement:
+
+- `agents/topics/apps/flat/algorithm32/` is the documentation home for the
+  official production Algorithm32 module.
+- `shared/algorithm32/` is the shared implementation location for production
+  Algorithm32 code.
+- This cleanroom folder remains evidence/design history until durable
+  contracts are promoted into the production documentation home.
 
 ## Algorithm32 Steps
 
@@ -290,6 +310,10 @@ material duplication.
 
 ## Production Algorithm32 Module Requirements
 
+Production documentation belongs under
+`agents/topics/apps/flat/algorithm32/`. Production implementation code belongs
+under `shared/algorithm32/`.
+
 To support the integrated shader and testing, the production module must
 provide:
 
@@ -433,6 +457,7 @@ Canonical current reference:
 
 Current detailed plan and evidence:
 
+- `evidence/current/README.md`
 - `algorithm32-shader-iteration-plan.md`
 - `scripts/flat/algorithm32-shader-lab/README.md`
 

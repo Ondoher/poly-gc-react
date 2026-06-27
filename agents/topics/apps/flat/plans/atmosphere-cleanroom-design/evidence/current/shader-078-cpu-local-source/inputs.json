@@ -1,0 +1,130 @@
+{
+  "kind": "algorithm32-cpu-local-source-integrated-render-inputs",
+  "sourceReference": "tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes",
+  "sourceBoundary": {
+    "appConfigurationUsed": [
+      "src/flat/features/flat-simulation/models/consts.js DEFAULT_FLAT_SIMULATION_CONFIG",
+      "src/flat/features/flat-simulation/models/consts.js DEFAULT_FLAT_SIMULATION_SUN",
+      "src/flat/features/flat-simulation/models/consts.js DEFAULT_ATMOSPHERE.rendering.falseSunRadiance",
+      "src/flat/features/flat-simulation/models/consts.js MEAN_EARTH_RADIUS_KM"
+    ],
+    "note": "App code is configuration only. Projection, closest approach, rotation offsets, source direction, configured source distance, renderer-owned sky-view ray length limit, and angular sky marker placement are computed inside atmosflat32. The app false-Sun brightness scale is recorded as input provenance, then the Algorithm32 transport source is calibrated so closest approach receives the same unit incident scale as the distant-directional Sun."
+  },
+  "atmosflatGeometry": {
+    "kind": "flat-round-equivalent-artificial-cap",
+    "observerPositionMeters": [
+      0,
+      0,
+      2
+    ],
+    "flatGroundPlane": "z=0",
+    "flatAltitudeAxis": "z",
+    "atmosphereTopAltitudeMeters": 100000,
+    "atmosphereGeometry": {
+      "kind": "flat-z-up-atmosphere",
+      "observerPositionMeters": [
+        0,
+        0,
+        2
+      ],
+      "flatGroundPlane": "z=0",
+      "flatAltitudeAxis": "z",
+      "atmosphereTopBoundary": "z=topAltitudeMeters",
+      "atmosphereTopAltitudeMeters": 100000,
+      "source": {
+        "kind": "flat-local-point-sun",
+        "sampleKind": "flat-local-point-sun",
+        "distanceKind": "finite",
+        "visibilityPath": "finite-source-distance-through-atmosphere"
+      },
+      "sourceSampleGeometryKinds": {
+        "observer": "flat-local-observer-source-sample",
+        "viewPathSample": "flat-local-view-path-sample"
+      }
+    },
+    "skyViewRayLengthLimit": {
+      "kind": "round-equivalent-artificial-cap",
+      "virtualCapCenterMeters": [
+        0,
+        0,
+        -6360000
+      ],
+      "virtualCapRadiusMeters": 6420000,
+      "footprintRadiusMeters": 875656.6450361694,
+      "footprintRadiusKm": 875.6566450361695,
+      "roundEquivalentGroundRadiusMeters": 6360000,
+      "roundEquivalentTopRadiusMeters": 6420000,
+      "scope": "observer angular sky renderer only; not a flat atmosphere or scene-renderer distance limit"
+    },
+    "virtualCapCenterMeters": [
+      0,
+      0,
+      -6360000
+    ],
+    "virtualCapRadiusMeters": 6420000,
+    "footprintRadiusMeters": 875656.6450361694,
+    "footprintRadiusKm": 875.6566450361695,
+    "roundEquivalentGroundRadiusMeters": 6360000,
+    "roundEquivalentTopRadiusMeters": 6420000,
+    "viewDistancePolicy": "same fisheye skydome loop as round Algorithm32; only the observer sky renderer terminates flat view rays at a round-equivalent artificial cap while atmosphere density and source paths use flat z-up geometry"
+  },
+  "brightnessCalibration": {
+    "kind": "match-distant-solar-noon-unit-incident-scale-at-closest-approach",
+    "distantSceneKey": "figure1-13h15-z21",
+    "targetIncidentScaleAtClosest": 1,
+    "targetIncidentScaleUnits": "multiple of Algorithm32 distant-directional-sun top-of-atmosphere solar irradiance",
+    "closestOffsetDegrees": 0,
+    "closestConfiguredDistanceKm": 5050.674164842701,
+    "closestDistanceFalloffScale": 0.9031996723576281,
+    "originalSolarIrradianceScale": 58,
+    "originalReferenceSpectralIncidentScale": 58,
+    "originalIncidentScaleAtClosest": 52.38558099674243,
+    "calibratedSolarIrradianceScale": 1.1071748923354825,
+    "calibratedReferenceSpectralIncidentScale": 1.1071748923354825,
+    "calibratedIncidentScaleAtClosest": 1,
+    "calibrationMultiplier": 0.01908922228164625
+  },
+  "sceneSkyRayLimit": {
+    "meters": 1926774,
+    "kilometers": 1926.774,
+    "policy": "accepted-062-flat-visibility-100-percent-lost-poc-default",
+    "status": "Renderer-owned POC no-hit sky ray length for flat scene images; configurable and not an Algorithm32 atmosphere constant.",
+    "futureShorterDistanceNote": "Later experiments may choose a shorter practical cap because realistic objects lose angular resolution before becoming fully obscured."
+  },
+  "localRenderCases": [
+    {
+      "id": "local-source-closest-day",
+      "role": "day-closest-approach",
+      "offsetDegrees": 0,
+      "sceneMode": "three-card-reference",
+      "args": [
+        "--width",
+        "240",
+        "--height",
+        "120",
+        "--scattering-order",
+        "first-order"
+      ],
+      "imageName": "local-source-closest-day.png"
+    },
+    {
+      "id": "local-source-090deg-rise-sunset",
+      "role": "rise-sunset-90deg-orbit-offset",
+      "offsetDegrees": 90,
+      "sceneMode": "sunset-floor",
+      "args": [
+        "--scene",
+        "sunset-floor",
+        "--sunset-framing",
+        "less-zoom",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--scattering-order",
+        "first-order"
+      ],
+      "imageName": "local-source-090deg-rise-sunset.png"
+    }
+  ]
+}

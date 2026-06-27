@@ -1,0 +1,9 @@
+{
+  "kind": "cpu-unified-source-driven-no-atmosphere-passthrough",
+  "noAtmospherePassthrough": {
+    "byteLength": 57600,
+    "maxAbsDelta": 0,
+    "meanAbsDelta": 0
+  },
+  "policy": "Current POC uses identity byte comparison for the sceneColor packet because density-disabled composition is represented as sceneColor passthrough."
+}

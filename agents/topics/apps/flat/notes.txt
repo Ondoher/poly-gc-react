@@ -1,0 +1,10 @@
+Images configuration:
+
+Lower latitude	23.5 deg S / -23.5
+Upper latitude	23.5 deg N / +23.5
+Current latitude at calibration date	23.5 deg N
+Latitude model	annual tropic migration
+Calibration date	2026-06-21, day 172
+Sun altitude	3000 mi = 4828.032 km
+Sun radius	16 mi = 25.749504 km
+Sun diameter	32 mi = 51.499008 km

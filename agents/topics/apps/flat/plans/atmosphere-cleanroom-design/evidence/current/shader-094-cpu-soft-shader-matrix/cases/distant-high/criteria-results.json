@@ -1,0 +1,105 @@
+{
+  "kind": "cpu-unified-source-driven-case-criteria",
+  "summary": {
+    "passed": 7,
+    "failed": 0
+  },
+  "criteria": [
+    {
+      "id": "scene-packet-contract-present",
+      "status": "passed",
+      "measured": {
+        "rowOrder": "top-left-row-major",
+        "hitMaskMeaning": "1 = raycaster hit, 0 = sky/no-hit",
+        "distanceUnits": "meters",
+        "sceneColorBytes": 57600
+      }
+    },
+    {
+      "id": "source-family-matches-case",
+      "status": "passed",
+      "measured": {
+        "caseKey": "distant-high",
+        "expected": "distant-directional-sun",
+        "packetSourceKind": "distant-directional-sun",
+        "postprocessSourceKind": "distant-directional-sun"
+      }
+    },
+    {
+      "id": "source-resolution-explicit-no-fallback",
+      "status": "passed",
+      "measured": {
+        "status": "canonical-sun-case",
+        "requestedSunCase": "figure1-13h15-z21"
+      }
+    },
+    {
+      "id": "no-atmosphere-passthrough-exact",
+      "status": "passed",
+      "measured": {
+        "byteLength": 57600,
+        "maxAbsDelta": 0,
+        "meanAbsDelta": 0
+      }
+    },
+    {
+      "id": "sky-and-hit-coverage",
+      "status": "passed",
+      "measured": {
+        "counts": {
+          "skyPixels": 6513,
+          "hitPixels": 7887,
+          "bySpectrumNumericId": {
+            "1": 529,
+            "3": 468,
+            "4": 6890
+          },
+          "byClassification": {
+            "card": 997,
+            "ground": 6890
+          }
+        },
+        "selected": [
+          {
+            "id": "upper-sky",
+            "hit": false
+          },
+          {
+            "id": "brightest-ground",
+            "hit": true
+          },
+          {
+            "id": "darkest-ground",
+            "hit": true
+          },
+          {
+            "id": "lower-center",
+            "hit": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "postprocess-finite-rgba",
+      "status": "passed",
+      "measured": {
+        "pixels": 14400,
+        "nonfinitePixels": 0,
+        "minByte": 26,
+        "maxByte": 249
+      }
+    },
+    {
+      "id": "source-trace-recorded",
+      "status": "passed",
+      "measured": {
+        "lightTravelDirectionDelta": 3.469446951953614e-18,
+        "directionToSourceThree": [
+          0.02927623871171526,
+          0.9335804264972017,
+          -0.3571701122829255
+        ]
+      }
+    }
+  ]
+}

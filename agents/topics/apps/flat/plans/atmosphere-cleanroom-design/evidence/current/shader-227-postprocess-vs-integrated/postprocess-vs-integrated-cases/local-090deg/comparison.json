@@ -1,0 +1,44 @@
+{
+  "kind": "postprocess-vs-integrated-shader-source-scenes-comparison",
+  "caseId": "local-090deg",
+  "sourceKind": "flat-local-point-sun",
+  "passMode": "flat-local-first-order-atmosphere",
+  "sceneLight": {
+    "kind": "source-driven-flat-local-point-light",
+    "mode": "flat-local-point-sun",
+    "color": 16777215,
+    "colorRgb": [
+      1,
+      1,
+      1
+    ],
+    "intensity": 0.549284739849314,
+    "calibrationScalar": 2.4,
+    "observerIncidentScale": 0.22886864160388085,
+    "positionMeters": [
+      1095438.1966602097,
+      4828003.5200000005,
+      -9324629.516453793
+    ],
+    "configuredAlgorithmPositionMeters": [
+      1095438.1966602097,
+      9324629.516453793,
+      4828003.5200000005
+    ],
+    "distanceAttenuationPolicy": "PointLight uses decay=0 for this subjective scene; configured local source distance/falloff is already folded into observerIncidentScale for scene brightness, while Algorithm32 still samples the true finite source.",
+    "ambientIntensity": 0.04
+  },
+  "comparison": {
+    "status": "compared",
+    "width": 320,
+    "height": 180,
+    "maxAbsRgbDelta": 116,
+    "meanAbsRgbDelta": 0.09617476851851851,
+    "p95PixelMaxAbsRgbDelta": 1,
+    "p99PixelMaxAbsRgbDelta": 1
+  },
+  "postprocessPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/local-090deg/postprocess-gpu-shader.png",
+  "integratedPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/local-090deg/integrated-three-native-shader.png",
+  "diffPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/local-090deg/postprocess-vs-integrated-diff.png",
+  "sideBySidePath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/local-090deg/postprocess-vs-integrated-side-by-side.png"
+}

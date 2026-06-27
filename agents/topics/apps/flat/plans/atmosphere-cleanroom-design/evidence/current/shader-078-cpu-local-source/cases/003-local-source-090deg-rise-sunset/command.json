@@ -1,0 +1,15 @@
+{
+  "kind": "algorithm32-node-three-reference-command",
+  "scriptPath": "scripts/flat/algorithm32-shader-lab/node-three-reference.js",
+  "options": {
+    "width": 320,
+    "height": 180,
+    "label": "local-source-090deg-rise-sunset",
+    "sceneMode": "sunset-floor",
+    "sunsetFraming": "less-zoom",
+    "mountainView": "front-high-sun",
+    "scatteringOrder": "first-order",
+    "sourceRunLabel": "rise-sunset-90deg-orbit-offset",
+    "compareReference": null
+  }
+}

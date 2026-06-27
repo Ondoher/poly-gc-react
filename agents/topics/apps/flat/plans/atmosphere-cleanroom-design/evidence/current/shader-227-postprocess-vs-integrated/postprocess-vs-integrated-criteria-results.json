@@ -1,0 +1,137 @@
+{
+  "kind": "postprocess-vs-integrated-shader-source-scenes-criteria",
+  "summary": {
+    "passed": 5,
+    "failed": 0
+  },
+  "criteria": [
+    {
+      "id": "source-browser-run-accepted",
+      "status": "passed",
+      "measured": {
+        "harnessStatus": "accepted",
+        "browserStatus": "accepted",
+        "browserKind": "algorithm32-browser-three-native-live-pass-soft-shader-matrix-result"
+      }
+    },
+    {
+      "id": "four-subjective-scenes-rendered",
+      "status": "passed",
+      "measured": [
+        {
+          "id": "distant-midday",
+          "sourceKind": "distant-directional-sun",
+          "passMode": "distant-first-order-atmosphere"
+        },
+        {
+          "id": "distant-sunset-behind-camera",
+          "sourceKind": "distant-directional-sun",
+          "passMode": "distant-first-order-atmosphere"
+        },
+        {
+          "id": "local-closest",
+          "sourceKind": "flat-local-point-sun",
+          "passMode": "flat-local-first-order-atmosphere"
+        },
+        {
+          "id": "local-090deg",
+          "sourceKind": "flat-local-point-sun",
+          "passMode": "flat-local-first-order-atmosphere"
+        }
+      ]
+    },
+    {
+      "id": "postprocess-and-integrated-images-written",
+      "status": "passed",
+      "measured": [
+        {
+          "id": "distant-midday",
+          "postprocessPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/distant-midday/postprocess-gpu-shader.png",
+          "integratedPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/distant-midday/integrated-three-native-shader.png"
+        },
+        {
+          "id": "distant-sunset-behind-camera",
+          "postprocessPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/distant-sunset-behind-camera/postprocess-gpu-shader.png",
+          "integratedPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/distant-sunset-behind-camera/integrated-three-native-shader.png"
+        },
+        {
+          "id": "local-closest",
+          "postprocessPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/local-closest/postprocess-gpu-shader.png",
+          "integratedPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/local-closest/integrated-three-native-shader.png"
+        },
+        {
+          "id": "local-090deg",
+          "postprocessPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/local-090deg/postprocess-gpu-shader.png",
+          "integratedPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/local-090deg/integrated-three-native-shader.png"
+        }
+      ]
+    },
+    {
+      "id": "side-by-side-comparisons-written",
+      "status": "passed",
+      "measured": {
+        "galleryPath": "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-gallery.png",
+        "sideBySidePaths": [
+          "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/distant-midday/postprocess-vs-integrated-side-by-side.png",
+          "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/distant-sunset-behind-camera/postprocess-vs-integrated-side-by-side.png",
+          "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/local-closest/postprocess-vs-integrated-side-by-side.png",
+          "tmp/atmosphere/algorithm32_shader_lab/227-postprocess-gpu-vs-integrated-shader-subjective-scenes/postprocess-vs-integrated-cases/local-090deg/postprocess-vs-integrated-side-by-side.png"
+        ]
+      }
+    },
+    {
+      "id": "images-compared-for-inspection",
+      "status": "passed",
+      "measured": [
+        {
+          "id": "distant-midday",
+          "comparison": {
+            "status": "compared",
+            "width": 320,
+            "height": 180,
+            "maxAbsRgbDelta": 66,
+            "meanAbsRgbDelta": 0.024716435185185185,
+            "p95PixelMaxAbsRgbDelta": 1,
+            "p99PixelMaxAbsRgbDelta": 1
+          }
+        },
+        {
+          "id": "distant-sunset-behind-camera",
+          "comparison": {
+            "status": "compared",
+            "width": 320,
+            "height": 180,
+            "maxAbsRgbDelta": 9,
+            "meanAbsRgbDelta": 0.05206018518518519,
+            "p95PixelMaxAbsRgbDelta": 1,
+            "p99PixelMaxAbsRgbDelta": 1
+          }
+        },
+        {
+          "id": "local-closest",
+          "comparison": {
+            "status": "compared",
+            "width": 320,
+            "height": 180,
+            "maxAbsRgbDelta": 104,
+            "meanAbsRgbDelta": 0.06719907407407408,
+            "p95PixelMaxAbsRgbDelta": 1,
+            "p99PixelMaxAbsRgbDelta": 1
+          }
+        },
+        {
+          "id": "local-090deg",
+          "comparison": {
+            "status": "compared",
+            "width": 320,
+            "height": 180,
+            "maxAbsRgbDelta": 116,
+            "meanAbsRgbDelta": 0.09617476851851851,
+            "p95PixelMaxAbsRgbDelta": 1,
+            "p99PixelMaxAbsRgbDelta": 1
+          }
+        }
+      ]
+    }
+  ]
+}

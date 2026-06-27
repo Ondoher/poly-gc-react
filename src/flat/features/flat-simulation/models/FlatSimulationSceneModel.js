@@ -20,6 +20,7 @@ import {
 	resolveAnimatedSun,
 	resolveClosestSunRotationAngleRad,
 } from './sun-animation.js';
+import { resolveFalseSunLatitudeDeg } from './sun-latitude.js';
 
 /**
  * Create plain flat-simulation scene view models from projection, catalog,
@@ -94,6 +95,10 @@ export default class FlatSimulationSceneModel {
 			rendering: {
 				...DEFAULT_FLAT_SIMULATION_SUN.rendering,
 				...(sun.rendering || {}),
+			},
+			latitude: {
+				...DEFAULT_FLAT_SIMULATION_SUN.latitude,
+				...(sun.latitude || {}),
 			},
 			light: {
 				...DEFAULT_FLAT_SIMULATION_SUN.light,
@@ -270,8 +275,12 @@ export default class FlatSimulationSceneModel {
 			return null;
 		}
 
+		const sourceLatitudeDeg = resolveFalseSunLatitudeDeg(
+			this.sun,
+			this.config.time,
+		);
 		const projected = projectionModel.projectEarthPoint({
-			lat: this.sun.lat,
+			lat: sourceLatitudeDeg,
 			lon: this.sun.lon,
 			elevationMeters: this.sun.altitudeKm * 1000,
 		});
@@ -299,10 +308,12 @@ export default class FlatSimulationSceneModel {
 			apparent,
 			animation: this.sun.animation,
 			source: {
-				lat: this.sun.lat,
+				lat: sourceLatitudeDeg,
 				lon: this.sun.lon,
 				altitudeKm: this.sun.altitudeKm,
 				diameterKm: this.sun.radiusKm * 2,
+				latitude: this.sun.latitude,
+				latitudeResolvedAt: this.config.time,
 			},
 		};
 

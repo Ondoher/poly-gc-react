@@ -1,0 +1,91 @@
+{
+  "kind": "three-native-production-shape-review-result",
+  "status": "accepted",
+  "iteration": "38-production-shape-review",
+  "milestone": 38,
+  "acceptedArtifacts": {
+    "m30": "218-three-native-atmosphere-pass-shell",
+    "m31": "212-three-native-depth-to-ray-contract",
+    "m32": "216-three-native-distant-first-order-atmosphere",
+    "m33": "217-three-native-live-scene-camera-controls",
+    "m34": "220-three-native-flat-local-first-order-atmosphere",
+    "m35": "222-three-native-unified-source-geometry-adapter",
+    "m36": "224-three-native-live-pass-soft-shader-matrix",
+    "m37": "225-three-native-scenario-controls-poc",
+    "m38": "226-three-native-production-shape-review"
+  },
+  "promotionPlan": {
+    "keep": [
+      {
+        "item": "Algorithm32AtmospherePass shape",
+        "reason": "It renders a normal Three scene into Three-owned color and depth targets, then applies atmosphere in a fullscreen ShaderMaterial pass in the same renderer context."
+      },
+      {
+        "item": "source and geometry configuration contract",
+        "reason": "The same config object drives Three light selection and shader uniforms for distant/spherical and flat/local scenarios."
+      },
+      {
+        "item": "soft-shader oracle workflow",
+        "reason": "It provides deterministic CPU comparison for live pass validation without making scene packets part of the normal render path."
+      }
+    ],
+    "rewrite": [
+      {
+        "item": "GLSL implementation",
+        "reason": "Move lab inline shader strings into shared production shader modules with stable uniform structs and compile-time feature gates."
+      },
+      {
+        "item": "lab scenario controls",
+        "reason": "Keep the control concepts, but wire production UI to app-owned source, geometry, atmosphere, and display state."
+      },
+      {
+        "item": "diagnostic/report code",
+        "reason": "Promote only the useful debug views and numeric checks; leave artifact bookkeeping in the lab."
+      }
+    ],
+    "discard": [
+      {
+        "item": "packet replay as renderer architecture",
+        "reason": "Packets remain validation/oracle artifacts, not the production render input."
+      },
+      {
+        "item": "standalone raw-WebGL atmosphere renderers",
+        "reason": "The target integration is a Three pass over a live Three scene."
+      },
+      {
+        "item": "per-object atmosphere material duplication",
+        "reason": "The accepted POC path colors the final camera view from scene color and depth."
+      }
+    ]
+  },
+  "productionApiSketch": {
+    "pass": "new Algorithm32AtmospherePass(renderer, { width, height, debug })",
+    "frame": [
+      "pass.setSize(width, height)",
+      "pass.setConfig({ source, geometry, atmosphere, display })",
+      "pass.render(scene, camera, outputTargetOrNull)"
+    ],
+    "debugViews": [
+      "final",
+      "scene-color",
+      "depth",
+      "transmittance",
+      "path-radiance"
+    ],
+    "sourceAdapters": [
+      "distant-directional-sun -> DirectionalLight + distant shader uniforms",
+      "flat-local-point-sun -> PointLight or explicit local light adapter + finite-source shader uniforms"
+    ],
+    "geometryAdapters": [
+      "spherical-atmosphere-geometry -> top-atmosphere ray length and world/camera conversion",
+      "flat-z-up-atmosphere -> configured top altitude and sky ray limit"
+    ]
+  },
+  "deferredPhysics": [
+    "local second-order cache",
+    "direct local solar-disc camera radiance",
+    "local ground bounce",
+    "Mars/non-Earth atmosphere preset data",
+    "production HDR/float transport policy"
+  ]
+}

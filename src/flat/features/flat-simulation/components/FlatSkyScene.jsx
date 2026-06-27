@@ -789,7 +789,7 @@ function ConstellationLines({ constellations, exposure }) {
 	);
 }
 
-function AnimatedFixedLatitudeObject({ object }) {
+function AnimatedLatitudeRingObject({ object }) {
 	const animationLoop = useFlatAnimationLoop();
 	const rotationRef = useRef(null);
 
@@ -865,8 +865,8 @@ function SceneObjects({ objects }) {
 	return (
 		<group>
 			{visibleObjects.map((object) => {
-				if (object.animation?.type === 'solar-day-fixed-latitude-rotation') {
-					return <AnimatedFixedLatitudeObject key={object.id} object={object} />;
+				if (object.animation?.type === 'solar-day-latitude-ring-rotation') {
+					return <AnimatedLatitudeRingObject key={object.id} object={object} />;
 				}
 
 				if (object.kind === 'box') {

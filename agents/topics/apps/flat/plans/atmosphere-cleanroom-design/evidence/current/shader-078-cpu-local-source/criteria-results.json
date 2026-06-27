@@ -1,0 +1,466 @@
+{
+  "kind": "algorithm32-cpu-local-source-integrated-render-criteria",
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0,
+    "unresolved": 0
+  },
+  "criteria": [
+    {
+      "criterionId": "distant-sun-regression-control-unchanged",
+      "status": "pass",
+      "tolerance": {
+        "status": "accepted",
+        "imageMaxAbsByteDelta": 0,
+        "selectedAndTransportJson": "reference-owned fields exact"
+      },
+      "measured": {
+        "id": "distant-sun-regression-control",
+        "status": "accepted",
+        "summary": {
+          "total": 16,
+          "passed": 16,
+          "failed": 0,
+          "unresolved": 0
+        },
+        "runDir": "tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render/cases/001-distant-sun-regression-control",
+        "reference": "tmp/atmosphere/algorithm32_shader_lab/037-algorithm32-simple-card-reference",
+        "comparisonSummary": {
+          "imageMatches": true,
+          "imageMaxAbsByteDelta": 0,
+          "selectedMatches": true,
+          "geometryMatches": true,
+          "transportMatches": true,
+          "criteriaMatches": true
+        }
+      },
+      "notes": "The default spherical distant-Sun renderer still matches the accepted CPU reference after the local-source integration."
+    },
+    {
+      "criterionId": "local-source-closest-day-accepted-render",
+      "status": "pass",
+      "tolerance": {
+        "status": "accepted"
+      },
+      "measured": {
+        "status": "accepted",
+        "summary": {
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "unresolved": 0
+        },
+        "runDir": "tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render/cases/002-local-source-closest-day",
+        "imagePath": "tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render/local-source-closest-day.png"
+      },
+      "notes": "Nested CPU render accepted using the configured local source and active-source transport criteria."
+    },
+    {
+      "criterionId": "local-source-closest-day-flat-local-source-contract",
+      "status": "pass",
+      "tolerance": {
+        "sourceKind": "flat-local-point-sun",
+        "geometryKind": "flat-z-up-atmosphere",
+        "sceneSkyRayLimitMeters": 1926774
+      },
+      "measured": {
+        "sourceKind": "flat-local-point-sun",
+        "geometryKind": "flat-z-up-atmosphere",
+        "sceneSkyRayLimitMeters": 1926774,
+        "sceneSkyRayLimitPolicy": "accepted-062-flat-visibility-100-percent-lost-poc-default"
+      },
+      "notes": "The nested render uses the configured flat/local source contract, including the renderer-owned sky/no-hit segment policy."
+    },
+    {
+      "criterionId": "local-source-closest-day-finite-source-samples",
+      "status": "pass",
+      "tolerance": {
+        "sourceKind": "flat-local-point-sun",
+        "distanceKind": "finite",
+        "distanceMeters": "finite positive"
+      },
+      "measured": [
+        {
+          "id": "observer",
+          "sourceSample": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-000deg-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              -0.2493396085475977,
+              -0.15511753124567554,
+              0.9559122925821059
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 5050674.1648427015,
+            "distanceKm": 5050.674164842701,
+            "incidentScale": 1,
+            "distanceFalloffScale": 0.9031996723576281,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                -0.2493396085475977,
+                -0.15511753124567554,
+                0.9559122925821059
+              ],
+              "distanceMeters": 5050674.1648427015
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.95,
+              0.95,
+              0.95,
+              0.95,
+              0.98,
+              0.98,
+              0.98,
+              0.98,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "ten-km-altitude",
+          "sourceSample": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-000deg-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              -0.24981227714897997,
+              -0.15541158475354316,
+              0.9557411079942274
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 5041117.808682872,
+            "distanceKm": 5041.117808682872,
+            "incidentScale": 1.003794957558583,
+            "distanceFalloffScale": 0.9066272767811514,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                -0.24981227714897997,
+                -0.15541158475354316,
+                0.9557411079942274
+              ],
+              "distanceMeters": 5041117.808682872
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.9536052096806538,
+              0.9536052096806538,
+              0.9536052096806538,
+              0.9536052096806538,
+              0.9837190584074113,
+              0.9837190584074113,
+              0.9837190584074113,
+              0.9837190584074113,
+              1.003794957558583,
+              1.003794957558583,
+              1.003794957558583,
+              1.003794957558583,
+              1.003794957558583,
+              1.003794957558583,
+              1.003794957558583
+            ]
+          }
+        },
+        {
+          "id": "camera-position",
+          "sourceSample": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-000deg-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              -0.2493396085475977,
+              -0.15511753124567554,
+              0.9559122925821059
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 5050674.1648427015,
+            "distanceKm": 5050.674164842701,
+            "incidentScale": 1,
+            "distanceFalloffScale": 0.9031996723576281,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                -0.2493396085475977,
+                -0.15511753124567554,
+                0.9559122925821059
+              ],
+              "distanceMeters": 5050674.1648427015
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.95,
+              0.95,
+              0.95,
+              0.95,
+              0.98,
+              0.98,
+              0.98,
+              0.98,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      ],
+      "notes": "Observer, 10 km, and camera trace points all sample the finite local source."
+    },
+    {
+      "criterionId": "local-source-closest-day-first-order-local-cache-policy",
+      "status": "pass",
+      "tolerance": {
+        "incidentSkyCacheEntries": 0
+      },
+      "measured": {
+        "imageCacheEntries": 0,
+        "diagnosticCacheEntries": 0
+      },
+      "notes": "Local-source CPU rendering is intentionally first-order; distant-Sun second-order cache use is not silently applied."
+    },
+    {
+      "criterionId": "local-source-090deg-rise-sunset-accepted-render",
+      "status": "pass",
+      "tolerance": {
+        "status": "accepted"
+      },
+      "measured": {
+        "status": "accepted",
+        "summary": {
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "unresolved": 0
+        },
+        "runDir": "tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render/cases/003-local-source-090deg-rise-sunset",
+        "imagePath": "tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render/local-source-090deg-rise-sunset.png"
+      },
+      "notes": "Nested CPU render accepted using the configured local source and active-source transport criteria."
+    },
+    {
+      "criterionId": "local-source-090deg-rise-sunset-flat-local-source-contract",
+      "status": "pass",
+      "tolerance": {
+        "sourceKind": "flat-local-point-sun",
+        "geometryKind": "flat-z-up-atmosphere",
+        "sceneSkyRayLimitMeters": 1926774
+      },
+      "measured": {
+        "sourceKind": "flat-local-point-sun",
+        "geometryKind": "flat-z-up-atmosphere",
+        "sceneSkyRayLimitMeters": 1926774,
+        "sceneSkyRayLimitPolicy": "accepted-062-flat-visibility-100-percent-lost-poc-default"
+      },
+      "notes": "The nested render uses the configured flat/local source contract, including the renderer-owned sky/no-hit segment policy."
+    },
+    {
+      "criterionId": "local-source-090deg-rise-sunset-finite-source-samples",
+      "status": "pass",
+      "tolerance": {
+        "sourceKind": "flat-local-point-sun",
+        "distanceKind": "finite",
+        "distanceMeters": "finite positive"
+      },
+      "measured": [
+        {
+          "id": "observer",
+          "sourceSample": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              0.10376040888727779,
+              0.8832331885992644,
+              0.4573105204391448
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 10557381.263312686,
+            "distanceKm": 10557.381263312685,
+            "incidentScale": 0.22886864160388085,
+            "distanceFalloffScale": 0.2067140821095606,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                0.10376040888727779,
+                0.8832331885992644,
+                0.4573105204391448
+              ],
+              "distanceMeters": 10557381.263312686
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085
+            ]
+          }
+        },
+        {
+          "id": "ten-km-altitude",
+          "sourceSample": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              0.10380532806839701,
+              0.8836155513134697,
+              0.4565610707688575
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 10552812.81841746,
+            "distanceKm": 10552.81281841746,
+            "incidentScale": 0.22906684470222102,
+            "distanceFalloffScale": 0.2068930990830417,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                0.10380532806839701,
+                0.8836155513134697,
+                0.4565610707688575
+              ],
+              "distanceMeters": 10552812.81841746
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.21761350246710995,
+              0.21761350246710995,
+              0.21761350246710995,
+              0.21761350246710995,
+              0.2244855078081766,
+              0.2244855078081766,
+              0.2244855078081766,
+              0.2244855078081766,
+              0.22906684470222102,
+              0.22906684470222102,
+              0.22906684470222102,
+              0.22906684470222102,
+              0.22906684470222102,
+              0.22906684470222102,
+              0.22906684470222102
+            ]
+          }
+        },
+        {
+          "id": "camera-position",
+          "sourceSample": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              0.10376040888727779,
+              0.8832331885992644,
+              0.4573105204391448
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 10557381.263312686,
+            "distanceKm": 10557.381263312685,
+            "incidentScale": 0.22886864160388085,
+            "distanceFalloffScale": 0.2067140821095606,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                0.10376040888727779,
+                0.8832331885992644,
+                0.4573105204391448
+              ],
+              "distanceMeters": 10557381.263312686
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085
+            ]
+          }
+        }
+      ],
+      "notes": "Observer, 10 km, and camera trace points all sample the finite local source."
+    },
+    {
+      "criterionId": "local-source-090deg-rise-sunset-first-order-local-cache-policy",
+      "status": "pass",
+      "tolerance": {
+        "incidentSkyCacheEntries": 0
+      },
+      "measured": {
+        "imageCacheEntries": 0,
+        "diagnosticCacheEntries": 0
+      },
+      "notes": "Local-source CPU rendering is intentionally first-order; distant-Sun second-order cache use is not silently applied."
+    },
+    {
+      "criterionId": "closest-brighter-than-90deg-source",
+      "status": "pass",
+      "tolerance": {
+        "ordering": "closest incident scale > 90 degree incident scale"
+      },
+      "measured": {
+        "closestIncidentScale": 1,
+        "ninetyDegreeIncidentScale": 0.22886864160388085,
+        "referenceBrightnessCalibration": {
+          "kind": "match-distant-solar-noon-unit-incident-scale-at-closest-approach",
+          "distantSceneKey": "figure1-13h15-z21",
+          "targetIncidentScaleAtClosest": 1,
+          "targetIncidentScaleUnits": "multiple of Algorithm32 distant-directional-sun top-of-atmosphere solar irradiance",
+          "closestOffsetDegrees": 0,
+          "closestConfiguredDistanceKm": 5050.674164842701,
+          "closestDistanceFalloffScale": 0.9031996723576281,
+          "originalSolarIrradianceScale": 58,
+          "originalReferenceSpectralIncidentScale": 58,
+          "originalIncidentScaleAtClosest": 52.38558099674243,
+          "calibratedSolarIrradianceScale": 1.1071748923354825,
+          "calibratedReferenceSpectralIncidentScale": 1.1071748923354825,
+          "calibratedIncidentScaleAtClosest": 1,
+          "calibrationMultiplier": 0.01908922228164625
+        }
+      },
+      "notes": "The integrated render preserves the atmosflat calibrated inverse-square source-distance relationship."
+    },
+    {
+      "criterionId": "flat-scene-sky-ray-limit-policy-recorded",
+      "status": "pass",
+      "tolerance": {
+        "defaultMeters": 1926774,
+        "overrideAllowed": true
+      },
+      "measured": {
+        "sceneSkyRayLimitMeters": 1926774,
+        "sceneSkyRayLimitPolicy": "accepted-062-flat-visibility-100-percent-lost-poc-default",
+        "provenance": "Accepted artifact 062 found 100% lost/cannot see at 1,926.774 km for the recorded target/render setup; this is a POC renderer policy, not a physical constant.",
+        "futurePolicy": "Shorter practical-resolution caps can be tested later for realistic object sizes that lose angular resolution before fully fading."
+      },
+      "notes": "The flat scene no-hit ray limit is explicit and configurable, seeded by the accepted visibility experiment but not treated as universal physics."
+    }
+  ]
+}

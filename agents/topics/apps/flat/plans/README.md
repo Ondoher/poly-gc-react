@@ -3,11 +3,9 @@
 Future Flat app implementation plans live here.
 
 - [POC Phase 1 Plan](poc-phase-1-plan.md)
-- [Reality-Aligned Daytime Atmosphere Plan](reality-aligned-daytime-atmosphere-plan.md)
-- [Atmosphere Reset Research](atmosphere_reset/research.md) - active reset
-  physics and references.
-- [Atmosphere Reset Design](atmosphere_reset/design.md) - active reset
-  implementation contracts.
+- [Algorithm32 Production Documentation](../algorithm32/README.md) -
+  production documentation home for the official Algorithm32 module. The
+  implementation lives in `shared/algorithm32/`.
 - [Atmosphere Cleanroom Design](atmosphere-cleanroom-design/README.md) - new
   reset documentation home for incorporating the closed cleanroom evidence
   lane and replacing the rejected reference pipeline.
@@ -28,6 +26,10 @@ Future Flat app implementation plans live here.
 - [Algorithm32 Shader Lab Plan](atmosphere-cleanroom-design/algorithm32-shader-lab-plan.md) -
   experimental harness plan for validating browser reload control, Node/Three
   CPU reference rendering, and shader parity against Algorithm32.
+- [Local Sun Second-Order POC](atmosphere-cleanroom-design/local-sun-second-order/README.md) -
+  cleanroom POC planning tracker for local Sun second-order scattering parity,
+  objective scene measurements, CPU soft-shader proof, and integrated GPU
+  proof.
 - [Object Transport Experiment Plan](atmosphere-cleanroom-design/object-transport-experiment-plan.md) -
   closed cleanroom experimental lane that proved object color transfer before
   the production pipeline.
@@ -46,24 +48,6 @@ Future Flat app implementation plans live here.
   first-run decisions for experiment 032 constants, Bruneton sunrise/highest
   Sun cases, stress spectra/distances, audit-trail input/output shape, and the
   required running log.
-- [Reference README](atmosphere_reset/reference/README.md) - human-facing
-  purpose and navigation for the slow truth engine.
-- [Reference Code Design](atmosphere_reset/reference/code_design.md) -
-  focused design for the slow truth engine.
-- [Reference Test Design](atmosphere_reset/reference/test_design.md) -
-  high-level stage test matrix for the slow truth engine.
-- [Reference Plan](atmosphere_reset/reference/plan.md) -
-  focused script implementation plan for the slow truth engine.
-- [Reference Status](atmosphere_reset/reference/status.md) - current status
-  for the slow truth engine.
-- [Atmosphere Reset Plan](atmosphere_reset/plan.md) - active test-first
-  implementation sequence.
-- [Bruneton Start-Fresh Prompt](bruneton-start-fresh-prompt.md) - active
-  self-contained script prompt for rendering sunset and midday Bruneton-like
-  skydomes with physics-justified equations and per-step artifacts.
-- [Bruneton Start-Fresh Work Log](bruneton-start-fresh-worklog.md) - active
-  continuation log for the fresh skydome experiment.
-- [Spherical Sun Atmosphere Plan](spherical-sun-atmosphere-plan.md) - active:
-  continue Phase 4.6 diagnostics for the globe sky's muted blue-gray color,
-  brown horizon, and red marker airlight behavior after Phase 4.4 radiometric
-  surface integration.
+- [Retired Atmosphere Material](retired/README.md) - historical atmosphere
+  reset, Bruneton/skydome, spherical-sun, reality-aligned, and visual baseline
+  material superseded by the cleanroom/Algorithm32 canon.

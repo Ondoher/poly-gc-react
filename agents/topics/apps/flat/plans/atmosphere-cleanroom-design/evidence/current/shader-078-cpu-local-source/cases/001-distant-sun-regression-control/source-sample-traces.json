@@ -1,0 +1,210 @@
+{
+  "kind": "algorithm32-source-sample-traces",
+  "sourceKind": "distant-directional-sun",
+  "sourceId": "figure1-13h15-z21",
+  "geometryKind": "spherical-atmosphere-geometry",
+  "sunCaseId": "figure1-13h15-z21",
+  "samples": [
+    {
+      "id": "observer",
+      "positionMeters": [
+        0,
+        0,
+        6360002
+      ],
+      "sourceSample": {
+        "kind": "distant-directional-sun",
+        "sourceId": "figure1-13h15-z21",
+        "direction": [
+          0.02927623871171526,
+          0.3571701122829255,
+          0.9335804264972017
+        ],
+        "distanceKind": "infinite",
+        "distanceMeters": null,
+        "distanceKm": null,
+        "incidentScale": 1,
+        "distanceFalloffScale": null,
+        "sourcePathPolicy": "spherical-top-atmosphere-boundary",
+        "transmittancePath": {
+          "kind": "sample-to-spherical-top-atmosphere",
+          "direction": [
+            0.02927623871171526,
+            0.3571701122829255,
+            0.9335804264972017
+          ],
+          "distanceKind": "to-top-atmosphere"
+        },
+        "spectralIncidentScaleByWavelength": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "meanSourceTransmittance": 0.7336623589385012,
+      "sourceTransmittanceByWavelength": [
+        0.45156167969675387,
+        0.5340098760482049,
+        0.6001566044626522,
+        0.652686067951629,
+        0.6944191358555316,
+        0.7277816071709686,
+        0.7547014954052705,
+        0.7766588449393308,
+        0.7947735545013077,
+        0.8098897401319324,
+        0.8226448842711018,
+        0.8335229415198906,
+        0.8428939256139736,
+        0.8510430349993621,
+        0.8581919915096059
+      ]
+    },
+    {
+      "id": "ten-km-altitude",
+      "positionMeters": [
+        0,
+        0,
+        6370000
+      ],
+      "sourceSample": {
+        "kind": "distant-directional-sun",
+        "sourceId": "figure1-13h15-z21",
+        "direction": [
+          0.02927623871171526,
+          0.3571701122829255,
+          0.9335804264972017
+        ],
+        "distanceKind": "infinite",
+        "distanceMeters": null,
+        "distanceKm": null,
+        "incidentScale": 1,
+        "distanceFalloffScale": null,
+        "sourcePathPolicy": "spherical-top-atmosphere-boundary",
+        "transmittancePath": {
+          "kind": "sample-to-spherical-top-atmosphere",
+          "direction": [
+            0.02927623871171526,
+            0.3571701122829255,
+            0.9335804264972017
+          ],
+          "distanceKind": "to-top-atmosphere"
+        },
+        "spectralIncidentScaleByWavelength": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "meanSourceTransmittance": 0.958140490896094,
+      "sourceTransmittanceByWavelength": [
+        0.8542013478235001,
+        0.8919081588153894,
+        0.9184793847337092,
+        0.9375144931317847,
+        0.9513808092986071,
+        0.9616461518392185,
+        0.9693619551204592,
+        0.9752438915962647,
+        0.9797867069480575,
+        0.9833377124811423,
+        0.9861443550554148,
+        0.9883854258818107,
+        0.9901918298418914,
+        0.9916606071931796,
+        0.9928645336809793
+      ]
+    },
+    {
+      "id": "camera-position",
+      "positionMeters": [
+        0,
+        0,
+        6360002
+      ],
+      "sourceSample": {
+        "kind": "distant-directional-sun",
+        "sourceId": "figure1-13h15-z21",
+        "direction": [
+          0.02927623871171526,
+          0.3571701122829255,
+          0.9335804264972017
+        ],
+        "distanceKind": "infinite",
+        "distanceMeters": null,
+        "distanceKm": null,
+        "incidentScale": 1,
+        "distanceFalloffScale": null,
+        "sourcePathPolicy": "spherical-top-atmosphere-boundary",
+        "transmittancePath": {
+          "kind": "sample-to-spherical-top-atmosphere",
+          "direction": [
+            0.02927623871171526,
+            0.3571701122829255,
+            0.9335804264972017
+          ],
+          "distanceKind": "to-top-atmosphere"
+        },
+        "spectralIncidentScaleByWavelength": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "meanSourceTransmittance": 0.7336623589385012,
+      "sourceTransmittanceByWavelength": [
+        0.45156167969675387,
+        0.5340098760482049,
+        0.6001566044626522,
+        0.652686067951629,
+        0.6944191358555316,
+        0.7277816071709686,
+        0.7547014954052705,
+        0.7766588449393308,
+        0.7947735545013077,
+        0.8098897401319324,
+        0.8226448842711018,
+        0.8335229415198906,
+        0.8428939256139736,
+        0.8510430349993621,
+        0.8581919915096059
+      ]
+    }
+  ]
+}

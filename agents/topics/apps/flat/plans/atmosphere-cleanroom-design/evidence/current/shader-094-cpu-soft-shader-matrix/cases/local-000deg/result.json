@@ -1,0 +1,25 @@
+{
+  "kind": "cpu-unified-source-driven-case-result",
+  "caseKey": "local-000deg",
+  "status": "accepted",
+  "sourceFamily": "flat-local-point-sun",
+  "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+  "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+  "sceneLightAdapter": "none-local-unlit-packet",
+  "sourceId": "san-jose-000deg-closest-algorithm32-flat-cap-first-order",
+  "offsetDegrees": 0,
+  "sourceDistanceMeters": 5050674.1648427015,
+  "incidentScale": 1,
+  "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+  "noAtmosphereMaxDelta": 0,
+  "finiteChecks": {
+    "pixels": 5184,
+    "nonfinitePixels": 0,
+    "minByte": 11,
+    "maxByte": 235
+  },
+  "summary": {
+    "passed": 7,
+    "failed": 0
+  }
+}

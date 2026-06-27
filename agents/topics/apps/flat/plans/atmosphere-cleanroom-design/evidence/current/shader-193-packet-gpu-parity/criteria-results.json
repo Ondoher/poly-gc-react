@@ -1,0 +1,107 @@
+{
+  "kind": "soft-shader-capability-parity-matrix-criteria",
+  "summary": {
+    "passed": 6,
+    "failed": 0
+  },
+  "criteria": [
+    {
+      "id": "distant-full-image-parity-retained",
+      "status": "passed",
+      "measured": {
+        "artifact": "172-distant-soft-shader-gpu-parity",
+        "status": "accepted",
+        "summary": {
+          "passed": 12,
+          "failed": 0,
+          "aggregatePassed": 2,
+          "aggregateFailed": 0,
+          "casePassed": 10,
+          "caseFailed": 0
+        }
+      }
+    },
+    {
+      "id": "distant-lit-composition-retained",
+      "status": "passed",
+      "measured": {
+        "artifact": "174-lit-scene-shader-composition",
+        "status": "accepted",
+        "summary": {
+          "passed": 5,
+          "failed": 0
+        }
+      }
+    },
+    {
+      "id": "local-spectrum-full-image-parity-accepted",
+      "status": "passed",
+      "measured": {
+        "artifact": "185-local-sun-full-image-shader-parity",
+        "status": "accepted",
+        "summary": {
+          "passed": 33,
+          "failed": 0,
+          "aggregatePassed": 3,
+          "aggregateFailed": 0,
+          "casePassed": 30,
+          "caseFailed": 0
+        }
+      }
+    },
+    {
+      "id": "local-scene-color-composition-parity-accepted",
+      "status": "passed",
+      "measured": {
+        "artifact": "192-local-sun-scene-color-composition-parity",
+        "status": "accepted",
+        "summary": {
+          "passed": 33,
+          "failed": 0,
+          "aggregatePassed": 3,
+          "aggregateFailed": 0,
+          "casePassed": 30,
+          "caseFailed": 0
+        }
+      }
+    },
+    {
+      "id": "required-local-offsets-covered",
+      "status": "passed",
+      "measured": {
+        "fullImageCases": [
+          "local-000deg",
+          "local-045deg",
+          "local-090deg",
+          "local-135deg",
+          "local-180deg"
+        ],
+        "sceneColorCases": [
+          "local-000deg",
+          "local-045deg",
+          "local-090deg",
+          "local-135deg",
+          "local-180deg"
+        ]
+      }
+    },
+    {
+      "id": "remaining-deferred-work-is-beyond-current-soft-shader",
+      "status": "passed",
+      "measured": {
+        "stillDeferred": [
+          "local second-order cache",
+          "direct local solar-disc camera radiance",
+          "local ground bounce",
+          "HDR/binary transport beyond current RGBA8 POC packet path",
+          "production promotion into official Algorithm32"
+        ],
+        "notDeferredAnymore": [
+          "local full-image first-order shader output",
+          "local full-image CPU/GPU parity",
+          "local sceneColor * T_view + L_path shader composition"
+        ]
+      }
+    }
+  ]
+}

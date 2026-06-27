@@ -27,6 +27,9 @@ detail is needed:
    - Treat this as the current source of truth for Algorithm32 steps,
      abstractions, source ownership, accepted endpoints, open issues, and
      production followups.
+   - If `tmp/atmosphere` has been emptied, use
+     [Current Algorithm32 Evidence](evidence/current/README.md) for the copied
+     current reports, criteria, diagnostics, and selected images.
 2. [Algorithm32 Shader Iteration Plan](algorithm32-shader-iteration-plan.md)
    - Read the accepted Milestone 8 through Milestone 13 summary.
    - Read `Shared Soft-Shader Contract` and the accepted Milestone 14 through
@@ -44,6 +47,13 @@ plan, production flat shader, object-color, rejected atmosphere,
 `atmosflat32` local-Sun, or historical artifact docs unless the prompt or user
 explicitly asks for that context. This active lane builds POC shader-lab
 artifacts, not production/shared app code, and does not require unit tests.
+
+Related POC planning:
+
+- [Local Sun Second-Order POC](local-sun-second-order/README.md) tracks the
+  planned experiment lane for local Sun second-order scattering parity,
+  including Algorithm32 proof, CPU soft-shader proof, integrated GPU proof,
+  objective scene measurements, and subjective images.
 
 Current shader-lab endpoint is accepted by
 `tmp/atmosphere/algorithm32_shader_lab/226-three-native-production-shape-review/`.
@@ -603,6 +613,12 @@ target appearance.
   current source of truth for Algorithm32 steps, source/geometry abstractions,
   accepted POC endpoint status, production module requirements, open issues,
   and immediate production followups.
+- [Atmosphere Design Principles](principles.md) is a staging document for the
+  doc reorg. It collects useful principles from older Flat atmosphere plans
+  without making those older lanes current design authority.
+- [Legacy Flat Reference Documents](legacy-reference-docs/INDEX.md) preserves
+  copied non-cleanroom Flat docs that contain source/reference material for
+  later reorg and provenance review.
 - Step 032 uses no ground coupling, no direct solar-disc camera term, no ozone,
   Bruneton 2016 aerosol constants, 15-sample CIE conversion, full-sphere
   Fibonacci second-order scattering, and `k = 1 / (5 * 683)`.

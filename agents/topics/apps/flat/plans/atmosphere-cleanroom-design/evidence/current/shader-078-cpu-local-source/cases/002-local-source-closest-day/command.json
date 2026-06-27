@@ -1,0 +1,15 @@
+{
+  "kind": "algorithm32-node-three-reference-command",
+  "scriptPath": "scripts/flat/algorithm32-shader-lab/node-three-reference.js",
+  "options": {
+    "width": 240,
+    "height": 120,
+    "label": "local-source-closest-day",
+    "sceneMode": "three-card-reference",
+    "sunsetFraming": "balanced",
+    "mountainView": "front-high-sun",
+    "scatteringOrder": "first-order",
+    "sourceRunLabel": "day-closest-approach",
+    "compareReference": null
+  }
+}

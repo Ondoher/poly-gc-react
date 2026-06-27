@@ -311,6 +311,41 @@ type FlatSimulationSunAnimation = {
 }
 
 /**
+ * Describe how the false-model Sun latitude is selected before projection.
+ */
+type FlatSimulationSunLatitudeModel = {
+	/**
+	 * Select fixed latitude or annual migration between tropic limits.
+	 */
+	type: "annual-tropic-migration" | "fixed-latitude";
+
+	/**
+	 * Store the northern latitude limit in decimal degrees.
+	 */
+	northLimitDeg?: number;
+
+	/**
+	 * Store the southern latitude limit in decimal degrees.
+	 */
+	southLimitDeg?: number;
+
+	/**
+	 * Store the day-of-year where the northern limit is reached.
+	 */
+	northernSolsticeDayOfYear?: number;
+
+	/**
+	 * Store the annual cycle length.
+	 */
+	periodDays?: number;
+
+	/**
+	 * Store the latitude for fixed-latitude diagnostic overrides.
+	 */
+	latitudeDeg?: number;
+}
+
+/**
  * Describe optional inputs for resolving the animated flat-simulation sun.
  */
 type FlatSimulationSunAnimationOptions = {
@@ -341,9 +376,9 @@ type FlatSimulationSunConfig = {
 	name: string;
 
 	/**
-	 * Store projected-model latitude in decimal degrees.
+	 * Store the projected-model latitude rule.
 	 */
-	lat: number;
+	latitude: FlatSimulationSunLatitudeModel;
 
 	/**
 	 * Store projected-model longitude in decimal degrees.
@@ -501,6 +536,16 @@ type FlatSimulationBodySource = {
 	 * Store physical diameter in kilometers.
 	 */
 	diameterKm: number;
+
+	/**
+	 * Store the latitude rule that produced `lat` when available.
+	 */
+	latitude?: FlatSimulationSunLatitudeModel;
+
+	/**
+	 * Store the scene time used to resolve annual latitude when available.
+	 */
+	latitudeResolvedAt?: string;
 }
 
 /**

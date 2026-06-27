@@ -1,0 +1,339 @@
+{
+  "kind": "algorithm32-node-three-reference-criteria",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "unresolved": 0
+  },
+  "criteria": [
+    {
+      "criterionId": "camera-ray-reconstruction",
+      "status": "pass",
+      "tolerance": {
+        "angularRadians": 1e-12,
+        "originMeters": 1e-12
+      },
+      "measured": {
+        "maxRayAngularError": 0,
+        "maxRayOriginError": 0
+      },
+      "notes": "Manual inverse-projection rays match Three Raycaster.setFromCamera rays."
+    },
+    {
+      "criterionId": "local-source-contract-active",
+      "status": "pass",
+      "tolerance": {
+        "sourceKind": "flat-local-point-sun",
+        "geometryKind": "flat-z-up-atmosphere"
+      },
+      "measured": {
+        "sourceKind": "flat-local-point-sun",
+        "geometryKind": "flat-z-up-atmosphere"
+      },
+      "notes": "The CPU renderer is using the configured flat/local source and geometry contract for this image."
+    },
+    {
+      "criterionId": "local-source-image-shape",
+      "status": "pass",
+      "tolerance": {
+        "skyPixels": "positive",
+        "hitPixels": "positive"
+      },
+      "measured": {
+        "skyPixels": 31360,
+        "hitPixels": 26240,
+        "objectCounts": {
+          "grass-green-floor": 26240
+        }
+      },
+      "notes": "The local-source image includes both atmosphere-only sky rays and Three scene hit segments."
+    },
+    {
+      "criterionId": "local-source-samples-finite",
+      "status": "pass",
+      "tolerance": {
+        "distanceKind": "finite",
+        "distanceMeters": "finite positive",
+        "incidentScale": "finite nonnegative"
+      },
+      "measured": [
+        {
+          "sampleId": "upper-sky",
+          "sourceSampleAtRayOrigin": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              0.10376040888727779,
+              0.8832331885992644,
+              0.4573105204391448
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 10557381.263312686,
+            "distanceKm": 10557.381263312685,
+            "incidentScale": 0.22886864160388085,
+            "distanceFalloffScale": 0.2067140821095606,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                0.10376040888727779,
+                0.8832331885992644,
+                0.4573105204391448
+              ],
+              "distanceMeters": 10557381.263312686
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085
+            ]
+          }
+        },
+        {
+          "sampleId": "center",
+          "sourceSampleAtRayOrigin": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              0.10376040888727779,
+              0.8832331885992644,
+              0.4573105204391448
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 10557381.263312686,
+            "distanceKm": 10557.381263312685,
+            "incidentScale": 0.22886864160388085,
+            "distanceFalloffScale": 0.2067140821095606,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                0.10376040888727779,
+                0.8832331885992644,
+                0.4573105204391448
+              ],
+              "distanceMeters": 10557381.263312686
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085
+            ]
+          }
+        },
+        {
+          "sampleId": "lower-center",
+          "sourceSampleAtRayOrigin": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              0.10376040888727779,
+              0.8832331885992644,
+              0.4573105204391448
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 10557381.263312686,
+            "distanceKm": 10557.381263312685,
+            "incidentScale": 0.22886864160388085,
+            "distanceFalloffScale": 0.2067140821095606,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                0.10376040888727779,
+                0.8832331885992644,
+                0.4573105204391448
+              ],
+              "distanceMeters": 10557381.263312686
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085
+            ]
+          }
+        },
+        {
+          "sampleId": "left-lower",
+          "sourceSampleAtRayOrigin": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              0.10376040888727779,
+              0.8832331885992644,
+              0.4573105204391448
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 10557381.263312686,
+            "distanceKm": 10557.381263312685,
+            "incidentScale": 0.22886864160388085,
+            "distanceFalloffScale": 0.2067140821095606,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                0.10376040888727779,
+                0.8832331885992644,
+                0.4573105204391448
+              ],
+              "distanceMeters": 10557381.263312686
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085
+            ]
+          }
+        },
+        {
+          "sampleId": "right-lower",
+          "sourceSampleAtRayOrigin": {
+            "kind": "flat-local-point-sun",
+            "sourceId": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+            "direction": [
+              0.10376040888727779,
+              0.8832331885992644,
+              0.4573105204391448
+            ],
+            "distanceKind": "finite",
+            "distanceMeters": 10557381.263312686,
+            "distanceKm": 10557.381263312685,
+            "incidentScale": 0.22886864160388085,
+            "distanceFalloffScale": 0.2067140821095606,
+            "sourcePathPolicy": "finite-source-distance-through-atmosphere",
+            "transmittancePath": {
+              "kind": "finite-source-distance",
+              "direction": [
+                0.10376040888727779,
+                0.8832331885992644,
+                0.4573105204391448
+              ],
+              "distanceMeters": 10557381.263312686
+            },
+            "spectralIncidentScaleByWavelength": [
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.2174252095236868,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22429126877180322,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085,
+              0.22886864160388085
+            ]
+          }
+        }
+      ],
+      "notes": "Each selected ray samples the configured finite source rather than reusing a global distant direction."
+    },
+    {
+      "criterionId": "local-source-finite-nonnegative-transfer",
+      "status": "pass",
+      "tolerance": {
+        "transmittanceRange": [
+          0,
+          1
+        ],
+        "slack": 1e-12
+      },
+      "measured": {
+        "nonfiniteTransferValues": 0,
+        "minTransmittance": 0.00023119453197370824,
+        "maxTransmittance": 0.9998010421037666
+      },
+      "notes": "Configured local-source spectral transfer remains finite, nonnegative, and bounded."
+    },
+    {
+      "criterionId": "local-source-beer-lambert-identity",
+      "status": "pass",
+      "tolerance": {
+        "absolute": 1e-12
+      },
+      "measured": {
+        "maxBeerLambertError": 0
+      },
+      "notes": "Stored local-source spectral transmittance equals exp(-opticalDepth)."
+    },
+    {
+      "criterionId": "local-source-sky-radiance-present",
+      "status": "pass",
+      "tolerance": {
+        "skySamples": "positive",
+        "pathRadiance": "positive"
+      },
+      "measured": {
+        "skySampleCount": 2,
+        "maxSkyPathRadiance": 0.1309426789653888
+      },
+      "notes": "Sky pixels are lit by the configured local source through CPU Algorithm32 first-order scattering."
+    },
+    {
+      "criterionId": "local-source-second-order-deferred",
+      "status": "pass",
+      "tolerance": {
+        "secondOrderPathRadianceMax": 0,
+        "incidentSkyCacheEntries": 0
+      },
+      "measured": {
+        "secondOrderMax": 0,
+        "incidentSkyCacheEntries": 0
+      },
+      "notes": "The local-source render is first-order only; distant-Sun second-order cache behavior remains deferred for local sources."
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "kind": "cpu-unified-source-driven-soft-shader-matrix-command",
+  "options": {
+    "outRoot": "tmp/atmosphere/algorithm32_shader_lab",
+    "label": "cpu-unified-source-driven-soft-shader-matrix",
+    "distantHighRun": "tmp/atmosphere/algorithm32_shader_lab/087-browser-distant-sun-position-matrix-high",
+    "distantLowRun": "tmp/atmosphere/algorithm32_shader_lab/088-browser-distant-sun-position-matrix-low",
+    "localMatrixRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+    "help": false
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "kind": "algorithm32-node-three-reference-result",
+  "status": "accepted",
+  "createdAt": "2026-06-24T18:55:04.834Z",
+  "completedAt": "2026-06-24T18:55:22.185Z",
+  "durationMs": 17351,
+  "artifactFolder": "tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render/cases/001-distant-sun-regression-control",
+  "summary": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "unresolved": 0
+  }
+}

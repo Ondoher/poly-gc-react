@@ -1,0 +1,11 @@
+{
+  "kind": "algorithm32-cpu-local-source-integrated-render-command",
+  "scriptPath": "scripts/flat/algorithm32-shader-lab/cpu-local-source-integrated-render.js",
+  "options": {
+    "outRoot": "C:\\dev\\poly-gc-react\\tmp\\atmosphere\\algorithm32_shader_lab",
+    "label": "cpu-local-source-integrated-render",
+    "atmosflatReference": "tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes",
+    "sceneSkyRayLimitMeters": 1926774,
+    "sceneSkyRayLimitPolicy": "accepted-062-flat-visibility-100-percent-lost-poc-default"
+  }
+}

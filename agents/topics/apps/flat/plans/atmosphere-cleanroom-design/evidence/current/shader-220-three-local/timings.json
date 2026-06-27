@@ -1,0 +1,9 @@
+{
+  "kind": "algorithm32-shader-lab-timings",
+  "startedAt": "2026-06-25T16:37:09.864Z",
+  "completedAt": "2026-06-25T16:37:21.419Z",
+  "durationMs": 11555,
+  "pageTiming": {
+    "pageDurationMs": 11338.199999809265
+  }
+}

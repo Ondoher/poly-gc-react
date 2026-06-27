@@ -4,28 +4,92 @@ Deployable Flat app documentation for the false-sky / sky-comparison project.
 
 ## Current Active Task
 
-Active bootstrap record: production promotion from the accepted Algorithm32
-shader-lab POC. Use this README only as a routing marker. A new or compacted
-agent should start with the canonical reference, then continue to the minimal
-source-contract sections only when implementation detail is needed:
+Active bootstrap record: local Sun second-order scattering/cache POC. Use this
+README only as a routing marker. A new or compacted agent should start with
+the local lane entrypoint, then the experiment plan, then the runner README:
 
-- [Algorithm32 Canonical Reference](plans/atmosphere-cleanroom-design/algorithm32-canonical-reference.md)
-- [Algorithm32 Shader Iteration Plan](plans/atmosphere-cleanroom-design/algorithm32-shader-iteration-plan.md)
-- [Shader Lab README](../../../../scripts/flat/algorithm32-shader-lab/README.md)
+- [Local Sun Second-Order POC](plans/atmosphere-cleanroom-design/local-sun-second-order/README.md)
+- [Local Sun Second-Order Experiment Plan](plans/atmosphere-cleanroom-design/local-sun-second-order/experiment-plan.md)
+- [Local Second-Order Browser Runner](../../../../scripts/flat/local-second-order/README.md)
+- [Algorithm32 POC Bundle](../../../../shared/algorithm32/POC/README.md)
+- [Current Evidence Registry](plans/atmosphere-cleanroom-design/evidence/current/README.md)
 
-Treat the canonical reference as the current source of truth for Algorithm32
-steps, abstractions, accepted endpoints, open issues, and production followups.
-In the iteration plan, read only the accepted Milestone 8 through Milestone 13
-summary, `Shared Soft-Shader Contract`, the accepted Milestone 14 through
-Milestone 29 soft-shader/shader runway, the accepted Milestone 30 through
-Milestone 38 Three-native atmosphere-pass runway, and `Current Next
-Iteration`. In the shader-lab README, read only the
-source-contract block beginning with `The accepted CPU source-contract runway
-is`, plus command examples only when needed. Do not load the older Flat
-status/design/plan links
-below, the detailed shader-lab plan, production flat shader notes, closed
-object-color docs, rejected atmosphere pipeline, `atmosflat32` local-Sun docs,
-or historical artifacts unless the prompt or user explicitly asks.
+Production placement: `agents/topics/apps/flat/algorithm32/` owns production
+Algorithm32 documentation, and `shared/algorithm32/` owns the shared production
+implementation. Treat the canonical reference as the current source of truth
+for Algorithm32 steps, abstractions, accepted endpoints, open issues, and
+production followups until those contracts are promoted into the production
+docs home.
+
+Local runner contract: browser experiment commands for this lane go through
+`scripts/flat/local-second-order/harness.js --watch` and
+`tmp/atmosphere/local-second-order/browser-command.json`; do not use manual
+one-shot harness commands for experiment work. Documentation should not track
+whether the watcher is currently running; inspect heartbeat/process state at
+execution time. The harness forces page/browser recovery on browser evaluation
+timeouts and does not launch Chromium with forced SwiftShader software GL by
+default, so integrated shader runs should use hardware WebGL when available.
+Artifacts are written under `tmp/atmosphere/local-second-order/`. The initial
+browser smoke artifact `001-browser-runner-smoke` is accepted, the local
+second-order lane is accepted through Milestone 12, and the current subjective
+terrain follow-up is the Southern France Blender OBJ runway in local
+Milestones 14 through 18. The current review-quality visual is
+`059-southern-france-obj-diffuse-aa-downsample-atmosphere`, and the paired
+shader-off comparison is
+`060-southern-france-obj-diffuse-aa-downsample-shader-off/with-without-shader-comparison.png`.
+Both use the Southern France diffuse backend, WebGL antialiasing, and
+`renderScale: 2`; `060` disables `Algorithm32AtmospherePass` for direct
+comparison. Shadow-map visual follow-up `061` enables real Three shadows with
+`enableShadows: true` and `shadowMapSize: 4096`; it shows live terrain shadows
+layered over baked diffuse texture shadows. Close-camera follow-up `062`/`063`
+uses the new `cameraOverride.cameraGroundClearanceMeters` payload to place the
+camera near the terrain surface and compare shadows on/off from the same view.
+Receive-only follow-up `064` adds `shadowPolicy: "receive-only"` and proves
+the shingle-like bands are terrain self-shadowing: it is byte-identical to the
+no-shadow close render while the full cast+receive render has the bands.
+High-altitude follow-up `065` repeats the receive-only policy from the original
+high camera and is also byte-identical to the no-shadow high render.
+The requested four subjective no-shadows with/without full-shader comparison
+is accepted as split one-case browser artifacts `070` through `073`. Each
+artifact places raw Three scene color without the full Algorithm32 atmosphere
+shader on the left and the integrated shader result on the right, using
+`southern-france-obj-diffuse`, WebGL antialiasing, `renderScale: 2`, and Three
+shadows disabled. All four passed `10/10` criteria with hardware WebGL through
+the NVIDIA/ANGLE D3D11 renderer; the local rows used
+`flat-local-second-order-atmosphere` with `315` local incident-cache entries.
+Partial artifacts `066`, `067`, and `069` are command-only, and rejected
+artifact `068` records the timeout failure that led to the split-command path.
+Follow-up fitted local-angle views are accepted as `077` through `079`: local
+`180`, local `90`, and local `135` degree orbit rows, all aimed with the same
+yaw-only camera rotation toward the local Sun bearing at `180` degrees while
+preserving the accepted high Southern France look-at elevation. The
+local-180-facing terrain fit rotates and widens the staged OBJ footprint so the
+finite mesh stays under the visible frame on the right edge. All three passed
+`10/10` criteria with hardware WebGL and `flat-local-second-order-atmosphere`.
+Earlier artifacts `074` through `076` are superseded by this terrain-fit
+rerender.
+New artifact `080` is accepted as the shader-only vertical local stack:
+local closest, local `45`, local `90`, local `135`, and local `180`, all
+looking toward the local `180` degree Sun bearing with the fitted terrain
+footprint. It passed `30/30` criteria with hardware WebGL; the gallery is
+`960 x 3010` and contains only integrated Algorithm32 shader rows.
+New artifact `086` is accepted as the same shader-only vertical stack with
+optional real-magnitude procedural point stars enabled in the integrated
+shader display config. Stars are sky-ray-only top-of-atmosphere radiance,
+divided by pixel solid angle, attenuated by view transmittance, and composed
+before the shared tone map; they do not light the terrain. Diagnostics record
+`starField.enabled: true`, `intensity: 1`, `density: 1.15`, and
+`pointSize: 1.15` for all five `flat-local-second-order-atmosphere` rows.
+The contribution is effectively below current fixed-exposure PNG visibility.
+Earlier visible-star artifacts `082` through `085` are superseded calibration
+attempts; `081` is failure evidence for the temporary GLSL brace error.
+See the local lane README and runner README before issuing new browser
+commands.
+
+Do not load the older Flat status/design/plan links below, the detailed
+shader-lab plan, production flat shader notes, closed object-color docs,
+rejected atmosphere pipeline, `atmosflat32` local-Sun docs, or historical
+artifacts unless the prompt or user explicitly asks.
 
 Current shader-lab endpoint:
 `tmp/atmosphere/algorithm32_shader_lab/226-three-native-production-shape-review/`
@@ -119,10 +183,11 @@ soft shader includes local second-order cache support, direct local
 solar-disc camera radiance, local ground bounce, Mars/non-Earth presets, and
 HDR/float transport policy. The next implementation step is production
 promotion of the accepted pass shape into the official Algorithm32
-implementation. Keep using the user-owned watch harness for browser artifacts
-when its heartbeat is current. If it is stale or unavailable, use the approved
-direct one-shot `harness.js --once --command ...` shell command; do not launch
-Chrome from nested experiment code or the agent path unless explicitly asked.
+implementation. For the local-second-order lane, keep using the user-owned
+watch harness for browser artifacts. Do not use direct one-shot
+`harness.js --once` commands for this lane. The harness recovery path and
+hardware-WebGL launch default are patched; browser validation should continue
+through the watcher contract without documenting live process state.
 
 Visual-only artifact
 `227-postprocess-gpu-vs-integrated-shader-subjective-scenes` compares the
@@ -140,11 +205,7 @@ behavior.
 - [Status](status.md)
 - [POC Prompt](prompt.md)
 - [ProjectionModel API Draft](projection-model-api.md)
-- [Atmosphere Design](atmosphere-design.md)
-- [Atmosphere Reset Research](plans/atmosphere_reset/research.md)
-- [Atmosphere Reset Design](plans/atmosphere_reset/design.md)
-- [Multiple-Scattering Reference Design](plans/atmosphere_reset/multiple_scattering_design.md)
-- [Multiple-Scattering Plan](plans/atmosphere_reset/multiple_scattering_plan.md)
+- [Algorithm32 Production Documentation](algorithm32/README.md)
 - [Atmosphere Cleanroom Design](plans/atmosphere-cleanroom-design/README.md)
 - [Experiment 032 Algorithm](plans/atmosphere-cleanroom-design/experiment-032-algorithm.md)
 - [Object Color Transport](plans/atmosphere-cleanroom-design/object-color-transport.md)
@@ -160,15 +221,7 @@ behavior.
 - [Objective Success Criteria](plans/atmosphere-cleanroom-design/objective-success-criteria.md)
 - [Environment Experiment Run Shape](plans/atmosphere-cleanroom-design/environment-experiment-run-shape.md)
 - [Environment Experiment Preflight Spec](plans/atmosphere-cleanroom-design/environment-experiment-preflight-spec.md)
-- [Reference README](plans/atmosphere_reset/reference/README.md)
-- [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md)
-- [Reference Code Design](plans/atmosphere_reset/reference/code_design.md)
-- [Reference Test Design](plans/atmosphere_reset/reference/test_design.md)
-- [Reference Test Plan](plans/atmosphere_reset/reference/test_plan.md)
-- [Reference Plan](plans/atmosphere_reset/reference/plan.md)
-- [Reference Status](plans/atmosphere_reset/reference/status.md)
-- [Atmosphere Reset Plan](plans/atmosphere_reset/plan.md)
-- [Atmosphere Rejected Ideas](atmosphere-rejected.md)
+- [Retired Atmosphere Material](plans/retired/README.md)
 - [Terrain Data Options](terrain-data-options.md)
 - [Plans](plans/README.md)
 - [Decisions](decisions/README.md)
@@ -191,6 +244,11 @@ Current implementation focus:
   stars/constellation overlays, a visible animated finite false sun, synthetic
   red mountain rectangles, a local floor patch, and a depth-aware atmosphere
   composer.
+- The flat false Sun is a 32-mile-diameter local finite source at roughly
+  `3000 mi` altitude. Its default latitude is date-resolved by the
+  `annual-tropic-migration` rule, moving between the Tropic of Cancer and the
+  Tropic of Capricorn over the year, while the solar-day animation rotates the
+  selected latitude ring once per simulated 24 hours.
 - The atmosphere composer is the active flat-simulation atmosphere owner. It renders solid
   scene color/depth offscreen, reconstructs camera rays, applies optical
   depth/transmittance and sun-driven Rayleigh/Mie single scattering, includes
@@ -228,38 +286,16 @@ Current implementation focus:
 Key continuation docs:
 
 - [Status](status.md): detailed current implementation history and next tasks.
-- [Atmosphere Design](atmosphere-design.md): current atmosphere/light
-  contract.
-- [Atmosphere Reset Research](plans/atmosphere_reset/research.md): reset research note for the
-  physical-constants-first atmosphere model, including physical properties,
-  equations, simplifications, references, and pixel-color flow.
-- [Atmosphere Reset Design](plans/atmosphere_reset/design.md): reset
-  implementation contracts for the script-owned reference module, globe and flat
-  model adapters, diagnostics, and shader parity boundary.
-- [Multiple-Scattering Plan](plans/atmosphere_reset/multiple_scattering_plan.md):
-  current comparison-first path for model-family reports, external numeric
-  artifacts, and a sidecar order-by-order reference before any canonical
-  higher-order transport change.
-- [Reference Code Design](plans/atmosphere_reset/reference/code_design.md):
-  focused contract for the slow spectral CPU truth engine.
-- [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md):
-  canonical packet input/output contracts for each CPU reference pipeline
-  stage.
-- [Reference Test Design](plans/atmosphere_reset/reference/test_design.md):
-  high-level stage test matrix for the slow spectral CPU truth engine.
-- [Reference Test Plan](plans/atmosphere_reset/reference/test_plan.md):
-  actionable stage-test sequence and current fixture-backed test batches.
-- [Reference Plan](plans/atmosphere_reset/reference/plan.md):
-  focused script implementation plan for the slow spectral CPU truth engine.
-- [Reference Status](plans/atmosphere_reset/reference/status.md): current
-  status and next documentation step for the CPU truth engine.
-- [Atmosphere Reset Plan](plans/atmosphere_reset/plan.md): test-first CPU
-  spectral truth-oracle plan for globe and flat/local-Sun atmosphere tests.
-- [Atmosphere Rejected Ideas](atmosphere-rejected.md): atmosphere approaches
-  that should not be revisited during tuning.
-- [Reality-Aligned Daytime Atmosphere Plan](plans/reality-aligned-daytime-atmosphere-plan.md):
-  flat-model atmosphere comparison context.
-- [Spherical Sun Atmosphere Plan](plans/spherical-sun-atmosphere-plan.md):
-  globe-simulation calibration plan.
+- [Algorithm32 Production Documentation](algorithm32/README.md):
+  production documentation home for the official Algorithm32 module, whose
+  implementation lives in `shared/algorithm32/`.
+- [Algorithm32 Canonical Reference](plans/atmosphere-cleanroom-design/algorithm32-canonical-reference.md):
+  current source of truth for Algorithm32 steps, abstractions, endpoints, open
+  issues, and production followups.
+- [Algorithm32 Shader Iteration Plan](plans/atmosphere-cleanroom-design/algorithm32-shader-iteration-plan.md):
+  current shader-lab milestone status and production-promotion runway.
+- [Retired Atmosphere Material](plans/retired/README.md): historical atmosphere
+  reset, Bruneton/skydome, spherical-sun, reality-aligned, rejected-pipeline,
+  and visual-baseline material superseded by the cleanroom/Algorithm32 canon.
 - [Terrain Data Options](terrain-data-options.md): terrain provider choice and
   first-pass terrain integration plan for after sky calibration.

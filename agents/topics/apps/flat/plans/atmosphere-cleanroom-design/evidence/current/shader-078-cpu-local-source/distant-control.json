@@ -1,0 +1,20 @@
+{
+  "id": "distant-sun-regression-control",
+  "status": "accepted",
+  "summary": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "unresolved": 0
+  },
+  "runDir": "tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render/cases/001-distant-sun-regression-control",
+  "reference": "tmp/atmosphere/algorithm32_shader_lab/037-algorithm32-simple-card-reference",
+  "comparisonSummary": {
+    "imageMatches": true,
+    "imageMaxAbsByteDelta": 0,
+    "selectedMatches": true,
+    "geometryMatches": true,
+    "transportMatches": true,
+    "criteriaMatches": true
+  }
+}

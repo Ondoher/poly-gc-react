@@ -1,0 +1,1060 @@
+{
+  "kind": "cpu-unified-source-driven-soft-shader-criteria",
+  "summary": {
+    "passed": 56,
+    "failed": 0,
+    "aggregatePassed": 7,
+    "aggregateFailed": 0,
+    "casePassed": 49,
+    "caseFailed": 0,
+    "caseCount": 7
+  },
+  "aggregateCriteria": [
+    {
+      "id": "unified-case-set-covered",
+      "status": "passed",
+      "measured": {
+        "required": [
+          "distant-high",
+          "distant-low",
+          "local-000deg",
+          "local-045deg",
+          "local-090deg",
+          "local-135deg",
+          "local-180deg"
+        ],
+        "actual": [
+          "distant-high",
+          "distant-low",
+          "local-000deg",
+          "local-045deg",
+          "local-090deg",
+          "local-135deg",
+          "local-180deg"
+        ]
+      }
+    },
+    {
+      "id": "all-cases-accepted",
+      "status": "passed",
+      "measured": {
+        "distant-high": {
+          "passed": 7,
+          "failed": 0
+        },
+        "distant-low": {
+          "passed": 7,
+          "failed": 0
+        },
+        "local-000deg": {
+          "passed": 7,
+          "failed": 0
+        },
+        "local-045deg": {
+          "passed": 7,
+          "failed": 0
+        },
+        "local-090deg": {
+          "passed": 7,
+          "failed": 0
+        },
+        "local-135deg": {
+          "passed": 7,
+          "failed": 0
+        },
+        "local-180deg": {
+          "passed": 7,
+          "failed": 0
+        }
+      }
+    },
+    {
+      "id": "distant-and-local-source-families-covered",
+      "status": "passed",
+      "measured": [
+        "distant-directional-sun",
+        "flat-local-point-sun"
+      ]
+    },
+    {
+      "id": "single-postprocess-kernel-used",
+      "status": "passed",
+      "measured": {
+        "kernel": "scripts/flat/algorithm32-shader-lab/cpu-scene-input-postprocessor.js:postprocessSceneInput",
+        "note": "Every case in this artifact was rendered by invoking the same CPU soft-shader postprocessor over a scene packet."
+      }
+    },
+    {
+      "id": "distant-cases-continue-milestone-17-checks",
+      "status": "passed",
+      "measured": [
+        {
+          "caseKey": "distant-high",
+          "status": "accepted",
+          "sourceFamily": "distant-directional-sun",
+          "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/087-browser-distant-sun-position-matrix-high",
+          "scenePacketOrigin": "browser-lit-scene-input-capture",
+          "sceneLightAdapter": "distant-directional-sun",
+          "sourceId": "figure1-13h15-z21",
+          "postprocessSourceResolution": "canonical-sun-case",
+          "noAtmosphereMaxDelta": 0,
+          "finiteChecks": {
+            "pixels": 14400,
+            "nonfinitePixels": 0,
+            "minByte": 26,
+            "maxByte": 249
+          },
+          "summary": {
+            "passed": 7,
+            "failed": 0
+          }
+        },
+        {
+          "caseKey": "distant-low",
+          "status": "accepted",
+          "sourceFamily": "distant-directional-sun",
+          "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/088-browser-distant-sun-position-matrix-low",
+          "scenePacketOrigin": "browser-lit-scene-input-capture",
+          "sceneLightAdapter": "distant-directional-sun",
+          "sourceId": "figure1-06h00-z87",
+          "postprocessSourceResolution": "canonical-sun-case",
+          "noAtmosphereMaxDelta": 0,
+          "finiteChecks": {
+            "pixels": 14400,
+            "nonfinitePixels": 0,
+            "minByte": 11,
+            "maxByte": 147
+          },
+          "summary": {
+            "passed": 7,
+            "failed": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "local-cases-continue-milestone-18-checks",
+      "status": "passed",
+      "measured": [
+        {
+          "caseKey": "local-000deg",
+          "status": "accepted",
+          "sourceFamily": "flat-local-point-sun",
+          "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+          "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+          "sceneLightAdapter": "none-local-unlit-packet",
+          "sourceId": "san-jose-000deg-closest-algorithm32-flat-cap-first-order",
+          "offsetDegrees": 0,
+          "sourceDistanceMeters": 5050674.1648427015,
+          "incidentScale": 1,
+          "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+          "noAtmosphereMaxDelta": 0,
+          "finiteChecks": {
+            "pixels": 5184,
+            "nonfinitePixels": 0,
+            "minByte": 11,
+            "maxByte": 235
+          },
+          "summary": {
+            "passed": 7,
+            "failed": 0
+          }
+        },
+        {
+          "caseKey": "local-045deg",
+          "status": "accepted",
+          "sourceFamily": "flat-local-point-sun",
+          "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+          "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+          "sceneLightAdapter": "none-local-unlit-packet",
+          "sourceId": "san-jose-045deg-from-closest-algorithm32-flat-cap-first-order",
+          "offsetDegrees": 45,
+          "sourceDistanceMeters": 7119212.438383861,
+          "incidentScale": 0.5033091181134656,
+          "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+          "noAtmosphereMaxDelta": 0,
+          "finiteChecks": {
+            "pixels": 5184,
+            "nonfinitePixels": 0,
+            "minByte": 17,
+            "maxByte": 251
+          },
+          "summary": {
+            "passed": 7,
+            "failed": 0
+          }
+        },
+        {
+          "caseKey": "local-090deg",
+          "status": "accepted",
+          "sourceFamily": "flat-local-point-sun",
+          "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+          "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+          "sceneLightAdapter": "none-local-unlit-packet",
+          "sourceId": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+          "offsetDegrees": 90,
+          "sourceDistanceMeters": 10557381.263312686,
+          "incidentScale": 0.22886864160388085,
+          "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+          "noAtmosphereMaxDelta": 0,
+          "finiteChecks": {
+            "pixels": 5184,
+            "nonfinitePixels": 0,
+            "minByte": 10,
+            "maxByte": 251
+          },
+          "summary": {
+            "passed": 7,
+            "failed": 0
+          }
+        },
+        {
+          "caseKey": "local-135deg",
+          "status": "accepted",
+          "sourceFamily": "flat-local-point-sun",
+          "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+          "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+          "sceneLightAdapter": "none-local-unlit-packet",
+          "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+          "offsetDegrees": 135,
+          "sourceDistanceMeters": 13123772.80110609,
+          "incidentScale": 0.14810894787454787,
+          "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+          "noAtmosphereMaxDelta": 0,
+          "finiteChecks": {
+            "pixels": 5184,
+            "nonfinitePixels": 0,
+            "minByte": 4,
+            "maxByte": 248
+          },
+          "summary": {
+            "passed": 7,
+            "failed": 0
+          }
+        },
+        {
+          "caseKey": "local-180deg",
+          "status": "accepted",
+          "sourceFamily": "flat-local-point-sun",
+          "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+          "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+          "sceneLightAdapter": "none-local-unlit-packet",
+          "sourceId": "san-jose-180deg-from-closest-algorithm32-flat-cap-first-order",
+          "offsetDegrees": 180,
+          "sourceDistanceMeters": 14050170.41741779,
+          "incidentScale": 0.12922172063575063,
+          "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+          "noAtmosphereMaxDelta": 0,
+          "finiteChecks": {
+            "pixels": 5184,
+            "nonfinitePixels": 0,
+            "minByte": 0,
+            "maxByte": 220
+          },
+          "summary": {
+            "passed": 7,
+            "failed": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "local-scene-light-adapter-deferred-explicitly",
+      "status": "passed",
+      "measured": [
+        {
+          "caseKey": "local-000deg",
+          "sceneLightAdapter": "none-local-unlit-packet"
+        },
+        {
+          "caseKey": "local-045deg",
+          "sceneLightAdapter": "none-local-unlit-packet"
+        },
+        {
+          "caseKey": "local-090deg",
+          "sceneLightAdapter": "none-local-unlit-packet"
+        },
+        {
+          "caseKey": "local-135deg",
+          "sceneLightAdapter": "none-local-unlit-packet"
+        },
+        {
+          "caseKey": "local-180deg",
+          "sceneLightAdapter": "none-local-unlit-packet"
+        }
+      ]
+    }
+  ],
+  "caseCriteria": {
+    "distant-high": [
+      {
+        "id": "scene-packet-contract-present",
+        "status": "passed",
+        "measured": {
+          "rowOrder": "top-left-row-major",
+          "hitMaskMeaning": "1 = raycaster hit, 0 = sky/no-hit",
+          "distanceUnits": "meters",
+          "sceneColorBytes": 57600
+        }
+      },
+      {
+        "id": "source-family-matches-case",
+        "status": "passed",
+        "measured": {
+          "caseKey": "distant-high",
+          "expected": "distant-directional-sun",
+          "packetSourceKind": "distant-directional-sun",
+          "postprocessSourceKind": "distant-directional-sun"
+        }
+      },
+      {
+        "id": "source-resolution-explicit-no-fallback",
+        "status": "passed",
+        "measured": {
+          "status": "canonical-sun-case",
+          "requestedSunCase": "figure1-13h15-z21"
+        }
+      },
+      {
+        "id": "no-atmosphere-passthrough-exact",
+        "status": "passed",
+        "measured": {
+          "byteLength": 57600,
+          "maxAbsDelta": 0,
+          "meanAbsDelta": 0
+        }
+      },
+      {
+        "id": "sky-and-hit-coverage",
+        "status": "passed",
+        "measured": {
+          "counts": {
+            "skyPixels": 6513,
+            "hitPixels": 7887,
+            "bySpectrumNumericId": {
+              "1": 529,
+              "3": 468,
+              "4": 6890
+            },
+            "byClassification": {
+              "card": 997,
+              "ground": 6890
+            }
+          },
+          "selected": [
+            {
+              "id": "upper-sky",
+              "hit": false
+            },
+            {
+              "id": "brightest-ground",
+              "hit": true
+            },
+            {
+              "id": "darkest-ground",
+              "hit": true
+            },
+            {
+              "id": "lower-center",
+              "hit": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "postprocess-finite-rgba",
+        "status": "passed",
+        "measured": {
+          "pixels": 14400,
+          "nonfinitePixels": 0,
+          "minByte": 26,
+          "maxByte": 249
+        }
+      },
+      {
+        "id": "source-trace-recorded",
+        "status": "passed",
+        "measured": {
+          "lightTravelDirectionDelta": 3.469446951953614e-18,
+          "directionToSourceThree": [
+            0.02927623871171526,
+            0.9335804264972017,
+            -0.3571701122829255
+          ]
+        }
+      }
+    ],
+    "distant-low": [
+      {
+        "id": "scene-packet-contract-present",
+        "status": "passed",
+        "measured": {
+          "rowOrder": "top-left-row-major",
+          "hitMaskMeaning": "1 = raycaster hit, 0 = sky/no-hit",
+          "distanceUnits": "meters",
+          "sceneColorBytes": 57600
+        }
+      },
+      {
+        "id": "source-family-matches-case",
+        "status": "passed",
+        "measured": {
+          "caseKey": "distant-low",
+          "expected": "distant-directional-sun",
+          "packetSourceKind": "distant-directional-sun",
+          "postprocessSourceKind": "distant-directional-sun"
+        }
+      },
+      {
+        "id": "source-resolution-explicit-no-fallback",
+        "status": "passed",
+        "measured": {
+          "status": "canonical-sun-case",
+          "requestedSunCase": "figure1-06h00-z87"
+        }
+      },
+      {
+        "id": "no-atmosphere-passthrough-exact",
+        "status": "passed",
+        "measured": {
+          "byteLength": 57600,
+          "maxAbsDelta": 0,
+          "meanAbsDelta": 0
+        }
+      },
+      {
+        "id": "sky-and-hit-coverage",
+        "status": "passed",
+        "measured": {
+          "counts": {
+            "skyPixels": 6513,
+            "hitPixels": 7887,
+            "bySpectrumNumericId": {
+              "1": 529,
+              "3": 468,
+              "4": 6890
+            },
+            "byClassification": {
+              "card": 997,
+              "ground": 6890
+            }
+          },
+          "selected": [
+            {
+              "id": "upper-sky",
+              "hit": false
+            },
+            {
+              "id": "center",
+              "hit": true
+            },
+            {
+              "id": "brightest-ground",
+              "hit": true
+            },
+            {
+              "id": "darkest-ground",
+              "hit": true
+            },
+            {
+              "id": "lower-center",
+              "hit": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "postprocess-finite-rgba",
+        "status": "passed",
+        "measured": {
+          "pixels": 14400,
+          "nonfinitePixels": 0,
+          "minByte": 11,
+          "maxByte": 147
+        }
+      },
+      {
+        "id": "source-trace-recorded",
+        "status": "passed",
+        "measured": {
+          "lightTravelDirectionDelta": 1.1102230246251565e-16,
+          "directionToSourceThree": [
+            0.8988227122935298,
+            0.052335956242943835,
+            0.4351766073095371
+          ]
+        }
+      }
+    ],
+    "local-000deg": [
+      {
+        "id": "scene-packet-contract-present",
+        "status": "passed",
+        "measured": {
+          "rowOrder": "top-left-row-major",
+          "hitMaskMeaning": "1 = raycaster hit, 0 = sky/no-hit",
+          "distanceUnits": "meters",
+          "sceneColorBytes": 20736
+        }
+      },
+      {
+        "id": "source-family-matches-case",
+        "status": "passed",
+        "measured": {
+          "caseKey": "local-000deg",
+          "expected": "flat-local-point-sun",
+          "packetSourceKind": "flat-local-point-sun",
+          "postprocessSourceKind": "flat-local-point-sun"
+        }
+      },
+      {
+        "id": "source-resolution-explicit-no-fallback",
+        "status": "passed",
+        "measured": {
+          "status": "packet-supplied-flat-local-point-sun",
+          "requestedSource": "san-jose-000deg-closest-algorithm32-flat-cap-first-order",
+          "observerSourceDistanceMeters": 5050674.1648427015,
+          "observerIncidentScale": 1
+        }
+      },
+      {
+        "id": "no-atmosphere-passthrough-exact",
+        "status": "passed",
+        "measured": {
+          "byteLength": 20736,
+          "maxAbsDelta": 0,
+          "meanAbsDelta": 0
+        }
+      },
+      {
+        "id": "sky-and-hit-coverage",
+        "status": "passed",
+        "measured": {
+          "counts": {
+            "skyPixels": 2690,
+            "hitPixels": 2494,
+            "bySpectrumNumericId": {
+              "1": 201,
+              "2": 100,
+              "3": 81,
+              "4": 2112
+            },
+            "byClassification": {
+              "card": 382,
+              "ground": 2112
+            }
+          },
+          "selected": [
+            {
+              "id": "upper-sky",
+              "hit": false
+            },
+            {
+              "id": "original-selected-0",
+              "hit": true
+            },
+            {
+              "id": "original-selected-1",
+              "hit": true
+            },
+            {
+              "id": "original-selected-2",
+              "hit": true
+            },
+            {
+              "id": "original-selected-3",
+              "hit": true
+            },
+            {
+              "id": "lower-center",
+              "hit": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "postprocess-finite-rgba",
+        "status": "passed",
+        "measured": {
+          "pixels": 5184,
+          "nonfinitePixels": 0,
+          "minByte": 11,
+          "maxByte": 235
+        }
+      },
+      {
+        "id": "source-trace-recorded",
+        "status": "passed",
+        "measured": {
+          "observerDistanceMeters": 5050674.1648427015,
+          "observerIncidentScale": 1,
+          "observerDistanceFalloffScale": 0.9031996723576281,
+          "observerMeanSourceTransmittance": 0.6591758563136678,
+          "transportSamplesHaveFiniteSource": true,
+          "minTransportSourceDistanceMeters": 5050674.1648427015,
+          "maxTransportSourceDistanceMeters": 5050674.1648427015,
+          "minTransportIncidentScale": 1,
+          "maxTransportIncidentScale": 1,
+          "maxSecondOrderPathRadiance": 0,
+          "maxMeanPathRadiance": 0.021849996144437042
+        }
+      }
+    ],
+    "local-045deg": [
+      {
+        "id": "scene-packet-contract-present",
+        "status": "passed",
+        "measured": {
+          "rowOrder": "top-left-row-major",
+          "hitMaskMeaning": "1 = raycaster hit, 0 = sky/no-hit",
+          "distanceUnits": "meters",
+          "sceneColorBytes": 20736
+        }
+      },
+      {
+        "id": "source-family-matches-case",
+        "status": "passed",
+        "measured": {
+          "caseKey": "local-045deg",
+          "expected": "flat-local-point-sun",
+          "packetSourceKind": "flat-local-point-sun",
+          "postprocessSourceKind": "flat-local-point-sun"
+        }
+      },
+      {
+        "id": "source-resolution-explicit-no-fallback",
+        "status": "passed",
+        "measured": {
+          "status": "packet-supplied-flat-local-point-sun",
+          "requestedSource": "san-jose-045deg-from-closest-algorithm32-flat-cap-first-order",
+          "observerSourceDistanceMeters": 7119212.438383861,
+          "observerIncidentScale": 0.5033091181134656
+        }
+      },
+      {
+        "id": "no-atmosphere-passthrough-exact",
+        "status": "passed",
+        "measured": {
+          "byteLength": 20736,
+          "maxAbsDelta": 0,
+          "meanAbsDelta": 0
+        }
+      },
+      {
+        "id": "sky-and-hit-coverage",
+        "status": "passed",
+        "measured": {
+          "counts": {
+            "skyPixels": 2690,
+            "hitPixels": 2494,
+            "bySpectrumNumericId": {
+              "1": 201,
+              "2": 100,
+              "3": 81,
+              "4": 2112
+            },
+            "byClassification": {
+              "card": 382,
+              "ground": 2112
+            }
+          },
+          "selected": [
+            {
+              "id": "upper-sky",
+              "hit": false
+            },
+            {
+              "id": "original-selected-0",
+              "hit": true
+            },
+            {
+              "id": "original-selected-1",
+              "hit": true
+            },
+            {
+              "id": "original-selected-2",
+              "hit": true
+            },
+            {
+              "id": "original-selected-3",
+              "hit": true
+            },
+            {
+              "id": "lower-center",
+              "hit": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "postprocess-finite-rgba",
+        "status": "passed",
+        "measured": {
+          "pixels": 5184,
+          "nonfinitePixels": 0,
+          "minByte": 17,
+          "maxByte": 251
+        }
+      },
+      {
+        "id": "source-trace-recorded",
+        "status": "passed",
+        "measured": {
+          "observerDistanceMeters": 7119212.438383861,
+          "observerIncidentScale": 0.5033091181134656,
+          "observerDistanceFalloffScale": 0.4545886305746889,
+          "observerMeanSourceTransmittance": 0.5615383105725505,
+          "transportSamplesHaveFiniteSource": true,
+          "minTransportSourceDistanceMeters": 7119212.438383861,
+          "maxTransportSourceDistanceMeters": 7119212.438383861,
+          "minTransportIncidentScale": 0.5033091181134656,
+          "maxTransportIncidentScale": 0.5033091181134656,
+          "maxSecondOrderPathRadiance": 0,
+          "maxMeanPathRadiance": 0.05015232986780608
+        }
+      }
+    ],
+    "local-090deg": [
+      {
+        "id": "scene-packet-contract-present",
+        "status": "passed",
+        "measured": {
+          "rowOrder": "top-left-row-major",
+          "hitMaskMeaning": "1 = raycaster hit, 0 = sky/no-hit",
+          "distanceUnits": "meters",
+          "sceneColorBytes": 20736
+        }
+      },
+      {
+        "id": "source-family-matches-case",
+        "status": "passed",
+        "measured": {
+          "caseKey": "local-090deg",
+          "expected": "flat-local-point-sun",
+          "packetSourceKind": "flat-local-point-sun",
+          "postprocessSourceKind": "flat-local-point-sun"
+        }
+      },
+      {
+        "id": "source-resolution-explicit-no-fallback",
+        "status": "passed",
+        "measured": {
+          "status": "packet-supplied-flat-local-point-sun",
+          "requestedSource": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+          "observerSourceDistanceMeters": 10557381.263312686,
+          "observerIncidentScale": 0.22886864160388085
+        }
+      },
+      {
+        "id": "no-atmosphere-passthrough-exact",
+        "status": "passed",
+        "measured": {
+          "byteLength": 20736,
+          "maxAbsDelta": 0,
+          "meanAbsDelta": 0
+        }
+      },
+      {
+        "id": "sky-and-hit-coverage",
+        "status": "passed",
+        "measured": {
+          "counts": {
+            "skyPixels": 2690,
+            "hitPixels": 2494,
+            "bySpectrumNumericId": {
+              "1": 201,
+              "2": 100,
+              "3": 81,
+              "4": 2112
+            },
+            "byClassification": {
+              "card": 382,
+              "ground": 2112
+            }
+          },
+          "selected": [
+            {
+              "id": "upper-sky",
+              "hit": false
+            },
+            {
+              "id": "original-selected-0",
+              "hit": true
+            },
+            {
+              "id": "original-selected-1",
+              "hit": true
+            },
+            {
+              "id": "original-selected-2",
+              "hit": true
+            },
+            {
+              "id": "original-selected-3",
+              "hit": true
+            },
+            {
+              "id": "lower-center",
+              "hit": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "postprocess-finite-rgba",
+        "status": "passed",
+        "measured": {
+          "pixels": 5184,
+          "nonfinitePixels": 0,
+          "minByte": 10,
+          "maxByte": 251
+        }
+      },
+      {
+        "id": "source-trace-recorded",
+        "status": "passed",
+        "measured": {
+          "observerDistanceMeters": 10557381.263312686,
+          "observerIncidentScale": 0.22886864160388085,
+          "observerDistanceFalloffScale": 0.2067140821095606,
+          "observerMeanSourceTransmittance": 0.4349084396402008,
+          "transportSamplesHaveFiniteSource": true,
+          "minTransportSourceDistanceMeters": 10557381.263312686,
+          "maxTransportSourceDistanceMeters": 10557381.263312686,
+          "minTransportIncidentScale": 0.22886864160388085,
+          "maxTransportIncidentScale": 0.22886864160388085,
+          "maxSecondOrderPathRadiance": 0,
+          "maxMeanPathRadiance": 0.066381706977614
+        }
+      }
+    ],
+    "local-135deg": [
+      {
+        "id": "scene-packet-contract-present",
+        "status": "passed",
+        "measured": {
+          "rowOrder": "top-left-row-major",
+          "hitMaskMeaning": "1 = raycaster hit, 0 = sky/no-hit",
+          "distanceUnits": "meters",
+          "sceneColorBytes": 20736
+        }
+      },
+      {
+        "id": "source-family-matches-case",
+        "status": "passed",
+        "measured": {
+          "caseKey": "local-135deg",
+          "expected": "flat-local-point-sun",
+          "packetSourceKind": "flat-local-point-sun",
+          "postprocessSourceKind": "flat-local-point-sun"
+        }
+      },
+      {
+        "id": "source-resolution-explicit-no-fallback",
+        "status": "passed",
+        "measured": {
+          "status": "packet-supplied-flat-local-point-sun",
+          "requestedSource": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+          "observerSourceDistanceMeters": 13123772.80110609,
+          "observerIncidentScale": 0.14810894787454787
+        }
+      },
+      {
+        "id": "no-atmosphere-passthrough-exact",
+        "status": "passed",
+        "measured": {
+          "byteLength": 20736,
+          "maxAbsDelta": 0,
+          "meanAbsDelta": 0
+        }
+      },
+      {
+        "id": "sky-and-hit-coverage",
+        "status": "passed",
+        "measured": {
+          "counts": {
+            "skyPixels": 2690,
+            "hitPixels": 2494,
+            "bySpectrumNumericId": {
+              "1": 201,
+              "2": 100,
+              "3": 81,
+              "4": 2112
+            },
+            "byClassification": {
+              "card": 382,
+              "ground": 2112
+            }
+          },
+          "selected": [
+            {
+              "id": "upper-sky",
+              "hit": false
+            },
+            {
+              "id": "original-selected-0",
+              "hit": true
+            },
+            {
+              "id": "original-selected-1",
+              "hit": true
+            },
+            {
+              "id": "original-selected-2",
+              "hit": true
+            },
+            {
+              "id": "original-selected-3",
+              "hit": true
+            },
+            {
+              "id": "lower-center",
+              "hit": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "postprocess-finite-rgba",
+        "status": "passed",
+        "measured": {
+          "pixels": 5184,
+          "nonfinitePixels": 0,
+          "minByte": 4,
+          "maxByte": 248
+        }
+      },
+      {
+        "id": "source-trace-recorded",
+        "status": "passed",
+        "measured": {
+          "observerDistanceMeters": 13123772.80110609,
+          "observerIncidentScale": 0.14810894787454787,
+          "observerDistanceFalloffScale": 0.13377195319352467,
+          "observerMeanSourceTransmittance": 0.3621216165080854,
+          "transportSamplesHaveFiniteSource": true,
+          "minTransportSourceDistanceMeters": 13123772.80110609,
+          "maxTransportSourceDistanceMeters": 13123772.80110609,
+          "minTransportIncidentScale": 0.14810894787454787,
+          "maxTransportIncidentScale": 0.14810894787454787,
+          "maxSecondOrderPathRadiance": 0,
+          "maxMeanPathRadiance": 0.009070798054566226
+        }
+      }
+    ],
+    "local-180deg": [
+      {
+        "id": "scene-packet-contract-present",
+        "status": "passed",
+        "measured": {
+          "rowOrder": "top-left-row-major",
+          "hitMaskMeaning": "1 = raycaster hit, 0 = sky/no-hit",
+          "distanceUnits": "meters",
+          "sceneColorBytes": 20736
+        }
+      },
+      {
+        "id": "source-family-matches-case",
+        "status": "passed",
+        "measured": {
+          "caseKey": "local-180deg",
+          "expected": "flat-local-point-sun",
+          "packetSourceKind": "flat-local-point-sun",
+          "postprocessSourceKind": "flat-local-point-sun"
+        }
+      },
+      {
+        "id": "source-resolution-explicit-no-fallback",
+        "status": "passed",
+        "measured": {
+          "status": "packet-supplied-flat-local-point-sun",
+          "requestedSource": "san-jose-180deg-from-closest-algorithm32-flat-cap-first-order",
+          "observerSourceDistanceMeters": 14050170.41741779,
+          "observerIncidentScale": 0.12922172063575063
+        }
+      },
+      {
+        "id": "no-atmosphere-passthrough-exact",
+        "status": "passed",
+        "measured": {
+          "byteLength": 20736,
+          "maxAbsDelta": 0,
+          "meanAbsDelta": 0
+        }
+      },
+      {
+        "id": "sky-and-hit-coverage",
+        "status": "passed",
+        "measured": {
+          "counts": {
+            "skyPixels": 2690,
+            "hitPixels": 2494,
+            "bySpectrumNumericId": {
+              "1": 201,
+              "2": 100,
+              "3": 81,
+              "4": 2112
+            },
+            "byClassification": {
+              "card": 382,
+              "ground": 2112
+            }
+          },
+          "selected": [
+            {
+              "id": "upper-sky",
+              "hit": false
+            },
+            {
+              "id": "original-selected-0",
+              "hit": true
+            },
+            {
+              "id": "original-selected-1",
+              "hit": true
+            },
+            {
+              "id": "original-selected-2",
+              "hit": true
+            },
+            {
+              "id": "original-selected-3",
+              "hit": true
+            },
+            {
+              "id": "lower-center",
+              "hit": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "postprocess-finite-rgba",
+        "status": "passed",
+        "measured": {
+          "pixels": 5184,
+          "nonfinitePixels": 0,
+          "minByte": 0,
+          "maxByte": 220
+        }
+      },
+      {
+        "id": "source-trace-recorded",
+        "status": "passed",
+        "measured": {
+          "observerDistanceMeters": 14050170.41741779,
+          "observerIncidentScale": 0.12922172063575063,
+          "observerDistanceFalloffScale": 0.11671301573969893,
+          "observerMeanSourceTransmittance": 0.33942635285309136,
+          "transportSamplesHaveFiniteSource": true,
+          "minTransportSourceDistanceMeters": 14050170.41741779,
+          "maxTransportSourceDistanceMeters": 14050170.41741779,
+          "minTransportIncidentScale": 0.12922172063575063,
+          "maxTransportIncidentScale": 0.12922172063575063,
+          "maxSecondOrderPathRadiance": 0,
+          "maxMeanPathRadiance": 0.002968285836969883
+        }
+      }
+    ]
+  }
+}

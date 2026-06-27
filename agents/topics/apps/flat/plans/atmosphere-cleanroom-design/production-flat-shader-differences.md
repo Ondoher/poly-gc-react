@@ -68,16 +68,18 @@ The flat variant needs these canonical inputs:
 - Sun configuration, including whether it is distant directional or a
   configurable local finite source.
 
-For the Flat app's proposed local-Sun mode, treat latitude, altitude,
+For the Flat app's proposed local-Sun mode, treat latitude model, altitude,
 radius/size, and brightness/luminosity as explicit flat-model hypothesis
-parameters. Older Flat POC/status notes already identified
-`config.sun.lat`, `config.sun.altitudeKm`, and `config.sun.radiusKm` as the
-first false-Sun controls, and the older atmosphere-reset research framed
-local-Sun height, radius, disk edge, dome height, and no-occlusion behavior as
-proposed physical assumptions rather than Earth-atmosphere constants. Those
-older local notes are routing/provenance context only; equations, constants,
-and production defaults still need direct external or explicitly
-hypothesis-labeled support.
+parameters. Current Flat code uses `config.sun.latitude` for the false Sun's
+annual tropic migration between `23.5 deg N` and `23.5 deg S`, plus
+`config.sun.altitudeKm` and `config.sun.radiusKm` for the local finite source.
+Older Flat POC/status notes identified a fixed `config.sun.lat` control; that
+is now superseded by the latitude-model contract. The older atmosphere-reset
+research framed local-Sun height, radius, disk edge, dome height, and
+no-occlusion behavior as proposed physical assumptions rather than
+Earth-atmosphere constants. Those older local notes are routing/provenance
+context only; equations, constants, and production defaults still need direct
+external or explicitly hypothesis-labeled support.
 
 ## Required Shader Differences
 

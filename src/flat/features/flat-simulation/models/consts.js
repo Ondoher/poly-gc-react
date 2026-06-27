@@ -59,6 +59,24 @@ export const KARMAN_LINE_KM = 100;
  * @type {number}
  */
 export const FALSE_SUN_LIGHT_INTENSITY = 64;
+/**
+ * Store the false-model annual Sun migration latitude limit.
+ *
+ * @type {number}
+ */
+export const FALSE_SUN_TROPIC_LATITUDE_DEGREES = 23.5;
+/**
+ * Store the default annual false-Sun latitude rule.
+ *
+ * @type {Readonly<object>}
+ */
+export const DEFAULT_FALSE_SUN_LATITUDE_MODEL = Object.freeze({
+	type: 'annual-tropic-migration',
+	northLimitDeg: FALSE_SUN_TROPIC_LATITUDE_DEGREES,
+	southLimitDeg: -FALSE_SUN_TROPIC_LATITUDE_DEGREES,
+	northernSolsticeDayOfYear: 172,
+	periodDays: 365.2422,
+});
 
 /**
  * Store the default georeferenced floor texture settings.
@@ -150,7 +168,7 @@ export const DEFAULT_FLAT_SIMULATION_SUN = Object.freeze({
 	id: 'false-sun',
 	kind: 'surface-altitude-sun',
 	name: 'Flat model sun',
-	lat: 24,
+	latitude: DEFAULT_FALSE_SUN_LATITUDE_MODEL,
 	lon: 58.1137,
 	altitudeKm: 3000 * KM_PER_MILE,
 	radiusKm: (32 * KM_PER_MILE) / 2,
@@ -181,7 +199,7 @@ export const DEFAULT_FLAT_SIMULATION_SUN = Object.freeze({
 		}),
 	}),
 	animation: Object.freeze({
-		type: 'solar-day-fixed-latitude-rotation',
+		type: 'solar-day-latitude-ring-rotation',
 		simulatedDurationHours: SOLAR_DAY_HOURS,
 		displayDurationSeconds: SOLAR_DAY_DISPLAY_SECONDS,
 	}),

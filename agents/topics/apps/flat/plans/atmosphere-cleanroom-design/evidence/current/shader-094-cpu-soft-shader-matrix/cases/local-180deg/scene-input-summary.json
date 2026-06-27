@@ -1,0 +1,289 @@
+{
+  "kind": "algorithm32-cpu-soft-shader-scene-input-packet",
+  "version": 2,
+  "captureId": "local-180deg",
+  "sceneMode": "three-card-reference",
+  "sceneColorPolicy": "spectrum-id-reference-radiance",
+  "width": 96,
+  "height": 54,
+  "rowOrder": "top-left-row-major",
+  "colorEncoding": "rgba8-unattenuated-spectrum-preview",
+  "distanceUnits": "meters",
+  "hitMaskMeaning": "1 = raycaster hit, 0 = sky/no-hit",
+  "source": {
+    "kind": "flat-local-point-sun",
+    "id": "san-jose-180deg-from-closest-algorithm32-flat-cap-first-order",
+    "sunCase": "san-jose-180deg-from-closest-algorithm32-flat-cap-first-order",
+    "sceneKey": "san-jose-180deg-from-closest-algorithm32-flat-cap-first-order",
+    "flatSceneKey": "san-jose-180deg-from-closest",
+    "offsetDegrees": 180,
+    "role": "180-degree-orbit-offset",
+    "positionMeters": [
+      11203515.820690716,
+      6969858.200630237,
+      4828003.5200000005
+    ],
+    "observerPositionMeters": [
+      0,
+      0,
+      2
+    ],
+    "radiusKm": 25.749504,
+    "referenceDistanceKm": 4800,
+    "referenceSpectralIncidentScale": 1.1071748923354825,
+    "distanceFalloff": true,
+    "color": {
+      "r": 1,
+      "g": 0.98,
+      "b": 0.95
+    },
+    "provenance": {
+      "sourceArtifact": "tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes",
+      "flatSceneKey": "san-jose-180deg-from-closest",
+      "appSolarIrradianceScale": 58,
+      "calibratedSolarIrradianceScale": 1.1071748923354825,
+      "brightnessCalibration": {
+        "kind": "match-distant-solar-noon-unit-incident-scale-at-closest-approach",
+        "distantSceneKey": "figure1-13h15-z21",
+        "targetIncidentScaleAtClosest": 1,
+        "targetIncidentScaleUnits": "multiple of Algorithm32 distant-directional-sun top-of-atmosphere solar irradiance",
+        "closestOffsetDegrees": 0,
+        "closestConfiguredDistanceKm": 5050.674164842701,
+        "closestDistanceFalloffScale": 0.9031996723576281,
+        "originalSolarIrradianceScale": 58,
+        "originalReferenceSpectralIncidentScale": 58,
+        "originalIncidentScaleAtClosest": 52.38558099674243,
+        "calibratedSolarIrradianceScale": 1.1071748923354825,
+        "calibratedReferenceSpectralIncidentScale": 1.1071748923354825,
+        "calibratedIncidentScaleAtClosest": 1,
+        "calibrationMultiplier": 0.01908922228164625
+      }
+    }
+  },
+  "geometry": {
+    "kind": "flat-z-up-atmosphere",
+    "observerPositionMeters": [
+      0,
+      0,
+      2
+    ],
+    "topAltitudeMeters": 100000,
+    "sceneSkyRayLimitMeters": 1926774,
+    "sceneSkyRayLimitPolicy": "accepted-062-flat-visibility-100-percent-lost-poc-default",
+    "threeToAlgorithmDirection": "[x, y, z] -> [x, -z, y]",
+    "threeToAlgorithmPosition": "[x, y, z] -> [x, -z, y]"
+  },
+  "sceneLight": null,
+  "counts": {
+    "skyPixels": 2690,
+    "hitPixels": 2494,
+    "bySpectrumNumericId": {
+      "1": 201,
+      "2": 100,
+      "3": 81,
+      "4": 2112
+    },
+    "byClassification": {
+      "card": 382,
+      "ground": 2112
+    }
+  },
+  "selectedPixels": [
+    {
+      "id": "upper-sky",
+      "x": 48,
+      "y": 8,
+      "ndc": {
+        "x": 0.01041666666666674,
+        "y": 0.6851851851851851
+      },
+      "hit": false,
+      "hitObject": null,
+      "hitKind": null,
+      "spectrumId": null,
+      "hitDistanceMeters": null,
+      "sceneColorRgba8": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "threeRay": {
+        "origin": [
+          0,
+          2,
+          0
+        ],
+        "direction": [
+          0.00856607711269685,
+          0.3948541275162501,
+          -0.9187038915266877
+        ]
+      }
+    },
+    {
+      "id": "original-selected-0",
+      "x": 48,
+      "y": 27,
+      "ndc": {
+        "x": 0.01041666666666674,
+        "y": -0.0185185185185186
+      },
+      "hit": true,
+      "hitObject": "middle-green-card",
+      "hitKind": "card",
+      "spectrumId": "green",
+      "hitDistanceMeters": 5014.065244796821,
+      "sceneColorRgba8": [
+        0,
+        157,
+        0,
+        255
+      ],
+      "threeRay": {
+        "origin": [
+          0,
+          2,
+          0
+        ],
+        "direction": [
+          0.009031348239116697,
+          0.07430263564438007,
+          -0.9971948420871832
+        ]
+      }
+    },
+    {
+      "id": "original-selected-1",
+      "x": 24,
+      "y": 35,
+      "ndc": {
+        "x": -0.48958333333333337,
+        "y": -0.3148148148148149
+      },
+      "hit": true,
+      "hitObject": "ground-plane",
+      "hitKind": "ground",
+      "spectrumId": "ground",
+      "hitDistanceMeters": 31.481619230041506,
+      "sceneColorRgba8": [
+        68,
+        55,
+        54,
+        255
+      ],
+      "threeRay": {
+        "origin": [
+          0,
+          2,
+          0
+        ],
+        "direction": [
+          -0.3869115785412734,
+          -0.06352913379049165,
+          -0.9199258011114428
+        ]
+      }
+    },
+    {
+      "id": "original-selected-2",
+      "x": 48,
+      "y": 35,
+      "ndc": {
+        "x": 0.01041666666666674,
+        "y": -0.3148148148148149
+      },
+      "hit": true,
+      "hitObject": "ground-plane",
+      "hitKind": "ground",
+      "spectrumId": "ground",
+      "hitDistanceMeters": 29.030887429318092,
+      "sceneColorRgba8": [
+        68,
+        55,
+        54,
+        255
+      ],
+      "threeRay": {
+        "origin": [
+          0,
+          2,
+          0
+        ],
+        "direction": [
+          0.008927104498750815,
+          -0.06889214134001394,
+          -0.9975841717202896
+        ]
+      }
+    },
+    {
+      "id": "original-selected-3",
+      "x": 72,
+      "y": 35,
+      "ndc": {
+        "x": 0.5104166666666667,
+        "y": -0.3148148148148149
+      },
+      "hit": true,
+      "hitObject": "ground-plane",
+      "hitKind": "ground",
+      "spectrumId": "ground",
+      "hitDistanceMeters": 31.68576959687623,
+      "sceneColorRgba8": [
+        68,
+        55,
+        54,
+        255
+      ],
+      "threeRay": {
+        "origin": [
+          0,
+          2,
+          0
+        ],
+        "direction": [
+          0.40077696342678043,
+          -0.06311981768004125,
+          -0.9139987495628468
+        ]
+      }
+    },
+    {
+      "id": "lower-center",
+      "x": 48,
+      "y": 42,
+      "ndc": {
+        "x": 0.01041666666666674,
+        "y": -0.5740740740740742
+      },
+      "hit": true,
+      "hitObject": "ground-plane",
+      "hitKind": "ground",
+      "spectrumId": "ground",
+      "hitDistanceMeters": 10.612519298006811,
+      "sceneColorRgba8": [
+        68,
+        55,
+        54,
+        255
+      ],
+      "threeRay": {
+        "origin": [
+          0,
+          2,
+          0
+        ],
+        "direction": [
+          0.008697256011100843,
+          -0.18845666555184704,
+          -0.9820429944493044
+        ]
+      }
+    }
+  ],
+  "knownLimitations": [
+    "CPU-synthesized local-source packet for Milestone 18.",
+    "Local source path is first-order only; local second-order cache, visible solar disc, ground bounce, and browser point-light proxy are deferred."
+  ]
+}

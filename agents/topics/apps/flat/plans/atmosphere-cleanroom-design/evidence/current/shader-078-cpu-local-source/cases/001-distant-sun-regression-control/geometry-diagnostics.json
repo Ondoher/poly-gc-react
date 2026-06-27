@@ -1,0 +1,112 @@
+{
+  "rayChecks": [
+    {
+      "kind": "pixel-ray",
+      "x": 0,
+      "y": 0,
+      "ndc": {
+        "x": -0.9958333333333333,
+        "y": 0.9916666666666667
+      },
+      "angularErrorRadians": 0,
+      "originErrorMeters": 0
+    },
+    {
+      "kind": "pixel-ray",
+      "x": 120,
+      "y": 60,
+      "ndc": {
+        "x": 0.004166666666666652,
+        "y": -0.008333333333333304
+      },
+      "angularErrorRadians": 0,
+      "originErrorMeters": 0
+    },
+    {
+      "kind": "pixel-ray",
+      "x": 239,
+      "y": 119,
+      "ndc": {
+        "x": 0.9958333333333333,
+        "y": -0.9916666666666667
+      },
+      "angularErrorRadians": 0,
+      "originErrorMeters": 0
+    },
+    {
+      "kind": "pixel-ray",
+      "x": 60,
+      "y": 60,
+      "ndc": {
+        "x": -0.49583333333333335,
+        "y": -0.008333333333333304
+      },
+      "angularErrorRadians": 0,
+      "originErrorMeters": 0
+    },
+    {
+      "kind": "pixel-ray",
+      "x": 180,
+      "y": 60,
+      "ndc": {
+        "x": 0.5041666666666667,
+        "y": -0.008333333333333304
+      },
+      "angularErrorRadians": 0,
+      "originErrorMeters": 0
+    }
+  ],
+  "hitChecks": [
+    {
+      "kind": "card-center-hit",
+      "cardId": "near-red-card",
+      "projectedPixel": {
+        "x": 87.74350455345835,
+        "y": 54.09581961944895
+      },
+      "projectedNdc": {
+        "x": -0.2646374620545137,
+        "y": 0.09006967300918406
+      },
+      "expectedObject": "near-red-card",
+      "hitObject": "near-red-card",
+      "analyticDistanceMeters": 1041.1455229697717,
+      "hitDistanceMeters": 1041.1455229697722,
+      "distanceErrorMeters": 4.547473508864641e-13
+    },
+    {
+      "kind": "card-center-hit",
+      "cardId": "middle-green-card",
+      "projectedPixel": {
+        "x": 119.5,
+        "y": 59.01150450637913
+      },
+      "projectedNdc": {
+        "x": 0,
+        "y": 0.008141591560347803
+      },
+      "expectedObject": "middle-green-card",
+      "hitObject": "middle-green-card",
+      "analyticDistanceMeters": 5019.147736419003,
+      "hitDistanceMeters": 5019.147736419002,
+      "distanceErrorMeters": 9.094947017729282e-13
+    },
+    {
+      "kind": "card-center-hit",
+      "cardId": "far-blue-card",
+      "projectedPixel": {
+        "x": 148.48046239149812,
+        "y": 59.72881623127164
+      },
+      "projectedNdc": {
+        "x": 0.24150385326248447,
+        "y": -0.0038136038545273487
+      },
+      "expectedObject": "far-blue-card",
+      "hitObject": "far-blue-card",
+      "analyticDistanceMeters": 22677.5837337226,
+      "hitDistanceMeters": 22677.5837337226,
+      "distanceErrorMeters": 0
+    }
+  ]
+}

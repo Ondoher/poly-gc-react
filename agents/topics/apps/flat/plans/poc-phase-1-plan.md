@@ -278,12 +278,13 @@ data to Three.js:
 			},
 		},
 		animation: {
-			type: 'solar-day-fixed-latitude-rotation',
+			type: 'solar-day-latitude-ring-rotation',
 			simulatedDurationHours: 24,
 			displayDurationSeconds: 10,
 		},
 		source: {
-			lat: 24,
+			lat: 20.45,
+			latitude: { type: 'annual-tropic-migration' },
 			lon: 58.1137,
 			altitudeKm: 4828.032,
 			diameterKm: 51.499008,
@@ -349,12 +350,13 @@ data to Three.js:
 				source: 'observer-position-and-body-radius',
 			},
 			animation: {
-				type: 'solar-day-fixed-latitude-rotation',
+				type: 'solar-day-latitude-ring-rotation',
 				simulatedDurationHours: 24,
 				displayDurationSeconds: 10,
 			},
 			source: {
-				lat: 24,
+				lat: 20.45,
+				latitude: { type: 'annual-tropic-migration' },
 				lon: 58.1137,
 				altitudeKm: 4828.032,
 				diameterKm: 51.499008,
@@ -551,14 +553,15 @@ Latest browser check:
   the sun's position and apparent angular size are simulation evidence, not
   optional decoration. The generic `scene.objects` entry remains a derived
   compatibility view.
-- The first planned controls for the false-model sun are latitude, elevation
-  above the projected floor, and physical radius. The scene model already
-  accepts those as `config.sun.lat`, `config.sun.altitudeKm`, and
+- The first planned controls for the false-model sun are latitude model,
+  elevation above the projected floor, and physical radius. The scene model now
+  accepts those as `config.sun.latitude`, `config.sun.altitudeKm`, and
   `config.sun.radiusKm`; the rendered body, apparent size, and point-light
-  state are all derived from those values.
-- Animated the false-model sun around the simulation origin at fixed
-  projected latitude as a solar-day body, compressing a 24-hour circuit into a
-  40-second loop.
+  state are all derived from those values. The default latitude model migrates
+  annually between the tropics.
+- Animated the false-model sun around the simulation origin on the
+  date-resolved projected latitude ring as a solar-day body, compressing a
+  24-hour circuit into a 40-second loop.
 - Added a separate sidereal-day animation for the dome star points. With the
   solar day set to 40 seconds, the sidereal star loop takes about `39.8908`
   seconds.

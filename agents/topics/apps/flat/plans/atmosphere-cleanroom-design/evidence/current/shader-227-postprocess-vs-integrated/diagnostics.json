@@ -1,0 +1,682 @@
+{
+  "kind": "algorithm32-shader-lab-diagnostics",
+  "diagnostics": {
+    "kind": "browser-three-native-live-pass-soft-shader-matrix-diagnostics",
+    "status": "accepted",
+    "iteration": "postprocess-vs-integrated-shader-source-scenes",
+    "goal": "Compare the live Three-native atmosphere pass against the CPU/GPU soft-shader oracle for distant and local source families.",
+    "criteria": [
+      {
+        "id": "four-required-cases-rendered",
+        "status": "passed",
+        "measured": [
+          {
+            "id": "distant-midday",
+            "sourceKind": "distant-directional-sun",
+            "geometryKind": "spherical-atmosphere-geometry"
+          },
+          {
+            "id": "distant-sunset-behind-camera",
+            "sourceKind": "distant-directional-sun",
+            "geometryKind": "spherical-atmosphere-geometry"
+          },
+          {
+            "id": "local-closest",
+            "sourceKind": "flat-local-point-sun",
+            "geometryKind": "flat-z-up-atmosphere"
+          },
+          {
+            "id": "local-090deg",
+            "sourceKind": "flat-local-point-sun",
+            "geometryKind": "flat-z-up-atmosphere"
+          }
+        ]
+      },
+      {
+        "id": "live-and-oracle-images-recorded",
+        "status": "passed",
+        "measured": [
+          {
+            "id": "distant-midday",
+            "hasLiveImage": true,
+            "hasOracleImage": true,
+            "imageDeltaSummary": {
+              "pixelCount": 57600,
+              "maxAbsRgbDelta": 66,
+              "meanAbsRgbDelta": 0.024716435185185185,
+              "p95AbsRgbDelta": 1,
+              "p99AbsRgbDelta": 1,
+              "lengthMismatch": false
+            }
+          },
+          {
+            "id": "distant-sunset-behind-camera",
+            "hasLiveImage": true,
+            "hasOracleImage": true,
+            "imageDeltaSummary": {
+              "pixelCount": 57600,
+              "maxAbsRgbDelta": 9,
+              "meanAbsRgbDelta": 0.05206018518518519,
+              "p95AbsRgbDelta": 1,
+              "p99AbsRgbDelta": 1,
+              "lengthMismatch": false
+            }
+          },
+          {
+            "id": "local-closest",
+            "hasLiveImage": true,
+            "hasOracleImage": true,
+            "imageDeltaSummary": {
+              "pixelCount": 57600,
+              "maxAbsRgbDelta": 104,
+              "meanAbsRgbDelta": 0.06719907407407408,
+              "p95AbsRgbDelta": 1,
+              "p99AbsRgbDelta": 1,
+              "lengthMismatch": false
+            }
+          },
+          {
+            "id": "local-090deg",
+            "hasLiveImage": true,
+            "hasOracleImage": true,
+            "imageDeltaSummary": {
+              "pixelCount": 57600,
+              "maxAbsRgbDelta": 116,
+              "meanAbsRgbDelta": 0.09617476851851851,
+              "p95AbsRgbDelta": 1,
+              "p99AbsRgbDelta": 1,
+              "lengthMismatch": false
+            }
+          }
+        ]
+      },
+      {
+        "id": "selected-gating-parity",
+        "status": "passed",
+        "measured": {
+          "maxGatingDelta": 1,
+          "selectedChecks": [
+            {
+              "id": "distant-midday",
+              "selectedChecks": [
+                {
+                  "id": "upper-sky",
+                  "x": 160,
+                  "y": 28,
+                  "acceptanceRole": "gating",
+                  "classification": "sky",
+                  "hitDistanceMeters": null,
+                  "liveRgba": [
+                    153,
+                    174,
+                    204,
+                    255
+                  ],
+                  "oracleRgba": [
+                    153,
+                    174,
+                    204,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                },
+                {
+                  "id": "center",
+                  "x": 160,
+                  "y": 90,
+                  "acceptanceRole": "gating",
+                  "classification": "mountain-ridge",
+                  "hitDistanceMeters": 11200.140842752546,
+                  "liveRgba": [
+                    87,
+                    95,
+                    114,
+                    255
+                  ],
+                  "oracleRgba": [
+                    87,
+                    95,
+                    114,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                },
+                {
+                  "id": "lower-center",
+                  "x": 160,
+                  "y": 140,
+                  "acceptanceRole": "gating",
+                  "classification": "ground",
+                  "hitDistanceMeters": 1643.8651255500251,
+                  "liveRgba": [
+                    93,
+                    105,
+                    91,
+                    255
+                  ],
+                  "oracleRgba": [
+                    93,
+                    105,
+                    91,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                },
+                {
+                  "id": "darkest-ground",
+                  "x": 69,
+                  "y": 169,
+                  "acceptanceRole": "diagnostic-only",
+                  "classification": "ground",
+                  "hitDistanceMeters": 1152.296211859265,
+                  "liveRgba": [
+                    88,
+                    101,
+                    86,
+                    255
+                  ],
+                  "oracleRgba": [
+                    88,
+                    101,
+                    85,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    1,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 1
+                },
+                {
+                  "id": "brightest-ground",
+                  "x": 55,
+                  "y": 101,
+                  "acceptanceRole": "diagnostic-only",
+                  "classification": "ground",
+                  "hitDistanceMeters": 7454.499084109381,
+                  "liveRgba": [
+                    122,
+                    130,
+                    125,
+                    255
+                  ],
+                  "oracleRgba": [
+                    122,
+                    130,
+                    125,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                }
+              ]
+            },
+            {
+              "id": "distant-sunset-behind-camera",
+              "selectedChecks": [
+                {
+                  "id": "upper-sky",
+                  "x": 160,
+                  "y": 28,
+                  "acceptanceRole": "gating",
+                  "classification": "sky",
+                  "hitDistanceMeters": null,
+                  "liveRgba": [
+                    96,
+                    97,
+                    77,
+                    255
+                  ],
+                  "oracleRgba": [
+                    96,
+                    97,
+                    77,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                },
+                {
+                  "id": "center",
+                  "x": 160,
+                  "y": 90,
+                  "acceptanceRole": "gating",
+                  "classification": "mountain-ridge",
+                  "hitDistanceMeters": 25589.0283257051,
+                  "liveRgba": [
+                    44,
+                    28,
+                    8,
+                    255
+                  ],
+                  "oracleRgba": [
+                    44,
+                    28,
+                    8,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                },
+                {
+                  "id": "lower-center",
+                  "x": 160,
+                  "y": 140,
+                  "acceptanceRole": "gating",
+                  "classification": "ground",
+                  "hitDistanceMeters": 1643.1594704692397,
+                  "liveRgba": [
+                    23,
+                    25,
+                    17,
+                    255
+                  ],
+                  "oracleRgba": [
+                    23,
+                    25,
+                    17,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                },
+                {
+                  "id": "darkest-ground",
+                  "x": 145,
+                  "y": 178,
+                  "acceptanceRole": "diagnostic-only",
+                  "classification": "ground",
+                  "hitDistanceMeters": 986.2216319638256,
+                  "liveRgba": [
+                    20,
+                    24,
+                    17,
+                    255
+                  ],
+                  "oracleRgba": [
+                    20,
+                    23,
+                    17,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    1,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 1
+                },
+                {
+                  "id": "brightest-ground",
+                  "x": 0,
+                  "y": 91,
+                  "acceptanceRole": "diagnostic-only",
+                  "classification": "ground",
+                  "hitDistanceMeters": 47576.030029443384,
+                  "liveRgba": [
+                    29,
+                    14,
+                    2,
+                    255
+                  ],
+                  "oracleRgba": [
+                    29,
+                    14,
+                    2,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                }
+              ]
+            },
+            {
+              "id": "local-closest",
+              "selectedChecks": [
+                {
+                  "id": "upper-sky",
+                  "x": 160,
+                  "y": 28,
+                  "acceptanceRole": "gating",
+                  "classification": "sky",
+                  "hitDistanceMeters": null,
+                  "liveRgba": [
+                    103,
+                    126,
+                    158,
+                    255
+                  ],
+                  "oracleRgba": [
+                    103,
+                    126,
+                    158,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                },
+                {
+                  "id": "center",
+                  "x": 160,
+                  "y": 90,
+                  "acceptanceRole": "gating",
+                  "classification": "mountain-ridge",
+                  "hitDistanceMeters": 11200.140842752544,
+                  "liveRgba": [
+                    72,
+                    81,
+                    90,
+                    255
+                  ],
+                  "oracleRgba": [
+                    72,
+                    81,
+                    90,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                },
+                {
+                  "id": "lower-center",
+                  "x": 160,
+                  "y": 140,
+                  "acceptanceRole": "gating",
+                  "classification": "ground",
+                  "hitDistanceMeters": 1643.8651255503664,
+                  "liveRgba": [
+                    88,
+                    102,
+                    85,
+                    255
+                  ],
+                  "oracleRgba": [
+                    88,
+                    101,
+                    85,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    1,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 1
+                },
+                {
+                  "id": "darkest-ground",
+                  "x": 198,
+                  "y": 146,
+                  "acceptanceRole": "diagnostic-only",
+                  "classification": "ground",
+                  "hitDistanceMeters": 1497.9343643233753,
+                  "liveRgba": [
+                    88,
+                    101,
+                    84,
+                    255
+                  ],
+                  "oracleRgba": [
+                    87,
+                    101,
+                    84,
+                    255
+                  ],
+                  "deltas": [
+                    1,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 1
+                },
+                {
+                  "id": "brightest-ground",
+                  "x": 0,
+                  "y": 101,
+                  "acceptanceRole": "diagnostic-only",
+                  "classification": "ground",
+                  "hitDistanceMeters": 8233.504045793175,
+                  "liveRgba": [
+                    103,
+                    111,
+                    102,
+                    255
+                  ],
+                  "oracleRgba": [
+                    103,
+                    111,
+                    102,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                }
+              ]
+            },
+            {
+              "id": "local-090deg",
+              "selectedChecks": [
+                {
+                  "id": "upper-sky",
+                  "x": 160,
+                  "y": 28,
+                  "acceptanceRole": "gating",
+                  "classification": "sky",
+                  "hitDistanceMeters": null,
+                  "liveRgba": [
+                    213,
+                    203,
+                    186,
+                    255
+                  ],
+                  "oracleRgba": [
+                    213,
+                    203,
+                    186,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                },
+                {
+                  "id": "center",
+                  "x": 160,
+                  "y": 90,
+                  "acceptanceRole": "gating",
+                  "classification": "mountain-ridge",
+                  "hitDistanceMeters": 11200.140842752544,
+                  "liveRgba": [
+                    108,
+                    93,
+                    71,
+                    255
+                  ],
+                  "oracleRgba": [
+                    108,
+                    93,
+                    72,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    -1,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 1
+                },
+                {
+                  "id": "lower-center",
+                  "x": 160,
+                  "y": 140,
+                  "acceptanceRole": "gating",
+                  "classification": "ground",
+                  "hitDistanceMeters": 1643.8651255503664,
+                  "liveRgba": [
+                    49,
+                    50,
+                    41,
+                    255
+                  ],
+                  "oracleRgba": [
+                    49,
+                    50,
+                    41,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                },
+                {
+                  "id": "darkest-ground",
+                  "x": 0,
+                  "y": 169,
+                  "acceptanceRole": "diagnostic-only",
+                  "classification": "ground",
+                  "hitDistanceMeters": 1287.4140452872186,
+                  "liveRgba": [
+                    33,
+                    37,
+                    29,
+                    255
+                  ],
+                  "oracleRgba": [
+                    33,
+                    37,
+                    28,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    1,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 1
+                },
+                {
+                  "id": "brightest-ground",
+                  "x": 176,
+                  "y": 101,
+                  "acceptanceRole": "diagnostic-only",
+                  "classification": "ground",
+                  "hitDistanceMeters": 6826.96610936059,
+                  "liveRgba": [
+                    108,
+                    96,
+                    73,
+                    255
+                  ],
+                  "oracleRgba": [
+                    108,
+                    96,
+                    73,
+                    255
+                  ],
+                  "deltas": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "maxAbsRgbDelta": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "side-by-side-contact-sheet-created",
+        "status": "passed",
+        "measured": {
+          "canvas": {
+            "width": 640,
+            "height": 816
+          },
+          "columns": [
+            "live-pass",
+            "soft-shader-oracle"
+          ]
+        }
+      }
+    ],
+    "summary": {
+      "passed": 4,
+      "failed": 0
+    }
+  }
+}

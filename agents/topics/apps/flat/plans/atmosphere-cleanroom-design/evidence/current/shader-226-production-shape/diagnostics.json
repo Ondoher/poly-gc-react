@@ -1,0 +1,90 @@
+{
+  "kind": "algorithm32-shader-lab-diagnostics",
+  "diagnostics": {
+    "kind": "three-native-production-shape-review-diagnostics",
+    "status": "accepted",
+    "iteration": "38-production-shape-review",
+    "goal": "Review what graduates from the lab Three-native Algorithm32AtmospherePass POC into the official Algorithm32 production implementation.",
+    "criteria": [
+      {
+        "id": "promotion-plan-names-keep-rewrite-discard",
+        "status": "passed",
+        "measured": {
+          "keep": [
+            "Three-native render target plus DepthTexture pass shape",
+            "Algorithm32AtmospherePass API concept",
+            "source and geometry discriminated config contract",
+            "source-driven Three light adapter",
+            "live-pass-vs-soft-shader validation matrix"
+          ],
+          "rewrite": [
+            "inline lab shader string into shared GLSL modules",
+            "lab-only scene builders and controls into app-owned scene integration",
+            "POC diagnostics into stable production debug hooks"
+          ],
+          "discard": [
+            "packet replay as a normal render path",
+            "raw-WebGL standalone atmosphere renderers as the target integration",
+            "per-object material duplication as the primary atmosphere strategy"
+          ]
+        }
+      },
+      {
+        "id": "poc-assumptions-classified",
+        "status": "passed",
+        "measured": {
+          "safeForProductionSeed": [
+            "normal input is live Three scene color and depth targets",
+            "JSON scene packets are validation artifacts only",
+            "source config owns both Three light and atmosphere uniforms",
+            "unsupported source or geometry combinations fail loudly"
+          ],
+          "mustBecomeConfiguration": [
+            "depth near and far planes",
+            "flat no-hit sky ray limit",
+            "source brightness calibration",
+            "display color-space and HDR policy",
+            "debug view selection"
+          ]
+        }
+      },
+      {
+        "id": "normal-render-path-not-packet-dependent",
+        "status": "passed",
+        "measured": {
+          "normalInput": "Three WebGLRenderTarget color texture plus DepthTexture",
+          "validationOnly": "Raycaster/packet oracle for side-by-side soft-shader comparisons"
+        }
+      },
+      {
+        "id": "deferred-physics-separated-from-integration",
+        "status": "passed",
+        "measured": [
+          "local second-order cache",
+          "direct local solar-disc camera radiance",
+          "local ground bounce",
+          "Mars/non-Earth atmosphere presets",
+          "HDR/float production transport beyond RGBA8 POC readback"
+        ]
+      },
+      {
+        "id": "evidence-chain-recorded",
+        "status": "passed",
+        "measured": [
+          "218-three-native-atmosphere-pass-shell",
+          "212-three-native-depth-to-ray-contract",
+          "216-three-native-distant-first-order-atmosphere",
+          "217-three-native-live-scene-camera-controls",
+          "220-three-native-flat-local-first-order-atmosphere",
+          "222-three-native-unified-source-geometry-adapter",
+          "224-three-native-live-pass-soft-shader-matrix",
+          "225-three-native-scenario-controls-poc"
+        ]
+      }
+    ],
+    "summary": {
+      "passed": 5,
+      "failed": 0
+    }
+  }
+}

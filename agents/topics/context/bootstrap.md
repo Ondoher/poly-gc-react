@@ -18,3 +18,7 @@ they are nearby.
 
 Do not load migrated historical docs from `agents/topics.bak` unless the active
 task needs them.
+
+Agent-facing docs should be current-state docs by default. Historical material
+belongs only in experiment evidence, intentional status/task trackers, or
+clearly marked archives.

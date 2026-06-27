@@ -4,6 +4,187 @@ This topic tracks notes for a new project named `flat`.
 
 ## Current State
 
+Canonical atmosphere status now lives in
+[Algorithm32 Canonical Reference](plans/atmosphere-cleanroom-design/algorithm32-canonical-reference.md).
+Production Algorithm32 documentation belongs under
+[Algorithm32 Production Documentation](algorithm32/README.md), and the shared
+production implementation belongs under `shared/algorithm32/`.
+Production Algorithm32 is currently in design stage only; the requirements
+entry point is [Algorithm32 Requirements](algorithm32/requirements.md), and the
+design entry point is [Algorithm32 Production Design](algorithm32/production-design.md).
+The primary public facade draft is
+[Algorithm32 Primary Facade API Draft](algorithm32/api-facade-draft.md).
+Current primary facade methods are `constructor`, `getConfig`, `setConfig`,
+awaited `setupShader`, `evaluate`, `getDiagnostics`, and `dispose`;
+`buildTexture` and `validate` are not primary app-facing methods.
+No implementation has been promoted into `shared/algorithm32/` outside the
+preserved `POC` bundle yet. The production deliverable is the usable shader
+runtime path; CPU reference code is support for validation, internal shader
+texture/cache building, cache construction, diagnostics, and future tests.
+The requirements are now divided into ownership domains that can become
+self-contained code surfaces: API contract/governance, algorithm input
+interfaces, local Sun configuration/calibration, execution configuration,
+transport kernel/reference support, shader texture/cache builder, runtime
+shader product, display conversion, and validation.
+The core abstractions are required to be public interfaces in the Algorithm32
+API itself, with display conversion kept separate from the three algorithm
+input interfaces. Numerical controls are now classified as execution
+configuration, not a fourth algorithm input abstraction. Per-path evaluation
+and shader texture/cache building are now separated as implementation
+responsibilities that share a transport core. CPU/reference evaluation may
+remain public; texture/cache building is implementation-owned behind awaited
+shader setup and awaited shader-handle config updates. Shared private
+operations are transport and contract primitives. The current assumed
+public shape is a configured Algorithm32 facade object constructed once per
+independent simulation window. It coordinates two internal implementation
+classes, one for algorithm/reference and texture/cache work and one for
+runtime shader/Three work, both sharing a private transport/core layer.
+Instance state owns configuration, validation state, shader bindings, cache
+descriptors, GPU resources, and disposal scope; the shared core must not
+become a global mutable singleton. The current POC/lane audit adds that normal
+runtime input is a live Three scene rendered to scene-color plus depth textures
+and then composed by an Algorithm32 fullscreen pass; JSON/Raycaster scene
+packets are validation-only. The facade should own or expose source-driven
+Three lighting synchronization, geometry/camera/depth policy, runtime
+capability diagnostics, stable debug views, and fail-loud local second-order
+cache binding. Latest script-lane audit: the shared shader class/GLSL is in the
+POC, but accepted live-scene wrapper behavior still lives in
+`scripts/flat/local-second-order/page/`, including cache `Data3DTexture`
+creation, source-matrix setup, source-driven lights, render diagnostics,
+render-scale/antialias policy, and cleanup. Evaluation uniquely owns
+`EvaluationRequest` and single-path output, while internal texture/cache
+building owns build request state, grid traversal, packing, descriptors, cache
+keys, and packed payload output. Local Sun calibration/resolution and
+calibration replay/invalidation are upstream local Sun configuration
+operations; the main Algorithm32 facade receives the configured public `Sun`.
+From the API consumer point of view, the normal product path should likely be
+the runtime shader facade if Algorithm32 ships the production shader adapter:
+construct the pass, explicitly prepare/rebuild required textures outside the
+render frame behind awaited setup/config updates, update config/display state,
+render through the composer, and dispose. Per-path evaluation remains the
+CPU/reference/offline consumer method. Texture artifact building and validation
+are implementation-owned unless a later non-app tooling consumer justifies a
+narrow API. Packet construction/preflight, display conversion, and
+validation/parity helpers are support tiers with narrower consumers. The Three
+adapter call surface is distinct from
+Algorithm32 configuration: it wraps render-target, depth texture,
+ShaderMaterial, fullscreen quad, renderer target/render/clear, uniform update,
+texture upload, resize, and dispose calls. The candidate consumer-facing Three
+adapter method is
+`await algorithm32.setupShader({ THREE, composer, scene, camera })`;
+it receives the caller's existing Three composer pipeline, prepares and installs
+the runtime integration, returns a handle that owns the
+`ShaderMaterial`/fullscreen-pass lifecycle, and receives Algorithm32 inputs as
+uniforms/textures. The composer is required; Algorithm32 installs into the
+existing composer so the app keeps calling `composer.render()`. Its purpose is
+to reduce caller decisions and operations around Three-specific material,
+target/depth, upload, pass order, resize, and disposal details, and to reduce
+caller dependence on Algorithm32-specific shader/cache/spectral binding
+knowledge. Long work remains explicit because setup/config updates are
+awaited outside the frame render. Requested local second-order shader mode
+must validate its incident-cache texture/descriptor before rendering and must
+not silently fall back to first-order if the resource is missing or
+mismatched.
+POC export verification supports this
+split: source-contract factories, CPU trace/postprocess/display-preview
+helpers, local cache build/key/pack/frame helpers, and the Three pass lifecycle
+all exist in the preserved POC bundle, but not all should be normal production
+consumer calls.
+Local Sun configuration/calibration is now explicitly upstream-only: it may
+resolve a public Sun input, but transport, shader texture building, cache, and
+runtime shader surfaces must not consume local configuration fields directly.
+The latest API-boundary rule is that public interfaces are strict
+encapsulation boundaries. For Sun, atmosphere composition, and geometry,
+private configuration, calibration, orbit, profile/preset, coefficient
+derivation, geometry factory, scene-adapter, provenance, and source-factory
+details flow outward only when they are defined by the corresponding public
+interface or public input/resolver types.
+The local Sun UX notes now keep user-authored setup to altitude, diameter, and
+latitude limits, treat orbit direction/period as standardized model behavior,
+and allow instantaneous resolved orbital speed to appear as a derived display
+value rather than a configuration input.
+Algorithm32 now carries imported source-mining catalogs for external
+references and fixture provenance under `agents/topics/apps/flat/algorithm32/`:
+`external-reference-log.md`, `fixture-sources.md`, and copied referenced JSON
+fixtures under `evidence/reference-fixtures/`.
+The production design doc now treats those catalogs as supporting inputs,
+keeps numbered artifact details out of the main design surface, and clarifies
+that calibration helpers consume normalized app-provided context rather than
+owning live app UI state.
+The local Sun second-order POC lane is closed as accepted evidence for the
+production design pivot. Its accepted work starts from the pure importable
+bundle under `shared/algorithm32/POC/`, where the original non-shader
+`bruneton-start-fresh` base algorithm is preserved as a pared-down POC module
+and the accepted copied runners have been reduced to CPU transport, CPU
+soft-shader, flat/local source, and Three-native pass modules with
+compatibility re-export shims. These clean POC modules are the tested basis
+for the production Algorithm32 implementation and should be promoted into
+`shared/algorithm32/` after validation. The local second-order plan now starts
+with shared-module parity validation against original runners or accepted
+evidence before implementing the local incident-field/cache work, and it now
+includes lane-specific guidance mined from other cleanroom experiment lanes:
+append-only artifacts, state-goal/running-log continuity, provenance and units,
+objective criteria before subjective images, fail-loud source/cache behavior,
+direct-trace or CPU-soft-shader oracle ordering, and shared source
+configuration for Three lighting plus Algorithm32 scattering. Its script lane
+is `scripts/flat/local-second-order/`, and browser artifacts go under
+`tmp/atmosphere/local-second-order/`; the long-lived browser harness is
+`node scripts/flat/local-second-order/harness.js --watch`. Experiment work goes
+through the user-owned command file at
+`tmp/atmosphere/local-second-order/browser-command.json`; do not document live
+watcher state, and inspect heartbeat/process state at execution time when that
+matters. The shared import smoke proof has passed, and the initial browser smoke
+artifact
+`tmp/atmosphere/local-second-order/001-browser-runner-smoke/` is accepted. It
+proved page load, WebGL2 availability, PNG capture, criteria output,
+provenance/state-goal output, and running-log continuity. Fatal page crashes,
+closed pages, protocol disconnect-style errors, unexpected harness-side
+command errors, and plain browser-side evaluation errors such as missing
+helper `ReferenceError`s are intended to become rejected artifacts instead of
+stopping the watch loop. Browser evaluation timeouts must additionally force
+page/browser recovery, because artifact `068` showed timed-out WebGL work can
+continue consuming CPU. Local second-order lane execution is accepted through
+Milestone 12. Accepted artifacts `003` through `009`, `011`, and `012` cover
+original base parity, CPU transport parity, CPU soft-shader parity, flat/local
+source parity, static Three pass parity, shared POC closeout, the local direct
+incident-field oracle, the local `z/rho/incomingDirection/wavelength` cache,
+and CPU soft-shader local L2. `010-local-cache-shape` was rejected because it
+proved world-space incoming directions are insufficient for a `z/rho` cache;
+the accepted `011` artifact records the corrected Sun-subpoint local
+radial/tangential/up incoming-direction frame. `013-three-integrated-gpu-local-l2-blocked`
+is superseded by accepted browser artifacts `018` and `019`, formal Milestone
+10 artifact `020-three-integrated-gpu-local-l2`, Milestone 11 artifact
+`021-objective-subjective-local-l2-matrix`, and Milestone 12 artifact
+`022-promotion-notes`. The Three pass now exposes
+`flat-local-second-order-atmosphere`, uploads the local incident cache as a
+Three `Data3DTexture`, and samples the cache in GLSL using the same
+Sun-subpoint local radial/tangential/up direction frame as the CPU cache.
+Milestone 11 selected CPU/GPU center diagnostics matched within `0` RGB bytes
+for closest and `2` RGB bytes for local `90`.
+The current local subjective evidence also includes accepted artifact
+`093-southern-france-obj-diffuse-high-local-distant-solstice-time-pai`, a
+summer-solstice (`2026-06-21`) vertical stack pairing each flat local Sun
+integrated-shader row with a spherical distant Sun integrated-shader row at the
+same modeled local solar time and identical camera pose/direction. Row headers
+show `13:09`, `16:09`, `19:09`, `22:09`, and `01:09 +1d`; each image label
+includes the modeled Sun sky position as azimuth and altitude in degrees.
+`093` passed `60/60` criteria with no page errors. `090` is superseded because
+it forced civil `12:00` as solar noon and lacked those labels; rejected `089`
+is superseded by the corrected camera-match criterion.
+The follow-up opposite daylight stack is accepted at
+`092-southern-france-obj-diffuse-high-distant-local-solstice-daylight`. It
+computes San Jose solar noon on `2026-06-21` as the local transit/highest-Sun
+anchor at `13:09`, maps that instant to flat local closest approach, and
+spreads five rows evenly from sunrise to sunset: `05:47`, `09:28`, `13:09`,
+`16:50`, and `20:31`. Each row renders spherical distant on the left and flat
+local on the right with the same camera pose/direction, yawed toward the
+spherical distant sunset bearing. Each image label includes the modeled Sun
+sky position as azimuth and altitude in degrees. `092` passed `60/60` criteria
+with no page errors; `091` is superseded because it lacked those labels.
+Older atmosphere reset, Bruneton/skydome, spherical-sun, reality-aligned, and
+visual-baseline material referenced in this historical status file has been
+retired under [Retired Atmosphere Material](plans/retired/README.md).
+
 Algorithm32 shader status:
 
 - Current task: execute the Algorithm32 shader iteration ladder. Iteration 1,
@@ -379,7 +560,7 @@ Atmosphere reset note:
   so disabled multiple scattering is visible in artifacts without doing any of
   the expensive work. Multiple scattering is now closed as an active
   output-fidelity investigation. The successor output-impact tasks now live in
-  [Reference Plan](plans/atmosphere_reset/reference/plan.md#current-next-focus-output-impact-reference-work)
+  [Reference Plan](plans/retired/atmosphere_reset/reference/plan.md#current-next-focus-output-impact-reference-work)
   instead of this multiple-scattering status note. General direction for those
   tasks: close identified model weaknesses by moving the reference runner
   toward Bruneton's documented methods, data, and comparison assumptions one
@@ -495,7 +676,7 @@ Atmosphere reset note:
   `npm run test:scripts:flat` passed with 398 specs and 0 failures after the
   weakness factor audit tests; `git diff --check` also passed.
   The focused output-impact queue now lives in
-  [Reference Plan](plans/atmosphere_reset/reference/plan.md#current-next-focus-output-impact-reference-work):
+  [Reference Plan](plans/retired/atmosphere_reset/reference/plan.md#current-next-focus-output-impact-reference-work):
   Tasks 4-6 now pin the source-weight transport contract, apply source
   weighting in single-scattering accumulation, and add explicit directional
   versus finite-disc solar-source modes. Task 7 is complete, and Task 8 is
@@ -536,11 +717,11 @@ Atmosphere reset note:
   `skydome-smoke.progress.log`, and the zero-radiance external fixture.
   Verification: `npm run test:scripts:flat` passed with 364 specs and
   0 failures after the Phase 9 residual-panel and dense image-gate update.
-- [Multiple-Scattering Plan](plans/atmosphere_reset/multiple_scattering_plan.md)
+- [Multiple-Scattering Plan](plans/retired/atmosphere_reset/multiple_scattering_plan.md)
   now records the closed comparison-first investigation, diagnostic sidecar
   contracts, no-op isolation mode, and evidence trail. The active successor
   queue lives in the focused
-  [Reference Plan](plans/atmosphere_reset/reference/plan.md#current-next-focus-output-impact-reference-work).
+  [Reference Plan](plans/retired/atmosphere_reset/reference/plan.md#current-next-focus-output-impact-reference-work).
 - The multiple-scattering/table-generation design now records the distinction
   between Bruneton-style tables and project-owned tables. Bruneton remains a
   useful spherical Earth-like validation and shader-architecture precedent,
@@ -605,7 +786,7 @@ Reference integrator update:
   `scripts/flat/atmosphere_rejected/run-reference-probe.js`. It runs
   controlled built-in smoke probes through the canonical stage sequence and can
   emit deterministic JSON, Markdown, and SVG visual evidence.
-- [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md)
+- [Reference Stage Contracts](plans/retired/atmosphere_reset/reference/stage_contracts.md)
   is now the canonical input/output contract for each CPU reference pipeline
   stage. It defines downstream-needed packet shapes, ownership, units, and
   known alignment follow-ups for code and tests.
@@ -722,7 +903,7 @@ Reference integrator update:
   The reference package index does not export color helpers; color remains a
   consumer of completed pipeline output, not part of transport. The color
   fidelity roadmap now lives in
-  `agents/topics/apps/flat/plans/atmosphere_reset/color/plan.md`.
+  `agents/topics/apps/flat/plans/retired/atmosphere_reset/color/plan.md`.
 - Official CIE 1931 2-degree color matching data is now stored under
   `scripts/flat/atmosphere_rejected/data/color/`: the raw CSV, publisher metadata JSON,
   and local README record the DOI/source, `360-830 nm` range, `1 nm` spacing,
@@ -775,7 +956,7 @@ Reference integrator update:
   composition: Rayleigh coefficient model, ozone absorber policy, aerosol/Mie
   policy, and species/profile provenance in diagnostics. This is recorded in
   the new
-  [Atmosphere Composition Plan](plans/atmosphere_reset/composition/plan.md);
+  [Atmosphere Composition Plan](plans/retired/atmosphere_reset/composition/plan.md);
   remaining color follow-ups stay lower priority until the atmosphere model
   improves.
 - The atmosphere reset plan now clarifies that the immediate composition
@@ -877,7 +1058,7 @@ Reference integrator update:
   `README.md`. `npm run test:scripts:flat` passed with 341 specs and
   0 failures after the FOV override.
 - The reference folder now has a focused
-  [Sun Visual Plan](plans/atmosphere_reset/sun/sun_visual_plan.md) for
+  [Sun Visual Plan](plans/retired/atmosphere_reset/sun/sun_visual_plan.md) for
   the missing visual sun stack: finite solar disk, near-sun angular
   resolution, improved aerosol phase behavior, direct solar radiance, disk
   occlusion, multiple scattering, camera/display response, and lower-frame
@@ -902,7 +1083,7 @@ Reference integrator update:
   lever, Rayleigh is second, ozone is smaller but nonzero, and the largest
   visual gap is still the missing rendered sun-disk/aureole/glare stack in the
   wide sunset evidence. The
-  [Sun Visual Plan](plans/atmosphere_reset/sun/sun_visual_plan.md)
+  [Sun Visual Plan](plans/retired/atmosphere_reset/sun/sun_visual_plan.md)
   now records diagnostic follow-ups: optical-depth validity classes, aerosol
   sensitivity grids, improved aerosol phase data, separated extinction versus
   radiance-contribution reporting, external comparison references, and
@@ -944,7 +1125,7 @@ Reference integrator update:
   (`164.0355 deg`, ratio `7.3865`). The horizon budget peaks at `2.2726 km`
   altitude and is flagged `multiple-scattering-likely`; surface bounce,
   clouds, terrain/ocean reflection, and multiple scattering remain disabled.
-- [Sun Visual Plan](plans/atmosphere_reset/sun/sun_visual_plan.md) records the
+- [Sun Visual Plan](plans/retired/atmosphere_reset/sun/sun_visual_plan.md) records the
   midday-horizon roadmap and the model-family comparison context. The previous
   haze-lift proxy branch has been backed out; future work should compare the
   single-scattering baseline against Bruneton/libRadtran-style references and
@@ -1031,7 +1212,7 @@ Reference integrator update:
   behavior, and calibrate any flat approximation against a finite-slab or
   stronger radiative-transfer reference where possible.
 - A future
-  [Multiple-Scattering Reference Design](plans/atmosphere_reset/multiple_scattering_design.md)
+  [Multiple-Scattering Reference Design](plans/retired/atmosphere_reset/multiple_scattering_design.md)
   now exists. It is the preferred direction after backing out the
   diffuse-airlight proxy: build or source a real higher-order transport
   reference instead of accumulating compensatory approximations.
@@ -1076,28 +1257,28 @@ Recommended next step:
 
 - Treat the current globe atmosphere code as mineable context for a reset, not
   as the target architecture. The new research baseline is
-  [Atmosphere Reset Research](plans/atmosphere_reset/research.md): a
+  [Atmosphere Reset Research](plans/retired/atmosphere_reset/research.md): a
   physical-constants-first model that starts with a CPU spectral reference
   integrator, explicit CIE/display conversion, documented environmental inputs,
   and swappable world-geometry / solar-source properties before returning to
   shader tuning. The implementation contract is
-  [Atmosphere Reset Design](plans/atmosphere_reset/design.md), and the
+  [Atmosphere Reset Design](plans/retired/atmosphere_reset/design.md), and the
   CPU solver contract is
-  [Reference Code Design](plans/atmosphere_reset/reference/code_design.md).
+  [Reference Code Design](plans/retired/atmosphere_reset/reference/code_design.md).
   The canonical stage packet contract is
-  [Reference Stage Contracts](plans/atmosphere_reset/reference/stage_contracts.md).
+  [Reference Stage Contracts](plans/retired/atmosphere_reset/reference/stage_contracts.md).
   The stage-level test matrix is
-  [Reference Test Design](plans/atmosphere_reset/reference/test_design.md).
+  [Reference Test Design](plans/retired/atmosphere_reset/reference/test_design.md).
   The actionable stage-test sequence is
-  [Reference Test Plan](plans/atmosphere_reset/reference/test_plan.md).
+  [Reference Test Plan](plans/retired/atmosphere_reset/reference/test_plan.md).
   Source-to-decision traceability lives in
-  [Reference Decision Log](plans/atmosphere_reset/reference/references.md).
+  [Reference Decision Log](plans/retired/atmosphere_reset/reference/references.md).
   The focused script checklist is
-  [Reference Plan](plans/atmosphere_reset/reference/plan.md),
+  [Reference Plan](plans/retired/atmosphere_reset/reference/plan.md),
   with current reference status in
-  [Reference Status](plans/atmosphere_reset/reference/status.md),
+  [Reference Status](plans/retired/atmosphere_reset/reference/status.md),
   and the broader reset checklist is
-  [Atmosphere Reset Plan](plans/atmosphere_reset/plan.md),
+  [Atmosphere Reset Plan](plans/retired/atmosphere_reset/plan.md),
   which adapts external test patterns from Bruneton/PBRT into local
   known-answer tests before shader parity. This plan should be executed
   test-first: write the analytic/invariant/reference-data tests for each phase,
@@ -1241,7 +1422,7 @@ Recommended next step:
   extent should produce large optical depth through the normal path-integral
   math rather than through a special tuning constant. The current
   fixture-source inventory now lives at
-  [Reference Fixture Sources](plans/atmosphere_reset/reference/fixture_sources.md).
+  [Reference Fixture Sources](plans/retired/atmosphere_reset/reference/fixture_sources.md).
   It records which expected-data sources are ready, partially ready, or not
   ready. The analytic invariant fixture has been expanded to 16 rows, adding
   empty-path explicit output, two-sample monotonic accumulation,
@@ -1367,7 +1548,7 @@ Recommended next step:
   rules. A shader-specific design document is intentionally deferred until the
   CPU reference is trusted and shader parity work needs dedicated approximation
   contracts. If continuing the current path temporarily, use the
-  [Spherical Sun Atmosphere Plan](plans/spherical-sun-atmosphere-plan.md)
+  [Spherical Sun Atmosphere Plan](plans/retired/spherical-sun-atmosphere-plan.md)
   Phase 4.6 diagnostics before changing physical coefficients: confirm the
   Rayleigh phase angle sign convention, compare Rayleigh-only and Mie-only
   captures, and isolate whether the brown horizon comes from aerosol/Mie
@@ -1400,7 +1581,7 @@ Recent verification:
   calls, and implemented algorithm branches now cite their supporting
   ray-domain, transmittance, and local model-interface sources.
 - `resolveRayPath` boundary precedence is now documented in
-  [Reference Code Design](plans/atmosphere_reset/reference/code_design.md):
+  [Reference Code Design](plans/retired/atmosphere_reset/reference/code_design.md):
   later surface hits are ignored, exact entry surface hits produce empty paths,
   exact exit surface hits use surface precedence with atmosphere metadata,
   non-finite surface-hit distances reject, negative surface hits are ignored as
@@ -1427,7 +1608,7 @@ Recent verification:
 - Fixture validation now scans every expectation JSON file and requires every
   row to carry a canonical `reference` object, including local design-contract
   rows.
-- [Reference Decision Log](plans/atmosphere_reset/reference/references.md) now
+- [Reference Decision Log](plans/retired/atmosphere_reset/reference/references.md) now
   maps each planned `resolveRayPath` row to its supporting references: PBRT
   Rays, PBRT Transmittance, Bruneton reference-testing discipline, local
   code/test design. Geometry-derived atmosphere-top conventions such as FAI
@@ -1609,21 +1790,21 @@ Bootstrap snapshot for the current continuation:
   `npm run test:ui:flat` passed with 109 specs and `npm run build` passed.
 - Terrain is intentionally deferred for now. The active atmosphere focus is now
   the
-  [Spherical Sun Atmosphere Plan](plans/spherical-sun-atmosphere-plan.md):
+  [Spherical Sun Atmosphere Plan](plans/retired/spherical-sun-atmosphere-plan.md):
   integrate the shared depth-aware atmosphere model into the current
   `globe-simulation` view using the spherical-shell frame, real Sun state, high
   tessellation globe surface, and grounded synthetic red mountain markers before
   further tuning the flat-model atmosphere. The earlier
-  [Reality-Aligned Daytime Atmosphere Plan](plans/reality-aligned-daytime-atmosphere-plan.md):
+  [Reality-Aligned Daytime Atmosphere Plan](plans/retired/reality-aligned-daytime-atmosphere-plan.md):
   remains the flat-model comparison context for bluer daylight, real-world
   analogs, named renderer controls, daylight airlight, and synthetic mountain
   replacement.
-- [Atmosphere Design](atmosphere-design.md) is now a current-state reference
+- [Atmosphere Design](plans/retired/flat-root/atmosphere-design.md) is now a current-state reference
   only: shared architecture, current consumers, parameter catalog, active
   defaults, current scattering math, and known gaps. Historical phase logs and
   superseded implementation notes have been removed from that design doc.
   Rejected ideas that should not be revisited are tracked separately in
-  [Atmosphere Rejected Ideas](atmosphere-rejected.md).
+  [Atmosphere Rejected Ideas](plans/retired/flat-root/atmosphere-rejected.md).
 - The first globe-simulation feature is implemented as a sibling flat-app page
   feature, not a separate app. `src/flat/features/globe-simulation` registers the
   `globe-simulation` page, owns its controller/view/component/CSS/model/test
@@ -1780,7 +1961,7 @@ Implemented:
   bend apparent sun/star positions near the horizon, lift objects relative to
   the geometric horizon, and affect sunrise/sunset timing.
 - Focused atmosphere design notes now live in
-  [Atmosphere Design](atmosphere-design.md). The intended next model is
+  [Atmosphere Design](plans/retired/flat-root/atmosphere-design.md). The intended next model is
   explicit-light single scattering: scene-level sun/light assumptions resolve
   to directional or point light state, and `Atmosphere` integrates camera to
   sample and sample to light transmittance with Rayleigh/Mie phase functions
@@ -1806,7 +1987,7 @@ Implemented:
   JSDoc types for shared atmosphere/sun/math contracts and flat-simulation
   scene/sun contracts. Newly added atmosphere, sun, math helper, scene-model,
   and first-class sun-rendering code now uses those types in JSDoc.
-- [Atmosphere Design](atmosphere-design.md) now includes a concrete renderer
+- [Atmosphere Design](plans/retired/flat-root/atmosphere-design.md) now includes a concrete renderer
   integration plan: add a shared runtime sun resolver, make `SunBody` consume
   it, add an atmosphere-uniform adapter, wire a first light-aware atmosphere
   material, test the resolver/adapter, then promote to depth-aware
@@ -1838,23 +2019,26 @@ Implemented:
 - The scene model now formalizes the visible false-model sun instead of hiding
   it as a generic orange reference object. `DEFAULT_FLAT_SIMULATION_SUN` is
   the canonical source for the 32-mile-diameter body centered 3000 miles above
-  projected latitude `24` at the longitude opposite the observer. The scene
-  derives both `scene.sun` and the renderable `scene.objects` sun sphere from
-  that source.
+  a date-resolved annual latitude ring. The default latitude rule is
+  `annual-tropic-migration`, moving between `23.5 deg N` and `23.5 deg S`
+  over the year, while the daily animation completes one rotation around the
+  projection center every simulated 24 hours. The scene derives both
+  `scene.sun` and the renderable `scene.objects` sun sphere from that source.
 - The false-model sun also derives `scene.lighting.sun` as a point-light state
   using the shared `Sun` class, so future atmosphere scattering can consume the
   same object that the renderer shows. Its visible body still animates around
-  the simulation origin at fixed projected latitude as a solar-day body, using
-  a 24-hour simulated circuit compressed into a 40-second visible loop.
+  the simulation origin on the date-resolved projected latitude ring as a
+  solar-day body, using a 24-hour simulated circuit compressed into a
+  40-second visible loop.
 - The visible false-model sun is now rendered through first-class `scene.sun`
   state rather than only through the generic object loop. Its render contract
   keeps the body visible and sizes it from physical `radiusKm`; observer-to-sun
   distance derives `scene.sun.apparent` and the matching apparent angular
   radius/diameter on `scene.lighting.sun`.
-- The first planned false-sun controls are latitude, elevation above the
-  projected floor, and physical radius. The scene model already supports these
-  as `config.sun.lat`, `config.sun.altitudeKm`, and `config.sun.radiusKm`, and
-  changing them updates the rendered body, apparent size, and point-light
+- The first planned false-sun controls are latitude rule, elevation above the
+  projected floor, and physical radius. The scene model supports these as
+  `config.sun.latitude`, `config.sun.altitudeKm`, and `config.sun.radiusKm`,
+  and changing them updates the rendered body, apparent size, and point-light
   state from the same source.
 - The dome star points animate around the same vertical axis on a sidereal-day
   period. With the solar day set to 40 seconds, the sidereal loop takes about
@@ -2075,7 +2259,7 @@ Verified:
   replacing the old random-looking synthetic mountain field with the
   deterministic 21-marker spiral calibration rig. The captured fixed daytime
   baseline
-  [phase-5-physical-surface-skylight-spiral-mountains](baselines/daytime-atmosphere/phase-5-physical-surface-skylight-spiral-mountains/README.md)
+  [phase-5-physical-surface-skylight-spiral-mountains](plans/retired/baselines/daytime-atmosphere/phase-5-physical-surface-skylight-spiral-mountains/README.md)
   recorded upper sky `[61, 131, 255]`, center sky `[84, 175, 255]`, horizon
   `[115, 231, 255]`, mountain band `[161, 230, 245]`, local floor
   `[86, 85, 38]`, and star probes `[82, 172, 255]`.
@@ -2093,7 +2277,7 @@ Verified:
   passed after moving the half-mile stray marker to `22.5 degrees` bearing so
   it is not collinear with the `1 mile` north spiral marker. Capture samples
   stayed stable.
-- [Atmosphere Design](atmosphere-design.md) now records the idealized
+- [Atmosphere Design](plans/retired/flat-root/atmosphere-design.md) now records the idealized
   single-scattering radiance equation and follow-up simplifications that derive
   lower-level shader values from physical quantities: aerosol optical depth,
   single-scattering albedo, Angstrom exponent, air mass, average-density view
@@ -2102,7 +2286,7 @@ Verified:
   derive Mie extinction/scattering/absorption from AOD and albedo, approximate
   sun transmittance from vertical optical depth and air mass, then compute a
   midpoint or short camera-ray-march approximation for surface and sky pixels.
-- [Atmosphere Design](atmosphere-design.md) now also records the magic-number
+- [Atmosphere Design](plans/retired/flat-root/atmosphere-design.md) now also records the magic-number
   audit and mitigation direction for the active daylight controls:
   `solarIrradianceScale` is an interim source-radiance calibration bridge,
   `threeLightUnitScale` is a Three.js unit bridge, `skyDiffuseIrradianceScale`
@@ -2253,7 +2437,7 @@ Verified:
   and sky light-transmittance floor `0.05`, with `backgroundDebugMode: 'none'`
   so the real no-depth scattering path is visible without bleaching the
   surface.
-- [Atmosphere Design](atmosphere-design.md) now includes the idealized
+- [Atmosphere Design](plans/retired/flat-root/atmosphere-design.md) now includes the idealized
   per-pixel single-scattering algorithm to rebuild toward: depth-aware camera
   rays, camera-to-sample transmittance, sample-to-sun transmittance,
   Rayleigh/Mie phase terms, and final composition as
@@ -2261,7 +2445,7 @@ Verified:
   `inScatteredLight` for sky pixels. The note also records that the nested
   sample-to-light march is the expensive reference path and should be
   approximated in staged real-time passes.
-- [Atmosphere Design](atmosphere-design.md) now also includes the reset
+- [Atmosphere Design](plans/retired/flat-root/atmosphere-design.md) now also includes the reset
   compositor rebuild plan. The plan keeps the current composer plumbing,
   animated sun resolver, and uniform adapter, but replaces the fragment shader
   core in stages: stripped composer shell, optical depth only, unshadowed
@@ -2459,7 +2643,7 @@ Verified:
   `npm run capture:flat-atmosphere` to capture repeatable daytime atmosphere
   screenshots and named RGB samples through Puppeteer plus Sharp. The Phase 1
   baseline is saved under
-  [phase-1 baseline](baselines/daytime-atmosphere/phase-1/README.md), using
+  [phase-1 baseline](plans/retired/baselines/daytime-atmosphere/phase-1/README.md), using
   `https://localhost/flat/flat-simulation`, viewport `1192x643`, and canvas
   `1138x487`. The captured samples had no console/page errors and showed the
   current sky is still near-black/dark-blue: upper sky `[2, 4, 8]`, center sky
@@ -2475,7 +2659,7 @@ Verified:
   `550 nm`; the flat-simulation default now opts into the clear-day profile.
   Phase 2
   capture output is saved under
-  [phase-2-clear-day baseline](baselines/daytime-atmosphere/phase-2-clear-day/README.md).
+  [phase-2-clear-day baseline](plans/retired/baselines/daytime-atmosphere/phase-2-clear-day/README.md).
   Compared with Phase 1, the sky stayed very dark rather than becoming a
   believable daytime sky: upper sky `[1, 4, 7]`, center sky `[2, 4, 7]`,
   horizon `[1, 3, 6]`, mountain band `[84, 86, 49]`, and local floor
@@ -2491,7 +2675,7 @@ Verified:
   of reusing generic `sunIntensity`. The flat-simulation sun body's
   atmosphere facet keeps `intensity: 1` and initially used
   `solarIrradianceScale: 50` as the first daylight calibration value. The
-  [phase-2-solar-irradiance-50 baseline](baselines/daytime-atmosphere/phase-2-solar-irradiance-50/README.md)
+  [phase-2-solar-irradiance-50 baseline](plans/retired/baselines/daytime-atmosphere/phase-2-solar-irradiance-50/README.md)
   captured a much bluer sky: upper sky `[72, 154, 255]`, center sky
   `[81, 169, 255]`, horizon `[57, 119, 224]`, mountain band
   `[111, 142, 186]`, local floor `[255, 255, 114]`, and star probes
@@ -2503,7 +2687,7 @@ Verified:
   `scene.atmosphere.rendering.starExposure`, and constellation guide lines use
   `scene.atmosphere.rendering.constellationOverlayExposure` for overlay
   opacity. The defaults are `0.02` and `0.04`, respectively. The
-  [phase-3-star-exposure baseline](baselines/daytime-atmosphere/phase-3-star-exposure/README.md)
+  [phase-3-star-exposure baseline](plans/retired/baselines/daytime-atmosphere/phase-3-star-exposure/README.md)
   kept the same daylight sky samples as the solar-irradiance capture while
   visual inspection showed the previously obvious white star points and red
   constellation overlay no longer apparent in the fixed San Jose daytime
@@ -2513,7 +2697,7 @@ Verified:
   controls are now `backgroundAtmosphereViewDistanceKm: 100` and
   `flatSlabHorizonViewDistanceFactor: 0.25`, with matching composer fallback
   constants if a scene override omits those fields. The
-  [phase-4-background-distance-100-horizon-025 baseline](baselines/daytime-atmosphere/phase-4-background-distance-100-horizon-025/README.md)
+  [phase-4-background-distance-100-horizon-025 baseline](plans/retired/baselines/daytime-atmosphere/phase-4-background-distance-100-horizon-025/README.md)
   kept upper sky blue at `[72, 154, 255]`, lifted center sky to
   `[91, 190, 255]`, lifted the horizon to `[108, 215, 255]`, and did not
   visually clip the horizon to white or yellow. The mountain band became much
@@ -2524,7 +2708,7 @@ Verified:
   passed.
 - Reality-aligned atmosphere Phase 5 is implemented, then corrected by linking
   the atmosphere source to the rendered false sun as the active contract. The
-  [phase-5-visible-false-sun-atmosphere baseline](baselines/daytime-atmosphere/phase-5-visible-false-sun-atmosphere/README.md)
+  [phase-5-visible-false-sun-atmosphere baseline](plans/retired/baselines/daytime-atmosphere/phase-5-visible-false-sun-atmosphere/README.md)
   remains as historical comparison evidence: it captured upper sky
   `[53, 95, 131]`, center sky `[73, 126, 162]`, horizon
   `[100, 167, 196]`, mountain band `[154, 202, 197]`, local floor
@@ -2535,7 +2719,7 @@ Verified:
   atmosphere uniforms from that same resolver each animation-loop frame, so
   the rendered sun body, solid-scene point light, and atmospheric point source
   stay synchronized. The active linked-sun capture is saved at
-  [phase-5-linked-visible-sun-atmosphere baseline](baselines/daytime-atmosphere/phase-5-linked-visible-sun-atmosphere/README.md):
+  [phase-5-linked-visible-sun-atmosphere baseline](plans/retired/baselines/daytime-atmosphere/phase-5-linked-visible-sun-atmosphere/README.md):
   upper sky `[53, 114, 226]`, center sky `[73, 151, 255]`, horizon
   `[100, 199, 255]`, mountain band `[154, 223, 253]`, local floor
   `[255, 255, 114]`, and star probes `[71, 148, 255]`. Verification:
@@ -2546,7 +2730,7 @@ Verified:
   `solarIrradianceScale` `58`, `60`, and `65` showed that `65` clipped the
   horizon/mountain band to cyan-white and `60` remained close to clipping.
   The selected linked-sun default is `58`, captured at
-  [phase-5-linked-visible-sun-irradiance-58 baseline](baselines/daytime-atmosphere/phase-5-linked-visible-sun-irradiance-58/README.md):
+  [phase-5-linked-visible-sun-irradiance-58 baseline](plans/retired/baselines/daytime-atmosphere/phase-5-linked-visible-sun-irradiance-58/README.md):
   upper sky `[61, 132, 255]`, center sky `[84, 175, 255]`, horizon
   `[116, 231, 255]`, mountain band `[165, 244, 255]`, local floor
   `[255, 255, 114]`, and star probes `[82, 172, 255]`. It is brighter than
@@ -2576,7 +2760,7 @@ Verified:
   value, and lets React presentation code read shared services through
   `FlatContext`. Sun body position, solid-scene light, floor light uniforms,
   atmosphere uniforms, star rotation, constellation rotation, and generic
-  fixed-latitude animation now consume the same service frame.
+  latitude-ring animation now consume the same service frame.
   `FlatSimulationSceneModel` currently publishes fixed playback at the
   closest-sun-to-San-Jose solar angle for stable daytime sky-color calibration.
   Verification: `npm run test:ui:flat` and `npm run build` passed.
@@ -2584,7 +2768,7 @@ Verified:
 Next:
 
 - Continue
-  [Spherical Sun Atmosphere Plan](plans/spherical-sun-atmosphere-plan.md) with
+  [Spherical Sun Atmosphere Plan](plans/retired/spherical-sun-atmosphere-plan.md) with
   Phase 4.5 or 4.6. Phase 4.4 has put globe surface albedo and marker lighting
   on the radiometric path, removing the main mixed-unit solid-surface
   composition issue. The remaining visible problems are that the globe sky is
@@ -2592,11 +2776,11 @@ Next:
   still lacks a named photometric radiance bridge even though the current
   daytime capture no longer shows bright star pixels at the probe points.
 - Keep
-  [Reality-Aligned Daytime Atmosphere Plan](plans/reality-aligned-daytime-atmosphere-plan.md)
+  [Reality-Aligned Daytime Atmosphere Plan](plans/retired/reality-aligned-daytime-atmosphere-plan.md)
   as the flat-model comparison context.
 - Phase 0: mostly complete. Fixed San Jose daytime browser baseline samples
   are captured in
-  [phase-1 baseline](baselines/daytime-atmosphere/phase-1/README.md);
+  [phase-1 baseline](plans/retired/baselines/daytime-atmosphere/phase-1/README.md);
   remaining Phase 0 work is only to record any extra profile/star-material
   values needed during Phase 2 comparison.
 - Phase 1: complete, with ownership corrected later. Visible false-sun
@@ -2841,7 +3025,7 @@ Keep terrain optional and separate from the first star/dome projection model.
 
 ## Atmosphere Rendering References
 
-The active design note is [Atmosphere Design](atmosphere-design.md).
+The active design note is [Atmosphere Design](plans/retired/flat-root/atmosphere-design.md).
 
 Future reference for improving the haze/atmosphere layer:
 
@@ -2915,8 +3099,8 @@ Useful ideas to revisit:
 
 - [Flat POC Prompt](prompt.md)
 - [Flat POC Phase 1 Plan](plans/poc-phase-1-plan.md)
-- [Spherical Sun Atmosphere Plan](plans/spherical-sun-atmosphere-plan.md)
-- [Reality-Aligned Daytime Atmosphere Plan](plans/reality-aligned-daytime-atmosphere-plan.md)
+- [Spherical Sun Atmosphere Plan](plans/retired/spherical-sun-atmosphere-plan.md)
+- [Reality-Aligned Daytime Atmosphere Plan](plans/retired/reality-aligned-daytime-atmosphere-plan.md)
 - [ProjectionModel API Draft](projection-model-api.md)
 - [Architecture Overview](/c:/dev/poly-gc-react/agents/topics/standards/architecture/overview.md)
 - [Architecture Topic](/c:/dev/poly-gc-react/agents/topics/standards/architecture/README.md)

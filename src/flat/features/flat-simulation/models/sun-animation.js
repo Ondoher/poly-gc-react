@@ -68,7 +68,7 @@ function resolveAnimationAngleRad(sceneSun, solarRotationAngleRad) {
 		return 0;
 	}
 
-	if (animation.type !== 'solar-day-fixed-latitude-rotation') {
+	if (animation.type !== 'solar-day-latitude-ring-rotation') {
 		throw new Error(`Unknown flat-simulation sun animation "${animation.type}".`);
 	}
 
@@ -79,14 +79,14 @@ function resolveAnimationAngleRad(sceneSun, solarRotationAngleRad) {
 
 /**
  * Resolve the solar rotation angle where the sun is horizontally closest to
- * the observer during its fixed-latitude rotation.
+ * the observer during its daily latitude-ring rotation.
  *
  * @param {FlatSimulationSunScene} sceneSun - Provide the scene sun to inspect.
  * @param {FlatVector3} observerPosition - Provide the projected observer position.
  * @returns {number}
  */
 export function resolveClosestSunRotationAngleRad(sceneSun, observerPosition) {
-	if (!sceneSun?.animation || sceneSun.animation.type !== 'solar-day-fixed-latitude-rotation') {
+	if (!sceneSun?.animation || sceneSun.animation.type !== 'solar-day-latitude-ring-rotation') {
 		return 0;
 	}
 

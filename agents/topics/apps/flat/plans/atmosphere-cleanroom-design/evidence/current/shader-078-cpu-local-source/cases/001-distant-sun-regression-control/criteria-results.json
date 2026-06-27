@@ -1,0 +1,435 @@
+{
+  "kind": "algorithm32-node-three-reference-criteria",
+  "summary": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "unresolved": 0
+  },
+  "criteria": [
+    {
+      "criterionId": "camera-ray-reconstruction",
+      "status": "pass",
+      "tolerance": {
+        "angularRadians": 1e-12,
+        "originMeters": 1e-12
+      },
+      "measured": {
+        "maxRayAngularError": 0,
+        "maxRayOriginError": 0
+      },
+      "notes": "Manual inverse-projection rays match Three Raycaster.setFromCamera rays."
+    },
+    {
+      "criterionId": "analytic-card-hit-distance",
+      "status": "pass",
+      "tolerance": {
+        "distanceMeters": 0.000001
+      },
+      "measured": {
+        "hitFailures": [],
+        "maxHitDistanceError": 9.094947017729282e-13
+      },
+      "notes": "Raycaster card-center hits agree with analytic intersections against the cards z-planes."
+    },
+    {
+      "criterionId": "rendered-three-object-mask",
+      "status": "pass",
+      "tolerance": {
+        "missingObjects": 0
+      },
+      "measured": {
+        "objectCounts": {
+          "near-red-card": 1013,
+          "middle-green-card": 462,
+          "far-blue-card": 400,
+          "ground-plane": 11968
+        },
+        "missingObjects": [],
+        "skyPixels": 14957,
+        "hitPixels": 13843
+      },
+      "notes": "The image assembly contains Three-classified sky pixels and all diagnostic card objects."
+    },
+    {
+      "criterionId": "object-transfer-composition",
+      "status": "pass",
+      "tolerance": {
+        "absolute": 1e-12
+      },
+      "measured": {
+        "maxCompositionError": 0
+      },
+      "notes": "Three-derived object paths compose as L_camera(lambda) = T_view(lambda) * L_object(lambda) + L_path(lambda)."
+    },
+    {
+      "criterionId": "black-object-path-only",
+      "status": "pass",
+      "tolerance": {
+        "absolute": 1e-12
+      },
+      "measured": {
+        "maxBlackIdentityError": 0
+      },
+      "notes": "Zero object radiance returns only Algorithm32 path radiance for the same Three hit path."
+    },
+    {
+      "criterionId": "zero-distance-transfer",
+      "status": "pass",
+      "tolerance": {
+        "absolute": 1e-12
+      },
+      "measured": {
+        "maxZeroTransmittanceError": 0,
+        "maxZeroPathRadiance": 0
+      },
+      "notes": "Zero-length Algorithm32 transfer keeps T = 1 and path radiance = 0."
+    },
+    {
+      "criterionId": "beer-lambert-identity",
+      "status": "pass",
+      "tolerance": {
+        "absolute": 1e-12
+      },
+      "measured": {
+        "maxBeerLambertError": 0
+      },
+      "notes": "Stored spectral transmittance equals exp(-opticalDepth)."
+    },
+    {
+      "criterionId": "finite-nonnegative-transfer",
+      "status": "pass",
+      "tolerance": {
+        "transmittanceRange": [
+          0,
+          1
+        ],
+        "slack": 1e-12
+      },
+      "measured": {
+        "nonfiniteTransferValues": 0,
+        "minTransmittance": 0.12088117935920845,
+        "maxTransmittance": 0.9592110175036379
+      },
+      "notes": "Algorithm32 spectral packets from Three hit paths remain finite, nonnegative, and bounded."
+    },
+    {
+      "criterionId": "distance-response",
+      "status": "pass",
+      "tolerance": {
+        "effect": "positive transmittance drop from nearest to farthest card"
+      },
+      "measured": {
+        "nearCardId": "near-red-card",
+        "nearMeanTransmittance": 0.9330888708938463,
+        "farCardId": "far-blue-card",
+        "farMeanTransmittance": 0.41682946719273717,
+        "distanceTransmittanceDrop": 0.5162594037011091
+      },
+      "notes": "The same Three scene shows stronger atmospheric attenuation over the longer object segment."
+    },
+    {
+      "criterionId": "split-segment-composition",
+      "status": "pass",
+      "tolerance": {
+        "absolute": 0.00002,
+        "status": "algorithmic numerical gate for finite quadrature"
+      },
+      "measured": {
+        "maxTransmittanceError": 1.1102230246251565e-16,
+        "maxPathRadianceError": 6.938893903907228e-18
+      },
+      "notes": "Splitting a Three-derived object segment recomposes T_full and L_path_full within the finite quadrature gate."
+    },
+    {
+      "criterionId": "sun-position-response",
+      "status": "pass",
+      "tolerance": {
+        "effect": "nonzero path-radiance delta between Figure 1 Sun cases"
+      },
+      "measured": {
+        "cardId": "middle-green-card",
+        "distanceMeters": 5019.147736419003,
+        "responses": [
+          {
+            "sunCase": "figure1-06h00-z87",
+            "opticalDepthByWavelength": [
+              0.6102621987461756,
+              0.507870654860977,
+              0.43466094145757467,
+              0.38052381943385505,
+              0.3392900536081717,
+              0.307056048986726,
+              0.28127182669431544,
+              0.2602237938207027,
+              0.24273081225715226,
+              0.2279598890677776,
+              0.21531121301819178,
+              0.20434460221237535,
+              0.19473135078244994,
+              0.18622203576503443,
+              0.17862457682878544
+            ],
+            "transmittanceByWavelength": [
+              0.5432084218334551,
+              0.6017756034775162,
+              0.6474841649018208,
+              0.6835032831210389,
+              0.7122758209521414,
+              0.7356093695919856,
+              0.7548231265155607,
+              0.7708790485303283,
+              0.7844826584676354,
+              0.7961561937621261,
+              0.806290473035579,
+              0.815181409462869,
+              0.8230557416387143,
+              0.830089265013763,
+              0.8364198518540844
+            ],
+            "pathRadianceByWavelength": [
+              0.0006807098170332159,
+              0.001376773882556306,
+              0.001794037757855056,
+              0.0022658224557592925,
+              0.002375281919748248,
+              0.002495598722522405,
+              0.002498919527181785,
+              0.0024120729211257828,
+              0.002227095279894528,
+              0.0020174556545902765,
+              0.0018210720459084313,
+              0.0016134194149066714,
+              0.0014522373830423746,
+              0.0012913363094832148,
+              0.0011451338212205957
+            ],
+            "firstOrderPathRadianceByWavelength": [
+              0.000001670996151139459,
+              0.000017687051853491514,
+              0.0000655936939487145,
+              0.0001635058232062614,
+              0.0002719215630860655,
+              0.0003966282871309262,
+              0.0005064904511413989,
+              0.0005892390587290162,
+              0.0006305505539827086,
+              0.0006436484357763292,
+              0.0006411841415613405,
+              0.0006170580625059336,
+              0.0005959071703085432,
+              0.0005629734481148476,
+              0.0005262331083392913
+            ],
+            "secondOrderPathRadianceByWavelength": [
+              0.0006790388208820764,
+              0.0013590868307028145,
+              0.0017284440639063414,
+              0.002102316632553031,
+              0.0021033603566621823,
+              0.002098970435391479,
+              0.0019924290760403858,
+              0.0018228338623967665,
+              0.001596544725911819,
+              0.001373807218813947,
+              0.0011798879043470908,
+              0.0009963613524007378,
+              0.0008563302127338315,
+              0.0007283628613683672,
+              0.0006189007128813044
+            ],
+            "meanTransmittance": 0.742748962143908,
+            "meanPathRadiance": 0.0018311311275218789,
+            "diagnostics": {
+              "sampleCount": 20,
+              "minAltitudeMeters": 2,
+              "maxAltitudeMeters": 441.96527253929526,
+              "rayleighOpticalLength": 4882.609459764828,
+              "mieOpticalLength": 4196.156438068474,
+              "absorptionOpticalLength": 0
+            }
+          },
+          {
+            "sunCase": "figure1-13h15-z21",
+            "opticalDepthByWavelength": [
+              0.6102621987461756,
+              0.507870654860977,
+              0.43466094145757467,
+              0.38052381943385505,
+              0.3392900536081717,
+              0.307056048986726,
+              0.28127182669431544,
+              0.2602237938207027,
+              0.24273081225715226,
+              0.2279598890677776,
+              0.21531121301819178,
+              0.20434460221237535,
+              0.19473135078244994,
+              0.18622203576503443,
+              0.17862457682878544
+            ],
+            "transmittanceByWavelength": [
+              0.5432084218334551,
+              0.6017756034775162,
+              0.6474841649018208,
+              0.6835032831210389,
+              0.7122758209521414,
+              0.7356093695919856,
+              0.7548231265155607,
+              0.7708790485303283,
+              0.7844826584676354,
+              0.7961561937621261,
+              0.806290473035579,
+              0.815181409462869,
+              0.8230557416387143,
+              0.830089265013763,
+              0.8364198518540844
+            ],
+            "pathRadianceByWavelength": [
+              0.01929052720476335,
+              0.027728808404048517,
+              0.026200773948932863,
+              0.02496429260458037,
+              0.02078822311420367,
+              0.018262358602043744,
+              0.015984215970720063,
+              0.013977091838767608,
+              0.01201943318232542,
+              0.010355565754174411,
+              0.009030359836096938,
+              0.007818497856713014,
+              0.0069348807986011176,
+              0.006113200960221404,
+              0.005396991370104122
+            ],
+            "firstOrderPathRadianceByWavelength": [
+              0.011450470256607065,
+              0.017967217786013127,
+              0.018172501999346488,
+              0.01828128740335369,
+              0.01590979388243412,
+              0.01449137445938079,
+              0.013066899062191358,
+              0.011710243803406002,
+              0.010276771715772357,
+              0.009004672479528854,
+              0.007963416370207536,
+              0.006976319223167867,
+              0.0062494953605876785,
+              0.005555479411534789,
+              0.004939871969597813
+            ],
+            "secondOrderPathRadianceByWavelength": [
+              0.007840056948156286,
+              0.00976159061803539,
+              0.008028271949586375,
+              0.006683005201226682,
+              0.00487842923176955,
+              0.0037709841426629537,
+              0.002917316908528707,
+              0.0022668480353616053,
+              0.001742661466553063,
+              0.0013508932746455569,
+              0.0010669434658894025,
+              0.0008421786335451465,
+              0.000685385438013439,
+              0.0005577215486866149,
+              0.0004571194005063095
+            ],
+            "meanTransmittance": 0.742748962143908,
+            "meanPathRadiance": 0.014991014763086442,
+            "diagnostics": {
+              "sampleCount": 20,
+              "minAltitudeMeters": 2,
+              "maxAltitudeMeters": 441.96527253929526,
+              "rayleighOpticalLength": 4882.609459764828,
+              "mieOpticalLength": 4196.156438068474,
+              "absorptionOpticalLength": 0
+            }
+          }
+        ],
+        "pathRadianceDifferenceMaxAbs": 0.02635203452149221
+      },
+      "notes": "The same Three hit path changes when Algorithm32 uses the low-Sun versus high-Sun Figure 1 source direction."
+    },
+    {
+      "criterionId": "reference-image-pixel-parity",
+      "status": "pass",
+      "tolerance": {
+        "maxAbsByteDelta": 0
+      },
+      "measured": {
+        "referenceImagePath": "tmp/atmosphere/algorithm32_shader_lab/037-algorithm32-simple-card-reference/reference-image.png",
+        "width": 240,
+        "height": 120,
+        "referenceWidth": 240,
+        "referenceHeight": 120,
+        "sameShape": true,
+        "differentBytes": 0,
+        "maxAbsByteDelta": 0,
+        "matches": true
+      },
+      "notes": "Rendered CPU source-contract image matches the accepted reference image pixel-for-pixel."
+    },
+    {
+      "criterionId": "selected-pixels-json-parity",
+      "status": "pass",
+      "tolerance": {
+        "canonicalJson": "exact"
+      },
+      "measured": {
+        "referenceBytes": 11944,
+        "currentBytes": 11944,
+        "sameCanonicalJson": true,
+        "sameReferenceShapeCanonicalJson": true,
+        "additiveCurrentFieldsAllowed": false
+      },
+      "notes": "Selected-pixel spectral diagnostics match the accepted reference artifact."
+    },
+    {
+      "criterionId": "geometry-diagnostics-json-parity",
+      "status": "pass",
+      "tolerance": {
+        "canonicalJson": "exact"
+      },
+      "measured": {
+        "referenceBytes": 1786,
+        "currentBytes": 1786,
+        "sameCanonicalJson": true,
+        "sameReferenceShapeCanonicalJson": true,
+        "additiveCurrentFieldsAllowed": false
+      },
+      "notes": "Geometry diagnostics match the accepted reference artifact."
+    },
+    {
+      "criterionId": "transport-diagnostics-json-parity",
+      "status": "pass",
+      "tolerance": {
+        "canonicalJson": "exact"
+      },
+      "measured": {
+        "referenceBytes": 41292,
+        "currentBytes": 41292,
+        "sameCanonicalJson": true,
+        "sameReferenceShapeCanonicalJson": true,
+        "additiveCurrentFieldsAllowed": true
+      },
+      "notes": "Transport diagnostics match the accepted reference artifact for all fields owned by that reference artifact."
+    },
+    {
+      "criterionId": "criteria-results-json-parity",
+      "status": "pass",
+      "tolerance": {
+        "canonicalJson": "exact"
+      },
+      "measured": {
+        "referenceBytes": 7508,
+        "currentBytes": 7508,
+        "sameCanonicalJson": true,
+        "sameReferenceShapeCanonicalJson": true,
+        "additiveCurrentFieldsAllowed": true
+      },
+      "notes": "Original criteria results match the accepted reference artifact for all fields owned by that reference artifact, before source-contract parity criteria are added."
+    }
+  ]
+}

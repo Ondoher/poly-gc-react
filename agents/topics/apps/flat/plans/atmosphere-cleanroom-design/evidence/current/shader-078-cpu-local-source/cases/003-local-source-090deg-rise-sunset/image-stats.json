@@ -1,0 +1,20 @@
+{
+  "kind": "algorithm32-node-three-reference-image-stats",
+  "width": 320,
+  "height": 180,
+  "scatteringOrder": "first-order",
+  "includeSecondOrder": false,
+  "objectCounts": {
+    "grass-green-floor": 26240
+  },
+  "radianceStats": {
+    "minMeanTransmittance": 9.325645162346681e-15,
+    "maxMeanTransmittance": 0.9997862548745878,
+    "maxPathRadianceMean": 0.14147657528633306,
+    "skyPixels": 31360,
+    "hitPixels": 26240
+  },
+  "cacheDiagnostics": {
+    "incidentSkyCacheEntries": 0
+  }
+}

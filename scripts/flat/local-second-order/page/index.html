@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Algorithm32 Local Second-Order</title>
+	<style>
+		html,
+		body {
+			margin: 0;
+			width: 100%;
+			height: 100%;
+			background: #111418;
+			color: #eef2f7;
+			font-family: Arial, sans-serif;
+		}
+
+		main {
+			display: grid;
+			grid-template-rows: auto 1fr;
+			gap: 12px;
+			width: 100%;
+			height: 100%;
+			box-sizing: border-box;
+			padding: 14px;
+		}
+
+		h1 {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 700;
+		}
+
+		canvas {
+			width: 100%;
+			height: 100%;
+			min-height: 0;
+			background: #18202a;
+			border: 1px solid #3a4654;
+		}
+	</style>
+	<script type="importmap">
+		{
+			"imports": {
+				"three": "/node_modules/three/build/three.module.js",
+				"three/addons/": "/node_modules/three/examples/jsm/",
+				"three.terrain.js": "/node_modules/three.terrain.js/dist/three.terrain.js"
+			}
+		}
+	</script>
+</head>
+<body>
+	<main>
+		<h1>Algorithm32 Local Second-Order</h1>
+		<canvas id="lab-canvas" width="640" height="320"></canvas>
+	</main>
+	<script type="module" src="./local-second-order.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "command": "C:\\Program Files\\nodejs\\node.exe C:\\dev\\poly-gc-react\\scripts\\flat\\atmosflat32\\run.js --step=distant-source-abstraction-baseline",
+  "defaultCommand": "node scripts/flat/atmosflat32/run.js --step=distant-source-abstraction-baseline",
+  "step": "distant-source-abstraction-baseline"
+}

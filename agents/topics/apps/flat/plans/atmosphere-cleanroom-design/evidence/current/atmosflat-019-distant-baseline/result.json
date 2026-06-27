@@ -1,0 +1,42 @@
+{
+  "status": "accepted",
+  "step": {
+    "id": "figure1-four-view-source-k-no-ground-baseline",
+    "registryId": "distant-source-abstraction-baseline",
+    "label": "distant-source-abstraction-baseline",
+    "title": "Algorithm32 source abstraction with the default distant directional Sun",
+    "status": "source-abstraction parity target",
+    "model": "algorithm32-source-abstraction-distant-directional-sun-step032-parity",
+    "outputSuffix": "figure1-four-view-source-k-no-ground",
+    "sourceAbstraction": {
+      "enabled": true,
+      "activeAdapter": "distant-directional-sun"
+    }
+  },
+  "artifactDirectory": "tmp/atmosphere/atmosflat32/019-distant-source-abstraction-baseline",
+  "summary": {
+    "criteria": {
+      "passed": 9,
+      "failed": 0,
+      "unresolved": 0,
+      "notApplicable": 0
+    },
+    "imageParity": {
+      "maxAbsRgbDelta": 0,
+      "maxAbsAlphaDelta": 0,
+      "exactImageBytes": true
+    },
+    "selectedRayParity": {
+      "maxRadianceAbs": 0,
+      "maxRadianceRel": 0,
+      "maxSecondOrderAbs": 0,
+      "maxDirectSunTransmittanceAbs": 0
+    }
+  },
+  "outputs": [
+    "figure1-06h00-z87-figure1-four-view-source-k-no-ground.png",
+    "figure1-10h15-z41-figure1-four-view-source-k-no-ground.png",
+    "figure1-11h15-z31-figure1-four-view-source-k-no-ground.png",
+    "figure1-13h15-z21-figure1-four-view-source-k-no-ground.png"
+  ]
+}

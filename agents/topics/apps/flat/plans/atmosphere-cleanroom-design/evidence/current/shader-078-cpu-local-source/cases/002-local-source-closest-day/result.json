@@ -1,0 +1,14 @@
+{
+  "kind": "algorithm32-node-three-reference-result",
+  "status": "accepted",
+  "createdAt": "2026-06-24T18:55:22.203Z",
+  "completedAt": "2026-06-24T18:55:25.621Z",
+  "durationMs": 3418,
+  "artifactFolder": "tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render/cases/002-local-source-closest-day",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "unresolved": 0
+  }
+}

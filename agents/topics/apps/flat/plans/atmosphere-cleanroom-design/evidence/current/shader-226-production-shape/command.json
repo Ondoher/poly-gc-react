@@ -1,0 +1,19 @@
+{
+  "id": "three-native-production-shape-review",
+  "label": "three-native-production-shape-review",
+  "payload": {
+    "mode": "documentation-production-shape-review",
+    "iteration": "38-production-shape-review",
+    "milestone": 38,
+    "inputArtifacts": [
+      "218-three-native-atmosphere-pass-shell",
+      "212-three-native-depth-to-ray-contract",
+      "216-three-native-distant-first-order-atmosphere",
+      "217-three-native-live-scene-camera-controls",
+      "220-three-native-flat-local-first-order-atmosphere",
+      "222-three-native-unified-source-geometry-adapter",
+      "224-three-native-live-pass-soft-shader-matrix",
+      "225-three-native-scenario-controls-poc"
+    ]
+  }
+}

@@ -5,6 +5,7 @@ import {
 	DEFAULT_FLAT_SIMULATION_CONFIG,
 	DEFAULT_ATMOSPHERE,
 	DEFAULT_EARTH_FLOOR_TEXTURE,
+	DEFAULT_FALSE_SUN_LATITUDE_MODEL,
 	DEFAULT_OBSERVER_VIEW,
 	DEFAULT_FLAT_SIMULATION_SUN,
 	EARTH_PROJECTION_RADIUS_KM,
@@ -21,6 +22,7 @@ import {
 	resolveAnimatedAtmosphereSun,
 	resolveAnimatedSun,
 } from '../models/sun-animation.js';
+import { resolveFalseSunLatitudeDeg } from '../models/sun-latitude.js';
 
 function expectFiniteVector(vector) {
 	expect(Number.isFinite(vector.x)).toBeTrue();
@@ -234,11 +236,16 @@ describe('FlatSimulationSceneModel', () => {
 		expect(scene.sun.apparent.distanceKm).toBeCloseTo(observerDistanceKm, 8);
 		expect(scene.sun.apparent.angularRadiusRad).toBeCloseTo(apparentAngularRadiusRad, 8);
 		expect(scene.sun.apparent.angularDiameterRad).toBeCloseTo(apparentAngularRadiusRad * 2, 8);
-		expect(sphere.source.lat).toBe(24);
+		expect(sphere.source.lat).toBeCloseTo(
+			resolveFalseSunLatitudeDeg(DEFAULT_FLAT_SIMULATION_SUN, scene.time),
+			8,
+		);
+		expect(sphere.source.latitude).toEqual(DEFAULT_FALSE_SUN_LATITUDE_MODEL);
+		expect(sphere.source.latitudeResolvedAt).toBe(scene.time);
 		expect(sphere.source.lon).toBeCloseTo(DEFAULT_FLAT_SIMULATION_CONFIG.root.lon + 180, 8);
 		expect(sphere.style).toEqual(DEFAULT_FLAT_SIMULATION_SUN.style);
 		expect(sphere.animation).toEqual({
-			type: 'solar-day-fixed-latitude-rotation',
+			type: 'solar-day-latitude-ring-rotation',
 			simulatedDurationHours: SOLAR_DAY_HOURS,
 			displayDurationSeconds: SOLAR_DAY_DISPLAY_SECONDS,
 		});
@@ -310,7 +317,10 @@ describe('FlatSimulationSceneModel', () => {
 	it('keeps false-sun latitude, elevation, and radius configurable', () => {
 		const scene = new FlatSimulationSceneModel({
 			sun: {
-				lat: 12,
+				latitude: {
+					type: 'fixed-latitude',
+					latitudeDeg: 12,
+				},
 				altitudeKm: 1200,
 				radiusKm: 40,
 			},
@@ -331,6 +341,15 @@ describe('FlatSimulationSceneModel', () => {
 		expect(scene.sun.light.distanceKm).toBeCloseTo(observerDistanceKm, 8);
 		expect(scene.sun.light.apparentAngularRadiusRad).toBeCloseTo(apparentAngularRadiusRad, 8);
 		expect(scene.lighting.sun).toEqual(resolvedSun.light);
+	});
+
+	it('migrates the false-sun latitude between the tropics over the year', () => {
+		expect(resolveFalseSunLatitudeDeg(DEFAULT_FLAT_SIMULATION_SUN, '2026-06-21T00:00:00-07:00'))
+			.toBeCloseTo(23.5, 2);
+		expect(resolveFalseSunLatitudeDeg(DEFAULT_FLAT_SIMULATION_SUN, '2026-12-21T00:00:00-08:00'))
+			.toBeCloseTo(-23.5, 2);
+		expect(resolveFalseSunLatitudeDeg(DEFAULT_FLAT_SIMULATION_SUN, DEFAULT_FLAT_SIMULATION_CONFIG.time))
+			.toBeGreaterThan(0);
 	});
 
 	it('defines separate solar and sidereal animation periods', () => {

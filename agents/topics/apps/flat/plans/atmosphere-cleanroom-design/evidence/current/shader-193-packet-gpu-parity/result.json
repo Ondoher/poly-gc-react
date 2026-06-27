@@ -1,0 +1,200 @@
+{
+  "kind": "soft-shader-capability-parity-matrix-result",
+  "status": "accepted",
+  "createdAt": "2026-06-25T15:09:02.384Z",
+  "completedAt": "2026-06-25T15:09:02.391Z",
+  "durationMs": 7,
+  "artifactFolder": "193-soft-shader-capability-parity-matrix",
+  "summary": {
+    "passed": 6,
+    "failed": 0
+  },
+  "evidence": {
+    "distantParity": "172-distant-soft-shader-gpu-parity",
+    "litComposition": "174-lit-scene-shader-composition",
+    "localFullImage": "185-local-sun-full-image-shader-parity",
+    "localSceneColor": "192-local-sun-scene-color-composition-parity"
+  },
+  "matrixCases": [
+    {
+      "id": "distant-high",
+      "sourceFamily": "distant-directional-sun",
+      "mode": "full-image-second-order",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 160,
+        "height": 80,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.0013020833333333333,
+        "p95PixelMaxAbsRgbDelta": 0,
+        "p99PixelMaxAbsRgbDelta": 0
+      }
+    },
+    {
+      "id": "distant-low",
+      "sourceFamily": "distant-directional-sun",
+      "mode": "full-image-second-order",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 160,
+        "height": 80,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.0013020833333333333,
+        "p95PixelMaxAbsRgbDelta": 0,
+        "p99PixelMaxAbsRgbDelta": 0
+      }
+    },
+    {
+      "id": "local-000deg",
+      "sourceFamily": "flat-local-point-sun",
+      "mode": "full-image-first-order-spectrum",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 96,
+        "height": 54,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.001286008230452675,
+        "p95PixelMaxAbsRgbDelta": 0,
+        "p99PixelMaxAbsRgbDelta": 0
+      }
+    },
+    {
+      "id": "local-045deg",
+      "sourceFamily": "flat-local-point-sun",
+      "mode": "full-image-first-order-spectrum",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 96,
+        "height": 54,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.0016075102880658437,
+        "p95PixelMaxAbsRgbDelta": 0,
+        "p99PixelMaxAbsRgbDelta": 0
+      }
+    },
+    {
+      "id": "local-090deg",
+      "sourceFamily": "flat-local-point-sun",
+      "mode": "full-image-first-order-spectrum",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 96,
+        "height": 54,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.0012217078189300412,
+        "p95PixelMaxAbsRgbDelta": 0,
+        "p99PixelMaxAbsRgbDelta": 0
+      }
+    },
+    {
+      "id": "local-135deg",
+      "sourceFamily": "flat-local-point-sun",
+      "mode": "full-image-first-order-spectrum",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 96,
+        "height": 54,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.001736111111111111,
+        "p95PixelMaxAbsRgbDelta": 0,
+        "p99PixelMaxAbsRgbDelta": 0
+      }
+    },
+    {
+      "id": "local-180deg",
+      "sourceFamily": "flat-local-point-sun",
+      "mode": "full-image-first-order-spectrum",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 96,
+        "height": 54,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.0013503086419753086,
+        "p95PixelMaxAbsRgbDelta": 0,
+        "p99PixelMaxAbsRgbDelta": 0
+      }
+    },
+    {
+      "id": "local-000deg",
+      "sourceFamily": "flat-local-point-sun",
+      "mode": "full-image-first-order-scene-color-composition",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 96,
+        "height": 54,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.03613683127572016,
+        "p95PixelMaxAbsRgbDelta": 1,
+        "p99PixelMaxAbsRgbDelta": 1
+      }
+    },
+    {
+      "id": "local-045deg",
+      "sourceFamily": "flat-local-point-sun",
+      "mode": "full-image-first-order-scene-color-composition",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 96,
+        "height": 54,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.031635802469135804,
+        "p95PixelMaxAbsRgbDelta": 1,
+        "p99PixelMaxAbsRgbDelta": 1
+      }
+    },
+    {
+      "id": "local-090deg",
+      "sourceFamily": "flat-local-point-sun",
+      "mode": "full-image-first-order-scene-color-composition",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 96,
+        "height": 54,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.02887088477366255,
+        "p95PixelMaxAbsRgbDelta": 1,
+        "p99PixelMaxAbsRgbDelta": 1
+      }
+    },
+    {
+      "id": "local-135deg",
+      "sourceFamily": "flat-local-point-sun",
+      "mode": "full-image-first-order-scene-color-composition",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 96,
+        "height": 54,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.023662551440329218,
+        "p95PixelMaxAbsRgbDelta": 1,
+        "p99PixelMaxAbsRgbDelta": 1
+      }
+    },
+    {
+      "id": "local-180deg",
+      "sourceFamily": "flat-local-point-sun",
+      "mode": "full-image-first-order-scene-color-composition",
+      "status": "accepted",
+      "comparison": {
+        "status": "compared",
+        "width": 96,
+        "height": 54,
+        "maxAbsRgbDelta": 1,
+        "meanAbsRgbDelta": 0.02334104938271605,
+        "p95PixelMaxAbsRgbDelta": 1,
+        "p99PixelMaxAbsRgbDelta": 1
+      }
+    }
+  ]
+}

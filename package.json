@@ -22,7 +22,8 @@
     "remark-math": "^6.0.0",
     "sharp": "^0.34.5",
     "three": "^0.180.0",
-    "three-bvh-csg": "^0.0.18"
+    "three-bvh-csg": "^0.0.18",
+    "three.terrain.js": "^3.0.0"
   },
   "devDependencies": {
     "@polylith/builder": "1.1.0",

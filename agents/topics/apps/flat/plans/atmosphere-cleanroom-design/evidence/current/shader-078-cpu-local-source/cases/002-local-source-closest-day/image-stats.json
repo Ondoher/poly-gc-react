@@ -1,0 +1,23 @@
+{
+  "kind": "algorithm32-node-three-reference-image-stats",
+  "width": 240,
+  "height": 120,
+  "scatteringOrder": "first-order",
+  "includeSecondOrder": false,
+  "objectCounts": {
+    "near-red-card": 1013,
+    "middle-green-card": 462,
+    "far-blue-card": 400,
+    "ground-plane": 11968
+  },
+  "radianceStats": {
+    "minMeanTransmittance": 1.1399478605226433e-7,
+    "maxMeanTransmittance": 0.9996210878520445,
+    "maxPathRadianceMean": 0.07760511228261947,
+    "skyPixels": 14957,
+    "hitPixels": 13843
+  },
+  "cacheDiagnostics": {
+    "incidentSkyCacheEntries": 0
+  }
+}

@@ -1,0 +1,818 @@
+{
+  "status": "figure1-four-view-source-k-no-ground-baseline",
+  "externalSources": [
+    {
+      "id": "bruneton-functions-glsl",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/functions.glsl",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/functions.glsl#L41-L53",
+      "usedFor": [
+        "distance to top atmosphere boundary",
+        "exponential density optical length integrated with the trapezoidal rule",
+        "Beer-Lambert transmittance expression"
+      ]
+    },
+    {
+      "id": "bruneton-demo-constants",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/demo/demo.cc",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/demo/demo.cc#L12-L20",
+      "usedFor": [
+        "Earth bottom and top radii",
+        "Rayleigh and Mie scale heights",
+        "Rayleigh wavelength power law coefficient",
+        "Mie Angstrom coefficient and alpha",
+        "Mie single-scattering albedo and phase-function asymmetry",
+        "solar irradiance values for 680, 550, and 440 nm",
+        "Sun angular radius and exposure value"
+      ]
+    },
+    {
+      "id": "bruneton-single-scattering",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/functions.glsl",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/functions.glsl#L82-L109",
+      "usedFor": [
+        "single-scattering integrand",
+        "Rayleigh and Mie radiance integration",
+        "Rayleigh and Cornette-Shanks Mie phase functions"
+      ]
+    },
+    {
+      "id": "bruneton-rendering-sky",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/functions.glsl",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/functions.glsl#L234-L241",
+      "usedFor": [
+        "render-time multiplication of scattering terms by Rayleigh and Mie phase functions",
+        "adding direct solar radiance when the view ray intersects the Sun"
+      ]
+    },
+    {
+      "id": "bruneton-model-wavelengths",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/model.h",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/model.h#L53-L60",
+      "usedFor": [
+        "RGB radiance-channel wavelengths at 680, 550, and 440 nm",
+        "scope note that 3-wavelength radiance is not full luminance conversion"
+      ]
+    },
+    {
+      "id": "bruneton-radiance-to-luminance",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/model.cc",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/model.cc#L29-L41",
+      "usedFor": [
+        "3-wavelength spectral radiance to luminance conversion factors",
+        "lambda power -3 for sky radiance and 0 for Sun radiance"
+      ]
+    },
+    {
+      "id": "bruneton-scattering-texture-coordinates",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/model.cc",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/model.cc#L699-L710",
+      "usedFor": [
+        "precomputed scattering texture dimensions include radius r, view zenith cosine mu, solar zenith cosine mu_s, and scattering angle cosine nu",
+        "local solar-zenith coordinate for the second-order incident-radiance cache"
+      ]
+    },
+    {
+      "id": "bruneton-2016-clear-sky-parameters",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "aerosol single-scattering albedo 0.8",
+        "Angstrom alpha 0.8",
+        "Angstrom beta 0.04",
+        "Cornette-Shanks asymmetry parameter g = 0.7"
+      ]
+    },
+    {
+      "id": "bruneton-2016-multiple-scattering-gap",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "the paper notes that ignored multiple scattering leaves computed irradiance about one third below measured values",
+        "first proxy scale: measured ~= single_scattering / (2/3), so scale single-scattered sky radiance by 1.5"
+      ]
+    },
+    {
+      "id": "bruneton-2016-nishita96-double-scattering",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "double scattering requires integration over all incoming directions at each sample along the view ray",
+        "Nishita96-style reduction to a finite set of sampling directions as a documented approximation path",
+        "paper diagnosis that using only 8 directions in a single plane instead of many directions over the whole unit sphere contributes to underestimated measured values"
+      ]
+    },
+    {
+      "id": "bruneton-2016-no-ozone-comparison-policy",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "paper comparison implementation policy that neglects ozone absorption",
+        "no-ozone step for matching the paper's rendered model-comparison setup"
+      ]
+    },
+    {
+      "id": "bruneton-2016-figure1-sky-radiance-target",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models, Figure 1",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "directly extracted Figure 1 skydome tiles show the Sun direction with a red cross overlay",
+        "target-contract test that compares atmospheric sky radiance and aureole without adding direct solar-disc radiance to the camera pass"
+      ]
+    },
+    {
+      "id": "bruneton-2016-figure1-display-transform",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models, Figure 1 caption",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "Figure 1 renders spectral radiance convolved with CIE color matching functions",
+        "Figure 1 converts XYZ to linear sRGB before display",
+        "Figure 1 tone maps with 1 - exp(-kL)"
+      ]
+    },
+    {
+      "id": "bruneton-2016-comparison-source-tone-map",
+      "title": "Eric Bruneton, clear-sky-models comparison source, atmosphere/comparisons.cc",
+      "url": "https://github.com/ebruneton/clear-sky-models/blob/master/atmosphere/comparisons.cc#L148-L153",
+      "usedFor": [
+        "Figure-style comparison tone-map implementation c = 5 * MaxLuminousEfficacy",
+        "source-derived k = 1 / (5 * 683)"
+      ]
+    },
+    {
+      "id": "bruneton-2016-figure1-extracted-target-tiles",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models, extracted Figure 1 skydome tiles",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "direct external low-Sun and high-Sun skydome targets",
+        "single global k multiplier fit for the paper Figure 1 tone-map equation, excluding non-sky pixels and red Sun-direction cross pixels"
+      ]
+    },
+    {
+      "id": "bruneton-2016-figure1-sun-zenith-angles",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models, Figure 1 row labels",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "low-Sun target row sun zenith angle 87 degrees",
+        "high-Sun target row sun zenith angle 21 degrees"
+      ]
+    },
+    {
+      "id": "bruneton-2016-figure1-four-view-layout",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models, Figure 1 layout",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "Figure 1 four skydome row labels: 06h00 / 87 degrees, 10h15 / 41 degrees, 11h15 / 31 degrees, and 13h15 / 21 degrees",
+        "Sun azimuth/orientation measured from red-cross centers in the directly extracted Bruneton-column Figure 1 tiles Im6, Im15, Im25, and Im35"
+      ]
+    },
+    {
+      "id": "bruneton-2016-40-wavelength-evaluation",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models, spectral comparison setup",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "paper comparison models are run spectrally with the same 40 wavelengths between 360 nm and 830 nm",
+        "40-wavelength direct per-pixel spectral evaluation step"
+      ]
+    },
+    {
+      "id": "gonzalez-2009-fibonacci-sphere-lattice",
+      "title": "Alvaro Gonzalez, Measurement of areas on a sphere using Fibonacci and latitude-longitude lattices",
+      "url": "https://arxiv.org/abs/0912.4540",
+      "usedFor": [
+        "Fibonacci lattice points are evenly distributed on the sphere with each point representing almost the same area",
+        "full-sphere second-order scattering quadrature directions"
+      ]
+    },
+    {
+      "id": "bruneton-demo-sun-angular-size",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/demo/demo.glsl",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/demo/demo.glsl",
+      "usedFor": [
+        "Sun visibility based on the view ray / sun direction angular test",
+        "finite angular Sun size for rendering the direct solar disc"
+      ]
+    },
+    {
+      "id": "pbrt-camera-measurement-equation",
+      "title": "Physically Based Rendering, 4th edition, Film and Imaging",
+      "url": "https://pbr-book.org/4ed/Cameras_and_Film/Film_and_Imaging",
+      "usedFor": [
+        "camera pixels measure incident radiance integrated over finite pixel area and angular footprint",
+        "motivation for averaging direct solar-disc radiance over the fisheye pixel footprint instead of evaluating only the center ray"
+      ]
+    },
+    {
+      "id": "bruneton-ground-reflection",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/demo/demo.cc, atmosphere/model.cc, and atmosphere/demo/demo.glsl",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/demo/demo.glsl#L345-L369",
+      "usedFor": [
+        "ground_albedo = 0.1 from the demo atmosphere setup",
+        "ground_albedo is part of the generated AtmosphereParameters",
+        "ground radiance is Lambertian: albedo * (1 / PI) * incident irradiance, then attenuated along the camera-to-ground segment",
+        "ground reflection uses sun irradiance plus sky irradiance",
+        "ground reflection applies direct Sun visibility separately from sky visibility"
+      ]
+    },
+    {
+      "id": "bruneton-ozone-absorption",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/demo/demo.cc",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/demo/demo.cc#L14-L20",
+      "usedFor": [
+        "ozone absorption cross sections",
+        "300 Dobson unit ozone amount",
+        "piecewise linear ozone density profile from 10 km to 40 km"
+      ]
+    },
+    {
+      "id": "bruneton-color-constants",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/constants.h",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/constants.h",
+      "usedFor": [
+        "CIE 1931 2-degree color matching functions",
+        "XYZ to linear sRGB matrix",
+        "maximum luminous efficacy"
+      ]
+    },
+    {
+      "id": "bruneton-demo-display",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/demo/demo.glsl",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/demo/demo.glsl",
+      "usedFor": [
+        "demo-style exposure display transform: pow(1 - exp(-radiance / white_point * exposure), 1 / 2.2)"
+      ]
+    },
+    {
+      "id": "bruneton-demo-white-balance",
+      "title": "Eric Bruneton, Precomputed Atmospheric Scattering, atmosphere/demo/demo.cc",
+      "url": "https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/demo/demo.cc#L328-L340",
+      "usedFor": [
+        "optional white balance from extraterrestrial solar spectrum converted to linear sRGB",
+        "normalizing the white point by the average of its RGB components before setting the shader uniform"
+      ]
+    },
+    {
+      "id": "bruneton-2016-white-balance-note",
+      "title": "Eric Bruneton, A Qualitative and Quantitative Evaluation of 8 Clear Sky Models",
+      "url": "https://arxiv.org/abs/1612.04336",
+      "usedFor": [
+        "paper note that perceptual effects such as tone mapping and white balance can improve realism"
+      ]
+    },
+    {
+      "id": "fisheye-equidistant-projection",
+      "title": "Fisheye lens mapping functions",
+      "url": "https://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function",
+      "usedFor": [
+        "equidistant fisheye diagnostic mapping from angular distance to image radius"
+      ]
+    }
+  ],
+  "equations": [
+    {
+      "name": "equidistant fisheye ray angle",
+      "expression": "theta = rho * pi / 2",
+      "purpose": "Maps the circular 180 degree fisheye from zenith at center to horizon at the edge.",
+      "source": "fisheye-equidistant-projection"
+    },
+    {
+      "name": "Figure 1 four skydome scene set",
+      "expression": "rows = {06h00 / theta_s=87 deg, 10h15 / theta_s=41 deg, 11h15 / theta_s=31 deg, 13h15 / theta_s=21 deg}; sun_altitude = 90 deg - theta_s; sun_azimuth = {-25.8345 deg, 9.5445 deg, 22.1663 deg, 85.3141 deg}",
+      "purpose": "Renders the same four Figure 1 time-of-day / Sun-position skydome views with the step 029 model. Azimuths are measured from the red-cross centers in the directly extracted Bruneton-column Figure 1 tiles.",
+      "source": "bruneton-2016-figure1-four-view-layout"
+    },
+    {
+      "name": "distance to top atmosphere boundary",
+      "expression": "d_top = -r * mu + sqrt(r^2 * (mu^2 - 1) + r_top^2)",
+      "purpose": "Finds the integration length from the observer to the top atmosphere boundary.",
+      "source": "bruneton-functions-glsl"
+    },
+    {
+      "name": "Beer-Lambert transmittance",
+      "expression": "T = exp(-(beta_R * L_R + beta_M * L_M + beta_O3 * L_O3))",
+      "purpose": "Computes transmittance from observer to sample and sample to Sun.",
+      "source": "bruneton-functions-glsl"
+    },
+    {
+      "name": "paper comparison no-ozone policy",
+      "expression": "beta_O3(lambda) = 0",
+      "purpose": "Matches the Bruneton 2016 comparison implementation policy that neglects ozone absorption.",
+      "source": "bruneton-2016-no-ozone-comparison-policy"
+    },
+    {
+      "name": "single-scattering integrand",
+      "expression": "dL = T_view * T_sun * density(h) * beta(lambda) * solarIrradiance(lambda) * phase(nu) * ds",
+      "purpose": "Accumulates Rayleigh and Mie single-scattered radiance along the view ray.",
+      "source": "bruneton-single-scattering"
+    },
+    {
+      "name": "directional second-order scattering",
+      "expression": "dL_2 = T_view * density(h) * integral(L_1(omega_i) * beta(lambda) * phase(dot(view, omega_i)) d omega_i) * ds",
+      "purpose": "Replaces the scalar proxy with an explicit second-scattering integral over a finite set of incoming sky directions.",
+      "source": "bruneton-2016-nishita96-double-scattering"
+    },
+    {
+      "name": "Fibonacci full-sphere second-order quadrature",
+      "expression": "omega_i from a spherical Fibonacci lattice; integral_S2 f(omega) d omega ~= (4*pi/N) * sum_i f(omega_i)",
+      "purpose": "Replaces the earlier upper-hemisphere/two-ring second-order directions with a deterministic full-sphere quadrature, addressing the paper's diagnosis that an 8-direction single-plane approximation misses many incoming directions.",
+      "source": "bruneton-2016-nishita96-double-scattering; gonzalez-2009-fibonacci-sphere-lattice"
+    },
+    {
+      "name": "paper sky-radiance direct-Sun omission",
+      "expression": "L_display(lambda) = L_sky_scattered(lambda); L_sun_direct(lambda) is not added to the camera pass",
+      "purpose": "Tests the Figure 1 target contract where the visible comparison target is sky radiance/aureole and the Sun direction is indicated by an overlay marker.",
+      "source": "bruneton-2016-figure1-sky-radiance-target"
+    },
+    {
+      "name": "Rayleigh phase function",
+      "expression": "P_R(nu) = 3 / (16*pi) * (1 + nu^2)",
+      "purpose": "Angular distribution for molecular scattering.",
+      "source": "bruneton-single-scattering"
+    },
+    {
+      "name": "Cornette-Shanks Mie phase function",
+      "expression": "P_M(g,nu) = 3/(8*pi) * (1-g^2)/(2+g^2) * (1+nu^2)/(1+g^2-2g*nu)^1.5",
+      "purpose": "Angular distribution for aerosol scattering.",
+      "source": "bruneton-single-scattering"
+    },
+    {
+      "name": "Bruneton RGB radiance wavelengths",
+      "expression": "lambda_R = 680 nm, lambda_G = 550 nm, lambda_B = 440 nm",
+      "purpose": "Stores radiance in Bruneton's 3-wavelength RGB radiance API order.",
+      "source": "bruneton-model-wavelengths"
+    },
+    {
+      "name": "Bruneton luminance spectral samples",
+      "expression": "lambda_i = 360 + (i + 0.5) * ((830 - 360) / 15), i in [0, 14]",
+      "purpose": "Uses the same centered wavelength-bin strategy Bruneton applies in precomputed illuminance mode, here evaluated directly for each skydome pixel.",
+      "source": "bruneton-radiance-to-luminance"
+    },
+    {
+      "name": "direct solar radiance separated from sky pass",
+      "expression": "L_sun(lambda) = E_sun(lambda) / (pi * alpha_s^2)",
+      "purpose": "Defines the direct solar beam term that this sky-radiance target-contract step keeps separate from displayed atmospheric sky radiance.",
+      "source": "bruneton-rendering-sky"
+    },
+    {
+      "name": "Bruneton 2016 Figure 1 display transform",
+      "expression": "display = 1 - exp(-k * max(0, linear_sRGB))",
+      "purpose": "Audits the Figure 1 paper display contract after CIE integration and XYZ-to-linear-sRGB conversion, using the comparison source implementation k = 1 / (5 * 683).",
+      "source": "bruneton-2016-figure1-display-transform; bruneton-2016-comparison-source-tone-map"
+    },
+    {
+      "name": "Bruneton comparison source Figure 1 tone-map k",
+      "expression": "k = 1 / (5 * MaxLuminousEfficacy) = 1 / (5 * 683) = 0.00029282576866764275",
+      "purpose": "Uses the same reciprocal display scale as Bruneton's clear-sky comparison source ToneMapping function.",
+      "source": "bruneton-2016-comparison-source-tone-map"
+    },
+    {
+      "name": "Bruneton radiance-to-luminance factors",
+      "expression": "k_c = 683 * integral((XYZ_TO_SRGB_c dot CIE(lambda)) * E_sun(lambda) / E_sun(lambda_c) * (lambda / lambda_c)^p d lambda)",
+      "purpose": "Approximates CIE/XYZ/sRGB luminance conversion from three spectral radiance samples.",
+      "source": "bruneton-radiance-to-luminance"
+    }
+  ],
+  "constants": {
+    "imageSizePixels": 320,
+    "skyRadiusPixels": 150.39999999999998,
+    "atmosphere": {
+      "bottomRadiusMeters": 6360000,
+      "topRadiusMeters": 6420000,
+      "observerHeightMeters": 2,
+      "rayleighScaleHeightMeters": 8000,
+      "mieScaleHeightMeters": 1200,
+      "rayleighCoefficientScale": 0.00000124062,
+      "mieAngstromAlpha": 0,
+      "mieAngstromBeta": 0.005328,
+      "mieSingleScatteringAlbedo": 0.9,
+      "miePhaseFunctionG": 0.8,
+      "sunAngularRadiusRadians": 0.004675,
+      "diagnosticWavelengthMicrometers": 0.55,
+      "opticalLengthSampleCount": 96,
+      "singleScatteringSampleCount": 20,
+      "sunTransmittanceSampleCount": 10,
+      "displayExposure": 10,
+      "luminanceExposureScale": 0.00001,
+      "paperFigure1ToneMapFittedK": 0.0002454,
+      "paperFigure1ToneMapFittedScale": 2.454,
+      "paperFortyWavelengthToneMapFittedScale": 2.672406,
+      "useOzone": true,
+      "dobsonUnitMoleculesPerSquareMeter": 268700000000000000000,
+      "ozoneDobsonUnits": 300,
+      "ozoneDensityIntegralMeters": 15000,
+      "multipleScatteringProxyScale": 1.5,
+      "secondOrderDirectionCount": 8,
+      "fibonacciSphereSecondOrderDirectionCount": 17,
+      "secondOrderAltitudeBins": 24,
+      "secondOrderIncidentMuBins": 5,
+      "secondOrderIncidentSunMuBins": 5,
+      "groundAlbedo": 0.1,
+      "groundBounceDirectionCount": 8,
+      "groundBounceAltitudeBins": 24,
+      "groundBounceTransmittanceSampleCount": 8,
+      "groundSkyIrradianceDirectionCount": 8,
+      "solarDiscPixelFilterSamplesPerAxis": 7
+    },
+    "bruneton2016Aerosol": {
+      "mieAngstromAlpha": 0.8,
+      "mieAngstromBeta": 0.04,
+      "mieSingleScatteringAlbedo": 0.8,
+      "miePhaseFunctionG": 0.7
+    },
+    "activeAerosol": {
+      "mieAngstromAlpha": 0.8,
+      "mieAngstromBeta": 0.04,
+      "mieSingleScatteringAlbedo": 0.8,
+      "miePhaseFunctionG": 0.7
+    },
+    "spectralChannels": [
+      {
+        "name": "lambda-376",
+        "wavelengthNanometers": 375.6666666666667,
+        "solarIrradiance": 1.0688666666666664,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-407",
+        "wavelengthNanometers": 407,
+        "solarIrradiance": 1.729673,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-438",
+        "wavelengthNanometers": 438.3333333333333,
+        "solarIrradiance": 1.8620716666666661,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-470",
+        "wavelengthNanometers": 469.66666666666663,
+        "solarIrradiance": 2.0220633333333335,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-501",
+        "wavelengthNanometers": 501,
+        "solarIrradiance": 1.9081540000000001,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-532",
+        "wavelengthNanometers": 532.3333333333333,
+        "solarIrradiance": 1.8833910000000003,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-564",
+        "wavelengthNanometers": 563.6666666666666,
+        "solarIrradiance": 1.8342466666666666,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-595",
+        "wavelengthNanometers": 595,
+        "solarIrradiance": 1.7674400000000001,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-626",
+        "wavelengthNanometers": 626.3333333333333,
+        "solarIrradiance": 1.65952,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-658",
+        "wavelengthNanometers": 657.6666666666666,
+        "solarIrradiance": 1.548102333333333,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-689",
+        "wavelengthNanometers": 689,
+        "solarIrradiance": 1.45078,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-720",
+        "wavelengthNanometers": 720.3333333333333,
+        "solarIrradiance": 1.3409603333333335,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-752",
+        "wavelengthNanometers": 751.6666666666666,
+        "solarIrradiance": 1.2624333333333335,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-783",
+        "wavelengthNanometers": 783,
+        "solarIrradiance": 1.175208,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      },
+      {
+        "name": "lambda-814",
+        "wavelengthNanometers": 814.3333333333333,
+        "solarIrradiance": 1.090824,
+        "wavelengthBinWidthNanometers": 31.333333333333332
+      }
+    ],
+    "derived": {
+      "coefficients": [
+        {
+          "channel": "lambda-376",
+          "wavelengthNanometers": 375.6666666666667,
+          "rayleighScatteringCoefficient": 0.00006229140589085156,
+          "mieExtinctionCoefficient": 0.00007295190148400736,
+          "mieScatteringCoefficient": 0.00005836152118720589,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 15567.197323906968
+        },
+        {
+          "channel": "lambda-407",
+          "wavelengthNanometers": 407,
+          "rayleighScatteringCoefficient": 0.00004521277270175901,
+          "mieExtinctionCoefficient": 0.00006842317425546999,
+          "mieScatteringCoefficient": 0.00005473853940437599,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 25191.31874586866
+        },
+        {
+          "channel": "lambda-438",
+          "wavelengthNanometers": 438.3333333333333,
+          "rayleighScatteringCoefficient": 0.00003360630663451922,
+          "mieExtinctionCoefficient": 0.00006448150224367247,
+          "mieScatteringCoefficient": 0.00005158520179493798,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 27119.600573432595
+        },
+        {
+          "channel": "lambda-470",
+          "wavelengthNanometers": 469.66666666666663,
+          "rayleighScatteringCoefficient": 0.000025496456396503267,
+          "mieExtinctionCoefficient": 0.00006101645256096843,
+          "mieScatteringCoefficient": 0.000048813162048774744,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 29449.752614704437
+        },
+        {
+          "channel": "lambda-501",
+          "wavelengthNanometers": 501,
+          "rayleighScatteringCoefficient": 0.00001969191147189329,
+          "mieExtinctionCoefficient": 0.00005794401232728453,
+          "mieScatteringCoefficient": 0.00004635520986182763,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 27790.75329857393
+        },
+        {
+          "channel": "lambda-532",
+          "wavelengthNanometers": 532.3333333333333,
+          "rayleighScatteringCoefficient": 0.00001544913372819837,
+          "mieExtinctionCoefficient": 0.000055199077040814766,
+          "mieScatteringCoefficient": 0.00004415926163265182,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 27430.09979579974
+        },
+        {
+          "channel": "lambda-564",
+          "wavelengthNanometers": 563.6666666666666,
+          "rayleighScatteringCoefficient": 0.000012289928793019434,
+          "mieExtinctionCoefficient": 0.00005273037537454943,
+          "mieScatteringCoefficient": 0.00004218430029963955,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 26714.351463280687
+        },
+        {
+          "channel": "lambda-595",
+          "wavelengthNanometers": 595,
+          "rayleighScatteringCoefficient": 0.000009898534821946659,
+          "mieExtinctionCoefficient": 0.00005049695291121953,
+          "mieScatteringCoefficient": 0.00004039756232897563,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 25741.36522001448
+        },
+        {
+          "channel": "lambda-626",
+          "wavelengthNanometers": 626.3333333333333,
+          "rayleighScatteringCoefficient": 0.00000806151518936415,
+          "mieExtinctionCoefficient": 0.00004846568161484885,
+          "mieScatteringCoefficient": 0.00003877254529187908,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 24169.595805186273
+        },
+        {
+          "channel": "lambda-658",
+          "wavelengthNanometers": 657.6666666666666,
+          "rayleighScatteringCoefficient": 0.0000066315562235333905,
+          "mieExtinctionCoefficient": 0.000046609461016143304,
+          "mieScatteringCoefficient": 0.00003728756881291465,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 22546.885642675235
+        },
+        {
+          "channel": "lambda-689",
+          "wavelengthNanometers": 689,
+          "rayleighScatteringCoefficient": 0.0000055050578928544675,
+          "mieExtinctionCoefficient": 0.00004490589615880109,
+          "mieScatteringCoefficient": 0.00003592471692704087,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 21129.46285808435
+        },
+        {
+          "channel": "lambda-720",
+          "wavelengthNanometers": 720.3333333333333,
+          "rayleighScatteringCoefficient": 0.000004607917866995555,
+          "mieExtinctionCoefficient": 0.00004333631062832077,
+          "mieScatteringCoefficient": 0.00003466904850265661,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 19530.026301252485
+        },
+        {
+          "channel": "lambda-752",
+          "wavelengthNanometers": 751.6666666666666,
+          "rayleighScatteringCoefficient": 0.000003886311539728726,
+          "mieExtinctionCoefficient": 0.000041884999258006534,
+          "mieScatteringCoefficient": 0.00003350799940640523,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 18386.342675991047
+        },
+        {
+          "channel": "lambda-783",
+          "wavelengthNanometers": 783,
+          "rayleighScatteringCoefficient": 0.0000033005911428405684,
+          "mieExtinctionCoefficient": 0.00004053865501413159,
+          "mieScatteringCoefficient": 0.000032430924011305275,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 17115.974707759684
+        },
+        {
+          "channel": "lambda-814",
+          "wavelengthNanometers": 814.3333333333333,
+          "rayleighScatteringCoefficient": 0.0000028211743663455,
+          "mieExtinctionCoefficient": 0.000039285924300739985,
+          "mieScatteringCoefficient": 0.000031428739440591986,
+          "ozoneAbsorptionCoefficient": 0,
+          "solarRadiance": 15886.988511495198
+        }
+      ],
+      "radianceToLuminanceFactors": null,
+      "fullSpectralCieConversion": true,
+      "spectralSampleCount": 15,
+      "ozoneAbsorptionEnabled": false,
+      "displayWhitePoint": [
+        1,
+        1,
+        1
+      ],
+      "paperFigure1ToneMap": {
+        "expression": "1 - exp(-kL)",
+        "k": 0.00029282576866764275,
+        "baseK": null,
+        "sourceDerivedK": 0.00029282576866764275,
+        "sourceDerivedFrom": "1 / (5 * MAX_LUMINOUS_EFFICACY)",
+        "brunetonComparisonToneMapExposureScale": 5,
+        "maxLuminousEfficacy": 683,
+        "directDerivedK": null,
+        "derivedFrom": null,
+        "fittedScale": null,
+        "fittedAgainstExternalTargets": null,
+        "demoGammaPowerOmitted": true,
+        "demoWhitePointOmitted": true
+      },
+      "demoWhiteBalanceEnabled": false,
+      "figure1SunZenithAngles": null,
+      "figure1FourSkydomeViews": [
+        {
+          "id": "figure1-06h00-z87",
+          "sourceTimeOfDay": "06h00",
+          "sourceSunZenithDegrees": 87,
+          "sunAltitudeDegrees": 3,
+          "sunAzimuthDegrees": -25.83454348280912,
+          "sourceTile": "35-Im6.png",
+          "sourceRedCrossCenterPixels": [
+            238,
+            181
+          ]
+        },
+        {
+          "id": "figure1-10h15-z41",
+          "sourceTimeOfDay": "10h15",
+          "sourceSunZenithDegrees": 41,
+          "sunAltitudeDegrees": 49,
+          "sunAzimuthDegrees": 9.544525565558136,
+          "sourceTile": "06-Im15.png",
+          "sourceRedCrossCenterPixels": [
+            184,
+            118
+          ]
+        },
+        {
+          "id": "figure1-11h15-z31",
+          "sourceTimeOfDay": "11h15",
+          "sourceSunZenithDegrees": 31,
+          "sunAltitudeDegrees": 59,
+          "sunAzimuthDegrees": 22.166345822082455,
+          "sourceTile": "17-Im25.png",
+          "sourceRedCrossCenterPixels": [
+            168,
+            111
+          ]
+        },
+        {
+          "id": "figure1-13h15-z21",
+          "sourceTimeOfDay": "13h15",
+          "sourceSunZenithDegrees": 21,
+          "sunAltitudeDegrees": 69,
+          "sunAzimuthDegrees": 85.31410016049729,
+          "sourceTile": "28-Im35.png",
+          "sourceRedCrossCenterPixels": [
+            130,
+            97
+          ]
+        }
+      ],
+      "directSolarDiscRendered": false,
+      "pixelFilteredSolarDisc": null,
+      "secondOrderScattering": {
+        "directionCount": 17,
+        "fullSphereDirections": true,
+        "fibonacciSphereDirections": true,
+        "altitudeBins": 24,
+        "angularWeightSteradians": 0.7391982714328925,
+        "nishita96PlaneDirections": false,
+        "incidentRadianceCacheSunMuBins": null,
+        "incidentRadianceCacheMuBins": null,
+        "incidentRadianceCacheCoordinates": "altitude bin for each incoming direction"
+      },
+      "groundBounceCoupling": null
+    },
+    "scenes": [
+      {
+        "id": "figure1-06h00-z87",
+        "sourceTimeOfDay": "06h00",
+        "sourceSunZenithDegrees": 87,
+        "sunAltitudeDegrees": 3,
+        "sunAzimuthDegrees": -25.83454348280912,
+        "sourceTile": "35-Im6.png",
+        "sourceRedCrossCenterPixels": [
+          238,
+          181
+        ]
+      },
+      {
+        "id": "figure1-10h15-z41",
+        "sourceTimeOfDay": "10h15",
+        "sourceSunZenithDegrees": 41,
+        "sunAltitudeDegrees": 49,
+        "sunAzimuthDegrees": 9.544525565558136,
+        "sourceTile": "06-Im15.png",
+        "sourceRedCrossCenterPixels": [
+          184,
+          118
+        ]
+      },
+      {
+        "id": "figure1-11h15-z31",
+        "sourceTimeOfDay": "11h15",
+        "sourceSunZenithDegrees": 31,
+        "sunAltitudeDegrees": 59,
+        "sunAzimuthDegrees": 22.166345822082455,
+        "sourceTile": "17-Im25.png",
+        "sourceRedCrossCenterPixels": [
+          168,
+          111
+        ]
+      },
+      {
+        "id": "figure1-13h15-z21",
+        "sourceTimeOfDay": "13h15",
+        "sourceSunZenithDegrees": 21,
+        "sunAltitudeDegrees": 69,
+        "sunAzimuthDegrees": 85.31410016049729,
+        "sourceTile": "28-Im35.png",
+        "sourceRedCrossCenterPixels": [
+          130,
+          97
+        ]
+      }
+    ]
+  },
+  "display": {
+    "colorRole": "Fifteen spectral radiance samples integrated with CIE 1931 color matching functions and XYZ to linear sRGB before the paper Figure 1 tone map.",
+    "exposure": 0.0001,
+    "whitePoint": [
+      1,
+      1,
+      1
+    ],
+    "transform": "1 - exp(-k * max(0, linear_sRGB)); k is Bruneton comparison source k = 1 / (5 * 683)",
+    "outsideCircle": "Transparent alpha marks pixels outside the sky dome."
+  },
+  "omittedByDesign": [
+    "ozone absorption",
+    "direct solar-disc radiance in the camera pass; this step isolates atmospheric sky radiance and aureole for the Figure 1 target-contract test",
+    "ground coupling",
+    "third and higher scattering orders; a directional second-order term is included",
+    "precomputed texture interpolation",
+    "full Bruneton precomputed illuminance textures; this evaluates 15 spectral samples directly per pixel"
+  ]
+}

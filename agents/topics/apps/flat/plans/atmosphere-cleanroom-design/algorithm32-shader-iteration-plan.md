@@ -2363,13 +2363,15 @@ optical-length coordinates, Sun transmittance, and cache keys while keeping the
 Algorithm32 clear-air atmosphere physics unchanged.
 
 Current flat-production discussion: the first target is a configurable
-flat-earth local Sun, with user-facing latitude, altitude, radius/size, and
-brightness/luminosity. Treat those values as explicit flat-model hypothesis
-parameters. The default Sun motion should use a solar-day period around the
-configured projected latitude ring; sidereal rotation stays reserved for the
-star dome or an explicit advanced option. Older Flat POC/status notes already
-identified `config.sun.lat`, `config.sun.altitudeKm`, and
-`config.sun.radiusKm` as first false-Sun controls, and the older rejected
+flat-earth local Sun, with user-facing latitude model, altitude, radius/size,
+and brightness/luminosity. Treat those values as explicit flat-model
+hypothesis parameters. The default Sun latitude uses an annual
+`annual-tropic-migration` model between `23.5 deg N` and `23.5 deg S`; the
+default daily motion uses a solar-day period around the date-resolved projected
+latitude ring. Sidereal rotation stays reserved for the star dome or an
+explicit advanced option. Older Flat POC/status notes identified a fixed
+`config.sun.lat` control; that is superseded by `config.sun.latitude` plus
+`config.sun.altitudeKm` and `config.sun.radiusKm`. The older rejected
 reference docs record secondary claim breadcrumbs such as a small local Sun
 around `32 mi` across and `3000 mi` above Earth. Those older docs are useful
 for provenance and UI intent, not as physics authority. The implementation

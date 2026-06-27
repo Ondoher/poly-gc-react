@@ -1,0 +1,181 @@
+{
+  "kind": "cpu-unified-source-driven-soft-shader-matrix-result",
+  "status": "accepted",
+  "createdAt": "2026-06-24T22:00:36.146Z",
+  "completedAt": "2026-06-24T22:00:56.995Z",
+  "durationMs": 20849,
+  "artifactFolder": "094-cpu-unified-source-driven-soft-shader-matrix",
+  "summary": {
+    "passed": 56,
+    "failed": 0,
+    "aggregatePassed": 7,
+    "aggregateFailed": 0,
+    "casePassed": 49,
+    "caseFailed": 0,
+    "caseCount": 7
+  },
+  "cases": [
+    {
+      "caseKey": "distant-high",
+      "status": "accepted",
+      "sourceFamily": "distant-directional-sun",
+      "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/087-browser-distant-sun-position-matrix-high",
+      "scenePacketOrigin": "browser-lit-scene-input-capture",
+      "sceneLightAdapter": "distant-directional-sun",
+      "sourceId": "figure1-13h15-z21",
+      "postprocessSourceResolution": "canonical-sun-case",
+      "noAtmosphereMaxDelta": 0,
+      "finiteChecks": {
+        "pixels": 14400,
+        "nonfinitePixels": 0,
+        "minByte": 26,
+        "maxByte": 249
+      },
+      "summary": {
+        "passed": 7,
+        "failed": 0
+      }
+    },
+    {
+      "caseKey": "distant-low",
+      "status": "accepted",
+      "sourceFamily": "distant-directional-sun",
+      "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/088-browser-distant-sun-position-matrix-low",
+      "scenePacketOrigin": "browser-lit-scene-input-capture",
+      "sceneLightAdapter": "distant-directional-sun",
+      "sourceId": "figure1-06h00-z87",
+      "postprocessSourceResolution": "canonical-sun-case",
+      "noAtmosphereMaxDelta": 0,
+      "finiteChecks": {
+        "pixels": 14400,
+        "nonfinitePixels": 0,
+        "minByte": 11,
+        "maxByte": 147
+      },
+      "summary": {
+        "passed": 7,
+        "failed": 0
+      }
+    },
+    {
+      "caseKey": "local-000deg",
+      "status": "accepted",
+      "sourceFamily": "flat-local-point-sun",
+      "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+      "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+      "sceneLightAdapter": "none-local-unlit-packet",
+      "sourceId": "san-jose-000deg-closest-algorithm32-flat-cap-first-order",
+      "offsetDegrees": 0,
+      "sourceDistanceMeters": 5050674.1648427015,
+      "incidentScale": 1,
+      "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+      "noAtmosphereMaxDelta": 0,
+      "finiteChecks": {
+        "pixels": 5184,
+        "nonfinitePixels": 0,
+        "minByte": 11,
+        "maxByte": 235
+      },
+      "summary": {
+        "passed": 7,
+        "failed": 0
+      }
+    },
+    {
+      "caseKey": "local-045deg",
+      "status": "accepted",
+      "sourceFamily": "flat-local-point-sun",
+      "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+      "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+      "sceneLightAdapter": "none-local-unlit-packet",
+      "sourceId": "san-jose-045deg-from-closest-algorithm32-flat-cap-first-order",
+      "offsetDegrees": 45,
+      "sourceDistanceMeters": 7119212.438383861,
+      "incidentScale": 0.5033091181134656,
+      "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+      "noAtmosphereMaxDelta": 0,
+      "finiteChecks": {
+        "pixels": 5184,
+        "nonfinitePixels": 0,
+        "minByte": 17,
+        "maxByte": 251
+      },
+      "summary": {
+        "passed": 7,
+        "failed": 0
+      }
+    },
+    {
+      "caseKey": "local-090deg",
+      "status": "accepted",
+      "sourceFamily": "flat-local-point-sun",
+      "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+      "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+      "sceneLightAdapter": "none-local-unlit-packet",
+      "sourceId": "san-jose-090deg-from-closest-algorithm32-flat-cap-first-order",
+      "offsetDegrees": 90,
+      "sourceDistanceMeters": 10557381.263312686,
+      "incidentScale": 0.22886864160388085,
+      "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+      "noAtmosphereMaxDelta": 0,
+      "finiteChecks": {
+        "pixels": 5184,
+        "nonfinitePixels": 0,
+        "minByte": 10,
+        "maxByte": 251
+      },
+      "summary": {
+        "passed": 7,
+        "failed": 0
+      }
+    },
+    {
+      "caseKey": "local-135deg",
+      "status": "accepted",
+      "sourceFamily": "flat-local-point-sun",
+      "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+      "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+      "sceneLightAdapter": "none-local-unlit-packet",
+      "sourceId": "san-jose-135deg-from-closest-algorithm32-flat-cap-first-order",
+      "offsetDegrees": 135,
+      "sourceDistanceMeters": 13123772.80110609,
+      "incidentScale": 0.14810894787454787,
+      "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+      "noAtmosphereMaxDelta": 0,
+      "finiteChecks": {
+        "pixels": 5184,
+        "nonfinitePixels": 0,
+        "minByte": 4,
+        "maxByte": 248
+      },
+      "summary": {
+        "passed": 7,
+        "failed": 0
+      }
+    },
+    {
+      "caseKey": "local-180deg",
+      "status": "accepted",
+      "sourceFamily": "flat-local-point-sun",
+      "sourceRun": "tmp/atmosphere/algorithm32_shader_lab/093-cpu-local-sun-soft-shader-source-matrix",
+      "scenePacketOrigin": "cpu-synthesized-unlit-scene-packet",
+      "sceneLightAdapter": "none-local-unlit-packet",
+      "sourceId": "san-jose-180deg-from-closest-algorithm32-flat-cap-first-order",
+      "offsetDegrees": 180,
+      "sourceDistanceMeters": 14050170.41741779,
+      "incidentScale": 0.12922172063575063,
+      "postprocessSourceResolution": "packet-supplied-flat-local-point-sun",
+      "noAtmosphereMaxDelta": 0,
+      "finiteChecks": {
+        "pixels": 5184,
+        "nonfinitePixels": 0,
+        "minByte": 0,
+        "maxByte": 220
+      },
+      "summary": {
+        "passed": 7,
+        "failed": 0
+      }
+    }
+  ]
+}

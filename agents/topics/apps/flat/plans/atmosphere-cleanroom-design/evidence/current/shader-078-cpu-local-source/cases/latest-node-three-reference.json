@@ -1,0 +1,14 @@
+{
+  "kind": "algorithm32-node-three-reference-result",
+  "status": "accepted",
+  "createdAt": "2026-06-24T18:55:25.638Z",
+  "completedAt": "2026-06-24T18:55:32.508Z",
+  "durationMs": 6870,
+  "artifactFolder": "tmp/atmosphere/algorithm32_shader_lab/078-cpu-local-source-integrated-render/cases/003-local-source-090deg-rise-sunset",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "unresolved": 0
+  }
+}

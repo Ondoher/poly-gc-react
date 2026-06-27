@@ -1,0 +1,15 @@
+{
+  "kind": "soft-shader-capability-parity-matrix-command",
+  "milestone": 29,
+  "options": {
+    "outRoot": "tmp/atmosphere/algorithm32_shader_lab",
+    "commandPath": null,
+    "browserRun": null,
+    "browserRunHigh": null,
+    "browserRunLow": null,
+    "localSourceRun": null,
+    "pageTimeoutMs": 300000,
+    "from": 29,
+    "to": 29
+  }
+}

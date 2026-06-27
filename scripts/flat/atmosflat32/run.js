@@ -8,6 +8,7 @@ import {
   DEFAULT_FLAT_SIMULATION_SUN,
   MEAN_EARTH_RADIUS_KM,
 } from "../../../src/flat/features/flat-simulation/models/consts.js";
+import { resolveFalseSunLatitudeDeg } from "../../../src/flat/features/flat-simulation/models/sun-latitude.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,6 +43,8 @@ const FLAT_APP_SKYDOME_ROTATION_OFFSETS_DEGREES = Object.freeze([
   135,
   180,
 ]);
+const FLAT_APP_FORWARD_TIME_ROTATION_SIGN = 1;
+const FLAT_APP_FORWARD_TIME_ORBIT_DIRECTION = "clockwise";
 const FLAT_APP_BRIGHTNESS_CALIBRATION_TARGET = Object.freeze({
   kind: "match-distant-solar-noon-unit-incident-scale-at-closest-approach",
   distantSceneKey: "figure1-13h15-z21",
@@ -51,6 +54,7 @@ const FLAT_APP_BRIGHTNESS_CALIBRATION_TARGET = Object.freeze({
 });
 const SAN_JOSE_CLOSEST_APPROACH_REQUEST = Object.freeze({
   root: Object.freeze({ ...DEFAULT_FLAT_SIMULATION_CONFIG.root }),
+  time: DEFAULT_FLAT_SIMULATION_CONFIG.time,
   sunConfig: DEFAULT_FLAT_SIMULATION_SUN,
   projectionConfig: Object.freeze({
     earthProjection: DEFAULT_FLAT_SIMULATION_CONFIG.earthProjection,
@@ -1982,13 +1986,17 @@ function createFlatAppClosestSanJoseContext() {
   const sunConfig = request.sunConfig;
   const radianceConfig = request.radianceConfig;
   const meanEarthRadiusKm = request.projectionConfig.meanEarthRadiusKm;
+  const resolvedSunLatitudeDeg = resolveFalseSunLatitudeDeg(
+    sunConfig,
+    request.time
+  );
   const observerProjection = projectNorthPoleAzimuthalEquidistantKm(
     root,
     meanEarthRadiusKm
   );
   const initialSunProjection = projectNorthPoleAzimuthalEquidistantKm(
     {
-      lat: sunConfig.lat,
+      lat: resolvedSunLatitudeDeg,
       lon: sunConfig.lon,
       elevationMeters: sunConfig.altitudeKm * 1000,
     },
@@ -2045,7 +2053,11 @@ function createFlatAppClosestSanJoseContext() {
     request,
     appConfig: {
       root,
-      sun: sunConfig,
+      sun: {
+        ...sunConfig,
+        resolvedLatitudeDeg: resolvedSunLatitudeDeg,
+        latitudeResolvedAt: request.time,
+      },
       projection: request.projectionConfig,
       radiance: radianceConfig,
     },
@@ -5575,7 +5587,9 @@ function buildFlatAppClosestCriteria(context, diagnostics, imageProducts = []) {
       measuredError: 0,
       sourceOrStatus: "app configuration",
       sunConfig: {
-        lat: context.appConfig.sun.lat,
+        latitude: context.appConfig.sun.latitude,
+        resolvedLatitudeDeg: context.appConfig.sun.resolvedLatitudeDeg,
+        latitudeResolvedAt: context.appConfig.sun.latitudeResolvedAt,
         lon: context.appConfig.sun.lon,
         altitudeKm: context.appConfig.sun.altitudeKm,
         radiusKm: context.appConfig.sun.radiusKm,
@@ -5886,7 +5900,7 @@ function makeFlatAppClosestEquationsRecord(context) {
         expression:
           "angleRad = atan2(observerHorizontal.x * sunHorizontal.z - observerHorizontal.z * sunHorizontal.x, dot(observerHorizontal, sunHorizontal))",
         purpose:
-          "Rotates the configured fixed-latitude false Sun to its closest horizontal approach to the configured San Jose observer.",
+          "Rotates the configured date-resolved false Sun latitude ring to its closest horizontal approach to the configured San Jose observer.",
         source: "algorithmic diagnostic math from app configuration",
       },
       {
@@ -6104,7 +6118,7 @@ function renderFlatClosestMapImage(context) {
       yellow: "closest-approach local Sun",
       orangeRing: "initial configured false-Sun position",
       red: "opposite rotation",
-      grayRing: "fixed-latitude Sun trajectory",
+      grayRing: "date-resolved Sun latitude-ring trajectory",
     },
   };
 }
@@ -6206,7 +6220,8 @@ function createFlatLocalPointSunSourceFromLight(
 function createFlatAppRotationSourceEntries(base) {
   return FLAT_APP_SKYDOME_ROTATION_OFFSETS_DEGREES.map((offsetDegrees) => {
     const rawRotationAngleRad =
-      base.closestRotationAngleRad + degreesToRadians(offsetDegrees);
+      base.closestRotationAngleRad +
+      FLAT_APP_FORWARD_TIME_ROTATION_SIGN * degreesToRadians(offsetDegrees);
     const normalizedRotationAngleRad =
       ((rawRotationAngleRad % TAU) + TAU) % TAU;
     const positionKm = rotateAroundWorldYArray(
@@ -6244,6 +6259,9 @@ function createFlatAppRotationSourceEntries(base) {
       offsetDegrees,
       rawRotationAngleRad,
       normalizedRotationAngleRad,
+      orbitDirection: FLAT_APP_FORWARD_TIME_ORBIT_DIRECTION,
+      offsetSemantic:
+        "positive rotation offsets are forward solar time from closest approach",
       sceneKey,
       source,
       sourceConfig: source.toJSON(),
@@ -6520,6 +6538,8 @@ function collectFlatRotationSkydomeDiagnostics(entries) {
     entries: entries.map((entry) => ({
       label: entry.label,
       offsetDegrees: entry.offsetDegrees,
+      orbitDirection: entry.orbitDirection,
+      offsetSemantic: entry.offsetSemantic,
       rawRotationAngleRad: entry.rawRotationAngleRad,
       normalizedRotationAngleRad: entry.normalizedRotationAngleRad,
       sourcePositionKm: entry.sourcePositionKm,
@@ -6922,7 +6942,8 @@ function makeFlatRotationSkydomeStateGoal(criteriaResults) {
 
 Goal: generate first-order Algorithm32 flat/local observer angular sky images
 for the app-config false Sun placement at closest San Jose approach and at 45,
-90, 135, and 180 degrees away around the same fixed-latitude rotation, using
+90, 135, and 180 degrees forward in time around the same clockwise
+date-resolved latitude-ring rotation, using
 an artificial cap whose footprint radius matches the round atmosphere horizon
 radius as a skydome-renderer ray length limit, plus a calibrated local-source
 brightness whose closest approach matches the distant-Sun unit incident scale.
@@ -6982,6 +7003,9 @@ function makeFlatRotationSkydomeInputsRecord(entries) {
     },
     request: SAN_JOSE_CLOSEST_APPROACH_REQUEST,
     offsetsDegrees: entries.map((entry) => entry.offsetDegrees),
+    orbitDirection: FLAT_APP_FORWARD_TIME_ORBIT_DIRECTION,
+    offsetSemantic:
+      "positive requested offsets are forward solar time from closest approach",
     sourceConfigs: entries.map((entry) => entry.sourceConfig),
     transportSourceConfigs: entries.map((entry) => entry.transportSourceConfig),
     outputProducts: [
@@ -7130,7 +7154,7 @@ function makeFlatRotationSkydomeEquationsRecord() {
         expression:
           "position(theta) = rotateY(initialSunPosition, closestAngle + offsetAngle)",
         purpose:
-          "Places the same configured false Sun along its fixed-latitude rotation at requested angular offsets from closest San Jose approach.",
+          "Places the same configured false Sun along its date-resolved clockwise latitude-ring rotation at requested forward-time angular offsets from closest San Jose approach.",
         source: "algorithmic diagnostic math from app configuration",
       },
       {
@@ -7187,6 +7211,9 @@ function makeFlatRotationSkydomeEquationsRecord() {
     constants: {
       request: SAN_JOSE_CLOSEST_APPROACH_REQUEST,
       offsetsDegrees: FLAT_APP_SKYDOME_ROTATION_OFFSETS_DEGREES,
+      orbitDirection: FLAT_APP_FORWARD_TIME_ORBIT_DIRECTION,
+      offsetSemantic:
+        "positive requested offsets are forward solar time from closest approach",
       imageSizePixels: IMAGE_SIZE,
       coordinateFrame:
         "flat transport frame, meters, z up; app flat scene is converted from kilometers and y up",

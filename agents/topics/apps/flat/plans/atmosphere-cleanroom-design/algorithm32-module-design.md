@@ -60,6 +60,14 @@ needs to preserve the boundary that would make that later profile possible.
 The implementation can start inside this repo, but should be structured as if
 it could become a standalone package.
 
+Production placement:
+
+- `agents/topics/apps/flat/algorithm32/` owns production Algorithm32
+  documentation.
+- `shared/algorithm32/` owns the shared production implementation.
+- This cleanroom design document remains the working design/evidence source
+  until durable contracts are promoted into the production documentation home.
+
 ```text
 algorithm32-core
   source-backed spectral transport kernels and direct trace APIs
