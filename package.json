@@ -51,6 +51,7 @@
     "validate:base-tile": "node scripts/3d-assets/asset-pipeline/validate-base-tile-asset.js",
     "test:engines": "jasmine --config=spec/support/jasmine-engines.json",
     "test:pipeline": "jasmine --config=spec/support/jasmine-pipeline.json",
+    "test:algorithm32:production": "jasmine --config=spec/support/jasmine-algorithm32-production.json",
     "test:scripts:flat": "jasmine --config=spec/support/jasmine-flat-reference.json",
     "test:scripts": "jasmine --config=spec/support/jasmine-scripts.json",
     "test": "npm run test:ui:gc",

@@ -8,18 +8,28 @@ Canonical atmosphere status now lives in
 [Algorithm32 Canonical Reference](plans/atmosphere-cleanroom-design/algorithm32-canonical-reference.md).
 Production Algorithm32 documentation belongs under
 [Algorithm32 Production Documentation](algorithm32/README.md), and the shared
-production implementation belongs under `shared/algorithm32/`.
+production implementation belongs under `shared/algorithm32/production/`.
 Production Algorithm32 is currently in design stage only; the requirements
 entry point is [Algorithm32 Requirements](algorithm32/requirements.md), and the
 design entry point is [Algorithm32 Production Design](algorithm32/production-design.md).
+The concise current handoff is [Algorithm32 Status](algorithm32/status.md), and
+the current sourced conclusions are
+[Algorithm32 Conclusions](algorithm32/conclusions.md).
 The primary public facade draft is
 [Algorithm32 Primary Facade API Draft](algorithm32/api-facade-draft.md).
-Current primary facade methods are `constructor`, `getConfig`, `setConfig`,
+Current primary facade methods are `constructor`, `config` getter, `setConfig`,
 awaited `setupShader`, `evaluate`, `getDiagnostics`, and `dispose`;
 `buildTexture` and `validate` are not primary app-facing methods.
-No implementation has been promoted into `shared/algorithm32/` outside the
-preserved `POC` bundle yet. The production deliverable is the usable shader
-runtime path; CPU reference code is support for validation, internal shader
+No implementation has been promoted into `shared/algorithm32/production/`
+outside the preserved `POC` bundle yet. The next gate is the
+`reconciliation` experimental lane: build a reference-backed CPU
+implementation of Algorithm32, then build a GPU shader implementation
+validated against that CPU reference. The lane must also produce the
+finalized, fully sourced parameter ledger, document the shape and flow of all
+data across the subsystem boundaries, rerun accepted Algorithm32 tests, and
+recreate the objective and subjective local-second-order artifact families
+before promotion. The production deliverable is the usable shader runtime
+path; CPU reference code is support for validation, internal shader
 texture/cache building, cache construction, diagnostics, and future tests.
 The requirements are now divided into ownership domains that can become
 self-contained code surfaces: API contract/governance, algorithm input
@@ -27,8 +37,11 @@ interfaces, local Sun configuration/calibration, execution configuration,
 transport kernel/reference support, shader texture/cache builder, runtime
 shader product, display conversion, and validation.
 The core abstractions are required to be public interfaces in the Algorithm32
-API itself, with display conversion kept separate from the three algorithm
-input interfaces. Numerical controls are now classified as execution
+API itself. Light/source, geometry, and atmosphere feed Algorithm32 transport;
+color/display conversion is a separate public boundary outside the algorithm
+itself. CPU reference transport does not depend on color, but the later GPU
+shader build uses the color/display interface for renderable output. Numerical
+controls are now classified as execution
 configuration, not a fourth algorithm input abstraction. Per-path evaluation
 and shader texture/cache building are now separated as implementation
 responsibilities that share a transport core. CPU/reference evaluation may
@@ -119,7 +132,8 @@ and the accepted copied runners have been reduced to CPU transport, CPU
 soft-shader, flat/local source, and Three-native pass modules with
 compatibility re-export shims. These clean POC modules are the tested basis
 for the production Algorithm32 implementation and should be promoted into
-`shared/algorithm32/` after validation. The local second-order plan now starts
+`shared/algorithm32/production/` after reconciliation and validation. The
+local second-order plan now starts
 with shared-module parity validation against original runners or accepted
 evidence before implementing the local incident-field/cache work, and it now
 includes lane-specific guidance mined from other cleanroom experiment lanes:

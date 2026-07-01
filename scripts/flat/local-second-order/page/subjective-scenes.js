@@ -128,7 +128,10 @@ let southernFranceDiffuseTexturesPromise = null;
 
 export async function runLocalSubjectiveSceneCapture(command, startedAt) {
 	const payload = command.payload || {};
-	const caseConfig = subjectiveCaseConfig(payload.caseId || payload.case || 'distant-midday');
+	const caseConfig = applySourceColorOverrideToCaseConfig(
+		subjectiveCaseConfig(payload.caseId || payload.case || 'distant-midday'),
+		payload.sourceColorOverride
+	);
 	const width = payload.width || WIDTH;
 	const height = payload.height || HEIGHT;
 	const terrainBackend = payload.terrainBackend || TERRAIN_BACKENDS.manualHeightfield;
@@ -468,10 +471,13 @@ export async function runThreeTerrainIntegratedSourceMatrix(command, startedAt) 
 		});
 		if (galleryMode === LOCAL_DISTANT_TIME_ALIGNED_GALLERY_MODE) {
 			const pairedCaseConfig =
-				timeAlignedDistantCaseConfigForLocalCase({
-					localCaseConfig: caseConfig,
-					sourceMatrixContext,
-				});
+				applySourceColorOverrideToCaseConfig(
+					timeAlignedDistantCaseConfigForLocalCase({
+						localCaseConfig: caseConfig,
+						sourceMatrixContext,
+					}),
+					payload.sourceColorOverride
+				);
 			console.info(
 				`[local-second-order] Rendering paired distant solar-time case for ${caseConfig.id}: ${pairedCaseConfig.id}`
 			);
@@ -497,10 +503,13 @@ export async function runThreeTerrainIntegratedSourceMatrix(command, startedAt) 
 		}
 		if (galleryMode === DISTANT_LOCAL_DAYLIGHT_GALLERY_MODE) {
 			const pairedCaseConfig =
-				timeAlignedLocalCaseConfigForDistantCase({
-					distantCaseConfig: caseConfig,
-					sourceMatrixContext,
-				});
+				applySourceColorOverrideToCaseConfig(
+					timeAlignedLocalCaseConfigForDistantCase({
+						distantCaseConfig: caseConfig,
+						sourceMatrixContext,
+					}),
+					payload.sourceColorOverride
+				);
 			console.info(
 				`[local-second-order] Rendering paired local solar-time case for ${caseConfig.id}: ${pairedCaseConfig.id}`
 			);
@@ -599,15 +608,19 @@ export async function runThreeTerrainIntegratedSourceMatrix(command, startedAt) 
 }
 
 function applySourceMatrixPayloadCasePolicy({ caseConfig, payload }) {
+	const colorAdjustedCaseConfig = applySourceColorOverrideToCaseConfig(
+		caseConfig,
+		payload.sourceColorOverride
+	);
 	if (
 		payload.forceLocalToward180Sun !== true ||
-		caseConfig.sourceFamily !== 'flat-local-point-sun' ||
-		caseConfig.mountainView === MOUNTAIN_VIEW_MODES.localToward180Sun
+		colorAdjustedCaseConfig.sourceFamily !== 'flat-local-point-sun' ||
+		colorAdjustedCaseConfig.mountainView === MOUNTAIN_VIEW_MODES.localToward180Sun
 	) {
-		return caseConfig;
+		return colorAdjustedCaseConfig;
 	}
 	return {
-		...caseConfig,
+		...colorAdjustedCaseConfig,
 		mountainView: MOUNTAIN_VIEW_MODES.localToward180Sun,
 		viewPolicyOverride: {
 			kind: 'force-local-yaw-to-180deg-sun',
@@ -616,6 +629,58 @@ function applySourceMatrixPayloadCasePolicy({ caseConfig, payload }) {
 			targetLocalSunOffsetDegrees: 180,
 		},
 	};
+}
+
+function applySourceColorOverrideToCaseConfig(caseConfig, sourceColorOverride) {
+	if (
+		!sourceColorOverride ||
+		caseConfig.sourceFamily !== 'flat-local-point-sun' ||
+		caseConfig.sourcePacket?.kind !== 'flat-local-point-sun'
+	) {
+		return caseConfig;
+	}
+	const color = normalizeSourceColorOverride(sourceColorOverride);
+	if (!color) {
+		return caseConfig;
+	}
+	return {
+		...caseConfig,
+		sourcePacket: {
+			...caseConfig.sourcePacket,
+			color,
+			sourceColorOverride: {
+				kind: 'payload-source-color-override',
+				color,
+				reason:
+					'Experiment isolates the Algorithm32 output effect of removing the inherited flat-app RGB source tint from local source spectral scale.',
+			},
+			provenance: {
+				...(caseConfig.sourcePacket.provenance || {}),
+				sourceColorOverride: {
+					kind: 'payload-source-color-override',
+					color,
+					reason:
+						'Experiment isolates the Algorithm32 output effect of removing the inherited flat-app RGB source tint from local source spectral scale.',
+				},
+			},
+		},
+	};
+}
+
+function normalizeSourceColorOverride(sourceColorOverride) {
+	const color = {
+		r: Number(sourceColorOverride.r),
+		g: Number(sourceColorOverride.g),
+		b: Number(sourceColorOverride.b),
+	};
+	if (
+		!Number.isFinite(color.r) ||
+		!Number.isFinite(color.g) ||
+		!Number.isFinite(color.b)
+	) {
+		return null;
+	}
+	return color;
 }
 
 async function renderThreeTerrainIntegratedCasePair({

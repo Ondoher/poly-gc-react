@@ -208,6 +208,16 @@ not uncopied temp folders.
   and writes `subjective-l2-cache-comparison-gallery.png`. Treat
   `025-subjective-l2-cache-comparison` as superseded because its fallback
   terrain generator used a different RNG and changed the silhouette.
+- The local lane now includes
+  `scripts/flat/local-second-order/local-source-neutral-spectrum-comparison.js`
+  for the source-tint reversal diagnostic. With the user-owned watcher running
+  (`node scripts/flat/local-second-order/harness.js --watch`), the runner
+  renders the accepted Southern France local-source integrated-shader vertical
+  stack, rerenders the same stack with
+  `payload.sourceColorOverride = { r: 1, g: 1, b: 1 }`, and writes a
+  reproducible artifact with both browser-run links, side-by-side output, diff
+  image, criteria, and report. This is a diagnostic for the inherited
+  flat-app RGB source tint only; it is not a new Algorithm32 physics contract.
 - Milestone 13 initial spike is accepted by
   `037-three-terrain-integrated-distant-midday`. It installs and imports
   `three.terrain.js`, adds the optional `three-terrain-js` terrain backend,

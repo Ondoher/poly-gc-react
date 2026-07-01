@@ -4,24 +4,30 @@ Deployable Flat app documentation for the false-sky / sky-comparison project.
 
 ## Current Active Task
 
-Active bootstrap record: local Sun second-order scattering/cache POC. Use this
-README only as a routing marker. A new or compacted agent should start with
-the local lane entrypoint, then the experiment plan, then the runner README:
+Active bootstrap record: Algorithm32 production conclusions and reconciliation
+prep. Use this README only as a routing marker. A new or compacted agent should
+start with the Algorithm32 production handoff, then load conclusions before
+dropping into historical experiment lanes:
 
-- [Local Sun Second-Order POC](plans/atmosphere-cleanroom-design/local-sun-second-order/README.md)
-- [Local Sun Second-Order Experiment Plan](plans/atmosphere-cleanroom-design/local-sun-second-order/experiment-plan.md)
-- [Local Second-Order Browser Runner](../../../../scripts/flat/local-second-order/README.md)
-- [Algorithm32 POC Bundle](../../../../shared/algorithm32/POC/README.md)
-- [Current Evidence Registry](plans/atmosphere-cleanroom-design/evidence/current/README.md)
+- [Algorithm32 Production Documentation](algorithm32/README.md)
+- [Algorithm32 Status](algorithm32/status.md)
+- [Algorithm32 Conclusions](algorithm32/conclusions.md)
+- [Reconciliation Lane](reconciliation/README.md)
+- [Reconciliation Experimental Guidelines](reconciliation/experimental-guidelines.md)
+- [Algorithm32 Requirements](algorithm32/requirements.md)
+- [Algorithm32 Production Design](algorithm32/production-design.md)
 
 Production placement: `agents/topics/apps/flat/algorithm32/` owns production
-Algorithm32 documentation, and `shared/algorithm32/` owns the shared production
-implementation. Treat the canonical reference as the current source of truth
-for Algorithm32 steps, abstractions, accepted endpoints, open issues, and
-production followups until those contracts are promoted into the production
-docs home.
+Algorithm32 documentation, and `shared/algorithm32/production/` owns the
+shared production implementation. Reconciliation must first produce a
+reference-backed CPU Algorithm32 implementation, then a GPU shader
+implementation validated against it. Treat the Algorithm32 conclusions
+document as the current source-mined synthesis of steps, abstractions,
+constants, source trails, open issues, and data-flow followups until the
+reconciliation lane closes and the contracts are promoted.
 
-Local runner contract: browser experiment commands for this lane go through
+Historical local-runner contract: when mining or recreating local-second-order
+artifacts for reconciliation, browser experiment commands go through
 `scripts/flat/local-second-order/harness.js --watch` and
 `tmp/atmosphere/local-second-order/browser-command.json`; do not use manual
 one-shot harness commands for experiment work. Documentation should not track
@@ -206,6 +212,10 @@ behavior.
 - [POC Prompt](prompt.md)
 - [ProjectionModel API Draft](projection-model-api.md)
 - [Algorithm32 Production Documentation](algorithm32/README.md)
+- [Algorithm32 Status](algorithm32/status.md)
+- [Algorithm32 Conclusions](algorithm32/conclusions.md)
+- [Reconciliation Lane](reconciliation/README.md)
+- [Reconciliation Experimental Guidelines](reconciliation/experimental-guidelines.md)
 - [Atmosphere Cleanroom Design](plans/atmosphere-cleanroom-design/README.md)
 - [Experiment 032 Algorithm](plans/atmosphere-cleanroom-design/experiment-032-algorithm.md)
 - [Object Color Transport](plans/atmosphere-cleanroom-design/object-color-transport.md)
@@ -286,9 +296,22 @@ Current implementation focus:
 Key continuation docs:
 
 - [Status](status.md): detailed current implementation history and next tasks.
+- [Algorithm32 Status](algorithm32/status.md):
+  concise current handoff for Algorithm32 production design and reconciliation
+  prep.
 - [Algorithm32 Production Documentation](algorithm32/README.md):
   production documentation home for the official Algorithm32 module, whose
-  implementation lives in `shared/algorithm32/`.
+  implementation lives in `shared/algorithm32/production/`.
+- [Algorithm32 Conclusions](algorithm32/conclusions.md):
+  source-mined synthesis of accepted Algorithm32 steps, subsystem
+  responsibilities, data flow, constants, references, and reconciliation work.
+- [Reconciliation Lane](reconciliation/README.md):
+  expanded experimental lane plan for the reference-backed CPU implementation,
+  GPU shader parity implementation, data-flow contract, and recreated evidence
+  artifacts.
+- [Reconciliation Experimental Guidelines](reconciliation/experimental-guidelines.md):
+  operating rulebook for reconciliation artifact structure, source authority,
+  criteria, tolerances, browser/GPU runs, display outputs, and closeout.
 - [Algorithm32 Canonical Reference](plans/atmosphere-cleanroom-design/algorithm32-canonical-reference.md):
   current source of truth for Algorithm32 steps, abstractions, endpoints, open
   issues, and production followups.

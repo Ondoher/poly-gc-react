@@ -1,0 +1,7 @@
+{
+  "kind": "algorithm32-production-source-registry",
+  "id": "algorithm32-production-source-registry",
+  "status": "scaffold",
+  "notes": "Records external algorithm and data references before production Algorithm32 implementation or tests depend on them.",
+  "sources": []
+}

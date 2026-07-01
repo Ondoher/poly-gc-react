@@ -1,0 +1,13 @@
+{
+  "spec_dir": "shared/algorithm32/production",
+  "spec_files": [
+    "**/_tests/**/*.spec.?(m)js"
+  ],
+  "helpers": [
+    "../../../spec/helpers/**/*.?(m)js"
+  ],
+  "env": {
+    "stopSpecOnExpectationFailure": false,
+    "random": false
+  }
+}

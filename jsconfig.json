@@ -7,5 +7,5 @@
 			"*": ["*", "gc/features/*", "types/*"]
 		}
 	},
-	"exclude": ["node_modules", "dist"]
+	"exclude": ["node_modules", "dist", "tmp", "tests"]
 }
