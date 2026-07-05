@@ -169,6 +169,26 @@ sky position as azimuth and altitude in degrees for the source model. Artifact
 `092` passed `60/60` criteria; artifact `091` is superseded because it lacked
 those per-image sky-position labels.
 
+Current reconciliation divergence:
+
+The shared installed `Algorithm32AtmospherePass` now uses endpoint composition
+policy
+`captured-scene-color-inverse-tone-mapped-as-endpoint-radiance-proxy` for hit
+pixels. This inverse-tone-maps captured scene color into the shader's
+pre-tone-map scale, composes it with RGB transmittance before tone mapping,
+and replaces the earlier post-tone-map display RGB add. This is a
+reconciliation review proxy, not the true matte
+`albedo * surfaceIrradiance / PI` contract. Record
+`096-reconciliation-d1-endpoint-proxy-distant-local-sunrise-sunset` preserved
+the first direct captured-linear proxy attempt, which looked overly blue and
+almost snow-field-like. Record
+`097-reconciliation-d1-endpoint-proxy-distant-local-sunrise-sunset` preserves
+the same-scene inverse-tone-map proxy rerun, which looked much more plausible.
+The rerender target was the same sunrise-to-sunset gallery mode as artifact
+`092`:
+`with-shader-distant-local-sunrise-sunset-side-by-side`, with spherical
+distant Sun on the left and flat local Sun on the right.
+
 Latest subjective follow-up:
 
 ```text

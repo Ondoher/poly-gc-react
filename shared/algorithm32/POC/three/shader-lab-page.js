@@ -2,6 +2,9 @@ import * as THREE from 'three';
 
 let algorithm32AtmospherePassInstanceCounter = 0;
 
+export const CAPTURED_SCENE_ENDPOINT_COMPOSITION_POLICY =
+	'captured-scene-color-inverse-tone-mapped-as-endpoint-radiance-proxy';
+
 export class Algorithm32AtmospherePass {
 	constructor({
 		renderer,
@@ -461,6 +464,11 @@ vec3 toneMapDisplayLinearSrgb(vec3 linearSrgb) {
 	);
 }
 
+vec3 inverseToneMapDisplayLinearSrgb(vec3 displayRgb) {
+	vec3 clamped = clamp(displayRgb, vec3(0.0), vec3(0.999999));
+	return -log(vec3(1.0) - clamped) / DISPLAY_TONE_MAP_K;
+}
+
 vec3 displayPreview(vec3 xyz) {
 	return toneMapDisplayLinearSrgb(xyzToDisplayLinearSrgb(xyz));
 }
@@ -536,6 +544,18 @@ vec3 pointStarFieldLinearSrgb(
 	}
 	return xyzToDisplayLinearSrgb(xyz) * point * starFieldIntensity *
 		transmittanceRgb;
+}
+
+vec3 composeCapturedSceneEndpointProxy(
+	vec2 pixelUv,
+	vec3 skyLinearSrgb,
+	vec3 transmittanceRgb
+) {
+	vec3 sceneEndpointLinearSrgb =
+		inverseToneMapDisplayLinearSrgb(texture(sceneColorTexture, pixelUv).rgb);
+	vec3 finalLinearSrgb =
+		skyLinearSrgb + sceneEndpointLinearSrgb * transmittanceRgb;
+	return toneMapDisplayLinearSrgb(finalLinearSrgb);
 }
 
 vec2 flatDensityAt(vec3 position) {
@@ -1057,11 +1077,10 @@ vec3 distantFirstOrderAtmosphere(vec2 pixelUv, bool hit, float hitDistanceMeters
 		return displayRgb;
 	}
 	if (hit) {
-		vec3 sceneRgb = linearToSrgb(texture(sceneColorTexture, pixelUv).rgb);
-		displayRgb = clamp(
-			sceneRgb * transmittanceRgb + displayRgb,
-			vec3(0.0),
-			vec3(1.0)
+		displayRgb = composeCapturedSceneEndpointProxy(
+			pixelUv,
+			skyLinearSrgb,
+			transmittanceRgb
 		);
 	} else {
 		displayRgb = toneMapDisplayLinearSrgb(
@@ -1129,11 +1148,10 @@ vec3 localFirstOrderAtmosphere(vec2 pixelUv, bool hit, float hitDistanceMeters) 
 		return displayRgb;
 	}
 	if (hit) {
-		vec3 sceneRgb = linearToSrgb(texture(sceneColorTexture, pixelUv).rgb);
-		displayRgb = clamp(
-			sceneRgb * transmittanceRgb + displayRgb,
-			vec3(0.0),
-			vec3(1.0)
+		displayRgb = composeCapturedSceneEndpointProxy(
+			pixelUv,
+			skyLinearSrgb,
+			transmittanceRgb
 		);
 	} else {
 		displayRgb = toneMapDisplayLinearSrgb(
@@ -1201,11 +1219,10 @@ vec3 localSecondOrderAtmosphere(vec2 pixelUv, bool hit, float hitDistanceMeters)
 		return displayRgb;
 	}
 	if (hit) {
-		vec3 sceneRgb = linearToSrgb(texture(sceneColorTexture, pixelUv).rgb);
-		displayRgb = clamp(
-			sceneRgb * transmittanceRgb + displayRgb,
-			vec3(0.0),
-			vec3(1.0)
+		displayRgb = composeCapturedSceneEndpointProxy(
+			pixelUv,
+			skyLinearSrgb,
+			transmittanceRgb
 		);
 	} else {
 		displayRgb = toneMapDisplayLinearSrgb(
@@ -1547,4 +1564,3 @@ function updateLocalIncidentCacheUniforms(uniforms, config) {
 		uniforms.localIncidentDirections.value[index].copy(directions.values[index]);
 	}
 }
-

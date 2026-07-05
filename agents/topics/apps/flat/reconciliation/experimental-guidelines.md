@@ -50,6 +50,33 @@ current operating guide for reconciliation.
   diagnostics. They must be labeled as such and replaced by sourced transport,
   source, geometry, cache, or display decisions before promotion.
 
+## Code Reference Trail
+
+- Chosen scheme: use a resolvable inline reference trail, not a separate
+  AMA-style `[n]` reference index. Code comments should name enough context to
+  resolve the source later: document path, section/stage, numbered record,
+  source audit, or external source title.
+- Every POC implementation file that encodes an architectural boundary,
+  equation, approximation, source model, geometry model, cache layout, display
+  conversion, verification runner, or artifact writer must keep a compact
+  reference trail.
+- Prefer a file-level `// References:` comment for the local running list.
+  Keep it short: cite the design section, action-plan stage, numbered record,
+  source audit, or external source that explains why the code exists.
+- Detailed source trails still belong in numbered records, provenance files,
+  and `equations-and-constants.json`. Inline comments are a quick map, not a
+  replacement for the artifact record.
+- Update the reference trail when code moves from scaffold/probe behavior to
+  source-backed physics, accepted Algorithm32 evidence, or a different
+  abstraction owner.
+- If a reference points to preserved historical code, prefer recording that
+  path in the numbered record or provenance document instead of inline POC
+  code comments. The POC source tree should still avoid path-shaped links to
+  old runtime code so the historical-runtime-link guardrail remains useful.
+- Do not introduce `[n]` citations in code unless the lane explicitly switches
+  to a centralized reference index and updates this rule, the POC README, and
+  existing implementation comments together.
+
 ## POC And Record Contract
 
 - Reconciliation is a full mutable POC lane, not a cumulative sequence of
@@ -64,6 +91,14 @@ current operating guide for reconciliation.
   target, rejected attempt, or design-verification step gets a new `NNN-*`
   folder after scaffold preparation. Inspect existing `NNN-*` folders and
   choose `max(existing NNN) + 1`.
+- Every CLI invocation of a reconciliation experiment runner is one
+  experiment and must get its own fresh `NNN-*` folder. Re-running the same
+  runner with the same options still creates the next folder and links back to
+  the prior attempt in provenance or diagnostics. Lightweight verification
+  commands inside a record, such as smoke checks, contract probes, JSON
+  validation, or `git diff --check`, are recorded in that folder's
+  `command.json`/`run.log`; they do not become separate experiment folders
+  unless they are the experiment runner being claimed.
 - Numbered folders are the audit trail of what changed, when, why, what was
   checked, and what evidence or references were found. They may describe a
   mutable POC state instead of containing a fully rerunnable standalone
@@ -84,12 +119,24 @@ current operating guide for reconciliation.
   next suggested step.
 - When practical, write a started log entry before a long run and complete it
   afterward so crashes are recoverable.
+- Long-running experiment runners must create `<record>/run.log` before
+  expensive work begins and append live progress while they run. Image
+  generation should report progress from inside the image/pixel loop, such as
+  completed rows or scanlines, rather than only logging after a whole image has
+  finished. Other nested scans should report their own row or item progress at
+  a readable cadence.
 - Mutable current-state notes are encouraged in parallel with numbered
   records. They may live in reconciliation topic docs, status docs, or a POC
   `CURRENT_STATE.md` once the POC root exists. These notes should summarize
   the current architecture, parity status, active blockers, latest accepted
   record, and next actions. They may be rewritten as the POC changes, but they
   must not replace numbered records or erase rejected/superseded history.
+- Milestone 1 is intentionally too large for one omnibus record. Keep using
+  `NNN-*` prefixed folders, but create separate focused records for
+  parameter/provenance extraction, transport helper invariants, concrete
+  distant/spherical CPU execution, and Step 032 image comparison. Split those
+  anchors further when cache staging, renderer parity, or defect isolation
+  needs a smaller claim.
 
 Each non-scaffolding numbered record should include:
 
@@ -122,10 +169,23 @@ or the specific milestone claim being made.
 
 - Any complex POC type must have a named ambient declaration in an owning
   `types.d.ts` file before implementation code relies on the shape.
+- Abstraction contracts must be ambient `interface` declarations, not `type`
+  aliases. This includes geometry, atmosphere, light/source,
+  incident-radiance cache/sampler, color/display, calculator-like, shader,
+  browser, and future public model contracts.
+- Behavior members on abstraction interfaces must use regular method
+  signatures, such as `sampleMedium(...): MediumSample`, not properties with
+  function types such as `readonly sampleMedium: (...) => MediumSample`.
+  Callable callback interfaces, such as an incident-radiance sampler, may use
+  TypeScript call signatures.
 - Complex types include object packets, descriptors, requests, samples,
   callbacks, handles, diagnostics, generated records, shader payloads, cache
   keys, and persisted artifact shapes. Primitive local scalars do not need
   ambient declarations.
+- Plain data packets, descriptors, records, discriminated unions, and fixed
+  tuple/value aliases may remain `type` aliases when that better matches their
+  value nature. The key distinction is contract behavior uses `interface`;
+  carried data uses `type` unless an interface is clearly more appropriate.
 - Use the nearest clear owner for the ambient declaration: shared cross-module
   packets in a shared/root `types.d.ts`, and implementation-only or
   module-private complex packets in that module's local `types.d.ts`.
@@ -141,12 +201,15 @@ or the specific milestone claim being made.
 
 - Runtime class modules should use one file per class, with that class as the
   file's single default export.
+- POC class names only need to be clear working names. They are not
+  production API commitments, and milestone work should not pause for naming
+  polish unless a name actively obscures ownership or behavior.
 - Runtime class files should not define reusable complex type shapes inline.
   Required complex types belong in the owning `types.d.ts` file, and the class
   file should reference them with JSDoc.
 - Do not create abstract runtime base classes just to represent interfaces.
-  Interface contracts live in ambient types and are enforced by validation,
-  smoke checks, and fail-loud setup behavior.
+  Interface contracts live as ambient `interface` declarations and are
+  enforced by validation, smoke checks, and fail-loud setup behavior.
 - Small stateless utility modules may export functions when a class would add
   no lifecycle or ownership value, but if a module defines a class, that class
   is the only export.
@@ -239,6 +302,12 @@ Useful default gates when no better accepted criterion exists:
 - browser/GPU display RGBA byte parity: `maxAbsRgbDelta <= 1` only when the
   artifact explicitly names browser/GPU parity
 
+Milestone 1 Step 032 CPU artifact parity is stricter than the default display
+gate. It requires exact decoded RGBA parity against the accepted four PNG
+targets: same dimensions, `maxAbsRgbaDelta = 0`, `mismatchedByteCount = 0`,
+and `mismatchedPixelCount = 0`. RMSE, mean delta, histograms, or contact sheets
+may be emitted only as failure diagnostics.
+
 ## CPU Reference Before GPU
 
 - Build and trust the CPU reference before accepting cache or shader
@@ -290,9 +359,11 @@ Useful default gates when no better accepted criterion exists:
 - Source path transmittance, source distance, and source falloff must be
   separate diagnostics. Do not hide them inside extinction, exposure, or RGB
   tuning.
-- Geometry owns path endpoints, hit distance, ray limits, and boundary policy.
-  Renderer-only sky caps or scene limits must not leak into source
-  transmittance unless the geometry contract explicitly says so.
+- Geometry owns path endpoints, hit distance, ray limits, and intersection
+  mechanics against supplied boundaries. Atmosphere/profile owns medium-domain
+  boundaries such as top altitude or top radius. Renderer-only sky caps or
+  scene limits must not leak into source transmittance unless the geometry
+  contract explicitly says so.
 
 ## Scene, Shader, And Lighting Rules
 
@@ -327,6 +398,12 @@ Useful default gates when no better accepted criterion exists:
   execution time.
 - Browser commands should go through the lane command file when a watcher is
   active.
+- When an experiment runner submits a browser command, the command should carry
+  the runner's existing numbered record directory as `artifactRunDirectory`.
+  The watcher should write visual artifacts into that directory and namespace
+  browser-owned metadata as `browser-*`, rather than creating a paired watcher
+  record. Direct ad hoc watcher jobs may still allocate their own numbered
+  folder.
 - Page crashes, closed pages, Puppeteer disconnects, unexpected harness
   errors, and browser-side evaluation errors must produce rejected artifacts
   instead of silently stopping the lane.
@@ -375,6 +452,11 @@ Useful default gates when no better accepted criterion exists:
   scoped claim is "maintains the accepted Experiment 32 Algorithm32 baseline,"
   with the external Bruneton images retained as source/provenance context.
   This Step 032 sky dome/four-view match is the lane's hard artifact rule.
+  The reconciliation M1 artifact renderer should port the accepted Bruneton
+  runner's rendering path for fisheye projection, sky-disc masking, display
+  conversion, byte packing, and PNG writing, adapting only the spectral
+  transport data source to the new POC evaluator/calculator/cache path. This
+  avoids comparing a new renderer against old renderer artifacts.
   The original acceptance of this visual baseline was subjective; the
   reconciliation task is to preserve that accepted result and verify that the
   retained algorithms, constants, and display choices still carry explicit

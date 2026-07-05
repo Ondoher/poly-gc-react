@@ -4,6 +4,7 @@ import { TGALoader } from 'three/addons/loaders/TGALoader.js';
 import Terrain, { TerrainNS } from 'three.terrain.js';
 import {
 	Algorithm32AtmospherePass,
+	CAPTURED_SCENE_ENDPOINT_COMPOSITION_POLICY,
 	threeNativePassModeCode,
 } from '/shared/algorithm32/POC/three/shader-lab-page.js';
 import {
@@ -762,6 +763,8 @@ async function renderThreeTerrainIntegratedCasePair({
 				mode: passSetup.mode,
 				modeCode: threeNativePassModeCode(passSetup.mode),
 				atmospherePassDisabled: false,
+				endpointCompositionPolicy:
+					CAPTURED_SCENE_ENDPOINT_COMPOSITION_POLICY,
 				localIncidentCache: passSetup.localIncidentCache,
 				display: passSetup.display,
 			};
@@ -879,6 +882,8 @@ async function renderThreeTerrainIntegratedCase({
 					mode: passSetup.mode,
 					modeCode: threeNativePassModeCode(passSetup.mode),
 					atmospherePassDisabled: false,
+					endpointCompositionPolicy:
+						CAPTURED_SCENE_ENDPOINT_COMPOSITION_POLICY,
 					localIncidentCache: passSetup.localIncidentCache,
 				};
 			} finally {

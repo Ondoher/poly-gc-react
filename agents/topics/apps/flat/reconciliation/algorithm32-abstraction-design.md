@@ -17,9 +17,10 @@ implementation freezes public packet names.
   - [Incident Radiance Cache / Sampler](#incident-radiance-cache--sampler)
   - [General Calculator](#general-calculator)
   - [Shared CPU/Shader Build Logic](#shared-cpushader-build-logic)
-  - [Calculation Helper Methods](#calculation-helper-methods)
+- [Calculation Helper Methods](#calculation-helper-methods)
   - [Color](#color)
 - [Ray And Path Points](#ray-and-path-points)
+- [Geometry Ray-Length Resolution](#geometry-ray-length-resolution)
 - [Coordinate Systems And Transforms](#coordinate-systems-and-transforms)
 - [Transport Responsibilities](#transport-responsibilities)
 - [Algorithm](#algorithm)
@@ -80,6 +81,24 @@ the POC often computed source-to-point relations inside the source object.
 That mixes geometry placement with lighting. Reconciliation should make the
 spatial relation an explicit geometry-owned handoff packet.
 
+When scene-derived facts affect Algorithm32, descriptor/setup configuration
+owns the routing decision. Runtime callers should not pass owner/route labels
+into `evaluate(...)`; adapters compile validated scene facts into typed domain
+fields on the evaluation request or into setup/configuration context. Spatial
+fields are consumed by geometry, medium/profile fields by atmosphere,
+lighting/source fields by the light source or incident-radiance cache, and
+endpoint material/radiance fields by color/display or postprocess
+composition. RGB, scene color, material color, display color, and other
+display-domain values must never enter `evaluate(...)`; if they are used at
+all, they must be converted by the color abstraction outside evaluation into
+spectral endpoint radiance or remain diagnostic/display-only data. Anything
+that has to do with color conversion belongs to the color abstraction:
+spectral-to-display, RGB/XYZ/color-space conversion, tone mapping, output
+encoding, display diagnostics, and RGB-to-spectrum inverse fitting. Transport
+coordinates the handoff and integration; it should not branch around owners,
+infer routing from caller metadata, or reinterpret contribution payloads
+itself.
+
 ## Current Design Commitments
 
 These points are the current handoff for a new agent. Exact type and method
@@ -124,6 +143,15 @@ ownership rules should not be reopened without a new design decision:
   It must not select cache artifacts, know cache family/shape, or construct
   raw cache/source-local lookup coordinates. It may ask geometry for the
   cache-access packet required by the bound sampler.
+- In the reconciliation POC, setup-time descriptor, dependency, or
+  configuration mismatches still fail before a render starts. Unexpected
+  per-sample runtime boundary conditions during a long render should degrade
+  unobtrusively for that sample, return a safe contribution for the affected
+  operation, and record bounded error diagnostics for later review. Cache
+  misses are one example; the same log-and-continue policy applies to other
+  unexpected runtime boundaries such as out-of-domain coordinates, non-finite
+  path/access facts, unresolved ray/source-path limits, or unexpected
+  atmosphere-domain misses.
 
 ## Configuration Facts
 
@@ -231,14 +259,20 @@ Geometry owns:
   direction;
 - light placement resolution into the same geometry-owned frame;
 - finite view-ray distance resolution;
+- scene-supplied spatial intersection handling for view rays and source/light
+  rays, when `evaluate(...)` receives scene intersection facts or a
+  scene-intersection query provider from the caller;
 - `AtmosphereCoordinate` resolution from model-space positions, initially
   altitude-only vertical stratification;
 - `AtmospherePath` resolution from geometry-owned paths into atmosphere
   coordinates plus segment measures for optical-depth integration;
 - local frame facts;
-- atmosphere-boundary, surface, top, ground, and clipping rules;
+- boundary intersection and clipping mechanics, including atmosphere exits
+  when supplied with the active atmosphere/profile domain descriptor;
+- surface and ground rules owned by the geometry/profile;
 - source-path boundary/clipping resolution once a light source supplies
-  direction and any source-owned path limit;
+  direction, any source-owned path limit, and any atmosphere/profile domain
+  descriptor needed to know when the source path leaves the medium;
 - observer-to-source diagnostic relation;
 - path-point `SourceRelativePosition` relation;
 - mapping between model-space positions/directions and cache access
@@ -248,11 +282,221 @@ Geometry owns:
   representative model-space positions, directions, paths, and
   `AtmosphereCoordinate` values for cache generation.
 
+Scene intersection information belongs at the geometry boundary because it is
+spatial. The scene, renderer, or test runner may know which mesh/depth sample a
+ray hit, but it should not decide Algorithm32's atmosphere path. Instead, the
+caller can pass scene intersection facts or a scene-intersection provider into
+`evaluate(...)`; `evaluate(...)` forwards that spatial context to geometry
+when resolving the view segment and any source/light path segments.
+
+Geometry may use scene intersection facts to decide that a view ray terminates
+at a finite scene surface before reaching an atmosphere exit, dome, map extent,
+or ground/profile boundary. Geometry may also use the same scene-intersection
+context to mark a source/light path as occluded by scene geometry when the
+transport profile supports shadows or scene-object light blocking. Geometry
+does not own endpoint radiance, captured RGB, material color, display
+conversion, or scene rendering. Those values remain post-transport composition
+inputs supplied by the scene/postprocess layer.
+
+If the same scene hit also contributes color, material, or surface-radiance
+facts, those facts should travel beside the spatial hit context but terminate
+at the display/color or postprocess composition boundary. The spatial part of
+the hit answers "where does the ray segment end?" and goes to geometry through
+`evaluate(...)`. The surface contribution answers "what radiance/color exists
+at that endpoint?" and goes to the color/display or surface-radiance adapter
+used for endpoint composition. RGB/display color does not enter
+`evaluate(...)`; only spatial scene-intersection facts and accepted
+spectral/domain inputs may cross that boundary. Any conversion needed to turn
+scene color/material facts into spectral endpoint radiance is owned by the
+color abstraction. Do not package the two
+together as a geometry fact, and do not let endpoint color alter ray-length
+resolution.
+
+The controlling design fork is whether endpoint color/material facts need to
+become spectral endpoint radiance before composition, or whether scene hits are
+geometry-only inputs and color is purely postprocess/display handling over the
+evaluated output. The inverse RGB-to-spectrum path is only relevant if the
+spectral-endpoint option is selected; it is not a prerequisite for geometry
+intersection handling.
+
+Mined soft-shader evidence favors the geometry-only option for the first
+reconciliation contract: hit mask and hit distance feed transport/path
+resolution, while spectrum-id fixtures and captured RGB are handled after the
+transfer is computed as composition/display policies outside `evaluate(...)`.
+Because subjective scene review did not clearly show enough endpoint color
+contribution, objective contribution-strength tests should verify this before
+the fork is closed.
+
+The intended handoff is:
+
+```text
+scene / ThreeGateway / test runner
+  -> scene intersection facts or SceneIntersectionProvider
+  -> evaluate(request)
+  -> geometry.resolveViewRaySegment({ ray, sceneIntersectionContext, ... })
+  -> RaySegment with endpoint/spatial clipping metadata
+
+scene / ThreeGateway / test runner
+  -> endpoint surface/color/radiance facts
+  -> color/display or postprocess composition adapter
+  -> endpointRadiance for final composition
+```
+
+For source/light rays, the same principle applies:
+
+```text
+path point + directionToSource + sourcePathLimit + sceneIntersectionContext
+  -> geometry.resolveSourceAtmospherePath(...)
+  -> source path marked clear, clipped, or scene-occluded
+```
+
+The exact provider shape is still open, but it should answer spatial
+intersection questions only: hit distance, hit position, surface normal,
+surface/object id, and confidence/source metadata. It should not return
+lighting, color, material radiance, or transport results.
+
+This is one instance of the general contribution-routing rule: the scene hit
+may produce multiple contribution payloads, but `evaluate(...)` should split
+them by owner before they affect the algorithm. The geometry contribution
+changes segment length or occlusion. The endpoint contribution changes final
+composition. Additional future scene-derived contribution types should name
+their owning abstraction before they are accepted into the request shape.
+For the rendering architecture side of that decision, Bruneton 2017 and the
+accepted Step 032 Bruneton-based color adapter are the primary evidence:
+spectral radiance is evaluated first and converted/composed at the color or
+display boundary unless the scene-hit endpoint use case introduces a boundary
+Bruneton does not cover.
+
 Geometry may know a light's placement in its own coordinate system. For flat
 geometry that may be a finite `[x, y, z]` position. For spherical geometry it
 may be a finite planet-centered position, a resolved astronomical position, or
 a directional approximation. The light source does not interpret those raw
 coordinates.
+
+For finite flat-world profiles, the atmosphere exit surface should not be
+reduced to an infinite flat slab plus a scalar no-hit cap. The stronger model
+is a spherical finite-domain dome whose horizontal center is explicit in the
+geometry descriptor. For the M2 local/flat skydome inspection profile, that
+center should be observer-centric: the dome axis runs through the observer
+footprint, so sky-ray path lengths are radial around the rendered view point in
+the same spirit as a spherical skydome render. A global map-centered dome can
+remain a separate full-world profile, but it should not be silently substituted
+for the observer-centered skydome profile.
+
+For the observer-centered skydome profile, define the primary radius-like value as the
+furthest observer view-ray extent, not the mathematical sphere radius. Call it
+`D = maxObserverViewRayExtentMeters`: for an equidistant hemispherical
+skydome, it is the horizon-ray length from the observer. The dome exists to
+show what that observer sees, so `D` should be the first-class configured or
+derived extent.
+
+If the observer is `O = [ox, oy, oz]`, the horizontal dome center is
+`C = [ox, oy]`, the configured dome apex altitude is `H`, and the furthest
+observer horizon-ray extent is `D`, the derived sphere center is
+`[ox, oy, centerZ]`, where:
+
+```text
+centerZ     = (H^2 - oz^2 - D^2) / (2 * (H - oz))
+sphereRadius = H - centerZ
+```
+
+The upper surface is then:
+
+```text
+rho = distanceXY(position, C)
+zDome(rho) = centerZ + sqrt(sphereRadius^2 - rho^2)
+```
+
+For a view ray, the value used by geometry is not a constant cap distance.
+It is the first positive intersection between the observer ray and the derived
+dome sphere, after also considering any nearer ground/profile/map boundary.
+For observer position `O`, unit ray direction `d`, derived dome sphere center
+`S = [ox, oy, centerZ]`, and sphere radius `R = sphereRadius`, solve:
+
+```text
+Q = O - S
+b = dot(Q, d)
+c = dot(Q, Q) - R^2
+discriminant = b^2 - c
+tDome = -b + sqrt(discriminant)
+```
+
+For the observer-centered skydome profile, `O` is expected to be inside the
+dome sphere, so `tDome` is the positive exit root. A negative discriminant or
+an observer outside the configured dome is a descriptor/setup error for this
+profile, not a reason to fall back to a scalar no-hit cap. The resolved view
+segment should end at the nearest positive hit among ground, supplied
+atmosphere/profile boundary, dome, and any explicit map extent.
+
+Because the skydome renderer traces rays by zenith angle from the observer's
+local up axis, the same extent can be written in a renderer-friendly form.
+Let:
+
+```text
+h = oz - centerZ
+theta = zenith angle from local up
+```
+
+For the observer-centered profile:
+
+```text
+tDome(theta) = -h * cos(theta) + sqrt(R^2 - h^2 * sin(theta)^2)
+tZenith      = H - oz
+tHorizon     = D
+```
+
+This makes the dome extent vary smoothly from the zenith exit to the horizon
+extent instead of creating a sharp rim from a single scalar no-hit distance.
+Since this deliberately changes the rendered local/flat skydomes away from
+the atmosflat Step 018 artifacts, those images should be treated as subjective
+model-inspection aids and error-spotting diagnostics rather than parity
+targets.
+
+When `oz = 0`, this reduces to the earlier footprint formula:
+
+```text
+centerZ      = (H^2 - D^2) / (2H)
+sphereRadius = (H^2 + D^2) / (2H)
+```
+
+Atmosflat Step 018 used this observer-centered policy in round-equivalent
+form: observer `[0, 0, 2]`, virtual cap center `[0, 0, -6360000]`, virtual cap
+radius `6420000`, and furthest observer horizon-ray extent
+`875656.6450361694 m`. That cap was scoped to observer skydome view rays only.
+Its view-cap apex was the round-equivalent top altitude, `60000 m`, while the
+flat local atmosphere/source-path geometry still recorded a separate
+`100000 m` top plane. Density sampling stayed flat altitude `z`, and
+source-path transmittance used the flat top plane plus ground/source-distance
+clipping.
+
+The reconciliation POC implements this M2 skydome profile in
+`scripts/flat/reconciliation/POC/src/geometry/FlatEarthGeometry.js` through
+the `observerCenteredDome` descriptor and
+`distanceToObserverCenteredDomeBoundary(...)`. The active M2 seed lives in
+`M2_LOCAL_FLAT_OBSERVER_CENTERED_DOME`, and records
+`040-m2-observer-centered-dome-local-flat-assets` and
+`041-m2-observer-centered-dome-side-by-side-stack` contain the first generated
+observer-dome images and two-column guide/new stack.
+
+Rays leave the modeled atmosphere when they first hit ground, the active
+profile boundary, the spherical dome surface, or any separate map extent
+declared by the active profile. The atmosphere may still consume an
+altitude-only coordinate for density sampling; the curved dome is a
+geometry-owned spatial exit boundary, not a light-source fact and not a
+source-path tuning constant. The dome does not compress or remap the
+atmosphere composition. Density, scattering, and absorption profiles remain
+the same altitude-based profiles; the finite dome domain only truncates which
+path samples exist inside the modeled atmosphere. A proper compressed
+atmosphere would be a different three-dimensional medium/composition model,
+not a one-dimensional altitude remap or scale factor.
+
+A reflective dome is a separate future extension. In the current POC, the dome
+is only a spatial exit boundary. If the dome has reflective properties, it
+becomes an optical boundary/material with reflection, transmission, and
+possibly wavelength-dependent behavior. That would require an explicit
+boundary-interaction contract between geometry-resolved dome hits and the
+radiance calculation, rather than hiding reflection inside the flat geometry
+intersection math.
 
 The required atmosphere-coordinate capability is provisionally:
 
@@ -273,17 +517,32 @@ Atmosphere supplies medium facts. It owns:
 - wavelength-aligned Rayleigh, aerosol/Mie, and absorption coefficients;
 - extinction/scattering/absorption samples;
 - optical-depth integration over geometry-resolved `AtmospherePath` samples;
+- medium domain descriptors, such as the top altitude for a flat
+  vertically stratified atmosphere, a finite dome/domain descriptor for a
+  flat-world profile, or top radius for a spherical shell, that geometry may
+  use to resolve ray exits and path clipping;
 - atmosphere-side medium facts used to build higher-order incident-radiance
   fields from available source light;
 - phase-function parameters and phase evaluation if phase remains
   atmosphere-owned in the final interface;
 - atmosphere-profile provenance.
 
-The atmosphere does not decide where the light is, where the observer is, how
-to clip paths, or how to convert raw model-space positions into altitude. It
-receives geometry-resolved `AtmosphereCoordinate` samples, or an
-`AtmospherePath` made from those coordinates plus segment measures, and returns
-medium facts or optical depth.
+The atmosphere does not decide where the light is, where the observer is, or
+how to convert raw model-space positions into altitude. It does own the medium
+domain used by ray/path clipping. Geometry performs the spatial intersection
+math against that supplied domain, then passes geometry-resolved
+`AtmosphereCoordinate` samples or an `AtmospherePath` made from those
+coordinates plus segment measures back to the atmosphere for medium facts or
+optical depth. For finite flat-world profiles, this means the atmosphere
+composition is unchanged and merely truncated by the geometry-resolved
+dome/domain exit. Any future compressed-atmosphere follow-up belongs in a
+separate atmosphere profile family that owns three-dimensional composition,
+coefficient, and density fields.
+
+Reflective dome behavior is likewise not part of the altitude-only atmosphere
+profile. It should be modeled as a named boundary-material/profile extension
+that can participate in radiance calculations after geometry reports a dome
+hit.
 
 For the first production profile, atmosphere should be treated as a vertically
 stratified medium. Its core coordinate is altitude:
@@ -794,11 +1053,12 @@ The primary evaluator and cache builder call
 `calculator.computeRadiance(...)`. The calculator method uses these lower-level
 helpers while remaining readable as a whole algorithm. No separate radiance port
 or first-order radiance method is needed; first-order cache generation is
-`computeRadiance(...)` with incident sampling omitted. The shader descriptor
-method exposes the calculation vocabulary needed for GLSL assembly; it does not
-run shader transport in JavaScript. Small inner-loop helpers are the exception
-to the pure-equation shape: they may call explicitly passed interfaces when the
-whole loop is a named atomic calculation that returns one value packet.
+`computeRadiance(...)` with incident sampling disabled for cache generation.
+The shader descriptor method exposes the calculation vocabulary needed for GLSL
+assembly; it does not run shader transport in JavaScript. Small inner-loop
+helpers are the exception to the pure-equation shape: they may call explicitly
+passed interfaces when the whole loop is a named atomic calculation that
+returns one value packet.
 
 Do not split owner queries into hidden model-to-model calls while extracting
 helpers. Geometry, light source, atmosphere, incident cache/sampler, and color
@@ -837,6 +1097,16 @@ The CPU reference should define the color boundary but should not require
 color conversion to execute spectral transport. The GPU shader phase needs the
 color/display interface because it must render visible output.
 
+For the reconciliation POC's Milestone 1 Figure 1 artifacts, the artifact
+renderer may invoke the validated Figure 1 color conversion directly after
+spectral transport so the comparison images match Step 032. The conversion
+policy is still color-abstraction work; it is not CPU transport, and neither
+`SpectralReferenceEvaluator` nor `SpectralCalculator` should depend on it. The
+artifact renderer should port the accepted Bruneton start-fresh runner's
+rendering path for fisheye projection, sky-disc masking, display conversion,
+byte packing, and PNG writing, adapting only the call that gets spectral
+transport data from the new POC evaluator/calculator/cache path.
+
 ## Type And JSDoc Contract
 
 The reconciliation POC is JavaScript, but complex shapes must not be left to
@@ -861,9 +1131,17 @@ sites in the same implementation step.
 
 Runtime class modules should use one file per class, with that class as the
 file's single default export. Required complex types stay in the owning
-`types.d.ts` file rather than being defined inline in the class file. Interface
-contracts are ambient types plus validation/fail-loud setup behavior; do not
-add empty abstract runtime base classes just to stand in for interfaces.
+`types.d.ts` file rather than being defined inline in the class file.
+Because this lane is a POC, class names only need to be clear working names
+for the current architecture; they are not production API commitments and can
+be refined during promotion if that improves clarity.
+Abstraction contracts are ambient `interface` declarations plus
+validation/fail-loud setup behavior; do not add empty abstract runtime base
+classes just to stand in for interfaces. Value packets, descriptors, records,
+discriminated unions, and tuple aliases can remain `type` aliases when that
+better matches their data role. Behavior members on abstraction interfaces use
+regular method signatures, not properties with function types. Callable
+callback interfaces may use TypeScript call signatures.
 
 ## M0 Scaffold Inventory
 
@@ -919,6 +1197,9 @@ Initial module-local ambient types:
 
 - `calculator/types.d.ts`: `SpectralCalculatorConfig`,
   `ComputeRadianceOptions`.
+- `constants/types.d.ts`: shared constant packet declarations for the
+  canonical atmosphere profile, distant source, spectral channels, Figure 1
+  display/render/scenes, and numerical controls.
 - `geometry/types.d.ts`: `GeometryModel`, `AtmosphereCoordinate`,
   `AtmospherePath`, `SourceRelativePosition`, `CacheAccess`.
 - `atmosphere/types.d.ts`: `AtmosphereModel`, `MediumSample`,
@@ -933,11 +1214,27 @@ Initial module-local ambient types:
 - `setup/types.d.ts`: cache-build coordinator request, result, and
   diagnostics packets as needed by the scaffold.
 
-Initial runtime classes and functions:
+In the POC code, abstraction contracts from this list are declared as
+interfaces: `SpectralCalculatorLike`, `GeometryModel`, `AtmosphereModel`,
+`LightSourceModel`, `IncidentRadianceCache`, `IncidentRadianceSampler`, and
+`ColorDisplayModel`. Data packets and descriptors remain type aliases unless a
+future contract owner needs interface extension/implementation semantics.
+
+Initial and current pre-artifact runtime classes and functions:
 
 - `SpectralCalculator.js`: default-exports `SpectralCalculator`; starts with
-  `buildEndpointTrapezoidPathIntegrationPoints(...)` and a fail-loud or very
-  thin `computeRadiance(...)` shell.
+  `buildEndpointTrapezoidPathIntegrationPoints(...)` and now owns the M1
+  pre-artifact `computeRadiance(...)` loop plus low-level transport helpers.
+- `evaluation/SpectralReferenceEvaluator.js`: default-exports
+  `SpectralReferenceEvaluator`, the spectral-only main algorithm coordinator.
+- `geometry/SphericalEarthGeometry.js`: default-exports the M1 spherical Earth
+  concrete geometry.
+- `light/DistantSunLightSource.js`: default-exports the M1 distant Sun
+  concrete light source.
+- `atmosphere/CanonicalAtmosphere.js`: default-exports the M1 canonical
+  atmosphere concrete profile.
+- `incident-radiance/DistantSunIncidentRadianceCache.js`: default-exports the
+  M1 distant incident-radiance cache.
 - `ReconciliationConfigurationError.js`: default-exports
   `ReconciliationConfigurationError`.
 - `UnsupportedCombinationError.js`: default-exports
@@ -946,10 +1243,16 @@ Initial runtime classes and functions:
   checks.
 - `buildIncidentRadianceCache.js`: utility function module for the generic
   cache-build coordinator shell.
+- `constants/consts.js`: shared active-baseline constants consumed by
+  atmosphere, artifact rendering, source setup, and primary runners.
 - `noIncidentRadiance.js`: utility function or value module for the canonical
   omitted-cache/null-support helper.
 - `smoke.js`: scaffold smoke runner that imports the module map and constructs
   the core value packets.
+- `runners/m1ParameterProvenance.js`,
+  `runners/m1TransportHelperInvariants.js`,
+  `runners/m1ConcreteDistantSpherical.js`, and
+  `runners/m1DistantL2Cache.js`: accepted M1 pre-artifact experiment runners.
 
 Do not build empty runtime base classes for `GeometryModel`,
 `AtmosphereModel`, `LightSourceModel`, or `ColorDisplayModel` in M0. Those are
@@ -957,19 +1260,70 @@ ambient interface contracts plus validation checks.
 
 Saved for later:
 
-- Milestone 1: `SphericalEarthGeometry`, `DistantSunLightSource`,
-  `CanonicalAtmosphere`, real `SpectralCalculator` radiance math, Step 032
-  figure/skydome renderer, image comparison tools, and populated
-  parameter/provenance ledger contents.
+- Milestone 1 remaining: `outputs/` and `comparison/` runtime modules for
+  post-transport Step 032 visual artifacts, a Figure 1 artifact renderer, exact
+  decoded RGBA image comparison, and any diagnostics needed to classify image
+  mismatches. Shared active baseline constants already live in
+  `constants/consts.js` and should be reused rather than duplicated by those
+  concrete modules.
+  The M1 Figure 1 artifact renderer invokes the validated display conversion
+  after spectral transport, but the conversion policy remains color-abstraction
+  work and not CPU transport.
 - Milestone 2: `FlatEarthGeometry`, `LocalSunLightSource`, local-source
-  calibration/falloff resolver, and Step 018 skydome comparison.
+  calibration/falloff resolver, local-source cache descriptors or concrete
+  cache class only as needed by the local light-source implementation, and
+  Step 018 skydome comparison through the Milestone 1 abstraction surface,
+  without reshaping the main algorithm except for defect fixes.
 - Milestone 3: `ShaderBuilder`, GLSL assembly, browser watcher implementation
   if not done earlier, GPU diagnostic packets, and distant/spherical shader
   parity runner.
-- Milestone 4: `LocalSunIncidentRadianceCache`, distant incident-radiance cache
-  only if needed by higher-order distant work, cache texture packing,
+- Milestone 4: local cache shader-payload adaptation, cache texture packing,
   `Data3DTexture`/shader payload upload, local/flat GPU integrated parity, and
-  local-second-order review galleries.
+  local-second-order review galleries. Milestone 4 should reuse the CPU cache
+  lifecycle and any local cache implementation established by Milestone 1/2
+  instead of introducing a second cache-build coordinator.
+- Ocean/water scene-object material options for later consideration:
+  water remains a scene object/material concern before Algorithm32. It should
+  render into the browser scene color/depth/hit inputs just like other scene
+  objects, while atmosphere transport still receives only ray/spatial facts
+  and finite endpoint distance. This note is not an actual-app material
+  decision; the production app may choose a completely different water system.
+  If a disposable POC choice is needed now, prefer Three.js `Water.js` because
+  it is already a flat reflective WebGL water mesh with normal-map distortion,
+  Sun direction, water color, and mirror render-target behavior. It is the
+  fastest way to prove that an ocean-like scene object can feed
+  `sceneColorTexture`, depth, and hit mask without changing Algorithm32. Its
+  main drawback is that it is planar/tangent rather than a true spherical
+  ocean. Source candidate: Three.js
+  [`examples/jsm/objects/Water.js`](https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/jsm/objects/Water.js).
+  The full option list, sorted for this POC, is:
+  1. Three.js `Water.js`: best throwaway POC choice; quick recognizable water
+     with reflection, normal distortion, Sun direction, and water color.
+  2. Simple custom normal/Fresnel material: architecturally cleaner and better
+     for testing the object-renderer contract, but costs design attention that
+     the throwaway POC does not need yet. A no-displacement version keeps
+     scene color, depth, and hit masks aligned.
+  3. Three.js `Water2.js`: supports reflection, refraction, and flow maps, but
+     refraction/transparency increases risk around explicit depth and hit-mask
+     semantics. Better for pools, rivers, or close water than this ocean POC.
+     Source candidate: Three.js
+     [`examples/jsm/objects/Water2.js`](https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/jsm/objects/Water2.js).
+  4. Custom Gerstner-wave ocean shader: useful once visible displacement and
+     wave shape matter, but any vertex displacement must be shared exactly by
+     scene color, depth, and hit-mask passes or it will reintroduce the
+     CPU/GPU scene mismatch class.
+     [GPU Gems Chapter 1](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models)
+     is a source candidate for the practical wave/normal-map family.
+  5. FFT/Tessendorf spectral ocean: strongest long-term ocean realism option
+     for open water, but too heavy for this POC. It belongs to actual-app or
+     later production-material investigation. Tessendorf's
+     [Simulating Ocean Water](https://people.computing.clemson.edu/~jtessen/reports/papers_files/coursenotes2004.pdf)
+     notes and the
+     [ocean rendering survey](https://arxiv.org/abs/1109.6494)
+     are source candidates.
+  With an architecture-first ranking, the simple custom normal/Fresnel material
+  would be more sympathetic to the constructed-scene/object-renderer contract;
+  with the current throwaway-POC framing, `Water.js` is the recommended choice.
 
 ## Ray And Path Points
 
@@ -1063,6 +1417,157 @@ even it should be treated as an immutable state transition:
 previous TransportState + point contribution -> next TransportState
 ```
 
+## Geometry Ray-Length Resolution
+
+Geometry owns the conversion from an unbounded ray to the finite
+`RaySegment.endDistanceMeters` used by transport. That ownership applies to
+view rays, source-transmittance paths, representative cache-build rays, and
+any future incident-ray diagnostic. The algorithm should not decide how far a
+ray travels through the model; it should ask geometry for a resolved segment
+or atmosphere path.
+
+The mechanical rule is candidate selection:
+
+```text
+candidateDistances =
+  positive intersections with ground/surface boundaries
+  positive exits through the active atmosphere/profile domain
+  positive exits through finite dome or map/domain boundaries
+  optional supplied scene/hit/max distance
+  optional source-owned path limit for source paths
+
+resolvedEndDistance = nearest valid candidate for the operation
+```
+
+The operation matters. For a view ray, a ground/surface hit may simply be the
+end of the visible path. For a source-transmittance path, a ground hit before
+the source or atmosphere exit blocks the source path and returns a
+ground-blocked atmosphere path with zero length/transmittance contribution.
+For a finite local source, `sourcePathLimit.maxDistanceMeters` is a candidate
+distance to the source; for a distant source, the source path normally has no
+finite source limit and geometry clips it to the medium/domain exit.
+
+Radiance falloff or negligible contribution does not define a geometry
+boundary. A distant directional source has no inverse-square source-distance
+falloff inside the modeled domain; its direct source path is clipped where the
+path leaves the active medium/domain, not where the source is. If a transport
+diagnostic finds that additional distance inside the medium contributes below a
+chosen spectral threshold because source transmittance, view transmittance,
+density, or source falloff has made the integrand negligible, that is a
+numerical contribution cutoff. It may shorten an implementation's effective
+integration work only when it is explicitly named, convergence-backed, and
+recorded as an execution approximation. It must not silently change
+`RaySegment.endDistanceMeters`, source-path geometry, cache coordinates, or
+medium-domain descriptors. The full geometry length remains boundary-driven;
+the calculator may optionally skip negligible tail work as a separate
+transport optimization.
+
+Flat z-up planes use the ordinary ray-plane distance. For ray origin `O`, unit
+direction `d`, plane normal `n`, and plane offset `k` where
+`dot(n, P) = k`:
+
+```text
+denominator = dot(n, d)
+tPlane = (k - dot(n, O)) / denominator
+```
+
+The candidate is valid only when `abs(denominator)` is large enough and
+`tPlane` is positive for the operation. For the flat ground/top planes, this
+reduces to:
+
+```text
+tGround = (0 - Oz) / dz
+tTop    = (topAltitudeMeters - Oz) / dz
+```
+
+`tGround` is only a forward candidate for downward rays; `tTop` is only a
+forward candidate for rays that actually cross the supplied top altitude. The
+top altitude is supplied by the active atmosphere/profile domain; geometry
+owns the intersection calculation, not the value selection.
+
+Spherical boundaries use the same quadratic family for spherical Earth top
+shells, spherical ground, finite flat-world domes, and any future spherical
+domain boundary. For sphere center `S`, radius `R`, ray origin `O`, and unit
+direction `d`:
+
+```text
+Q = O - S
+b = dot(Q, d)
+c = dot(Q, Q) - R^2
+discriminant = b^2 - c
+tNear = -b - sqrt(discriminant)
+tFar  = -b + sqrt(discriminant)
+```
+
+The boundary role decides which root is meaningful. If the ray starts inside a
+domain sphere, such as the spherical atmosphere top shell or the
+observer-centered dome, the exit distance is `tFar`. If the ray starts outside
+a blocking sphere, such as spherical ground, the hit distance is the nearest
+positive root, typically `tNear`. A negative discriminant means the ray misses
+that boundary. A descriptor that says the observer is inside a dome but yields
+no valid positive dome exit is a setup/descriptor error, not permission to use
+a hidden scalar cap.
+
+A finite flat map extent, when modeled as a vertical radial boundary around a
+declared horizontal center `Cxy`, is a two-dimensional quadratic over the ray's
+horizontal projection. With:
+
+```text
+p = Oxy - Cxy
+v = dxy
+a = dot(v, v)
+b = dot(p, v)
+c = dot(p, p) - mapRadiusMeters^2
+discriminant = b^2 - a * c
+```
+
+the roots are:
+
+```text
+tNear = (-b - sqrt(discriminant)) / a
+tFar  = (-b + sqrt(discriminant)) / a
+```
+
+When the ray starts inside the map extent, `tFar` is the radial map exit. When
+there is no configured finite map boundary, no map candidate is added. A map
+extent is separate from an observer-centered skydome extent; the active
+geometry/profile descriptor must say which one is in force.
+
+The view-ray segment resolution can therefore be written as:
+
+```text
+resolveViewRaySegment(ray, optionalMaxDistance):
+  candidates = []
+  candidates += ground/surface hit candidates
+  candidates += atmosphere/profile exit candidates
+  candidates += dome/map finite-domain candidates
+  candidates += optionalMaxDistance when supplied
+  endDistance = nearest positive candidate
+  return RaySegment(ray, 0, endDistance)
+```
+
+Source atmosphere paths use the same candidate math but a different selection
+policy:
+
+```text
+resolveSourceAtmospherePath(point, directionToSource, sourcePathLimit):
+  sourceLimit = sourcePathLimit.maxDistanceMeters when finite
+  domainExit = nearest top/dome/map atmosphere-domain exit
+  groundHit = nearest positive ground/surface hit
+  intendedEnd = min(sourceLimit, domainExit) when both exist
+  if groundHit exists and groundHit < intendedEnd:
+    return blocked ground path
+  return AtmospherePath from point to intendedEnd
+```
+
+This keeps the separation of concerns intact. Light source supplies the source
+path limit and lighting facts. Atmosphere supplies the active medium/domain
+descriptor. Geometry owns all ray-length calculations and returns either a
+finite `RaySegment` or an atmosphere path with explicit clipping/blocking
+metadata. Transport consumes those resolved lengths; it does not know whether
+they came from a plane, sphere, dome, map extent, source limit, or supplied
+scene distance.
+
 ## Coordinate Systems And Transforms
 
 Reconciliation needs explicit coordinate ownership because Algorithm32 has to
@@ -1079,7 +1584,8 @@ The governing rule is:
 - Light sources consume geometry-resolved source-relative relations and produce
   lighting facts.
 - Atmosphere consumes geometry-resolved `AtmosphereCoordinate` and
-  `AtmospherePath` facts, then returns atmospheric coefficients or optical
+  `AtmospherePath` facts, owns the medium-domain descriptors needed to know
+  where the atmosphere ends, and returns atmospheric coefficients or optical
   depth.
 - Incident radiance cache/sampler consumes geometry-resolved cache-access
   packets and returns optional incoming spectral radiance facts.
@@ -1109,7 +1615,8 @@ Coordinate spaces:
 - Atmosphere path space: a path already converted into atmosphere-owned
   sampling inputs. Each sample has an `AtmosphereCoordinate` plus a segment
   measure such as `segmentLengthMeters`. Geometry constructs this path from a
-  model-space ray or source path after applying boundary/clipping rules.
+  model-space ray or source path after applying geometry-owned surface rules
+  and atmosphere-supplied medium-domain boundaries.
   Atmosphere integrates optical depth over this path without interpreting the
   original model-space positions.
 - Ray/path parameter space: the camera ray represented by an `origin`, a view
@@ -1286,6 +1793,14 @@ to show which owner is being queried.
 
 1. **viewRaySegment** = geometry.resolveViewRaySegment(...)
 
+   If the request contains scene intersection facts or a
+   scene-intersection provider, **evaluate(request)** passes that spatial
+   context through to geometry. Geometry decides whether the view segment ends
+   at a scene surface, ground/profile boundary, atmosphere exit, dome/map
+   extent, or another geometry-owned boundary. The scene input may supply
+   endpoint radiance for later composition, but endpoint radiance is not used
+   to resolve the transport segment.
+
 2. The resolved ray segment supplies the geometry/model-space **ray** plus
    finite start/end distances and any path-domain facts needed by later
    geometry resolvers.
@@ -1358,7 +1873,10 @@ For each integration point in **pathIntegrationPoints**:
    **directionToSource**, **sourcePathLimit**)
 
    This path is already in the atmosphere sampling domain: atmosphere
-   coordinates plus segment measures, not raw model-space coordinates.
+   coordinates plus segment measures, not raw model-space coordinates. If the
+   active geometry receives scene intersection context and the configured
+   profile supports scene-object light blocking, geometry may also mark this
+   source path as scene-occluded or clipped before atmosphere integration.
 
 8. **sourceOpticalDepth** =
    atmosphere.integrateOpticalDepth(**sourceAtmospherePath**)
@@ -1628,9 +2146,10 @@ interface IncidentRadianceCache {
     IncidentRadianceCacheShaderPayload;
 }
 
-type IncidentRadianceSampler = (
-  cacheAccess: IncidentRadianceCacheAccess
-) => IncidentRadianceSamples;
+interface IncidentRadianceSampler {
+  (cacheAccess: IncidentRadianceCacheAccess):
+    IncidentRadianceSamples;
+}
 
 type IncidentRadianceSampling = {
   cacheBinding: IncidentRadianceCacheBinding;
@@ -1838,14 +2357,29 @@ This is the missing bridge between generation and use: cache generation
 declares the source-shaped cache domain, coordinate domain, and dependencies;
 setup proves the current request context matches that declaration; runtime only
 asks geometry for a cache-access packet and then invokes the already-bound
-sampler callback for incident radiance. If validation fails, the sampler must be
-disabled, rebuilt, or rejected loudly. It must not silently fall back to a
-visually plausible but mismatched cache. The cache-access packet is technically
-the join of the path integration point's source-relative and atmosphere-relative
-coordinates, plus incoming direction and spectral channel when the cache
-descriptor keeps those axes, but it is produced by geometry and consumed by
-the sampler callback. Transport coordinates the request; it does not index the
-cache from raw model-space coordinates.
+sampler callback for incident radiance. Setup validation failures disable,
+rebuild, or loudly reject the sampler before a long render starts; a stale or
+spatially mismatched cache must not masquerade as a plausible lighting fact.
+After setup has produced a valid POC binding, unexpected per-sample boundary
+conditions should not abort the whole render. In cache lookup, examples include
+out-of-domain cache coordinates, quantization misses, non-finite access values,
+or a representative mapping falling outside the configured cache domain. In
+those cases the sampler returns a safe empty or zero incident-radiance
+contribution for that lookup and records an error diagnostic with bounded
+examples and counters. The same log-and-continue policy applies to non-cache
+runtime boundary conditions elsewhere in evaluation, such as unexpected
+ray-segment bounds, source-path clipping failures, atmosphere-domain misses,
+or non-finite path facts. Each affected operation returns its safe contribution
+for that boundary. The final artifact may still fail acceptance if those
+diagnostics are present or above threshold, but a single boundary issue should
+not interrupt a long render.
+
+The cache-access packet is technically the join of the path integration point's
+source-relative and atmosphere-relative coordinates, plus incoming direction
+and spectral channel when the cache descriptor keeps those axes, but it is
+produced by geometry and consumed by the sampler callback. Transport
+coordinates the request; it does not index the cache from raw model-space
+coordinates.
 
 ### Shader Cache Texture Building
 
@@ -2114,6 +2648,15 @@ source-path query. `sourcePathLimit` feeds the geometry clipping query.
 Distance treatment, falloff, calibration, and angular-radius facts are
 light-source derivation or diagnostic facts unless a named finite-disk/source
 area approximation explicitly consumes them.
+
+Working local-source calibration policy: brightness calibration should probably
+default to the source's own latitude at local solar noon, then reuse the
+resolved source scale for views at other observer latitudes. In that framing,
+the remaining scene-to-scene timing problem is clock synchronization: map the
+requested observer-local time or rotation offset to the calibrated source
+state, rather than recalibrating source power per observer. Profiles can still
+declare a different reference event, but the event should be explicit
+calibration state, not a hidden brightness knob.
 
 The clipped path relation is resolved after the light source supplies its
 direction and source-owned path limit:
@@ -2524,6 +3067,10 @@ Before production promotion, reconciliation should produce:
   validates it against the active Algorithm32 context and hands evaluation an
   operation-ready incident radiance sampler callback plus cache-access
   metadata;
+- POC runtime-boundary diagnostics proving that unexpected per-sample boundary
+  conditions, including but not limited to cache misses or out-of-domain
+  accesses, degrade to safe per-operation contributions, emit bounded error
+  diagnostics, and do not abort a long render;
 - optional distant-as-local validation artifacts under
   `tmp/atmosphere/reconciliation/`.
 

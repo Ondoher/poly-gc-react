@@ -731,6 +731,36 @@ Algorithm execution specific abstractions:
   lifecycle, or mutation methods beyond the evaluation call boundary. The
   CPU/reference algorithm execution class may validate or canonicalize it into
   an immutable internal snapshot for one run.
+- Evaluation scene-intersection context:
+  an additive optional field on the evaluation request can carry scene
+  intersection facts or a scene-intersection provider for the requested ray.
+  This is allowed because it narrows or annotates one evaluation's spatial
+  context without changing the accepted Algorithm32 transport equations. The
+  execution class should validate and canonicalize this context, then pass it
+  to geometry for ray-distance/path segmentation. The context must be spatial
+  only: hit distance, hit position, surface normal, object/surface id,
+  confidence/source metadata, or an equivalent query provider. It must not
+  carry endpoint radiance, captured color, material lighting, display
+  conversion, cache data, or transport results.
+- Evaluation endpoint contribution context:
+  if the same scene hit carries color, material, or surface-radiance facts,
+  those facts are a separate additive endpoint contribution input. They travel
+  beside the scene-intersection context but are consumed by the color/display
+  or postprocess composition boundary, not by geometry. They may be used to
+  produce endpoint radiance for final composition with Algorithm32
+  transmittance and path radiance. They must not influence
+  `GeometryModel.resolveRayDistance(...)`, source/light path clipping,
+  atmosphere sampling, cache lookup, or transport integration.
+- Evaluation contribution routing:
+  additive scene-derived facts that affect Algorithm32 should enter
+  `evaluate(...)` as explicit contribution data and be routed to the owning
+  abstraction. Spatial hit facts route to geometry. Endpoint surface/color or
+  material facts route to color/display or postprocess composition.
+  Source-lighting facts, atmosphere facts, and cache/incident-radiance facts
+  must route through their public owner interfaces if they are added later.
+  `Reference.evaluate(...)` coordinates owner calls and transport integration;
+  it should not reinterpret contribution payloads or add domain-specific
+  branches that bypass the owning interfaces.
 - Geometry ray-distance resolution:
   the geometry interface owns the POC-derived distinction between bounded
   hit/surface rays and unbounded sky rays. Production `Reference.evaluate`
@@ -743,8 +773,12 @@ Algorithm execution specific abstractions:
   top/sky/ground-limited distance, matching the POC
   `traceSkyForThreeRay(...)` path through `distanceToSkyBoundary(...)`.
   Geometry returns only the finite integration distance needed by execution.
-  Clipping, termination reasons, entry/exit facts, surface hits, and preserved
-  boundary metadata are diagnostics and should be designed separately.
+  Scene-intersection context is the production-compatible replacement for
+  ad hoc renderer hit branching: `Reference.evaluate(...)` may receive it as
+  an additive request parameter, but only geometry uses it to resolve spatial
+  segmentation. Clipping, termination reasons, entry/exit facts, surface hits,
+  and preserved boundary metadata are diagnostics and should be designed
+  separately.
 - Transport path:
   the resolved path artifact for one algorithm execution. It is created from
   the evaluation request plus shared source, atmosphere, geometry, and
@@ -1143,7 +1177,9 @@ Reference.evaluate(request)
 
 2. Ask geometry how far to integrate the requested ray.
    Geometry owns ray-distance resolution and returns the finite distance
-   through the atmosphere.
+   through the atmosphere. If the request includes scene-intersection context,
+   the reference executor forwards that additive spatial context to geometry;
+   geometry decides whether scene geometry terminates or clips the view ray.
 
 3. Prepare spectral result containers.
    Create empty spectral arrays for total path radiance, first-order radiance,
@@ -1642,8 +1678,17 @@ as render exposure or display tone mapping, not as source brightness.
 - The normal production render path is not packet replay. It is:
   `Three scene + camera -> scene color render target + DepthTexture ->
   Algorithm32 fullscreen ShaderMaterial -> output target or screen`.
-  Raycaster/JSON scene packets remain CPU soft-shader validation artifacts and
-  should not be required by normal app rendering.
+  Raycaster/JSON scene inputs remain CPU soft-shader validation artifacts and
+  should not be required by normal app rendering. When CPU/offline evaluation
+  needs scene-object ray hits, `evaluate(...)` may accept an additive
+  scene-intersection context. That context is validated as spatial input and
+  passed to geometry; endpoint radiance/color remains a display/postprocess
+  composition input outside geometry and outside Algorithm32 transport. If a
+  hit contributes material/color/surface-radiance facts, those facts are routed
+  to the color/display or postprocess composition boundary rather than to
+  geometry. More generally, scene-derived effects are acceptable only as
+  owner-routed additive contribution data processed by the correct Algorithm32
+  abstraction.
 - The normal consumer path should likely be the runtime shader facade if
   Algorithm32 ships the production renderer adapter. Awaited setup,
   composer-pass installation, awaited config updates, scene/camera replacement,
@@ -1765,7 +1810,8 @@ as render exposure or display tone mapping, not as source brightness.
   deterministic errors, generic pure math, and concrete GPU packing belong to
   their separate owners.
 - Per-path evaluation uniquely owns `EvaluationRequest`, single-ray/segment
-  path resolution, optional surface-radiance composition, and per-path output.
+  path resolution, optional additive scene-intersection context handoff to
+  geometry, optional surface-radiance composition, and per-path output.
   Internal texture/cache building uniquely owns build request state, texture
   kind, sampled build domains, grid traversal, chunking/progress, packing,
   descriptors, cache keys, stale-key checks, and packed payload output.
@@ -1804,7 +1850,12 @@ as render exposure or display tone mapping, not as source brightness.
    display-boundary tests under those parameters. Recreate the objective and
    subjective `scripts/flat/local-second-order/` artifact families as part of
    this gate, including milestone criteria artifacts, browser captures,
-   source-matrix galleries, and review images.
+   source-matrix galleries, and review images. Include validation for the
+   additive scene-intersection evaluation parameter: no-hit behavior must stay
+   unchanged, finite scene hits must shorten only geometry-resolved segments,
+   endpoint radiance/material/color must remain postprocess/color-display
+   composition data, and any future source/light path occlusion must be
+   geometry-owned and explicitly profiled.
 3. Freeze the production API design: module names, exports, public interface
    definitions, type docs, packet schemas, cache key fields, and fail-loud
    error behavior.

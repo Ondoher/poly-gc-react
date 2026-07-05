@@ -1,0 +1,308 @@
+newmtl ID4
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID4_diffuse.tga
+map_Ks Mountain Range in Southern France_ID4_roughness.tga
+map_bump Mountain Range in Southern France_ID4_normal_map.tga
+newmtl ID409
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID409_diffuse.tga
+map_Ks Mountain Range in Southern France_ID409_roughness.tga
+map_bump Mountain Range in Southern France_ID409_normal_map.tga
+newmtl ID422
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID422_diffuse.tga
+map_Ks Mountain Range in Southern France_ID422_roughness.tga
+map_bump Mountain Range in Southern France_ID422_normal_map.tga
+newmtl ID435
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID435_diffuse.tga
+map_Ks Mountain Range in Southern France_ID435_roughness.tga
+map_bump Mountain Range in Southern France_ID435_normal_map.tga
+newmtl ID640
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID640_diffuse.tga
+map_Ks Mountain Range in Southern France_ID640_roughness.tga
+map_bump Mountain Range in Southern France_ID640_normal_map.tga
+newmtl ID661
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID661_diffuse.tga
+map_Ks Mountain Range in Southern France_ID661_roughness.tga
+map_bump Mountain Range in Southern France_ID661_normal_map.tga
+newmtl ID706
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID706_diffuse.tga
+map_Ks Mountain Range in Southern France_ID706_roughness.tga
+map_bump Mountain Range in Southern France_ID706_normal_map.tga
+newmtl ID727
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID727_diffuse.tga
+map_Ks Mountain Range in Southern France_ID727_roughness.tga
+map_bump Mountain Range in Southern France_ID727_normal_map.tga
+newmtl ID740
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID740_diffuse.tga
+map_Ks Mountain Range in Southern France_ID740_roughness.tga
+map_bump Mountain Range in Southern France_ID740_normal_map.tga
+newmtl ID785
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID785_diffuse.tga
+map_Ks Mountain Range in Southern France_ID785_roughness.tga
+map_bump Mountain Range in Southern France_ID785_normal_map.tga
+newmtl ID1014
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1014_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1014_roughness.tga
+map_bump Mountain Range in Southern France_ID1014_normal_map.tga
+newmtl ID1091
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1091_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1091_roughness.tga
+map_bump Mountain Range in Southern France_ID1091_normal_map.tga
+newmtl ID1104
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1104_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1104_roughness.tga
+map_bump Mountain Range in Southern France_ID1104_normal_map.tga
+newmtl ID1133
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1133_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1133_roughness.tga
+map_bump Mountain Range in Southern France_ID1133_normal_map.tga
+newmtl ID1146
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1146_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1146_roughness.tga
+map_bump Mountain Range in Southern France_ID1146_normal_map.tga
+newmtl ID1159
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1159_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1159_roughness.tga
+map_bump Mountain Range in Southern France_ID1159_normal_map.tga
+newmtl ID1188
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1188_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1188_roughness.tga
+map_bump Mountain Range in Southern France_ID1188_normal_map.tga
+newmtl ID1233
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1233_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1233_roughness.tga
+map_bump Mountain Range in Southern France_ID1233_normal_map.tga
+newmtl ID1270
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1270_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1270_roughness.tga
+map_bump Mountain Range in Southern France_ID1270_normal_map.tga
+newmtl ID1283
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1283_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1283_roughness.tga
+map_bump Mountain Range in Southern France_ID1283_normal_map.tga
+newmtl ID1296
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1296_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1296_roughness.tga
+map_bump Mountain Range in Southern France_ID1296_normal_map.tga
+newmtl ID1549
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1549_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1549_roughness.tga
+map_bump Mountain Range in Southern France_ID1549_normal_map.tga
+newmtl ID1618
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1618_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1618_roughness.tga
+map_bump Mountain Range in Southern France_ID1618_normal_map.tga
+newmtl ID1631
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1631_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1631_roughness.tga
+map_bump Mountain Range in Southern France_ID1631_normal_map.tga
+newmtl ID1644
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1644_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1644_roughness.tga
+map_bump Mountain Range in Southern France_ID1644_normal_map.tga
+newmtl ID1729
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1729_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1729_roughness.tga
+map_bump Mountain Range in Southern France_ID1729_normal_map.tga
+newmtl ID1742
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1742_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1742_roughness.tga
+map_bump Mountain Range in Southern France_ID1742_normal_map.tga
+newmtl ID1771
+Ns 100.000
+d 1.00000
+illum 2
+Kd 1.00000 1.00000 1.00000
+Ka 0.00000 0.00000 0.00000
+Ks 1.00000 1.00000 1.00000
+Ke 0.00000e+0 0.00000e+0 0.00000e+0
+map_Kd Mountain Range in Southern France_ID1771_diffuse.tga
+map_Ks Mountain Range in Southern France_ID1771_roughness.tga
+map_bump Mountain Range in Southern France_ID1771_normal_map.tga

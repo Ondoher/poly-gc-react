@@ -17,3 +17,5 @@ IncidentRadianceCache indexing and packing fields: z, rho, direction index/frame
 Spectral array shape fields: channel arrays, groups, padding, alignment fingerprints, descriptor versions.
 Software contract fields: provenance ids, diagnostics, debug-view labels, compatibility labels, cache/build descriptors.
 The core physics vo
+
+a thing i was thinking about. If we are going to add some sort of relective surface (water) we have a problem that we want the water to reflect the shader modified colors, but we also need to apply the shader to the reflected surface itself.

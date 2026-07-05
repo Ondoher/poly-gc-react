@@ -1,12 +1,44 @@
 # Algorithm32 Status
 
-Current status: design and reconciliation prep. The production scaffold exists
-under `shared/algorithm32/production/`, but no production shader/runtime
+Current status: design and reconciliation POC work. The production scaffold
+exists under `shared/algorithm32/production/`, but no production shader/runtime
 implementation has been promoted outside the preserved POC bundle.
 
 ## Current Checkpoint
 
-- The next gate is a new experimental lane named `reconciliation`.
+- The active gate is the `reconciliation` experimental lane. Milestone 1 is
+  complete under `scripts/flat/reconciliation/POC/`: the CPU Algorithm32
+  distant-Sun/spherical-Earth path, canonical atmosphere, distant light source,
+  spherical geometry, distant L2 incident-radiance cache build/bind/sample
+  path, Figure 1 renderer, and exact decoded RGBA Step 032 image comparison
+  are implemented and accepted. Record
+  `tmp/atmosphere/reconciliation/016-step032-full-image-comparison` generated
+  the four full-size cache-backed sky-dome PNGs and matched all accepted Step
+  032 targets exactly. The main algorithm produces spectral data only and does
+  not assume distant light, spherical geometry, a specific atmosphere
+  implementation, absent L2 incident sampling, rendering, or color conversion.
+- Milestone 2 is active and implemented through Subgoal 2.5. Record
+  `tmp/atmosphere/reconciliation/017-m2-reference-gap-carry-forward` completed
+  Subgoal 2.0 by carrying forward the existing local Sun / flat geometry gap
+  analysis, snapshotting the separate M2 calibration/evidence tracker,
+  classifying Step 018 atmosflat sky domes as guide imagery only, and
+  classifying first implementation defaults as seed choices rather than final
+  production constants. Record
+  `tmp/atmosphere/reconciliation/018-m2-north-polar-aeqd-source-decision`
+  settles the flat projection choice as north-polar azimuthal equidistant,
+  sources the projection facts to PROJ, and leaves the exact Earth-radius value
+  as source-precision pending. Record
+  `tmp/atmosphere/reconciliation/019-m2-atmosphere-boundary-ownership`
+  corrects top-boundary ownership: atmosphere/profile supplies medium-domain
+  limits, geometry computes ray exits against those supplied limits, and
+  renderer/view policy owns no-hit sky caps. Records
+  `tmp/atmosphere/reconciliation/025-m2-flat-geometry-profile` through
+  `tmp/atmosphere/reconciliation/030-m2-local-flat-assets-quick-rerun`
+  implement and verify flat geometry, local Sun packets/calibration, basic
+  local/flat CPU transport, the pre-asset diagnostic gate, and local/flat PNG
+  assets. The next reconciliation POC task is Subgoal 2.6 closeout; do not
+  promote final local/flat numerical controls or exact Step 018 parity from
+  records 025 through 030 alone.
 - The initial implementation ships one atmosphere profile: the accepted
   Algorithm32 canonical profile. Alternate atmosphere profiles are future
   named extensions, not first-implementation defaults.
@@ -20,9 +52,9 @@ implementation has been promoted outside the preserved POC bundle.
   under finalized parameters.
 - Reconciliation artifact gaps are recorded unless they are egregious. The
   hard artifact rule is matching the accepted Bruneton start-fresh Experiment
-  32 / Step 032 sky dome/four-view artifacts; other missing diagnostics or
-  criteria files are findings unless they block the current verification
-  claim.
+  32 / Step 032 sky dome/four-view artifacts by exact decoded RGBA parity;
+  other missing diagnostics or criteria files are findings unless they block
+  the current verification claim.
 - Future atmosphere experimental lanes should use Step 032 as their baseline
   comparison anchor. Any deviation from it must be named, justified by source
   or accepted experiment, and measured; unjustified drift is not promotable.
@@ -45,8 +77,12 @@ implementation has been promoted outside the preserved POC bundle.
   Algorithm32 transport. Color is a published display boundary outside the
   algorithm itself. It is not required to execute the CPU reference transport,
   but the later GPU shader phase will need the color/display interface to
-  build the renderable output path. Numerical controls are execution
-  configuration.
+  build the renderable output path. Milestone 1 must make this split real in
+  code and implement the complete CPU Algorithm32 path with L2 incident
+  radiance; because it succeeded, Milestone 2 is primarily adding concrete
+  `FlatEarthGeometry` and `LocalSunLightSource` implementations on that
+  existing algorithm/cache lifecycle, starting with flat geometry. Numerical
+  controls are execution configuration.
 - Reconciliation POC complex types must have named ambient declarations in an
   owning `types.d.ts` file, and JavaScript implementation code must use JSDoc
   to record where those types are consumed or produced. This applies to value
@@ -54,6 +90,29 @@ implementation has been promoted outside the preserved POC bundle.
   shader payloads, cache keys, and persisted artifact shapes. Runtime class
   modules use one file per class with that class as the single default export;
   required complex types stay in `types.d.ts`.
+  POC class names may be clear working names rather than production-final API
+  names; promotion can refine names if the accepted architecture benefits.
+- The reconciliation POC now has a shared constants module at
+  `scripts/flat/reconciliation/POC/src/constants/consts.js`, with ambient
+  constant packet declarations in `constants/types.d.ts`. Atmosphere,
+  artifact-rendering, source setup, and primary runner work should consume
+  those canonical atmosphere, spectral-channel, Figure 1 display/render/scene,
+  and numerical-control packets rather than copying Step 032 values. This is
+  recorded in
+  `tmp/atmosphere/reconciliation/005-shared-baseline-constants`.
+- The M1 Figure 1 display conversion can be implemented in artifact-rendering
+  code executed by the experiment runner. It should not be placed inside CPU
+  transport, and it does not require a concrete `ColorDisplayModel`
+  implementation for M1. This is recorded in
+  `tmp/atmosphere/reconciliation/006-artifact-renderer-display-conversion`.
+- The M1 artifact renderer should port the accepted Bruneton start-fresh
+  rendering path for projection, sky-disc masking, display conversion, byte
+  packing, and PNG writing, adapting only the spectral transport source to the
+  new POC evaluator/calculator/cache path. Step 032 artifact acceptance is
+  exact decoded RGBA match across all four accepted PNG targets, with
+  `maxAbsRgbaDelta = 0`, `mismatchedByteCount = 0`, and
+  `mismatchedPixelCount = 0`. This is recorded in
+  `tmp/atmosphere/reconciliation/007-exact-step032-renderer-parity`.
 - Reconciliation should preserve the accepted Algorithm32 transport algorithm
   while sharpening the abstractions: geometry owns observer/light placement
   resolution, model-space meaning, source-relative positions, geometry
@@ -228,8 +287,9 @@ pathRadiance = calculator.computeRadiance(
   sub-equations are source-backed candidates, but the combined model is not
   externally validated as real-world physics and must be promoted only as a
   named Algorithm32 extension profile. It now also records legacy flat
-  projection provenance showing the north-pole azimuthal-equidistant choice as
-  intentional app/model lineage rather than an accidental implementation value.
+  projection provenance showing the north-polar azimuthal-equidistant choice
+  as intentional app/model lineage rather than an accidental implementation
+  value, with record 018 sourcing the projection identity/parameters to PROJ.
 - Local Sun reconciliation must distinguish authored/user configuration from
   the source-backed or accepted facts that act on it. Default false-Sun
   altitude, size, and annual latitude migration are source-recovery profile
@@ -274,7 +334,7 @@ what changed, when, why, what was checked, and which facts, references, or
 artifacts were produced; it does not need to be a standalone rerunnable
 experiment.
 Parallel current-state notes are allowed and expected. This status file,
-the reconciliation README, the active-topic handoff, and eventually a POC
+the reconciliation README, the active-topic handoff, and the POC
 `CURRENT_STATE.md` may be rewritten to reflect the current architecture,
 parity status, active blockers, latest accepted record, and next actions.
 They summarize the lane; numbered records preserve the history.
@@ -328,9 +388,10 @@ Major POC parity goals:
 
 1. CPU reference, distant Sun, spherical Earth parity against
    `tmp/atmosphere/bruneton_start_fresh/032-figure1-four-view-source-k-no-ground-baseline`.
-2. CPU reference, local Sun, flat Earth parity against
-   `tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes`, verified in
-   parts where needed because the scenario is artificial.
+2. CPU reference, local Sun, flat Earth method-confidence work guided by
+   `tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes`, with those
+   images treated as diagnostic material rather than exact-match canon because
+   the scenario is artificial.
 3. GPU integrated shader, spherical Earth, distant Sun parity against the CPU
    reference, with browser-run job watching for long-running shader tests.
 4. GPU integrated shader, local Sun, flat Earth parity informed by the
@@ -418,13 +479,34 @@ experiment provenance or reconciliation artifacts.
 
 ## Current Open Work
 
-- Create the mutable reconciliation POC root and current-state note. The first
-  numbered evidence record under `tmp/atmosphere/reconciliation/` begins after
-  scaffold preparation, when substantive verification starts. Follow the M0
-  scaffold inventory in
-  [Algorithm32 Abstraction Design](../reconciliation/algorithm32-abstraction-design.md#m0-scaffold-inventory).
-- Produce the reference-backed CPU Algorithm32 implementation and finalized
-  parameter ledger with per-value provenance.
+- Continue Milestone 2 with Subgoal 2.6 closeout on the accepted Milestone 1
+  evaluator/calculator/cache lifecycle and the M2 implementation records
+  `025-m2-flat-geometry-profile` through
+  `030-m2-local-flat-assets-quick-rerun`. Subgoal 2.6 should classify which
+  flat geometry, local source, pre-asset diagnostics, local cache, and
+  local/flat PNG evidence is accepted, unresolved, model-policy, or deferred.
+  It should not promote final local/flat numerical controls, exact Step 018
+  image parity, or production local/flat defaults from records 025 through 030
+  alone. Subgoal 1.0 abstraction closure is accepted in
+  `tmp/atmosphere/reconciliation/001-abstraction-closure-contract`, with
+  interface declarations refined in
+  `tmp/atmosphere/reconciliation/002-interface-contract-declarations` and
+  method signatures refined in
+  `tmp/atmosphere/reconciliation/003-interface-method-signatures`; the POC now
+  has `SpectralReferenceEvaluator` as a spectral-only main evaluator,
+  tightened ambient `interface` contracts, and a contract probe showing
+  non-spherical/non-distant mocks can run without rendering/color
+  dependencies. Records 011 through 016 complete parameter/provenance
+  extraction, transport helper invariants, concrete distant/spherical
+  selected-ray execution, distant L2 cache build/bind/sample, first artifact
+  generation, and exact Step 032 full-image parity. Record 017 carries forward
+  the M2 local/flat gap analysis and tracker obligations. Use
+  `scripts/flat/reconciliation/POC/CURRENT_STATE.md` as the immediate POC
+  handoff.
+- Keep the `NNN-*` record-folder prefix. Every CLI-launched reconciliation
+  experiment runner invocation gets its own fresh `NNN-*` folder, including
+  reruns; smoke checks and other supporting verification commands are logged
+  inside the active record.
 - Produce the GPU shader implementation and parity evidence against the CPU
   reference.
 - Document the final data-shape and data-flow contract across light/source,

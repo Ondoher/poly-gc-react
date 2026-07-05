@@ -1,0 +1,810 @@
+{
+  "kind": "shader-validation-scene-inventory",
+  "version": 1,
+  "sourceDocument": "agents/topics/apps/flat/reconciliation/shader-test-design.md",
+  "scenes": [
+    {
+      "sceneId": "shader-lab-node-controlled-reference",
+      "sceneKind": "objective",
+      "status": "accepted",
+      "implementationKind": "node-three",
+      "moduleId": "createShaderLabReferenceScene",
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "node-three-reference-fixture-source",
+      "geometryDescriptorId": "node-three-reference-fixture-geometry",
+      "atmosphereDescriptorId": "node-three-reference-fixture-atmosphere",
+      "lightSourceDescriptorId": "node-three-reference-fixture-light-source",
+      "cacheDescriptorId": null,
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [9, 7],
+      "selectedPixels": [
+        { "pixelId": "upper-sky-control", "x": 4, "y": 0 },
+        { "pixelId": "center-card-hit", "x": 4, "y": 3 },
+        { "pixelId": "lower-ground-hit", "x": 4, "y": 6 }
+      ],
+      "objectiveTestIds": [
+        "three-raycaster-hit-no-hit-routing",
+        "scene-intersection-routing"
+      ],
+      "objectiveCriteria": [
+        {
+          "criterionId": "node-bridge-selected-rays-route-to-soft-shader",
+          "claim": "The controlled Node Three scene produces sky, object-hit, and ground-hit pixel inputs that the CPU soft-shader can evaluate without leaking endpoint fixture ids into evaluate(...).",
+          "measurement": "Selected-pixel diagnostics from record 058: finite display output, normalized rays, finite positive hit distances for card/ground, and no supplied hit distance for the sky control.",
+          "owner": "three-gateway-soft-shader-bridge",
+          "failureClassification": "scene-input-bridge-regression",
+          "requiredBeforeGpuObjectiveRuns": false
+        }
+      ],
+      "provenanceIds": [
+        "shader-test-design",
+        "algorithm32-shader-lab-node-three-reference",
+        "record-058-m3-node-three-scene-bridge"
+      ],
+      "extentTags": ["view-ray-distance", "scene-intersection-routing", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "record-058-selected-pixels-finite-output",
+          "description": "The accepted Node bridge probe proves the selected sky/card/ground pixels produce finite CPU soft-shader display output while keeping endpoint fixture ids out of evaluate(...).",
+          "selectedPixelIds": ["upper-sky-control", "center-card-hit", "lower-ground-hit"],
+          "expectedValueSource": {
+            "materialization": "accepted-record",
+            "sourceIds": ["record-058-m3-node-three-scene-bridge"],
+            "policy": "Use record 058 for bridge-contract acceptance only; final objective RGBA gate values require later externally sourced fixture materialization.",
+            "finalNumericRgbaStatus": "pending-external-source",
+            "acceptedRecord": "tmp/atmosphere/reconciliation/058-m3-node-three-scene-bridge"
+          },
+          "tolerancePolicy": "Record 058 accepts finite output and routing criteria, not final RGBA parity."
+        }
+      ],
+      "acceptedRecord": "tmp/atmosphere/reconciliation/058-m3-node-three-scene-bridge",
+      "notes": "First implemented scene row. Browser/WebGL input is not required for this descriptor."
+    },
+    {
+      "sceneId": "obj-001-zero-atmosphere-passthrough",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "json-fixture",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "zero-density-test-source",
+      "geometryDescriptorId": "controlled-passthrough-geometry",
+      "atmosphereDescriptorId": "zero-density-test-atmosphere",
+      "lightSourceDescriptorId": "no-light-passthrough",
+      "cacheDescriptorId": null,
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [16, 4],
+      "selectedPixels": [
+        { "pixelId": "black-bar", "x": 1, "y": 1 },
+        { "pixelId": "white-bar", "x": 5, "y": 1 },
+        { "pixelId": "saturated-red-bar", "x": 9, "y": 1 },
+        { "pixelId": "saturated-blue-bar", "x": 13, "y": 1 }
+      ],
+      "objectiveTestIds": ["obj-001-zero-atmosphere-passthrough"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "zero-atmosphere-pixels-pass-through-display-policy",
+          "claim": "With zero atmosphere and no light contribution, selected source pixels are not modified by hidden shader, display, or composition behavior.",
+          "measurement": "Selected black, white, saturated red, and saturated blue pixels decode to the materialized passthrough RGBA values for the configured display/readback policy.",
+          "owner": "display-model-and-runner-readback",
+          "failureClassification": "display-readback-baseline-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["step032-display-basis", "zero-density-profile-test-policy"],
+      "extentTags": ["display-readback", "no-atmosphere-baseline", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "zero-atmosphere-color-bars-pass-through",
+          "description": "Selected color-bar pixels equal externally materialized passthrough RGBA values under the selected display/readback policy.",
+          "selectedPixelIds": ["black-bar", "white-bar", "saturated-red-bar", "saturated-blue-bar"],
+          "expectedValueSource": {
+            "materialization": "external-fixture-required",
+            "sourceIds": ["step032-display-basis"],
+            "policy": "Final numeric RGBA values must come from an external fixture or accepted external-source-backed record for the passthrough display/readback policy.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "CPU exact or fixture tolerance; GPU/browser tolerance must be perception/readback grounded."
+        }
+      ],
+      "notes": "Planned descriptor row; final numeric RGBA values are intentionally not invented here."
+    },
+    {
+      "sceneId": "obj-002-display-adapter-cie-propagation",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "json-fixture",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "canonical-spectral-fixtures",
+      "geometryDescriptorId": "controlled-display-fixture-geometry",
+      "atmosphereDescriptorId": "zero-density-test-atmosphere",
+      "lightSourceDescriptorId": "fixture-only-lighting",
+      "cacheDescriptorId": null,
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [16, 4],
+      "selectedPixels": [
+        { "pixelId": "cie-red-fixture", "x": 2, "y": 1 },
+        { "pixelId": "cie-green-fixture", "x": 6, "y": 1 },
+        { "pixelId": "cie-blue-fixture", "x": 10, "y": 1 },
+        { "pixelId": "cie-neutral-fixture", "x": 14, "y": 1 }
+      ],
+      "objectiveTestIds": ["obj-002-display-adapter-cie-propagation"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "cie-spectral-fixtures-reach-display-rgba",
+          "claim": "Externally sourced CIE/display fixture spectra propagate through BrunetonColorDisplayModel into expected rendered pixels with no alternate color conversion path.",
+          "measurement": "Selected red, green, blue, and neutral spectral fixture pixels match materialized RGBA values derived from the CIE-backed fixture table and validated display model.",
+          "owner": "color-display-model",
+          "failureClassification": "display-adapter-propagation-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["step032-display-basis", "cie-1931-2deg"],
+      "extentTags": ["spectral-basis", "display-readback", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "cie-fixture-spectra-reach-display-rgba",
+          "description": "Selected spectral fixture pixels equal externally materialized BrunetonColorDisplayModel RGBA values; no alternate color conversion is allowed.",
+          "selectedPixelIds": ["cie-red-fixture", "cie-green-fixture", "cie-blue-fixture", "cie-neutral-fixture"],
+          "expectedValueSource": {
+            "materialization": "external-fixture-required",
+            "sourceIds": ["step032-display-basis", "cie-1931-2deg"],
+            "policy": "Final numeric RGBA values must be materialized from external CIE/display fixture data and the validated display policy.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Fixture-owned display tolerance for CPU; perception/readback grounded tolerance for GPU/browser."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-003-sky-no-hit-atmosphere-exit",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "node-three",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "m1-distant-spherical-source",
+      "geometryDescriptorId": "m1-spherical-geometry",
+      "atmosphereDescriptorId": "canonical-atmosphere",
+      "lightSourceDescriptorId": "m1-distant-sun",
+      "cacheDescriptorId": "m1-distant-cache-optional",
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [9, 7],
+      "selectedPixels": [
+        { "pixelId": "sky-upper", "x": 4, "y": 0 },
+        { "pixelId": "sky-horizon-control", "x": 4, "y": 2 }
+      ],
+      "objectiveTestIds": ["obj-003-sky-no-hit-atmosphere-exit"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "no-hit-sky-uses-path-radiance-only",
+          "claim": "No-hit sky pixels compose as path radiance only, with no endpoint radiance contribution.",
+          "measurement": "Selected sky pixels match materialized L_path display RGBA values and diagnostics classify atmosphere exit with no scene endpoint.",
+          "owner": "algorithm-evaluate-and-geometry",
+          "failureClassification": "sky-no-hit-composition-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["accepted-m1-distant-spherical-records", "controlled-ray-path-fixtures", "step032-display-basis"],
+      "extentTags": ["atmosphere-exit", "view-ray-distance", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "no-hit-sky-final-equals-path-radiance",
+          "description": "No-hit selected pixels match externally materialized display RGBA for L_path with no endpoint radiance.",
+          "selectedPixelIds": ["sky-upper", "sky-horizon-control"],
+          "expectedValueSource": {
+            "materialization": "external-source-backed-run-required",
+            "sourceIds": ["accepted-m1-distant-spherical-records", "controlled-ray-path-fixtures", "step032-display-basis"],
+            "policy": "Final numeric RGBA values must be produced by an accepted CPU baseline record using public evaluate(...) and externally sourced fixture facts.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "CPU record tolerance from fixture/baseline; GPU tolerance perception/readback grounded."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-004-finite-endpoint-near-mid-far",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "node-three",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "canonical-endpoint-fixtures",
+      "geometryDescriptorId": "controlled-near-mid-far-geometry",
+      "atmosphereDescriptorId": "canonical-atmosphere",
+      "lightSourceDescriptorId": "m1-distant-sun",
+      "cacheDescriptorId": "m1-distant-cache-optional",
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [16, 9],
+      "selectedPixels": [
+        { "pixelId": "near-card", "x": 3, "y": 4 },
+        { "pixelId": "mid-card", "x": 8, "y": 4 },
+        { "pixelId": "far-card", "x": 13, "y": 4 },
+        { "pixelId": "sky-control", "x": 8, "y": 1 }
+      ],
+      "objectiveTestIds": ["obj-004-finite-endpoint-near-mid-far"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "finite-endpoint-distance-controls-composition",
+          "claim": "Opaque finite endpoints cap the view ray and compose as endpointRadiance * T_view + L_path at near, mid, and far distances.",
+          "measurement": "Near/mid/far selected pixels match materialized fixture-derived RGBA values and distance trend while the sky control remains endpoint-free.",
+          "owner": "geometry-and-soft-shader-composition",
+          "failureClassification": "finite-endpoint-composition-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["controlled-ray-path-fixtures", "canonical-endpoint-fixture-table-required", "step032-display-basis"],
+      "extentTags": ["view-ray-distance", "endpoint-composition", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "near-mid-far-endpoints-match-fixture-derived-rgba",
+          "description": "Same fixture at near/mid/far distances matches externally materialized endpointRadiance * T_view + L_path display RGBA values and distance trend.",
+          "selectedPixelIds": ["near-card", "mid-card", "far-card", "sky-control"],
+          "expectedValueSource": {
+            "materialization": "external-source-backed-run-required",
+            "sourceIds": ["controlled-ray-path-fixtures", "canonical-endpoint-fixture-table-required", "step032-display-basis"],
+            "policy": "Final numeric RGBA values must be generated in an accepted CPU soft-shader record from externally sourced ray-path and endpoint fixture data.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "CPU expected values from accepted fixture record; GPU tolerance perception/readback grounded."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-005-invalid-depth-log-continue",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "json-fixture",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "invalid-depth-fixtures",
+      "geometryDescriptorId": "controlled-invalid-depth-geometry",
+      "atmosphereDescriptorId": "canonical-atmosphere",
+      "lightSourceDescriptorId": "m1-distant-sun",
+      "cacheDescriptorId": null,
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [8, 4],
+      "selectedPixels": [
+        { "pixelId": "invalid-depth", "x": 2, "y": 2 },
+        { "pixelId": "valid-neighbor", "x": 5, "y": 2 }
+      ],
+      "objectiveTestIds": ["obj-005-invalid-depth-log-continue"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "invalid-depth-logs-and-valid-neighbor-continues",
+          "claim": "Invalid depth is classified and logged without aborting the render or corrupting neighboring valid pixels.",
+          "measurement": "Invalid selected pixel records the configured invalid classification/omission policy and the valid neighbor matches its materialized expected output.",
+          "owner": "three-gateway-runtime-and-runner-diagnostics",
+          "failureClassification": "runtime-boundary-log-continue-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["controlled-ray-path-fixtures"],
+      "extentTags": ["invalid-depth", "runtime-boundary", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "invalid-depth-logs-continues-neighbor-valid",
+          "description": "Invalid selected pixel is classified invalid under the configured omission policy while neighboring valid pixels still match externally materialized output.",
+          "selectedPixelIds": ["invalid-depth", "valid-neighbor"],
+          "expectedValueSource": {
+            "materialization": "external-fixture-required",
+            "sourceIds": ["controlled-ray-path-fixtures"],
+            "policy": "Invalid-depth classification and valid-neighbor RGBA values must come from controlled fixture rows or an accepted external-source-backed record.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Invalid classification exact; valid neighbor uses fixture/CPU record tolerance and GPU perception/readback tolerance."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-006-routing-same-distance-different-fixture",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "node-three",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "canonical-endpoint-fixtures",
+      "geometryDescriptorId": "same-distance-card-geometry",
+      "atmosphereDescriptorId": "canonical-atmosphere",
+      "lightSourceDescriptorId": "m1-distant-sun",
+      "cacheDescriptorId": null,
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [12, 6],
+      "selectedPixels": [
+        { "pixelId": "red-card-same-distance", "x": 3, "y": 3 },
+        { "pixelId": "blue-card-same-distance", "x": 8, "y": 3 }
+      ],
+      "objectiveTestIds": ["obj-006-routing-same-distance-different-fixture"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "same-distance-different-fixtures-change-postprocess-only",
+          "claim": "Same-distance object hits share transport distance while different endpoint fixtures change only postprocess composition.",
+          "measurement": "Selected same-distance card pixels share hit-distance/T_view diagnostics and differ in final materialized RGBA according to their endpoint fixtures.",
+          "owner": "soft-shader-endpoint-composition",
+          "failureClassification": "endpoint-routing-or-composition-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["controlled-ray-path-fixtures", "canonical-endpoint-fixture-table-required"],
+      "extentTags": ["scene-intersection-routing", "endpoint-composition", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "same-distance-fixtures-differ-only-after-transport",
+          "description": "Cards at the same distance share hit-distance and T_view diagnostics but produce different externally materialized fixture-derived final pixels.",
+          "selectedPixelIds": ["red-card-same-distance", "blue-card-same-distance"],
+          "expectedValueSource": {
+            "materialization": "external-source-backed-run-required",
+            "sourceIds": ["controlled-ray-path-fixtures", "canonical-endpoint-fixture-table-required"],
+            "policy": "Final numeric RGBA values require materialized endpoint spectral fixtures and an accepted CPU baseline record.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Geometry diagnostics exact/fixture tolerance; RGBA values from accepted external-source-backed record."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-007-routing-same-fixture-different-distance",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "node-three",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "canonical-endpoint-fixtures",
+      "geometryDescriptorId": "different-distance-card-geometry",
+      "atmosphereDescriptorId": "canonical-atmosphere",
+      "lightSourceDescriptorId": "m1-distant-sun",
+      "cacheDescriptorId": null,
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [12, 6],
+      "selectedPixels": [
+        { "pixelId": "neutral-near", "x": 3, "y": 3 },
+        { "pixelId": "neutral-far", "x": 8, "y": 3 }
+      ],
+      "objectiveTestIds": ["obj-007-routing-same-fixture-different-distance"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "same-fixture-different-distance-changes-transport",
+          "claim": "Changing only endpoint distance changes transport while preserving the endpoint fixture identity outside evaluate(...).",
+          "measurement": "Selected near/far pixels for the same fixture produce materialized RGBA deltas and diagnostics consistent with different path radiance and transmittance.",
+          "owner": "geometry-and-algorithm-evaluate",
+          "failureClassification": "distance-routing-transport-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["controlled-ray-path-fixtures", "canonical-endpoint-fixture-table-required"],
+      "extentTags": ["view-ray-distance", "scene-intersection-routing", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "same-fixture-distance-changes-transport",
+          "description": "Same fixture at different distances produces externally materialized pixel deltas from path radiance and transmittance changes.",
+          "selectedPixelIds": ["neutral-near", "neutral-far"],
+          "expectedValueSource": {
+            "materialization": "external-source-backed-run-required",
+            "sourceIds": ["controlled-ray-path-fixtures", "canonical-endpoint-fixture-table-required"],
+            "policy": "Final numeric RGBA values require accepted ray-path fixture values and CPU baseline materialization.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Distance trend and RGBA deltas from accepted fixture/CPU record; GPU tolerance perception/readback grounded."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-008-spectral-fixture-wavelength-bands",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "json-fixture",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "canonical-endpoint-fixtures",
+      "geometryDescriptorId": "spectral-band-fixture-geometry",
+      "atmosphereDescriptorId": "canonical-atmosphere",
+      "lightSourceDescriptorId": "m1-distant-sun",
+      "cacheDescriptorId": null,
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [20, 4],
+      "selectedPixels": [
+        { "pixelId": "fixture-red", "x": 2, "y": 2 },
+        { "pixelId": "fixture-green", "x": 6, "y": 2 },
+        { "pixelId": "fixture-blue", "x": 10, "y": 2 },
+        { "pixelId": "fixture-neutral", "x": 14, "y": 2 },
+        { "pixelId": "fixture-ground-like", "x": 18, "y": 2 }
+      ],
+      "objectiveTestIds": ["obj-008-spectral-fixture-wavelength-bands"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "spectral-fixture-bands-remain-visible-in-pixels",
+          "claim": "Red, green, blue, neutral, and ground-like endpoint spectra remain distinguishable after transport and display conversion.",
+          "measurement": "Selected fixture pixels match materialized source-backed RGBA values and satisfy the declared separability checks.",
+          "owner": "canonical-spectral-fixtures-and-color-display-model",
+          "failureClassification": "spectral-fixture-display-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["canonical-endpoint-fixture-table-required", "shader-lab-endpoint-spectra-seed", "cie-1931-2deg"],
+      "extentTags": ["spectral-basis", "display-readback", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "spectral-fixtures-remain-separable",
+          "description": "Red/green/blue/neutral/ground-like endpoint spectra match externally materialized display RGBA values and remain separable.",
+          "selectedPixelIds": ["fixture-red", "fixture-green", "fixture-blue", "fixture-neutral", "fixture-ground-like"],
+          "expectedValueSource": {
+            "materialization": "external-fixture-required",
+            "sourceIds": ["canonical-endpoint-fixture-table-required", "cie-1931-2deg"],
+            "policy": "Historical shader-lab spectra are seed provenance only; final numeric RGBA values require reconciliation-owned fixture data with external provenance.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Fixture separability and RGBA values from external fixture record; GPU tolerance perception/readback grounded."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-009-spectral-basis-extent",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "json-fixture",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "basis-extent-fixtures",
+      "geometryDescriptorId": "basis-extent-fixture-geometry",
+      "atmosphereDescriptorId": "zero-density-test-atmosphere",
+      "lightSourceDescriptorId": "basis-fixture-lighting",
+      "cacheDescriptorId": null,
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [8, 4],
+      "selectedPixels": [
+        { "pixelId": "first-channel-biased", "x": 2, "y": 2 },
+        { "pixelId": "last-channel-biased", "x": 5, "y": 2 }
+      ],
+      "objectiveTestIds": ["obj-009-spectral-basis-extent"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "spectral-basis-first-last-channels-are-enforced",
+          "claim": "The active spectral basis shape is enforced and first/last active channel fixture values survive display conversion.",
+          "measurement": "Selected first/last-channel-biased pixels match materialized display behavior and mismatched basis descriptors fail setup.",
+          "owner": "spectral-basis-and-color-display-model",
+          "failureClassification": "spectral-basis-contract-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["step032-display-basis", "cie-1931-2deg", "astm-g173"],
+      "extentTags": ["spectral-basis", "source-table", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "first-last-channel-fixtures-preserved",
+          "description": "First/last-channel-biased fixtures produce externally materialized display behavior and mismatched basis descriptors fail setup.",
+          "selectedPixelIds": ["first-channel-biased", "last-channel-biased"],
+          "expectedValueSource": {
+            "materialization": "external-fixture-required",
+            "sourceIds": ["step032-display-basis", "cie-1931-2deg", "astm-g173"],
+            "policy": "Final numeric RGBA values and basis rejection rows require external-source-backed fixture materialization.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Basis shape rejection exact; RGBA fixture tolerance from external source-backed record."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-010-cache-off-on-nonzero",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "json-fixture",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "m1-distant-source",
+      "geometryDescriptorId": "m1-spherical-geometry",
+      "atmosphereDescriptorId": "canonical-atmosphere",
+      "lightSourceDescriptorId": "m1-distant-sun",
+      "cacheDescriptorId": "m1-distant-l2-cache",
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [8, 4],
+      "selectedPixels": [
+        { "pixelId": "cache-off-control", "x": 2, "y": 2 },
+        { "pixelId": "cache-on-nonzero", "x": 5, "y": 2 }
+      ],
+      "objectiveTestIds": ["obj-010-cache-off-on-nonzero"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "cache-on-delta-comes-only-from-incident-cache",
+          "claim": "Cache-enabled output changes only through the accepted incident-radiance cache contribution.",
+          "measurement": "Selected cache-off/cache-on pixels match materialized RGBA values and cache delta diagnostics from the cache-owned fixture or accepted cache-backed CPU record.",
+          "owner": "incident-radiance-cache",
+          "failureClassification": "cache-contribution-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["accepted-m1-distant-cache-records", "cache-owned-fixtures-required"],
+      "extentTags": ["cache-participation", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "cache-on-delta-matches-incident-radiance-fixture",
+          "description": "Cache-on output changes only by externally materialized accepted incident-radiance contribution compared with cache-off control.",
+          "selectedPixelIds": ["cache-off-control", "cache-on-nonzero"],
+          "expectedValueSource": {
+            "materialization": "external-source-backed-run-required",
+            "sourceIds": ["accepted-m1-distant-cache-records", "cache-owned-fixtures-required"],
+            "policy": "Final numeric RGBA values require cache-owned fixture materialization or accepted M1-cache-backed CPU record.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Cache delta from accepted fixture/record; GPU tolerance perception/readback grounded."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-011-cache-boundary-miss-log-continue",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "json-fixture",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "cache-boundary-fixtures",
+      "geometryDescriptorId": "cache-boundary-geometry",
+      "atmosphereDescriptorId": "canonical-atmosphere",
+      "lightSourceDescriptorId": "m1-distant-sun",
+      "cacheDescriptorId": "m1-distant-l2-cache-boundary",
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [8, 4],
+      "selectedPixels": [
+        { "pixelId": "cache-miss", "x": 2, "y": 2 },
+        { "pixelId": "cache-valid-control", "x": 5, "y": 2 }
+      ],
+      "objectiveTestIds": ["obj-011-cache-boundary-miss-log-continue"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "cache-miss-logs-continues-and-preserves-valid-control",
+          "claim": "Unexpected cache boundary or miss conditions log and continue without silently contributing invalid data.",
+          "measurement": "Cache-miss selected pixel follows the configured miss classification while valid control pixels still match materialized expected output.",
+          "owner": "incident-radiance-cache",
+          "failureClassification": "cache-boundary-log-continue-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["cache-owned-fixtures-required"],
+      "extentTags": ["cache-participation", "runtime-boundary", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "cache-miss-logs-continues-control-valid",
+          "description": "Cache miss selected pixel follows configured miss policy while valid control pixel still matches externally materialized expected output.",
+          "selectedPixelIds": ["cache-miss", "cache-valid-control"],
+          "expectedValueSource": {
+            "materialization": "external-fixture-required",
+            "sourceIds": ["cache-owned-fixtures-required"],
+            "policy": "Cache miss classification and final RGBA values require cache-owned fixture rows before becoming a gate.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Miss classification exact; valid-control RGBA from fixture/record."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-012-horizon-long-path",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "node-three",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "m1-distant-source",
+      "geometryDescriptorId": "m1-spherical-horizon-geometry",
+      "atmosphereDescriptorId": "canonical-atmosphere",
+      "lightSourceDescriptorId": "m1-distant-sun",
+      "cacheDescriptorId": "m1-distant-cache-optional",
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [16, 8],
+      "selectedPixels": [
+        { "pixelId": "horizon-left", "x": 3, "y": 4 },
+        { "pixelId": "horizon-center", "x": 8, "y": 4 },
+        { "pixelId": "horizon-right", "x": 13, "y": 4 }
+      ],
+      "controlledRegionIds": ["horizon-band"],
+      "objectiveTestIds": ["obj-012-horizon-long-path"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "horizon-long-path-stays-finite-and-trended",
+          "claim": "Long shallow horizon rays remain finite and follow the sourced/model-owned expected display trend without clipped artifacts.",
+          "measurement": "Selected horizon pixels and horizon band diagnostics match materialized trend/RGBA values and report no non-finite or unexpected clip classifications.",
+          "owner": "geometry-atmosphere-and-algorithm-evaluate",
+          "failureClassification": "horizon-long-path-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["accepted-m1-distant-spherical-records", "sourced-or-model-owned-ray-path-boundary-required"],
+      "extentTags": ["view-ray-distance", "horizon-long-path", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "horizon-long-path-finite-expected-trend",
+          "description": "Controlled horizon selected pixels and region match externally materialized expected display trend without non-finite or clipped artifact classifications.",
+          "selectedPixelIds": ["horizon-left", "horizon-center", "horizon-right"],
+          "controlledRegionIds": ["horizon-band"],
+          "expectedValueSource": {
+            "materialization": "external-source-backed-run-required",
+            "sourceIds": ["accepted-m1-distant-spherical-records", "sourced-or-model-owned-ray-path-boundary-required"],
+            "policy": "Final numeric RGBA values require accepted CPU baseline record using sourced/model-owned ray-path boundaries.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Expected trend and RGBA values from accepted record; GPU tolerance perception/readback grounded."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-013-high-altitude-atmosphere-boundary",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "json-fixture",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "high-altitude-source",
+      "geometryDescriptorId": "high-altitude-spherical-geometry",
+      "atmosphereDescriptorId": "us-standard-atmosphere-profile-fixture",
+      "lightSourceDescriptorId": "m1-distant-sun",
+      "cacheDescriptorId": null,
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [8, 4],
+      "selectedPixels": [
+        { "pixelId": "altitude-80km", "x": 2, "y": 2 },
+        { "pixelId": "altitude-85km", "x": 5, "y": 2 }
+      ],
+      "objectiveTestIds": ["obj-013-high-altitude-atmosphere-boundary"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "high-altitude-profile-boundary-uses-sourced-rows",
+          "claim": "High-altitude atmosphere boundary behavior uses sourced U.S. Standard Atmosphere profile rows and consistent top-boundary/exit classification.",
+          "measurement": "Selected 80 km and 85 km pixels match materialized source-profile display values and diagnostics cite the sourced density rows.",
+          "owner": "atmosphere-model-and-geometry",
+          "failureClassification": "high-altitude-boundary-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["us-standard-atmosphere-1976", "accepted-m1-distant-spherical-records"],
+      "extentTags": ["atmosphere-altitude-profile", "atmosphere-exit", "screen-pixel"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "high-altitude-boundary-uses-sourced-profile",
+          "description": "High-altitude selected sky pixels match externally materialized display values for sourced profile rows and classify top-boundary/exit consistently.",
+          "selectedPixelIds": ["altitude-80km", "altitude-85km"],
+          "expectedValueSource": {
+            "materialization": "external-fixture-required",
+            "sourceIds": ["us-standard-atmosphere-1976", "accepted-m1-distant-spherical-records"],
+            "policy": "Final numeric RGBA values require externally sourced atmosphere profile fixture rows and accepted CPU baseline materialization.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Profile row tolerance from source-backed fixture; GPU tolerance perception/readback grounded."
+        }
+      ]
+    },
+    {
+      "sceneId": "obj-014-readback-png-artifact",
+      "sceneKind": "objective",
+      "status": "planned",
+      "implementationKind": "runner-policy",
+      "moduleId": null,
+      "activeMilestones": ["M3"],
+      "sourceDescriptorId": "browser-runner-policy",
+      "geometryDescriptorId": "not-applicable-runner-policy",
+      "atmosphereDescriptorId": "not-applicable-runner-policy",
+      "lightSourceDescriptorId": "not-applicable-runner-policy",
+      "cacheDescriptorId": null,
+      "displayDescriptorId": "bruneton-color-display",
+      "viewportPixels": [1, 1],
+      "controlledRegionIds": ["retained-png-artifact"],
+      "objectiveTestIds": ["obj-014-readback-png-artifact"],
+      "objectiveCriteria": [
+        {
+          "criterionId": "objective-renders-retain-png-and-compared-readback",
+          "claim": "Every objective render retains PNG artifacts and comparison metadata whose decoded pixels match the values actually compared.",
+          "measurement": "Runner records include PNGs, progress logs, comparison metadata, and decoded readback values for each objective render.",
+          "owner": "browser-runner-and-comparison-records",
+          "failureClassification": "artifact-retention-or-readback-policy-failure",
+          "requiredBeforeGpuObjectiveRuns": true
+        }
+      ],
+      "provenanceIds": ["runner-protocol", "accepted-browser-job-convention"],
+      "extentTags": ["display-readback", "artifact-policy"],
+      "expectedDisplayPixelClaims": [
+        {
+          "claimId": "retained-png-decodes-to-compared-values",
+          "description": "Each retained objective render writes PNG artifacts, progress logs, and comparison metadata; decoded PNG pixels match compared values within encoding policy.",
+          "controlledRegionIds": ["retained-png-artifact"],
+          "expectedValueSource": {
+            "materialization": "runner-policy",
+            "sourceIds": ["runner-protocol", "accepted-browser-job-convention"],
+            "policy": "This row validates artifact retention/readback policy; final numeric RGBA values are owned by each rendered objective scene.",
+            "finalNumericRgbaStatus": "pending-external-source"
+          },
+          "tolerancePolicy": "Encoding/readback tolerance must be declared by the runner record and grounded in browser/readback behavior."
+        }
+      ]
+    }
+  ],
+  "subjectiveLineage": [
+    {
+      "lineageId": "southern-france-070-distant-midday-no-shadows",
+      "recordPath": "tmp/atmosphere/local-second-order/070-southern-france-obj-diffuse-high-distant-midday-with-without-sha",
+      "sourceSceneId": "southern-france-obj-diffuse-high-distant-midday",
+      "reviewStatus": "active-first-gpu-review",
+      "reviewIntent": "No-shadow Southern France distant-midday plausibility review with raw Three scene color beside integrated Algorithm32 shader output.",
+      "shadowPolicy": "no-shadows",
+      "notes": "Accepted local-second-order source-matrix row; hardware NVIDIA/ANGLE WebGL; useful for terrain color contribution and midday distant-source plausibility."
+    },
+    {
+      "lineageId": "southern-france-071-distant-sunset-no-shadows",
+      "recordPath": "tmp/atmosphere/local-second-order/071-southern-france-obj-diffuse-high-distant-sunset-with-without-sha",
+      "sourceSceneId": "southern-france-obj-diffuse-high-distant-sunset",
+      "reviewStatus": "active-first-gpu-review",
+      "reviewIntent": "No-shadow Southern France distant-sunset plausibility review for horizon color and sunset progression.",
+      "shadowPolicy": "no-shadows",
+      "notes": "Accepted local-second-order source-matrix row; one of the first M3 visual review gallery carry-forward scenes."
+    },
+    {
+      "lineageId": "southern-france-072-local-closest-no-shadows",
+      "recordPath": "tmp/atmosphere/local-second-order/072-southern-france-obj-diffuse-high-local-closest-with-without-shad",
+      "sourceSceneId": "southern-france-obj-diffuse-high-local-closest",
+      "reviewStatus": "active-first-gpu-review",
+      "reviewIntent": "No-shadow Southern France local-source closest-approach plausibility review.",
+      "shadowPolicy": "no-shadows",
+      "notes": "Accepted local-second-order source-matrix row using flat-local-second-order-atmosphere and local incident-cache entries."
+    },
+    {
+      "lineageId": "southern-france-073-local-090-no-shadows",
+      "recordPath": "tmp/atmosphere/local-second-order/073-southern-france-obj-diffuse-high-local-090deg-with-without-shade",
+      "sourceSceneId": "southern-france-obj-diffuse-high-local-090deg",
+      "reviewStatus": "active-first-gpu-review",
+      "reviewIntent": "No-shadow Southern France local-source 90-degree orbit plausibility review.",
+      "shadowPolicy": "no-shadows",
+      "notes": "Accepted local-second-order source-matrix row; first M3 visual review carry-forward despite local/flat implementation being later."
+    },
+    {
+      "lineageId": "southern-france-077-local-180-fit-no-shadows",
+      "recordPath": "tmp/atmosphere/local-second-order/077-southern-france-obj-diffuse-high-local-180deg-toward-180sun-fit",
+      "sourceSceneId": "southern-france-obj-diffuse-high-local-180deg-toward-180sun-fit",
+      "reviewStatus": "deferred-local-flat-follow-on",
+      "reviewIntent": "Deferred fitted local-angle review for yaw toward the local 180-degree Sun bearing.",
+      "shadowPolicy": "no-shadows",
+      "notes": "Accepted fitted terrain-footprint rerender; deferred until local/flat GPU follow-on unless explicitly requested earlier."
+    },
+    {
+      "lineageId": "southern-france-078-local-090-fit-no-shadows",
+      "recordPath": "tmp/atmosphere/local-second-order/078-southern-france-obj-diffuse-high-local-090deg-toward-180sun-fit",
+      "sourceSceneId": "southern-france-obj-diffuse-high-local-090deg-toward-180sun-fit",
+      "reviewStatus": "deferred-local-flat-follow-on",
+      "reviewIntent": "Deferred fitted local-angle review for local 90-degree source with yaw toward local 180-degree Sun bearing.",
+      "shadowPolicy": "no-shadows",
+      "notes": "Accepted fitted terrain-footprint rerender; deferred local/flat follow-on scene."
+    },
+    {
+      "lineageId": "southern-france-079-local-135-fit-no-shadows",
+      "recordPath": "tmp/atmosphere/local-second-order/079-southern-france-obj-diffuse-high-local-135deg-toward-180sun-fit",
+      "sourceSceneId": "southern-france-obj-diffuse-high-local-135deg-toward-180sun-fit",
+      "reviewStatus": "deferred-local-flat-follow-on",
+      "reviewIntent": "Deferred fitted local-angle review for local 135-degree source with yaw toward local 180-degree Sun bearing.",
+      "shadowPolicy": "no-shadows",
+      "notes": "Accepted fitted terrain-footprint rerender; deferred local/flat follow-on scene."
+    },
+    {
+      "lineageId": "southern-france-080-local-stack-no-shadows",
+      "recordPath": "tmp/atmosphere/local-second-order/080-southern-france-obj-diffuse-high-local-stack-toward-180sun-fit-w",
+      "sourceSceneId": "southern-france-obj-diffuse-high-local-stack-toward-180sun-fit",
+      "reviewStatus": "deferred-local-flat-follow-on",
+      "reviewIntent": "Deferred shader-only local vertical stack for local closest, 45, 90, 135, and 180 source positions.",
+      "shadowPolicy": "no-shadows",
+      "notes": "Accepted 960 x 3010 shader-only stack; local 45 row comes from accepted atmosflat evidence."
+    },
+    {
+      "lineageId": "southern-france-086-local-stack-stars-no-shadows",
+      "recordPath": "tmp/atmosphere/local-second-order/086-southern-france-obj-diffuse-high-local-stack-toward-180sun-fit-w",
+      "sourceSceneId": "southern-france-obj-diffuse-high-local-stack-stars-toward-180sun-fit",
+      "reviewStatus": "deferred-local-flat-follow-on",
+      "reviewIntent": "Deferred shader-only local vertical stack with magnitude-calibrated procedural stars.",
+      "shadowPolicy": "no-shadows",
+      "notes": "Accepted optional star-field stack; current fixed-exposure PNG shows sub-perceptual star contribution."
+    },
+    {
+      "lineageId": "southern-france-shadowed-variants-excluded",
+      "recordPath": "tmp/atmosphere/local-second-order/061-southern-france-obj-diffuse-aa-downsample-atmosphere-shadows",
+      "sourceSceneId": "southern-france-obj-diffuse-shadowed-variants",
+      "reviewStatus": "excluded",
+      "reviewIntent": "Explicit exclusion of Southern France shadow-enabled variants from objective and subjective shader validation.",
+      "shadowPolicy": "excluded-shadowed",
+      "notes": "The diffuse OBJ texture already contains baked shadow/detail and live Three shadows make terrain validation ambiguous; receive-only diagnostics were byte-identical to no-shadow rows."
+    }
+  ]
+}
