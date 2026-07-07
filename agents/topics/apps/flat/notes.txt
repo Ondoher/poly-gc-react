@@ -19,3 +19,8 @@ Software contract fields: provenance ids, diagnostics, debug-view labels, compat
 The core physics vo
 
 a thing i was thinking about. If we are going to add some sort of relective surface (water) we have a problem that we want the water to reflect the shader modified colors, but we also need to apply the shader to the reflected surface itself.
+
+
+We are going to have a new synchronization method where the latitude is not driven by configuration but by correspondance with the real world.
+
+The local sun lat and time are synced to the latitude where the sun is directly overhead on the given day at solar noon at long 0

@@ -2,11 +2,8 @@
 
 This folder is the documentation home for the production Algorithm32 module.
 
-Current status: production Algorithm32 is in design stage with scaffold plus
-initial tested CPU/reference helper implementations.
-The local second-order experimental lane is closed as accepted evidence, but
-no production algorithm/runtime implementation has been promoted outside the
-preserved `POC` bundle yet. The production code root is
+Current status: production Algorithm32 shader/runtime work is the active
+handoff after reconciliation. The production code root is
 `shared/algorithm32/production/`, which currently contains the Jasmine test
 lane, AMA reference registry, ambient `types.d.ts` homes, initial
 consumer-provided `LightSourceModel`, `AtmosphereModel`, `GeometryModel`, and `Color`
@@ -18,8 +15,16 @@ several implemented leaf/private helper methods, and remaining unimplemented
 private helper stubs for the transport steps. The
 production deliverable is a usable
 shader/runtime atmosphere pass; CPU reference code is support for validation,
-internal shader texture building, cache construction, diagnostics, and future
+internal shader texture building, cache construction, future diagnostics, and
 tests.
+Use [Reconciliation Conclusions](../reconciliation/conclusions.md) as the
+primary production implementation driver from the POC. It consolidates the
+accepted reference/shader path, adjusted abstraction ownership, and data-flow
+contracts. The reconciliation topic, code, and experiment records remain
+relevant supporting implementation material; older pre-reconciliation lanes
+are replaced as implementation references. Use
+[Unsourced And Partially Sourced Facts](../reconciliation/unsourced-and-partially-sourced-facts.md)
+for remaining provenance gaps.
 The three algorithm input abstractions are Sun, atmosphere composition, and
 geometry. Algorithm32 core output is spectral or spectral-group radiance and
 transmittance; display conversion is a separate class that consumes spectral
@@ -72,8 +77,8 @@ The normal renderer input is a live Three scene rendered into color/depth
 targets, then composed by an Algorithm32 fullscreen shader pass. JSON scene
 packets and Raycaster captures are validation/oracle inputs only. The facade
 should own or expose source-driven scene-light synchronization, geometry/depth
-policy, runtime capability diagnostics, and fail-loud local-cache binding so
-callers do not need Algorithm32 shader/cache domain knowledge.
+policy, and fail-loud local-cache binding so callers do not need Algorithm32
+shader/cache domain knowledge. Stable diagnostics remain deferred.
 The production runtime shader integration should require a composer-style
 Three render pipeline. Algorithm32 setup asks its runtime shader builder to
 build the runtime shader from packaged shader source, the shared model, and
@@ -85,90 +90,65 @@ The current primary facade draft is
 provisional caller-facing class, returned shader handle, minimal Three
 integration path, configuration boundary, and explicit exclusions. The current
 primary facade surface is `constructor`, `config` getter, `setConfig`, awaited
-`setupShader`, `evaluate`, `getDiagnostics`, and `dispose`; `buildTexture`
-and `validate` are not primary app-facing methods.
+`setupShader`, `evaluate`, deferred `getDiagnostics`, and `dispose`;
+`buildTexture` and `validate` are not primary app-facing methods.
 Local Sun configuration and calibration must resolve to the public Sun
 interface before reaching transport, texture building, cache, or runtime
 shader code. For Sun, atmosphere composition, and geometry, anything not
 defined by the corresponding public interface or public input/resolver types
 stays private to that owner domain.
 
-## Current Handoff
+## Current Implementation Reference
 
-The latest operational source to mine is the accepted local-second-order POC
-lineage:
+The production implementation reference is now
+[Reconciliation Conclusions](../reconciliation/conclusions.md). That document
+is supported by the reconciliation topic docs, reconciliation POC code, and
+reconciliation experiment records:
 
-- `scripts/flat/local-second-order/`
-- `shared/algorithm32/POC/local-second-order/`
-- `shared/algorithm32/POC/three/shader-lab-page.js`
-- `shared/algorithm32/POC/cpu/algorithm32-transport.js`
-- `shared/algorithm32/POC/source-contract/`
+- `agents/topics/apps/flat/reconciliation/`
+- `scripts/flat/reconciliation/POC/`
+- `tmp/atmosphere/reconciliation/`
 
-Current mined conclusions:
+Those reconciliation materials are relevant to production promotion, but
+production code must not runtime-link to them. Older pre-reconciliation
+local-second-order, cleanroom, shader-lab, `shared/algorithm32/POC/`, and
+source-contract lanes are no longer implementation references unless the user
+explicitly asks for historical archaeology.
 
-- [Algorithm32 Conclusions](conclusions.md) consolidates the accepted
-  Algorithm32 transport steps, source/geometry/atmosphere/color ownership
-  split, data flow, active constants, source references, rejected residues, and
-  unresolved production choices.
-- The latest accepted shader lineage uses endpoint/trapezoid transport for
-  view-path and source-path optical-depth integration. Older midpoint
-  cleanroom fixtures remain useful fixture/stage evidence, but they are not
-  the current production default.
-- The POC source-contract lineage emitted source-path descriptors from
-  light-source samples, but reconciliation should promote the cleaner
-  production boundary recorded in
-  [Algorithm32 Abstraction Design](../reconciliation/algorithm32-abstraction-design.md):
-  geometry resolves source-relative coordinates, boundary context, clipping,
-  cache coordinates, and altitude policy; light source consumes those spatial
-  coordinates and supplies lighting facts, including source-owned distance
-  semantics and source path limits; geometry then resolves clipped source
-  paths for transmittance; atmosphere owns sampled medium coefficients;
-  transport coordinates plain packets and applies the integration rule.
-- `IncidentRadianceCache` is owned by a concrete light-source implementation
-  behind `LightSourceModel.sampleIncidentRadiance(...)`. It is not a shared
-  aggregate model, generic `Reference` dependency, or caller-provided provider.
-- The latest mined POC constant inventory is recorded in
-  [Algorithm32 Production Design](production-design.md#latest-poc-constant-inventory).
-  Constants are grouped by whether they are reference-backed, accepted POC
-  operational values, app/legacy contamination, or unresolved production
-  questions.
-- The next experimental follow-up is the `reconciliation` lane described in
-  [Algorithm32 Conclusions](conclusions.md#follow-up-reconciliation-lane):
-  produce a reference-backed CPU Algorithm32 implementation, then a GPU shader
-  implementation validated against the CPU reference. It must also assemble
-  the finalized, fully sourced initial parameter ledger, document the shape
-  and flow of all data across light/source, geometry, atmosphere,
-  Algorithm32 transport, cache/shader resources, diagnostics, and external
-  color/display conversion, then rerun the accepted Algorithm32 tests before
-  promotion. Color stays outside CPU transport, but the later GPU shader build
-  needs the color/display interface for renderable output. That lane should
-  also recreate the objective and subjective
-  artifact families from
-  `scripts/flat/local-second-order/`, including milestone criteria artifacts,
-  browser harness captures, source-matrix galleries, and subjective review
-  images.
+Use [Reconciliation To Production Deltas](reconciliation-production-deltas.md)
+as the working tracker for differences between the accepted reconciliation
+architecture and the current production scaffold.
+The production top-level API shape remains primary: `Algorithm32`, the
+production dependency aggregate, `Reference`, and `ShaderBuilder` stay as the
+boundary while reconciled implementation details move underneath them.
+Type definitions should follow the reconciliation POC shapes by default
+because most production implementation code will be lifted from that code base.
+Keep production unit-bearing packet boundaries where units matter, such as
+distance.
+Failure policy is split by lifecycle phase: fail loudly during configuration
+and setup, including constructor validation, `setConfig`, `setupShader`,
+awaited handle config updates, and resource build/bind setup; once the runtime
+render path is live, log runtime failures and continue with the last valid
+state, no-op, or fallback path when possible.
 
-The implementation lives in:
+The production implementation lives in:
 
 ```text
 shared/algorithm32/production/
 ```
 
-The cleanroom experiment and shader-lab docs remain the evidence and design
-history for the production build. Use them as inputs, then promote durable
-contracts here as the official production documentation.
-
 ## Current Authority
 
 - [Algorithm32 Status](status.md) is the concise current handoff for the
-  design checkpoint, reconciliation gate, reload order, and next work.
+  design checkpoint, reload order, and next work.
 - [Algorithm32 Requirements](requirements.md) is the current requirements
   entry point. It divides requirements into implementable ownership domains;
   define and accept this layer before freezing production API names or packet
   shapes.
-- [Algorithm32 Conclusions](conclusions.md) is the current source-mined
-  consolidation of accepted Algorithm32 behavior, constants, external
-  references, rejected experiment residue, and unresolved choices.
+- [Reconciliation Conclusions](../reconciliation/conclusions.md) is the
+  current implementation authority for production reference/shader work.
+- [Reconciliation To Production Deltas](reconciliation-production-deltas.md)
+  records the architecture/API gaps that must be resolved during promotion.
 - [Algorithm32 Production Design](production-design.md) records the
   design-stage module boundaries, local Sun solar-zenith calibration UX/API
   notes, non-goals, promotion sequence, and open questions needed to satisfy
@@ -176,19 +156,12 @@ contracts here as the official production documentation.
 - [Algorithm32 Primary Facade API Draft](api-facade-draft.md) is the current
   design draft for the main configured facade class and the runtime shader
   handle it returns.
-- [Algorithm32 Canonical Reference](../plans/atmosphere-cleanroom-design/algorithm32-canonical-reference.md)
-  is the current source of truth for accepted Algorithm32 behavior, endpoints,
-  abstractions, open issues, and production followups.
-- [Algorithm32 Module Design](../plans/atmosphere-cleanroom-design/algorithm32-module-design.md)
-  is the current working design for module boundaries and API shape.
-- [Algorithm32 Shader Iteration Plan](../plans/atmosphere-cleanroom-design/algorithm32-shader-iteration-plan.md)
-  records accepted shader-lab milestones and parity evidence.
 
-## Source Mining
+## Provenance Only
 
-These catalogs are available when production Algorithm32 needs external
-reference provenance, source-backed constants, or validation-fixture rationale.
-They are not default reload sources.
+These catalogs are available only when a named source/provenance gap requires
+external reference detail. They are not implementation references and are not
+default reload sources.
 
 - [External Reference Log](external-reference-log.md): imported external
   source and decision catalog from the retired atmosphere reference lane.
@@ -238,29 +211,28 @@ in-scattering, and incident in-scattering helpers.
   Production analytic fixtures now start under `fixtures/` with
   `analytic-invariants.json`, normalized to AMA numbered references and
   compact reference pointer objects.
-- `shared/algorithm32/POC/`: centralized POC implementation bundle, including
-  a pared-down module for the original non-shader `bruneton-start-fresh` base
-  algorithm, pure-module extraction of accepted later POCs, and compatibility
-  shims for old runner filenames. These clean, tested POC modules are the
-  starting basis for production code. Use them as the promotion source, but do
-  not treat the `POC` folder itself as the production module boundary.
-- `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/`: cleanroom and
-  shader-lab evidence/design history, not the final production-doc home.
-- `scripts/flat/algorithm32-shader-lab/`: POC experiment lane, not production
-  code.
+- `agents/topics/apps/flat/reconciliation/`,
+  `scripts/flat/reconciliation/POC/`, and
+  `tmp/atmosphere/reconciliation/`: the relevant reconciliation topic, code,
+  and experiment records for production promotion.
+- `shared/algorithm32/POC/`: pre-reconciliation archive bundle. Do not use it
+  as the production promotion source.
+- `agents/topics/apps/flat/plans/atmosphere-cleanroom-design/` and
+  `scripts/flat/algorithm32-shader-lab/`: pre-reconciliation archive lanes,
+  not production implementation references.
 
-## POC Evidence
+## Pre-Reconciliation Archive
 
-The local Sun second-order experimental lane is now closed as evidence for the
-production-design pivot. Its tracker remains:
+The local Sun second-order experimental lane is pre-reconciliation archive
+material. Its tracker remains:
 
 - [Local Sun Second-Order POC](../plans/atmosphere-cleanroom-design/local-sun-second-order/README.md)
 
-The currently preserved POC implementation bundle is:
+The archived pre-reconciliation POC implementation bundle is:
 
 - `shared/algorithm32/POC/`
 
-The preserved POC bundle contains the shared Three shader class and GLSL used
+The archived POC bundle contains the shared Three shader class and GLSL used
 by the latest local lane. It now also contains the accepted local finite-Sun
 source resolver, the local incident-cache `Data3DTexture` upload helper, and
 the live Three scene-color/depth to Algorithm32 display-pass wrapper:

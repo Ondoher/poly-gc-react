@@ -5,6 +5,8 @@
 
 import { fibonacciSphereDirection } from '../math/vector.js';
 
+const SPECTRAL_GROUP_SIZE = 4;
+
 export default class LocalSunIncidentRadianceCache {
     /**
      * @param {LocalIncidentRadianceCacheConfig} configuration - Local cache configuration.
@@ -155,18 +157,71 @@ export default class LocalSunIncidentRadianceCache {
      * @returns {CacheShaderPayloadDescriptor} Shader payload descriptor.
      */
     createShaderPayload() {
+        const spectralChannelCount = this._configuration.spectralBasis.wavelengthsNanometers.length;
+        const spectralGroupCount = Math.ceil(spectralChannelCount / SPECTRAL_GROUP_SIZE);
+        const zBinCount = this._configuration.zBinsMeters.length;
+        const rhoBinCount = this._configuration.rhoBinsMeters.length;
+        const rgbaFloat32 = [];
+
+        for (let zBinIndex = 0; zBinIndex < zBinCount; zBinIndex += 1) {
+            for (let spectralGroupIndex = 0; spectralGroupIndex < spectralGroupCount; spectralGroupIndex += 1) {
+                for (let rhoBinIndex = 0; rhoBinIndex < rhoBinCount; rhoBinIndex += 1) {
+                    for (let directionIndex = 0; directionIndex < this._configuration.directionCount; directionIndex += 1) {
+                        const key = this._key(zBinIndex, rhoBinIndex, directionIndex);
+                        const radiance = this._valuesByKey.get(key);
+
+                        if (!radiance) {
+                            throw new Error(`Local incident radiance cache is missing ${key}.`);
+                        }
+
+                        for (let componentIndex = 0; componentIndex < SPECTRAL_GROUP_SIZE; componentIndex += 1) {
+                            const channelIndex = spectralGroupIndex * SPECTRAL_GROUP_SIZE + componentIndex;
+                            rgbaFloat32.push(channelIndex < spectralChannelCount ? radiance[channelIndex] : 0);
+                        }
+                    }
+                }
+            }
+        }
+
         return Object.freeze({
             payloadKind: 'local-incident-radiance-cache',
             dimensions: Object.freeze([
-                this._configuration.zBinsMeters.length,
-                this._configuration.rhoBinsMeters.length,
+                zBinCount,
+                rhoBinCount,
                 this._configuration.directionCount,
-                this._configuration.spectralBasis.wavelengthsNanometers.length,
+                spectralChannelCount,
             ]),
             format: 'float32-spectral',
+            texture: Object.freeze({
+                kind: 'rgba32f-3d-texture-v1',
+                textureId: 'incident-radiance-local-l2',
+                width: this._configuration.directionCount,
+                height: rhoBinCount,
+                depth: zBinCount * spectralGroupCount,
+                dimensionality: '3d',
+                format: 'rgba32f',
+                samplerPolicy: 'nearest-clamp',
+                coordinateOrder: Object.freeze(['directionIndex', 'rhoBinIndex', 'zSpectralGroupIndex']),
+                spectralGroupSize: SPECTRAL_GROUP_SIZE,
+                spectralGroupCount,
+                spectralChannelCount,
+                rgbaFloat32: Object.freeze(rgbaFloat32),
+            }),
+            lookup: Object.freeze({
+                policy: 'z-rho-bin-all-directions',
+                directionSequence: 'fibonacci-sphere',
+                directionWeight: (4 * Math.PI) / this._configuration.directionCount,
+                zBinsMeters: this._configuration.zBinsMeters,
+                rhoBinsMeters: this._configuration.rhoBinsMeters,
+                depthPacking: 'z-bin-major-spectral-group-minor',
+            }),
             metadata: Object.freeze({
                 valueCount: this._valuesByKey.size,
+                zBinCount,
+                rhoBinCount,
+                directionCount: this._configuration.directionCount,
                 lookupPolicy: 'nearest-neighbor-poc-grid',
+                uploadValueCount: rgbaFloat32.length,
             }),
         });
     }

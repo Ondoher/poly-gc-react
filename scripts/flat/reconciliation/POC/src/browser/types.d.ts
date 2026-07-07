@@ -99,6 +99,8 @@ type BrowserAlgorithm32RuntimeInput = {
     readonly sceneId: string;
     readonly width: number;
     readonly height: number;
+    readonly geometryKind?: 'spherical-earth' | 'flat-earth';
+    readonly lightSourceKind?: 'distant-sun' | 'local-sun';
     readonly sceneDepthBytes: Uint8Array | readonly number[];
     readonly sceneHitBytes: Uint8Array | readonly number[];
     readonly sceneDepthTextureEncoding?: string;
@@ -122,6 +124,8 @@ type BrowserAlgorithm32RuntimeInput = {
         readonly y: number;
     }[];
     readonly pathIntervalCount?: number;
+    readonly sourceTransmittanceIntervalCount?: number;
+    readonly localFlat?: unknown;
 };
 
 type BrowserAlgorithm32ComposerResult = {

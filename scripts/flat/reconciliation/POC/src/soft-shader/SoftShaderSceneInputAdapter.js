@@ -55,6 +55,7 @@ export default class SoftShaderSceneInputAdapter {
             }),
             endpointContribution,
             sceneIntersectionKind: sceneIntersection.kind,
+            sceneIntersectionDistanceMeters: sceneIntersection.distanceMeters,
             diagnostics: Object.freeze(diagnostics),
         });
     }

@@ -86,9 +86,14 @@ export function makeM2SeedSummary() {
         distanceFalloff: seed.distanceFalloff,
         falseSunLatitudeModel: seed.falseSunLatitudeModel,
         summerSolsticeSimulationTime: seed.summerSolsticeSimulationTime,
+        winterSolstice2025SimulationTime: seed.winterSolstice2025SimulationTime,
+        currentReviewSceneSetId: seed.currentReviewSceneSetId,
+        currentReviewSceneCount: seed.currentReviewScenes?.length ?? null,
         latitudeSweepObserverLatitudesDegrees: seed.latitudeSweepObserverLatitudesDegrees,
         summerSolsticeLatitudeSweepBrightnessCalibration:
             seed.summerSolsticeLatitudeSweepBrightnessCalibration,
+        winterSolstice2025DegreeBrightnessCalibration:
+            seed.winterSolstice2025DegreeBrightnessCalibration,
         localCacheZBinsMeters: seed.localCacheZBinsMeters,
         localCacheRhoBinsMeters: seed.localCacheRhoBinsMeters,
         localCacheDirectionCount: seed.localCacheDirectionCount,

@@ -1323,7 +1323,29 @@ Saved for later:
      are source candidates.
   With an architecture-first ranking, the simple custom normal/Fresnel material
   would be more sympathetic to the constructed-scene/object-renderer contract;
-  with the current throwaway-POC framing, `Water.js` is the recommended choice.
+  however, the Three.js water helpers remain the best quick POC options when
+  the goal is disposable review imagery rather than production material design.
+- Visible Sun disk / direct solar-disc camera radiance:
+  keep this as a deferred source/display extension, not part of the current
+  Algorithm32 transport core. The clean design is a source-owned visible
+  emitter endpoint resolved in the postprocess shader composition layer. For a
+  distant Sun, a pixel hits the disk when the reconstructed view ray falls
+  within the light source's angular radius. For a local Sun, a pixel hits the
+  disk by ray-sphere intersection against the source position and source
+  radius. Existing scene hit/depth facts should occlude the disk when a box,
+  ground, or other scene endpoint is closer than the source endpoint.
+  Composition should stay in the established endpoint form:
+  `sourceEndpointRadiance * T_view + L_path`. The disk's spectral radiance is
+  source-owned and stays outside `evaluate(...)`; only spatial ray facts and
+  scene/source distances affect transport. Do not render the disk as a normal
+  Three mesh whose RGB is captured as surface hit color. The hard parts are
+  source-radiance calibration from spectral irradiance and apparent solid
+  angle, subpixel/analytic coverage for tiny disks, CPU/GPU parity, and a
+  display policy for saturation, tone mapping, and any POC clamping or bloom.
+  At recent review scale (`228 x 128`, `45 deg` vertical FOV), a real distant
+  Sun is only about `1.5 px` tall, and the current winter-solstice 2025 local
+  false Sun at `180` degrees is about `0.44 px` tall, so naive center-sample
+  disk tests will flicker or disappear.
 
 ## Ray And Path Points
 
@@ -2683,6 +2705,50 @@ source-relative position:
   calibration;
 - direct-radiance lookup and incident-radiance sampling using the same
   coordinate convention.
+
+### Scene Lighting Adapter Boundary
+
+Renderer scene lighting is an integration/display concern adjacent to the
+light-source abstraction. It exists so a constructed Three scene can shade
+endpoint materials from the same source placement used by Algorithm32 before
+the postprocess shader captures scene color. It is not an additional
+Algorithm32 transport operation.
+
+The POC light-source surface includes an optional adapter:
+
+```ts
+interface LightSourceModel {
+  createThreeLightingObjects?(request: LightSourceThreeLightingRequest):
+    LightSourceThreeLightingObjects;
+}
+```
+
+The request is renderer-facing and should carry only prepared integration
+facts: Three constructors, source position in scene units, observer position in
+scene units, the geometry-resolved `SourceRelativePosition`, endpoint scene
+light calibration/display policy, and optional shadow-frame settings. Geometry
+owns conversion from model/source coordinates into the observer-local Three
+scene frame. The light source owns conversion from its source facts into
+renderer light objects and metadata.
+
+The adapter result is limited to scene objects for renderer capture:
+
+- Three light objects such as ambient fill, local-source `PointLight`, or a
+  shadow-map `DirectionalLight` plus target object;
+- optional non-light scene objects needed by those lights, such as a shadow
+  target;
+- diagnostic metadata including lighting policy, shadow policy, source
+  direction, observer incident scale, endpoint scene incident scale, and
+  selected endpoint light-scale policy.
+
+Those objects affect only the rendered endpoint scene color that is later
+composed with `endpointRadiance * T_view + L_path`. They must not be passed
+into `evaluate(...)`, used as incident-radiance cache inputs, or treated as
+source radiance pre-scaling for spectral transport. If a scene-light policy
+uses a fixed review intensity, that intensity is display/capture policy. If it
+uses observer incident scale, that is still endpoint scene shading policy and
+must be recorded separately from the spectral incident scale consumed by
+Algorithm32 transport.
 
 A conical light source uses the same source-relative position. Geometry can also
 resolve source orientation into the same source-relative frame. In that case

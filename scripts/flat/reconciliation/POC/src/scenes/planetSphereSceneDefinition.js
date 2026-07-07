@@ -13,6 +13,12 @@ export const PLANET_SPHERE_SCENE_OBJECT_NAMES = Object.freeze({
     farGreenBox: 'far-green-box',
     veryFarMagentaBox: 'very-far-magenta-box',
     veryFarGreenBox: 'very-far-green-box',
+    unionNearYellowBox: 'union-review-near-yellow-box',
+    unionMidWhiteBox: 'union-review-mid-white-box',
+    unionFarOrangeBox: 'union-review-far-orange-box',
+    unionDistantCyanBox: 'union-review-distant-cyan-box',
+    unionDenaliOrangeBox: 'union-review-denali-200km-orange-box',
+    unionCloseSingleStoryBuildingBox: 'union-review-close-single-story-building-box',
 });
 
 const PLANET_SPHERE_SCENE_OBJECT_SPECS = Object.freeze({
@@ -79,6 +85,54 @@ const PLANET_SPHERE_SCENE_OBJECT_SPECS = Object.freeze({
         displayRgba: Object.freeze([0, 170, 40, 255]),
         spectralCoverageHint: 'middle-wavelength-green',
     }),
+    [PLANET_SPHERE_SCENE_OBJECT_NAMES.unionNearYellowBox]: Object.freeze({
+        kind: 'diagnostic-color-box',
+        centerXZ: Object.freeze([-0.26, -1.6]),
+        sizeSceneUnits: Object.freeze([0.18, 0.22, 0.18]),
+        displayRgba: Object.freeze([226, 178, 34, 255]),
+        spectralCoverageHint: 'red-plus-green-yellow-review',
+        shadowRegion: 'camera-local',
+    }),
+    [PLANET_SPHERE_SCENE_OBJECT_NAMES.unionMidWhiteBox]: Object.freeze({
+        kind: 'diagnostic-color-box',
+        centerXZ: Object.freeze([0.62, -3.6]),
+        sizeSceneUnits: Object.freeze([0.42, 0.5, 0.42]),
+        displayRgba: Object.freeze([220, 214, 190, 255]),
+        spectralCoverageHint: 'broad-neutral-white-review',
+        shadowRegion: 'camera-local',
+    }),
+    [PLANET_SPHERE_SCENE_OBJECT_NAMES.unionFarOrangeBox]: Object.freeze({
+        kind: 'diagnostic-color-box',
+        centerXZ: Object.freeze([-1.3, -8.2]),
+        sizeSceneUnits: Object.freeze([0.9, 0.9, 0.9]),
+        displayRgba: Object.freeze([218, 95, 28, 255]),
+        spectralCoverageHint: 'long-wavelength-orange-review',
+        shadowRegion: 'camera-local',
+    }),
+    [PLANET_SPHERE_SCENE_OBJECT_NAMES.unionDistantCyanBox]: Object.freeze({
+        kind: 'diagnostic-color-box',
+        centerXZ: Object.freeze([18.0, -60.0]),
+        sizeSceneUnits: Object.freeze([6.0, 5.0, 6.0]),
+        displayRgba: Object.freeze([42, 170, 188, 255]),
+        spectralCoverageHint: 'green-plus-blue-cyan-review',
+        shadowRegion: 'distant-reference',
+    }),
+    [PLANET_SPHERE_SCENE_OBJECT_NAMES.unionDenaliOrangeBox]: Object.freeze({
+        kind: 'diagnostic-color-box',
+        centerXZ: Object.freeze([100.0, -250.0]),
+        sizeSceneUnits: Object.freeze([50.0, 6.2, 100.0]),
+        displayRgba: Object.freeze([224, 95, 32, 255]),
+        spectralCoverageHint: 'denali-scale-orange-review',
+        shadowRegion: 'distant-reference',
+    }),
+    [PLANET_SPHERE_SCENE_OBJECT_NAMES.unionCloseSingleStoryBuildingBox]: Object.freeze({
+        kind: 'diagnostic-color-box',
+        centerXZ: Object.freeze([-0.012, -0.03]),
+        sizeSceneUnits: Object.freeze([0.014, 0.006, 0.010]),
+        displayRgba: Object.freeze([28, 105, 185, 255]),
+        spectralCoverageHint: 'near-blue-field-building-review',
+        shadowRegion: 'camera-local',
+    }),
 });
 
 const PLANET_SPHERE_COLOR_BOX_OBJECT_NAMES = Object.freeze([
@@ -124,10 +178,45 @@ export const PLANET_SPHERE_GROUND_SHADOWED_SCENE = Object.freeze({
     shadowPolicy: 'raycast-shadows-from-distant-sun',
 });
 
+export const PLANET_SPHERE_UNION_REVIEW_SHADOWED_SCENE = Object.freeze({
+    name: 'planet-sphere-union-review-shadowed',
+    objectNames: Object.freeze([
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.distantSunLight,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionNearYellowBox,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionCloseSingleStoryBuildingBox,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionMidWhiteBox,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionFarOrangeBox,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionDistantCyanBox,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionDenaliOrangeBox,
+    ]),
+    objectSpecs: PLANET_SPHERE_SCENE_OBJECT_SPECS,
+    groundPolicy: 'geometry-owned-spherical-ground',
+    lightingPolicy: 'directional-light-from-distant-sun',
+    shadowPolicy: 'raycast-shadows-from-distant-sun',
+});
+
+export const PLANET_SPHERE_UNION_REVIEW_UNLIT_SCENE = Object.freeze({
+    name: 'planet-sphere-union-review-unlit',
+    objectNames: Object.freeze([
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionNearYellowBox,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionCloseSingleStoryBuildingBox,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionMidWhiteBox,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionFarOrangeBox,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionDistantCyanBox,
+        PLANET_SPHERE_SCENE_OBJECT_NAMES.unionDenaliOrangeBox,
+    ]),
+    objectSpecs: PLANET_SPHERE_SCENE_OBJECT_SPECS,
+    groundPolicy: 'geometry-owned-spherical-ground',
+    lightingPolicy: 'unlit-endpoint-color',
+    shadowPolicy: 'shadows-disabled',
+});
+
 export const PLANET_SPHERE_SCENE_PRESETS = Object.freeze({
     [PLANET_SPHERE_GROUND_UNLIT_SCENE.name]: PLANET_SPHERE_GROUND_UNLIT_SCENE,
     [PLANET_SPHERE_GROUND_LIT_SCENE.name]: PLANET_SPHERE_GROUND_LIT_SCENE,
     [PLANET_SPHERE_GROUND_SHADOWED_SCENE.name]: PLANET_SPHERE_GROUND_SHADOWED_SCENE,
+    [PLANET_SPHERE_UNION_REVIEW_SHADOWED_SCENE.name]: PLANET_SPHERE_UNION_REVIEW_SHADOWED_SCENE,
+    [PLANET_SPHERE_UNION_REVIEW_UNLIT_SCENE.name]: PLANET_SPHERE_UNION_REVIEW_UNLIT_SCENE,
 });
 
 export function planetSphereSceneDefinitionByName(name) {

@@ -19,9 +19,12 @@ import {
 } from '/scripts/flat/reconciliation/POC/src/constants/consts.js';
 import SpectralCalculator from '/scripts/flat/reconciliation/POC/src/calculator/SpectralCalculator.js';
 import SpectralReferenceEvaluator from '/scripts/flat/reconciliation/POC/src/evaluation/SpectralReferenceEvaluator.js';
+import FlatEarthGeometry from '/scripts/flat/reconciliation/POC/src/geometry/FlatEarthGeometry.js';
 import SphericalEarthGeometry from '/scripts/flat/reconciliation/POC/src/geometry/SphericalEarthGeometry.js';
 import DistantSunLightSource from '/scripts/flat/reconciliation/POC/src/light/DistantSunLightSource.js';
+import LocalSunLightSource from '/scripts/flat/reconciliation/POC/src/light/LocalSunLightSource.js';
 import { normalize, sunOrientedFibonacciSphereDirection } from '/scripts/flat/reconciliation/POC/src/math/vector.js';
+import buildIncidentRadianceCache from '/scripts/flat/reconciliation/POC/src/setup/buildIncidentRadianceCache.js';
 import CpuPostprocessSoftShader from '/scripts/flat/reconciliation/POC/src/soft-shader/CpuPostprocessSoftShader.js';
 
 const CAPTURED_SCENE_ENDPOINT_POLICY =
@@ -40,7 +43,8 @@ const CPU_PROGRESS_REPORT_INTERVAL_MS = 5000;
  *   readonly backend: 'gpu' | 'cpu',
  *   readonly runtimeInput: BrowserAlgorithm32RuntimeInput,
  *   readonly progressCallback?: BrowserAlgorithm32ProgressCallback | null,
- *   readonly captureSceneColorBytes?: boolean
+ *   readonly captureSceneColorBytes?: boolean,
+ *   readonly renderTargetSamples?: number
  * }} request - Browser composer render request.
  * @returns {BrowserAlgorithm32ComposerResult} Composer output diagnostics.
  */
@@ -54,6 +58,9 @@ export function renderAlgorithm32ComposerScene(request) {
         format: THREE.RGBAFormat,
         type: THREE.UnsignedByteType,
     });
+    if (request.renderer.capabilities?.isWebGL2 && 'samples' in renderTarget) {
+        renderTarget.samples = Math.max(0, request.renderTargetSamples ?? 4);
+    }
     renderTarget.texture.name = 'Algorithm32Composer.rgba8';
 
     request.renderer.setSize(width, height, false);
@@ -304,10 +311,12 @@ class Algorithm32CpuComposerPass extends Pass {
             width: this._runtimeInput.width,
             height: this._runtimeInput.height,
             bytes: this._outputBytes,
+            filter: this._runtimeInput.outputTextureFilter,
         });
         this._displayAdapter = new BrunetonColorDisplayModel();
+        this._evaluationRuntime = createEvaluationRuntimeFromRuntimeInput(this._runtimeInput);
         this._softShader = new CpuPostprocessSoftShader({
-            evaluator: createDistantSphericalEvaluatorFromRuntimeInput(this._runtimeInput),
+            evaluator: this._evaluationRuntime.evaluator,
             displayAdapter: this._displayAdapter,
         });
         this._uniforms = {
@@ -343,6 +352,7 @@ class Algorithm32CpuComposerPass extends Pass {
             softShader: this._softShader,
             outputBytes: this._outputBytes,
             progressCallback: this._progressCallback,
+            incidentRadianceCacheDiagnostics: this._evaluationRuntime.incidentRadianceCache,
         });
         this._outputTexture.needsUpdate = true;
         renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
@@ -368,6 +378,7 @@ class Algorithm32CpuComposerPass extends Pass {
             aggregateDiagnostics: this._diagnostics?.aggregateDiagnostics ?? null,
             selectedPixels: this._diagnostics?.selectedPixels ?? Object.freeze([]),
             incidentRadianceCache: this._diagnostics?.incidentRadianceCache ?? null,
+            setup: this._evaluationRuntime.setup,
             sceneColorReadbackCaptured: this._sceneColorBytes instanceof Uint8Array,
         });
     }
@@ -379,11 +390,19 @@ class Algorithm32CpuComposerPass extends Pass {
  *   readonly sceneColorBytes: Uint8Array,
  *   readonly softShader: CpuPostprocessSoftShader,
  *   readonly outputBytes: Uint8Array,
- *   readonly progressCallback?: BrowserAlgorithm32ProgressCallback | null
+ *   readonly progressCallback?: BrowserAlgorithm32ProgressCallback | null,
+ *   readonly incidentRadianceCacheDiagnostics?: unknown
  * }} request - CPU render request.
  * @returns {BrowserAlgorithm32CpuPassDiagnostics} CPU pass diagnostics.
  */
-function renderCpuSoftShaderBytes({ runtimeInput, sceneColorBytes, softShader, outputBytes, progressCallback = null }) {
+function renderCpuSoftShaderBytes({
+    runtimeInput,
+    sceneColorBytes,
+    softShader,
+    outputBytes,
+    progressCallback = null,
+    incidentRadianceCacheDiagnostics = null,
+}) {
     const aggregateDiagnostics = {
         selectedPixelCount: 0,
         validPixelCount: 0,
@@ -436,16 +455,36 @@ function renderCpuSoftShaderBytes({ runtimeInput, sceneColorBytes, softShader, o
 
             const selected = selectedByCoordinate.get(`${pixel.coordinate.x},${pixel.coordinate.y}`);
             if (selected) {
+                const sceneColorByteRgba = byteRgbaAt(sceneColorBytes, offset);
+                const outputMinusSceneColorByteRgba = rgba.map((value, index) =>
+                    value - sceneColorByteRgba[index]);
                 selectedPixels.push(Object.freeze({
                     pixelId: selected.pixelId,
                     x: pixel.coordinate.x,
                     y: pixel.coordinate.y,
                     readbackRgba: rgba,
+                    sceneColorByteRgba,
+                    outputMinusSceneColorByteRgba,
+                    absoluteOutputSceneColorByteDeltaSum: outputMinusSceneColorByteRgba
+                        .slice(0, 3)
+                        .reduce((sum, value) => sum + Math.abs(value), 0),
                     sceneIntersectionKind: pixel.sceneIntersectionKind,
+                    sceneHitDistanceMeters: pixel.sceneIntersectionKind === 'hit'
+                        ? sceneHitDistanceMetersFromRuntime(runtimeInput, offset)
+                        : null,
                     endpointPolicy: pixel.endpointPolicy,
                     displayRgba: pixel.displayRgba,
+                    displayComposition: summarizeDisplayComposition(pixel.displayComposition),
                     transmittanceMean: average(pixel.evaluationOutput.pathRadiance.transmittance),
                     pathRadianceMean: average(pixel.evaluationOutput.pathRadiance.inScattered),
+                    directInScatteringMean: averagePathDiagnostic(
+                        pixel.evaluationOutput.pathRadiance.diagnostics,
+                        'meanDirectInScattering',
+                    ),
+                    incidentInScatteringMean: averagePathDiagnostic(
+                        pixel.evaluationOutput.pathRadiance.diagnostics,
+                        'meanIncidentInScattering',
+                    ),
                 }));
             }
         }
@@ -474,7 +513,7 @@ function renderCpuSoftShaderBytes({ runtimeInput, sceneColorBytes, softShader, o
     return Object.freeze({
         aggregateDiagnostics: Object.freeze({ ...aggregateDiagnostics }),
         selectedPixels: Object.freeze(selectedPixels),
-        incidentRadianceCache: Object.freeze({
+        incidentRadianceCache: incidentRadianceCacheDiagnostics ?? Object.freeze({
             mode: 'packed-gpu-cache-payload-sampler',
             textureId: runtimeInput.incidentRadianceTexture.textureId ?? null,
             width: runtimeInput.incidentRadianceTexture.width,
@@ -561,6 +600,8 @@ function pixelInputFromRuntime({ runtimeInput, sceneColorBytes, x, y }) {
                 metadata: Object.freeze({
                     captureSource: 'effect-composer-render-pass-read-buffer',
                     endpointCompositionSource: 'captured-scene-color-inverse-tone-mapped-as-endpoint-radiance-proxy',
+                    endpointRadianceScale: runtimeInput.endpointRadianceScale,
+                    endpointCameraDistanceScale: runtimeInput.endpointCameraDistanceScale,
                 }),
             })
             : null,
@@ -569,6 +610,38 @@ function pixelInputFromRuntime({ runtimeInput, sceneColorBytes, x, y }) {
         metadata: Object.freeze({
             coordinateConvention: 'webgl-bottom-left',
             hasSceneEndpoint,
+        }),
+    });
+}
+
+/**
+ * @param {BrowserAlgorithm32RuntimeInput} runtimeInput - Shared runtime input.
+ * @returns {{ readonly evaluator: SpectralReferenceEvaluator, readonly incidentRadianceCache: unknown, readonly setup: unknown }}
+ *   Browser CPU evaluation runtime.
+ */
+function createEvaluationRuntimeFromRuntimeInput(runtimeInput) {
+    if (runtimeInput.geometryKind === 'flat-earth' || runtimeInput.lightSourceKind === 'local-sun') {
+        if (runtimeInput.geometryKind !== 'flat-earth' || runtimeInput.lightSourceKind !== 'local-sun') {
+            throw new Error(`Unsupported Algorithm32 CPU composer model pair: ${runtimeInput.geometryKind}/${runtimeInput.lightSourceKind}.`);
+        }
+
+        return createLocalFlatEvaluatorFromRuntimeInput(runtimeInput);
+    }
+
+    return Object.freeze({
+        evaluator: createDistantSphericalEvaluatorFromRuntimeInput(runtimeInput),
+        incidentRadianceCache: Object.freeze({
+            mode: 'packed-gpu-cache-payload-sampler',
+            textureId: runtimeInput.incidentRadianceTexture.textureId ?? null,
+            width: runtimeInput.incidentRadianceTexture.width,
+            height: runtimeInput.incidentRadianceTexture.height,
+            depth: runtimeInput.incidentRadianceTexture.depth,
+            spectralChannelCount: runtimeInput.incidentRadianceTexture.spectralChannelCount,
+        }),
+        setup: Object.freeze({
+            geometryKind: runtimeInput.geometryKind,
+            lightSourceKind: runtimeInput.lightSourceKind,
+            incidentRadianceCacheMode: 'packed-gpu-cache-payload-sampler',
         }),
     });
 }
@@ -629,6 +702,103 @@ function createDistantSphericalEvaluatorFromRuntimeInput(runtimeInput) {
 
 /**
  * @param {BrowserAlgorithm32RuntimeInput} runtimeInput - Shared runtime input.
+ * @returns {{ readonly evaluator: SpectralReferenceEvaluator, readonly incidentRadianceCache: unknown, readonly setup: unknown }}
+ *   Browser CPU evaluator runtime.
+ */
+function createLocalFlatEvaluatorFromRuntimeInput(runtimeInput) {
+    const localFlat = runtimeInput.localFlat;
+    const executionControls = Object.freeze({
+        ...RUNTIME_NUMERICAL_CONTROLS,
+        pathIntervalCount: runtimeInput.pathIntervalCount,
+        sourceTransmittanceIntervalCount: localFlat.sourceTransmittanceIntervalCount,
+    });
+    const geometry = new FlatEarthGeometry({
+        observerPositionMeters: localFlat.observerPositionMeters,
+        sourcePositionMeters: localFlat.sourcePositionMeters,
+        topAltitudeMeters: localFlat.topAltitudeMeters,
+        sceneSkyRayLimitMeters: localFlat.sceneSkyRayLimitMeters,
+        observerCenteredDome: localFlat.observerCenteredDome,
+        sourceTransmittanceIntervalCount: executionControls.sourceTransmittanceIntervalCount,
+        cacheZBinsMeters: localFlat.cacheZBinsMeters,
+        cacheRhoBinsMeters: localFlat.cacheRhoBinsMeters,
+    });
+    const atmosphere = new CanonicalAtmosphere({
+        constants: CANONICAL_ATMOSPHERE_CONSTANTS,
+        spectralChannels: CANONICAL_SPECTRAL_CHANNELS,
+    });
+    const lightSource = new LocalSunLightSource({
+        sourceKey: localFlat.sourceKey,
+        spectralChannels: CANONICAL_SPECTRAL_CHANNELS,
+        referenceDistanceMeters: localFlat.referenceDistanceMeters,
+        referenceSpectralIncidentScale: localFlat.referenceSpectralIncidentScale,
+        radiusMeters: localFlat.radiusMeters,
+        distanceFalloff: localFlat.distanceFalloff,
+        cacheZBinsMeters: localFlat.cacheZBinsMeters,
+        cacheRhoBinsMeters: localFlat.cacheRhoBinsMeters,
+        cacheDirectionCount: localFlat.cacheDirectionCount,
+    });
+    const calculator = new SpectralCalculator({
+        geometry,
+        atmosphere,
+        lightSource,
+        spectralBasis: CANONICAL_SPECTRAL_BASIS,
+        executionControls,
+    });
+    const cacheBuildResult = localFlat.incidentRadianceCacheEnabled
+        ? buildIncidentRadianceCache({
+            cache: lightSource.createIncidentRadianceCache({
+                spectralBasis: CANONICAL_SPECTRAL_BASIS,
+            }),
+            geometry,
+            atmosphere,
+            lightSource,
+            calculator,
+            pathIntervalCount: localFlat.cachePathIntervalCount,
+            sourceTransmittanceIntervalCount: executionControls.sourceTransmittanceIntervalCount,
+        })
+        : null;
+    const cacheShaderPayload = cacheBuildResult?.cache.createShaderPayload?.() ?? null;
+    const incidentRadianceCacheDiagnostics = cacheBuildResult
+        ? Object.freeze({
+            mode: 'local-l2-cache-sampler',
+            cacheKind: cacheBuildResult.cache.descriptor.cacheKind,
+            sourceKey: cacheBuildResult.cache.descriptor.sourceKey,
+            coordinateCount: cacheBuildResult.coordinateCount,
+            valueCount: cacheBuildResult.cache.valueCount,
+            zBinCount: localFlat.cacheZBinsMeters.length,
+            rhoBinCount: localFlat.cacheRhoBinsMeters.length,
+            directionCount: localFlat.cacheDirectionCount,
+            spectralChannelCount: CANONICAL_SPECTRAL_CHANNELS.length,
+            shaderPayload: cacheShaderPayload,
+        })
+        : Object.freeze({
+            mode: 'none-direct-local-sun',
+            reason: 'localFlat.incidentRadianceCacheEnabled is false',
+        });
+
+    return Object.freeze({
+        evaluator: new SpectralReferenceEvaluator({
+            geometry,
+            atmosphere,
+            lightSource,
+            calculator,
+            spectralBasis: CANONICAL_SPECTRAL_BASIS,
+            executionControls,
+            incidentRadianceSampling: cacheBuildResult?.incidentRadianceSampling ?? null,
+        }),
+        incidentRadianceCache: incidentRadianceCacheDiagnostics,
+        setup: Object.freeze({
+            geometryKind: runtimeInput.geometryKind,
+            lightSourceKind: runtimeInput.lightSourceKind,
+            incidentRadianceCacheMode: incidentRadianceCacheDiagnostics.mode,
+            cacheBuildCoordinateCount: cacheBuildResult?.coordinateCount ?? 0,
+            cacheValueCount: cacheBuildResult?.cache.valueCount ?? 0,
+        }),
+    });
+}
+
+/**
+ * @param {BrowserAlgorithm32RuntimeInput} runtimeInput - Shared runtime input.
  * @returns {IncidentRadianceSampling} Incident sampler backed by the GPU texture payload.
  */
 function incidentRadianceSamplingFromPackedTexture(runtimeInput) {
@@ -681,19 +851,26 @@ function incidentRadianceSamplingFromPackedTexture(runtimeInput) {
  * @returns {SoftShaderSceneInputDescriptor} Soft shader scene input descriptor.
  */
 function softShaderSceneInputDescriptor(runtimeInput) {
+    const isLocalFlat = runtimeInput.geometryKind === 'flat-earth'
+        && runtimeInput.lightSourceKind === 'local-sun';
+
     return Object.freeze({
         sceneId: runtimeInput.sceneId,
         sourceKind: 'three-capture',
         sourceDescriptorId: 'browser-effect-composer-render-pass',
-        geometryDescriptorId: 'shader-descriptor-spherical-earth',
+        geometryDescriptorId: isLocalFlat ? 'flat-earth' : 'shader-descriptor-spherical-earth',
         atmosphereDescriptorId: 'canonical-atmosphere',
-        lightSourceDescriptorId: 'distant-sun',
-        cacheDescriptorId: runtimeInput.incidentRadianceCache?.descriptor?.sourceKey ?? 'packed-gpu-cache-payload',
+        lightSourceDescriptorId: isLocalFlat ? 'local-sun' : 'distant-sun',
+        cacheDescriptorId: isLocalFlat
+            ? 'none-direct-local-sun'
+            : runtimeInput.incidentRadianceCache?.descriptor?.sourceKey ?? 'packed-gpu-cache-payload',
         displayDescriptorId: 'bruneton-color-display',
         viewportPixels: Object.freeze([runtimeInput.width, runtimeInput.height]),
         metadata: Object.freeze({
             inputContract: 'algorithm32-browser-composer-runtime-input-v1',
             coordinateConvention: 'webgl-bottom-left',
+            geometryKind: runtimeInput.geometryKind,
+            lightSourceKind: runtimeInput.lightSourceKind,
         }),
     });
 }
@@ -746,6 +923,15 @@ function normalizeRuntimeInput(runtimeInput) {
     const sceneDepthBytes = uint8Bytes(runtimeInput.sceneDepthBytes, expectedByteLength, 'sceneDepthBytes');
     const sceneHitBytes = uint8Bytes(runtimeInput.sceneHitBytes, expectedByteLength, 'sceneHitBytes');
     const incidentRadianceTexture = normalizeIncidentRadianceTexture(runtimeInput.incidentRadianceTexture);
+    const geometryKind = runtimeInput.geometryKind === 'flat-earth' ? 'flat-earth' : 'spherical-earth';
+    const lightSourceKind = runtimeInput.lightSourceKind === 'local-sun' ? 'local-sun' : 'distant-sun';
+    const sourceTransmittanceIntervalCount = Number.isInteger(runtimeInput.sourceTransmittanceIntervalCount)
+        && runtimeInput.sourceTransmittanceIntervalCount > 0
+        ? runtimeInput.sourceTransmittanceIntervalCount
+        : RUNTIME_NUMERICAL_CONTROLS.sourceTransmittanceIntervalCount;
+    const pathIntervalCount = Number.isInteger(runtimeInput.pathIntervalCount) && runtimeInput.pathIntervalCount > 0
+        ? runtimeInput.pathIntervalCount
+        : RUNTIME_NUMERICAL_CONTROLS.pathIntervalCount;
 
     return Object.freeze({
         sceneId: typeof runtimeInput.sceneId === 'string' && runtimeInput.sceneId
@@ -755,6 +941,8 @@ function normalizeRuntimeInput(runtimeInput) {
         height,
         sceneDepthBytes,
         sceneHitBytes,
+        geometryKind,
+        lightSourceKind,
         sceneDepthTextureEncoding: runtimeInput.sceneDepthTextureEncoding
             ?? 'rgb24-normalized-distance-times-sceneDepthMaxMeters; sceneHitTexture carries hit mask',
         sceneDepthMaxMeters: finiteNumber(runtimeInput.sceneDepthMaxMeters, 'sceneDepthMaxMeters'),
@@ -764,6 +952,7 @@ function normalizeRuntimeInput(runtimeInput) {
         endpointRadianceScale: Number.isFinite(runtimeInput.endpointRadianceScale)
             ? runtimeInput.endpointRadianceScale
             : 1,
+        endpointCameraDistanceScale: normalizeEndpointCameraDistanceScale(runtimeInput.endpointCameraDistanceScale),
         cameraWorldPositionMeters: vector3(runtimeInput.cameraWorldPositionMeters, 'cameraWorldPositionMeters'),
         distantSunDirection: normalize(vector3(runtimeInput.distantSunDirection, 'distantSunDirection')),
         inverseProjectionMatrix: matrix4(runtimeInput.inverseProjectionMatrix, 'inverseProjectionMatrix'),
@@ -774,9 +963,43 @@ function normalizeRuntimeInput(runtimeInput) {
         selectedPixels: Object.freeze(Array.isArray(runtimeInput.selectedPixels)
             ? runtimeInput.selectedPixels.map(normalizeSelectedPixel)
             : []),
-        pathIntervalCount: Number.isInteger(runtimeInput.pathIntervalCount) && runtimeInput.pathIntervalCount > 0
-            ? runtimeInput.pathIntervalCount
-            : RUNTIME_NUMERICAL_CONTROLS.pathIntervalCount,
+        pathIntervalCount,
+        sourceTransmittanceIntervalCount,
+        outputTextureFilter: runtimeInput.outputTextureFilter === 'nearest' ? 'nearest' : 'linear',
+        localFlat: geometryKind === 'flat-earth' || lightSourceKind === 'local-sun'
+            ? normalizeLocalFlatRuntimeConfig(runtimeInput.localFlat, {
+                fallbackObserverPositionMeters: runtimeInput.cameraWorldPositionMeters,
+                sourceTransmittanceIntervalCount,
+            })
+            : null,
+    });
+}
+
+function normalizeEndpointCameraDistanceScale(scaleConfig) {
+    if (!scaleConfig || typeof scaleConfig !== 'object' || scaleConfig.policy !== 'reverse-square') {
+        return Object.freeze({
+            policy: 'none',
+            referenceMeters: 200000,
+            minScale: 0.05,
+            maxScale: 1,
+        });
+    }
+
+    const referenceMeters = Number.isFinite(scaleConfig.referenceMeters) && scaleConfig.referenceMeters > 0
+        ? scaleConfig.referenceMeters
+        : 200000;
+    const minScale = Number.isFinite(scaleConfig.minScale)
+        ? Math.max(0, scaleConfig.minScale)
+        : 0.05;
+    const maxScale = Number.isFinite(scaleConfig.maxScale)
+        ? Math.max(minScale, scaleConfig.maxScale)
+        : 1;
+
+    return Object.freeze({
+        policy: 'reverse-square',
+        referenceMeters,
+        minScale,
+        maxScale,
     });
 }
 
@@ -786,6 +1009,12 @@ function createRuntimeUniforms(runtimeInput, textures) {
         uSceneTerminationMeters: { value: runtimeInput.sceneTerminationMeters },
         uSceneDepthMaxMeters: { value: runtimeInput.sceneDepthMaxMeters },
         uEndpointRadianceScale: { value: runtimeInput.endpointRadianceScale },
+        uEndpointCameraDistanceScaleEnabled: {
+            value: runtimeInput.endpointCameraDistanceScale.policy === 'reverse-square' ? 1 : 0,
+        },
+        uEndpointCameraDistanceReferenceMeters: { value: runtimeInput.endpointCameraDistanceScale.referenceMeters },
+        uEndpointCameraDistanceMinScale: { value: runtimeInput.endpointCameraDistanceScale.minScale },
+        uEndpointCameraDistanceMaxScale: { value: runtimeInput.endpointCameraDistanceScale.maxScale },
         uCameraWorldPositionMeters: { value: vectorToThree(runtimeInput.cameraWorldPositionMeters) },
         uDistantSunDirection: { value: vectorToThree(runtimeInput.distantSunDirection) },
         uInverseProjectionMatrix: { value: matrixToThree(runtimeInput.inverseProjectionMatrix) },
@@ -813,10 +1042,11 @@ function createRuntimeTextures(runtimeInput) {
     });
 }
 
-function createRgbaDataTexture({ width, height, bytes }) {
+function createRgbaDataTexture({ width, height, bytes, filter = 'nearest' }) {
     const texture = new THREE.DataTexture(bytes, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
-    texture.minFilter = THREE.NearestFilter;
-    texture.magFilter = THREE.NearestFilter;
+    const selectedFilter = filter === 'linear' ? THREE.LinearFilter : THREE.NearestFilter;
+    texture.minFilter = selectedFilter;
+    texture.magFilter = selectedFilter;
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.generateMipmaps = false;
@@ -861,12 +1091,18 @@ function runtimeInputSummary(runtimeInput) {
     return Object.freeze({
         kind: 'algorithm32-browser-composer-runtime-input-v1',
         sceneId: runtimeInput.sceneId,
+        geometryKind: runtimeInput.geometryKind,
+        lightSourceKind: runtimeInput.lightSourceKind,
         viewportPixels: Object.freeze([runtimeInput.width, runtimeInput.height]),
         sceneDepthEncoding: runtimeInput.sceneDepthTextureEncoding,
         sceneDepthMaxMeters: runtimeInput.sceneDepthMaxMeters,
         sceneHitMaskEncoding: 'r8-explicit-hit-mask-in-rgba8-red-channel',
         cameraWorldPositionMeters: runtimeInput.cameraWorldPositionMeters,
         distantSunDirection: runtimeInput.distantSunDirection,
+        pathIntervalCount: runtimeInput.pathIntervalCount,
+        sourceTransmittanceIntervalCount: runtimeInput.sourceTransmittanceIntervalCount,
+        outputTextureFilter: runtimeInput.outputTextureFilter,
+        endpointCameraDistanceScale: runtimeInput.endpointCameraDistanceScale,
         incidentRadianceTexture: Object.freeze({
             kind: runtimeInput.incidentRadianceTexture.kind,
             width: runtimeInput.incidentRadianceTexture.width,
@@ -875,6 +1111,25 @@ function runtimeInputSummary(runtimeInput) {
             spectralChannelCount: runtimeInput.incidentRadianceTexture.spectralChannelCount,
             uploadValueCount: runtimeInput.incidentRadianceTexture.rgbaFloat32.length,
         }),
+        localFlat: runtimeInput.localFlat
+            ? Object.freeze({
+                sourceKey: runtimeInput.localFlat.sourceKey,
+                observerPositionMeters: runtimeInput.localFlat.observerPositionMeters,
+                sourcePositionMeters: runtimeInput.localFlat.sourcePositionMeters,
+                topAltitudeMeters: runtimeInput.localFlat.topAltitudeMeters,
+                sceneSkyRayLimitMeters: runtimeInput.localFlat.sceneSkyRayLimitMeters,
+                observerCenteredDome: runtimeInput.localFlat.observerCenteredDome,
+                referenceDistanceMeters: runtimeInput.localFlat.referenceDistanceMeters,
+                referenceSpectralIncidentScale: runtimeInput.localFlat.referenceSpectralIncidentScale,
+                radiusMeters: runtimeInput.localFlat.radiusMeters,
+                distanceFalloff: runtimeInput.localFlat.distanceFalloff,
+                cacheZBinCount: runtimeInput.localFlat.cacheZBinsMeters.length,
+                cacheRhoBinCount: runtimeInput.localFlat.cacheRhoBinsMeters.length,
+                cacheDirectionCount: runtimeInput.localFlat.cacheDirectionCount,
+                incidentRadianceCacheEnabled: runtimeInput.localFlat.incidentRadianceCacheEnabled,
+                cachePathIntervalCount: runtimeInput.localFlat.cachePathIntervalCount,
+            })
+            : null,
         selectedPixelCount: runtimeInput.selectedPixels.length,
     });
 }
@@ -925,6 +1180,37 @@ function addAggregateDiagnostics(target, rowDiagnostics) {
     target.noHitPixelCount += rowDiagnostics.noHitPixelCount;
     target.warningCount += rowDiagnostics.warningCount;
     target.errorCount += rowDiagnostics.errorCount;
+}
+
+function sceneHitDistanceMetersFromRuntime(runtimeInput, offset) {
+    return unpackNormalizedDistance24(
+        runtimeInput.sceneDepthBytes[offset],
+        runtimeInput.sceneDepthBytes[offset + 1],
+        runtimeInput.sceneDepthBytes[offset + 2],
+    ) * runtimeInput.sceneDepthMaxMeters;
+}
+
+function byteRgbaAt(bytes, offset) {
+    return Object.freeze([
+        bytes[offset],
+        bytes[offset + 1],
+        bytes[offset + 2],
+        bytes[offset + 3],
+    ]);
+}
+
+function summarizeDisplayComposition(composition) {
+    if (!composition || typeof composition !== 'object') {
+        return null;
+    }
+
+    return Object.freeze({
+        kind: composition.kind ?? null,
+        skyLinearSrgb: composition.skyLinearSrgb ?? null,
+        transmittanceRgb: composition.transmittanceRgb ?? null,
+        endpointLinearSrgb: composition.endpointLinearSrgb ?? null,
+        finalLinearSrgb: composition.finalLinearSrgb ?? null,
+    });
 }
 
 function unpackNormalizedDistance24(redByte, greenByte, blueByte) {
@@ -997,6 +1283,82 @@ function normalizeIncidentRadianceTexture(texture) {
     });
 }
 
+function normalizeLocalFlatRuntimeConfig(localFlat, options) {
+    if (!localFlat || typeof localFlat !== 'object') {
+        throw new Error('Local-flat Algorithm32 composer runtime requires localFlat configuration.');
+    }
+
+    const sourceKey = typeof localFlat.sourceKey === 'string' && localFlat.sourceKey
+        ? localFlat.sourceKey
+        : 'local-flat-browser-scene';
+    const sceneSkyRayLimitMeters = Number.isFinite(localFlat.sceneSkyRayLimitMeters)
+        ? localFlat.sceneSkyRayLimitMeters
+        : null;
+
+    return Object.freeze({
+        sourceKey,
+        observerPositionMeters: vector3(
+            localFlat.observerPositionMeters ?? options.fallbackObserverPositionMeters,
+            'localFlat.observerPositionMeters',
+        ),
+        sourcePositionMeters: vector3(localFlat.sourcePositionMeters, 'localFlat.sourcePositionMeters'),
+        topAltitudeMeters: positiveNumber(localFlat.topAltitudeMeters, 'localFlat.topAltitudeMeters'),
+        sceneSkyRayLimitMeters,
+        observerCenteredDome: normalizeFlatObserverCenteredDome(localFlat.observerCenteredDome),
+        sourceTransmittanceIntervalCount: Number.isInteger(localFlat.sourceTransmittanceIntervalCount)
+            && localFlat.sourceTransmittanceIntervalCount > 0
+            ? localFlat.sourceTransmittanceIntervalCount
+            : options.sourceTransmittanceIntervalCount,
+        cacheZBinsMeters: normalizeFiniteNumberArray(localFlat.cacheZBinsMeters, 'localFlat.cacheZBinsMeters'),
+        cacheRhoBinsMeters: normalizeFiniteNumberArray(localFlat.cacheRhoBinsMeters, 'localFlat.cacheRhoBinsMeters'),
+        referenceDistanceMeters: positiveNumber(localFlat.referenceDistanceMeters, 'localFlat.referenceDistanceMeters'),
+        referenceSpectralIncidentScale: finiteNumber(
+            localFlat.referenceSpectralIncidentScale,
+            'localFlat.referenceSpectralIncidentScale',
+        ),
+        radiusMeters: positiveNumber(localFlat.radiusMeters, 'localFlat.radiusMeters'),
+        distanceFalloff: localFlat.distanceFalloff !== false,
+        cacheDirectionCount: Number.isInteger(localFlat.cacheDirectionCount) && localFlat.cacheDirectionCount > 0
+            ? localFlat.cacheDirectionCount
+            : 1,
+        incidentRadianceCacheEnabled: localFlat.incidentRadianceCacheEnabled !== false,
+        cachePathIntervalCount: Number.isInteger(localFlat.cachePathIntervalCount) && localFlat.cachePathIntervalCount > 0
+            ? localFlat.cachePathIntervalCount
+            : 1,
+    });
+}
+
+function normalizeFlatObserverCenteredDome(dome) {
+    if (dome == null) {
+        return null;
+    }
+    if (typeof dome !== 'object') {
+        throw new Error('localFlat.observerCenteredDome must be an object when present.');
+    }
+
+    return Object.freeze({
+        centerPolicy: dome.centerPolicy === 'observer-centered'
+            ? 'observer-centered'
+            : undefined,
+        apexAltitudeMeters: positiveNumber(
+            dome.apexAltitudeMeters,
+            'localFlat.observerCenteredDome.apexAltitudeMeters',
+        ),
+        maxObserverViewRayExtentMeters: positiveNumber(
+            dome.maxObserverViewRayExtentMeters,
+            'localFlat.observerCenteredDome.maxObserverViewRayExtentMeters',
+        ),
+    });
+}
+
+function normalizeFiniteNumberArray(value, fieldName) {
+    if (!Array.isArray(value) || value.length < 1 || !value.every(Number.isFinite)) {
+        throw new Error(`${fieldName} must be a non-empty finite number array.`);
+    }
+
+    return Object.freeze([...value]);
+}
+
 function normalizeSelectedPixel(selection, index) {
     return Object.freeze({
         pixelId: typeof selection.pixelId === 'string' ? selection.pixelId : `selected-${index}`,
@@ -1038,6 +1400,13 @@ function finiteNumber(value, fieldName) {
     return value;
 }
 
+function positiveNumber(value, fieldName) {
+    if (!Number.isFinite(value) || value <= 0) {
+        throw new Error(`${fieldName} must be a positive finite number.`);
+    }
+    return value;
+}
+
 function positiveInteger(value, fieldName) {
     if (!Number.isInteger(value) || value <= 0) {
         throw new Error(`${fieldName} must be a positive integer.`);
@@ -1050,6 +1419,16 @@ function average(values) {
         return 0;
     }
     return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function averagePathDiagnostic(pathDiagnostics, fieldName) {
+    const samples = Array.isArray(pathDiagnostics?.samples)
+        ? pathDiagnostics.samples
+        : [];
+
+    return average(samples
+        .map((sample) => sample?.[fieldName])
+        .filter(Number.isFinite));
 }
 
 function summarizeDurations(values) {

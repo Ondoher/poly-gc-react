@@ -9,9 +9,10 @@ Canonical atmosphere status now lives in
 Production Algorithm32 documentation belongs under
 [Algorithm32 Production Documentation](algorithm32/README.md), and the shared
 production implementation belongs under `shared/algorithm32/production/`.
-Production Algorithm32 is currently in design stage only; the requirements
-entry point is [Algorithm32 Requirements](algorithm32/requirements.md), and the
-design entry point is [Algorithm32 Production Design](algorithm32/production-design.md).
+Production Algorithm32 is now the active handoff after the reconciliation POC.
+The requirements entry point is
+[Algorithm32 Requirements](algorithm32/requirements.md), and the design entry
+point is [Algorithm32 Production Design](algorithm32/production-design.md).
 The concise current handoff is [Algorithm32 Status](algorithm32/status.md), and
 the current sourced conclusions are
 [Algorithm32 Conclusions](algorithm32/conclusions.md).
@@ -20,17 +21,17 @@ The primary public facade draft is
 Current primary facade methods are `constructor`, `config` getter, `setConfig`,
 awaited `setupShader`, `evaluate`, `getDiagnostics`, and `dispose`;
 `buildTexture` and `validate` are not primary app-facing methods.
-No implementation has been promoted into `shared/algorithm32/production/`
-outside the preserved `POC` bundle yet. The next gate is the
-`reconciliation` experimental lane: build a reference-backed CPU
-implementation of Algorithm32, then build a GPU shader implementation
-validated against that CPU reference. The lane must also produce the
-finalized, fully sourced parameter ledger, document the shape and flow of all
-data across the subsystem boundaries, rerun accepted Algorithm32 tests, and
-recreate the objective and subjective local-second-order artifact families
-before promotion. The production deliverable is the usable shader runtime
-path; CPU reference code is support for validation, internal shader
-texture/cache building, cache construction, diagnostics, and future tests.
+The reconciliation POC is closed as an evidence-generating lane. Its
+production-facing handoff is
+[Reconciliation Conclusions](reconciliation/conclusions.md), with remaining
+source gaps tracked in
+[Unsourced And Partially Sourced Facts](reconciliation/unsourced-and-partially-sourced-facts.md).
+The next work is production shader/runtime implementation in
+`shared/algorithm32/production/`: a usable Three/composer atmosphere pass,
+runtime shader builder, cache/texture preparation path, display composition,
+and diagnostics. CPU reference code remains support for validation, internal
+shader texture/cache building, cache construction, diagnostics, and future
+tests.
 The requirements are now divided into ownership domains that can become
 self-contained code surfaces: API contract/governance, algorithm input
 interfaces, local Sun configuration/calibration, execution configuration,

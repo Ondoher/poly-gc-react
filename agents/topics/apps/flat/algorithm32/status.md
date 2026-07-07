@@ -1,12 +1,60 @@
 # Algorithm32 Status
 
-Current status: design and reconciliation POC work. The production scaffold
-exists under `shared/algorithm32/production/`, but no production shader/runtime
-implementation has been promoted outside the preserved POC bundle.
+Current status: production shader/runtime implementation is the active
+handoff after the reconciliation POC. The POC conclusions are now the
+consolidated implementation driver for the production reference/shader path,
+including the adjusted primary abstractions and ownership boundaries. The
+production scaffold exists under `shared/algorithm32/production/`; the next
+work is to implement the usable runtime shader / Three composer path from the
+accepted production contracts.
 
 ## Current Checkpoint
 
-- The active gate is the `reconciliation` experimental lane. Milestone 1 is
+- The reconciliation POC is the consolidated production implementation guide.
+  Its production-facing handoff is
+  [Reconciliation Conclusions](../reconciliation/conclusions.md). Production
+  implementation should promote those contracts into
+  `shared/algorithm32/production/` without runtime-linking to reconciliation
+  POC or experiment code. Remaining provenance gaps live in
+  [Unsourced And Partially Sourced Facts](../reconciliation/unsourced-and-partially-sourced-facts.md).
+- The reconciliation topic, reconciliation POC code, and reconciliation
+  experiment records remain relevant supporting implementation material:
+  `agents/topics/apps/flat/reconciliation/`,
+  `scripts/flat/reconciliation/POC/`, and
+  `tmp/atmosphere/reconciliation/`.
+- Older pre-reconciliation cleanroom, shader-lab, local-second-order,
+  `shared/algorithm32/POC/`, source-contract, and scattered experiment lanes
+  are no longer production implementation references. Treat them as archival
+  unless the user explicitly asks for historical archaeology.
+- Production shader work should proceed in `shared/algorithm32/production/`
+  using [Reconciliation Conclusions](../reconciliation/conclusions.md) first,
+  [Reconciliation To Production Deltas](reconciliation-production-deltas.md),
+  [Algorithm32 Requirements](requirements.md),
+  [Algorithm32 Production Design](production-design.md), and
+  [Algorithm32 Primary Facade API Draft](api-facade-draft.md). The immediate
+  implementation direction is the runtime shader builder / Three composer pass
+  with prepared cache textures, renderer-generated scene color plus
+  hit/depth/object inputs, display composition, and fail-loud setup/resource
+  validation.
+- Design decision: keep the production top-level API/implementation shape as
+  primary. `Algorithm32`, the production dependency aggregate, `Reference`,
+  and `ShaderBuilder` stay in place; reconciliation POC details and ownership
+  abstractions are promoted beneath those boundaries.
+- Design decision: production type definitions should follow reconciliation
+  POC type shapes by default because most implementation code will be lifted
+  from that code base. Keep production unit-bearing packet boundaries where
+  units matter, such as distance.
+- Design decision: diagnostics remain deferred. First promotion should avoid
+  diagnostic envelopes, per-helper callbacks, and stable public diagnostics
+  taxonomy; implement only the basic fail-loud validation/setup/resource
+  errors needed for the runtime path.
+- Design decision: fail loudly on configuration and setup surfaces, including
+  constructor validation, `setConfig`, `setupShader`, awaited handle config
+  updates, and resource build/bind setup. Once the runtime render path is
+  live, log runtime failures and continue with the last valid state, no-op, or
+  fallback path when possible.
+- The old reconciliation gate produced the following durable baseline:
+  Milestone 1 is
   complete under `scripts/flat/reconciliation/POC/`: the CPU Algorithm32
   distant-Sun/spherical-Earth path, canonical atmosphere, distant light source,
   spherical geometry, distant L2 incident-radiance cache build/bind/sample
@@ -17,7 +65,8 @@ implementation has been promoted outside the preserved POC bundle.
   032 targets exactly. The main algorithm produces spectral data only and does
   not assume distant light, spherical geometry, a specific atmosphere
   implementation, absent L2 incident sampling, rendering, or color conversion.
-- Milestone 2 is active and implemented through Subgoal 2.5. Record
+- Reconciliation Milestone 2 later closed as local/flat method-confidence
+  evidence. Earlier M2 records include: record
   `tmp/atmosphere/reconciliation/017-m2-reference-gap-carry-forward` completed
   Subgoal 2.0 by carrying forward the existing local Sun / flat geometry gap
   analysis, snapshotting the separate M2 calibration/evidence tracker,
@@ -316,208 +365,76 @@ pathRadiance = calculator.computeRadiance(
   display-fixture facts. Use it to drive `parameters.md` and do not promote a
   row until its listed action is resolved or it is explicitly excluded.
 
-## Reconciliation Lane
+## Reference Boundary
 
-Create a new `reconciliation` experiment lane before production promotion.
-Its job is to turn the accepted Algorithm32 evidence into two concrete
-implementation targets and one complete data contract.
+The reconciliation POC is complete enough to act as the production
+implementation source through
+[Reconciliation Conclusions](../reconciliation/conclusions.md), with the
+reconciliation topic, code, and experiment records available as supporting
+implementation material. Relevant reconciliation sources are:
 
-This lane is a mutable full-POC lane rather than the previous cumulative,
-rerunnable experiment style. The living POC implementation belongs under
-`scripts/flat/reconciliation/POC/`. Milestone 0 is scaffold preparation, not a
-formal experiment, and is accepted when the mutable skeleton exists; an
-imperfect skeleton can be iterated later. Numbered folders under
-`tmp/atmosphere/reconciliation/NNN-*` are still required as the durable audit
-trail once substantive verification begins: significant runs, parity targets,
-rejected attempts, and design-verification steps. Each record should capture
-what changed, when, why, what was checked, and which facts, references, or
-artifacts were produced; it does not need to be a standalone rerunnable
-experiment.
-Parallel current-state notes are allowed and expected. This status file,
-the reconciliation README, the active-topic handoff, and the POC
-`CURRENT_STATE.md` may be rewritten to reflect the current architecture,
-parity status, active blockers, latest accepted record, and next actions.
-They summarize the lane; numbered records preserve the history.
-Historical POC and experiment code may be mined, copied, or ported into the
-new POC with provenance, but the reconciliation POC must not import, symlink,
-re-export, or otherwise runtime-link to old code where it currently lives.
+- `agents/topics/apps/flat/reconciliation/`
+- `scripts/flat/reconciliation/POC/`
+- `tmp/atmosphere/reconciliation/`
 
-End results:
+Do not use older pre-reconciliation cleanroom, shader-lab,
+local-second-order, `shared/algorithm32/POC/`, source-contract, or scattered
+experiment lanes as production references unless the user explicitly asks for
+historical analysis.
 
-1. A new CPU reference implementation of Algorithm32 under
-   `shared/algorithm32/production/`, with reference-backed algorithms,
-   reference-backed or explicitly accepted constants, and proper separation
-   between the light/source, geometry, atmosphere, incident radiance
-   cache/sampler, and color interfaces. The CPU reference uses light/source,
-   geometry, atmosphere, and optional incident radiance sampler callbacks to run
-   transport; the color boundary is defined, but color is not needed to
-   execute CPU transport.
-2. A GPU shader implementation that implements the CPU reference within
-   documented tolerances. Shader packing, precision, cache layout, and
-   approximation shortcuts must be tested against the CPU reference or recorded
-   as explicit implementation decisions.
-   In this phase, the shader builder/runtime uses the color/display interface
-   to convert spectral transport output into renderable output.
-3. A documented shape and flow for every data object that crosses the
-   boundaries: configuration, resolved models, spectral basis, ray/path
-   requests, source samples, geometry intersections, medium samples, transport
-   state, incident-radiance cache descriptors and sampler bindings, shader
-   textures/uniforms, spectral outputs, diagnostics, and color/display
-   requests.
-
-Primary outputs:
-
-- The CPU reference implementation and tests proving its algorithms and
-  constants are source-backed or accepted Algorithm32 decisions.
-- The GPU shader implementation and parity artifacts proving it implements
-  the CPU reference within stated tolerances.
-- A data-flow contract naming each request, sample, descriptor, cache/sampler
-  binding, cache payload, shader binding, result, and diagnostic object, with
-  its owner boundary.
-- `parameters.md` or equivalent, listing every promoted constant, derived
-  value, formula, owner subsystem, and source trail.
-- Machine-readable `equations-and-constants.json` for the reconciled run.
-- Criteria/results artifacts and reports for the accepted transport,
-  convergence, local-source, second-order, shader/CPU parity, and display
-  boundary checks.
-- A local-second-order artifact manifest covering command/script origin,
-  objective-or-subjective evidence type, criteria summary, rendered image
-  outputs, and superseded/rejected history.
-
-Major POC parity goals:
-
-1. CPU reference, distant Sun, spherical Earth parity against
-   `tmp/atmosphere/bruneton_start_fresh/032-figure1-four-view-source-k-no-ground-baseline`.
-2. CPU reference, local Sun, flat Earth method-confidence work guided by
-   `tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes`, with those
-   images treated as diagnostic material rather than exact-match canon because
-   the scenario is artificial.
-3. GPU integrated shader, spherical Earth, distant Sun parity against the CPU
-   reference, with browser-run job watching for long-running shader tests.
-4. GPU integrated shader, local Sun, flat Earth parity informed by the
-   shader-lab and local-second-order lanes.
-
-The browser watcher may be designed and implemented before Milestone 3, but
-the long-lived browser process itself is a user-run step when sandbox
-restrictions prevent the agent from launching or controlling the browser.
-
-Use [Reconciliation Lane](../reconciliation/README.md) as the expanded lane
-plan, [Reconciliation Action Plan](../reconciliation/action-plan.md) as the
-current milestone order, and
-[Reconciliation Experimental Guidelines](../reconciliation/experimental-guidelines.md)
-as the lane operating rulebook. The source follow-up remains in
-[Algorithm32 Conclusions](conclusions.md#follow-up-reconciliation-lane).
-
-## Evidence To Mine
-
-- `agents/topics/apps/flat/algorithm32/conclusions.md`: consolidated
-  Algorithm32 steps, subsystem responsibilities, data flow, constants,
-  references, and follow-up lane.
-- `agents/topics/apps/flat/reconciliation/bruneton-start-fresh-source-audit.md`:
-  audit of the closed Bruneton start-fresh lane, retained Step 032 source
-  trails, inactive source material, and missing provenance tasks for
-  reconciliation.
-- `agents/topics/apps/flat/reconciliation/algorithm32-abstraction-design.md`:
-  current reconciliation design target for preserving the core Algorithm32
-  transport while splitting geometry-owned source-relative spatial facts from
-  light-source-owned lighting facts.
-- `agents/topics/apps/flat/reconciliation/post-step032-lane-source-audit.md`:
-  reverse-chronological audit of retained product-driving facts from
-  atmosflat, shader-lab, and local-second-order, including supported
-  deviations from Step 032, evidence-only artifacts, and local Sun provenance
-  gaps.
-- `agents/topics/apps/flat/reconciliation/local-sun-flat-geometry-fact-inventory.md`:
-  inventory of local Sun / flat-geometry facts, support status, external source
-  candidates, missing source/model-only parameters, and reconciliation tasks.
-- `agents/topics/apps/flat/reconciliation/unsourced-and-partially-sourced-facts.md`:
-  single actionable source-gap ledger for unsourced, partially sourced,
-  experiment-backed, model-only, and display/review fixture facts.
-- `scripts/flat/reconciliation/POC/`: mutable reconciliation POC root for the
-  new architecture implementation.
-- `tmp/atmosphere/reconciliation/`: numbered reconciliation evidence records.
-- `scripts/flat/local-second-order/`: historical local second-order runner
-  lane whose objective and subjective artifact families must be recreated.
-- `tmp/atmosphere/local-second-order/`: historical numbered artifact root for
-  accepted and rejected local second-order outputs.
-- `shared/algorithm32/POC/`: preserved POC implementation bundle and accepted
-  promotion source.
-- `shared/algorithm32/production/`: current production scaffold and future
-  production implementation destination.
+Use [Unsourced And Partially Sourced Facts](../reconciliation/unsourced-and-partially-sourced-facts.md)
+only as the actionable provenance-gap ledger. When it requires a citation or
+source pointer, use external reference/provenance catalogs for that specific
+gap; do not reopen old implementation lanes as design authority.
 
 ## Reload Order
 
 For a new or compacted agent, bootstrap normally from
 [Active Topic](../../../active-topic.md). If reading this file standalone,
-load only the minimal current reconciliation context first:
+load only the production implementation handoff:
 
 1. [Active Topic](../../../active-topic.md)
-2. [Reconciliation Lane](../reconciliation/README.md)
-3. [Reconciliation Action Plan](../reconciliation/action-plan.md)
-4. [Algorithm32 Abstraction Design](../reconciliation/algorithm32-abstraction-design.md)
-5. [Reconciliation Experimental Guidelines](../reconciliation/experimental-guidelines.md)
+2. [Reconciliation Conclusions](../reconciliation/conclusions.md)
+3. [Reconciliation To Production Deltas](reconciliation-production-deltas.md)
+4. [Reconciliation Lane](../reconciliation/README.md)
+5. [Unsourced And Partially Sourced Facts](../reconciliation/unsourced-and-partially-sourced-facts.md)
+6. [Algorithm32 Production Documentation](README.md)
+7. [Algorithm32 Requirements](requirements.md)
+8. [Algorithm32 Production Design](production-design.md)
+9. [Algorithm32 Primary Facade API Draft](api-facade-draft.md)
+10. `shared/algorithm32/production/implementation/reference_plan.md`
 
-Load these only when the task needs their specific evidence:
+Inspect `scripts/flat/reconciliation/POC/` and
+`tmp/atmosphere/reconciliation/` when implementation work needs concrete code
+or experiment detail from the reconciliation handoff.
 
-- [Bruneton Start-Fresh Source Audit](../reconciliation/bruneton-start-fresh-source-audit.md)
-- [Post-Step032 Product Facts Audit](../reconciliation/post-step032-lane-source-audit.md)
-- [Local Sun Flat Geometry Fact Inventory](../reconciliation/local-sun-flat-geometry-fact-inventory.md)
-- [Unsourced And Partially Sourced Facts](../reconciliation/unsourced-and-partially-sourced-facts.md)
-- [Algorithm32 Conclusions](conclusions.md)
-
-Load production docs only when the task needs the future promotion boundary or
-existing scaffold shape:
-
-- [Algorithm32 Production Documentation](README.md)
-- [Algorithm32 Requirements](requirements.md)
-- [Algorithm32 Production Design](production-design.md)
-- [Algorithm32 Primary Facade API Draft](api-facade-draft.md)
-- `shared/algorithm32/production/implementation/reference_plan.md`
-
-Historical cleanroom, shader-lab, and local-second-order plans are evidence
-sources. Do not treat them as the current handoff unless the task asks for
-experiment provenance or reconciliation artifacts.
+Historical pre-reconciliation cleanroom, shader-lab, local-second-order,
+`shared/algorithm32/POC/`, source-contract, and scattered experiment artifacts
+are archive-only for this topic.
 
 ## Current Open Work
 
-- Continue Milestone 2 with Subgoal 2.6 closeout on the accepted Milestone 1
-  evaluator/calculator/cache lifecycle and the M2 implementation records
-  `025-m2-flat-geometry-profile` through
-  `030-m2-local-flat-assets-quick-rerun`. Subgoal 2.6 should classify which
-  flat geometry, local source, pre-asset diagnostics, local cache, and
-  local/flat PNG evidence is accepted, unresolved, model-policy, or deferred.
-  It should not promote final local/flat numerical controls, exact Step 018
-  image parity, or production local/flat defaults from records 025 through 030
-  alone. Subgoal 1.0 abstraction closure is accepted in
-  `tmp/atmosphere/reconciliation/001-abstraction-closure-contract`, with
-  interface declarations refined in
-  `tmp/atmosphere/reconciliation/002-interface-contract-declarations` and
-  method signatures refined in
-  `tmp/atmosphere/reconciliation/003-interface-method-signatures`; the POC now
-  has `SpectralReferenceEvaluator` as a spectral-only main evaluator,
-  tightened ambient `interface` contracts, and a contract probe showing
-  non-spherical/non-distant mocks can run without rendering/color
-  dependencies. Records 011 through 016 complete parameter/provenance
-  extraction, transport helper invariants, concrete distant/spherical
-  selected-ray execution, distant L2 cache build/bind/sample, first artifact
-  generation, and exact Step 032 full-image parity. Record 017 carries forward
-  the M2 local/flat gap analysis and tracker obligations. Use
-  `scripts/flat/reconciliation/POC/CURRENT_STATE.md` as the immediate POC
-  handoff.
-- Keep the `NNN-*` record-folder prefix. Every CLI-launched reconciliation
-  experiment runner invocation gets its own fresh `NNN-*` folder, including
-  reruns; smoke checks and other supporting verification commands are logged
-  inside the active record.
-- Produce the GPU shader implementation and parity evidence against the CPU
-  reference.
-- Document the final data-shape and data-flow contract across light/source,
-  geometry, atmosphere, incident radiance cache/sampler, Algorithm32 transport,
-  shader resources, and external color/display conversion.
-- Freeze the geometry-owned `SourceRelativePosition` contract, including
-  model-space to source-position mapping, separate reverse/representative
-  mapping for cache construction, light-source-owned path limits,
-  geometry-clipped source paths, and cache descriptor compatibility.
-- Recreate accepted objective and subjective local-second-order artifact
-  families under the reconciled parameters.
-- Resolve the remaining cache descriptor questions before promoting local
-  second-order cache resources into production.
-- Update conclusions and production docs again after reconciliation closes.
+- Resolve the architecture/API gaps tracked in
+  [Reconciliation To Production Deltas](reconciliation-production-deltas.md)
+  before changing production contracts.
+- Promote reconciled internals without renaming the top-level production
+  facade, dependency aggregate, `Reference`, or `ShaderBuilder` boundaries.
+- Promote type definitions from the reconciliation POC by default, while
+  retaining production unit-bearing packets for unit-sensitive facts such as
+  distance.
+- Promote the reconciliation conclusions into
+  `shared/algorithm32/production/` as the production CPU/reference and shader
+  implementation.
+- Build the runtime shader builder / Three composer pass with prepared cache
+  textures, renderer-generated scene color plus hit/depth/object inputs,
+  display composition, and fail-loud setup/resource validation.
+- Apply the failure policy across promoted code: fail loudly on config/setup;
+  log and continue on live runtime failures where possible.
+- Keep the production facade aligned with [Algorithm32 Primary Facade API Draft](api-facade-draft.md):
+  `constructor`, `config`, `setConfig`, awaited `setupShader`, `evaluate`,
+  deferred `getDiagnostics`, and `dispose`.
+- Resolve any remaining source/provenance gaps only through
+  [Unsourced And Partially Sourced Facts](../reconciliation/unsourced-and-partially-sourced-facts.md)
+  and targeted external/provenance references.
+- Update production status/design docs after implementation steps with what
+  changed, what was verified, and what remains.

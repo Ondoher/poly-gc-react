@@ -55,6 +55,7 @@ interface GeometryModel {
     resolveCacheAccess(...args: readonly unknown[]): CacheAccess;
     mapObserverLocalScenePointToModelPosition?(...args: readonly unknown[]): Position;
     mapObserverLocalSceneDirectionToModelDirection?(...args: readonly unknown[]): UnitVector3;
+    mapModelPositionToObserverLocalScenePoint?(...args: readonly unknown[]): Position;
     createThreeEndpointObjects?(request?: GeometryThreeEndpointObjectsRequest): GeometryThreeEndpointObjects;
 }
 
@@ -63,6 +64,8 @@ type GeometryThreeEndpointObjectsRequest = {
     readonly scaleDenominator?: number;
     readonly spectralReferenceId?: string;
     readonly visualMaterialColor?: number;
+    readonly visualMaterialDisplayRgba?: readonly [number, number, number, number];
+    readonly visualMaterialLighting?: 'basic' | 'lambert';
     readonly widthSegments?: number;
     readonly heightSegments?: number;
     readonly name?: string;

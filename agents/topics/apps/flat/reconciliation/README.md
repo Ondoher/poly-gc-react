@@ -1,10 +1,12 @@
 # Reconciliation Lane
 
-Current status lives in [Status](status.md). Milestone 2 is closed by record
+Current status lives in [Status](status.md), and final POC decisions live in
+[Conclusions](conclusions.md). Milestone 2 is closed by record
 `050-m2-closeout`; Milestone 3 Subgoals 3.3 and 3.4 are closed by records
 `063-m3-shader-descriptor` through `066-m3-browser-diagnostics-readiness`.
-The next default work is integrated GPU distant Sun / spherical Earth shader
-validation through the user-run browser watcher.
+The reconciliation POC is now considered exhausted as an evidence-generating
+lane; future work should promote accepted contracts into production-oriented
+design/code or start a new focused experiment.
 
 This lane expands the
 [Algorithm32 conclusions follow-up](../algorithm32/conclusions.md#follow-up-reconciliation-lane)
@@ -208,9 +210,10 @@ enter production silently.
 
 Start here if picking up the lane from a compacted or fresh session:
 
-- The immediate continuation task is Milestone 3 preparation: GPU distant Sun,
-  spherical Earth, using the accepted M1 CPU distant/spherical reference as
-  the comparison anchor. Read
+- The immediate continuation task is Milestone 4.3.2: recreate the required
+  local/flat review galleries after M4.3.1 accepted flat-geometry GPU
+  selected-ray parity and integrated local-flat CPU/GPU selected-pixel parity.
+  Read
   [Status](status.md), [Action Plan](action-plan.md),
   [Shader Design](shader-design.md), the
   [Local Sun Flat Geometry Fact Inventory](local-sun-flat-geometry-fact-inventory.md),
@@ -473,9 +476,9 @@ Start here if picking up the lane from a compacted or fresh session:
   `048-m2-south-pole-winter-solstice-gmt-sweep` renders the South Pole
   winter-solstice counterpart. Record
   `049-m2-union-glacier-final-experiment-gmt-sweep` renders the Union Glacier
-  Final Experiment review set. Record `050-m2-closeout` closes M2. The next
-  implementation task is Milestone 3 preparation, not more local/flat asset
-  generation by default.
+  Final Experiment review set. Record `050-m2-closeout` closes M2; the
+  historical next task after that closeout was Milestone 3 preparation, not
+  more local/flat asset generation by default.
 - Subgoal 1.0 is complete in
   `tmp/atmosphere/reconciliation/001-abstraction-closure-contract`, with the
   interface-declaration refinement in
@@ -689,6 +692,25 @@ pathRadiance = calculator.computeRadiance(
    process that can watch for job updates.
 4. GPU integrated shader, local Sun, flat Earth parity, informed by the
    shader-lab implementation and the later local-second-order lane.
+
+Current Milestone 4 checkpoint: record
+`tmp/atmosphere/reconciliation/534-m4-local-cache-texture-prep` accepts M4.1
+local cache texture prep, record
+`tmp/atmosphere/reconciliation/535-m4-local-gpu-cache-texture-lookup` accepts
+M4.2 browser/GPU cache texture upload, binding, and local GLSL lookup, and
+records
+`tmp/atmosphere/reconciliation/536-m4-flat-geometry-gpu-selected-ray-parity`
+and
+`tmp/atmosphere/reconciliation/537-m4-local-flat-gpu-integrated-selected-pixel-parity`
+accept M4.3.1. Record `536` proves selected-ray flat-geometry GPU parity
+against `FlatEarthGeometry` for ray reconstruction, scene-hit termination,
+ground/top/observer-dome bounds, and z/rho cache coordinates. Record `537`
+runs the same constructed local-flat scene through integrated CPU and GPU
+composer backends with the local L2 cache contract and matches selected
+browser readbacks with max byte delta `1`. The next step is M4.3.2 review
+gallery recreation, followed by M4.4 local/GPU closeout classification. The
+POC has since been closed for conclusions rather than extended through more
+review tuning; use [Conclusions](conclusions.md) as the durable handoff.
 
 Each goal's numbered records should capture code/config changes, criteria,
 diagnostics, visual artifacts, facts, references, and any rejected or

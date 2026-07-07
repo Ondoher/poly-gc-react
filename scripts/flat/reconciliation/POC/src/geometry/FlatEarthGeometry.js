@@ -5,9 +5,17 @@
 // - tmp/atmosphere/reconciliation/037-m2-coordinate-warning-fix-check.
 // - agents/topics/apps/flat/reconciliation/algorithm32-abstraction-design.md, Geometry Ray-Length Resolution.
 
+import * as THREE from 'three';
+
 import { addScaled, clamp, dot, isFiniteVector3, magnitude, normalize, scale } from '../math/vector.js';
+import ExactFlatGroundObject from '../three/ExactFlatGroundObject.js';
 
 const EPSILON = 1e-9;
+const FLAT_OBSERVER_LOCAL_SCENE_FRAME = Object.freeze({
+    up: Object.freeze([0, 0, 1]),
+    right: Object.freeze([1, 0, 0]),
+    forward: Object.freeze([0, -1, 0]),
+});
 
 export default class FlatEarthGeometry {
     /**
@@ -50,6 +58,7 @@ export default class FlatEarthGeometry {
             cacheRhoBinsMeters: Object.freeze([...cacheRhoBinsMeters]),
             runtimeDiagnosticLimit,
             cacheRadialAxis: buildCacheRadialAxis(observerPositionMeters, sourcePositionMeters),
+            observerLocalSceneFrame: FLAT_OBSERVER_LOCAL_SCENE_FRAME,
         });
         this._runtimeDiagnostics = [];
     }
@@ -309,6 +318,137 @@ export default class FlatEarthGeometry {
     }
 
     /**
+     * @param {unknown} point - Observer-local Three-style scene point.
+     * @param {{ readonly metersPerSceneUnit?: number, readonly scaleDenominator?: number }} [request]
+     *   Scene unit conversion request.
+     * @returns {Position} Model-space position in flat Algorithm32 meters.
+     */
+    mapObserverLocalScenePointToModelPosition(point, request = {}) {
+        const vector = vector3Tuple(point, 'Observer-local scene point');
+        const metersPerSceneUnit = metersPerSceneUnitFromRequest(request);
+        const observer = this._configuration.observerPositionMeters;
+
+        return Object.freeze([
+            observer[0] + vector[0] * metersPerSceneUnit,
+            observer[1] - vector[2] * metersPerSceneUnit,
+            vector[1] * metersPerSceneUnit,
+        ]);
+    }
+
+    /**
+     * @param {unknown} direction - Observer-local Three-style scene direction.
+     * @returns {UnitVector3} Model-space direction.
+     */
+    mapObserverLocalSceneDirectionToModelDirection(direction) {
+        const vector = vector3Tuple(direction, 'Observer-local scene direction');
+
+        return normalize([
+            vector[0],
+            -vector[2],
+            vector[1],
+        ]);
+    }
+
+    /**
+     * @param {unknown} position - Model-space position in flat Algorithm32 meters.
+     * @param {{ readonly metersPerSceneUnit?: number, readonly scaleDenominator?: number }} [request]
+     *   Scene unit conversion request.
+     * @returns {Position} Observer-local Three-style scene point.
+     */
+    mapModelPositionToObserverLocalScenePoint(position, request = {}) {
+        const vector = vector3Tuple(position, 'Model-space position');
+        const metersPerSceneUnit = metersPerSceneUnitFromRequest(request);
+
+        return this._modelPositionToObserverLocalScenePoint(vector, metersPerSceneUnit);
+    }
+
+    /**
+     * @param {GeometryThreeEndpointObjectsRequest} request - Three endpoint object request.
+     * @returns {GeometryThreeEndpointObjects} Geometry-owned Three endpoint objects.
+     */
+    createThreeEndpointObjects(request = {}) {
+        const metersPerSceneUnit = metersPerSceneUnitFromRequest(request);
+        const groundExtentMeters = flatGroundExtentMeters(this._configuration);
+        const widthSceneUnits = groundExtentMeters / metersPerSceneUnit;
+        const depthSceneUnits = groundExtentMeters / metersPerSceneUnit;
+        const centerSceneUnits = this._modelPositionToObserverLocalScenePoint(
+            [
+                this._configuration.observerPositionMeters[0],
+                this._configuration.observerPositionMeters[1],
+                0,
+            ],
+            metersPerSceneUnit,
+        );
+        const spectralReferenceId = request.spectralReferenceId ?? 'diagnostic-flat-ground-object-matte';
+        const visualMaterialDisplayRgba = displayRgbaOrNull(request.visualMaterialDisplayRgba);
+        const visualMaterialColor = visualMaterialDisplayRgba
+            ? new THREE.Color(
+                visualMaterialDisplayRgba[0] / 255,
+                visualMaterialDisplayRgba[1] / 255,
+                visualMaterialDisplayRgba[2] / 255,
+            )
+            : request.visualMaterialColor ?? 0x566942;
+        const visualMaterial = request.visualMaterialLighting === 'lambert'
+            ? new THREE.MeshLambertMaterial({
+                color: visualMaterialColor,
+                side: THREE.DoubleSide,
+            })
+            : new THREE.MeshBasicMaterial({
+                color: visualMaterialColor,
+                side: THREE.DoubleSide,
+            });
+        const widthSegments = request.widthSegments ?? 32;
+        const heightSegments = request.heightSegments ?? 32;
+        const visualObject = new THREE.Mesh(
+            new THREE.PlaneGeometry(
+                widthSceneUnits,
+                depthSceneUnits,
+                widthSegments,
+                heightSegments,
+            ),
+            visualMaterial,
+        );
+        const raycastObject = new ExactFlatGroundObject({
+            centerSceneUnits,
+            widthSceneUnits,
+            depthSceneUnits,
+            metersPerSceneUnit,
+            spectralReferenceId,
+            name: request.name ?? 'flat-earth-ground-endpoint',
+        });
+
+        visualObject.name = `${request.name ?? 'flat-earth-ground'}-visual`;
+        visualObject.rotation.x = -Math.PI / 2;
+        visualObject.position.set(centerSceneUnits[0], centerSceneUnits[1], centerSceneUnits[2]);
+        visualObject.userData.spectralReferenceId = spectralReferenceId;
+        visualObject.userData.endpointKind = 'geometry-ground-boundary-visual';
+        visualObject.userData.metersPerSceneUnit = metersPerSceneUnit;
+        visualObject.updateMatrixWorld(true);
+        raycastObject.updateMatrixWorld(true);
+
+        return Object.freeze({
+            visualObjects: Object.freeze([visualObject]),
+            raycastObjects: Object.freeze([raycastObject]),
+            metadata: Object.freeze({
+                owner: 'FlatEarthGeometry',
+                endpointKind: 'ground-boundary',
+                groundPlane: 'z=0 in flat model space; y=0 in Three scene space',
+                widthSceneUnits,
+                depthSceneUnits,
+                groundExtentMeters,
+                centerSceneUnits,
+                metersPerSceneUnit,
+                spectralReferenceId,
+                visualMaterialDisplayRgba,
+                visualMaterialLighting: request.visualMaterialLighting === 'lambert' ? 'lambert' : 'basic',
+                widthSegments,
+                heightSegments,
+                observerLocalSceneFrame: this._configuration.observerLocalSceneFrame,
+            }),
+        });
+    }
+
+    /**
      * @param {CacheBuildCoordinate} coordinate - Cache-owned logical coordinate.
      * @returns {RaySegment | null} Representative incident ray segment, or null when ground-blocked.
      */
@@ -542,6 +682,16 @@ export default class FlatEarthGeometry {
         });
     }
 
+    _modelPositionToObserverLocalScenePoint(position, metersPerSceneUnit) {
+        const observer = this._configuration.observerPositionMeters;
+
+        return Object.freeze([
+            (position[0] - observer[0]) / metersPerSceneUnit,
+            position[2] / metersPerSceneUnit,
+            -(position[1] - observer[1]) / metersPerSceneUnit,
+        ]);
+    }
+
     _diagnose(id, severity, message, details) {
         if (this._runtimeDiagnostics.length >= this._configuration.runtimeDiagnosticLimit) {
             return;
@@ -562,6 +712,61 @@ function subtract(a, b) {
 
 function subtractHorizontal(a, b) {
     return Object.freeze([a[0] - b[0], a[1] - b[1], 0]);
+}
+
+function vector3Tuple(value, label) {
+    if (Array.isArray(value) && value.length === 3 && value.every(Number.isFinite)) {
+        return value;
+    }
+
+    if (
+        value
+        && Number.isFinite(value.x)
+        && Number.isFinite(value.y)
+        && Number.isFinite(value.z)
+    ) {
+        return [value.x, value.y, value.z];
+    }
+
+    throw new TypeError(`${label} must be a finite 3D vector.`);
+}
+
+function metersPerSceneUnitFromRequest(request) {
+    const metersPerSceneUnit = request.metersPerSceneUnit ?? request.scaleDenominator ?? 1;
+
+    if (!Number.isFinite(metersPerSceneUnit) || metersPerSceneUnit <= 0) {
+        throw new TypeError('Flat geometry Three endpoint conversion requires a positive metersPerSceneUnit.');
+    }
+
+    return metersPerSceneUnit;
+}
+
+function displayRgbaOrNull(value) {
+    if (!Array.isArray(value) || value.length < 3 || !value.every(Number.isFinite)) {
+        return null;
+    }
+
+    return Object.freeze([
+        clampByte(value[0]),
+        clampByte(value[1]),
+        clampByte(value[2]),
+        Number.isFinite(value[3]) ? clampByte(value[3]) : 255,
+    ]);
+}
+
+function clampByte(value) {
+    return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+function flatGroundExtentMeters(configuration) {
+    const extentCandidates = [
+        configuration.sceneSkyRayLimitMeters,
+        configuration.observerCenteredDome?.maxObserverViewRayExtentMeters,
+        configuration.topAltitudeMeters * 20,
+        10000,
+    ].filter((value) => Number.isFinite(value) && value > 0);
+
+    return Math.max(...extentCandidates) * 2;
 }
 
 function buildCacheRadialAxis(observerPositionMeters, sourcePositionMeters) {

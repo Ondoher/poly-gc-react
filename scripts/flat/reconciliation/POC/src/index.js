@@ -24,6 +24,8 @@ export { default as createShaderLabReferenceScene } from './scenes/createShaderL
 export { default as ShaderSceneRegistry } from './scenes/ShaderSceneRegistry.js';
 export { default as DistantSphericalShaderDescriptorBuilder } from './shader/DistantSphericalShaderDescriptorBuilder.js';
 export { default as DistantSphericalShaderContributionFactory } from './shader/DistantSphericalShaderContributionFactory.js';
+export { default as LocalFlatShaderDescriptorBuilder } from './shader/LocalFlatShaderDescriptorBuilder.js';
+export { default as LocalFlatShaderContributionFactory } from './shader/LocalFlatShaderContributionFactory.js';
 export { default as Algorithm32ShaderAssembler } from './shader/Algorithm32ShaderAssembler.js';
 export { default as ShaderCompatibilityValidator } from './shader/ShaderCompatibilityValidator.js';
 export { default as TextureBuilder } from './shader/TextureBuilder.js';

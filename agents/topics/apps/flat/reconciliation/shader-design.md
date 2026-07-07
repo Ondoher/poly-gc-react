@@ -1903,6 +1903,30 @@ does not own default light creation or physical light facts; it synchronizes
 requested app/scene-builder light handles to the Algorithm32/source-provided
 direction, position, color, and intensity parameters.
 
+The current local/flat POC uses a source-owned scene-light adapter for this
+handoff. The scene builder resolves source placement through geometry, then
+passes Three constructors, observer/source scene positions, the
+geometry-resolved `SourceRelativePosition`, optional shadow-frame settings,
+and an endpoint-scene light-scale policy to
+`LightSourceModel.createThreeLightingObjects(...)`. The light source returns
+Three light objects, optional shadow/target scene objects, and bounded metadata
+such as `lightingPolicy`, `shadowPolicy`, `observerIncidentScale`,
+`endpointSceneIncidentScale`, source direction in scene/model frames, and the
+selected endpoint-light scale policy. This adapter is part of integration
+capture: it affects the pre-shader scene color that later becomes endpoint
+color. It does not supply radiance to `evaluate(...)`, does not build or bind
+incident-radiance caches, and does not change the spectral source facts used
+by Algorithm32 transport.
+
+For local sources, the adapter may use a `PointLight` when only endpoint scene
+shading is needed, and may use a compact `DirectionalLight` plus target object
+when Three shadow maps are requested. That directional shadow light uses the
+resolved local source direction for renderer shadows; it is a renderer/shadow
+camera approximation, not a claim that the finite local source became a
+distant physical source. Shadows imply endpoint scene shading because the
+captured scene color must contain the shadowed material color before the
+Algorithm32 postprocess pass composes atmosphere over it.
+
 Geometry owns scene endpoint surfaces that represent geometry/domain
 boundaries. When a Three scene needs a ground, dome, map edge, or other
 geometry-defined endpoint, the scene builder should ask the active geometry
@@ -2403,6 +2427,12 @@ The inventory separates objective scenes from subjective review scenes:
   cache-on/cache-off, and selected-pixel distant/spherical parity.
 - Subjective scenes are for plausibility and regression review only. They do
   not become parity targets and do not replace objective evidence.
+
+Ad hoc subjective scenes requested during review are record/status artifacts,
+not shader design surface. They may use the shared scene construction path and
+the same CPU/GPU shader inputs, but their specific locations, camera choices,
+objects, colors, and review compositions should not be added to the design
+inventory unless they are explicitly promoted to reusable fixtures.
 
 Scene descriptors identify selected pixels, controlled regions, expected facts,
 comparison intent, readback format, and setup-time ownership/routing

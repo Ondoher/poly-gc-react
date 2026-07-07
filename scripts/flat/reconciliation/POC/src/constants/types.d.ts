@@ -277,10 +277,18 @@ type LocalFlatSeedConstants = {
     readonly falseSunLatitudeModel: LocalFlatFalseSunLatitudeModel;
     /** Summer-solstice simulation time for derived local/flat review scenes. */
     readonly summerSolsticeSimulationTime: string;
+    /** Winter-solstice 2025 simulation time for the current flat/local review scenes. */
+    readonly winterSolstice2025SimulationTime: string;
+    /** Scene-set id used by the current integrated flat/local review runner. */
+    readonly currentReviewSceneSetId: string;
+    /** Current integrated flat/local review scenes. */
+    readonly currentReviewScenes: readonly LocalFlatSceneConstants[];
     /** Observer latitudes for the additional summer-solstice latitude sweep. */
     readonly latitudeSweepObserverLatitudesDegrees: readonly number[];
     /** Shared brightness calibration for the summer-solstice latitude sweep. */
     readonly summerSolsticeLatitudeSweepBrightnessCalibration: LocalFlatSourceBrightnessCalibration;
+    /** Shared brightness calibration for the winter-solstice 2025 degree-offset review set. */
+    readonly winterSolstice2025DegreeBrightnessCalibration: LocalFlatSourceBrightnessCalibration;
     /** Local cache z bins in meters. */
     readonly localCacheZBinsMeters: readonly number[];
     /** Local cache rho bins in meters. */
@@ -321,4 +329,3 @@ type Algorithm32BaselineConstants = {
     /** M2 local/flat seed constants for method-confidence runs. */
     readonly m2LocalFlatSeed: LocalFlatSeedConstants;
 };
-

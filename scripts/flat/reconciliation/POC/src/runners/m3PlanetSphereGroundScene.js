@@ -15,6 +15,9 @@ import {
     DistantSphericalShaderContributionFactory,
     DistantSphericalShaderDescriptorBuilder,
     DistantSunLightSource,
+    M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DATE_UTC,
+    M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LATITUDE_DEGREES,
+    M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LONGITUDE_DEGREES,
     SpectralCalculator,
     SphericalEarthGeometry,
     algorithm32ConstantsForShaderQualityProfile,
@@ -64,6 +67,9 @@ const endpointRadianceScale = numberArg(
 );
 const groundDisplayMode = stringArg('--ground-display-mode', 'pattern');
 const requestedSunSample = stringArg('--sun-sample', solarNoon ? 'solar-noon' : 'solar-noon');
+const requestedSunDirection = vectorArgOrNull('--sun-direction');
+const requestedSunLabel = stringArg('--sun-label', requestedSunSample);
+const requestedSunClockOffsetDegrees = numberArg('--sun-clock-offset-degrees', 0);
 const shaderQualityProfileId = stringArg('--shader-quality-profile', 'ideal');
 const shaderQualityProfile = shaderQualityProfileById(shaderQualityProfileId);
 const shaderQualityConstants = algorithm32ConstantsForShaderQualityProfile(shaderQualityProfile);
@@ -190,6 +196,7 @@ await writeJson(recordDirectory, 'inputs.json', {
     shaderBackend,
     solarNoon,
     sunSample: requestedSunSample,
+    sunClockOffsetDegrees: requestedSunClockOffsetDegrees,
     endpointRadianceScale,
     groundDisplayMode,
     shaderQualityProfile,
@@ -222,7 +229,7 @@ await writeJson(recordDirectory, 'diagnostics.json', {
 });
 await writeJson(recordDirectory, 'command.json', {
     commands: Object.freeze([{
-        command: `node scripts/flat/reconciliation/POC/src/runners/m3PlanetSphereGroundScene.js --record ${recordDirectory} --scene-name ${sceneName}${allowShading ? ' --allow-shading' : ''}${withShadows ? ' --with-shadows' : ''}${withShader ? ` --with-shader --shader-backend ${shaderBackend} --shader-quality-profile ${shaderQualityProfile.id}` : ''}${solarNoon ? ' --solar-noon' : ''} --sun-sample ${requestedSunSample}`,
+        command: runnerInvocationCommand(),
         timestamp: nowIso(),
     }]),
 });
@@ -383,6 +390,30 @@ function makeCommand() {
 }
 
 function planetSphereSunSample(sampleId) {
+    if (requestedSunDirection) {
+        const direction = normalizeVector(requestedSunDirection);
+
+        return Object.freeze({
+            id: requestedSunLabel,
+            label: requestedSunLabel,
+            date: 'review-direction',
+            location: Object.freeze({ latitudeDegrees: null, longitudeDegrees: null }),
+            declinationDegrees: null,
+            hourAngleDegrees: null,
+            localSolarTime: Object.freeze({ label: requestedSunLabel }),
+            altitudeDegrees: Math.asin(direction[0]) * 180 / Math.PI,
+            azimuthDegrees: normalizeDegrees(Math.atan2(direction[1], direction[2]) * 180 / Math.PI),
+            observerLocalDirection: direction,
+        });
+    }
+    if (sampleId === 'union-glacier-2021-dec14-solar-noon-offset') {
+        return unionGlacier2021SolarNoonOffsetSample(requestedSunClockOffsetDegrees);
+    }
+    const unionGlacierOffsetMatch =
+        /^union-glacier-2021-dec14-(\d{3})deg-from-solar-noon$/.exec(sampleId);
+    if (unionGlacierOffsetMatch) {
+        return unionGlacier2021SolarNoonOffsetSample(Number(unionGlacierOffsetMatch[1]));
+    }
     if (sampleId === 'solar-noon') {
         return southernFranceSolarNoonSample();
     }
@@ -394,6 +425,52 @@ function planetSphereSunSample(sampleId) {
     }
 
     throw new Error(`Unknown planet sphere sun sample: ${sampleId}`);
+}
+
+function unionGlacier2021SolarNoonOffsetSample(clockOffsetDegrees) {
+    const offsetDegrees = normalizeDegrees(clockOffsetDegrees);
+    const date = M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DATE_UTC;
+    const latitudeDegrees = M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LATITUDE_DEGREES;
+    const longitudeDegrees = M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LONGITUDE_DEGREES;
+    const declinationDegrees = solarDeclinationApproxDegrees(date);
+    const hourAngleDegrees = offsetDegrees;
+    const pose = sphericalSolarPose({
+        latitudeDegrees,
+        declinationDegrees,
+        hourAngleDegrees,
+    });
+    const solarNoonUtcMinutes = 720 - longitudeDegrees * 4;
+    const rowUtcMinutes = solarNoonUtcMinutes + hourAngleDegrees * 4;
+    const sourceSubpointLongitudeDegrees = normalizeLongitudeDegrees(longitudeDegrees - hourAngleDegrees);
+    const offsetSlug = `${String(Math.round(offsetDegrees)).padStart(3, '0')}deg`;
+
+    return Object.freeze({
+        id: `union-glacier-2021-dec14-${offsetSlug}-from-solar-noon`,
+        label: `Union Glacier 2021-12-14 ${offsetSlug} from real solar noon`,
+        date,
+        location: Object.freeze({ latitudeDegrees, longitudeDegrees }),
+        declinationDegrees,
+        hourAngleDegrees,
+        sourceSubpointLongitudeDegrees,
+        localSolarTime: Object.freeze({
+            label: timeLabelFromMinutes(720 + Math.round(hourAngleDegrees * 4)),
+            noonLabel: '12:00',
+            utcLabel: timeLabelFromMinutes(Math.round(rowUtcMinutes)),
+            solarNoonUtcLabel: timeLabelFromMinutes(Math.round(solarNoonUtcMinutes)),
+            policy: '0 degrees is real local solar noon at Union Glacier. The source latitude corresponds to the real-world subsolar latitude for the date at longitude-0 solar noon; positive offsets advance local solar time by 4 minutes per degree.',
+        }),
+        altitudeDegrees: pose.altitudeDegrees,
+        azimuthDegrees: pose.azimuthDegrees,
+        observerLocalDirection: pose.observerLocalDirection,
+        clockSync: Object.freeze({
+            kind: 'real-subsolar-longitude0-noon',
+            anchor: 'default sync policy unless overridden: local Sun latitude and 0 degree row correspond to real-world subsolar latitude at longitude-0 solar noon, with the observer row at real local solar noon',
+            offsetDegrees,
+            date,
+            observerLongitudeDegrees: longitudeDegrees,
+            sourceSubpointLongitudeDegrees,
+        }),
+    });
 }
 
 function southernFranceSolarNoonSample() {
@@ -600,11 +677,70 @@ function normalizeDegrees(degrees) {
     return ((degrees % 360) + 360) % 360;
 }
 
+function normalizeLongitudeDegrees(longitudeDegrees) {
+    const normalized = ((((longitudeDegrees + 180) % 360) + 360) % 360) - 180;
+
+    return Math.abs(normalized + 180) < 1e-9 ? 180 : normalized;
+}
+
+function solarDeclinationApproxDegrees(dateText) {
+    const date = new Date(`${dateText}T12:00:00Z`);
+    const start = new Date(`${date.getUTCFullYear()}-01-01T00:00:00Z`);
+    const dayOfYear = Math.floor((date.getTime() - start.getTime()) / 86400000) + 1;
+
+    return 23.44 * Math.sin((2 * Math.PI / 365) * (dayOfYear - 81));
+}
+
 function timeLabelFromMinutes(minutes) {
     const normalized = ((minutes % 1440) + 1440) % 1440;
     const hours = Math.floor(normalized / 60);
     const mins = normalized % 60;
     return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
+function runnerInvocationCommand() {
+    const parts = [
+        'node',
+        'scripts/flat/reconciliation/POC/src/runners/m3PlanetSphereGroundScene.js',
+        '--record', recordDirectory,
+        '--width', String(width),
+        '--height', String(height),
+        '--scene-name', sceneName,
+        '--bottom-radius-meters', String(bottomRadiusMeters),
+        '--observer-altitude-meters', String(observerAltitudeMeters),
+        '--scale-denominator', String(scaleDenominator),
+        '--scene-depth-max-meters', String(sceneDepthMaxMeters),
+        '--vertical-fov-degrees', String(verticalFovDegrees),
+        '--endpoint-radiance-scale', String(endpointRadianceScale),
+        '--ground-display-mode', groundDisplayMode,
+        '--sun-sample', requestedSunSample,
+        '--sun-clock-offset-degrees', String(requestedSunClockOffsetDegrees),
+    ];
+
+    if (allowShading) {
+        parts.push('--allow-shading');
+    }
+    if (withShadows) {
+        parts.push('--with-shadows');
+    }
+    if (withShader) {
+        parts.push(
+            '--with-shader',
+            '--shader-backend', shaderBackend,
+            '--shader-quality-profile', shaderQualityProfile.id,
+        );
+    }
+    if (solarNoon) {
+        parts.push('--solar-noon');
+    }
+    if (requestedSunDirection) {
+        parts.push('--sun-direction', requestedSunDirection.join(','));
+    }
+    if (requestedSunLabel !== requestedSunSample) {
+        parts.push('--sun-label', requestedSunLabel);
+    }
+
+    return parts.join(' ');
 }
 
 async function waitForWatcherResult(commandId) {
@@ -751,6 +887,28 @@ function stringArg(name, fallback) {
     }
 
     return typeof process.argv[index + 1] === 'string' ? process.argv[index + 1] : fallback;
+}
+
+function vectorArgOrNull(name) {
+    const raw = stringArg(name, '');
+    if (!raw) {
+        return null;
+    }
+    const values = raw.split(',').map((entry) => Number(entry.trim()));
+    if (values.length !== 3 || !values.every(Number.isFinite)) {
+        throw new Error(`${name} requires three comma-separated finite numbers.`);
+    }
+
+    return Object.freeze(values);
+}
+
+function normalizeVector(vector) {
+    const length = Math.hypot(...vector);
+    if (!Number.isFinite(length) || length <= 0) {
+        throw new Error('Sun direction must have positive length.');
+    }
+
+    return Object.freeze(vector.map((entry) => entry / length));
 }
 
 function booleanArg(name) {

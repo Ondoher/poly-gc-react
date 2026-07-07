@@ -2206,9 +2206,67 @@ Primary work:
 - Capture terrain/skydome/browser outputs, shader diagnostics, cache keys,
   direction-frame conventions, and source/geometry handoff facts.
 
+User-requested subjective scenes created while inspecting local/flat behavior
+are not design fixtures or acceptance gates by default. Keep those scene
+records in the numbered artifact log, `CURRENT_STATE.md`, and topic status.
+Only promote a subjective scene into this milestone plan when the user
+explicitly chooses it as a reusable validation/review fixture or when it
+captures a durable contract that objective tests need.
+
+Current status before formal M4 GPU implementation:
+
+- Ahead/prepared: the browser-integrated CPU composer can run the
+  `flat-earth` / `local-sun` profile through public
+  `SpectralReferenceEvaluator.evaluate(...)`, with geometry-owned flat ground,
+  scene-hit endpoint composition, and local L2 cache binding.
+- Ahead/prepared: local Sun degree inputs are treated as
+  `degreesFromClosestApproach`, so source position, apparent sky placement,
+  endpoint lighting direction, shadow direction, and transport source facts
+  are derived from the same resolved local-source state.
+- Ahead/prepared: local-source-owned Three endpoint lighting and optional
+  shadow objects exist for subjective scene-color capture through the optional
+  `LightSourceModel.createThreeLightingObjects(...)` integration adapter. This
+  remains endpoint scene shading outside Algorithm32 transport; it is not
+  source radiance pre-scaling inside `evaluate(...)`.
+- Complete/prepared: record
+  `534-m4-local-cache-texture-prep` accepts the M4.1 local cache texture-prep
+  probe. The local L2 cache builds `315 / 315` coordinates/values, emits a
+  deterministic packed `rgba32f` 3D shader payload
+  `incident-radiance-local-l2` with dimensions `9 x 7 x 20` and `5040`
+  upload floats, carries z/rho/direction/spectral-group lookup metadata, and
+  proves runtime cache access still flows through geometry-resolved
+  `local-source-z-rho` packets.
+- Complete/prepared: record
+  `535-m4-local-gpu-cache-texture-lookup` accepts M4.2 local GPU cache
+  texture materialization and shader lookup. The browser WebGL2 path uploads
+  the real `incident-radiance-local-l2` payload as a `9 x 7 x 20`
+  `rgba32f` 3D texture with `5040` floats, compiles the local/flat shader
+  contribution set, binds the local cache sampler, and reads back the packed
+  z/rho/direction/spectral-group texel through GLSL with expected RGBA
+  `[128, 182, 204, 255]`.
+- Complete/prepared: records
+  `536-m4-flat-geometry-gpu-selected-ray-parity` and
+  `537-m4-local-flat-gpu-integrated-selected-pixel-parity` accept M4.3.1.
+  Record `536` proves local/flat GPU selected-ray parity against
+  `FlatEarthGeometry` for browser ray reconstruction, scene-hit termination,
+  ground/top/observer-dome path bounds, and z/rho cache access coordinates.
+  Record `537` runs the same constructed local-flat scene through integrated
+  CPU and GPU composer backends, both using the local L2 cache contract, and
+  matches selected browser readbacks with max byte delta `1`.
+- Not complete: M4.3.2 required review galleries, any remaining
+  local-second-order evidence recreation beyond the M4.3.1 objective records,
+  and final M4 closeout remain open.
+
 ### Major Subgoals And Primary Stages
 
 #### Subgoal 4.1: Local Cache Texture Prep
+
+Current status: accepted in
+`tmp/atmosphere/reconciliation/534-m4-local-cache-texture-prep`. Record `533`
+is preserved as a rejected probe-criterion bug; record `534` is the accepted
+evidence for cache descriptor, shader payload, TextureBuilder request, and
+geometry-resolved runtime cache access. Browser/GPU upload and GLSL lookup are
+M4.2 work.
 
 - Stage 4.1.1: Adapt local cache descriptors for shader texture creation.
   - Code: consume the local cache descriptors, coordinate generators, cache
@@ -2247,6 +2305,16 @@ Primary work:
 
 #### Subgoal 4.2: Local GPU Cache Texture And Shader Lookup
 
+Current status: accepted in
+`tmp/atmosphere/reconciliation/535-m4-local-gpu-cache-texture-lookup`.
+Record `535` is the M4.2 evidence for browser/GPU texture upload, binding,
+local/flat descriptor and contribution assembly, and GLSL lookup of the
+cache-owned `z-rho-bin-all-directions` payload. It includes initial
+flat-geometry shader contribution coverage sufficient for assembly/compile and
+cache-coordinate lookup diagnostics; selected-ray/path-bound parity and
+integrated selected-pixel parity are now accepted as M4.3.1 records `536` and
+`537`.
+
 - Stage 4.2.1: Build local cache textures for GPU.
   - Code: make the local cache call `TextureBuilder` with its dimensions,
     data, texture kind, sampler policy, spectral grouping, direction-index
@@ -2260,10 +2328,34 @@ Primary work:
     `local-sun-flat-geometry-fact-inventory.md`, and Three `Data3DTexture`
     usage in the historical POC.
   - Verification: CPU pack/unpack roundtrip inside the cache, texture dimension
-    checks, descriptor equality, and sampled cache value parity at named
-    coordinates.
+    checks, descriptor equality, WebGL2 `Data3DTexture` upload diagnostics, and
+    sampled cache value parity at named coordinates.
 
-- Stage 4.2.2: Integrate local-source shader lookup.
+- Stage 4.2.2: Add the flat-geometry GPU contribution.
+  - Code: implement the flat-geometry shader contribution that reconstructs
+    browser camera rays into the flat model frame, resolves path bounds from
+    explicit scene-hit distance plus flat ground/top/sky limits, samples
+    atmosphere by flat altitude, and resolves geometry-owned z/rho cache
+    coordinates for local incident-radiance lookup. Keep this separate from
+    light-source radiometry: geometry converts positions and cache coordinates;
+    the light source supplies source direction, distance/scale, and source
+    path behavior.
+  - Files/classes: add or update `LocalFlatShaderDescriptorBuilder`,
+    `LocalFlatShaderContributionFactory`, browser runtime diagnostics, and
+    descriptor facts sourced from `FlatEarthGeometry` / the local-flat runtime
+    config. Do not add flat-geometry branches to the distant/spherical shader
+    class.
+  - References: `FlatEarthGeometry`, `algorithm32-abstraction-design.md`
+    geometry ownership sections, `shader-design.md` contribution ownership
+    rules, and accepted CPU flat/local records beginning at `456`.
+  - Verification: shader assembly must compile with flat geometry symbols,
+    no sentinels or tolerance-as-signal behavior, and cache-coordinate lookup
+    must consume geometry-owned z/rho facts. Record `535` covers compile and
+    diagnostic cache lookup; record `536` accepts full selected-ray/path-bound
+    parity against CPU `FlatEarthGeometry`, including observer-dome clipping
+    and scene-hit termination.
+
+- Stage 4.2.3: Integrate local-source shader lookup.
   - Code: add local-source shader uniforms, source-relative direction frame,
     cache lookup, phase weighting, and scene/display composition.
   - Files/classes: add or update a local/flat shader builder class and GLSL
@@ -2273,15 +2365,28 @@ Primary work:
     `219-220-three-native-flat-local-first-order-atmosphere`,
     `179-185-local-sun-full-image-shader-parity`, and local-second-order
     records `020` and `021`.
-  - Verification: CPU/GPU selected-pixel parity, source-direction sign
-    convention checks, cache/no-cache comparison, and browser image metrics.
+  - Verification: local shader compile/link, source-direction sign convention
+    checks, local cache texel readback through GLSL, and no cache-packing
+    drift. Record `537` accepts integrated CPU/GPU selected-pixel parity for
+    the constructed local-flat scene with max byte delta `1`; cache/no-cache
+    comparison and broader browser image metrics remain M4.3 evidence
+    recreation/closeout work if needed.
 
 #### Subgoal 4.3: Local/Flat Integrated Evidence Recreation
 
 - Stage 4.3.1: Recreate required objective records.
-  - Code: add runners for module/reference parity, cache shape/key checks,
-    CPU soft-shader local L2, GPU integrated local L2, and CPU/GPU
-    selected-pixel parity.
+  - Current status: accepted for the flat-geometry selected-ray parity and
+    integrated local-flat CPU/GPU selected-pixel parity slice in records
+    `tmp/atmosphere/reconciliation/536-m4-flat-geometry-gpu-selected-ray-parity`
+    and
+    `tmp/atmosphere/reconciliation/537-m4-local-flat-gpu-integrated-selected-pixel-parity`.
+  - Code: first prove flat-geometry GPU selected-ray parity against
+    `FlatEarthGeometry` for ray reconstruction, scene hit termination,
+    ground/top/observer-dome limits, atmosphere altitude coordinates, and
+    z/rho cache access. Then add runners for any remaining module/reference
+    parity, cache shape/key checks, CPU soft-shader local L2, GPU integrated
+    local L2, and CPU/GPU selected-pixel parity records not already covered by
+    `536`/`537`.
   - Files/classes: add focused objective runner modules under `runners/` and
     reuse comparison, cache, shader, and browser classes; write recreated
     objective evidence into numbered records.

@@ -52,3 +52,12 @@ type ExactSphereGroundObjectConfig = {
     readonly spectralReferenceId?: string | null;
     readonly name?: string;
 };
+
+type ExactFlatGroundObjectConfig = {
+    readonly centerSceneUnits?: Position;
+    readonly widthSceneUnits: number;
+    readonly depthSceneUnits: number;
+    readonly metersPerSceneUnit: number;
+    readonly spectralReferenceId?: string | null;
+    readonly name?: string;
+};

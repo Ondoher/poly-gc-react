@@ -129,6 +129,8 @@ export const M2_LOCAL_FLAT_NUMERICAL_CONTROLS = Object.freeze({
 const M2_LOCAL_FLAT_KM_PER_MILE = 1.609344;
 const M2_LOCAL_FLAT_TRANSPORT_OBSERVER_HEIGHT_METERS = 2;
 
+export const DEFAULT_LOCAL_SUN_TIME_SYNCHRONIZATION_POLICY = 'real-subsolar-longitude0-noon';
+
 /** @type {LocalFlatFalseSunLatitudeModel} */
 export const M2_LOCAL_FLAT_FALSE_SUN_LATITUDE_MODEL = Object.freeze({
     type: 'annual-tropic-migration',
@@ -139,6 +141,8 @@ export const M2_LOCAL_FLAT_FALSE_SUN_LATITUDE_MODEL = Object.freeze({
 });
 
 export const M2_LOCAL_FLAT_SUMMER_SOLSTICE_SIMULATION_TIME = '2026-06-21T12:00:00-07:00';
+export const M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_SIMULATION_TIME = '2025-12-21T12:00:00-08:00';
+export const M2_LOCAL_FLAT_SAN_JOSE_OBSERVER_LATITUDE_DEGREES = 37.3382;
 export const M2_LOCAL_FLAT_OBSERVER_LONGITUDE_DEGREES = -121.8863;
 export const M2_LOCAL_FLAT_OBSERVER_ELEVATION_METERS = 30.48;
 export const M2_LOCAL_FLAT_PROJECTION_SPHERE_RADIUS_METERS = 6371008.8;
@@ -159,11 +163,16 @@ export const M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LATITUDE_DEGREES = -79
 export const M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LONGITUDE_DEGREES = -83.261666;
 export const M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_ELEVATION_METERS = 700;
 export const M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_DATE_UTC = '2024-12-15';
+export const M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DATE_UTC = '2021-12-14';
 export const M2_LOCAL_FLAT_UNION_GLACIER_CALIBRATION_LONGITUDE_DEGREES = 0;
 export const M2_LOCAL_FLAT_UNION_GLACIER_CALIBRATION_ELEVATION_METERS = 0;
+export const M2_LOCAL_FLAT_CURRENT_REVIEW_SCENE_SET_ID = 'san-jose-winter-solstice-2025-degree-offsets';
 
 /** @type {readonly number[]} */
 export const M2_LOCAL_FLAT_POLAR_TIME_SWEEP_UTC_HOURS = Object.freeze([0, 4, 8, 12, 16, 20]);
+
+/** @type {readonly number[]} */
+export const M2_LOCAL_FLAT_DEGREE_SCENE_OFFSETS = Object.freeze([0, 45, 90, 135, 180]);
 
 /** @type {FlatObserverCenteredDomeConfig} */
 export const M2_LOCAL_FLAT_OBSERVER_CENTERED_DOME = Object.freeze({
@@ -184,6 +193,17 @@ export const M2_LOCAL_FLAT_SUMMER_SOLSTICE_OBSERVER_LATITUDES_DEGREES = Object.f
 /** @type {LocalFlatSourceBrightnessCalibration} */
 export const M2_LOCAL_FLAT_SUMMER_SOLSTICE_LATITUDE_SWEEP_BRIGHTNESS_CALIBRATION =
     createSummerSolsticeLatitudeSweepBrightnessCalibration();
+
+/** @type {LocalFlatSourceBrightnessCalibration} */
+export const M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_DEGREE_BRIGHTNESS_CALIBRATION =
+    createClosestApproachBrightnessCalibration({
+        simulationTime: M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_SIMULATION_TIME,
+        observerLatitudeDegrees: M2_LOCAL_FLAT_SAN_JOSE_OBSERVER_LATITUDE_DEGREES,
+        observerLongitudeDegrees: M2_LOCAL_FLAT_OBSERVER_LONGITUDE_DEGREES,
+        observerElevationMeters: M2_LOCAL_FLAT_OBSERVER_ELEVATION_METERS,
+        kind: 'subsolar-latitude-winter-solstice-2025-san-jose-degree-unit-incident-scale',
+        calibrationRule: 'calibrate-winter-solstice-2025-san-jose-closest-approach-and-reuse-for-degree-offsets',
+    });
 
 /** @type {LocalFlatSourceBrightnessCalibration} */
 export const M2_LOCAL_FLAT_NORTH_POLE_SUMMER_SOLSTICE_TIME_SWEEP_BRIGHTNESS_CALIBRATION =
@@ -211,6 +231,37 @@ export const M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_TIME_SWEEP_BRIGHTNESS_
         M2_LOCAL_FLAT_UNION_GLACIER_CALIBRATION_ELEVATION_METERS,
         'subsolar-latitude-union-glacier-final-experiment-clock-sweep-unit-incident-scale',
     );
+
+/** @type {LocalFlatSourceBrightnessCalibration} */
+export const M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_SOLAR_NOON_BRIGHTNESS_CALIBRATION =
+    createSynchronizedClockBrightnessCalibration(
+        `${M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DATE_UTC}T12:00:00Z`,
+        M2_LOCAL_FLAT_UNION_GLACIER_CALIBRATION_LONGITUDE_DEGREES,
+        M2_LOCAL_FLAT_UNION_GLACIER_CALIBRATION_ELEVATION_METERS,
+        'subsolar-latitude-union-glacier-camp-2021-dec14-longitude0-solar-noon-unit-incident-scale',
+    );
+
+/** @type {LocalFlatSourceBrightnessCalibration} */
+export const M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_FAR_SIDE_BRIGHTNESS_CALIBRATION =
+    createClosestApproachBrightnessCalibration({
+        simulationTime: `${M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DATE_UTC}T12:00:00Z`,
+        observerLatitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LATITUDE_DEGREES,
+        observerLongitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LONGITUDE_DEGREES,
+        observerElevationMeters: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_ELEVATION_METERS,
+        kind: 'subsolar-latitude-union-glacier-camp-2021-dec14-far-side-orbit-unit-incident-scale',
+        calibrationRule: 'calibrate-union-glacier-camp-2021-dec14-closest-approach-and-reuse-for-far-side-offset',
+    });
+
+/** @type {LocalFlatSourceBrightnessCalibration} */
+export const M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_CLOSEST_BRIGHTNESS_CALIBRATION =
+    createClosestApproachBrightnessCalibration({
+        simulationTime: `${M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DATE_UTC}T12:00:00Z`,
+        observerLatitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LATITUDE_DEGREES,
+        observerLongitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LONGITUDE_DEGREES,
+        observerElevationMeters: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_ELEVATION_METERS,
+        kind: 'subsolar-latitude-union-glacier-camp-2021-dec14-closest-approach-unit-incident-scale',
+        calibrationRule: 'calibrate-union-glacier-camp-2021-dec14-closest-approach',
+    });
 
 /** @type {readonly LocalFlatSceneConstants[]} */
 export const M2_LOCAL_FLAT_SCENES = Object.freeze([
@@ -270,6 +321,12 @@ export const M2_LOCAL_FLAT_SCENES = Object.freeze([
         0.12922172063575063,
     ),
 ]);
+
+/** @type {readonly LocalFlatSceneConstants[]} */
+export const M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_DEGREE_SCENES = Object.freeze(
+    M2_LOCAL_FLAT_DEGREE_SCENE_OFFSETS.map((offsetDegrees) =>
+        createWinterSolstice2025DegreeScene(offsetDegrees)),
+);
 
 /** @type {readonly LocalFlatSceneConstants[]} */
 export const M2_LOCAL_FLAT_SUMMER_SOLSTICE_LATITUDE_SCENES = Object.freeze(
@@ -336,6 +393,63 @@ export const M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_TIME_SWEEP_SCENES = Ob
         })),
 );
 
+/** @type {readonly LocalFlatSceneConstants[]} */
+export const M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_SOLAR_NOON_SCENES = Object.freeze([
+    createLocationTimeSweepScene({
+        observerLatitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LATITUDE_DEGREES,
+        observerLongitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LONGITUDE_DEGREES,
+        observerElevationMeters: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_ELEVATION_METERS,
+        simulationDateUtc: M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DATE_UTC,
+        utcHour: 12,
+        slugPrefix: 'union-glacier-camp-2021-dec14-longitude0-solar-noon',
+        seasonLabel: 'union-glacier-camp-2021-dec14-longitude0-solar-noon',
+        calibration: M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_SOLAR_NOON_BRIGHTNESS_CALIBRATION,
+    }),
+]);
+
+/** @type {readonly LocalFlatSceneConstants[]} */
+export const M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_CLOSEST_SCENES = Object.freeze([
+    createLocationDegreeOffsetScene({
+        observerLatitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LATITUDE_DEGREES,
+        observerLongitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LONGITUDE_DEGREES,
+        observerElevationMeters: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_ELEVATION_METERS,
+        simulationTime: `${M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DATE_UTC}T12:00:00Z`,
+        offsetDegrees: 0,
+        slugPrefix: 'union-glacier-camp-2021-dec14',
+        seasonLabel: 'union-glacier-camp-2021-dec14-closest-approach',
+        calibration: M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_CLOSEST_BRIGHTNESS_CALIBRATION,
+    }),
+]);
+
+/** @type {readonly LocalFlatSceneConstants[]} */
+export const M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DEGREE_SCENES = Object.freeze(
+    M2_LOCAL_FLAT_DEGREE_SCENE_OFFSETS.map((offsetDegrees) =>
+        createLocationDegreeOffsetScene({
+            observerLatitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LATITUDE_DEGREES,
+            observerLongitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LONGITUDE_DEGREES,
+            observerElevationMeters: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_ELEVATION_METERS,
+            simulationTime: `${M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DATE_UTC}T12:00:00Z`,
+            offsetDegrees,
+            slugPrefix: 'union-glacier-camp-2021-dec14',
+            seasonLabel: 'union-glacier-camp-2021-dec14-degree-offset',
+            calibration: M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_CLOSEST_BRIGHTNESS_CALIBRATION,
+        })),
+);
+
+/** @type {readonly LocalFlatSceneConstants[]} */
+export const M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_FAR_SIDE_SCENES = Object.freeze([
+    createLocationDegreeOffsetScene({
+        observerLatitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LATITUDE_DEGREES,
+        observerLongitudeDegrees: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_LONGITUDE_DEGREES,
+        observerElevationMeters: M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_ELEVATION_METERS,
+        simulationTime: `${M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DATE_UTC}T12:00:00Z`,
+        offsetDegrees: 180,
+        slugPrefix: 'union-glacier-camp-2021-dec14',
+        seasonLabel: 'union-glacier-camp-2021-dec14-far-side-orbit',
+        calibration: M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_FAR_SIDE_BRIGHTNESS_CALIBRATION,
+    }),
+]);
+
 /** @type {Readonly<Record<string, LocalFlatSceneSetConstants>>} */
 export const M2_LOCAL_FLAT_SCENE_SETS = Object.freeze({
     'step018-rotation': freezeLocalFlatSceneSet(
@@ -345,6 +459,15 @@ export const M2_LOCAL_FLAT_SCENE_SETS = Object.freeze({
         M2_LOCAL_FLAT_SCENES,
         'tmp/atmosphere/atmosflat32/018-flat-app-rotation-skydomes',
         true,
+    ),
+    'san-jose-winter-solstice-2025-degree-offsets': freezeLocalFlatSceneSet(
+        'san-jose-winter-solstice-2025-degree-offsets',
+        'San Jose winter-solstice 2025 degree offsets',
+        'Current flat/local review set at San Jose for 2025-12-21. Source latitude is resolved from the annual-tropic-migration model, closest approach is aligned for the San Jose fixture, and scene rows advance by degrees from closest approach along the local false-Sun orbit.',
+        M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_DEGREE_SCENES,
+        null,
+        false,
+        M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_DEGREE_BRIGHTNESS_CALIBRATION,
     ),
     'san-jose-longitude-summer-solstice-latitude-sweep': freezeLocalFlatSceneSet(
         'san-jose-longitude-summer-solstice-latitude-sweep',
@@ -409,6 +532,42 @@ export const M2_LOCAL_FLAT_SCENE_SETS = Object.freeze({
         false,
         M2_LOCAL_FLAT_UNION_GLACIER_FINAL_EXPERIMENT_TIME_SWEEP_BRIGHTNESS_CALIBRATION,
     ),
+    'union-glacier-camp-2021-dec14-longitude0-solar-noon': freezeLocalFlatSceneSet(
+        'union-glacier-camp-2021-dec14-longitude0-solar-noon',
+        'Union Glacier Camp 2021-12-14 longitude-0 solar noon',
+        'Single subjective flat/local review scene at Union Glacier Camp, latitude -79.768036, longitude -83.261666, elevation 700 m, on 2021-12-14. The local Sun latitude is derived from the real-world subsolar latitude for the date: the latitude where the Sun is directly overhead at solar noon on longitude 0. The clock/source subpoint longitude is synchronized to solar noon on longitude 0.',
+        M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_SOLAR_NOON_SCENES,
+        null,
+        false,
+        M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_SOLAR_NOON_BRIGHTNESS_CALIBRATION,
+    ),
+    'union-glacier-camp-2021-dec14-closest-approach': freezeLocalFlatSceneSet(
+        'union-glacier-camp-2021-dec14-closest-approach',
+        'Union Glacier Camp 2021-12-14 closest approach',
+        'Single subjective flat/local review scene at Union Glacier Camp, latitude -79.768036, longitude -83.261666, elevation 700 m, on 2021-12-14. The local Sun latitude is derived from the real-world subsolar latitude for the date at longitude-0 solar noon, closest approach is aligned for the Union Glacier fixture, and the rendered source is the 0 degree closest-approach orbit position.',
+        M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_CLOSEST_SCENES,
+        null,
+        false,
+        M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_CLOSEST_BRIGHTNESS_CALIBRATION,
+    ),
+    'union-glacier-camp-2021-dec14-degree-offsets': freezeLocalFlatSceneSet(
+        'union-glacier-camp-2021-dec14-degree-offsets',
+        'Union Glacier Camp 2021-12-14 degree offsets',
+        'Five subjective flat/local review scenes at Union Glacier Camp, latitude -79.768036, longitude -83.261666, elevation 700 m, on 2021-12-14. The local Sun latitude is derived from the real-world subsolar latitude for the date at longitude-0 solar noon, closest approach is aligned for the Union Glacier fixture, and rows advance by 45 degree clock/orbit offsets from that synchronized closest-approach state.',
+        M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_DEGREE_SCENES,
+        null,
+        false,
+        M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_CLOSEST_BRIGHTNESS_CALIBRATION,
+    ),
+    'union-glacier-camp-2021-dec14-far-side-orbit': freezeLocalFlatSceneSet(
+        'union-glacier-camp-2021-dec14-far-side-orbit',
+        'Union Glacier Camp 2021-12-14 far-side orbit',
+        'Single subjective flat/local review scene at Union Glacier Camp, latitude -79.768036, longitude -83.261666, elevation 700 m, on 2021-12-14. The local Sun latitude is derived from the real-world subsolar latitude for the date at longitude-0 solar noon, closest approach is aligned for the Union Glacier fixture, and the rendered source is the 180 degree far-side orbit offset from that synchronized closest approach.',
+        M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_FAR_SIDE_SCENES,
+        null,
+        false,
+        M2_LOCAL_FLAT_UNION_GLACIER_CAMP_DEC14_2021_FAR_SIDE_BRIGHTNESS_CALIBRATION,
+    ),
 });
 
 /** @type {LocalFlatSeedConstants} */
@@ -424,9 +583,14 @@ export const M2_LOCAL_FLAT_SEED_CONSTANTS = Object.freeze({
     distanceFalloff: true,
     falseSunLatitudeModel: M2_LOCAL_FLAT_FALSE_SUN_LATITUDE_MODEL,
     summerSolsticeSimulationTime: M2_LOCAL_FLAT_SUMMER_SOLSTICE_SIMULATION_TIME,
+    winterSolstice2025SimulationTime: M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_SIMULATION_TIME,
+    currentReviewSceneSetId: M2_LOCAL_FLAT_CURRENT_REVIEW_SCENE_SET_ID,
+    currentReviewScenes: M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_DEGREE_SCENES,
     latitudeSweepObserverLatitudesDegrees: M2_LOCAL_FLAT_SUMMER_SOLSTICE_OBSERVER_LATITUDES_DEGREES,
     summerSolsticeLatitudeSweepBrightnessCalibration:
         M2_LOCAL_FLAT_SUMMER_SOLSTICE_LATITUDE_SWEEP_BRIGHTNESS_CALIBRATION,
+    winterSolstice2025DegreeBrightnessCalibration:
+        M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_DEGREE_BRIGHTNESS_CALIBRATION,
     localCacheZBinsMeters: Object.freeze([2, 1000, 5000, 15000, 45000]),
     localCacheRhoBinsMeters: Object.freeze([0, 500000, 1250000, 2500000, 5000000, 9000000, 13000000]),
     localCacheDirectionCount: 9,
@@ -527,6 +691,38 @@ function createSummerSolsticeLatitudeSweepBrightnessCalibration() {
 }
 
 /**
+ * @param {{
+ *   readonly simulationTime: string,
+ *   readonly observerLatitudeDegrees: number,
+ *   readonly observerLongitudeDegrees: number,
+ *   readonly observerElevationMeters: number,
+ *   readonly kind: string,
+ *   readonly calibrationRule: string
+ * }} request - Closest-approach calibration request.
+ * @returns {LocalFlatSourceBrightnessCalibration} Closest-approach brightness calibration.
+ */
+function createClosestApproachBrightnessCalibration(request) {
+    const state = resolveClosestApproachState(request);
+    const referenceSpectralIncidentScale =
+        M2_LOCAL_FLAT_TARGET_INCIDENT_SCALE_AT_CALIBRATION / state.distanceFalloffScale;
+
+    return Object.freeze({
+        kind: request.kind,
+        target: 'local-flat-closest-approach-unit-incident-scale-at-observer',
+        calibrationObserverLatitudeDegrees: request.observerLatitudeDegrees,
+        calibrationObserverLongitudeDegrees: request.observerLongitudeDegrees,
+        calibrationSimulationTime: request.simulationTime,
+        sourceSubpointLatitudeDegrees: state.sourceLatitudeDegrees,
+        sourceSubpointLongitudeDegrees: state.sourceSubpointLongitudeDegrees,
+        calibrationDistanceKilometers: state.observerDistanceKilometers,
+        calibrationDistanceFalloffScale: state.distanceFalloffScale,
+        targetIncidentScaleAtCalibration: M2_LOCAL_FLAT_TARGET_INCIDENT_SCALE_AT_CALIBRATION,
+        referenceSpectralIncidentScale,
+        calibrationRule: request.calibrationRule,
+    });
+}
+
+/**
  * @param {string} simulationTime - UTC simulation time used to resolve source latitude.
  * @param {number} observerLongitudeDegrees - Calibration longitude in degrees.
  * @param {number} observerElevationMeters - Calibration observer elevation in meters.
@@ -604,6 +800,103 @@ function createSummerSolsticeLatitudeScene(observerLatitudeDegrees) {
             sourceLatitudeResolvedAt: M2_LOCAL_FLAT_SUMMER_SOLSTICE_SIMULATION_TIME,
             sourceClosestApproachRule: 'annual-tropic-migration-latitude-then-closest-horizontal-approach',
             solarSeasonLabel: 'summer-solstice-closest-approach',
+        },
+    );
+}
+
+/**
+ * @param {number} offsetDegrees - Degrees from closest approach along the local false-Sun orbit.
+ * @returns {LocalFlatSceneConstants} Frozen winter-solstice 2025 degree-offset scene.
+ */
+function createWinterSolstice2025DegreeScene(offsetDegrees) {
+    const state = resolveClosestApproachOffsetState({
+        observerLatitudeDegrees: M2_LOCAL_FLAT_SAN_JOSE_OBSERVER_LATITUDE_DEGREES,
+        observerLongitudeDegrees: M2_LOCAL_FLAT_OBSERVER_LONGITUDE_DEGREES,
+        observerElevationMeters: M2_LOCAL_FLAT_OBSERVER_ELEVATION_METERS,
+        simulationTime: M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_SIMULATION_TIME,
+        offsetDegrees,
+    });
+    const calibration = M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_DEGREE_BRIGHTNESS_CALIBRATION;
+    const incidentScaleAtObserver = calibration.referenceSpectralIncidentScale * state.distanceFalloffScale;
+    const offsetSlug = `${String(offsetDegrees).padStart(3, '0')}deg`;
+
+    return freezeLocalFlatScene(
+        `san-jose-winter-solstice-2025-${offsetSlug}-from-closest`,
+        offsetDegrees,
+        `flat-skydome-winter-solstice-2025-${offsetSlug}-from-closest.png`,
+        state.sourcePositionMeters,
+        state.observerDistanceKilometers,
+        state.sourceAltitudeDegrees,
+        state.sourceAzimuthDegrees,
+        state.distanceFalloffScale,
+        incidentScaleAtObserver,
+        {
+            referenceSpectralIncidentScale: calibration.referenceSpectralIncidentScale,
+            sourceBrightnessCalibration: calibration,
+            observerLatitudeDegrees: M2_LOCAL_FLAT_SAN_JOSE_OBSERVER_LATITUDE_DEGREES,
+            observerLongitudeDegrees: M2_LOCAL_FLAT_OBSERVER_LONGITUDE_DEGREES,
+            observerElevationMeters: M2_LOCAL_FLAT_OBSERVER_ELEVATION_METERS,
+            sourceSubpointLatitudeDegrees: state.sourceLatitudeDegrees,
+            sourceSubpointLongitudeDegrees: state.sourceSubpointLongitudeDegrees,
+            sourceInitialLongitudeDegrees: M2_LOCAL_FLAT_FALSE_SUN_INITIAL_LONGITUDE_DEGREES,
+            sourceLatitudeModel: M2_LOCAL_FLAT_FALSE_SUN_LATITUDE_MODEL,
+            sourceLatitudeResolvedAt: M2_LOCAL_FLAT_WINTER_SOLSTICE_2025_SIMULATION_TIME,
+            sourceClosestApproachRule: 'winter-solstice-2025-latitude-then-degree-offset-from-closest-approach',
+            solarSeasonLabel: 'winter-solstice-2025-degree-offset',
+            horizontalFrame: 'observer-local-east-north-up',
+        },
+    );
+}
+
+/**
+ * @param {{
+ *   readonly observerLatitudeDegrees: number,
+ *   readonly observerLongitudeDegrees: number,
+ *   readonly observerElevationMeters: number,
+ *   readonly simulationTime: string,
+ *   readonly offsetDegrees: number,
+ *   readonly slugPrefix: string,
+ *   readonly seasonLabel: string,
+ *   readonly calibration: LocalFlatSourceBrightnessCalibration
+ * }} request - Location/date degree-offset scene request.
+ * @returns {LocalFlatSceneConstants} Frozen location/date degree-offset scene.
+ */
+function createLocationDegreeOffsetScene(request) {
+    const state = resolveClosestApproachOffsetState({
+        observerLatitudeDegrees: request.observerLatitudeDegrees,
+        observerLongitudeDegrees: request.observerLongitudeDegrees,
+        observerElevationMeters: request.observerElevationMeters,
+        simulationTime: request.simulationTime,
+        offsetDegrees: request.offsetDegrees,
+    });
+    const incidentScaleAtObserver = request.calibration.referenceSpectralIncidentScale * state.distanceFalloffScale;
+    const offsetSlug = `${String(request.offsetDegrees).padStart(3, '0')}deg`;
+
+    return freezeLocalFlatScene(
+        `${request.slugPrefix}-${offsetSlug}-from-closest`,
+        request.offsetDegrees,
+        `flat-skydome-${request.slugPrefix}-${offsetSlug}-from-closest.png`,
+        state.sourcePositionMeters,
+        state.observerDistanceKilometers,
+        state.sourceAltitudeDegrees,
+        state.sourceAzimuthDegrees,
+        state.distanceFalloffScale,
+        incidentScaleAtObserver,
+        {
+            referenceSpectralIncidentScale: request.calibration.referenceSpectralIncidentScale,
+            sourceBrightnessCalibration: request.calibration,
+            observerLatitudeDegrees: request.observerLatitudeDegrees,
+            observerLongitudeDegrees: request.observerLongitudeDegrees,
+            observerElevationMeters: request.observerElevationMeters,
+            sourceSubpointLatitudeDegrees: state.sourceLatitudeDegrees,
+            sourceSubpointLongitudeDegrees: state.sourceSubpointLongitudeDegrees,
+            sourceInitialLongitudeDegrees: M2_LOCAL_FLAT_FALSE_SUN_INITIAL_LONGITUDE_DEGREES,
+            sourceLatitudeModel: M2_LOCAL_FLAT_FALSE_SUN_LATITUDE_MODEL,
+            sourceLatitudeResolvedAt: request.simulationTime,
+            sourceClosestApproachRule: 'real-date-subsolar-latitude-at-longitude0-solar-noon-then-degree-offset-from-closest-approach',
+            solarTimeRule: DEFAULT_LOCAL_SUN_TIME_SYNCHRONIZATION_POLICY,
+            solarSeasonLabel: request.seasonLabel,
+            horizontalFrame: 'observer-local-east-north-up',
         },
     );
 }
@@ -822,14 +1115,65 @@ function createSolarNoonLatitudeScene(
  * }} Derived closest-approach state.
  */
 function resolveSummerSolsticeClosestApproachState(observerLatitudeDegrees) {
+    return resolveClosestApproachState({
+        observerLatitudeDegrees,
+        observerLongitudeDegrees: M2_LOCAL_FLAT_OBSERVER_LONGITUDE_DEGREES,
+        observerElevationMeters: M2_LOCAL_FLAT_OBSERVER_ELEVATION_METERS,
+        simulationTime: M2_LOCAL_FLAT_SUMMER_SOLSTICE_SIMULATION_TIME,
+    });
+}
+
+/**
+ * @param {{
+ *   readonly observerLatitudeDegrees: number,
+ *   readonly observerLongitudeDegrees: number,
+ *   readonly observerElevationMeters: number,
+ *   readonly simulationTime: string
+ * }} request - Closest-approach state request.
+ * @returns {{
+ *   readonly sourcePositionMeters: Position,
+ *   readonly observerDistanceKilometers: number,
+ *   readonly sourceAltitudeDegrees: number,
+ *   readonly sourceAzimuthDegrees: number,
+ *   readonly distanceFalloffScale: number,
+ *   readonly sourceLatitudeDegrees: number,
+ *   readonly sourceSubpointLongitudeDegrees: number
+ * }} Derived closest-approach state.
+ */
+function resolveClosestApproachState(request) {
+    return resolveClosestApproachOffsetState({
+        ...request,
+        offsetDegrees: 0,
+    });
+}
+
+/**
+ * @param {{
+ *   readonly observerLatitudeDegrees: number,
+ *   readonly observerLongitudeDegrees: number,
+ *   readonly observerElevationMeters: number,
+ *   readonly simulationTime: string,
+ *   readonly offsetDegrees: number
+ * }} request - Closest-approach degree-offset state request.
+ * @returns {{
+ *   readonly sourcePositionMeters: Position,
+ *   readonly observerDistanceKilometers: number,
+ *   readonly sourceAltitudeDegrees: number,
+ *   readonly sourceAzimuthDegrees: number,
+ *   readonly distanceFalloffScale: number,
+ *   readonly sourceLatitudeDegrees: number,
+ *   readonly sourceSubpointLongitudeDegrees: number
+ * }} Derived closest-approach degree-offset state.
+ */
+function resolveClosestApproachOffsetState(request) {
     const sourceLatitudeDegrees = falseSunLatitudeDegreesForTime(
-        M2_LOCAL_FLAT_SUMMER_SOLSTICE_SIMULATION_TIME,
+        request.simulationTime,
         M2_LOCAL_FLAT_FALSE_SUN_LATITUDE_MODEL,
     );
     const observerScenePositionMeters = projectNorthPoleAeqdScenePositionMeters({
-        latitudeDegrees: observerLatitudeDegrees,
-        longitudeDegrees: M2_LOCAL_FLAT_OBSERVER_LONGITUDE_DEGREES,
-        elevationMeters: M2_LOCAL_FLAT_OBSERVER_ELEVATION_METERS,
+        latitudeDegrees: request.observerLatitudeDegrees,
+        longitudeDegrees: request.observerLongitudeDegrees,
+        elevationMeters: request.observerElevationMeters,
     });
     const initialSourceScenePositionMeters = projectNorthPoleAeqdScenePositionMeters({
         latitudeDegrees: sourceLatitudeDegrees,
@@ -842,13 +1186,13 @@ function resolveSummerSolsticeClosestApproachState(observerLatitudeDegrees) {
     );
     const sourceScenePositionMeters = rotateAroundFlatSceneUp(
         initialSourceScenePositionMeters,
-        closestRotationRadians,
+        closestRotationRadians + degreesToRadians(request.offsetDegrees),
     );
     const sourcePositionMeters = Object.freeze([
         sourceScenePositionMeters[0] - observerScenePositionMeters[0],
         sourceScenePositionMeters[2] - observerScenePositionMeters[2],
         sourceScenePositionMeters[1]
-            - M2_LOCAL_FLAT_OBSERVER_ELEVATION_METERS
+            - request.observerElevationMeters
             + M2_LOCAL_FLAT_TRANSPORT_OBSERVER_HEIGHT_METERS,
     ]);
     const sourceHorizontalDistanceMeters = Math.hypot(sourcePositionMeters[0], sourcePositionMeters[1]);

@@ -1,6 +1,10 @@
 # Reconciliation POC Current State
 
-Status: Milestone 2 is closed. Record `050-m2-closeout` accepts M2 as a CPU
+Status: the reconciliation POC is now considered exhausted as an
+evidence-generating lane. Final architectural and technical decisions are
+captured in `agents/topics/apps/flat/reconciliation/conclusions.md`,
+including the separate Three integration lessons. Milestone 2 is closed.
+Record `050-m2-closeout` accepts M2 as a CPU
 local/flat method-confidence POC milestone and leaves production/shader
 limitations explicitly outside the M2 acceptance claim. The CPU
 distant-Sun/spherical-Earth reference still matches the accepted Step 032
@@ -189,9 +193,14 @@ Milestone 1 abstraction surface. Record `050-m2-closeout` closes it.
 
 ## Active Milestone
 
-Milestone 3 is the next active milestone: GPU distant Sun and spherical Earth,
-using the accepted M1 CPU distant/spherical implementation as the comparison
-anchor. The current shader design lives in
+No further reconciliation POC milestone is active. The POC is closed for
+conclusions rather than more review tuning. M4.1, M4.2, and M4.3.1 are
+accepted in records `534`, `535`, `536`, and `537`; later review records remain
+subjective evidence and implementation-learning context. The earlier M3 shader
+design context remains relevant because
+the local/flat GPU work uses the same composer, contribution assembly, cache
+texture, hit-distance, endpoint-color, and watcher architecture. The current
+shader design lives in
 `agents/topics/apps/flat/reconciliation/shader-design.md`: it is an operation
 design covering setup/config/runtime lifecycles, abstraction-owned shader
 contributions, cache-owned texture/access assembly through `TextureBuilder`,
@@ -1463,21 +1472,20 @@ writing, adapting only the spectral transport data source to the new POC path.
 
 ## Next Step
 
-Milestone 2 is closed. The next default work is Milestone 3: GPU distant Sun,
-spherical Earth, using the accepted M1 CPU distant/spherical path as the
-reference. Start from the shader operation design, especially cache-owned
-texture/access assembly through `TextureBuilder`, `ThreeGateway`, setup/config
-lifecycles, bindings, symbol inventory, and invalidation. Keep browser watcher
-and comparison mechanics in the action plan / experiment-runner layer. Do not
-make `ThreeGateway` own image capture: screenshots and image artifacts are
-runner outputs, while other useful operational information flows through
-bounded diagnostics, capability packets, setup reports, or selected shader
-diagnostic outputs. Do not make `ThreeGateway` own default scene lighting:
-scene builders decide whether
-lighting is included, Algorithm32/source configuration supplies lighting
-parameters in predefined units, and `ThreeGateway` synchronizes those values
-onto requested Three light handles. Do not treat M2 closeout as production
-local/flat promotion: final
+Milestone 4.3.1 is closed by records
+`536-m4-flat-geometry-gpu-selected-ray-parity` and
+`537-m4-local-flat-gpu-integrated-selected-pixel-parity`. The next default
+work is M4.3.2: recreate the required local/flat review galleries, then move
+to M4.4 local/GPU closeout classification. Keep browser watcher and comparison
+mechanics in the action plan / experiment-runner layer. Do not make
+`ThreeGateway` own image capture: screenshots and image artifacts are runner
+outputs, while other useful operational information flows through bounded
+diagnostics, capability packets, setup reports, or selected shader diagnostic
+outputs. Do not make `ThreeGateway` own default scene lighting: scene builders
+decide whether lighting is included, Algorithm32/source configuration supplies
+lighting parameters in predefined units, and `ThreeGateway` synchronizes those
+values onto requested Three light handles. Do not treat M2 closeout as
+production local/flat promotion: final
 local/flat numerical controls, local cache defaults, exact Step 018 image
 parity, default false-Sun source provenance, unit-bearing local-source
 radiometric calibration, map/world-centered in-world edge-domain behavior, and
@@ -2426,3 +2434,1324 @@ The diff treats GPU ideal as expected and CPU integrated as actual. Metrics:
 max RGBA byte delta `1`, mean RGBA byte delta `0.0219`, mean display-luma byte
 delta `0.0294`, and `9861` mismatched pixels out of `116736`. Record `453`
 was a rejected comparison-runner initialization bug before `454` accepted.
+
+Milestone 4 status classification: the implementation is ahead of the written
+M4 plan only in pre-GPU local/flat support and subjective review tooling. The
+prepared pieces are browser-integrated CPU composer support for `flat-earth` /
+`local-sun`, geometry-owned flat ground and scene-frame conversion, local L2
+cache binding, local Sun `degreesFromClosestApproach` source-phase semantics,
+source-owned endpoint Three lighting through the optional
+`LightSourceModel.createThreeLightingObjects(...)` integration adapter,
+optional source-owned shadows, and user-requested local/flat subjective review
+renders. The design now records that this adapter is renderer
+integration/display capture: geometry maps model/source positions into
+observer-local Three scene coordinates, the light source creates endpoint scene
+lights/shadow helpers plus metadata, and the resulting shaded scene color is
+composed after `evaluate(...)`. These are M4 preparation and defect-finding
+context. Record `534-m4-local-cache-texture-prep` now accepts M4.1 local cache
+texture prep: the local L2 cache builds `315 / 315` coordinates/values, emits
+a deterministic packed `rgba32f` 3D shader payload
+`incident-radiance-local-l2` with texture dimensions `9 x 7 x 20` and `5040`
+upload floats, records z/rho/direction/spectral-group lookup metadata, proves
+`TextureBuilder` can materialize the cache request, and verifies runtime cache
+access is still geometry-resolved through `local-source-z-rho` packets. Record
+`533` is preserved as a rejected probe-criterion bug before `534` accepted.
+Record `535-m4-local-gpu-cache-texture-lookup` now accepts M4.2 local GPU
+cache texture and shader lookup: the browser WebGL2 path uploads the real
+`incident-radiance-local-l2` payload as a `9 x 7 x 20` `rgba32f` 3D texture
+with `5040` floats, compiles the local/flat shader descriptor/contribution
+set, binds the local cache sampler, and verifies GLSL lookup by matching the
+expected packed-cache texel readback `[128, 182, 204, 255]`. Records
+`536-m4-flat-geometry-gpu-selected-ray-parity` and
+`537-m4-local-flat-gpu-integrated-selected-pixel-parity` now accept M4.3.1.
+Record `536` proves selected-ray/path-bound parity against CPU
+`FlatEarthGeometry`, including browser ray reconstruction, scene-hit
+termination, ground/top/observer-dome clipping, and z/rho cache access.
+Record `537` runs the same constructed local-flat scene through integrated CPU
+and GPU composer backends with the local L2 cache contract and matches
+selected browser readbacks with max byte delta `1`. Still open M4 work begins
+at M4.3.2: required review galleries, any remaining local-second-order
+evidence recreation beyond the accepted objective records, and final
+local/GPU closeout.
+
+M4.3.2 GPU review-gallery recreation has started with the Union Glacier Camp
+`2021-12-14` five-row phase stack. Records `538` through `542` render the
+same reference-box landscape through the integrated GPU local/flat shader for
+local Sun offsets `180`, `135`, `90`, `45`, and `0` degrees from closest
+approach, using scene set `union-glacier-camp-2021-dec14-degree-offsets`,
+`228 x 128`, `150 m` camera height, `800 m` look distance, `272.67 m`
+look-at height, and camera aimed toward the closest-approach direction. All
+five row records accepted with the GPU composer backend and local L2 texture.
+Record
+`543-m4-gpu-integrated-flat-local-sun-union-glacier-2021-dec14-reference-boxes-phase-stack-180-to-000-228x128`
+composites the rows into
+`images/union-glacier-2021-dec14-gpu-reference-boxes-phase-stack-180-to-000.png`.
+Records `544` through `548` repeat the same GPU Union Glacier phase rows after
+adding a centered Denali-scale review box with front face at `200 km`, height
+`6.2 km`, width `50 km`, and depth `100 km`. The box is named
+`local-flat-denali-200km-6p2kmx50kmx100km-orange-box`; subpixel hit capture is
+enabled for this far review object so visible far geometry contributes a
+scene-hit termination. Record
+`549-m4-gpu-union-glacier-2021-dec14-denali-200km-phase-stack-180-to-000-228x128`
+composites those five accepted rows into
+`images/union-glacier-2021-dec14-gpu-denali-200km-phase-stack-180-to-000.png`.
+
+Flat/local integrated CPU verification: record
+`456-m3-cpu-integrated-flat-local-sun-96x54` accepts a browser integrated CPU
+EffectComposer smoke for flat geometry with a local Sun. The browser integrated
+CPU composer path now accepts explicit `geometryKind` and `lightSourceKind`
+runtime fields. The default remains distant/spherical, while `flat-earth`
+plus `local-sun` constructs `FlatEarthGeometry`, `LocalSunLightSource`,
+`CanonicalAtmosphere`, `SpectralCalculator`, and `SpectralReferenceEvaluator`
+in the browser CPU composer and runs direct local-source transport through
+public `evaluate(...)`. `FlatEarthGeometry` now owns a flat Three ground
+endpoint factory plus the scene-frame conversion that maps Three scene
+directions as `[scene.x, -scene.z, scene.y]` into flat model coordinates.
+Record `456` verifies the `flat-earth / local-sun` contract, geometry-owned
+ground, hit/no-hit pixels, local flat box and ground hits, positive selected
+path radiance, and saved `images/canvas-image.png` plus
+`images/pre-shader-scene-color.png`. It reported hit counts
+`local-flat-geometry-ground: 2555`, `local-flat-near-green-box: 90`, and
+`local-flat-far-blue-box: 56`, with selected `pathRadianceMean` values
+positive for ground, box, and sky samples. Record `455` was a rejected
+submitter-criterion typo before `456` accepted.
+
+Record `458-m3-cpu-integrated-flat-local-sun-l2-more-boxes-96x54` supersedes
+`456` as the current flat/local integrated CPU smoke because it explicitly
+builds and binds the local L2 incident-radiance cache in CPU setup before
+rendering. It reports incident cache mode `local-l2-cache-sampler`,
+coordinate/value count `315 / 315`, and positive selected-pixel
+`incidentInScatteringMean` for ground, box, and sky samples. The local-flat
+diagnostic scene now includes three farther boxes, with accepted hit counts:
+ground `2555`, near green `90`, far blue `56`, mid yellow `53`, very far
+magenta `29`, and far cyan `60`. Record `457` rejected only because two new
+far boxes were hidden behind nearer boxes at `96 x 54`; record `458` separates
+their angular placement and verifies every diagnostic box has raycast hit
+pixels.
+
+Records `459` through `464` are the current flat/local endpoint-visibility
+diagnostic sequence. The scene now uses a distance ladder for the diagnostic
+boxes and selects CPU diagnostics from actual raycast object-hit pixels
+instead of three fixed screen positions. The CPU selected-pixel packets
+include captured scene RGBA, final output RGBA, byte delta,
+display-composition details, and decoded hit distance. Record `459` first
+isolated the original symptom: endpoint hits were already being composed, but
+the previous selected object/ground distances were too short to move visibly.
+Record `460` fixed the ground visual input to use explicit display RGBA, so
+the selected pre-shader ground pixel became `[86,105,66]` instead of the
+earlier dark linearized value.
+
+Record
+`464-m3-cpu-integrated-flat-local-sun-planet-scale-high-observer-final-160x90`
+accepts the current flat/local endpoint-color setup, and record
+`465-m3-cpu-integrated-flat-local-sun-planet-scale-high-observer-final-320x180`
+rerenders it at doubled review resolution. The setup scales the Three scene
+like the planet path (`1000 m/scene-unit`), spaces the boxes from about
+`12 km` through `58 km`, and sets `sceneDepthMaxMeters` to the flat geometry
+sky-ray limit (`1926774 m`). The raycast capture now limits hits to the
+representable scene-depth range before writing the hit mask; record `464`
+reports `nearMaxDepthHitBucket: 0`. Record `465` accepts the unlit
+`320 x 180` review render. Record
+`466-m3-cpu-integrated-flat-local-sun-planet-scale-high-observer-shaded-320x180`
+turns on Three Lambert shading on the flat ground visual mesh and every
+diagnostic box, adds a DirectionalLight from the resolved local Sun direction
+plus ambient fill, and leaves that lighting entirely in the captured composer
+RenderPass scene color. Record
+`467-m3-cpu-integrated-flat-local-sun-planet-scale-150m-shaded-320x180`
+lowers the observer/camera height to `150 m` (`0.15` scene units). Record
+`468-m3-cpu-integrated-flat-local-sun-planet-scale-150m-close-boxes-shaded-320x180`
+adds close red, orange, and white diagnostic boxes at roughly `0.9 km`,
+`1.8 km`, and `3.5 km` in front of the camera. Record
+`469-m3-cpu-integrated-flat-local-sun-planet-scale-150m-rotated-close-boxes-shaded-320x180`
+rotates the diagnostic boxes so their faces are no longer square to the
+camera: close red `18 deg`, close orange `-24 deg`, close white `31 deg`,
+near green `-16 deg`, far blue `22 deg`, mid yellow `-12 deg`, far cyan
+`17 deg`, and far magenta `-20 deg`. Record
+`470-m3-cpu-integrated-flat-local-sun-source-driven-light-rotated-close-boxes-480x270`
+supersedes `469` as the current flat/local visual review artifact. It raises
+the image size by 50% to `480 x 270` and replaces the hardcoded
+DirectionalLight endpoint-scene light with the older shader-lab-style
+source-driven local PointLight policy: white point light at the configured
+local source position, `decay = 0`, intensity `2.4 * observerIncidentScale`,
+and low ambient fill. The source distance/falloff is folded into
+`observerIncidentScale` for endpoint scene brightness while Algorithm32 still
+samples the true finite source through the flat/local evaluator. The
+integrated CPU pass still feeds only flat/local ray and hit-distance facts
+into `SpectralReferenceEvaluator.evaluate`, with lit endpoint color composed
+after spectral transport. Record `470` accepted with local L2 still bound
+(`315 / 315` cache values), every listed diagnostic box hit, selected ground
+hit distance about `333 m`, `observerIncidentScale` about `1.00006`, and
+point-light intensity about `2.40013`.
+
+Record
+`471-m3-cpu-integrated-flat-local-sun-source-owned-three-light-smoke-160x90`
+keeps the same visual policy but fixes the abstraction boundary: conversion
+from local Sun configuration/source-relative facts into Three scene lights now
+lives on `LocalSunLightSource.createThreeLightingObjects(...)`. The browser
+scene runner asks `FlatEarthGeometry` for the model-position-to-observer-local
+Three scene placement and source-relative packet, then asks the light source
+for the ambient fill plus source-driven `PointLight`. The runner no longer
+duplicates source falloff or incident-scale math. Record `471` accepted at
+`160 x 90`, reports lighting owner `LocalSunLightSource`, keeps the local L2
+cache bound (`315 / 315` cache values), and verifies all diagnostic boxes plus
+ground hits.
+
+Record
+`473-m3-cpu-integrated-flat-local-sun-wide-box-layout-480x270` first spread
+the same diagnostic boxes across the available horizontal field of view while
+preserving the distance ladder, colors, Lambert endpoint materials,
+source-owned Three light conversion, and integrated CPU shader path. The close
+boxes sat on opposite sides of the frame, and the farther blue/cyan/magenta/
+yellow boxes alternated across the left and right field instead of stacking
+near image center. Record `472` accepted that layout as a `160 x 90` smoke;
+record `473` accepted at `480 x 270`, kept local L2 bound (`315 / 315` cache
+values), and reported hit pixels for every listed diagnostic box plus the
+geometry-owned flat ground.
+Record
+`475-m3-cpu-integrated-flat-local-sun-even-box-layout-480x270` supersedes that
+as the current layout record after the side-cluster gap diagnosis. It changes
+only the diagnostic box horizontal placement: selected object hits now span
+the `480`-wide frame at about x=`31`, `91`, `134`, `183`, `239`, `288`, `342`,
+and `383`, so the view has left, middle, and right coverage instead of two
+side clusters. Record `474` accepted the same layout as a `160 x 90` smoke,
+and record `475` accepts at `480 x 270` with local L2 still bound
+(`315 / 315` cache values), hit pixels for every diagnostic box, and the same
+integrated CPU shader path.
+Record
+`477-m3-cpu-integrated-flat-local-sun-shadows-480x270` supersedes `475` as
+the current flat/local visual record. It turns on source-owned Three shadows:
+`LocalSunLightSource.createThreeLightingObjects(...)` now returns a
+source-driven directional shadow light when shadows are enabled, using the
+local source direction and `observerIncidentScale` for endpoint scene
+brightness while Algorithm32 still samples the true finite local source. The
+flat scene renderer enables Three shadow maps, the diagnostic boxes cast and
+receive shadows, and the geometry-owned flat ground visual mesh receives
+shadows. The shadow frame is computed from the diagnostic box bounds, with a
+`2048` shadow map in record `477`. The record accepts at `480 x 270`, keeps
+local L2 bound (`315 / 315` cache values), reports hit pixels for every
+diagnostic box, and adds the `local-flat-shadows-enabled` acceptance
+criterion. Render-quality diagnostics now distinguish Three-side antialiasing
+and MSAA-capable composer targets from the still single-center-sample
+raycast hit mask, which remains the main source of visible stair-stepping at
+this review resolution.
+
+Local Sun degree-language clarification: a local Sun degree request means
+`degreesFromClosestApproach`, the number of degrees the configured finite local
+Sun has moved along its local orbit from closest approach. It is not an
+apparent sky-altitude/elevation angle. Source position, apparent
+altitude/azimuth, lighting direction, and shadow direction should be derived
+from that resolved orbit state.
+
+Record
+`478-m3-cpu-integrated-flat-local-sun-045deg-shadows-480x270` renders the same
+integrated CPU flat/local shadow scene at `480 x 270` with scene seed
+`san-jose-045deg-from-closest`, i.e. `45` degrees from closest approach along
+the local Sun orbit rather than a `45` degree apparent elevation. It accepts
+with the integrated CPU EffectComposer path, `flat-earth / local-sun`,
+`local-l2-cache-sampler` (`315 / 315` cache values), source-owned Three
+shadows, and hit pixels for every diagnostic box plus the geometry-owned flat
+ground. The primary artifact is
+`tmp/atmosphere/reconciliation/478-m3-cpu-integrated-flat-local-sun-045deg-shadows-480x270/images/canvas-image.png`.
+
+Record
+`479-m3-cpu-integrated-flat-local-sun-045deg-contact-shadows-480x270`
+rerenders the same `45` degrees-from-closest scene after removing the local
+flat shadow-map `normalBias`. The previous value was `0.02` scene units, which
+equals `20 m` at the current `1000 m / scene unit` scale and could create
+shadow peter-panning. The diagnostic boxes are not floating: each box center
+height equals half its box height, so each bottom face is at scene `y = 0`,
+and the geometry-owned flat visual/raycast ground is also scene `y = 0`.
+Record `479` accepts with `normalBias: 0`, source-owned Three shadows, local
+L2 bound (`315 / 315` cache values), and hit pixels for every diagnostic box.
+The primary artifact is
+`tmp/atmosphere/reconciliation/479-m3-cpu-integrated-flat-local-sun-045deg-contact-shadows-480x270/images/canvas-image.png`.
+
+Record
+`480-m3-cpu-integrated-flat-local-sun-045deg-compact-shadow-camera-480x270`
+supersedes `479` for the current shadow-contact review. It keeps the same
+`san-jose-045deg-from-closest` scene and `normalBias: 0`, but changes the
+source-owned directional shadow camera to a compact scene-object frame:
+`lightDistanceSceneUnits = shadowFrame.extentSceneUnits * 4` and
+`cameraFar = shadowFrame.extentSceneUnits * 8`. This avoids placing the
+DirectionalLight shadow camera at the finite local Sun's kilometer-scale scene
+distance when Three only needs the light direction for directional shadows.
+Record `480` accepts at `480 x 270` with source-owned Three shadows, local L2
+bound (`315 / 315` cache values), and hit pixels for every diagnostic box plus
+the geometry-owned flat ground. The primary artifact is
+`tmp/atmosphere/reconciliation/480-m3-cpu-integrated-flat-local-sun-045deg-compact-shadow-camera-480x270/images/canvas-image.png`.
+
+Local-second-order lighting parity check: the old local runner's flat local
+source endpoint light used a white `PointLight` with `decay = 0`, intensity
+`2.4 * observerIncidentScale`, and low ambient fill. Its source-contract math
+computes `observerIncidentScale` as
+`referenceSpectralIncidentScale * (referenceDistance / distance)^2`. The
+current reconciliation `LocalSunLightSource.sampleDirectLighting(...)` matches
+that math exactly for the current `150 m` / `san-jose-045deg-from-closest`
+input: both paths report distance `7119112.070777757 m`, falloff
+`0.45460144854799356`, incident scale `0.5033233098516792`, and endpoint
+light intensity `1.20797594364403`. The remaining endpoint-lighting difference
+is the Three light object used when shadows are enabled: local-second-order
+kept the local Sun as a `PointLight`, while the current reconciliation shadow
+path uses a compact `DirectionalLight` for shadow-map control. The dark 45
+degree review image is therefore not evidence of source-scale drift; if it
+needs correction, treat it as endpoint Three lighting/shadow policy, not an
+`evaluate(...)` or spectral-transport change.
+
+Record
+`482-m3-cpu-integrated-flat-local-sun-045deg-shaded-no-shadows-240x135`
+renders the requested smaller diagnostic with source-owned shading enabled and
+Three shadows disabled. The submitter now accepts `--shadows-enabled false`,
+and the browser-side criterion now expects `shadows-disabled` when that payload
+is supplied. Record `481` rendered the same image but was rejected only because
+the browser acceptance criterion still hardcoded shadows-on. Record `482`
+accepts with integrated CPU `evaluate(...)`, flat/local input, local L2 cache
+bound (`315 / 315` cache values), every diagnostic box hit, and
+`sceneLighting.lightingPolicy: source-driven-flat-local-point-light`. The
+no-shadow scene lighting reports ambient `0.04`,
+`observerIncidentScale = 0.5033233098516792`, `falloffScale =
+0.45460144854799356`, `pointLightIntensity = 1.20797594364403`, and
+`shadowPolicy: shadows-disabled`. The pre-shader image remains dark, matching
+the shadowed image's baseline darkness closely enough to rule out the
+DirectionalLight shadow branch as the primary cause.
+
+Record
+`483-m3-cpu-integrated-flat-local-sun-090deg-shadows-480x270` renders the
+larger requested `480 x 270` integrated CPU flat/local scene using
+`san-jose-090deg-from-closest`, i.e. `90` degrees along the local Sun orbit
+from closest approach. It accepts with source-owned Three shadows, local L2
+bound (`315 / 315` cache values), every diagnostic box hit, and the same
+integrated CPU `evaluate(...)` path. The source-owned endpoint lighting reports
+the expected lower `90`-degree orbit scale: `pointLightIntensity =
+0.5492917826134377`. The primary artifact is
+`tmp/atmosphere/reconciliation/483-m3-cpu-integrated-flat-local-sun-090deg-shadows-480x270/images/canvas-image.png`;
+the raw endpoint scene is
+`tmp/atmosphere/reconciliation/483-m3-cpu-integrated-flat-local-sun-090deg-shadows-480x270/images/pre-shader-scene-color.png`.
+
+Record
+`484-m3-cpu-integrated-flat-local-sun-090deg-fixed-endpoint-light-240x135`
+updates the source-owned Three endpoint lighting policy: the local Sun still
+provides direction for Lambert endpoint shading and shadows, and still reports
+`observerIncidentScale` for Algorithm32 transport diagnostics, but the
+captured endpoint scene no longer multiplies its Three light intensity by that
+scale. This avoids pre-dimming the hit color before the CPU shader applies the
+source-dependent spectral transport. The fixed endpoint light uses
+`endpointSceneIncidentScale = 1` and `pointLightIntensity = 2.4`; the record's
+diagnostics still report the local-source transport scale separately
+(`observerIncidentScale = 0.22887157608893238`, `falloffScale =
+0.2067167325354977`). Record `484` accepts at `240 x 135` with scene seed
+`san-jose-090deg-from-closest`, source-owned Three shadows, local L2 bound
+(`315 / 315` cache values), and every diagnostic box hit. Primary artifact:
+`tmp/atmosphere/reconciliation/484-m3-cpu-integrated-flat-local-sun-090deg-fixed-endpoint-light-240x135/images/canvas-image.png`.
+
+Records
+`485-m3-cpu-integrated-flat-local-sun-135deg-fixed-endpoint-light-240x135`
+and
+`486-m3-cpu-integrated-flat-local-sun-180deg-fixed-endpoint-light-240x135`
+render the requested small review images for `135` and `180` degrees from
+closest approach. Both use the fixed endpoint-light policy from record `484`,
+source-owned Three shadows, integrated CPU `evaluate(...)`, and local L2
+cache binding (`315 / 315` cache values). Both accepted with every diagnostic
+box hit. Record `485` reports `endpointSceneIncidentScale = 1`,
+`pointLightIntensity = 2.4`, and transport-only `observerIncidentScale =
+0.14811017678417482`; record `486` reports the same endpoint scene light scale
+with transport-only `observerIncidentScale = 0.1292226561015886`. Primary
+artifacts:
+`tmp/atmosphere/reconciliation/485-m3-cpu-integrated-flat-local-sun-135deg-fixed-endpoint-light-240x135/images/canvas-image.png`
+and
+`tmp/atmosphere/reconciliation/486-m3-cpu-integrated-flat-local-sun-180deg-fixed-endpoint-light-240x135/images/canvas-image.png`.
+
+Records
+`487-m3-cpu-integrated-flat-local-sun-000deg-tilted-up-fixed-endpoint-light-240x135`
+through
+`491-m3-cpu-integrated-flat-local-sun-180deg-tilted-up-fixed-endpoint-light-240x135`
+rerender the same five local Sun phase samples (`0`, `45`, `90`, `135`, and
+`180` degrees from closest approach) after tilting the review camera upward.
+The camera remains at `150 m`, with an explicit look-at target `250 m` high
+and `800 m` out, reducing unused foreground and showing more sky while keeping
+the same fixed endpoint-light policy, source-owned shadows, integrated CPU
+shader path, and local L2 cache binding. Record
+`492-m3-cpu-integrated-flat-local-sun-tilted-up-phase-stack-240x135` creates
+the requested single stacked review image, ordered top-to-bottom as `0`, `45`,
+`90`, `135`, and `180`:
+`tmp/atmosphere/reconciliation/492-m3-cpu-integrated-flat-local-sun-tilted-up-phase-stack-240x135/images/local-sun-tilted-up-phase-stack.png`.
+
+Records
+`493-m3-cpu-integrated-flat-local-sun-000deg-tilted-up-source-scaled-light-240x135`
+through
+`497-m3-cpu-integrated-flat-local-sun-180deg-tilted-up-source-scaled-light-240x135`
+rerun that same tilted-up five-phase set with the local endpoint light scale
+turned back on through `endpointSceneLightScalePolicy =
+observer-incident-scale`. This makes the source-owned Three light intensity
+track the local Sun observer incident scale again while preserving the same
+integrated CPU shader path, camera, shadows, and local L2 cache binding. The
+recorded endpoint scales/intensities are approximately `1.000056 / 2.400134`,
+`0.503323 / 1.207976`, `0.228872 / 0.549292`, `0.148110 / 0.355464`, and
+`0.129223 / 0.310134` for `0`, `45`, `90`, `135`, and `180` degrees from
+closest approach. Record
+`498-m3-cpu-integrated-flat-local-sun-tilted-up-source-scaled-light-phase-stack-240x135`
+writes the matching stack:
+`tmp/atmosphere/reconciliation/498-m3-cpu-integrated-flat-local-sun-tilted-up-source-scaled-light-phase-stack-240x135/images/local-sun-tilted-up-source-scaled-light-phase-stack.png`.
+
+Records
+`499-m3-cpu-integrated-flat-local-sun-180deg-camera-toward-180sun-source-scaled-light-240x135`
+through
+`503-m3-cpu-integrated-flat-local-sun-135deg-camera-toward-180sun-source-scaled-light-240x135`
+keep the source-scaled endpoint light, `150 m` camera height, `250 m`
+look-at height, `800 m` look-at distance, and source-owned shadows, but rotate
+the camera toward the `180`-degree local Sun source direction. The runner now
+supports this through `--look-toward-scene-index 4`, which resolves the
+look-at x/z target from the canonical local-flat source coordinates instead
+of a hand-entered camera yaw. Because the original diagnostic boxes can move
+out of frame when the camera turns, the browser and runner acceptance criteria
+now use a payload-provided minimum diagnostic-box hit count; this review set
+uses `3`. The scene also adds deterministic camera-forward review boxes
+(`cameraForwardReviewBoxes = true`) so the sunward framing retains foreground
+objects. Record
+`504-m3-cpu-integrated-flat-local-sun-camera-toward-180sun-source-scaled-light-phase-stack-240x135`
+writes the requested stack in phase order `0`, `45`, `90`, `135`, `180`:
+`tmp/atmosphere/reconciliation/504-m3-cpu-integrated-flat-local-sun-camera-toward-180sun-source-scaled-light-phase-stack-240x135/images/local-sun-camera-toward-180sun-source-scaled-light-phase-stack.png`.
+
+Record
+`505-m3-cpu-integrated-flat-local-sun-000deg-camera-toward-sun-ocean-flat-ground-240x135`
+adds the requested flat-ground ocean-colored scene. It uses closest-approach
+local Sun (`scene-index 0`), points the camera toward that same source
+direction (`look-toward-scene-index 0`), keeps the `150 m` camera height,
+`250 m` look-at height, `800 m` look-at distance, `240 x 135` viewport,
+integrated CPU shader path, source-scaled endpoint light, and local L2 cache
+binding. The geometry-owned flat ground endpoint color is
+`groundDisplayRgba = [69, 128, 111, 255]`, matching the earlier diagnostic
+ocean matte color, and diagnostic boxes are disabled for this scene. Primary
+artifact:
+`tmp/atmosphere/reconciliation/505-m3-cpu-integrated-flat-local-sun-000deg-camera-toward-sun-ocean-flat-ground-240x135/images/canvas-image.png`.
+
+Record
+`507-m3-cpu-integrated-flat-local-sun-000deg-camera-toward-sun-water-js-ground-240x135`
+tries the Three.js `Water` addon for the same closest-approach, camera-toward-
+sun ocean scene. The visible ground is a Water.js mesh using the same ocean
+color `[69, 128, 111, 255]` and a deterministic procedural normal texture,
+while hit depth and ray termination still come from the geometry-owned exact
+flat ground raycast. The runner keeps the integrated browser CPU shader,
+source-scaled endpoint light, local L2 cache, `150 m` camera height, `250 m`
+look-at height, `800 m` look-at distance, `240 x 135` viewport, and diagnostic
+boxes disabled. Record `506` exposed a diagnostics serialization bug because
+the browser result attempted to return the Water mesh object graph; the scene
+summary now records only JSON-safe Water material facts. Record `507` accepts
+with `flat-earth / local-sun`, `SpectralReferenceEvaluator.evaluate`, local L2
+cache binding (`315 / 315` values), and ground-only hit pixels. Primary
+artifact:
+`tmp/atmosphere/reconciliation/507-m3-cpu-integrated-flat-local-sun-000deg-camera-toward-sun-water-js-ground-240x135/images/canvas-image.png`.
+The pre-shader and shader images both show a right-edge Water.js visual
+artifact, so treat this as a POC water trial rather than production water
+behavior.
+
+Record
+`508-m3-cpu-integrated-flat-local-sun-000deg-camera-toward-sun-water-js-ground-1m-240x135`
+rerenders the Water.js POC scene with the camera lowered to `1 m` above the
+flat ground. To isolate height from pitch, the look target was lowered by the
+same `149 m` offset (`101 m` look-at height over the same `800 m` look-at
+distance), preserving the previous upward pitch. The browser job accepted and
+wrote both images, with the same right-edge Water.js visual artifact already
+present in the pre-shader capture. The submitter record is rejected only by
+`selected-hit-pixel-atmosphere-delta-present`: the selected ground hit is
+about `4.6 m` away, so hit-pixel spectral transport is recorded and positive
+but rounds to `0` RGBA byte delta. Primary artifact:
+`tmp/atmosphere/reconciliation/508-m3-cpu-integrated-flat-local-sun-000deg-camera-toward-sun-water-js-ground-1m-240x135/images/canvas-image.png`.
+
+Record
+`509-m3-cpu-integrated-flat-local-sun-000deg-camera-toward-sun-ocean-matte-ground-150m-240x135`
+retires the Water.js quick-test path from the active renderer and returns the
+current ocean scene to geometry-owned Lambert matte ground. The ocean color is
+kept as `groundDisplayRgba = [69, 128, 111, 255]`, the camera is back at
+`150 m`, and the scene otherwise matches the previous closest-approach
+camera-toward-sun setup: `250 m` look-at height, `800 m` look-at distance,
+source-scaled endpoint light, integrated CPU shader path, local L2 cache, and
+diagnostic boxes disabled. The browser result accepts with `flat-earth /
+local-sun`, `SpectralReferenceEvaluator.evaluate`, local L2 cache binding
+(`315 / 315` values), and ground hit distances from about `571 m` to
+`48.7 km`. Primary artifact:
+`tmp/atmosphere/reconciliation/509-m3-cpu-integrated-flat-local-sun-000deg-camera-toward-sun-ocean-matte-ground-150m-240x135/images/canvas-image.png`.
+
+Record
+`511-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-160km-500m-box-240x135`
+adds a single far-horizon review box to the current ocean matte baseline. The
+box is `500 m` tall, `1 km x 1 km` in footprint, grounded on the flat plane,
+and placed `160 km` along the camera/source-facing direction. Diagnostic boxes
+remain disabled. Record `510` tried the same setup with a `300 m` tall box and
+was superseded because the object was visible in the pre-shader image but the
+single center-ray hit mask missed it. The far-review-box path now enables a
+small subpixel raycast sample grid and prefers non-ground hits when a subpixel
+sample catches the review object. Record `511` accepts with the review box
+hit at about `159.5 km` (`2` hit pixels), local L2 cache binding (`315 / 315`
+values), and selected-pixel transmittance mean about `0.00136`, producing the
+expected heavy atmospheric fade. Primary artifact:
+`tmp/atmosphere/reconciliation/511-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-160km-500m-box-240x135/images/canvas-image.png`.
+
+Record
+`512-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-160km-20kmx100kmx100km-box-240x135`
+supersedes record `511` for far-horizon review visibility. The review box is
+now `20 km` tall and `100 km x 100 km` wide/deep, with its near/front face
+placed at about `160 km` along the camera/source-facing direction and its
+center at about `210 km` because of the `100 km` depth. The same 150 m ocean
+matte camera and source-scaled local-Sun setup is used, with diagnostic boxes
+disabled and the optional far-review-box subpixel hit/depth capture enabled.
+Record `512` accepts with `2154` review-box hit pixels; the box hit distances
+range from about `160.0 km` to `168.6 km`. The selected review-box pixel has
+transmittance mean about `0.00101`, so the pre-shader dark-orange object is
+heavily fogged in the CPU shader output. Primary artifact:
+`tmp/atmosphere/reconciliation/512-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-160km-20kmx100kmx100km-box-240x135/images/canvas-image.png`.
+
+Record
+`513-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-160km-6p2kmx100kmx100km-box-240x135`
+supersedes record `512` for the current Denali-height far-horizon review. The
+review box is now `6.2 km` tall while keeping the `100 km x 100 km` footprint,
+with its near/front face at about `160 km` and center at about `210 km`. The
+same `150 m` ocean matte camera, closest-approach local Sun, source-scaled
+endpoint light, disabled diagnostic boxes, and optional far-review-box
+subpixel hit/depth capture are used. Record `513` accepts with `726`
+review-box hit pixels; the box hit distances range from about `160.0 km` to
+`167.7 km`. The selected review-box pixel has transmittance mean about
+`0.00101`, so the pre-shader dark-orange horizon bar is heavily fogged in the
+CPU shader output. Primary artifact:
+`tmp/atmosphere/reconciliation/513-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-160km-6p2kmx100kmx100km-box-240x135/images/canvas-image.png`.
+
+Record
+`514-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-160km-6p2kmx100kmx100km-box-455x256`
+rerenders the same current flat/local ocean scene at `256` image lines
+(`455 x 256`). This is still the flat-earth/local-Sun scene, not the
+spherical/globe renderer: the scene id is
+`local-flat-ground-san-jose-000deg-closest`, with the same `150 m` camera,
+ocean matte ground, closest-approach local Sun, and Denali-height
+`6.2 km x 100 km x 100 km` box whose near/front face is `160 km` away. Record
+`514` accepts with `2535` review-box hit pixels, local L2 cache binding
+(`315 / 315` values), and box hit distances from about `160.0 km` to
+`167.7 km`. Primary artifact:
+`tmp/atmosphere/reconciliation/514-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-160km-6p2kmx100kmx100km-box-455x256/images/canvas-image.png`.
+
+Record
+`515-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-two-denali-review-boxes-228x128`
+updates the current flat/local far-horizon review object layout and renders it
+at `128` image lines (`228 x 128`). The previous single centered
+`6.2 km x 100 km x 100 km` box is replaced by two grounded
+`6.2 km x 50 km x 100 km` orange review boxes. The left box has near/front
+face distance `160 km` and lateral offset `-35 km`; the right box has
+near/front face distance `240 km` and lateral offset `+35 km`, treating
+"further back by half" as `50%` farther than `160 km`. Diagnostic boxes remain
+disabled. Record `515` accepts with both review boxes hit: `368` left-box hit
+pixels and `174` right-box hit pixels. The left box hit distances range from
+about `160.3 km` to `225.9 km`; the right box hit distances range from about
+`240.2 km` to `317.9 km`. Primary artifact:
+`tmp/atmosphere/reconciliation/515-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-two-denali-review-boxes-228x128/images/canvas-image.png`.
+
+Record
+`516-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-two-denali-review-boxes-455x256`
+rerenders the same two-box flat/local far-horizon review layout at `256`
+image lines (`455 x 256`). The scene remains flat-earth/local-Sun with the
+same ocean matte ground, `150 m` camera, disabled diagnostic boxes, left
+`6.2 km x 50 km x 100 km` box at `160 km` near/front face and `-35 km`
+lateral offset, and right matching box at `240 km` near/front face and
+`+35 km` lateral offset. Record `516` accepts with both review boxes hit:
+`1350` left-box hit pixels and `624` right-box hit pixels. The left box hit
+distances range from about `160.3 km` to `251.3 km`; the right box hit
+distances range from about `240.2 km` to `331.4 km`. Primary artifact:
+`tmp/atmosphere/reconciliation/516-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-two-denali-review-boxes-455x256/images/canvas-image.png`.
+
+Record
+`517-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-two-denali-review-boxes-180deg-228x128`
+rerenders the same two-box flat/local ocean scene at `128` image lines with
+the local Sun moved to `180` degrees from closest approach. The camera remains
+aimed along the closest-approach scene direction (`look-toward-scene-index 0`)
+so this isolates the Sun phase change from the current object/camera layout.
+The scene seed is `san-jose-180deg-from-closest`, and the endpoint light
+diagnostics report `observerIncidentScale = 0.1292226561015886` and
+`pointLightIntensity = 0.3101343746438126`. Record `517` accepts with both
+review boxes hit: `368` left-box hit pixels and `174` right-box hit pixels,
+matching the `128`-line geometry coverage from record `515`. Primary artifact:
+`tmp/atmosphere/reconciliation/517-m3-cpu-integrated-flat-local-sun-ocean-matte-150m-two-denali-review-boxes-180deg-228x128/images/canvas-image.png`.
+
+Record
+`518-m3-cpu-integrated-flat-local-sun-ocean-matte-500m-two-denali-review-boxes-180deg-228x128`
+rerenders record `517` with the camera elevation raised from `150 m` to
+`500 m`. To preserve the same camera pitch, the look target was raised by the
+same `350 m`, from `250 m` to `600 m`, over the same `800 m` look-at distance.
+The scene seed remains `san-jose-180deg-from-closest`, the camera remains
+aimed along the closest-approach scene direction, and the two Denali-height
+review boxes keep the same front-face distances and lateral offsets. Record
+`518` accepts with both review boxes hit: `367` left-box hit pixels and `173`
+right-box hit pixels. Ground hit distances shift upward with the raised
+camera, from about `566 m-49.6 km` in record `517` to about `1.89 km-165.5 km`
+in record `518`. Primary artifact:
+`tmp/atmosphere/reconciliation/518-m3-cpu-integrated-flat-local-sun-ocean-matte-500m-two-denali-review-boxes-180deg-228x128/images/canvas-image.png`.
+
+Record
+`519-m3-cpu-integrated-flat-local-sun-ocean-matte-500m-two-denali-review-boxes-winter-solstice-2025-180deg-228x128`
+switches the current integrated flat/local review default from the historical
+Step018/summer-derived degree seeds to
+`san-jose-winter-solstice-2025-degree-offsets`. The new current review set uses
+San Jose local noon on `2025-12-21T12:00:00-08:00`; the existing
+annual-tropic-migration model resolves the source subpoint latitude to about
+`23.4995S`. The rendered row uses the `180` degree offset from closest
+approach while keeping the raised `500 m` camera, `600 m` look target, ocean
+matte ground, two Denali-height review boxes, source-scaled endpoint light,
+source-owned shadows, integrated CPU shader path, and local L2 cache binding.
+At this winter-solstice 180-degree state, the resolved source altitude is about
+`14.64 deg`, source azimuth is about `58.11 deg`, and the transport incident
+scale at the observer is about `0.1894`. Record `519` accepts with both review
+boxes hit: `367` left-box pixels and `173` right-box pixels. Primary artifact:
+`tmp/atmosphere/reconciliation/519-m3-cpu-integrated-flat-local-sun-ocean-matte-500m-two-denali-review-boxes-winter-solstice-2025-180deg-228x128/images/canvas-image.png`.
+
+Record
+`520-m3-cpu-integrated-flat-local-sun-ocean-matte-500m-two-denali-review-boxes-winter-solstice-2025-180deg-camera-toward-180-228x128`
+renders the same winter-solstice 2025 two-box ocean-ground scene as record
+`519`, but points the camera toward the recomputed winter `180` degree local
+Sun direction with `look-toward-scene-index 4`. The scene seed remains
+`san-jose-winter-solstice-2025-180deg-from-closest`, using
+`2025-12-21T12:00:00-08:00`, source subpoint latitude about `23.4995S`, source
+altitude about `14.64 deg`, source azimuth about `58.11 deg`, and observer
+transport incident scale about `0.1894`. Record `520` accepts at `228 x 128`
+with local L2 cache binding, source-owned shadows, both review boxes hit
+(`367` left-box pixels and `173` right-box pixels), and the expected warmer
+sunward horizon/box output. Primary artifact:
+`tmp/atmosphere/reconciliation/520-m3-cpu-integrated-flat-local-sun-ocean-matte-500m-two-denali-review-boxes-winter-solstice-2025-180deg-camera-toward-180-228x128/images/canvas-image.png`.
+
+Record
+`521-m3-cpu-integrated-flat-local-sun-ground-many-boxes-winter-solstice-2025-180deg-camera-toward-180-228x128`
+corrects that review back to the normal green ground / many-box fixture rather
+than the ocean matte far-horizon two-box scene. It keeps the winter-solstice
+2025 `180` degree scene seed and points the camera toward the recomputed
+winter `180` source direction. The render uses the default ground display
+RGBA `[86, 105, 66, 255]`, diagnostic boxes enabled, camera-forward review
+boxes enabled for the turned camera, far-horizon review boxes disabled,
+`150 m` camera height, `250 m` look target, source-scaled endpoint light,
+source-owned shadows, integrated CPU shader path, and local L2 cache binding.
+Record `521` accepts at `228 x 128`; five non-ground boxes are hit in frame:
+the near green box, very-far magenta box, and the three sunward
+near/mid/far review boxes. Primary artifact:
+`tmp/atmosphere/reconciliation/521-m3-cpu-integrated-flat-local-sun-ground-many-boxes-winter-solstice-2025-180deg-camera-toward-180-228x128/images/canvas-image.png`.
+
+Future follow-up note: visible Sun disk / direct solar-disc camera radiance is
+recorded for later as `future-004` in the reconciliation gap ledger and in the
+abstraction design's saved-for-later list. The intended direction is a
+source-owned visible-emitter endpoint composed after `evaluate(...)`, not a
+normal Three scene mesh captured as hit color. Distant Sun visibility should
+use angular-radius coverage; local Sun visibility should use source
+ray-sphere intersection; existing scene hit/depth facts should occlude it.
+The expected composition remains `sourceEndpointRadiance * T_view + L_path`.
+Open work includes spectral source-radiance calibration from irradiance and
+solid angle, subpixel coverage for tiny disks, CPU/GPU parity, and display
+policy for saturation/tone mapping.
+
+Record
+`522-m3-cpu-integrated-flat-local-sun-union-glacier-2021-dec14-far-side-orbit-plain-ground-camera-at-sun-228x128`
+adds the requested Union Glacier Camp scene for `2021-12-14`. The constants now
+include two reusable Union Glacier 2021 scene sets: the initially requested
+longitude-0 synchronized solar-noon set, and the rendered
+`union-glacier-camp-2021-dec14-far-side-orbit` set. Record `522` uses the
+far-side set: the local Sun latitude is interpreted as the real-world
+subsolar latitude for `2021-12-14` at longitude-0 solar noon, approximated by
+the current annual-tropic-migration resolver at about `23.3477S`; closest
+approach is aligned for Union Glacier Camp (`79.768036S`, `83.261666W`,
+elevation `700 m`), and the source is placed at the `180` degree far-side
+orbit offset. The
+resolved source subpoint longitude is about `96.7383E`, source altitude about
+`8.72 deg`, source azimuth about `96.74 deg`, observer distance about
+`31,849 km`, and observer incident scale about `0.0618`. The camera points
+toward that source azimuth with pitch derived from the source altitude
+(`150 m` camera, `800 m` look distance, `272.67 m` look-at height). Terrain
+features are disabled: diagnostic boxes, camera-forward boxes, and far-horizon
+review boxes are all off, so only the geometry-owned flat ground is hit.
+Record `522` accepts at `228 x 128` with local L2 cache binding and writes:
+`tmp/atmosphere/reconciliation/522-m3-cpu-integrated-flat-local-sun-union-glacier-2021-dec14-far-side-orbit-plain-ground-camera-at-sun-228x128/images/canvas-image.png`.
+
+Record
+`524-m3-cpu-integrated-flat-local-sun-union-glacier-2021-dec14-far-side-orbit-reference-boxes-accepted-camera-at-sun-228x128`
+adds grounded reference boxes to the same Union Glacier Camp far-side source
+view. Record `523` produced the intended visual but was rejected by the
+diagnostic-box acceptance criterion because the first submission did not enable
+the diagnostic-box flag; record `524` reruns the same camera/source setup with
+diagnostic boxes and camera-forward review boxes enabled. The camera remains
+pointed at the far-side source azimuth with the `150 m` camera, `800 m`
+look distance, and `272.67 m` look-at height derived from the `8.72 deg`
+source altitude. Record `524` accepts at `228 x 128` with local L2 cache
+binding, source-owned shadows, and three visible/reference box hits:
+`local-flat-sunward-near-yellow-box` (`470` pixels,
+about `1.52-1.69 km`), `local-flat-sunward-mid-white-box` (`496` pixels,
+about `3.41-3.82 km`), and `local-flat-sunward-far-orange-box`
+(`188` pixels, about `7.76-8.60 km`). Primary artifact:
+`tmp/atmosphere/reconciliation/524-m3-cpu-integrated-flat-local-sun-union-glacier-2021-dec14-far-side-orbit-reference-boxes-accepted-camera-at-sun-228x128/images/canvas-image.png`.
+
+Record
+`526-m3-cpu-integrated-flat-local-sun-union-glacier-2021-dec14-closest-approach-reference-boxes-current-camera-228x128`
+adds a reusable
+`union-glacier-camp-2021-dec14-closest-approach` scene set and rerenders the
+same Union Glacier reference-box landscape with the source moved from the
+`180` degree far-side offset to the `0` degree closest-approach position.
+The closest source resolves to the same azimuth direction (`96.74 deg`) but
+much higher altitude (`37.58 deg`) and observer incident scale `1.0`. Record
+`525` first pointed the camera directly at that higher source and produced an
+all-sky no-hit frame, so record `526` keeps the current landscape framing from
+record `524` (`150 m` camera, `800 m` look distance, `272.67 m` look-at
+height) while changing only the source scene. Record `526` accepts at
+`228 x 128` with local L2 cache binding, source-owned shadows, and the same
+three reference-box hit counts as record `524`: near `470` pixels, mid `496`
+pixels, and far `188` pixels. Primary artifact:
+`tmp/atmosphere/reconciliation/526-m3-cpu-integrated-flat-local-sun-union-glacier-2021-dec14-closest-approach-reference-boxes-current-camera-228x128/images/canvas-image.png`.
+
+Records `527` through `531` render the requested Union Glacier Camp
+`2021-12-14` degree sequence from `180` down to `0` degrees from closest
+approach, every `45` degrees. They use the new
+`union-glacier-camp-2021-dec14-degree-offsets` scene set, keep the same
+landscape framing as record `526` (`150 m` camera, `800 m` look distance,
+`272.67 m` look-at height, camera aimed toward the closest-approach scene),
+and keep diagnostic boxes, camera-forward review boxes, source-owned shadows,
+the integrated CPU shader path, and local L2 cache binding enabled. Record
+`532-m3-cpu-integrated-flat-local-sun-union-glacier-2021-dec14-reference-boxes-phase-stack-180-to-000-228x128`
+composites the five accepted row images into one labeled vertical stack,
+ordered top-to-bottom `180`, `135`, `90`, `45`, `0` degrees. Primary stack
+artifact:
+`tmp/atmosphere/reconciliation/532-m3-cpu-integrated-flat-local-sun-union-glacier-2021-dec14-reference-boxes-phase-stack-180-to-000-228x128/images/union-glacier-2021-dec14-reference-boxes-phase-stack-180-to-000.png`.
+
+The Union Glacier stack and the recent Denali/ocean/local-flat review scenes
+are user-requested subjective inspection artifacts. They are useful for
+spotting behavior and preserving discussion context, but their specific
+locations, cameras, object layouts, colors, and composites are not design
+fixtures or milestone acceptance gates unless explicitly promoted later.
+
+Endpoint scene lighting policy note: the transport-neutral policy formerly
+named `fixed-review-light-intensity` is now `endpoint-material-shading` and is
+the default in the local-flat runner and light-source abstraction. This policy
+lets Three lighting encode endpoint material color, Lambert shading, and
+shadows without scaling the captured hit color by local Sun incident scale;
+Algorithm32 then applies finite-source and atmospheric transport. The
+`observer-incident-scale` policy remains only as an explicit comparison/review
+mode for source-scaled endpoint lighting and should not be mixed into CPU/GPU
+parity comparisons unless both sides use it deliberately.
+
+Records `550` through `554` rerender the Union Glacier Camp `2021-12-14`
+`180`, `135`, `90`, `45`, and `0` degree CPU rows with
+`endpointSceneLightScalePolicy = endpoint-material-shading`, matching the
+transport-neutral endpoint-light contract used by the GPU review stack. All
+five rows accepted at `228 x 128` with diagnostic boxes, camera-forward review
+boxes, source-owned shadows, the integrated CPU composer shader path, and
+local L2 cache binding. Record
+`555-m4-cpu-integrated-flat-local-sun-union-glacier-2021-dec14-endpoint-material-shading-phase-stack-180-to-000-228x128`
+composites those rows into the corrected CPU stack:
+`tmp/atmosphere/reconciliation/555-m4-cpu-integrated-flat-local-sun-union-glacier-2021-dec14-endpoint-material-shading-phase-stack-180-to-000-228x128/images/union-glacier-2021-dec14-cpu-endpoint-material-shading-phase-stack-180-to-000.png`.
+
+The Denali-sized review box was moved from the camera-forward centerline to a
+`100 km` camera-right lateral offset so it no longer hides between the
+foreground reference boxes. Record `556` preserves the first corrected-CPU
+Denali row before the offset change. Records `557` through `561` render the
+right-offset Denali CPU rows for `180`, `135`, `90`, `45`, and `0` degrees,
+and record
+`562-m4-cpu-union-glacier-2021-dec14-denali-200km-right-offset-phase-stack-180-to-000-228x128`
+writes the CPU stack:
+`tmp/atmosphere/reconciliation/562-m4-cpu-union-glacier-2021-dec14-denali-200km-right-offset-phase-stack-180-to-000-228x128/images/union-glacier-2021-dec14-cpu-denali-200km-right-offset-phase-stack-180-to-000.png`.
+Records `563` through `567` rerender the matching GPU rows with the same
+right-offset Denali scene, and record
+`568-m4-gpu-union-glacier-2021-dec14-denali-200km-right-offset-phase-stack-180-to-000-228x128`
+writes the GPU stack:
+`tmp/atmosphere/reconciliation/568-m4-gpu-union-glacier-2021-dec14-denali-200km-right-offset-phase-stack-180-to-000-228x128/images/union-glacier-2021-dec14-gpu-denali-200km-right-offset-phase-stack-180-to-000.png`.
+Pre-shader scene-color comparison for CPU records `557-561` against GPU
+records `563-567` reports max byte delta `0` and `0 / 29184` differing pixels
+for every phase, so any remaining image differences are shader-output
+differences, not constructed-scene differences.
+
+Record `570-m4-cpu-union-glacier-2021-dec14-180deg-denali-200km-right-offset-no-antialias-nearest-output-228x128`
+adds the first Option 1 silhouette diagnostic. The local-flat runner now
+accepts `--no-antialias`, which passes `antialias: false` to the browser scene
+payload, forces the composer render target to `0` samples, and uses nearest
+filtering for the CPU output texture copy. Record `570` accepted with
+`rendererAntialias = false`, `renderTargetSampleCount = 0`,
+`renderTargetSamples = disabled-single-sample-composer-target`, and
+`cpuOutputTextureFilter = nearest-display-copy`. The result removes the soft
+MSAA/linear-copy component of the bright silhouette fringe, but still leaves a
+hard single-pixel stair-step at some box edges, so AA mismatch is confirmed as
+a contributor rather than the full explanation.
+
+Record
+`571-m4-gpu-union-glacier-2021-dec14-000deg-denali-200km-right-offset-path-only-228x128`
+adds the first GPU-only path-radiance diagnostic. `--endpoint-radiance-scale`
+now controls captured endpoint-color contribution in both assembled GPU shader
+composition and the CPU soft-shader composition path; record `571` renders
+only the GPU backend with `endpointRadianceScale = 0`. Scene hits still
+terminate view rays, but endpoint hit color is multiplied out, so the retained
+image shows the shader's path-radiance contribution over object/ground/sky
+ray lengths. The primary output is:
+`tmp/atmosphere/reconciliation/571-m4-gpu-union-glacier-2021-dec14-000deg-denali-200km-right-offset-path-only-228x128/images/canvas-image.png`.
+
+Record
+`572-m4-gpu-union-glacier-2021-dec14-180deg-denali-200km-right-offset-path-only-228x128`
+adds the matching GPU-only path-radiance diagnostic for the `180` degree
+Union Glacier row. It uses the same right-offset Denali scene, GPU backend,
+source-owned shadows, local L2 cache binding, and `endpointRadianceScale = 0`
+composition behavior as record `571`, but selects scene index `4`
+(`180` degrees from closest approach). The render accepted; scene hits still
+terminate rays while endpoint hit color is removed from the final composition.
+The primary output is:
+`tmp/atmosphere/reconciliation/572-m4-gpu-union-glacier-2021-dec14-180deg-denali-200km-right-offset-path-only-228x128/images/canvas-image.png`.
+
+Endpoint indirect lighting contract update: local-flat box placement can now
+declare participation in a named endpoint indirect
+approximation. The camera-forward review-box generator marks its three
+foreground/reference boxes as participants; the renderer computes a local fill
+anchor from those box placements and passes that packet into
+`LocalSunLightSource.createThreeLightingObjects(...)`. The light source then
+adds a non-shadow-casting PointLight named as a
+`vacuum-endpoint-indirect-approximation`, with intensity derived from the
+transport-neutral endpoint direct-light calibration. This stays outside
+`evaluate(...)` and affects only the
+captured endpoint scene color. Record
+`573-m4-gpu-union-glacier-2021-dec14-180deg-denali-200km-right-offset-endpoint-indirect-fill-smoke-228x128`
+preserves the first implementation attempt, where legacy diagnostic boxes also
+participated and pulled the fill anchor toward the hidden wide diagnostic
+layout. Record
+`574-m4-gpu-union-glacier-2021-dec14-180deg-review-box-cluster-endpoint-indirect-fill-228x128`
+tightens the contract so only the three camera-forward review boxes
+participate, but it accidentally left the antialiasing/MSAA review path on.
+Record
+`575-m4-gpu-union-glacier-2021-dec14-180deg-review-box-cluster-endpoint-indirect-fill-no-antialias-228x128`
+fixes the antialiasing regression but remains visually ineffective because the
+fill is weak and centered inside the cluster; the near review box only reaches
+pre-shader max RGB `[13, 16, 10]`. Record
+`576-m4-gpu-union-glacier-2021-dec14-180deg-review-box-camera-side-endpoint-indirect-fill-no-antialias-228x128`
+proved a camera-side local point fill can move the foreground out of
+silhouette, but it also created a noticeable local lighting patch on the
+ground. Record
+`577-m4-gpu-union-glacier-2021-dec14-180deg-general-ambient-endpoint-fill-r025-no-antialias-228x128`
+therefore supersedes the point-fill approach for now. The endpoint indirect
+approximation is now `general-ambient-fill`: a source-owned scene-wide ambient
+term derived from the transport-neutral endpoint direct-light calibration by
+`--endpoint-ambient-fill-ratio`. Record `577` uses ratio `0.25`, producing fill
+intensity `0.6`, total ambient intensity `0.64`, and direct endpoint light
+intensity `2.4`; render quality still records `rendererAntialias = false`,
+`renderTargetSampleCount = 0`, and `cpuOutputTextureFilter =
+nearest-display-copy`. The near review box pre-shader range becomes min/max
+RGB `[26, 19, 6]` / `[46, 36, 21]`, confirming visible non-silhouette endpoint
+color without a local ground glow patch. Primary output:
+`tmp/atmosphere/reconciliation/577-m4-gpu-union-glacier-2021-dec14-180deg-general-ambient-endpoint-fill-r025-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`578-m4-gpu-union-glacier-2021-dec14-180deg-opposite-directional-endpoint-fill-r025-no-antialias-228x128`
+adds the requested weak directional-fill option. The selectable endpoint fill
+policy now supports `general-ambient-fill` and `opposite-directional-fill`
+through `--endpoint-fill-policy`; both use `--endpoint-ambient-fill-ratio` as
+their transport-neutral endpoint fill ratio. The opposite-directional policy
+adds a non-shadow-casting DirectionalLight from the anti-Sun horizontal
+direction while preserving the Sun altitude magnitude, so the source-owned
+direct light still casts shadows and Algorithm32 remains unchanged. Record
+`578` uses ratio `0.25`, producing directional fill intensity `0.6`; base
+ambient stays `0.04` instead of being raised to `0.64`. Render quality remains
+single-sample (`rendererAntialias = false`, `renderTargetSampleCount = 0`,
+`cpuOutputTextureFilter = nearest-display-copy`). The near review box
+pre-shader range becomes min/max RGB `[12, 10, 2]` / `[44, 35, 10]`, while the
+ground minimum stays near the old silhouette value at `[4, 4, 3]`, avoiding
+the broad ambient ground lift from record `577`. Primary output:
+`tmp/atmosphere/reconciliation/578-m4-gpu-union-glacier-2021-dec14-180deg-opposite-directional-endpoint-fill-r025-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`579-m4-cpu-union-glacier-2021-dec14-180deg-opposite-directional-endpoint-fill-r025-no-antialias-228x128`
+rerenders the same scene and endpoint fill policy through the integrated CPU
+composer shader. It changes only `shaderBackend` from `gpu` to `cpu` relative
+to record `578`, while keeping no-antialias/single-sample rendering,
+source-owned shadows, local L2 cache binding, the right-offset Denali review
+box, and the opposite-directional endpoint fill ratio `0.25`. The record
+accepts with the same hit counts as `578`: `8747` ground pixels, `486` near
+yellow box pixels, `541` mid white box pixels, `210` far orange box pixels,
+and `288` Denali box pixels. Primary output:
+`tmp/atmosphere/reconciliation/579-m4-cpu-union-glacier-2021-dec14-180deg-opposite-directional-endpoint-fill-r025-no-antialias-228x128/images/canvas-image.png`.
+
+Renderer-distance scene-hit capture probe: the local-flat integrated runner
+now accepts `--scene-depth-capture-policy renderer-distance` as an opt-in
+alternative to the default `raycaster` capture. The browser path uses an
+existing hidden `ShaderMaterial` override pass: it renders the same scene and
+camera into an offscreen target, each winning fragment writes packed
+camera-to-fragment distance, and clear/no-fragment pixels remain no-hit. This
+changes only the `sceneDepthBytes` / `sceneHitBytes` source consumed by the
+Algorithm32 composer; scene color still comes from the normal composer
+`RenderPass`, and object-name/count diagnostics still use the existing
+raycaster diagnostic path. Record
+`580-m4-gpu-union-glacier-2021-dec14-180deg-renderer-distance-depth-opposite-fill-no-antialias-228x128`
+rerenders record `578` with this renderer-distance capture policy, no
+antialiasing, source-owned shadows, local L2 cache binding, right-offset
+Denali, and `opposite-directional-fill` ratio `0.25`. It accepts with
+`sceneDepthCapturePolicy = renderer-distance`; shader-input hit pixels drop
+from record `578`'s `10272` to `10081`, consistent with removing some
+raycaster/raster silhouette disagreement. Primary output:
+`tmp/atmosphere/reconciliation/580-m4-gpu-union-glacier-2021-dec14-180deg-renderer-distance-depth-opposite-fill-no-antialias-228x128/images/canvas-image.png`.
+
+Endpoint camera-distance composition option: the integrated CPU/GPU composer
+now accepts `--endpoint-camera-distance-scale-policy reverse-square` with
+`--endpoint-camera-distance-reference-meters`,
+`--endpoint-camera-distance-min-scale`, and
+`--endpoint-camera-distance-max-scale`. This is a POC-only post-transport
+endpoint composition boost:
+`endpointScale = 1 + clamp((hitDistance / referenceDistance)^2, min, max)`.
+It adds brightness to the captured endpoint scene-color term after Algorithm32
+spectral transport; it does not enter `evaluate(...)`, does not change sky path
+radiance, and does not change Three scene materials. When enabled by the
+local-flat runner, endpoint indirect fill is suppressed so this non-directional
+distance proxy does not pair with the current reverse-facing
+`opposite-directional-fill` light. Syntax checks passed for the browser
+composer, runner, local/distant shader contribution factories, and CPU soft
+shader after this wiring.
+
+Record
+`581-m4-gpu-union-glacier-2021-dec14-180deg-renderer-distance-depth-endpoint-distance-scale-no-antialias-228x128`
+rerenders the most recent Union Glacier GPU scene with
+`--endpoint-camera-distance-scale-policy reverse-square`, reference distance
+`200000 m`, min scale `0.05`, max scale `1`, renderer-distance scene-hit
+capture, no antialiasing, source-owned shadows, and the same right-offset
+Denali/review-box layout as record `580`. The runner accepted with
+`effectiveEndpointIndirectFillEnabled = false` and
+`endpointIndirectFillSuppressedByCameraDistanceScale = true`, so the
+reverse-square endpoint composition proxy did not stack with
+`opposite-directional-fill`. Shader-input hit pixels remain `10081`, matching
+record `580`; object hit counts remain `8747` ground, `486` near yellow,
+`541` mid white, `210` far orange, and `288` Denali. Primary output:
+`tmp/atmosphere/reconciliation/581-m4-gpu-union-glacier-2021-dec14-180deg-renderer-distance-depth-endpoint-distance-scale-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`582-m4-gpu-union-glacier-2021-dec14-090deg-renderer-distance-depth-endpoint-distance-scale-no-antialias-228x128`
+renders the same GPU/review layout at `90` degrees from closest approach
+(`sceneIndex = 2`). It keeps renderer-distance hit/depth capture, no
+antialiasing, endpoint camera-distance scale `reverse-square`, reference
+`200000 m`, min `0.05`, max `1`, source-owned shadows, and the same
+right-offset Denali/review-box layout. It accepts with endpoint indirect fill
+suppressed, source altitude `12.006470321633222 deg`, azimuth
+`63.00878956315418 deg`, incident scale `0.11636135496061355`, and the same
+`10081` shader-input hit pixels / object-hit counts as record `581`. Primary
+output:
+`tmp/atmosphere/reconciliation/582-m4-gpu-union-glacier-2021-dec14-090deg-renderer-distance-depth-endpoint-distance-scale-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`583-m4-gpu-union-glacier-2021-dec14-045deg-renderer-distance-depth-endpoint-distance-scale-no-antialias-228x128`
+renders the same GPU/review layout at `45` degrees from closest approach
+(`sceneIndex = 1`). It keeps renderer-distance hit/depth capture, no
+antialiasing, endpoint camera-distance scale `reverse-square`, reference
+`200000 m`, min `0.05`, max `1`, source-owned shadows, and endpoint indirect
+fill suppressed. It accepts with source altitude `19.853746253559972 deg`,
+azimuth `54.93114692079673 deg`, incident scale `0.3101537614110556`, and the
+same `10081` shader-input hit pixels / object-hit counts as records `581` and
+`582`. Primary output:
+`tmp/atmosphere/reconciliation/583-m4-gpu-union-glacier-2021-dec14-045deg-renderer-distance-depth-endpoint-distance-scale-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`584-m4-gpu-san-jose-2025-winter-090deg-looking-180-renderer-distance-depth-endpoint-distance-scale-no-antialias-228x128`
+renders the San Jose winter-solstice review scene with the source at `90`
+degrees from closest approach (`sceneIndex = 2`) while the camera looks toward
+the `180` degree scene direction (`lookTowardSceneIndex = 4`). It keeps the
+current GPU/review setup: renderer-distance hit/depth capture, no antialiasing,
+endpoint camera-distance scale `reverse-square`, reference `200000 m`, min
+`0.05`, max `1`, source-owned shadows, right-offset Denali/review-box layout,
+and endpoint indirect fill suppressed. It accepts with source altitude
+`19.13760122098663 deg`, azimuth `-6.995817502567756 deg`, incident scale
+`0.31848646265063413`, `10319` shader-input hit pixels, and additional visible
+diagnostic boxes because the camera is now aimed away from the active source
+row. Primary output:
+`tmp/atmosphere/reconciliation/584-m4-gpu-san-jose-2025-winter-090deg-looking-180-renderer-distance-depth-endpoint-distance-scale-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`585-m4-gpu-san-jose-2025-winter-000deg-looking-180-renderer-distance-depth-endpoint-distance-scale-no-antialias-228x128`
+renders the same San Jose winter-solstice review framing with the source at
+closest approach (`sceneIndex = 0`) while the camera still looks toward the
+`180` degree scene direction (`lookTowardSceneIndex = 4`). It keeps the same
+GPU renderer-distance/no-antialias reverse-square endpoint-distance setup and
+endpoint indirect fill suppression as record `584`. It accepts with source
+altitude `35.51503446712982 deg`, azimuth `-121.88630000000002 deg`,
+incident scale `1`, `10319` shader-input hit pixels, and the same object-hit
+counts as record `584`. Primary output:
+`tmp/atmosphere/reconciliation/585-m4-gpu-san-jose-2025-winter-000deg-looking-180-renderer-distance-depth-endpoint-distance-scale-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`586-m4-gpu-san-jose-2025-winter-000deg-looking-180-renderer-distance-depth-no-endpoint-distance-scale-no-antialias-228x128`
+rerenders record `585` with `endpointCameraDistanceScale.policy = none`. This
+corrects the too-blue review result from record `585`: the reverse-square
+endpoint distance option had clamped near ground/box endpoint color to its
+minimum `0.05` scale, leaving atmospheric path radiance to dominate nearby
+endpoint pixels. Record `586` keeps closest-approach source, camera looking
+toward `180`, renderer-distance hit/depth capture, no antialiasing,
+source-owned shadows, and the same San Jose review geometry. Endpoint indirect
+fill is active again as `opposite-directional-fill` with intensity `0.6`, and
+the record accepts with the same `10319` shader-input hit pixels and object-hit
+counts as `585`. Treat `586`, not `585`, as the intended closest/San-Jose
+look-180 review artifact unless explicitly testing the endpoint distance scale.
+Primary output:
+`tmp/atmosphere/reconciliation/586-m4-gpu-san-jose-2025-winter-000deg-looking-180-renderer-distance-depth-no-endpoint-distance-scale-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`587-m4-gpu-san-jose-2025-winter-000deg-looking-180-renderer-distance-depth-endpoint-distance-additive-no-antialias-228x128`
+fixes the reverse-square endpoint camera-distance option so it adds brightness
+instead of setting/replacing endpoint brightness. The CPU and GPU composition
+paths now use `1 + clamp((hitDistance / referenceDistance)^2, min, max)` for
+the endpoint multiplier. The record rerenders the same closest/San-Jose
+look-180 setup as `585` with reverse-square enabled, renderer-distance
+hit/depth capture, no antialiasing, source-owned shadows, and endpoint
+indirect fill suppressed. It accepts with the same `10319` shader-input hit
+pixels and object-hit counts as `585`/`586`; generated GLSL contains
+`endpointCameraDistanceBoostScale(...)` and applies the boost as an additive
+factor above the normal endpoint contribution. Primary output:
+`tmp/atmosphere/reconciliation/587-m4-gpu-san-jose-2025-winter-000deg-looking-180-renderer-distance-depth-endpoint-distance-additive-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`588-m4-gpu-san-jose-2025-winter-180deg-looking-180-renderer-distance-depth-endpoint-distance-additive-no-antialias-228x128`
+rerenders the San Jose winter-solstice `180` degree row with both source and
+camera aimed at `san-jose-winter-solstice-2025-180deg-from-closest`
+(`sceneIndex = 4`, `lookTowardSceneIndex = 4`). It keeps renderer-distance
+hit/depth capture, no antialiasing, source-owned shadows, and the corrected
+additive reverse-square endpoint-distance composition option. It accepts with
+source altitude `14.644366689327432 deg`, azimuth `58.11369999999999 deg`,
+incident scale `0.18940463789109677`, endpoint indirect fill suppressed by
+the active endpoint-distance option, and `10319` shader-input hit pixels.
+Primary output:
+`tmp/atmosphere/reconciliation/588-m4-gpu-san-jose-2025-winter-180deg-looking-180-renderer-distance-depth-endpoint-distance-additive-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`589-m4-gpu-san-jose-2025-winter-090deg-looking-180-renderer-distance-depth-endpoint-distance-additive-no-antialias-228x128`
+rerenders the San Jose winter-solstice `90` degree row with the camera still
+aimed at the `180` degree scene direction (`sceneIndex = 2`,
+`lookTowardSceneIndex = 4`). It keeps renderer-distance hit/depth capture, no
+antialiasing, source-owned shadows, and the corrected additive reverse-square
+endpoint-distance composition option. It accepts with source altitude
+`19.13760122098663 deg`, azimuth `-6.995817502567756 deg`, incident scale
+`0.31848646265063413`, endpoint indirect fill suppressed by the active
+endpoint-distance option, and `10319` shader-input hit pixels. Primary output:
+`tmp/atmosphere/reconciliation/589-m4-gpu-san-jose-2025-winter-090deg-looking-180-renderer-distance-depth-endpoint-distance-additive-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`590-m4-gpu-san-jose-2025-winter-090deg-looking-180-renderer-distance-depth-no-endpoint-distance-scale-no-antialias-228x128`
+rerenders record `589` with the new endpoint camera-distance/backlight option
+disabled (`endpointCameraDistanceScale.policy = none`). The older
+`opposite-directional-fill` endpoint fill is active again at ratio `0.25`
+(`intensity = 0.6`), so this record is the comparison artifact for the
+pre-distance-boost lighting path. It accepts with the same `90` degree source,
+camera aimed at `180`, source altitude `19.13760122098663 deg`, azimuth
+`-6.995817502567756 deg`, incident scale `0.31848646265063413`, and `10319`
+shader-input hit pixels. Primary output:
+`tmp/atmosphere/reconciliation/590-m4-gpu-san-jose-2025-winter-090deg-looking-180-renderer-distance-depth-no-endpoint-distance-scale-no-antialias-228x128/images/canvas-image.png`.
+
+The local Sun endpoint lighting ambient floor is now lower: `LocalSunLightSource`
+defaults `request.ambientIntensity` to `0.01` instead of `0.04`. This keeps the
+endpoint scene lighting owned by the light-source abstraction while reducing the
+pre-shader ambient wash that made near-object shadows barely visible.
+
+Record
+`591-m4-gpu-san-jose-2025-winter-090deg-looking-180-renderer-distance-depth-low-ambient-no-endpoint-distance-scale-no-antialias-228x128`
+rerenders record `590` after the ambient-floor reduction. It keeps the `90`
+degree source, camera aimed toward `180`, renderer-distance hit/depth capture,
+no antialiasing, `endpointCameraDistanceScale.policy = none`, and the older
+`opposite-directional-fill` endpoint fill. It accepts with
+`baseAmbientIntensity = 0.01`, `ambientIntensity = 0.01`, endpoint fill
+intensity `0.6`, and `10319` shader-input hit pixels. Primary output:
+`tmp/atmosphere/reconciliation/591-m4-gpu-san-jose-2025-winter-090deg-looking-180-renderer-distance-depth-low-ambient-no-endpoint-distance-scale-no-antialias-228x128/images/canvas-image.png`.
+
+Record
+`592-m4-gpu-san-jose-2025-winter-090deg-looking-180-renderer-distance-depth-low-ambient-no-fill-no-endpoint-distance-scale-no-antialias-228x128`
+rerenders the same `90` degree San Jose comparison with endpoint indirect fill
+disabled. This isolates the source-owned directional shadow light plus the new
+low ambient floor. It accepts with `baseAmbientIntensity = 0.01`,
+`ambientIntensity = 0.01`, `endpointIndirectFill = {"enabled":false,"policy":"none"}`,
+and `10319` shader-input hit pixels. Primary output:
+`tmp/atmosphere/reconciliation/592-m4-gpu-san-jose-2025-winter-090deg-looking-180-renderer-distance-depth-low-ambient-no-fill-no-endpoint-distance-scale-no-antialias-228x128/images/canvas-image.png`.
+
+Records `593` through `597` rerender the Union Glacier Camp `2021-12-14`
+phase rows through the integrated GPU local/flat shader at `456 x 256`. The
+rows use scene set `union-glacier-camp-2021-dec14-degree-offsets`, source
+offsets `180`, `135`, `90`, `45`, and `0` degrees from closest approach,
+camera aimed toward closest approach (`lookTowardSceneIndex = 0`), renderer
+distance hit/depth capture, no antialiasing, source-owned shadows, the
+current low local-Sun ambient floor, the corrected additive reverse-square
+endpoint-distance option, camera-forward reference boxes, and the Denali review
+box. Record
+`598-m4-gpu-union-glacier-2021-dec14-current-lighting-phase-stack-180-to-000-456x256`
+composites the five accepted rows into a `502 x 1280` stack:
+`tmp/atmosphere/reconciliation/598-m4-gpu-union-glacier-2021-dec14-current-lighting-phase-stack-180-to-000-456x256/images/union-glacier-2021-dec14-gpu-current-lighting-phase-stack-180-to-000-456x256.png`.
+
+Records `599` through `603` rerender the same `456 x 256` Union Glacier GPU
+rows with the opposite-direction endpoint backlight active
+(`endpointFillPolicy = opposite-directional-fill`,
+`endpointCameraDistanceScale.policy = none`). This keeps the new low local-Sun
+ambient floor and source-owned shadows, but disables the endpoint-distance
+boost so the backlight is not suppressed. Record
+`604-m4-gpu-union-glacier-2021-dec14-opposite-backlight-phase-stack-180-to-000-456x256`
+composites the five accepted rows into a `502 x 1280` stack:
+`tmp/atmosphere/reconciliation/604-m4-gpu-union-glacier-2021-dec14-opposite-backlight-phase-stack-180-to-000-456x256/images/union-glacier-2021-dec14-gpu-opposite-backlight-phase-stack-180-to-000-456x256.png`.
+
+The local Sun endpoint scene ambient approximation now preserves color before
+the atmosphere shader by scaling the ambient floor by the light reaching the
+observer: `ambientIntensity = baseAmbientIntensity * observerIncidentScale`
+before optional endpoint fill. The default `baseAmbientIntensity` is now
+`1.00`, raised from `0.04` and then `0.20` after the closest-approach Union
+Glacier review still left endpoint boxes subjectively black.
+Record `605` was a transient rejected browser-session closure while testing an
+abandoned source-direction point-fill experiment; records `606` through `610`
+accepted that experiment but it did not materially improve the review image.
+Records `611` through `615` supersede it by rendering the Union Glacier GPU
+rows with the observer-scaled ambient approximation, endpoint indirect fill
+disabled, and endpoint-distance scaling disabled. Record
+`616-m4-gpu-union-glacier-2021-dec14-observer-scaled-ambient-phase-stack-180-to-000-456x256`
+composites the five accepted rows into a `502 x 1280` stack:
+`tmp/atmosphere/reconciliation/616-m4-gpu-union-glacier-2021-dec14-observer-scaled-ambient-phase-stack-180-to-000-456x256/images/union-glacier-2021-dec14-gpu-observer-scaled-ambient-phase-stack-180-to-000-456x256.png`.
+Record
+`617-m4-gpu-union-glacier-2021-dec14-000deg-observer-scaled-ambient-r020-456x256`
+rerenders the closest-approach Union Glacier GPU row with the raised
+observer-scaled ambient default, renderer-distance hit/depth capture, no
+antialiasing, source-owned shadows, endpoint indirect fill disabled, and
+endpoint-distance scaling disabled. It accepts with source altitude
+`37.57684752736655 deg`, azimuth `96.73833400000002 deg`,
+`observerIncidentScale = 1.0000228033251901`, `baseAmbientIntensity = 0.2`,
+`ambientIntensity = 0.20000456066503802`, and `40580` hit pixels. Primary
+output:
+`tmp/atmosphere/reconciliation/617-m4-gpu-union-glacier-2021-dec14-000deg-observer-scaled-ambient-r020-456x256/images/canvas-image.png`.
+Record
+`618-m4-gpu-union-glacier-2021-dec14-000deg-observer-scaled-ambient-r100-456x256`
+rerenders the same closest-approach GPU row with `baseAmbientIntensity = 1.0`.
+It accepts with `observerIncidentScale = 1.0000228033251901`,
+`ambientIntensity = 1.0000228033251901`, and `40580` hit pixels. The
+pre-shader capture now preserves recognizable endpoint colors for the yellow,
+white, and orange review boxes, though the final shader output remains hazy
+and muted by atmospheric composition. Primary output:
+`tmp/atmosphere/reconciliation/618-m4-gpu-union-glacier-2021-dec14-000deg-observer-scaled-ambient-r100-456x256/images/canvas-image.png`.
+Records `620` through `623` render the matching `180`, `135`, `90`, and `45`
+degree GPU rows with the same `baseAmbientIntensity = 1.0` observer-scaled
+ambient setup, renderer-distance hit/depth capture, no antialiasing,
+source-owned shadows, endpoint indirect fill disabled, and endpoint-distance
+scaling disabled. Record
+`624-m4-gpu-union-glacier-2021-dec14-observer-scaled-ambient-r100-phase-stack-180-to-000-456x256`
+composites those four rows plus the accepted `0` degree row from record `618`
+into the requested five-row stack. Primary output:
+`tmp/atmosphere/reconciliation/624-m4-gpu-union-glacier-2021-dec14-observer-scaled-ambient-r100-phase-stack-180-to-000-456x256/images/union-glacier-2021-dec14-gpu-observer-scaled-ambient-r100-phase-stack-180-to-000-456x256.png`.
+Records `625` through `629` rerender the same five GPU phase rows at
+`912 x 512`, preserving the `baseAmbientIntensity = 1.0` observer-scaled
+ambient setup and all other review settings from record `624`. Record
+`630-m4-gpu-union-glacier-2021-dec14-observer-scaled-ambient-r100-phase-stack-180-to-000-912x512`
+composites those rows into the higher-resolution POC review stack
+(`958 x 2560`, including labels). Primary output:
+`tmp/atmosphere/reconciliation/630-m4-gpu-union-glacier-2021-dec14-observer-scaled-ambient-r100-phase-stack-180-to-000-912x512/images/union-glacier-2021-dec14-gpu-observer-scaled-ambient-r100-phase-stack-180-to-000-912x512.png`.
+Records `631` through `635` rerender the same five GPU phase rows with the
+observer/camera elevation lowered from `150 m` to `5 m`, keeping the
+`912 x 512` row size, `baseAmbientIntensity = 1.0`, renderer-distance
+hit/depth capture, no antialiasing, source-owned shadows, endpoint indirect
+fill disabled, and endpoint-distance scaling disabled. Record
+`636-m4-gpu-union-glacier-2021-dec14-observer-scaled-ambient-r100-5m-phase-stack-180-to-000-912x512`
+composites those rows into the low-camera POC review stack (`958 x 2560`,
+including labels). Primary output:
+`tmp/atmosphere/reconciliation/636-m4-gpu-union-glacier-2021-dec14-observer-scaled-ambient-r100-5m-phase-stack-180-to-000-912x512/images/union-glacier-2021-dec14-gpu-observer-scaled-ambient-r100-5m-phase-stack-180-to-000-912x512.png`.
+
+The spherical distant-Sun planet scene runner now has an explicit Union Glacier
+clocked sample mode:
+`--sun-sample union-glacier-2021-dec14-solar-noon-offset
+--sun-clock-offset-degrees N`. The `0` degree row is anchored to real local
+solar noon at Union Glacier Camp on `2021-12-14`; positive degree offsets
+advance local solar time by four minutes per degree. This replaces the earlier
+raw-vector-only spherical comparison attempt, because a raw direction did not
+preserve the clock/date contract needed to compare against the flat/local
+phase rows.
+
+Local Sun synchronization policy note: `real-subsolar-longitude0-noon` is the
+default policy for real-world-correspondence local/flat review scenes unless a
+scene/profile explicitly selects another named policy. Under that policy, the
+finite local Sun latitude is derived from the date's real-world subsolar
+latitude: the latitude where the real Sun is directly overhead at solar noon
+on longitude `0`. The local source clock is synchronized to that date-derived
+longitude-0 noon anchor; closest approach and positive degree offsets are then
+phase/time offsets from that synchronized state. Scene location/date remain
+inputs, while source latitude is derived metadata for scenes selecting this
+policy.
+
+The spherical review scene preset
+`planet-sphere-union-review-shadowed` adds the same review-box family to the
+scaled planet-size spherical-ground scene: near yellow, mid white, far orange,
+and the right-offset Denali-scale orange box. The browser scene object map now
+registers those object names, and the planet box helper accepts scalar or
+`[width,height,depth]` scene-unit sizes so the Denali-scale box can match the
+flat/local review dimensions.
+
+Records `637` and `638` are preserved rejected attempts from missing browser
+scene-object registration/name-table wiring. Record `639` accepted a
+raw-direction `0` degree spherical row but is superseded by the clocked sample
+path. Records `641`, `642`, and `643` are rejected concurrent submissions
+through the single watcher command file; they were rerun sequentially as
+accepted records `645`, `646`, and `647`.
+
+Accepted clock-synced spherical/distant GPU rows are:
+`640` (`0` degree solar-noon row), `645` (`45`), `646` (`90`), `647` (`135`),
+and `644` (`180`). They use `planet-sphere-union-review-shadowed`,
+`912 x 512`, `5 m` observer altitude, `45` degree FOV, solid spherical ground,
+shading and shadows enabled, the integrated GPU distant/spherical shader, and
+the Union Glacier `2021-12-14` real-solar-noon clock anchor. Record
+`648-m4-gpu-spherical-distant-union-review-solar-noon-clock-phase-stack-180-to-000-912x512`
+composites the accepted rows into the requested five-row stack. Primary
+output:
+`tmp/atmosphere/reconciliation/648-m4-gpu-spherical-distant-union-review-solar-noon-clock-phase-stack-180-to-000-912x512/images/union-glacier-2021-dec14-gpu-spherical-distant-solar-noon-clock-phase-stack-180-to-000-912x512.png`.
+
+The distant/spherical endpoint scene lighting no longer applies the POC
+ambient compensation used in record `648`. `PLANET_SCENE_AMBIENT_LIGHT_INTENSITY`
+is now `0`, the distant-Sun scene object installs only the directional light
+and its target, and `planetSceneEndpointLightFactor(...)` normalizes against
+the directional light only. This keeps directional shading/shadows while
+removing the ambient wash from distant-Sun spherical review captures.
+
+Records `649` through `653` rerender the same clock-synced Union Glacier
+spherical/distant GPU rows with no distant ambient compensation. Record `654`
+is a rejected stack attempt caused by an overlong output path failing before
+the `images` output could be written. Record
+`655-m4-gpu-spherical-distant-no-ambient-stack-912x512` uses the accepted rows
+and a shorter output path to write the current five-row stack. Primary output:
+`tmp/atmosphere/reconciliation/655-m4-gpu-spherical-distant-no-ambient-stack-912x512/images/union-glacier-spherical-distant-no-ambient-stack-912x512.png`.
+
+The spherical review scene set now also includes
+`planet-sphere-union-review-unlit`, which uses the same Union Glacier review
+boxes but omits the distant-Sun light object, uses
+`lightingPolicy = unlit-endpoint-color`, and disables shadows. Records `656`
+through `660` rerender the clock-synced spherical/distant GPU rows against
+that unlit endpoint scene. Record
+`661-m4-gpu-spherical-distant-unlit-stack-912x512` composites them into the
+current no-shading/no-shadow comparison stack. Primary output:
+`tmp/atmosphere/reconciliation/661-m4-gpu-spherical-distant-unlit-stack-912x512/images/union-glacier-spherical-distant-unlit-stack-912x512.png`.
+The comparison shows the spherical/distant washout is not only the Three
+ambient/directional endpoint scene lighting; even with MeshBasic/raw endpoint
+colors and no scene shadows, the final shader-composed result remains heavily
+brightened in most rows.
+
+Record
+`662-m4-gpu-spherical-distant-unlit-endpoint-scale-1-000deg-5m-912x512`
+rerenders the unlit `0` degree row with `endpointRadianceScale = 1` instead
+of the spherical default `5200`. This confirms the reverse-square/backlight
+distance boost is not the active washout source: the shader still compiles the
+generic `endpointCameraDistanceBoostScale(...)` helper, but the runtime policy
+is `none`, making that boost `0` and the endpoint distance multiplier `1`.
+The active whitening factor is the final composition term
+`endpointLinearSrgb * transmittanceRgb * uEndpointRadianceScale`, where
+`uEndpointRadianceScale` was still `5200` for records `648`, `649`-`653`, and
+`656`-`660`. Primary output:
+`tmp/atmosphere/reconciliation/662-m4-gpu-spherical-distant-unlit-endpoint-scale-1-000deg-5m-912x512/images/canvas-image.png`.
+
+The Union Glacier spherical review presets now include a close single-story
+building reference box named `union-review-close-single-story-building-box`.
+It is currently a blue field-building/module reference approximately
+`14 m x 6 m x 10 m`, centered at scene coordinates `[-0.012, -0.03]` km,
+placing it about `30 m` from the camera and left of center. This replaces the
+earlier long-building interpretation after the visual reference image showed a
+closer blue camp module. It is included in both
+`planet-sphere-union-review-shadowed`
+and `planet-sphere-union-review-unlit`, and the browser scene-object registry
+now registers that object name. Record
+`663-m4-gpu-spherical-distant-unlit-close-building-scale-1-000deg-5m-912x512`
+renders the earlier `0.5 km` placement. Record
+`664-m4-gpu-spherical-distant-unlit-close-building-10m-scale-1-000deg-5m-912x512`
+is preserved as a rejected visual attempt: moving the same building to about
+`10 m` made it fill/occlude the frame and broke the expected ground/box hit
+criteria. Record
+`665-m4-gpu-spherical-distant-unlit-close-building-100m-scale-1-000deg-5m-912x512`
+renders the intermediate `100 m` placement and accepts. Record
+`666-m4-gpu-spherical-distant-unlit-blue-cabin-30m-scale-1-000deg-5m-912x512`
+renders the right-of-center blue module placement. It is visually useful but rejected
+by the legacy all-diagnostic-box criteria because the close cabin occludes the
+far-right Denali-scale object; the browser job, canvas, ground, cabin, near
+yellow, mid white, and far orange hits all rendered. Record
+`667-m4-gpu-spherical-distant-unlit-blue-cabin-left-30m-scale-1-000deg-5m-912x512`
+shifts the blue module to the left while keeping the same scale and distance;
+it accepts with ground, cabin, near yellow, mid white, far orange, and
+Denali-scale hits all present. Primary current output:
+`tmp/atmosphere/reconciliation/667-m4-gpu-spherical-distant-unlit-blue-cabin-left-30m-scale-1-000deg-5m-912x512/images/canvas-image.png`.
+Record
+`668-m4-gpu-spherical-distant-shadowed-blue-cabin-left-30m-scale-1-000deg-5m-912x512`
+rerenders that same left-shifted cabin scene with distant-Sun endpoint
+directional lighting and raycast shadows enabled; it accepts with the same
+object hit counts as record `667`. Primary shadowed output:
+`tmp/atmosphere/reconciliation/668-m4-gpu-spherical-distant-shadowed-blue-cabin-left-30m-scale-1-000deg-5m-912x512/images/canvas-image.png`.
+Record
+`669-m4-gpu-spherical-distant-shadowed-blue-cabin-left-fill-r025-30m-scale-1-000deg-5m-912x512`
+supersedes `668` for shadowed review after adding a distant-Sun endpoint
+material-fill `AmbientLight` at `25%` of the directional key light. This is a
+pre-shader material color preservation step only: it keeps shadowed surfaces
+from collapsing to black before Algorithm32 composes endpoint color after
+transport. The record accepts with the same object hit counts as `667` and
+`668`. Primary current shadowed output:
+`tmp/atmosphere/reconciliation/669-m4-gpu-spherical-distant-shadowed-blue-cabin-left-fill-r025-30m-scale-1-000deg-5m-912x512/images/canvas-image.png`.
+Records `670` through `674` diagnose why that shadowed review still looked
+flat. The shadow frame was incorrectly derived from every object spec in the
+shared table, including inactive legacy boxes, and the Denali-scale reference
+was also too large/far to share one useful shadow-map frame with the close
+module. The browser scene now sizes the distant-Sun shadow frame from active
+scene objects only, and the Denali-scale reference remains visible and
+raycastable outside the camera-local shadow frame. The endpoint material fill
+is reduced to `10%` of the directional
+key light to preserve color without flattening shading. Record
+`673-m4-gpu-spherical-distant-shadowed-blue-cabin-left-active-shadow-frame-fill-r010-45deg-5m-912x512`
+is the readable side-light control with visible diagonal ground shadowing.
+Record
+`674-m4-gpu-spherical-distant-shadowed-blue-cabin-left-active-shadow-frame-fill-r010-000deg-5m-912x512`
+rerenders the original `0` degree view; because the camera is pointed almost
+toward the Sun, shadows project mostly in screen depth and read as a broad
+foreground band rather than long sideways shadows. Primary current shadowed
+output:
+`tmp/atmosphere/reconciliation/674-m4-gpu-spherical-distant-shadowed-blue-cabin-left-active-shadow-frame-fill-r010-000deg-5m-912x512/images/canvas-image.png`.
+Readable `45` degree shadow-control output:
+`tmp/atmosphere/reconciliation/673-m4-gpu-spherical-distant-shadowed-blue-cabin-left-active-shadow-frame-fill-r010-45deg-5m-912x512/images/canvas-image.png`.
+Follow-up implementation replaces the temporary Denali-specific exclusion
+marker with a per-box `shadowRegion` option. The close cabin, near yellow,
+mid white, and far orange review boxes are assigned `camera-local`; the
+Denali-scale reference is assigned `distant-reference`. The current POC uses
+the `camera-local` region to size the single high-detail review shadow frame,
+while all objects remain visible and raycastable. Record
+`675-m4-gpu-spherical-distant-shadowed-blue-cabin-left-shadow-region-r010-000deg-5m-912x512`
+rerenders the original `0` degree view through that per-box `shadowRegion`
+implementation and accepts with the same visible/raycast hit set. Primary
+current shadow-region output:
+`tmp/atmosphere/reconciliation/675-m4-gpu-spherical-distant-shadowed-blue-cabin-left-shadow-region-r010-000deg-5m-912x512/images/canvas-image.png`.
+Record
+`676-m4-gpu-spherical-distant-shadowed-blue-cabin-left-shadow-region-r025-000deg-5m-912x512`
+restores the `25%` endpoint material fill from record `671` while keeping the
+per-box `shadowRegion` implementation. Record
+`677-m4-gpu-spherical-distant-shadowed-blue-cabin-left-shadow-region-r025-45deg-5m-912x512`
+is the apples-to-apples successor to `671`: same `45` degree Sun offset and
+`25%` material fill, but with the new `shadowRegion` box option. Primary
+current color-preserving shadow-region output:
+`tmp/atmosphere/reconciliation/677-m4-gpu-spherical-distant-shadowed-blue-cabin-left-shadow-region-r025-45deg-5m-912x512/images/canvas-image.png`.
+Records
+`678-m4-gpu-spherical-distant-shadowed-blue-cabin-left-shadow-region-r025-090deg-5m-912x512`
+and
+`679-m4-gpu-spherical-distant-shadowed-blue-cabin-left-shadow-region-r025-135deg-5m-912x512`
+rerender the same scene with later Union Glacier solar-noon clock offsets to
+avoid the awkward camera-facing `0` degree Sun placement. Both keep identical
+object hit coverage. The `90` degree row has Sun altitude/azimuth
+`22.890431330327957 / 265.6291059864785`; the `135` degree row has
+`15.87812592663214 / 222.4769102423786`. The current preferred composition is
+the `135` degree row because it keeps endpoint color while making object faces
+and ground shadow direction read more clearly:
+`tmp/atmosphere/reconciliation/679-m4-gpu-spherical-distant-shadowed-blue-cabin-left-shadow-region-r025-135deg-5m-912x512/images/canvas-image.png`.
+Record
+`680-m4-gpu-spherical-distant-shadowed-blue-cabin-left-mid-distance-cyan-shadow-region-r025-135deg-5m-912x512`
+is preserved as a rejected wiring attempt: the submitter-side scene definition
+included a new Union cyan review box, but the browser-side scene object
+renderer map did not yet register that object name. Record
+`681-m4-gpu-spherical-distant-shadowed-blue-cabin-left-distant-cyan-r025-135deg-5m-912x512`
+accepted after registering the object, but its `60 km` cyan reference sat too
+close behind the white box to read cleanly. Record
+`682-m4-gpu-spherical-distant-shadowed-blue-cabin-left-distant-cyan-right-r025-135deg-5m-912x512`
+is the current preferred spherical/distant Union review image: it adds
+`union-review-distant-cyan-box`, a `6 km x 5 km x 6 km` cyan reference centered
+at `[18, -60]` scene km with `shadowRegion = distant-reference`. The accepted
+render keeps the `135` degree Sun offset and `25%` endpoint material fill,
+reports `3978` hit pixels for the distant cyan box, and provides a separate
+hazy reference behind the nearer yellow/white boxes:
+`tmp/atmosphere/reconciliation/682-m4-gpu-spherical-distant-shadowed-blue-cabin-left-distant-cyan-right-r025-135deg-5m-912x512/images/canvas-image.png`.
+Records `683`, `684`, `685`, and `686` render the matching `180`, `90`, `45`,
+and `0` degree rows for that same scene. Together with record `682` for
+`135` degrees, they preserve the clock-sync contract:
+`--sun-sample union-glacier-2021-dec14-solar-noon-offset`, where the `0`
+degree row is real local solar noon at Union Glacier on `2021-12-14` and the
+positive degree offsets advance the clock by four minutes per degree. Record
+`687-m4-gpu-spherical-distant-union-review-distant-cyan-clock-synced-phase-stack-180-to-000-912x512`
+stacks those five accepted GPU rows in `180, 135, 90, 45, 0` order. Primary
+current full stack:
+`tmp/atmosphere/reconciliation/687-m4-gpu-spherical-distant-union-review-distant-cyan-clock-synced-phase-stack-180-to-000-912x512/images/union-glacier-2021-dec14-gpu-spherical-distant-distant-cyan-clock-synced-stack-180-to-000-912x512.png`.
+Matching `0` degree shadow-region output:
+`tmp/atmosphere/reconciliation/676-m4-gpu-spherical-distant-shadowed-blue-cabin-left-shadow-region-r025-000deg-5m-912x512/images/canvas-image.png`.
+Earlier right-of-center `30 m` output:
+`tmp/atmosphere/reconciliation/666-m4-gpu-spherical-distant-unlit-blue-cabin-30m-scale-1-000deg-5m-912x512/images/canvas-image.png`.
+Earlier `100 m` output:
+`tmp/atmosphere/reconciliation/665-m4-gpu-spherical-distant-unlit-close-building-100m-scale-1-000deg-5m-912x512/images/canvas-image.png`.
+Earlier `0.5 km` output:
+`tmp/atmosphere/reconciliation/663-m4-gpu-spherical-distant-unlit-close-building-scale-1-000deg-5m-912x512/images/canvas-image.png`.

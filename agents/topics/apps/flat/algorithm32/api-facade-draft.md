@@ -83,12 +83,11 @@ and disposal scope. The
 builder constructs a shader binder that applies and updates the required
 uniforms, samplers, textures, defines, display-conversion resources,
 frame/config values, and runtime resources on the Three shader/pass objects.
-The binder's output is live applied runtime state plus binding diagnostics or
-update status, not another public data model. Then the facade installs the
-resulting composer pass and returns a
-handle for config updates, scene/camera replacement, debug views, diagnostics,
-and disposal. The handle has no normal `render()` method because the composer
-owns per-frame invocation.
+The binder's output is live applied runtime state plus binding/update status,
+not another public data model. Then the facade installs the resulting composer
+pass and returns a handle for config updates, scene/camera replacement, debug
+views, future diagnostics, and disposal. The handle has no normal `render()`
+method because the composer owns per-frame invocation.
 
 When configuration changes, the caller replaces the facade configuration and
 lets the installed shader handle refresh resources:
@@ -145,6 +144,9 @@ rebuild textures or upload GPU resources by itself.
 Normal runtime consumers should usually call `await handle.setConfig(config)`
 on the shader handle instead. That combines facade config replacement with the
 resource refresh required by the installed runtime pass.
+Config replacement is a fail-loud surface: invalid configuration or failed
+resource refresh should throw or reject rather than leave partially applied
+state.
 
 ### `setupShader`
 
@@ -155,7 +157,7 @@ binding facts to the built Three shader/pass objects, installs the built pass
 into the requested runtime location, and returns a handle that owns
 Algorithm32-specific render targets, depth texture, `ShaderMaterial`,
 fullscreen pass, uniforms, texture binding, resource validation, render
-sequencing, resize, diagnostics, and disposal.
+sequencing, resize, future diagnostics, and disposal.
 
 This is the normal product path for app rendering. It exists so the caller
 does not need to make Algorithm32-specific decisions about shader material
@@ -166,6 +168,9 @@ or disposal order.
 `setupShader` is awaited. It may validate, build, load, bind, or upload the
 resources required by the selected runtime shader mode. It must not leave
 long-running work to be discovered by the first frame render.
+Setup is a fail-loud surface: invalid runtime attachment, unsupported required
+capabilities, or failed resource build/bind should reject before installing a
+partially usable pass.
 
 ### `evaluate`
 
@@ -174,22 +179,31 @@ Sun, atmosphere composition, geometry, and execution configuration plus a
 single `EvaluationRequest`. The returned transport output is spectral or
 spectral-group information, not display-converted RGB.
 
-This is for validation, tools, diagnostics, offline probes, and tests. It is
+This is for validation, tools, offline probes, and tests. It is
 not the normal app renderer path and it should not require callers to
 understand internal shader resource build state.
 
 ### `getDiagnostics`
 
-Returns current facade diagnostics such as config version, active descriptors,
-resource status, runtime capability status reported by adapters, selected
-debug view, unsupported feature combinations, and recent validation failures.
-It must not expose private cache packing internals except through public
-descriptor types.
+Deferred diagnostic surface. The method name may remain reserved by the
+facade draft, but first promotion should not design or implement a stable
+public diagnostics schema. Later diagnostics may include config version,
+active descriptors, resource status, runtime capability status reported by
+adapters, selected debug view, unsupported feature combinations, and recent
+validation failures. They must not expose private cache packing internals
+except through public descriptor types.
 
 Validation is automatic in `constructor`, `setConfig`, `setupShader`,
 `handle.setConfig`, and `evaluate`. Failures should throw or reject with
-structured Algorithm32 errors. Explicit validation/preflight helpers may exist
-as dev/test tooling, but they are not part of the primary app-facing facade.
+basic fail-loud errors in the first slice; structured Algorithm32 error
+taxonomy is deferred with diagnostics. Explicit validation/preflight helpers
+may exist as dev/test tooling, but they are not part of the primary app-facing
+facade.
+
+Once setup has succeeded and the runtime render path is live, frame-time
+failures should be logged and the pass should continue with the last valid
+state, no-op, or fallback path when possible. Runtime logging is an operational
+policy, not the deferred public diagnostics schema.
 
 ### `dispose`
 
@@ -289,6 +303,7 @@ export interface Algorithm32ThreeShaderHandle {
   setCamera(camera: THREE.Camera): void;
   setDebugView(debugView: ShaderDebugView): void;
 
+  // Deferred reserved surface.
   getDiagnostics(): ShaderDiagnostics;
   dispose(): void;
 }
@@ -296,10 +311,14 @@ export interface Algorithm32ThreeShaderHandle {
 
 The handle is for lifecycle and state updates, not per-frame rendering. The
 composer calls the installed Algorithm32 pass during `composer.render()`.
+The handle-level diagnostics method is reserved with the facade diagnostics
+surface and is not part of the first implementation slice.
 
 `setConfig` is the normal runtime config-update method for the handle. It
 replaces the facade configuration and performs any required resource
 validation, build, bind, or upload before the next frame renders.
+Because it is awaited configuration/setup work, `setConfig` rejects on invalid
+or failed updates rather than applying partial runtime state.
 
 `setDisplayConversion` updates the external display-conversion descriptor used
 by the installed runtime shader handle. It does not replace Algorithm32

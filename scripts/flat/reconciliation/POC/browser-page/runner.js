@@ -7,6 +7,11 @@ import {
     benchmarkAlgorithm32ComposerScene,
     renderAlgorithm32ComposerScene,
 } from './algorithm32-composer-passes.js';
+import {
+    CANONICAL_SPECTRAL_CHANNELS,
+} from '/scripts/flat/reconciliation/POC/src/constants/consts.js';
+import FlatEarthGeometry from '/scripts/flat/reconciliation/POC/src/geometry/FlatEarthGeometry.js';
+import LocalSunLightSource from '/scripts/flat/reconciliation/POC/src/light/LocalSunLightSource.js';
 
 (function installReconciliationShaderRunner() {
     const PLANET_SCENE_DISPLAY_RGBA = Object.freeze({
@@ -16,8 +21,10 @@ import {
     });
     const PLANET_GROUND_SPHERE_WIDTH_SEGMENTS = 512;
     const PLANET_GROUND_SPHERE_HEIGHT_SEGMENTS = 256;
-    const PLANET_SCENE_AMBIENT_LIGHT_INTENSITY = 1.1;
     const PLANET_SCENE_DIRECTIONAL_LIGHT_INTENSITY = 4.0;
+    const PLANET_SCENE_AMBIENT_TO_DIRECTIONAL_RATIO = 0.25;
+    const PLANET_SCENE_AMBIENT_LIGHT_INTENSITY =
+        PLANET_SCENE_DIRECTIONAL_LIGHT_INTENSITY * PLANET_SCENE_AMBIENT_TO_DIRECTIONAL_RATIO;
     const PLANET_SCENE_OBJECT_NAMES = Object.freeze({
         distantSunLight: 'distant-sun-light',
         nearRedBox: 'near-red-box',
@@ -29,6 +36,12 @@ import {
         farGreenBox: 'far-green-box',
         veryFarMagentaBox: 'very-far-magenta-box',
         veryFarGreenBox: 'very-far-green-box',
+        unionNearYellowBox: 'union-review-near-yellow-box',
+        unionMidWhiteBox: 'union-review-mid-white-box',
+        unionFarOrangeBox: 'union-review-far-orange-box',
+        unionDistantCyanBox: 'union-review-distant-cyan-box',
+        unionDenaliOrangeBox: 'union-review-denali-200km-orange-box',
+        unionCloseSingleStoryBuildingBox: 'union-review-close-single-story-building-box',
     });
     const PLANET_SPHERE_SCENE_OBJECT_SPECS = Object.freeze({
         [PLANET_SCENE_OBJECT_NAMES.nearRedBox]: Object.freeze({
@@ -123,6 +136,10 @@ import {
                 ? runBrowserPlanetSphereScene(gl, canvas, command, diagnostics, startedAt)
             : command.type === 'shader-quality-performance-benchmark'
                 ? runShaderQualityPerformanceBenchmark(gl, canvas, command, diagnostics, startedAt)
+            : command.type === 'local-cache-texture-lookup-smoke'
+                ? runLocalCacheTextureLookupSmoke(gl, canvas, command, diagnostics, startedAt)
+            : command.type === 'local-flat-geometry-selected-ray-parity'
+                ? runLocalFlatGeometrySelectedRayParity(gl, canvas, command, diagnostics, startedAt)
             : command.type === 'assembled-objective-scene-comparison'
                 ? runAssembledObjectiveSceneComparison(gl, canvas, command, diagnostics, startedAt)
                 : command.type === 'assembled-distant-spherical-smoke'
@@ -402,6 +419,275 @@ import {
         };
     }
 
+    function runLocalCacheTextureLookupSmoke(gl, canvas, command, diagnostics, startedAt) {
+        const payload = command.payload && typeof command.payload === 'object'
+            ? command.payload
+            : {};
+        const fragmentSource = typeof payload.fragmentShaderSource === 'string'
+            ? payload.fragmentShaderSource
+            : '';
+        const viewportPixels = Array.isArray(payload.viewportPixels)
+            ? payload.viewportPixels
+            : [16, 16];
+        resizeCanvas(canvas, viewportPixels);
+        const shaderProgram = compileProgram(gl, {
+            vertexSource: fullScreenVertexSource(),
+            fragmentSource,
+        });
+
+        if (shaderProgram.status === 'accepted') {
+            bindObjectiveSceneResources(gl, shaderProgram.program, canvas, payload);
+            drawSmokeTriangle(gl, shaderProgram.program);
+        }
+
+        const selectedPixels = shaderProgram.status === 'accepted'
+            ? readPayloadSelectedPixels(gl, canvas, payload.selectedPixels)
+            : [];
+        const imageDataUrl = shaderProgram.status === 'accepted'
+            ? canvas.toDataURL('image/png')
+            : null;
+        const expectedTexture = payload.expectedTexture && typeof payload.expectedTexture === 'object'
+            ? payload.expectedTexture
+            : {};
+        const expectedReadbackRgba = Array.isArray(payload.expectedReadbackRgba)
+            ? payload.expectedReadbackRgba
+            : null;
+        const readbackToleranceBytes = Number.isFinite(payload.expectedReadbackToleranceBytes)
+            ? Math.max(0, payload.expectedReadbackToleranceBytes)
+            : 2;
+        const criteriaResults = [
+            criterion('webgl2-context-created', diagnostics.webglVersion.includes('WebGL 2.0'), 'WebGL2 diagnostic version string'),
+            criterion('objective-scene-id-present', typeof payload.sceneId === 'string' && payload.sceneId.length > 0, 'scene descriptor id'),
+            criterion('local-cache-fragment-source-present',
+                fragmentSource.includes('readLocalIncidentRadianceTexture')
+                    && fragmentSource.includes('zSpectralGroupDepthIndex')
+                    && fragmentSource.includes('LOCAL_CACHE_LOOKUP_DIAGNOSTIC_ENABLED = true'),
+                'assembled local/flat cache lookup fragment source'),
+            criterion('assembled-shader-compile-link-accepted', shaderProgram.status === 'accepted', 'compile and link accepted'),
+            criterion('local-cache-payload-uploadable',
+                hasIncidentRadianceTexturePayload(payload.incidentRadianceTexture),
+                'packed local incident-radiance texture payload'),
+            criterion('local-cache-payload-dimensions-match',
+                payload.incidentRadianceTexture?.textureId === expectedTexture.textureId
+                    && payload.incidentRadianceTexture?.width === expectedTexture.width
+                    && payload.incidentRadianceTexture?.height === expectedTexture.height
+                    && payload.incidentRadianceTexture?.depth === expectedTexture.depth
+                    && Array.isArray(payload.incidentRadianceTexture?.rgbaFloat32)
+                    && payload.incidentRadianceTexture.rgbaFloat32.length === expectedTexture.uploadValueCount,
+                'local texture dimensions match descriptor handoff'),
+            criterion('selected-pixel-readback-present',
+                selectedPixels.length === expectedSelectedPixelCount(payload.selectedPixels),
+                'payload selected pixel readbacks'),
+            criterion('local-cache-selected-readback-matches-expected-texel',
+                expectedReadbackRgba
+                    && selectedPixels.length > 0
+                    && selectedPixels.every((pixel) =>
+                        rgbaWithinTolerance(pixel.readbackRgba, expectedReadbackRgba, readbackToleranceBytes)),
+                'diagnostic output matches expected packed local-cache texel'),
+            criterion('selected-pixel-visible-output-present', selectedPixels.some(hasVisibleRgb), 'at least one selected pixel has non-black RGB'),
+            criterion('png-data-url-present', typeof imageDataUrl === 'string' && imageDataUrl.startsWith('data:image/png;base64,'), 'PNG data URL'),
+        ];
+        const accepted = criteriaResults.every((entry) => entry.status === 'pass');
+
+        return {
+            kind: 'algorithm32-reconciliation-browser-result',
+            status: accepted ? 'accepted' : 'rejected',
+            command,
+            diagnostics: {
+                status: accepted ? 'accepted' : 'rejected',
+                browser: diagnostics,
+                shader: shaderProgram,
+                scene: {
+                    sceneId: payload.sceneId ?? null,
+                    viewportPixels: [canvas.width, canvas.height],
+                    selectedPixelCount: selectedPixels.length,
+                    comparisonMode: 'local-cache-texture-lookup-smoke',
+                },
+                canvas: {
+                    width: canvas.width,
+                    height: canvas.height,
+                    imageDataUrlKind: imageDataUrl ? 'image/png' : null,
+                },
+                bindings: {
+                    kind: 'local-cache-texture-lookup-bindings',
+                    sceneColorTexture: payload.sceneColorTextureKind ?? '2d-gradient-rgba8',
+                    sceneDepthTexture: payload.sceneDepthTextureKind ?? '2d-constant-rgba8',
+                    sceneHitTexture: payload.sceneHitTextureKind ?? '2d-constant-mask-rgba8',
+                    incidentRadianceTexture: summarizeIncidentRadianceTexture(payload.incidentRadianceTexture),
+                    expectedTexture,
+                    expectedReadbackRgba,
+                    readbackToleranceBytes,
+                },
+            },
+            selectedPixels,
+            criteriaResults,
+            imageDataUrl,
+            timings: timing(startedAt),
+        };
+    }
+
+    function runLocalFlatGeometrySelectedRayParity(gl, canvas, command, diagnostics, startedAt) {
+        const payload = command.payload && typeof command.payload === 'object'
+            ? command.payload
+            : {};
+        const viewportPixels = Array.isArray(payload.viewportPixels)
+            ? payload.viewportPixels
+            : [16, 16];
+        const diagnosticRuns = Array.isArray(payload.diagnosticRuns)
+            ? payload.diagnosticRuns
+            : [];
+        const readbackToleranceBytes = Number.isFinite(payload.expectedReadbackToleranceBytes)
+            ? Math.max(0, payload.expectedReadbackToleranceBytes)
+            : 2;
+
+        resizeCanvas(canvas, viewportPixels);
+
+        const runResults = [];
+        const selectedPixels = [];
+        const criteriaResults = [
+            criterion('webgl2-context-created', diagnostics.webglVersion.includes('WebGL 2.0'), 'WebGL2 diagnostic version string'),
+            criterion('objective-scene-id-present', typeof payload.sceneId === 'string' && payload.sceneId.length > 0, 'scene descriptor id'),
+            criterion('diagnostic-run-list-present', diagnosticRuns.length > 0, 'one or more geometry diagnostic runs'),
+            criterion('local-cache-payload-uploadable',
+                hasIncidentRadianceTexturePayload(payload.incidentRadianceTexture),
+                'packed local incident-radiance texture payload'),
+            criterion('camera-matrix-bindings-present',
+                hasMatrix16(payload.inverseProjectionMatrix) && hasMatrix16(payload.inverseViewMatrix),
+                'camera inverse projection/view matrices'),
+        ];
+        let imageDataUrl = null;
+
+        for (const run of diagnosticRuns) {
+            const runId = typeof run.runId === 'string' && run.runId.length > 0
+                ? run.runId
+                : `diagnostic-run-${runResults.length}`;
+            const fragmentSource = typeof run.fragmentShaderSource === 'string'
+                ? run.fragmentShaderSource
+                : '';
+            const shaderProgram = compileProgram(gl, {
+                vertexSource: fullScreenVertexSource(),
+                fragmentSource,
+            });
+            const runPayload = {
+                ...payload,
+                ...run,
+                selectedPixels: Array.isArray(run.selectedPixels) ? run.selectedPixels : payload.selectedPixels,
+                sceneDepthTexture: run.sceneDepthTexture ?? payload.sceneDepthTexture,
+                sceneHitTexture: run.sceneHitTexture ?? payload.sceneHitTexture,
+                sceneColorTexture: run.sceneColorTexture ?? payload.sceneColorTexture,
+                incidentRadianceTexture: run.incidentRadianceTexture ?? payload.incidentRadianceTexture,
+            };
+
+            if (shaderProgram.status === 'accepted') {
+                bindObjectiveSceneResources(gl, shaderProgram.program, canvas, runPayload);
+                drawSmokeTriangle(gl, shaderProgram.program);
+            }
+
+            const runSelectedPixels = shaderProgram.status === 'accepted'
+                ? readPayloadSelectedPixels(gl, canvas, runPayload.selectedPixels)
+                : [];
+            const runSelectedWithExpectations = runSelectedPixels.map((pixel) => {
+                const expectedReadbackRgba = expectedDiagnosticReadback(run, pixel);
+                const readbackDelta = expectedReadbackRgba
+                    ? pixel.readbackRgba.map((value, index) => value - expectedReadbackRgba[index])
+                    : null;
+
+                return {
+                    ...pixel,
+                    runId,
+                    diagnosticMode: run.diagnosticMode ?? null,
+                    expectedReadbackRgba,
+                    readbackDelta,
+                };
+            });
+            const runReadbacksMatch = runSelectedWithExpectations.length === expectedSelectedPixelCount(runPayload.selectedPixels)
+                && runSelectedWithExpectations.every((pixel) =>
+                    pixel.expectedReadbackRgba
+                    && rgbaWithinTolerance(pixel.readbackRgba, pixel.expectedReadbackRgba, readbackToleranceBytes));
+
+            selectedPixels.push(...runSelectedWithExpectations);
+            runResults.push({
+                runId,
+                diagnosticMode: run.diagnosticMode ?? null,
+                sourceHash: run.sourceHash ?? null,
+                shader: shaderProgram,
+                selectedPixelCount: runSelectedWithExpectations.length,
+                readbacksMatch: runReadbacksMatch,
+            });
+            criteriaResults.push(
+                criterion(`geometry-${runId}-fragment-source-present`,
+                    fragmentSource.includes('LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_ENABLED = true')
+                        && fragmentSource.includes('observerDomeBoundaryDistance')
+                        && fragmentSource.includes('resolveAtmospherePath'),
+                    'assembled local/flat geometry diagnostic fragment source'),
+                criterion(`geometry-${runId}-compile-link-accepted`,
+                    shaderProgram.status === 'accepted',
+                    'compile and link accepted'),
+                criterion(`geometry-${runId}-selected-pixels-present`,
+                    runSelectedWithExpectations.length === expectedSelectedPixelCount(runPayload.selectedPixels),
+                    'payload selected pixel readbacks'),
+                criterion(`geometry-${runId}-readbacks-match-cpu-reference`,
+                    runReadbacksMatch,
+                    `readback tolerance ${readbackToleranceBytes} byte(s)`),
+            );
+
+            if (shaderProgram.status === 'accepted') {
+                imageDataUrl = canvas.toDataURL('image/png');
+            }
+        }
+
+        criteriaResults.push(
+            criterion('selected-pixel-readback-present',
+                selectedPixels.length === diagnosticRuns.reduce((sum, run) =>
+                    sum + expectedSelectedPixelCount(run.selectedPixels ?? payload.selectedPixels), 0),
+                'all diagnostic selected pixel readbacks'),
+            criterion('png-data-url-present',
+                typeof imageDataUrl === 'string' && imageDataUrl.startsWith('data:image/png;base64,'),
+                'PNG data URL'),
+        );
+        const accepted = criteriaResults.every((entry) => entry.status === 'pass');
+
+        return {
+            kind: 'algorithm32-reconciliation-browser-result',
+            status: accepted ? 'accepted' : 'rejected',
+            command,
+            diagnostics: {
+                status: accepted ? 'accepted' : 'rejected',
+                browser: diagnostics,
+                shader: {
+                    kind: 'algorithm32-local-flat-geometry-selected-ray-parity',
+                    runs: runResults,
+                },
+                scene: {
+                    sceneId: payload.sceneId ?? null,
+                    viewportPixels: [canvas.width, canvas.height],
+                    selectedPixelCount: selectedPixels.length,
+                    comparisonMode: 'local-flat-geometry-selected-ray-parity',
+                },
+                canvas: {
+                    width: canvas.width,
+                    height: canvas.height,
+                    imageDataUrlKind: imageDataUrl ? 'image/png' : null,
+                },
+                bindings: {
+                    kind: 'local-flat-geometry-selected-ray-parity-bindings',
+                    sceneColorTexture: payload.sceneColorTextureKind ?? '2d-gradient-rgba8',
+                    sceneDepthTexture: payload.sceneDepthTextureKind ?? 'payload-rgba8',
+                    sceneHitTexture: payload.sceneHitTextureKind ?? 'payload-mask-rgba8',
+                    incidentRadianceTexture: summarizeIncidentRadianceTexture(payload.incidentRadianceTexture),
+                    cameraWorldPositionMeters: payload.cameraWorldPositionMeters ?? null,
+                    sceneDepthMaxMeters: payload.sceneDepthMaxMeters ?? null,
+                    sceneTerminationMeters: payload.sceneTerminationMeters ?? 0,
+                    readbackToleranceBytes,
+                },
+            },
+            selectedPixels,
+            criteriaResults,
+            imageDataUrl,
+            timings: timing(startedAt),
+        };
+    }
+
     async function runAssembledThreeSceneComparison(gl, canvas, command, diagnostics, startedAt) {
         const payload = command.payload && typeof command.payload === 'object'
             ? command.payload
@@ -422,6 +708,12 @@ import {
         }
         if (payload.sceneKind === 'planet-sphere-ground') {
             return await runPlanetSphereGroundComposerComparison(gl, canvas, command, diagnostics, startedAt, {
+                payload,
+                fragmentSource,
+            });
+        }
+        if (payload.sceneKind === 'local-flat-ground') {
+            return await runLocalFlatGroundComposerComparison(gl, canvas, command, diagnostics, startedAt, {
                 payload,
                 fragmentSource,
             });
@@ -582,6 +874,7 @@ import {
                     sceneDepthMaxMeters,
                     sceneTerminationMeters: payload.sceneTerminationMeters ?? 0,
                     endpointRadianceScale: payload.endpointRadianceScale ?? 1,
+                    endpointCameraDistanceScale: payload.endpointCameraDistanceScale ?? null,
                     cameraWorldPositionMeters: payload.cameraWorldPositionMeters,
                     distantSunDirection: payload.distantSunDirection,
                     inverseProjectionMatrix: Array.from(camera.projectionMatrixInverse.elements),
@@ -717,6 +1010,291 @@ import {
         };
     }
 
+    async function runLocalFlatGroundComposerComparison(gl, canvas, command, diagnostics, startedAt, options) {
+        const payload = options.payload;
+        const fragmentSource = options.fragmentSource;
+        const shaderBackend = payload.shaderBackend === 'cpu' ? 'cpu' : 'gpu';
+        const viewportPixels = Array.isArray(payload.viewportPixels)
+            ? payload.viewportPixels
+            : [96, 54];
+        resizeCanvas(canvas, viewportPixels);
+
+        let constructedScene = null;
+        let composerResult = null;
+        let selectedPixels = [];
+        let imageDataUrl = null;
+        let preShaderSceneColorImageDataUrl = null;
+        let distanceCapture = null;
+        let colorDiagnosticCapture = null;
+        let depthSummary = null;
+        let runtimeError = null;
+        let selectedPixelSelections = [];
+
+        try {
+            constructedScene = await constructLocalFlatGroundScene(payload, canvas, {
+                THREE: THREE_RUNTIME,
+                renderCanvas: canvas,
+                context: gl,
+            });
+            const {
+                THREE,
+                renderer,
+                scene,
+                camera,
+                width,
+                height,
+                metersPerSceneUnit,
+                sceneDepthMaxMeters,
+                raycastObjects,
+                cameraWorldPositionMeters,
+                geometryFrame,
+                localFlat,
+            } = constructedScene;
+            const raycastCaptureOptions = localFlat.farHorizonReviewBoxEnabled === true
+                || localFlat.denaliReviewBoxEnabled === true
+                ? {
+                    raycastSampleOffsets: subpixelGridSampleOffsets(5),
+                    preferNonGroundSampleHits: true,
+                }
+                : {};
+            distanceCapture = buildLocalFlatSceneDistanceCapture({
+                THREE,
+                renderer,
+                scene,
+                camera,
+                raycastObjects,
+                width,
+                height,
+                sceneDepthMaxMeters,
+                metersPerSceneUnit,
+                capturePolicy: localFlat.sceneDepthCapturePolicy,
+                raycastCaptureOptions,
+            });
+            depthSummary = summarizeEncodedDepthBytes(distanceCapture.depthBytes, distanceCapture.hitMaskBytes);
+            selectedPixelSelections = localFlatSelectedPixels(width, height, distanceCapture);
+            composerResult = renderAlgorithm32ComposerScene({
+                renderer,
+                scene,
+                camera,
+                width,
+                height,
+                fragmentShaderSource: fragmentSource,
+                backend: shaderBackend,
+                renderTargetSamples: constructedScene.renderQualityFacts?.renderTargetSampleCount ?? undefined,
+                progressCallback: shaderBackend === 'cpu'
+                    ? browserCpuProgressLogger(payload.sceneId ?? 'local-flat-ground')
+                    : null,
+                runtimeInput: {
+                    sceneId: payload.sceneId ?? 'local-flat-ground',
+                    width,
+                    height,
+                    geometryKind: 'flat-earth',
+                    lightSourceKind: 'local-sun',
+                    sceneDepthBytes: distanceCapture.depthBytes,
+                    sceneHitBytes: distanceCapture.hitMaskBytes,
+                    sceneDepthTextureEncoding: 'rgb24-normalized-distance-times-sceneDepthMaxMeters; sceneHitTexture carries hit mask',
+                    sceneDepthMaxMeters,
+                    sceneTerminationMeters: payload.sceneTerminationMeters ?? 0,
+                    endpointRadianceScale: payload.endpointRadianceScale ?? 1,
+                    endpointCameraDistanceScale: payload.endpointCameraDistanceScale ?? null,
+                    cameraWorldPositionMeters,
+                    distantSunDirection: [0, 0, 1],
+                    inverseProjectionMatrix: Array.from(camera.projectionMatrixInverse.elements),
+                    inverseViewMatrix: Array.from(camera.matrixWorld.elements),
+                    incidentRadianceTexture: payload.incidentRadianceTexture,
+                    incidentRadianceCache: null,
+                    geometryFrame,
+                    localFlat,
+                    selectedPixels: selectedPixelSelections,
+                    pathIntervalCount: payload.pathIntervalCount,
+                    sourceTransmittanceIntervalCount: payload.sourceTransmittanceIntervalCount,
+                    outputTextureFilter: constructedScene.renderQualityFacts?.cpuOutputTextureFilter === 'nearest-display-copy'
+                        ? 'nearest'
+                        : 'linear',
+                },
+            });
+            selectedPixels = readPayloadSelectedPixels(gl, canvas, selectedPixelSelections);
+            imageDataUrl = canvas.toDataURL('image/png');
+            if (composerResult.sceneColorBytes) {
+                preShaderSceneColorImageDataUrl = dataUrlFromBottomLeftRgbaBytes({
+                    width,
+                    height,
+                    rgbaBytes: composerResult.sceneColorBytes,
+                });
+                colorDiagnosticCapture = buildRaycasterSceneDistanceCapture({
+                    THREE,
+                    meshes: raycastObjects,
+                    camera,
+                    width,
+                    height,
+                    sceneDepthMaxMeters,
+                    distanceMultiplier: metersPerSceneUnit,
+                    diagnosticColorBytes: composerResult.sceneColorBytes,
+                    ...raycastCaptureOptions,
+                });
+            }
+            renderer.dispose();
+        } catch (error) {
+            runtimeError = {
+                name: error?.name ?? 'Error',
+                message: error?.message ?? String(error),
+                stack: error?.stack ?? null,
+            };
+            constructedScene?.renderer?.dispose?.();
+        }
+
+        const sceneSummary = constructedScene
+            ? localFlatComposerSceneSummary({
+                constructedScene,
+                composerResult,
+                distanceCapture,
+                colorDiagnosticCapture,
+                depthSummary,
+                shaderBackend,
+            })
+            : null;
+        const cpuSelectedDiagnostics = composerResult?.diagnostics?.selectedPixels ?? [];
+        const localFlatSceneObjects = sceneSummary?.sceneObjects ?? {};
+        const localFlatDiagnosticBoxNames = Object.keys(localFlatSceneObjects)
+            .filter((name) => localFlatSceneObjects[name]?.kind === 'diagnostic-flat-box');
+        const localFlatReviewBoxNames = Object.keys(localFlatSceneObjects)
+            .filter((name) => localFlatSceneObjects[name]?.kind === 'review-flat-box');
+        const minimumDiagnosticBoxHitCount = Math.max(
+            0,
+            Math.floor(numberOrDefault(payload.minimumDiagnosticBoxHitCount, 5)),
+        );
+        const localFlatHitDiagnosticBoxNames = localFlatDiagnosticBoxNames.filter((name) =>
+            (sceneSummary?.objectHitCounts?.[name] ?? 0) > 0);
+        const localFlatHitReviewBoxNames = localFlatReviewBoxNames.filter((name) =>
+            (sceneSummary?.objectHitCounts?.[name] ?? 0) > 0);
+        const shadowsExpected = payload.shadowsEnabled !== false;
+        const farHorizonReviewBoxExpected = payload.localFlat?.farHorizonReviewBoxEnabled === true;
+        const criteriaResults = [
+            criterion('webgl2-context-created', diagnostics.webglVersion.includes('WebGL 2.0'), 'WebGL2 diagnostic version string'),
+            criterion('objective-scene-id-present', typeof payload.sceneId === 'string' && payload.sceneId.length > 0, 'scene descriptor id'),
+            criterion('three-module-loaded', Boolean(constructedScene), 'browser imports local Three module'),
+            criterion('effect-composer-runtime-rendered', composerResult?.status === 'accepted', 'Three EffectComposer runtime pass rendered'),
+            criterion('three-scene-render-target-captured',
+                composerResult?.sceneColorBytes?.some((value, index) => index % 4 !== 3 && value > 0) === true,
+                'non-empty composer RenderPass read buffer'),
+            criterion('three-hit-depth-texture-captured', (distanceCapture?.hitPixelCount ?? 0) > 0, 'scene hit-distance texture has at least one hit'),
+            criterion('three-no-hit-sky-pixels-present',
+                (distanceCapture?.hitPixelCount ?? 0) < (constructedScene?.width ?? 0) * (constructedScene?.height ?? 0),
+                'scene hit capture leaves at least one no-hit sky pixel'),
+            criterion('camera-matrix-bindings-present',
+                hasMatrix16(constructedScene?.camera?.projectionMatrixInverse?.elements ? Array.from(constructedScene.camera.projectionMatrixInverse.elements) : null)
+                    && hasMatrix16(constructedScene?.camera?.matrixWorld?.elements ? Array.from(constructedScene.camera.matrixWorld.elements) : null),
+                'browser Three camera inverse projection/view matrices'),
+            criterion('shader-backend-supported',
+                shaderBackend === 'cpu' || shaderBackend === 'gpu',
+                'local flat verification uses an integrated composer shader backend'),
+            criterion('integrated-shader-backend-accepted',
+                composerResult?.diagnostics?.status === 'accepted', 'integrated composer shader pass accepted'),
+            criterion('cpu-composer-pass-used-evaluate',
+                shaderBackend !== 'cpu'
+                    || composerResult?.diagnostics?.evaluatorKind === 'SpectralReferenceEvaluator.evaluate',
+                'CPU composer pass calls public evaluator when CPU backend is selected'),
+            criterion('input-contract-is-flat-local',
+                composerResult?.diagnostics?.inputContract?.geometryKind === 'flat-earth'
+                    && composerResult?.diagnostics?.inputContract?.lightSourceKind === 'local-sun',
+                'composer input contract reports flat geometry and local Sun'),
+            criterion(shadowsExpected ? 'local-flat-shadows-enabled' : 'local-flat-shadows-disabled',
+                shadowsExpected
+                    ? sceneSummary?.shadowPolicy === 'three-shadow-map-from-local-source-direction'
+                        && sceneSummary?.sceneLighting?.shadowPolicy === 'three-shadow-map-from-local-source-direction'
+                    : sceneSummary?.shadowPolicy === 'shadows-disabled'
+                        && sceneSummary?.sceneLighting?.shadowPolicy === 'shadows-disabled',
+                shadowsExpected
+                    ? 'local flat scene uses source-owned Three shadow map lighting'
+                    : 'local flat scene keeps source-owned shading but disables Three shadow maps'),
+            criterion('local-l2-cache-used',
+                shaderBackend === 'cpu'
+                    ? composerResult?.diagnostics?.incidentRadianceCache?.mode === 'local-l2-cache-sampler'
+                        && composerResult?.diagnostics?.incidentRadianceCache?.cacheKind === 'local'
+                        && composerResult?.diagnostics?.incidentRadianceCache?.coordinateCount > 0
+                    : composerResult?.diagnostics?.inputContract?.incidentRadianceTexture?.kind === 'rgba32f-3d-texture-v1'
+                        && composerResult?.diagnostics?.inputContract?.incidentRadianceTexture?.uploadValueCount > 0,
+                'local L2 incident-radiance cache built/bound for CPU or uploaded for GPU'),
+            criterion('flat-geometry-ground-owned-by-abstraction',
+                sceneSummary?.ground?.metadata?.owner === 'FlatEarthGeometry'
+                    && sceneSummary?.ground?.metadata?.observerLocalSceneFrame,
+                'flat geometry returned ground endpoint and frame metadata'),
+            criterion('local-flat-diagnostic-boxes-hit',
+                localFlatDiagnosticBoxNames.length >= minimumDiagnosticBoxHitCount
+                    && localFlatHitDiagnosticBoxNames.length >= minimumDiagnosticBoxHitCount,
+                `${minimumDiagnosticBoxHitCount} or more local-flat diagnostic boxes have raycast hit pixels`),
+            criterion('far-horizon-review-box-hit',
+                !farHorizonReviewBoxExpected
+                    || (localFlatReviewBoxNames.length > 0
+                        && localFlatReviewBoxNames.every((name) => localFlatHitReviewBoxNames.includes(name))),
+                'optional far-horizon review boxes have raycast hit pixels when requested'),
+            criterion('selected-pixel-readback-present', selectedPixels.length === expectedSelectedPixelCount(selectedPixelSelections), 'payload selected pixel readbacks'),
+            criterion('cpu-selected-pixel-diagnostics-present',
+                shaderBackend !== 'cpu'
+                    || cpuSelectedDiagnostics.length === expectedSelectedPixelCount(selectedPixelSelections),
+                'CPU pass selected-pixel diagnostics when CPU backend is selected'),
+            criterion('local-sun-path-radiance-positive',
+                shaderBackend !== 'cpu'
+                    || cpuSelectedDiagnostics.some((pixel) => pixel.pathRadianceMean > 0),
+                'at least one selected CPU pixel has positive local-sun path radiance'),
+            criterion('selected-pixel-incident-inscattering-positive',
+                shaderBackend !== 'cpu'
+                    || cpuSelectedDiagnostics.some((pixel) => pixel.incidentInScatteringMean > 0),
+                'at least one selected CPU pixel has positive L2 incident in-scattering'),
+            criterion('selected-pixel-visible-output-present', selectedPixels.some(hasVisibleRgb), 'at least one selected pixel has non-black RGB'),
+            criterion('png-data-url-present', typeof imageDataUrl === 'string' && imageDataUrl.startsWith('data:image/png;base64,'), 'PNG data URL'),
+        ];
+        const accepted = !runtimeError && criteriaResults.every((entry) => entry.status === 'pass');
+
+        return {
+            kind: 'algorithm32-reconciliation-browser-result',
+            status: accepted ? 'accepted' : 'rejected',
+            command,
+            diagnostics: {
+                status: accepted ? 'accepted' : 'rejected',
+                browser: diagnostics,
+                shader: {
+                    kind: `algorithm32-${shaderBackend}-effect-composer-pass`,
+                    status: composerResult?.diagnostics?.status ?? 'rejected',
+                    backend: shaderBackend,
+                    composer: composerResult?.diagnostics ?? null,
+                    runtimeError,
+                },
+                scene: {
+                    sceneId: payload.sceneId ?? null,
+                    viewportPixels: constructedScene ? [constructedScene.width, constructedScene.height] : [canvas.width, canvas.height],
+                    selectedPixelCount: selectedPixels.length,
+                    comparisonMode: payload.comparisonMode ?? null,
+                    browserThreeScene: sceneSummary,
+                },
+                canvas: {
+                    width: canvas.width,
+                    height: canvas.height,
+                    imageDataUrlKind: imageDataUrl ? 'image/png' : null,
+                    preShaderSceneColorImageDataUrlKind: preShaderSceneColorImageDataUrl ? 'image/png' : null,
+                },
+                bindings: {
+                    kind: 'algorithm32-effect-composer-bindings',
+                    shaderBackend,
+                    sceneColorTexture: 'EffectComposer RenderPass readBuffer.texture',
+                    sceneDepthTexture: `${distanceCapture?.capturePolicy ?? 'unknown'}-distance-rgba8`,
+                    sceneHitTexture: `${distanceCapture?.capturePolicy ?? 'unknown'}-hit-mask-rgba8`,
+                    incidentRadianceTexture: summarizeIncidentRadianceTexture(payload.incidentRadianceTexture),
+                    cameraWorldPositionMeters: constructedScene?.cameraWorldPositionMeters ?? null,
+                    sceneDepthMaxMeters: constructedScene?.sceneDepthMaxMeters ?? null,
+                    sceneTerminationMeters: payload.sceneTerminationMeters ?? 0,
+                },
+            },
+            selectedPixels,
+            criteriaResults,
+            imageDataUrl,
+            ...(preShaderSceneColorImageDataUrl
+                ? { preShaderSceneColorImageDataUrl }
+                : {}),
+            timings: timing(startedAt),
+        };
+    }
+
     async function runShaderQualityPerformanceBenchmark(gl, canvas, command, diagnostics, startedAt) {
         const payload = command.payload && typeof command.payload === 'object'
             ? command.payload
@@ -778,6 +1356,7 @@ import {
                 sceneDepthMaxMeters,
                 sceneTerminationMeters: payload.sceneTerminationMeters ?? 0,
                 endpointRadianceScale: payload.endpointRadianceScale ?? 1,
+                endpointCameraDistanceScale: payload.endpointCameraDistanceScale ?? null,
                 cameraWorldPositionMeters: payload.cameraWorldPositionMeters,
                 distantSunDirection: payload.distantSunDirection,
                 inverseProjectionMatrix: Array.from(camera.projectionMatrixInverse.elements),
@@ -1502,6 +2081,697 @@ import {
         });
     }
 
+    async function constructLocalFlatGroundScene(payload, canvas, options = {}) {
+        const THREE = options.THREE ?? await import('/vendor/three.module.js');
+        const width = canvas.width;
+        const height = canvas.height;
+        const localFlat = payload.localFlat && typeof payload.localFlat === 'object'
+            ? payload.localFlat
+            : {};
+        const observerPositionMeters = vector3OrDefault(localFlat.observerPositionMeters, [0, 0, 2]);
+        const metersPerSceneUnit = Math.max(
+            0.000001,
+            numberOrDefault(payload.metersPerSceneUnit ?? payload.scaleDenominator, 1),
+        );
+        const sceneDepthMaxMeters = Math.max(1, numberOrDefault(payload.sceneDepthMaxMeters, 5000));
+        const verticalFovDegrees = Math.max(1, Math.min(120, numberOrDefault(payload.verticalFovDegrees, 45)));
+        const shadowsEnabled = payload.shadowsEnabled !== false;
+        const antialiasEnabled = payload.antialias !== false;
+        const observerHeightSceneUnits = observerPositionMeters[2] / metersPerSceneUnit;
+        const cameraPosition = Array.isArray(payload.cameraPositionSceneUnits)
+            ? payload.cameraPositionSceneUnits
+            : [0, observerHeightSceneUnits, 0];
+        const defaultLookAtDistanceMeters = Math.max(800, observerPositionMeters[2] * 3.7);
+        const lookAt = Array.isArray(payload.lookAtSceneUnits)
+            ? payload.lookAtSceneUnits
+            : [0, 0, -defaultLookAtDistanceMeters / metersPerSceneUnit];
+        const near = Math.max(0.000001, Math.min(0.1, Math.max(observerHeightSceneUnits, 0.000001) * 0.05));
+        const far = Math.max(sceneDepthMaxMeters / metersPerSceneUnit, 1000 / metersPerSceneUnit);
+        const threeCanvas = options.renderCanvas ?? document.createElement('canvas');
+        threeCanvas.width = width;
+        threeCanvas.height = height;
+        const rendererOptions = {
+            canvas: threeCanvas,
+            antialias: antialiasEnabled,
+            alpha: false,
+            preserveDrawingBuffer: true,
+        };
+        if (options.context) {
+            rendererOptions.context = options.context;
+        }
+        const renderer = options.renderer ?? new THREE.WebGLRenderer(rendererOptions);
+        renderer.setSize(width, height, false);
+        renderer.setPixelRatio(1);
+        renderer.shadowMap.enabled = shadowsEnabled;
+        if (shadowsEnabled && THREE.PCFSoftShadowMap !== undefined) {
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        }
+        renderer.setClearColor(colorFromDisplayRgba(THREE, [132, 160, 190, 255]), 1);
+        if ('toneMapping' in renderer) {
+            renderer.toneMapping = THREE.NoToneMapping;
+        }
+
+        const scene = new THREE.Scene();
+        scene.background = colorFromDisplayRgba(THREE, [132, 160, 190, 255]);
+        const camera = new THREE.PerspectiveCamera(verticalFovDegrees, width / height, near, far);
+        camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+        camera.lookAt(new THREE.Vector3(lookAt[0], lookAt[1], lookAt[2]));
+        camera.updateMatrixWorld(true);
+        camera.updateProjectionMatrix();
+
+        const geometry = new FlatEarthGeometry({
+            observerPositionMeters,
+            sourcePositionMeters: vector3OrDefault(localFlat.sourcePositionMeters, [0, 1000000, 500000]),
+            topAltitudeMeters: numberOrDefault(localFlat.topAltitudeMeters, 100000),
+            sceneSkyRayLimitMeters: Number.isFinite(localFlat.sceneSkyRayLimitMeters)
+                ? localFlat.sceneSkyRayLimitMeters
+                : sceneDepthMaxMeters,
+            observerCenteredDome: localFlat.observerCenteredDome ?? null,
+            sourceTransmittanceIntervalCount: numberOrDefault(payload.sourceTransmittanceIntervalCount, 10),
+            cacheZBinsMeters: Array.isArray(localFlat.cacheZBinsMeters) ? localFlat.cacheZBinsMeters : [2],
+            cacheRhoBinsMeters: Array.isArray(localFlat.cacheRhoBinsMeters) ? localFlat.cacheRhoBinsMeters : [0],
+        });
+        const groundObjects = geometry.createThreeEndpointObjects({
+            metersPerSceneUnit,
+            visualMaterialDisplayRgba: rgbaOrDefault(localFlat.groundDisplayRgba, [86, 105, 66, 255]),
+            visualMaterialLighting: 'lambert',
+            name: 'local-flat-geometry-ground',
+            widthSegments: 32,
+            heightSegments: 32,
+        });
+        const objectRenderResult = renderLocalFlatSceneObjects({
+            THREE,
+            scene,
+            metersPerSceneUnit,
+            cameraPosition,
+            lookAt,
+            diagnosticBoxesEnabled: localFlat.diagnosticBoxesEnabled !== false,
+            cameraForwardReviewBoxes: localFlat.cameraForwardReviewBoxes === true,
+            farHorizonReviewBoxEnabled: localFlat.farHorizonReviewBoxEnabled === true,
+            denaliReviewBoxEnabled: localFlat.denaliReviewBoxEnabled === true,
+            shadowsEnabled,
+            endpointIndirectFillEnabled: localFlat.endpointIndirectFillEnabled !== false,
+            endpointFillPolicy: localFlat.endpointFillPolicy ?? 'general-ambient-fill',
+            endpointAmbientFillRatio: numberOrDefault(localFlat.endpointAmbientFillRatio, 0.25),
+        });
+        const shadowFrame = localFlatShadowFrame(objectRenderResult.sceneObjects);
+        const lightingSummary = addLocalFlatSceneLighting({
+            THREE,
+            scene,
+            geometry,
+            localFlat,
+            observerPositionMeters,
+            observerScenePositionUnits: cameraPosition,
+            metersPerSceneUnit,
+            shadowsEnabled,
+            shadowFrame,
+            endpointIndirectFill: objectRenderResult.endpointIndirectFill,
+        });
+        for (const object of groundObjects.visualObjects) {
+            object.receiveShadow = shadowsEnabled;
+            scene.add(object);
+        }
+        scene.updateMatrixWorld(true);
+
+        return Object.freeze({
+            THREE,
+            renderer,
+            scene,
+            camera,
+            width,
+            height,
+            metersPerSceneUnit,
+            sceneDepthMaxMeters,
+            localFlat,
+            cameraWorldPositionMeters: observerPositionMeters,
+            geometryFrame: geometry.configuration.observerLocalSceneFrame,
+            groundObjects,
+            visualObjects: Object.freeze([
+                ...groundObjects.visualObjects,
+                ...objectRenderResult.visualObjects,
+            ]),
+            raycastObjects: Object.freeze([
+                ...objectRenderResult.raycastObjects,
+                ...groundObjects.raycastObjects,
+            ]),
+            sceneObjects: objectRenderResult.sceneObjects,
+            lightingSummary,
+            shadowsEnabled,
+            shadowFrame,
+            cameraFacts: Object.freeze({
+                positionSceneUnits: cameraPosition,
+                lookAtSceneUnits: lookAt,
+                algorithmCameraWorldPositionMeters: observerPositionMeters,
+                verticalFovDegrees,
+                near,
+                far,
+            }),
+            transformFacts: Object.freeze({
+                metersPerSceneUnit,
+                algorithmBasisFromSceneDirection: '[scene.x, -scene.z, scene.y]',
+                sceneGroundPlane: 'y=0',
+                algorithmGroundPlane: 'z=0',
+            }),
+            renderQualityFacts: Object.freeze({
+                rendererAntialias: antialiasEnabled,
+                renderTargetSampleCount: antialiasEnabled ? 4 : 0,
+                renderTargetSamples: antialiasEnabled
+                    ? 'browser-composer-msaa-when-supported'
+                    : 'disabled-single-sample-composer-target',
+                cpuOutputTextureFilter: antialiasEnabled
+                    ? 'linear-display-copy'
+                    : 'nearest-display-copy',
+                hitMaskSampling: 'single-center-ray-per-output-pixel',
+            }),
+        });
+    }
+
+    function addLocalFlatSceneLighting({
+        THREE,
+        scene,
+        geometry,
+        localFlat,
+        observerPositionMeters,
+        observerScenePositionUnits,
+        metersPerSceneUnit,
+        shadowsEnabled,
+        shadowFrame,
+        endpointIndirectFill,
+    }) {
+        const sourcePositionMeters = vector3OrDefault(localFlat.sourcePositionMeters, [0, 1000000, 500000]);
+        const sourceRelativePosition = geometry.resolveSourceRelativePosition({
+            position: observerPositionMeters,
+        });
+        const sourcePositionSceneUnits = geometry.mapModelPositionToObserverLocalScenePoint(
+            sourcePositionMeters,
+            { metersPerSceneUnit },
+        );
+        const lightSource = new LocalSunLightSource({
+            sourceKey: localFlat.sourceKey ?? 'local-flat-source',
+            spectralChannels: CANONICAL_SPECTRAL_CHANNELS,
+            referenceDistanceMeters: numberOrDefault(
+                localFlat.referenceDistanceMeters,
+                sourceRelativePosition.distanceFromSourceMeters,
+            ),
+            referenceSpectralIncidentScale: numberOrDefault(localFlat.referenceSpectralIncidentScale, 1),
+            radiusMeters: numberOrDefault(localFlat.radiusMeters, 0),
+            distanceFalloff: localFlat.distanceFalloff !== false,
+        });
+        const lightingObjects = lightSource.createThreeLightingObjects({
+            THREE,
+            sourceRelativePosition,
+            sourcePositionSceneUnits,
+            observerScenePositionUnits,
+            endpointSceneLightScalePolicy: localFlat.endpointSceneLightScalePolicy,
+            endpointIndirectFill,
+            shadow: shadowsEnabled
+                ? {
+                    enabled: true,
+                    focusSceneUnits: shadowFrame.focusSceneUnits,
+                    extentSceneUnits: shadowFrame.extentSceneUnits,
+                    lightDistanceSceneUnits: shadowFrame.extentSceneUnits * 4,
+                    cameraNear: 0.1,
+                    cameraFar: shadowFrame.extentSceneUnits * 8,
+                    mapSize: 2048,
+                    bias: -0.00002,
+                    normalBias: 0,
+                }
+                : null,
+        });
+
+        for (const light of lightingObjects.lights) {
+            scene.add(light);
+        }
+        for (const object of lightingObjects.sceneObjects ?? []) {
+            scene.add(object);
+        }
+
+        return Object.freeze({
+            ...lightingObjects.metadata,
+            sourcePositionSceneUnits: Object.freeze([...sourcePositionSceneUnits]),
+            sourcePositionMeters: Object.freeze([...sourcePositionMeters]),
+            shadowFrame,
+        });
+    }
+
+    function renderLocalFlatSceneObjects({
+        THREE,
+        scene,
+        metersPerSceneUnit,
+        cameraPosition,
+        lookAt,
+        diagnosticBoxesEnabled = true,
+        cameraForwardReviewBoxes = false,
+        farHorizonReviewBoxEnabled = false,
+        denaliReviewBoxEnabled = false,
+        shadowsEnabled = false,
+        endpointIndirectFillEnabled = true,
+        endpointFillPolicy = 'general-ambient-fill',
+        endpointAmbientFillRatio = 0.25,
+    }) {
+        const diagnosticSpecs = diagnosticBoxesEnabled === false
+            ? []
+            : [
+                {
+                    name: 'local-flat-close-red-box',
+                    kind: 'diagnostic-flat-box',
+                    displayRgba: [205, 42, 36, 255],
+                    centerSceneUnits: [-235 / metersPerSceneUnit, 75 / metersPerSceneUnit, -900 / metersPerSceneUnit],
+                    sizeSceneUnits: [120 / metersPerSceneUnit, 150 / metersPerSceneUnit, 120 / metersPerSceneUnit],
+                    rotationYDegrees: 18,
+                },
+                {
+                    name: 'local-flat-close-orange-box',
+                    kind: 'diagnostic-flat-box',
+                    displayRgba: [220, 105, 28, 255],
+                    centerSceneUnits: [85 / metersPerSceneUnit, 100 / metersPerSceneUnit, -1800 / metersPerSceneUnit],
+                    sizeSceneUnits: [180 / metersPerSceneUnit, 200 / metersPerSceneUnit, 180 / metersPerSceneUnit],
+                    rotationYDegrees: -24,
+                },
+                {
+                    name: 'local-flat-close-white-box',
+                    kind: 'diagnostic-flat-box',
+                    displayRgba: [210, 214, 198, 255],
+                    centerSceneUnits: [-1450 / metersPerSceneUnit, 125 / metersPerSceneUnit, -3500 / metersPerSceneUnit],
+                    sizeSceneUnits: [250 / metersPerSceneUnit, 250 / metersPerSceneUnit, 250 / metersPerSceneUnit],
+                    rotationYDegrees: 31,
+                },
+                {
+                    name: 'local-flat-near-green-box',
+                    kind: 'diagnostic-flat-box',
+                    displayRgba: [0, 170, 40, 255],
+                    centerSceneUnits: [3900 / metersPerSceneUnit, 500 / metersPerSceneUnit, -11000 / metersPerSceneUnit],
+                    sizeSceneUnits: [1000 / metersPerSceneUnit, 1000 / metersPerSceneUnit, 1000 / metersPerSceneUnit],
+                    rotationYDegrees: -16,
+                },
+                {
+                    name: 'local-flat-far-blue-box',
+                    kind: 'diagnostic-flat-box',
+                    displayRgba: [38, 88, 210, 255],
+                    centerSceneUnits: [-8500 / metersPerSceneUnit, 750 / metersPerSceneUnit, -15000 / metersPerSceneUnit],
+                    sizeSceneUnits: [1400 / metersPerSceneUnit, 1500 / metersPerSceneUnit, 1400 / metersPerSceneUnit],
+                    rotationYDegrees: 22,
+                },
+                {
+                    name: 'local-flat-mid-yellow-box',
+                    kind: 'diagnostic-flat-box',
+                    displayRgba: [205, 170, 22, 255],
+                    centerSceneUnits: [6000 / metersPerSceneUnit, 1000 / metersPerSceneUnit, -30000 / metersPerSceneUnit],
+                    sizeSceneUnits: [3000 / metersPerSceneUnit, 2000 / metersPerSceneUnit, 3000 / metersPerSceneUnit],
+                    rotationYDegrees: -12,
+                },
+                {
+                    name: 'local-flat-far-cyan-box',
+                    kind: 'diagnostic-flat-box',
+                    displayRgba: [32, 178, 190, 255],
+                    centerSceneUnits: [-4850 / metersPerSceneUnit, 1250 / metersPerSceneUnit, -45000 / metersPerSceneUnit],
+                    sizeSceneUnits: [5000 / metersPerSceneUnit, 2500 / metersPerSceneUnit, 5000 / metersPerSceneUnit],
+                    rotationYDegrees: 17,
+                },
+                {
+                    name: 'local-flat-very-far-magenta-box',
+                    kind: 'diagnostic-flat-box',
+                    displayRgba: [178, 48, 190, 255],
+                    centerSceneUnits: [30000 / metersPerSceneUnit, 1500 / metersPerSceneUnit, -60000 / metersPerSceneUnit],
+                    sizeSceneUnits: [7000 / metersPerSceneUnit, 3000 / metersPerSceneUnit, 7000 / metersPerSceneUnit],
+                    rotationYDegrees: -20,
+                },
+            ];
+        const specs = [
+            ...diagnosticSpecs,
+            ...cameraForwardReviewBoxSpecs({
+                cameraForwardReviewBoxes,
+                cameraPosition,
+                lookAt,
+                metersPerSceneUnit,
+            }),
+            ...farHorizonReviewBoxSpecs({
+                farHorizonReviewBoxEnabled,
+                cameraPosition,
+                lookAt,
+                metersPerSceneUnit,
+            }),
+            ...denaliReviewBoxSpecs({
+                denaliReviewBoxEnabled,
+                cameraPosition,
+                lookAt,
+                metersPerSceneUnit,
+            }),
+        ];
+        const visualObjects = [];
+        const sceneObjects = {};
+        const endpointIndirectFillParticipants = [];
+
+        for (const spec of specs) {
+            const geometry = new THREE.BoxGeometry(
+                spec.sizeSceneUnits[0],
+                spec.sizeSceneUnits[1],
+                spec.sizeSceneUnits[2],
+            );
+            const material = new THREE.MeshLambertMaterial({
+                color: colorFromDisplayRgba(THREE, spec.displayRgba),
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.name = spec.name;
+            mesh.position.set(...spec.centerSceneUnits);
+            mesh.rotation.y = (spec.rotationYDegrees ?? 0) * Math.PI / 180;
+            mesh.userData.endpointKind = spec.endpointKind ?? 'diagnostic-flat-scene-object';
+            mesh.userData.displayRgba = spec.displayRgba;
+            mesh.userData.rotationYDegrees = spec.rotationYDegrees ?? 0;
+            mesh.castShadow = shadowsEnabled;
+            mesh.receiveShadow = shadowsEnabled;
+            mesh.updateMatrixWorld(true);
+            scene.add(mesh);
+            visualObjects.push(mesh);
+            sceneObjects[spec.name] = Object.freeze({
+                kind: spec.kind ?? 'diagnostic-flat-box',
+                displayRgba: Object.freeze([...spec.displayRgba]),
+                centerSceneUnits: Object.freeze([...spec.centerSceneUnits]),
+                sizeSceneUnits: Object.freeze([...spec.sizeSceneUnits]),
+                rotationYDegrees: spec.rotationYDegrees ?? 0,
+                metersPerSceneUnit,
+                reviewDistanceMeters: spec.reviewDistanceMeters ?? null,
+                reviewCenterDistanceMeters: spec.reviewCenterDistanceMeters ?? null,
+                reviewHeightMeters: spec.reviewHeightMeters ?? null,
+                reviewFootprintMeters: spec.reviewFootprintMeters ?? null,
+                reviewWidthMeters: spec.reviewWidthMeters ?? null,
+                reviewDepthMeters: spec.reviewDepthMeters ?? null,
+                reviewLateralOffsetMeters: spec.reviewLateralOffsetMeters ?? null,
+                endpointIndirectFillParticipant: spec.endpointIndirectFillParticipant === true,
+            });
+            if (spec.endpointIndirectFillParticipant === true) {
+                endpointIndirectFillParticipants.push(spec);
+            }
+        }
+        const endpointIndirectFill = endpointIndirectFillEnabled
+            ? localFlatEndpointIndirectFill(endpointIndirectFillParticipants, endpointAmbientFillRatio, endpointFillPolicy)
+            : Object.freeze({
+                enabled: false,
+                policy: `${endpointFillPolicy}-disabled`,
+            });
+
+        return Object.freeze({
+            visualObjects: Object.freeze(visualObjects),
+            raycastObjects: Object.freeze([...visualObjects]),
+            sceneObjects: Object.freeze(sceneObjects),
+            endpointIndirectFill,
+        });
+    }
+
+    function cameraForwardReviewBoxSpecs({
+        cameraForwardReviewBoxes,
+        cameraPosition,
+        lookAt,
+        metersPerSceneUnit,
+    }) {
+        if (cameraForwardReviewBoxes !== true) {
+            return [];
+        }
+
+        const forwardX = numberOrDefault(lookAt?.[0], 0) - numberOrDefault(cameraPosition?.[0], 0);
+        const forwardZ = numberOrDefault(lookAt?.[2], -1) - numberOrDefault(cameraPosition?.[2], 0);
+        const forwardLength = Math.hypot(forwardX, forwardZ);
+        if (forwardLength <= 0.000001) {
+            return [];
+        }
+
+        const unitForwardX = forwardX / forwardLength;
+        const unitForwardZ = forwardZ / forwardLength;
+        const unitRightX = -unitForwardZ;
+        const unitRightZ = unitForwardX;
+        const yawDegrees = Math.atan2(unitForwardX, unitForwardZ) * 180 / Math.PI;
+        const reviewSpecs = [
+            {
+                name: 'local-flat-sunward-near-yellow-box',
+                displayRgba: [226, 178, 34, 255],
+                distanceMeters: 1600,
+                lateralMeters: -260,
+                sizeMeters: [180, 220, 180],
+                rotationOffsetDegrees: 15,
+            },
+            {
+                name: 'local-flat-sunward-mid-white-box',
+                displayRgba: [220, 214, 190, 255],
+                distanceMeters: 3600,
+                lateralMeters: 620,
+                sizeMeters: [420, 500, 420],
+                rotationOffsetDegrees: -21,
+            },
+            {
+                name: 'local-flat-sunward-far-orange-box',
+                displayRgba: [218, 95, 28, 255],
+                distanceMeters: 8200,
+                lateralMeters: -1300,
+                sizeMeters: [900, 900, 900],
+                rotationOffsetDegrees: 28,
+            },
+        ];
+
+        return reviewSpecs.map((spec) => {
+            const centerX = unitForwardX * spec.distanceMeters / metersPerSceneUnit
+                + unitRightX * spec.lateralMeters / metersPerSceneUnit;
+            const centerZ = unitForwardZ * spec.distanceMeters / metersPerSceneUnit
+                + unitRightZ * spec.lateralMeters / metersPerSceneUnit;
+            const sizeSceneUnits = spec.sizeMeters.map((value) => value / metersPerSceneUnit);
+
+            return Object.freeze({
+                name: spec.name,
+                displayRgba: spec.displayRgba,
+                centerSceneUnits: Object.freeze([
+                    centerX,
+                    sizeSceneUnits[1] / 2,
+                    centerZ,
+                ]),
+                sizeSceneUnits: Object.freeze(sizeSceneUnits),
+                rotationYDegrees: yawDegrees + spec.rotationOffsetDegrees,
+                endpointIndirectFillParticipant: true,
+            });
+        });
+    }
+
+    function localFlatEndpointIndirectFill(specs, endpointAmbientFillRatio, endpointFillPolicy) {
+        const policy = localFlatEndpointFillPolicy(endpointFillPolicy);
+
+        if (policy !== 'source-direction-falloff-fill' && (!Array.isArray(specs) || specs.length === 0)) {
+            return Object.freeze({
+                enabled: false,
+                policy: `${policy}-no-participants`,
+            });
+        }
+
+        return Object.freeze({
+            enabled: true,
+            policy,
+            role: localFlatEndpointFillRole(policy),
+            participantCount: Array.isArray(specs) ? specs.length : 0,
+            intensityRatio: Math.max(0, numberOrDefault(endpointAmbientFillRatio, 0.25)),
+            distanceSceneUnits: 100,
+        });
+    }
+
+    function localFlatEndpointFillPolicy(endpointFillPolicy) {
+        if (endpointFillPolicy === 'opposite-directional-fill') {
+            return 'opposite-directional-fill';
+        }
+        if (endpointFillPolicy === 'source-direction-falloff-fill') {
+            return 'source-direction-falloff-fill';
+        }
+        return 'general-ambient-fill';
+    }
+
+    function localFlatEndpointFillRole(policy) {
+        if (policy === 'opposite-directional-fill') {
+            return 'vacuum-endpoint-opposite-directional-approximation';
+        }
+        if (policy === 'source-direction-falloff-fill') {
+            return 'vacuum-endpoint-source-direction-falloff-approximation';
+        }
+        return 'vacuum-endpoint-general-ambient-approximation';
+    }
+
+    function farHorizonReviewBoxSpecs({
+        farHorizonReviewBoxEnabled,
+        cameraPosition,
+        lookAt,
+        metersPerSceneUnit,
+    }) {
+        if (farHorizonReviewBoxEnabled !== true) {
+            return [];
+        }
+
+        const forwardX = numberOrDefault(lookAt?.[0], 0) - numberOrDefault(cameraPosition?.[0], 0);
+        const forwardZ = numberOrDefault(lookAt?.[2], -1) - numberOrDefault(cameraPosition?.[2], 0);
+        const forwardLength = Math.hypot(forwardX, forwardZ);
+        if (forwardLength <= 0.000001) {
+            return [];
+        }
+
+        const unitForwardX = forwardX / forwardLength;
+        const unitForwardZ = forwardZ / forwardLength;
+        const heightMeters = 6200;
+        const widthMeters = 50000;
+        const depthMeters = 100000;
+        const unitRightX = -unitForwardZ;
+        const unitRightZ = unitForwardX;
+        const yawDegrees = Math.atan2(unitForwardX, unitForwardZ) * 180 / Math.PI;
+        const boxSpecs = [
+            {
+                name: 'local-flat-left-160km-6p2kmx50kmx100km-orange-box',
+                frontFaceDistanceMeters: 160000,
+                lateralMeters: -35000,
+            },
+            {
+                name: 'local-flat-right-240km-6p2kmx50kmx100km-orange-box',
+                frontFaceDistanceMeters: 240000,
+                lateralMeters: 35000,
+            },
+        ];
+
+        return boxSpecs.map((spec) => {
+            const centerDistanceMeters = spec.frontFaceDistanceMeters + depthMeters / 2;
+            const centerX = numberOrDefault(cameraPosition?.[0], 0)
+                + unitForwardX * centerDistanceMeters / metersPerSceneUnit
+                + unitRightX * spec.lateralMeters / metersPerSceneUnit;
+            const centerZ = numberOrDefault(cameraPosition?.[2], 0)
+                + unitForwardZ * centerDistanceMeters / metersPerSceneUnit
+                + unitRightZ * spec.lateralMeters / metersPerSceneUnit;
+
+            return Object.freeze({
+                name: spec.name,
+                kind: 'review-flat-box',
+                endpointKind: 'review-flat-scene-object',
+                displayRgba: [224, 95, 32, 255],
+                centerSceneUnits: Object.freeze([
+                    centerX,
+                    heightMeters / metersPerSceneUnit / 2,
+                    centerZ,
+                ]),
+                sizeSceneUnits: Object.freeze([
+                    widthMeters / metersPerSceneUnit,
+                    heightMeters / metersPerSceneUnit,
+                    depthMeters / metersPerSceneUnit,
+                ]),
+                rotationYDegrees: yawDegrees,
+                reviewDistanceMeters: spec.frontFaceDistanceMeters,
+                reviewCenterDistanceMeters: centerDistanceMeters,
+                reviewHeightMeters: heightMeters,
+                reviewWidthMeters: widthMeters,
+                reviewDepthMeters: depthMeters,
+                reviewLateralOffsetMeters: spec.lateralMeters,
+            });
+        });
+    }
+
+    function denaliReviewBoxSpecs({
+        denaliReviewBoxEnabled,
+        cameraPosition,
+        lookAt,
+        metersPerSceneUnit,
+    }) {
+        if (denaliReviewBoxEnabled !== true) {
+            return [];
+        }
+
+        const forwardX = numberOrDefault(lookAt?.[0], 0) - numberOrDefault(cameraPosition?.[0], 0);
+        const forwardZ = numberOrDefault(lookAt?.[2], -1) - numberOrDefault(cameraPosition?.[2], 0);
+        const forwardLength = Math.hypot(forwardX, forwardZ);
+        if (forwardLength <= 0.000001) {
+            return [];
+        }
+
+        const unitForwardX = forwardX / forwardLength;
+        const unitForwardZ = forwardZ / forwardLength;
+        const heightMeters = 6200;
+        const widthMeters = 50000;
+        const depthMeters = 100000;
+        const frontFaceDistanceMeters = 200000;
+        const lateralMeters = 100000;
+        const centerDistanceMeters = frontFaceDistanceMeters + depthMeters / 2;
+        const unitRightX = -unitForwardZ;
+        const unitRightZ = unitForwardX;
+        const centerX = numberOrDefault(cameraPosition?.[0], 0)
+            + unitForwardX * centerDistanceMeters / metersPerSceneUnit
+            + unitRightX * lateralMeters / metersPerSceneUnit;
+        const centerZ = numberOrDefault(cameraPosition?.[2], 0)
+            + unitForwardZ * centerDistanceMeters / metersPerSceneUnit
+            + unitRightZ * lateralMeters / metersPerSceneUnit;
+        const yawDegrees = Math.atan2(unitForwardX, unitForwardZ) * 180 / Math.PI;
+
+        return Object.freeze([
+            Object.freeze({
+                name: 'local-flat-denali-200km-6p2kmx50kmx100km-orange-box',
+                kind: 'review-flat-box',
+                endpointKind: 'review-flat-scene-object',
+                displayRgba: [224, 95, 32, 255],
+                centerSceneUnits: Object.freeze([
+                    centerX,
+                    heightMeters / metersPerSceneUnit / 2,
+                    centerZ,
+                ]),
+                sizeSceneUnits: Object.freeze([
+                    widthMeters / metersPerSceneUnit,
+                    heightMeters / metersPerSceneUnit,
+                    depthMeters / metersPerSceneUnit,
+                ]),
+                rotationYDegrees: yawDegrees,
+                reviewDistanceMeters: frontFaceDistanceMeters,
+                reviewCenterDistanceMeters: centerDistanceMeters,
+                reviewHeightMeters: heightMeters,
+                reviewWidthMeters: widthMeters,
+                reviewDepthMeters: depthMeters,
+                reviewLateralOffsetMeters: lateralMeters,
+            }),
+        ]);
+    }
+
+    function localFlatShadowFrame(sceneObjects) {
+        const values = Object.values(sceneObjects ?? {});
+        if (values.length === 0) {
+            return Object.freeze({
+                focusSceneUnits: Object.freeze([0, 0, -20]),
+                extentSceneUnits: 40,
+                policy: 'default-local-flat-shadow-frame',
+            });
+        }
+
+        let minX = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let minY = 0;
+        let maxY = Number.NEGATIVE_INFINITY;
+        let minZ = Number.POSITIVE_INFINITY;
+        let maxZ = Number.NEGATIVE_INFINITY;
+
+        for (const object of values) {
+            const center = object.centerSceneUnits;
+            const size = object.sizeSceneUnits;
+            minX = Math.min(minX, center[0] - size[0] / 2);
+            maxX = Math.max(maxX, center[0] + size[0] / 2);
+            minY = Math.min(minY, center[1] - size[1] / 2);
+            maxY = Math.max(maxY, center[1] + size[1] / 2);
+            minZ = Math.min(minZ, center[2] - size[2] / 2);
+            maxZ = Math.max(maxZ, center[2] + size[2] / 2);
+        }
+
+        const spanX = maxX - minX;
+        const spanY = maxY - minY;
+        const spanZ = maxZ - minZ;
+        const extentSceneUnits = Math.max(12, Math.max(spanX, spanY, spanZ) / 2 + 10);
+
+        return Object.freeze({
+            focusSceneUnits: Object.freeze([
+                (minX + maxX) / 2,
+                Math.max(0, (minY + maxY) / 2),
+                (minZ + maxZ) / 2,
+            ]),
+            extentSceneUnits,
+            boundsSceneUnits: Object.freeze({
+                min: Object.freeze([minX, minY, minZ]),
+                max: Object.freeze([maxX, maxY, maxZ]),
+            }),
+            policy: 'local-flat-shadow-frame-from-diagnostic-box-bounds',
+        });
+    }
+
     function capturePlanetSphereConstructedScene(constructedScene) {
         const {
             THREE,
@@ -1693,6 +2963,8 @@ import {
             hitPixelCount: distanceCapture?.hitPixelCount ?? 0,
             objectHitCounts: objectDiagnostics?.objectHitCounts ?? Object.freeze({}),
             objectColorExtents: objectDiagnostics?.objectColorExtents ?? Object.freeze({}),
+            objectDistanceExtents: distanceCapture?.objectDistanceExtents ?? Object.freeze({}),
+            objectFirstHitCoordinates: distanceCapture?.objectFirstHitCoordinates ?? Object.freeze({}),
             depthSummary,
             viewportPixels: [width, height],
             sceneDepthMaxMeters,
@@ -1703,6 +2975,98 @@ import {
             visualGround: ground.userData,
             camera: cameraFacts,
             transform: transformFacts,
+        });
+    }
+
+    function localFlatComposerSceneSummary({
+        constructedScene,
+        composerResult,
+        distanceCapture,
+        colorDiagnosticCapture,
+        depthSummary,
+        shaderBackend,
+    }) {
+        const {
+            width,
+            height,
+            metersPerSceneUnit,
+            sceneDepthMaxMeters,
+            localFlat,
+            groundObjects,
+            visualObjects,
+            raycastObjects,
+            sceneObjects,
+            cameraFacts,
+            transformFacts,
+            geometryFrame,
+            lightingSummary,
+            shadowsEnabled,
+            shadowFrame,
+            renderQualityFacts,
+        } = constructedScene;
+        const objectDiagnostics = colorDiagnosticCapture ?? distanceCapture;
+
+        return Object.freeze({
+            kind: 'browser-three-local-flat-ground-composer-capture',
+            shaderRuntime: 'three-effect-composer',
+            shaderBackend,
+            geometryKind: 'flat-earth',
+            lightSourceKind: 'local-sun',
+            colorSource: 'EffectComposer RenderPass readBuffer.texture',
+            depthSource: distanceCapture?.depthSource
+                ?? 'geometry-owned exact flat ground plus scene-object raycaster hit distances, converted to Algorithm32 meters',
+            hitMaskSource: distanceCapture?.hitMaskSource ?? 'local flat scene raycaster hit mask',
+            sceneDepthCapturePolicy: distanceCapture?.capturePolicy ?? 'unknown',
+            groundColorPolicy: distanceCapture?.capturePolicy === 'renderer-distance'
+                ? 'visible flat ground mesh contributes through composer scene color; renderer distance pass owns ground/object hit distance and hit mask'
+                : 'visible flat ground mesh contributes only through composer scene color; geometry-owned exact flat ground raycast owns ground hit distance and hit mask',
+            sceneLighting: Object.freeze({
+                ...(lightingSummary ?? {}),
+                algorithmLightSource: 'local-sun',
+            }),
+            shadowPolicy: shadowsEnabled
+                ? 'three-shadow-map-from-local-source-direction'
+                : 'shadows-disabled',
+            shadowFrame,
+            renderQuality: renderQualityFacts,
+            localFlat: Object.freeze({
+                sourceKey: localFlat.sourceKey ?? null,
+                observerPositionMeters: localFlat.observerPositionMeters ?? null,
+                sourcePositionMeters: localFlat.sourcePositionMeters ?? null,
+                topAltitudeMeters: localFlat.topAltitudeMeters ?? null,
+                sceneSkyRayLimitMeters: localFlat.sceneSkyRayLimitMeters ?? null,
+                observerCenteredDome: localFlat.observerCenteredDome ?? null,
+            }),
+            sceneObjects,
+            meshCount: raycastObjects.length,
+            visualMeshCount: visualObjects.length,
+            threeObjectCount: visualObjects.length,
+            raycastObjectCount: raycastObjects.length,
+            hitPixelCount: distanceCapture?.hitPixelCount ?? 0,
+            objectHitCounts: objectDiagnostics?.objectHitCounts ?? Object.freeze({}),
+            objectColorExtents: objectDiagnostics?.objectColorExtents ?? Object.freeze({}),
+            objectDistanceExtents: distanceCapture?.objectDistanceExtents ?? Object.freeze({}),
+            objectFirstHitCoordinates: distanceCapture?.objectFirstHitCoordinates ?? Object.freeze({}),
+            depthSummary,
+            viewportPixels: [width, height],
+            sceneDepthMaxMeters,
+            cameraProfile: 'local-flat-planet-scale-low-observer-downrange-view',
+            metersPerSceneUnit,
+            ground: Object.freeze({
+                metadata: groundObjects.metadata,
+                raycastUserData: groundObjects.raycastObjects[0]?.userData ?? null,
+                visualUserData: groundObjects.visualObjects[0]?.userData ?? null,
+                visualMaterial: Object.freeze({
+                    materialKind: 'lambert-matte',
+                    policy: 'geometry-owned-flat-ground-lambert-visual',
+                    displayRgba: groundObjects.metadata?.visualMaterialDisplayRgba ?? null,
+                    visualObjectCount: groundObjects.visualObjects.length,
+                }),
+            }),
+            camera: cameraFacts,
+            transform: transformFacts,
+            geometryFrame,
+            cpuSelectedPixelDiagnostics: composerResult?.diagnostics?.selectedPixels ?? Object.freeze([]),
         });
     }
 
@@ -2097,6 +3461,51 @@ import {
         return bytes;
     }
 
+    function buildLocalFlatSceneDistanceCapture({
+        THREE,
+        renderer,
+        scene,
+        camera,
+        raycastObjects,
+        width,
+        height,
+        sceneDepthMaxMeters,
+        metersPerSceneUnit,
+        capturePolicy,
+        raycastCaptureOptions,
+    }) {
+        if (capturePolicy === 'renderer-distance') {
+            return renderSceneDistanceCapture({
+                THREE,
+                renderer,
+                scene,
+                camera,
+                width,
+                height,
+                sceneDepthMaxMeters,
+                distanceMultiplier: metersPerSceneUnit,
+            });
+        }
+
+        const capture = buildRaycasterSceneDistanceCapture({
+            THREE,
+            meshes: raycastObjects,
+            camera,
+            width,
+            height,
+            sceneDepthMaxMeters,
+            distanceMultiplier: metersPerSceneUnit,
+            ...(raycastCaptureOptions ?? {}),
+        });
+
+        return Object.freeze({
+            ...capture,
+            capturePolicy: 'raycaster',
+            depthSource: 'geometry-owned exact flat ground plus scene-object raycaster hit distances, converted to Algorithm32 meters',
+            hitMaskSource: 'local flat scene raycaster hit mask',
+        });
+    }
+
     function renderSceneDistanceCapture({
         THREE,
         renderer,
@@ -2195,6 +3604,9 @@ import {
             depthBytes,
             hitMaskBytes,
             hitPixelCount,
+            capturePolicy: 'renderer-distance',
+            depthSource: 'renderer override-material fragment distance pass, converted from scene units to Algorithm32 meters',
+            hitMaskSource: 'renderer override-material fragment coverage mask',
         });
     }
 
@@ -2345,10 +3757,12 @@ import {
                 && Array.isArray(spec.centerXZ)
                 && spec.centerXZ.length === 2
                 && spec.centerXZ.every(Number.isFinite)
-                && Number.isFinite(spec.sizeSceneUnits)
-                && spec.sizeSceneUnits > 0);
+                && planetSceneBoxSizeIsValid(spec.sizeSceneUnits));
         const shadowFrame = planetSceneShadowFrame(planetSceneDefinition);
-        const maxObjectSize = specs.reduce((maxSize, spec) => Math.max(maxSize, spec.sizeSceneUnits), 1);
+        const maxObjectSize = specs.reduce((maxSize, spec) => {
+            const size = planetSceneBoxSizeTuple(spec.sizeSceneUnits);
+            return Math.max(maxSize, size[0], size[1], size[2]);
+        }, 1);
         const xExtent = Math.max(
             shadowFrame.extentSceneUnits,
             horizonDistanceSceneUnits * 1.2,
@@ -2357,12 +3771,12 @@ import {
         );
         const zMin = Math.min(
             -horizonDistanceSceneUnits * 1.8,
-            ...specs.map((spec) => spec.centerXZ[1] - spec.sizeSceneUnits * 8),
+            ...specs.map((spec) => spec.centerXZ[1] - planetSceneBoxSizeTuple(spec.sizeSceneUnits)[2] * 8),
             -80,
         );
         const zMax = Math.max(
             horizonDistanceSceneUnits * 0.25,
-            ...specs.map((spec) => spec.centerXZ[1] + spec.sizeSceneUnits * 6),
+            ...specs.map((spec) => spec.centerXZ[1] + planetSceneBoxSizeTuple(spec.sizeSceneUnits)[2] * 6),
             12,
         );
         const xSegments = positiveIntegerOrDefault(
@@ -2533,7 +3947,7 @@ import {
     function planetSceneEndpointLightFactor({ lambert, shadowed }) {
         const ambient = PLANET_SCENE_AMBIENT_LIGHT_INTENSITY;
         const directional = PLANET_SCENE_DIRECTIONAL_LIGHT_INTENSITY * lambert * (shadowed ? 0 : 1);
-        const maximum = Math.max(1, PLANET_SCENE_AMBIENT_LIGHT_INTENSITY + PLANET_SCENE_DIRECTIONAL_LIGHT_INTENSITY);
+        const maximum = Math.max(1, PLANET_SCENE_DIRECTIONAL_LIGHT_INTENSITY);
 
         return Math.max(0, Math.min(1, (ambient + directional) / maximum));
     }
@@ -2638,12 +4052,18 @@ import {
             [PLANET_SCENE_OBJECT_NAMES.farGreenBox, renderPlanetColorBoxObject],
             [PLANET_SCENE_OBJECT_NAMES.veryFarMagentaBox, renderPlanetColorBoxObject],
             [PLANET_SCENE_OBJECT_NAMES.veryFarGreenBox, renderPlanetColorBoxObject],
+            [PLANET_SCENE_OBJECT_NAMES.unionNearYellowBox, renderPlanetColorBoxObject],
+            [PLANET_SCENE_OBJECT_NAMES.unionCloseSingleStoryBuildingBox, renderPlanetColorBoxObject],
+            [PLANET_SCENE_OBJECT_NAMES.unionMidWhiteBox, renderPlanetColorBoxObject],
+            [PLANET_SCENE_OBJECT_NAMES.unionFarOrangeBox, renderPlanetColorBoxObject],
+            [PLANET_SCENE_OBJECT_NAMES.unionDistantCyanBox, renderPlanetColorBoxObject],
+            [PLANET_SCENE_OBJECT_NAMES.unionDenaliOrangeBox, renderPlanetColorBoxObject],
         ]);
     }
 
     function renderPlanetDistantSunLightObject({ THREE, sceneDefinition, radiusSceneUnits, distantSunDirection }) {
         const sceneSunDirection = sceneDirectionFromObserverLocalSun(normalize3(distantSunDirection));
-        const ambient = new THREE.AmbientLight(0xffffff, PLANET_SCENE_AMBIENT_LIGHT_INTENSITY);
+        const ambientLight = new THREE.AmbientLight(0xffffff, PLANET_SCENE_AMBIENT_LIGHT_INTENSITY);
         const light = new THREE.DirectionalLight(0xffffff, PLANET_SCENE_DIRECTIONAL_LIGHT_INTENSITY);
         const shadowsEnabled = planetSceneShadowsEnabled(sceneDefinition);
         const shadowFrame = planetSceneShadowFrame(sceneDefinition);
@@ -2654,7 +4074,13 @@ import {
             ? shadowFrame.focusSceneUnits
             : [0, 0, 0];
 
-        ambient.name = 'distant-sun-ambient-light';
+        ambientLight.name = 'distant-sun-endpoint-material-fill-light';
+        ambientLight.userData = {
+            kind: 'diagnostic-distant-sun-endpoint-material-fill-light',
+            ambientIntensity: PLANET_SCENE_AMBIENT_LIGHT_INTENSITY,
+            ambientToDirectionalRatio: PLANET_SCENE_AMBIENT_TO_DIRECTIONAL_RATIO,
+            note: 'Endpoint-scene material color preservation before Algorithm32 composition.',
+        };
         light.name = 'distant-sun-directional-light';
         light.castShadow = shadowsEnabled;
         light.position.set(
@@ -2687,7 +4113,7 @@ import {
         };
 
         return Object.freeze({
-            visualObjects: Object.freeze([ambient, light, light.target]),
+            visualObjects: Object.freeze([ambientLight, light, light.target]),
             raycastObjects: Object.freeze([]),
             description: Object.freeze({
                 name: PLANET_SCENE_OBJECT_NAMES.distantSunLight,
@@ -2695,6 +4121,7 @@ import {
                 sceneDirection: sceneSunDirection,
                 observerLocalDirection: distantSunDirection,
                 renderPolicy: 'registered-scene-object-renderer',
+                ambientToDirectionalRatio: PLANET_SCENE_AMBIENT_TO_DIRECTIONAL_RATIO,
                 shadowPolicy: sceneDefinition.shadowPolicy,
                 shadowFrame,
             }),
@@ -2702,14 +4129,21 @@ import {
     }
 
     function planetSceneShadowFrame(sceneDefinition) {
-        const specs = Object.values(sceneDefinition.objectSpecs ?? {})
-            .filter((spec) =>
-                isDiagnosticColorBoxSpecKind(spec?.kind)
-                && Array.isArray(spec.centerXZ)
-                && spec.centerXZ.length === 2
-                && spec.centerXZ.every(Number.isFinite)
-                && Number.isFinite(spec.sizeSceneUnits)
-                && spec.sizeSceneUnits > 0);
+        const activeObjectNames = new Set(Array.isArray(sceneDefinition.objectNames)
+            ? sceneDefinition.objectNames
+            : []);
+        const specs = Object.entries(sceneDefinition.objectSpecs ?? {})
+            .filter(([objectName, spec]) => {
+                return activeObjectNames.has(objectName)
+                    && objectName !== PLANET_SCENE_OBJECT_NAMES.distantSunLight
+                    && isDiagnosticColorBoxSpecKind(spec?.kind)
+                    && planetSceneShadowRegionForSpec(spec) === 'camera-local'
+                    && Array.isArray(spec.centerXZ)
+                    && spec.centerXZ.length === 2
+                    && spec.centerXZ.every(Number.isFinite)
+                    && planetSceneBoxSizeIsValid(spec.sizeSceneUnits);
+            })
+            .map(([, spec]) => spec);
         if (specs.length === 0) {
             return Object.freeze({
                 focusSceneUnits: Object.freeze([0, 0, 0]),
@@ -2724,17 +4158,19 @@ import {
         let maxZ = -Infinity;
         let maxSize = 0;
         for (const spec of specs) {
-            const halfSize = spec.sizeSceneUnits * 0.5;
-            minX = Math.min(minX, spec.centerXZ[0] - halfSize);
-            maxX = Math.max(maxX, spec.centerXZ[0] + halfSize);
-            minZ = Math.min(minZ, spec.centerXZ[1] - halfSize);
-            maxZ = Math.max(maxZ, spec.centerXZ[1] + halfSize);
-            maxSize = Math.max(maxSize, spec.sizeSceneUnits);
+            const size = planetSceneBoxSizeTuple(spec.sizeSceneUnits);
+            const halfX = size[0] * 0.5;
+            const halfZ = size[2] * 0.5;
+            minX = Math.min(minX, spec.centerXZ[0] - halfX);
+            maxX = Math.max(maxX, spec.centerXZ[0] + halfX);
+            minZ = Math.min(minZ, spec.centerXZ[1] - halfZ);
+            maxZ = Math.max(maxZ, spec.centerXZ[1] + halfZ);
+            maxSize = Math.max(maxSize, size[0], size[1], size[2]);
         }
 
         const spanX = Math.max(maxX - minX, maxSize);
         const spanZ = Math.max(maxZ - minZ, maxSize);
-        const extent = Math.max(24, spanX * 0.5 + maxSize * 2 + 4, spanZ * 0.5 + maxSize * 2 + 4);
+        const extent = Math.max(4, spanX * 0.5 + maxSize * 2 + 4, spanZ * 0.5 + maxSize * 2 + 4);
 
         return Object.freeze({
             focusSceneUnits: Object.freeze([
@@ -2755,7 +4191,8 @@ import {
         radiusSceneUnits,
         metersPerSceneUnit,
     }) {
-        const { centerXZ, sizeSceneUnits, displayRgba, spectralCoverageHint } = colorBoxObjectSpec(objectName, objectSpec);
+        const { centerXZ, sizeSceneUnits, displayRgba, spectralCoverageHint, shadowRegion } =
+            colorBoxObjectSpec(objectName, objectSpec);
         const material = planetSceneMaterial(THREE, displayRgba, sceneDefinition);
         const shadowsEnabled = planetSceneShadowsEnabled(sceneDefinition);
         const box = createPlanetDiagnosticColorBox({
@@ -2765,6 +4202,7 @@ import {
             sizeSceneUnits,
             displayRgba,
             spectralCoverageHint,
+            shadowRegion,
             radiusSceneUnits,
             metersPerSceneUnit,
             material,
@@ -2780,6 +4218,7 @@ import {
                 kind: 'diagnostic-color-box',
                 displayRgba,
                 spectralCoverageHint,
+                shadowRegion,
                 renderPolicy: 'registered-scene-object-renderer',
                 shadowPolicy: sceneDefinition.shadowPolicy,
             }),
@@ -2800,19 +4239,25 @@ import {
             || !Array.isArray(objectSpec.centerXZ)
             || objectSpec.centerXZ.length !== 2
             || !objectSpec.centerXZ.every(Number.isFinite)
-            || !Number.isFinite(objectSpec.sizeSceneUnits)
-            || objectSpec.sizeSceneUnits <= 0) {
+            || !planetSceneBoxSizeIsValid(objectSpec.sizeSceneUnits)) {
             throw new Error(`Scene object ${objectName} requires a diagnostic-color-box object spec.`);
         }
 
         return Object.freeze({
             centerXZ: Object.freeze([...objectSpec.centerXZ]),
-            sizeSceneUnits: objectSpec.sizeSceneUnits,
+            sizeSceneUnits: planetSceneBoxSizeTuple(objectSpec.sizeSceneUnits),
             displayRgba: rgbaOrDefault(objectSpec.displayRgba, PLANET_SCENE_DISPLAY_RGBA.greenBox),
             spectralCoverageHint: typeof objectSpec.spectralCoverageHint === 'string'
                 ? objectSpec.spectralCoverageHint
                 : 'unspecified-color-box',
+            shadowRegion: planetSceneShadowRegionForSpec(objectSpec),
         });
+    }
+
+    function planetSceneShadowRegionForSpec(spec) {
+        return typeof spec?.shadowRegion === 'string' && spec.shadowRegion.length > 0
+            ? spec.shadowRegion
+            : 'camera-local';
     }
 
     function createPlanetDiagnosticColorBox({
@@ -2822,6 +4267,7 @@ import {
         sizeSceneUnits,
         displayRgba,
         spectralCoverageHint,
+        shadowRegion,
         radiusSceneUnits,
         metersPerSceneUnit,
         material,
@@ -2829,17 +4275,18 @@ import {
         const [x, z] = centerXZ;
         const surfaceY = planetSphereSurfaceYAt({ x, z, radiusSceneUnits });
         const box = new THREE.Mesh(
-            new THREE.BoxGeometry(sizeSceneUnits, sizeSceneUnits, sizeSceneUnits),
+            new THREE.BoxGeometry(sizeSceneUnits[0], sizeSceneUnits[1], sizeSceneUnits[2]),
             material,
         );
 
         box.name = name;
         box.renderOrder = 0;
-        box.position.set(x, surfaceY + sizeSceneUnits * 0.5, z);
+        box.position.set(x, surfaceY + sizeSceneUnits[1] * 0.5, z);
         box.userData.endpointKind = 'diagnostic-scene-object';
         box.userData.metersPerSceneUnit = metersPerSceneUnit;
         box.userData.displayRgba = displayRgba;
         box.userData.spectralCoverageHint = spectralCoverageHint;
+        box.userData.shadowRegion = shadowRegion;
         box.updateMatrixWorld(true);
 
         return box;
@@ -2968,22 +4415,35 @@ import {
             if (!Array.isArray(spec.centerXZ)
                 || spec.centerXZ.length !== 2
                 || !spec.centerXZ.every(Number.isFinite)
-                || !Number.isFinite(spec.sizeSceneUnits)
-                || spec.sizeSceneUnits <= 0) {
+                || !planetSceneBoxSizeIsValid(spec.sizeSceneUnits)) {
                 continue;
             }
             specs[name] = Object.freeze({
                 kind: 'diagnostic-color-box',
                 centerXZ: Object.freeze([...spec.centerXZ]),
-                sizeSceneUnits: spec.sizeSceneUnits,
+                sizeSceneUnits: planetSceneBoxSizeTuple(spec.sizeSceneUnits),
                 displayRgba: rgbaOrDefault(spec.displayRgba, PLANET_SCENE_DISPLAY_RGBA.greenBox),
                 spectralCoverageHint: typeof spec.spectralCoverageHint === 'string'
                     ? spec.spectralCoverageHint
                     : 'unspecified-color-box',
+                shadowRegion: planetSceneShadowRegionForSpec(spec),
             });
         }
 
         return Object.freeze(specs);
+    }
+
+    function planetSceneBoxSizeIsValid(value) {
+        return (Number.isFinite(value) && value > 0)
+            || (Array.isArray(value) && value.length === 3 && value.every((entry) => Number.isFinite(entry) && entry > 0));
+    }
+
+    function planetSceneBoxSizeTuple(value) {
+        if (Array.isArray(value)) {
+            return Object.freeze([value[0], value[1], value[2]]);
+        }
+
+        return Object.freeze([value, value, value]);
     }
 
     function isDiagnosticColorBoxSpecKind(kind) {
@@ -3017,8 +4477,11 @@ import {
         colorResolver = null,
         noHitColorRgba = [0, 0, 0, 255],
         diagnosticColorBytes = null,
+        raycastSampleOffsets = [[0.5, 0.5]],
+        preferNonGroundSampleHits = false,
     }) {
         const raycaster = new THREE.Raycaster();
+        const representableFarSceneUnits = sceneDepthMaxMeters / distanceMultiplier;
         const depthBytes = new Uint8Array(width * height * 4);
         const hitMaskBytes = new Uint8Array(width * height * 4);
         const colorBytes = typeof colorResolver === 'function'
@@ -3028,6 +4491,8 @@ import {
             && diagnosticColorBytes.length === width * height * 4;
         const objectHitCounts = {};
         const objectColorExtents = {};
+        const objectDistanceExtents = {};
+        const objectFirstHitCoordinates = {};
         for (let index = 0; index < width * height; index += 1) {
             const offset = index * 4;
             depthBytes[offset + 3] = 255;
@@ -3042,20 +4507,37 @@ import {
 
         let hitPixelCount = 0;
         for (let y = 0; y < height; y += 1) {
-            const ndcY = ((y + 0.5) / height) * 2 - 1;
             for (let x = 0; x < width; x += 1) {
-                const ndcX = ((x + 0.5) / width) * 2 - 1;
-                raycaster.setFromCamera({ x: ndcX, y: ndcY }, camera);
-                const intersections = raycaster.intersectObjects(meshes, false);
-                if (intersections.length === 0) {
+                const hit = raycastPixelSample({
+                    raycaster,
+                    meshes,
+                    camera,
+                    x,
+                    y,
+                    width,
+                    height,
+                    representableFarSceneUnits,
+                    raycastSampleOffsets,
+                    preferNonGroundSampleHits,
+                });
+                if (!hit) {
                     continue;
                 }
 
                 hitPixelCount += 1;
-                const hit = intersections[0];
-                objectHitCounts[hit.object?.name ?? 'unknown'] =
-                    (objectHitCounts[hit.object?.name ?? 'unknown'] ?? 0) + 1;
+                const objectName = hit.object?.name ?? 'unknown';
+                objectHitCounts[objectName] = (objectHitCounts[objectName] ?? 0) + 1;
                 const distanceMeters = hit.distance * distanceMultiplier;
+                updateObjectDistanceExtents(objectDistanceExtents, objectName, distanceMeters);
+                if (!objectFirstHitCoordinates[objectName]) {
+                    objectFirstHitCoordinates[objectName] = {
+                        pixelId: `first-hit-${objectName}`,
+                        x,
+                        y,
+                        sceneHitDistanceMeters: distanceMeters,
+                        sourceCoordinateConvention: 'webgl-bottom-left',
+                    };
+                }
                 const encoded = packNormalizedDistance24(distanceMeters / sceneDepthMaxMeters);
                 const offset = (y * width + x) * 4;
                 depthBytes[offset] = encoded[0];
@@ -3072,9 +4554,9 @@ import {
                     colorBytes[offset + 1] = rgba[1];
                     colorBytes[offset + 2] = rgba[2];
                     colorBytes[offset + 3] = rgba[3];
-                    updateObjectColorExtents(objectColorExtents, hit.object?.name ?? 'unknown', rgba);
+                    updateObjectColorExtents(objectColorExtents, objectName, rgba);
                 } else if (hasDiagnosticColorBytes) {
-                    updateObjectColorExtents(objectColorExtents, hit.object?.name ?? 'unknown', [
+                    updateObjectColorExtents(objectColorExtents, objectName, [
                         diagnosticColorBytes[offset],
                         diagnosticColorBytes[offset + 1],
                         diagnosticColorBytes[offset + 2],
@@ -3091,7 +4573,86 @@ import {
             hitPixelCount,
             objectHitCounts: Object.freeze({ ...objectHitCounts }),
             objectColorExtents: freezeObjectColorExtents(objectColorExtents),
+            objectDistanceExtents: freezeObjectDistanceExtents(objectDistanceExtents),
+            objectFirstHitCoordinates: freezeObjectFirstHitCoordinates(objectFirstHitCoordinates),
         });
+    }
+
+    function raycastPixelSample({
+        raycaster,
+        meshes,
+        camera,
+        x,
+        y,
+        width,
+        height,
+        representableFarSceneUnits,
+        raycastSampleOffsets,
+        preferNonGroundSampleHits,
+    }) {
+        const sampleOffsets = Array.isArray(raycastSampleOffsets) && raycastSampleOffsets.length > 0
+            ? raycastSampleOffsets
+            : [[0.5, 0.5]];
+        let fallbackHit = null;
+        let preferredHit = null;
+
+        for (const offset of sampleOffsets) {
+            const offsetX = Array.isArray(offset) && Number.isFinite(offset[0]) ? offset[0] : 0.5;
+            const offsetY = Array.isArray(offset) && Number.isFinite(offset[1]) ? offset[1] : 0.5;
+            const ndcX = ((x + offsetX) / width) * 2 - 1;
+            const ndcY = ((y + offsetY) / height) * 2 - 1;
+
+            raycaster.setFromCamera({ x: ndcX, y: ndcY }, camera);
+            raycaster.near = Number.isFinite(camera.near) ? camera.near : 0;
+            raycaster.far = Number.isFinite(camera.far)
+                ? Math.min(camera.far, representableFarSceneUnits)
+                : representableFarSceneUnits;
+
+            const intersections = raycaster.intersectObjects(meshes, false);
+            if (intersections.length === 0) {
+                continue;
+            }
+
+            const hit = intersections[0];
+            if (!fallbackHit || hit.distance < fallbackHit.distance) {
+                fallbackHit = hit;
+            }
+            if (preferNonGroundSampleHits && !isGeometryGroundHit(hit)) {
+                if (!preferredHit || hit.distance < preferredHit.distance) {
+                    preferredHit = hit;
+                }
+            }
+        }
+
+        return preferredHit ?? fallbackHit;
+    }
+
+    function isGeometryGroundHit(hit) {
+        const name = hit?.object?.name ?? '';
+        const endpointKind = hit?.object?.userData?.endpointKind ?? '';
+        return name === 'local-flat-geometry-ground'
+            || endpointKind === 'geometry-ground-boundary';
+    }
+
+    function subpixelGridSampleOffsets(gridSize) {
+        const count = Math.max(1, Math.floor(gridSize));
+        const samples = [[0.5, 0.5]];
+        const seen = new Set(['0.5,0.5']);
+
+        for (let y = 0; y < count; y += 1) {
+            for (let x = 0; x < count; x += 1) {
+                const offsetX = (x + 0.5) / count;
+                const offsetY = (y + 0.5) / count;
+                const key = `${offsetX},${offsetY}`;
+                if (seen.has(key)) {
+                    continue;
+                }
+                seen.add(key);
+                samples.push([offsetX, offsetY]);
+            }
+        }
+
+        return Object.freeze(samples.map((sample) => Object.freeze(sample)));
     }
 
     function updateObjectColorExtents(extents, objectName, rgba) {
@@ -3113,6 +4674,50 @@ import {
             frozen[objectName] = Object.freeze({
                 minRgb: Object.freeze([...value.minRgb]),
                 maxRgb: Object.freeze([...value.maxRgb]),
+            });
+        }
+
+        return Object.freeze(frozen);
+    }
+
+    function updateObjectDistanceExtents(extents, objectName, distanceMeters) {
+        const current = extents[objectName] ?? {
+            minMeters: Number.POSITIVE_INFINITY,
+            maxMeters: 0,
+            sumMeters: 0,
+            count: 0,
+        };
+
+        current.minMeters = Math.min(current.minMeters, distanceMeters);
+        current.maxMeters = Math.max(current.maxMeters, distanceMeters);
+        current.sumMeters += distanceMeters;
+        current.count += 1;
+        extents[objectName] = current;
+    }
+
+    function freezeObjectDistanceExtents(extents) {
+        const frozen = {};
+        for (const [objectName, value] of Object.entries(extents)) {
+            frozen[objectName] = Object.freeze({
+                minMeters: value.minMeters,
+                maxMeters: value.maxMeters,
+                meanMeters: value.count > 0 ? value.sumMeters / value.count : 0,
+                count: value.count,
+            });
+        }
+
+        return Object.freeze(frozen);
+    }
+
+    function freezeObjectFirstHitCoordinates(coordinates) {
+        const frozen = {};
+        for (const [objectName, value] of Object.entries(coordinates)) {
+            frozen[objectName] = Object.freeze({
+                pixelId: value.pixelId,
+                x: value.x,
+                y: value.y,
+                sceneHitDistanceMeters: value.sceneHitDistanceMeters,
+                sourceCoordinateConvention: value.sourceCoordinateConvention,
             });
         }
 
@@ -3664,6 +5269,91 @@ import {
         }));
     }
 
+    function localFlatSelectedPixels(width, height, distanceCapture = null) {
+        const selections = [
+            {
+                pixelId: 'upper-sky-control',
+                x: Math.floor(width * 0.5),
+                y: height - 1 - Math.floor(height * 0.08),
+                sourceCoordinateConvention: 'top-left',
+                readbackCoordinateConvention: 'webgl-bottom-left',
+            },
+        ];
+        const firstHits = distanceCapture?.objectFirstHitCoordinates ?? {};
+        const objectSelectionOrder = [
+            'local-flat-close-red-box',
+            'local-flat-close-orange-box',
+            'local-flat-close-white-box',
+            'local-flat-near-green-box',
+            'local-flat-far-blue-box',
+            'local-flat-mid-yellow-box',
+            'local-flat-far-cyan-box',
+            'local-flat-very-far-magenta-box',
+            'local-flat-left-160km-6p2kmx50kmx100km-orange-box',
+            'local-flat-right-240km-6p2kmx50kmx100km-orange-box',
+            'local-flat-denali-200km-6p2kmx50kmx100km-orange-box',
+            'local-flat-geometry-ground',
+        ];
+
+        for (const objectName of objectSelectionOrder) {
+            const hit = firstHits[objectName];
+            if (!hit || !Number.isFinite(hit.x) || !Number.isFinite(hit.y)) {
+                continue;
+            }
+            selections.push({
+                pixelId: `object-hit-${objectName}`,
+                x: hit.x,
+                y: hit.y,
+                objectName,
+                sceneHitDistanceMeters: hit.sceneHitDistanceMeters ?? null,
+                sourceCoordinateConvention: 'webgl-bottom-left',
+                readbackCoordinateConvention: 'webgl-bottom-left',
+            });
+        }
+
+        if (selections.length === 1) {
+            selections.push(
+                {
+                    pixelId: 'center-box-or-ground-control',
+                    x: Math.floor(width * 0.5),
+                    y: height - 1 - Math.floor(height * 0.50),
+                    sourceCoordinateConvention: 'top-left',
+                    readbackCoordinateConvention: 'webgl-bottom-left',
+                },
+                {
+                    pixelId: 'lower-ground-hit',
+                    x: Math.floor(width * 0.5),
+                    y: height - 1 - Math.floor(height * 0.82),
+                    sourceCoordinateConvention: 'top-left',
+                    readbackCoordinateConvention: 'webgl-bottom-left',
+                },
+            );
+        }
+
+        return uniqueSelectedPixels(selections, width, height);
+    }
+
+    function uniqueSelectedPixels(selections, width, height) {
+        const seen = new Set();
+        const unique = [];
+        for (const selection of selections) {
+            const x = clampInteger(selection.x, 0, width - 1);
+            const y = clampInteger(selection.y, 0, height - 1);
+            const key = `${x},${y}`;
+            if (seen.has(key)) {
+                continue;
+            }
+            seen.add(key);
+            unique.push({
+                ...selection,
+                x,
+                y,
+            });
+        }
+
+        return unique;
+    }
+
     function collectBrowserDiagnostics(gl, canvas) {
         const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
         const precision = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
@@ -3782,6 +5472,10 @@ void main() {
         setUniform1f(gl, program, 'uSceneTerminationMeters', 0);
         setUniform1f(gl, program, 'uSceneDepthMaxMeters', 1);
         setUniform1f(gl, program, 'uEndpointRadianceScale', 1);
+        setUniform1f(gl, program, 'uEndpointCameraDistanceScaleEnabled', 0);
+        setUniform1f(gl, program, 'uEndpointCameraDistanceReferenceMeters', 200000);
+        setUniform1f(gl, program, 'uEndpointCameraDistanceMinScale', 0.05);
+        setUniform1f(gl, program, 'uEndpointCameraDistanceMaxScale', 1);
         setUniform3f(gl, program, 'uCameraWorldPositionMeters', 6360002, 0, 0);
         setUniform3f(gl, program, 'uDistantSunDirection', 0, 0, 1);
         setUniformMatrix4fv(gl, program, 'uInverseProjectionMatrix', identityMatrix4());
@@ -3804,6 +5498,12 @@ void main() {
         setUniform1f(gl, program, 'uSceneTerminationMeters', numberOrDefault(payload.sceneTerminationMeters, 0));
         setUniform1f(gl, program, 'uSceneDepthMaxMeters', numberOrDefault(payload.sceneDepthMaxMeters, 1));
         setUniform1f(gl, program, 'uEndpointRadianceScale', numberOrDefault(payload.endpointRadianceScale, 1));
+        const endpointCameraDistanceScale = normalizeEndpointCameraDistanceScalePayload(payload.endpointCameraDistanceScale);
+        setUniform1f(gl, program, 'uEndpointCameraDistanceScaleEnabled',
+            endpointCameraDistanceScale.policy === 'reverse-square' ? 1 : 0);
+        setUniform1f(gl, program, 'uEndpointCameraDistanceReferenceMeters', endpointCameraDistanceScale.referenceMeters);
+        setUniform1f(gl, program, 'uEndpointCameraDistanceMinScale', endpointCameraDistanceScale.minScale);
+        setUniform1f(gl, program, 'uEndpointCameraDistanceMaxScale', endpointCameraDistanceScale.maxScale);
         setUniform3f(gl, program, 'uCameraWorldPositionMeters',
             cameraWorldPosition[0], cameraWorldPosition[1], cameraWorldPosition[2]);
         setUniform3f(gl, program, 'uDistantSunDirection',
@@ -4075,6 +5775,35 @@ void main() {
         return selection.readbackRgba.slice(0, 3).some((channel) => channel > 0);
     }
 
+    function rgbaWithinTolerance(actual, expected, toleranceBytes) {
+        return Array.isArray(actual)
+            && Array.isArray(expected)
+            && actual.length === 4
+            && expected.length === 4
+            && actual.every((value, index) =>
+                Math.abs(value - expected[index]) <= toleranceBytes);
+    }
+
+    function expectedDiagnosticReadback(run, pixel) {
+        if (Array.isArray(run.expectedReadbacks)) {
+            const match = run.expectedReadbacks.find((entry) =>
+                entry?.pixelId === pixel.pixelId
+                || (entry?.x === pixel.x && entry?.y === pixel.y));
+
+            return Array.isArray(match?.expectedReadbackRgba)
+                ? match.expectedReadbackRgba
+                : null;
+        }
+
+        if (run.expectedReadbacks && typeof run.expectedReadbacks === 'object') {
+            const byId = run.expectedReadbacks[pixel.pixelId];
+
+            return Array.isArray(byId) ? byId : null;
+        }
+
+        return null;
+    }
+
     function addVec3(a, b) {
         return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
     }
@@ -4123,6 +5852,34 @@ void main() {
 
     function numberOrDefault(value, fallback) {
         return Number.isFinite(value) ? value : fallback;
+    }
+
+    function normalizeEndpointCameraDistanceScalePayload(scaleConfig) {
+        if (!scaleConfig || typeof scaleConfig !== 'object' || scaleConfig.policy !== 'reverse-square') {
+            return {
+                policy: 'none',
+                referenceMeters: 200000,
+                minScale: 0.05,
+                maxScale: 1,
+            };
+        }
+
+        const referenceMeters = Number.isFinite(scaleConfig.referenceMeters) && scaleConfig.referenceMeters > 0
+            ? scaleConfig.referenceMeters
+            : 200000;
+        const minScale = Number.isFinite(scaleConfig.minScale)
+            ? Math.max(0, scaleConfig.minScale)
+            : 0.05;
+        const maxScale = Number.isFinite(scaleConfig.maxScale)
+            ? Math.max(minScale, scaleConfig.maxScale)
+            : 1;
+
+        return {
+            policy: 'reverse-square',
+            referenceMeters,
+            minScale,
+            maxScale,
+        };
     }
 
     function summarizeIncidentRadianceTexture(texturePayload) {

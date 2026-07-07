@@ -1,6 +1,6 @@
 // References:
+// - agents/topics/apps/flat/reconciliation/action-plan.md, Subgoal 4.2 local GPU cache texture and lookup.
 // - agents/topics/apps/flat/reconciliation/shader-design.md, owner contributions and cache texture access.
-// - scripts/flat/reconciliation/POC/src/color/BrunetonColorDisplayModel.js, accepted display adapter policy.
 
 import TextureBuilder from './TextureBuilder.js';
 import BrunetonColorDisplayModel from '../color/BrunetonColorDisplayModel.js';
@@ -11,7 +11,6 @@ import {
 
 const SPECTRAL_CHANNEL_COUNT = CANONICAL_SPECTRAL_CHANNELS.length;
 const SPECTRAL_GROUP_SIZE = 4;
-const SPECTRAL_GROUP_COUNT = Math.ceil(SPECTRAL_CHANNEL_COUNT / SPECTRAL_GROUP_SIZE);
 const DISPLAY_LINEAR_SRGB_BY_CHANNEL = buildDisplayLinearSrgbByChannel();
 
 const MAIN_SYMBOLS = Object.freeze([
@@ -26,7 +25,7 @@ const MAIN_SYMBOLS = Object.freeze([
     'color.encodeOutput',
 ]);
 
-export default class DistantSphericalShaderContributionFactory {
+export default class LocalFlatShaderContributionFactory {
     /**
      * @param {{ readonly textureBuilder?: TextureBuilder }} [configuration] - Factory configuration.
      */
@@ -47,18 +46,14 @@ export default class DistantSphericalShaderContributionFactory {
      */
     createContributions(descriptor) {
         const cacheTexture = this._textureBuilder.createTexture({
-            textureId: 'incident-radiance-distant-l2',
+            textureId: descriptor.cache.facts.textureId,
             owner: 'cache',
             dimensionality: '3d',
-            dimensions: Object.freeze([
-                descriptor.cache.facts.incidentDirectionCount,
-                descriptor.cache.facts.incidentAltitudeBinCount,
-                SPECTRAL_GROUP_COUNT,
-            ]),
+            dimensions: descriptor.cache.facts.textureDimensions,
             formatPreference: Object.freeze(['float32', 'half-float']),
-            samplerPolicy: 'nearest-clamp',
-            valueKey: 'cache.incidentRadianceTexture',
-            accessFunctionName: 'readIncidentRadianceTexture',
+            samplerPolicy: descriptor.cache.facts.samplerPolicy,
+            valueKey: 'cache.localIncidentRadianceTexture',
+            accessFunctionName: 'readLocalIncidentRadianceTexture',
         });
 
         return Object.freeze([
@@ -69,13 +64,14 @@ export default class DistantSphericalShaderContributionFactory {
             cacheContribution(descriptor, cacheTexture),
             transportContribution(descriptor),
             colorContribution(descriptor),
+            diagnosticContribution(descriptor),
         ]);
     }
 }
 
 function runtimeContribution(descriptor) {
     return contribution({
-        id: 'runtime-three-single-camera',
+        id: 'runtime-three-single-camera-local-flat',
         owner: 'runtime',
         descriptorFingerprint: descriptor.runtime.fingerprint,
         compatibilityTags: descriptor.runtime.compatibilityTags,
@@ -177,14 +173,14 @@ SpectralValue oneSpectral() {
 
 function geometryContribution(descriptor) {
     const facts = descriptor.geometry.facts;
-    const frame = facts.observerLocalSceneFrame ?? Object.freeze({
-        up: Object.freeze([1, 0, 0]),
-        right: Object.freeze([0, 1, 0]),
-        forward: Object.freeze([0, 0, -1]),
-    });
+    const frame = facts.observerLocalSceneFrame;
+    const dome = facts.observerCenteredDome;
+    const domeEnabled = Boolean(dome);
+    const domeCenterMeters = domeEnabled ? dome.sphereCenterMeters : [0, 0, 0];
+    const domeRadiusMeters = domeEnabled ? dome.sphereRadiusMeters : 0;
 
     return contribution({
-        id: 'geometry-spherical-earth',
+        id: 'geometry-flat-earth',
         owner: 'geometry',
         descriptorFingerprint: descriptor.geometry.fingerprint,
         compatibilityTags: descriptor.geometry.compatibilityTags,
@@ -202,12 +198,15 @@ function geometryContribution(descriptor) {
             uniform('uSceneDepthMaxMeters', 'float', 'geometry.sceneDepthMaxMeters'),
         ]),
         functions: Object.freeze([
-            block('geometry-constants', 'declareConstants', 0, `const float GEOMETRY_BOTTOM_RADIUS_METERS = ${formatFloat(facts.bottomRadiusMeters)};
-const float GEOMETRY_TOP_RADIUS_METERS = ${formatFloat(facts.topRadiusMeters)};
-const float GEOMETRY_CACHE_BOUNDARY_ALTITUDE_METERS = ${formatFloat(facts.cacheBoundaryAltitudeMeters ?? 2)};
+            block('geometry-constants', 'declareConstants', 0, `const float GEOMETRY_TOP_ALTITUDE_METERS = ${formatFloat(facts.topAltitudeMeters)};
+const float GEOMETRY_SCENE_SKY_RAY_LIMIT_METERS = ${formatFloat(facts.sceneSkyRayLimitMeters)};
+const vec3 GEOMETRY_SOURCE_SUBPOINT_METERS = ${formatVec3(facts.sourceSubpointMeters)};
 const vec3 GEOMETRY_OBSERVER_UP_DIRECTION = ${formatVec3(frame.up)};
 const vec3 GEOMETRY_OBSERVER_RIGHT_DIRECTION = ${formatVec3(frame.right)};
-const vec3 GEOMETRY_OBSERVER_FORWARD_DIRECTION = ${formatVec3(frame.forward)};`),
+const vec3 GEOMETRY_OBSERVER_FORWARD_DIRECTION = ${formatVec3(frame.forward)};
+const bool GEOMETRY_OBSERVER_DOME_ENABLED = ${domeEnabled ? 'true' : 'false'};
+const vec3 GEOMETRY_OBSERVER_DOME_CENTER_METERS = ${formatVec3(domeCenterMeters)};
+const float GEOMETRY_OBSERVER_DOME_RADIUS_METERS = ${formatFloat(domeRadiusMeters)};`),
             block('geometry-reconstruct-helper', 'reconstructRay', 0, `ViewRay reconstructViewRay(vec2 uv) {
     vec4 clip = vec4(uv * 2.0 - 1.0, 1.0, 1.0);
     vec4 view = uInverseProjectionMatrix * clip;
@@ -222,42 +221,115 @@ const vec3 GEOMETRY_OBSERVER_FORWARD_DIRECTION = ${formatVec3(frame.forward)};`)
 }`),
             block('geometry-depth-helper', 'resolvePathBounds', 0, `float sceneTerminationMetersFromDepth(float sceneDepth) {
     return max(sceneDepth * uSceneDepthMaxMeters, 0.0);
+}
+
+float positiveBoundaryDistance(float distanceMeters) {
+    return max(distanceMeters, 0.0);
+}
+
+bool observerDomeBoundaryDistance(vec3 originMeters, vec3 direction, out float distanceMeters) {
+    if (!GEOMETRY_OBSERVER_DOME_ENABLED) {
+        distanceMeters = 0.0;
+        return false;
+    }
+
+    vec3 offsetFromCenter = originMeters - GEOMETRY_OBSERVER_DOME_CENTER_METERS;
+    float b = dot(offsetFromCenter, direction);
+    float c = dot(offsetFromCenter, offsetFromCenter)
+        - GEOMETRY_OBSERVER_DOME_RADIUS_METERS * GEOMETRY_OBSERVER_DOME_RADIUS_METERS;
+    float discriminant = b * b - c;
+
+    if (discriminant < -0.000001) {
+        distanceMeters = 0.0;
+        return false;
+    }
+
+    float root = sqrt(max(discriminant, 0.0));
+    float nearDistance = -b - root;
+    float farDistance = -b + root;
+
+    if (c <= 0.000001 && farDistance >= -0.000001) {
+        distanceMeters = positiveBoundaryDistance(farDistance);
+        return true;
+    }
+    if (nearDistance >= -0.000001) {
+        distanceMeters = positiveBoundaryDistance(nearDistance);
+        return true;
+    }
+    if (farDistance >= -0.000001) {
+        distanceMeters = positiveBoundaryDistance(farDistance);
+        return true;
+    }
+
+    distanceMeters = 0.0;
+    return false;
+}
+
+void chooseNearestBoundary(float candidateDistanceMeters, bool hasCandidate, inout float selectedDistanceMeters, inout bool hasSelected) {
+    if (hasCandidate && (!hasSelected || candidateDistanceMeters < selectedDistanceMeters)) {
+        selectedDistanceMeters = candidateDistanceMeters;
+        hasSelected = true;
+    }
 }`),
             block('geometry-path-helper', 'resolvePathBounds', 0, `PathBounds resolveAtmospherePath(ViewRay ray, float sceneTerminationMeters, bool hasSceneEndpoint) {
-    float radius = length(ray.originMeters);
-    float mu = dot(ray.originMeters, ray.direction) / max(radius, 1.0);
-    float topDiscriminant =
-        radius * radius * (mu * mu - 1.0)
-        + GEOMETRY_TOP_RADIUS_METERS * GEOMETRY_TOP_RADIUS_METERS;
-    if (topDiscriminant < 0.0) {
-        return PathBounds(0.0, 0.0, 0.0, false, false, false);
-    }
-    float atmosphereExitMeters = max(0.0, -radius * mu + sqrt(topDiscriminant));
-    float boundaryDistanceMeters = atmosphereExitMeters;
-    bool hasGroundEndpoint = false;
-    float endDistanceMeters = hasSceneEndpoint ? min(max(sceneTerminationMeters, 0.0), boundaryDistanceMeters) : boundaryDistanceMeters;
-    return PathBounds(0.0, max(0.0, endDistanceMeters), sceneTerminationMeters, hasSceneEndpoint, hasGroundEndpoint, true);
+    bool hasTopBoundary = ray.direction.z > 0.000001;
+    bool hasGroundBoundary = ray.direction.z < -0.000001;
+    float topDistanceMeters = hasTopBoundary
+        ? positiveBoundaryDistance((GEOMETRY_TOP_ALTITUDE_METERS - ray.originMeters.z) / ray.direction.z)
+        : 0.0;
+    float groundDistanceMeters = hasGroundBoundary
+        ? positiveBoundaryDistance((0.0 - ray.originMeters.z) / ray.direction.z)
+        : 0.0;
+    float domeDistanceMeters = 0.0;
+    bool hasDomeBoundary = observerDomeBoundaryDistance(ray.originMeters, ray.direction, domeDistanceMeters);
+    bool hasAtmosphereBoundary = false;
+    float boundaryDistanceMeters = 0.0;
+    bool usesGroundBoundary = false;
+
+    chooseNearestBoundary(topDistanceMeters, hasTopBoundary, boundaryDistanceMeters, hasAtmosphereBoundary);
+    bool groundWouldWin = hasGroundBoundary
+        && (!hasAtmosphereBoundary || groundDistanceMeters <= boundaryDistanceMeters);
+    chooseNearestBoundary(groundDistanceMeters, hasGroundBoundary, boundaryDistanceMeters, hasAtmosphereBoundary);
+    usesGroundBoundary = groundWouldWin;
+    chooseNearestBoundary(domeDistanceMeters, hasDomeBoundary, boundaryDistanceMeters, hasAtmosphereBoundary);
+
+    float fallbackSkyDistanceMeters = max(GEOMETRY_SCENE_SKY_RAY_LIMIT_METERS, 0.0);
+    float selectedBoundaryDistanceMeters = hasAtmosphereBoundary
+        ? boundaryDistanceMeters
+        : fallbackSkyDistanceMeters;
+    float endDistanceMeters = hasSceneEndpoint
+        ? min(max(sceneTerminationMeters, 0.0), selectedBoundaryDistanceMeters)
+        : selectedBoundaryDistanceMeters;
+    bool hasGroundEndpoint = hasGroundBoundary && groundDistanceMeters <= endDistanceMeters;
+    bool valid = endDistanceMeters >= 0.0;
+    return PathBounds(0.0, max(0.0, endDistanceMeters), sceneTerminationMeters, hasSceneEndpoint, hasGroundEndpoint, valid);
 }`),
-            block('geometry-cache-coordinate', 'lookupIncidentRadiance', 0, `float resolveCacheAltitudeNormalized(vec3 positionMeters) {
-    float altitudeMeters = max(
-        length(positionMeters) - GEOMETRY_BOTTOM_RADIUS_METERS,
-        GEOMETRY_CACHE_BOUNDARY_ALTITUDE_METERS
-    );
-    return clamp(
-        altitudeMeters / max(GEOMETRY_TOP_RADIUS_METERS - GEOMETRY_BOTTOM_RADIUS_METERS, 1.0),
-        0.0,
-        0.999999999
-    );
+            block('geometry-cache-coordinate', 'lookupIncidentRadiance', 0, `int nearestLocalCacheZBinIndex(vec3 positionMeters) {
+    float altitudeMeters = positionMeters.z;
+    int bestIndex = 0;
+    float bestDelta = abs(altitudeMeters - LOCAL_CACHE_Z_BINS_METERS[0]);
+    for (int binIndex = 1; binIndex < LOCAL_CACHE_Z_BIN_COUNT; binIndex += 1) {
+        float candidateDelta = abs(altitudeMeters - LOCAL_CACHE_Z_BINS_METERS[binIndex]);
+        if (candidateDelta < bestDelta) {
+            bestDelta = candidateDelta;
+            bestIndex = binIndex;
+        }
+    }
+    return bestIndex;
 }
 
-int resolveCacheAltitudeBinIndex(vec3 positionMeters) {
-    float altitude = resolveCacheAltitudeNormalized(positionMeters);
-    return int(floor(altitude * float(CACHE_INCIDENT_ALTITUDE_BIN_COUNT)));
-}
-
-float resolveCacheAltitudeBinCoordinate(vec3 positionMeters) {
-    float altitude = resolveCacheAltitudeNormalized(positionMeters);
-    return altitude * float(CACHE_INCIDENT_ALTITUDE_BIN_COUNT) - 0.5;
+int nearestLocalCacheRhoBinIndex(vec3 positionMeters) {
+    float rhoMeters = length(positionMeters.xy - GEOMETRY_SOURCE_SUBPOINT_METERS.xy);
+    int bestIndex = 0;
+    float bestDelta = abs(rhoMeters - LOCAL_CACHE_RHO_BINS_METERS[0]);
+    for (int binIndex = 1; binIndex < LOCAL_CACHE_RHO_BIN_COUNT; binIndex += 1) {
+        float candidateDelta = abs(rhoMeters - LOCAL_CACHE_RHO_BINS_METERS[binIndex]);
+        if (candidateDelta < bestDelta) {
+            bestDelta = candidateDelta;
+            bestIndex = binIndex;
+        }
+    }
+    return bestIndex;
 }`),
         ]),
         mainHooks: Object.freeze([
@@ -271,7 +343,7 @@ function atmosphereContribution(descriptor) {
     const facts = descriptor.atmosphere.facts;
 
     return contribution({
-        id: 'atmosphere-canonical',
+        id: 'atmosphere-canonical-flat-altitude',
         owner: 'atmosphere',
         descriptorFingerprint: descriptor.atmosphere.fingerprint,
         compatibilityTags: descriptor.atmosphere.compatibilityTags,
@@ -287,7 +359,7 @@ const float ATMOSPHERE_MIE_SINGLE_SCATTERING_ALBEDO = ${formatFloat(facts.mieSin
 const float ATMOSPHERE_MIE_PHASE_FUNCTION_G = ${formatFloat(facts.miePhaseFunctionG)};
 const float ATMOSPHERE_WAVELENGTH_MICROMETERS[${SPECTRAL_CHANNEL_COUNT}] = float[${SPECTRAL_CHANNEL_COUNT}](${formatFloatArray(CANONICAL_SPECTRAL_CHANNELS.map((channel) => channel.wavelengthNanometers / 1000))});`),
             block('atmosphere-sample-medium', 'sampleAtmosphere', 0, `MediumSample sampleAtmosphere(vec3 positionMeters) {
-    float altitudeMeters = max(0.0, length(positionMeters) - GEOMETRY_BOTTOM_RADIUS_METERS);
+    float altitudeMeters = clamp(positionMeters.z, 0.0, GEOMETRY_TOP_ALTITUDE_METERS);
     float rayleighDensity = exp(-altitudeMeters / ATMOSPHERE_RAYLEIGH_SCALE_HEIGHT_METERS);
     float mieDensity = exp(-altitudeMeters / ATMOSPHERE_MIE_SCALE_HEIGHT_METERS);
     MediumSample medium;
@@ -310,27 +382,28 @@ const float ATMOSPHERE_WAVELENGTH_MICROMETERS[${SPECTRAL_CHANNEL_COUNT}] = float
 
 SpectralValue sourcePathTransmittance(vec3 positionMeters, vec3 sourceDirection) {
     vec3 direction = normalize(sourceDirection);
-    float radius = length(positionMeters);
-    float mu = dot(positionMeters, direction) / max(radius, 1.0);
-    float groundDiscriminant =
-        radius * radius * (mu * mu - 1.0)
-        + GEOMETRY_BOTTOM_RADIUS_METERS * GEOMETRY_BOTTOM_RADIUS_METERS;
-    if (mu < 0.0 && groundDiscriminant >= 0.0) {
-        float groundDistance = -radius * mu - sqrt(groundDiscriminant);
-        if (groundDistance > 0.0) {
+    float sourceDistanceMeters = length(LOCAL_LIGHT_SOURCE_POSITION_METERS - positionMeters);
+
+    if (direction.z < -0.000001) {
+        float groundDistanceMeters = (0.0 - positionMeters.z) / direction.z;
+        if (groundDistanceMeters >= 0.0 && groundDistanceMeters < sourceDistanceMeters) {
             return zeroSpectral();
         }
     }
 
-    float topDiscriminant =
-        radius * radius * (mu * mu - 1.0)
-        + GEOMETRY_TOP_RADIUS_METERS * GEOMETRY_TOP_RADIUS_METERS;
-    if (topDiscriminant < 0.0) {
-        return zeroSpectral();
+    float endDistanceMeters = sourceDistanceMeters;
+    if (direction.z > 0.000001) {
+        float topDistanceMeters = (GEOMETRY_TOP_ALTITUDE_METERS - positionMeters.z) / direction.z;
+        if (topDistanceMeters >= 0.0) {
+            endDistanceMeters = min(endDistanceMeters, topDistanceMeters);
+        }
+    }
+    float domeDistanceMeters = 0.0;
+    if (observerDomeBoundaryDistance(positionMeters, direction, domeDistanceMeters)) {
+        endDistanceMeters = min(endDistanceMeters, domeDistanceMeters);
     }
 
-    float endDistanceMeters = max(0.0, -radius * mu + sqrt(topDiscriminant));
-    float stepMeters = endDistanceMeters / float(SOURCE_TRANSMITTANCE_INTERVAL_COUNT);
+    float stepMeters = max(endDistanceMeters, 0.0) / float(SOURCE_TRANSMITTANCE_INTERVAL_COUNT);
     SpectralValue opticalDepth = zeroSpectral();
 
     for (int pointIndex = 0; pointIndex <= SOURCE_TRANSMITTANCE_INTERVAL_COUNT; pointIndex += 1) {
@@ -357,23 +430,40 @@ SpectralValue sourcePathTransmittance(vec3 positionMeters, vec3 sourceDirection)
 }
 
 function lightContribution(descriptor) {
+    const facts = descriptor.lightSource.facts;
+    const falloffExpression = facts.distanceFalloff
+        ? 'pow(LOCAL_LIGHT_REFERENCE_DISTANCE_METERS / safeDistanceMeters, 2.0)'
+        : '1.0';
+
     return contribution({
-        id: 'light-distant-sun',
+        id: 'light-local-sun',
         owner: 'lightSource',
         descriptorFingerprint: descriptor.lightSource.fingerprint,
         compatibilityTags: descriptor.lightSource.compatibilityTags,
         provides: Object.freeze(['light.sampleDirectRadiance', 'light.sourceDirection']),
         requires: Object.freeze(['atmosphere.sourcePathTransmittance']),
-        uniforms: Object.freeze([
-            uniform('uDistantSunDirection', 'vec3', 'lightSource.direction'),
-        ]),
         functions: Object.freeze([
-            block('light-source-constants', 'declareConstants', 0, `const float LIGHT_SOURCE_SOLAR_IRRADIANCE[${SPECTRAL_CHANNEL_COUNT}] = float[${SPECTRAL_CHANNEL_COUNT}](${formatFloatArray(CANONICAL_SPECTRAL_CHANNELS.map((channel) => channel.solarIrradiance))});`),
-            block('light-source-helper', 'sampleLightSource', 0, `SpectralValue sampleDirectRadiance(vec3 positionMeters) {
-    SpectralValue sourceTransmittance = sourcePathTransmittance(positionMeters, normalize(uDistantSunDirection));
+            block('light-source-constants', 'declareConstants', 0, `const vec3 LOCAL_LIGHT_SOURCE_POSITION_METERS = ${formatVec3(facts.sourcePositionMeters)};
+const float LOCAL_LIGHT_REFERENCE_DISTANCE_METERS = ${formatFloat(facts.referenceDistanceMeters)};
+const float LOCAL_LIGHT_REFERENCE_SPECTRAL_INCIDENT_SCALE = ${formatFloat(facts.referenceSpectralIncidentScale)};
+const float LOCAL_LIGHT_RADIUS_METERS = ${formatFloat(facts.radiusMeters)};
+const float LIGHT_SOURCE_SOLAR_IRRADIANCE[${SPECTRAL_CHANNEL_COUNT}] = float[${SPECTRAL_CHANNEL_COUNT}](${formatFloatArray(CANONICAL_SPECTRAL_CHANNELS.map((channel) => channel.solarIrradiance))});`),
+            block('light-source-helper', 'sampleLightSource', 0, `vec3 directionToLight(vec3 positionMeters) {
+    return normalize(LOCAL_LIGHT_SOURCE_POSITION_METERS - positionMeters);
+}
+
+SpectralValue sampleDirectRadiance(vec3 positionMeters) {
+    vec3 direction = directionToLight(positionMeters);
+    float distanceMeters = length(LOCAL_LIGHT_SOURCE_POSITION_METERS - positionMeters);
+    float safeDistanceMeters = max(LOCAL_LIGHT_RADIUS_METERS, max(distanceMeters, 0.0));
+    float falloffScale = ${falloffExpression};
+    float incidentScale = LOCAL_LIGHT_REFERENCE_SPECTRAL_INCIDENT_SCALE * falloffScale;
+    SpectralValue sourceTransmittance = sourcePathTransmittance(positionMeters, direction);
     SpectralValue radiance;
     for (int channelIndex = 0; channelIndex < SPECTRAL_CHANNEL_COUNT; channelIndex += 1) {
-        radiance.c[channelIndex] = LIGHT_SOURCE_SOLAR_IRRADIANCE[channelIndex] * sourceTransmittance.c[channelIndex];
+        radiance.c[channelIndex] = LIGHT_SOURCE_SOLAR_IRRADIANCE[channelIndex]
+            * incidentScale
+            * sourceTransmittance.c[channelIndex];
     }
     return radiance;
 }`),
@@ -385,12 +475,10 @@ function lightContribution(descriptor) {
 }
 
 function cacheContribution(descriptor, cacheTexture) {
-    const cacheLookupHelper = cacheIncidentRadianceLookupHelper(
-        descriptor.cache.facts.altitudeLookup?.kind ?? 'nearest-bin',
-    );
+    const facts = descriptor.cache.facts;
 
     return contribution({
-        id: 'cache-distant-l2-incident-radiance',
+        id: 'cache-local-l2-incident-radiance',
         owner: 'cache',
         descriptorFingerprint: descriptor.cache.fingerprint,
         compatibilityTags: descriptor.cache.compatibilityTags,
@@ -400,102 +488,88 @@ function cacheContribution(descriptor, cacheTexture) {
             texture('uIncidentRadianceCacheTexture', 'sampler3D', cacheTexture.valueKey),
         ]),
         bindingRequirements: Object.freeze([
-            binding('cache.incidentRadianceTexture', 'cache', 'texture', 'setup', cacheTexture.valueKey, true),
+            binding('cache.localIncidentRadianceTexture', 'cache', 'texture', 'setup', cacheTexture.valueKey, true),
         ]),
         functions: Object.freeze([
-            block('cache-constants', 'declareConstants', 0, `const int CACHE_INCIDENT_DIRECTION_COUNT = ${descriptor.cache.facts.incidentDirectionCount};
-const int CACHE_INCIDENT_ALTITUDE_BIN_COUNT = ${descriptor.cache.facts.incidentAltitudeBinCount};
-const int CACHE_SPECTRAL_GROUP_COUNT = ${SPECTRAL_GROUP_COUNT};
-const float CACHE_INCIDENT_DIRECTION_WEIGHT = ${formatFloat((4 * Math.PI) / descriptor.cache.facts.incidentDirectionCount)};
-const float CACHE_GOLDEN_RATIO = 1.6180339887498948482;`),
-            block('cache-texture-access', 'lookupIncidentRadiance', 5, `vec4 readIncidentRadianceTexture(sampler3D sourceTexture, int altitudeBinIndex, int directionIndex, int spectralGroupIndex) {
-    int clampedAltitudeBinIndex = clamp(altitudeBinIndex, 0, CACHE_INCIDENT_ALTITUDE_BIN_COUNT - 1);
-    int clampedDirectionIndex = clamp(directionIndex, 0, CACHE_INCIDENT_DIRECTION_COUNT - 1);
-    int clampedSpectralGroupIndex = clamp(spectralGroupIndex, 0, CACHE_SPECTRAL_GROUP_COUNT - 1);
-    return texelFetch(sourceTexture, ivec3(clampedDirectionIndex, clampedAltitudeBinIndex, clampedSpectralGroupIndex), 0);
+            block('cache-constants', 'declareConstants', 0, `const int LOCAL_CACHE_DIRECTION_COUNT = ${facts.directionCount};
+const int LOCAL_CACHE_RHO_BIN_COUNT = ${facts.rhoBinCount};
+const int LOCAL_CACHE_Z_BIN_COUNT = ${facts.zBinCount};
+const int LOCAL_CACHE_SPECTRAL_GROUP_COUNT = ${facts.spectralGroupCount};
+const float LOCAL_CACHE_INCIDENT_DIRECTION_WEIGHT = ${formatFloat(facts.directionWeight)};
+const float LOCAL_CACHE_GOLDEN_RATIO = 1.6180339887498948482;
+const float LOCAL_CACHE_Z_BINS_METERS[${facts.zBinCount}] = float[${facts.zBinCount}](${formatFloatArray(facts.zBinsMeters)});
+const float LOCAL_CACHE_RHO_BINS_METERS[${facts.rhoBinCount}] = float[${facts.rhoBinCount}](${formatFloatArray(facts.rhoBinsMeters)});`),
+            block('cache-texture-access', 'lookupIncidentRadiance', 5, `int zSpectralGroupDepthIndex(int zBinIndex, int spectralGroupIndex) {
+    int clampedZBinIndex = clamp(zBinIndex, 0, LOCAL_CACHE_Z_BIN_COUNT - 1);
+    int clampedSpectralGroupIndex = clamp(spectralGroupIndex, 0, LOCAL_CACHE_SPECTRAL_GROUP_COUNT - 1);
+    return clampedZBinIndex * LOCAL_CACHE_SPECTRAL_GROUP_COUNT + clampedSpectralGroupIndex;
 }
 
-float unpackIncidentRadianceChannel(int altitudeBinIndex, int directionIndex, int channelIndex) {
+vec4 readLocalIncidentRadianceTexture(sampler3D sourceTexture, int zBinIndex, int rhoBinIndex, int directionIndex, int spectralGroupIndex) {
+    int clampedDirectionIndex = clamp(directionIndex, 0, LOCAL_CACHE_DIRECTION_COUNT - 1);
+    int clampedRhoBinIndex = clamp(rhoBinIndex, 0, LOCAL_CACHE_RHO_BIN_COUNT - 1);
+    int depthIndex = zSpectralGroupDepthIndex(zBinIndex, spectralGroupIndex);
+    return texelFetch(sourceTexture, ivec3(clampedDirectionIndex, clampedRhoBinIndex, depthIndex), 0);
+}
+
+float unpackLocalIncidentRadianceChannel(int zBinIndex, int rhoBinIndex, int directionIndex, int channelIndex) {
     int spectralGroupIndex = channelIndex / ${SPECTRAL_GROUP_SIZE};
     int componentIndex = channelIndex - spectralGroupIndex * ${SPECTRAL_GROUP_SIZE};
-    vec4 packed = readIncidentRadianceTexture(uIncidentRadianceCacheTexture, altitudeBinIndex, directionIndex, spectralGroupIndex);
+    vec4 packed = readLocalIncidentRadianceTexture(
+        uIncidentRadianceCacheTexture,
+        zBinIndex,
+        rhoBinIndex,
+        directionIndex,
+        spectralGroupIndex
+    );
     if (componentIndex == 0) return packed.r;
     if (componentIndex == 1) return packed.g;
     if (componentIndex == 2) return packed.b;
     return packed.a;
-}
-
-float unpackIncidentRadianceChannelInterpolated(float altitudeBinCoordinate, int directionIndex, int channelIndex) {
-    int lowerAltitudeBinIndex = int(floor(altitudeBinCoordinate));
-    int upperAltitudeBinIndex = lowerAltitudeBinIndex + 1;
-    float blend = clamp(altitudeBinCoordinate - float(lowerAltitudeBinIndex), 0.0, 1.0);
-    float lowerRadiance = unpackIncidentRadianceChannel(lowerAltitudeBinIndex, directionIndex, channelIndex);
-    float upperRadiance = unpackIncidentRadianceChannel(upperAltitudeBinIndex, directionIndex, channelIndex);
-    return mix(lowerRadiance, upperRadiance, blend);
 }`),
-            block('cache-lookup-helper', 'lookupIncidentRadiance', 10, `vec3 cacheBasisReference(vec3 sunAxis) {
-    return abs(dot(sunAxis, vec3(0.0, 0.0, 1.0))) < 0.95
-        ? vec3(0.0, 0.0, 1.0)
-        : vec3(0.0, 1.0, 0.0);
+            block('cache-lookup-helper', 'lookupIncidentRadiance', 10, `vec3 localIncidentDirection(int directionIndex) {
+    float index = float(directionIndex);
+    float z = 1.0 - (2.0 * (index + 0.5)) / float(LOCAL_CACHE_DIRECTION_COUNT);
+    float horizontalScale = sqrt(max(0.0, 1.0 - z * z));
+    float longitude = index * 3.14159265358979323846 * (3.0 - sqrt(5.0));
+    return normalize(vec3(
+        horizontalScale * cos(longitude),
+        horizontalScale * sin(longitude),
+        z
+    ));
 }
 
-vec3 sunOrientedIncidentDirection(int directionIndex) {
-    int halfCount = CACHE_INCIDENT_DIRECTION_COUNT / 2;
-    float centeredIndex = float(directionIndex - halfCount);
-    vec3 sunAxis = normalize(uDistantSunDirection);
-    vec3 reference = cacheBasisReference(sunAxis);
-    vec3 zAxis = normalize(reference - sunAxis * dot(reference, sunAxis));
-    vec3 yAxis = normalize(cross(zAxis, sunAxis));
-    float z = (2.0 * centeredIndex) / float(CACHE_INCIDENT_DIRECTION_COUNT);
-    float latitude = asin(z);
-    float longitude = (2.0 * 3.14159265358979323846 * centeredIndex) / CACHE_GOLDEN_RATIO;
-    float horizontalScale = cos(latitude);
-    float localX = horizontalScale * cos(longitude);
-    float localY = horizontalScale * sin(longitude);
-    float localZ = z;
-    return normalize(sunAxis * localX + yAxis * localY + zAxis * localZ);
-}
-
-${cacheLookupHelper}`),
+SpectralValue lookupIncidentRadiance(vec3 positionMeters, int directionIndex) {
+    int zBinIndex = nearestLocalCacheZBinIndex(positionMeters);
+    int rhoBinIndex = nearestLocalCacheRhoBinIndex(positionMeters);
+    SpectralValue radiance;
+    for (int channelIndex = 0; channelIndex < SPECTRAL_CHANNEL_COUNT; channelIndex += 1) {
+        radiance.c[channelIndex] = unpackLocalIncidentRadianceChannel(
+            zBinIndex,
+            rhoBinIndex,
+            directionIndex,
+            channelIndex
+        );
+    }
+    return radiance;
+}`),
         ]),
         mainHooks: Object.freeze([
             block('cache-main-lookup', 'lookupIncidentRadiance', 0, 'state.incidentRadiance = lookupIncidentRadiance(state.ray.originMeters + state.ray.direction * max(state.bounds.endDistanceMeters * 0.5, 0.0), 0);'),
         ]),
         diagnostics: Object.freeze({
             texture: cacheTexture,
-            altitudeLookup: descriptor.cache.facts.altitudeLookup ?? Object.freeze({ kind: 'nearest-bin' }),
+            depthPacking: facts.depthPacking,
+            lookupPolicy: facts.lookupPolicy,
         }),
     });
 }
 
-function cacheIncidentRadianceLookupHelper(kind) {
-    if (kind === 'linear-altitude-v1') {
-        return `SpectralValue lookupIncidentRadiance(vec3 positionMeters, int directionIndex) {
-    float altitudeBinCoordinate = resolveCacheAltitudeBinCoordinate(positionMeters);
-    SpectralValue radiance;
-    for (int channelIndex = 0; channelIndex < SPECTRAL_CHANNEL_COUNT; channelIndex += 1) {
-        radiance.c[channelIndex] = unpackIncidentRadianceChannelInterpolated(altitudeBinCoordinate, directionIndex, channelIndex);
-    }
-    return radiance;
-}`;
-    }
-
-    return `SpectralValue lookupIncidentRadiance(vec3 positionMeters, int directionIndex) {
-    int altitudeBinIndex = resolveCacheAltitudeBinIndex(positionMeters);
-    SpectralValue radiance;
-    for (int channelIndex = 0; channelIndex < SPECTRAL_CHANNEL_COUNT; channelIndex += 1) {
-        radiance.c[channelIndex] = unpackIncidentRadianceChannel(altitudeBinIndex, directionIndex, channelIndex);
-    }
-    return radiance;
-}`;
-}
-
 function transportContribution(descriptor) {
     const facts = descriptor.transport.facts;
-    const pathSampleHelper = transportPathSampleHelper(facts.pathSampleDistribution?.kind ?? 'uniform-distance');
 
     return contribution({
-        id: 'transport-algorithm32',
+        id: 'transport-algorithm32-local-flat',
         owner: 'transport',
         descriptorFingerprint: descriptor.transport.fingerprint,
         compatibilityTags: descriptor.transport.compatibilityTags,
@@ -535,7 +609,21 @@ SpectralValue computeTrapezoidSegmentTransmittance(MediumSample previousMedium, 
     return transmittance;
 }
 
-${pathSampleHelper}
+float pathSampleDistanceForIndex(ShaderState state, int pointIndex) {
+    float uniformFraction = float(pointIndex) / float(max(TRANSPORT_PATH_INTERVAL_COUNT, 1));
+    return mix(
+        state.bounds.startDistanceMeters,
+        state.bounds.endDistanceMeters,
+        clamp(uniformFraction, 0.0, 1.0)
+    );
+}
+
+float pathSampleMeasureMeters(ShaderState state, int pointIndex) {
+    float stepMeters = max(state.bounds.endDistanceMeters - state.bounds.startDistanceMeters, 0.0)
+        / float(max(TRANSPORT_PATH_INTERVAL_COUNT, 1));
+    return ((pointIndex == 0 || pointIndex == TRANSPORT_PATH_INTERVAL_COUNT) ? 0.5 : 1.0)
+        * stepMeters;
+}
 
 void evaluatePathRadiance(inout ShaderState state) {
     if (!state.bounds.valid) {
@@ -567,7 +655,7 @@ void evaluatePathRadiance(inout ShaderState state) {
         SpectralValue directScattering = directScatteringForDirection(
             medium,
             state.ray.direction,
-            normalize(uDistantSunDirection)
+            directionToLight(positionMeters)
         );
         float measureMeters = pathSampleMeasureMeters(state, pointIndex);
 
@@ -578,8 +666,8 @@ void evaluatePathRadiance(inout ShaderState state) {
                 * measureMeters;
         }
 
-        for (int directionIndex = 0; directionIndex < CACHE_INCIDENT_DIRECTION_COUNT; directionIndex += 1) {
-            vec3 incomingDirection = sunOrientedIncidentDirection(directionIndex);
+        for (int directionIndex = 0; directionIndex < LOCAL_CACHE_DIRECTION_COUNT; directionIndex += 1) {
+            vec3 incomingDirection = localIncidentDirection(directionIndex);
             SpectralValue incidentRadiance = lookupIncidentRadiance(positionMeters, directionIndex);
             SpectralValue incidentScattering = directScatteringForDirection(
                 medium,
@@ -591,7 +679,7 @@ void evaluatePathRadiance(inout ShaderState state) {
                 radiance.c[channelIndex] += viewTransmittance.c[channelIndex]
                     * incidentRadiance.c[channelIndex]
                     * incidentScattering.c[channelIndex]
-                    * CACHE_INCIDENT_DIRECTION_WEIGHT
+                    * LOCAL_CACHE_INCIDENT_DIRECTION_WEIGHT
                     * measureMeters;
             }
         }
@@ -610,87 +698,11 @@ void evaluatePathRadiance(inout ShaderState state) {
     });
 }
 
-function transportPathSampleHelper(kind) {
-    if (kind === 'tangent-density-adaptive-v1' || kind === 'tangent-density-adaptive-soft-v1') {
-        const adaptiveBlend = kind === 'tangent-density-adaptive-soft-v1' ? '0.35' : '1.0';
-        return `float pathSampleFraction(ShaderState state, float uniformFraction) {
-    float startDistanceMeters = state.bounds.startDistanceMeters;
-    float endDistanceMeters = state.bounds.endDistanceMeters;
-    float pathLengthMeters = max(endDistanceMeters - startDistanceMeters, 0.0);
-    if (pathLengthMeters <= 0.0) {
-        return 0.0;
-    }
-
-    float tangentDistanceMeters = clamp(
-        -dot(state.ray.originMeters, state.ray.direction),
-        startDistanceMeters,
-        endDistanceMeters
-    );
-    float tangentFraction = clamp(
-        (tangentDistanceMeters - startDistanceMeters) / pathLengthMeters,
-        0.0,
-        1.0
-    );
-    bool hasInteriorTangent = tangentFraction > 0.08 && tangentFraction < 0.92;
-    float adaptiveFraction = uniformFraction;
-
-    if (hasInteriorTangent) {
-        if (uniformFraction <= tangentFraction) {
-            float localFraction = uniformFraction / max(tangentFraction, 0.0001);
-            float warpedLocal = 1.0 - pow(1.0 - localFraction, 2.0);
-            adaptiveFraction = tangentFraction * warpedLocal;
-        } else {
-            float remainingFraction = max(1.0 - tangentFraction, 0.0001);
-            float localFraction = (uniformFraction - tangentFraction) / remainingFraction;
-            float warpedLocal = pow(localFraction, 2.0);
-            adaptiveFraction = tangentFraction + remainingFraction * warpedLocal;
-        }
-    } else {
-        adaptiveFraction = pow(uniformFraction, 1.75);
-    }
-
-    return mix(uniformFraction, adaptiveFraction, ${adaptiveBlend});
-}
-
-float pathSampleDistanceForIndex(ShaderState state, int pointIndex) {
-    float uniformFraction = float(pointIndex) / float(max(TRANSPORT_PATH_INTERVAL_COUNT, 1));
-    float sampleFraction = pathSampleFraction(state, clamp(uniformFraction, 0.0, 1.0));
-    return mix(state.bounds.startDistanceMeters, state.bounds.endDistanceMeters, sampleFraction);
-}
-
-float pathSampleMeasureMeters(ShaderState state, int pointIndex) {
-    float previousDistanceMeters = pointIndex > 0
-        ? pathSampleDistanceForIndex(state, pointIndex - 1)
-        : pathSampleDistanceForIndex(state, pointIndex);
-    float nextDistanceMeters = pointIndex < TRANSPORT_PATH_INTERVAL_COUNT
-        ? pathSampleDistanceForIndex(state, pointIndex + 1)
-        : pathSampleDistanceForIndex(state, pointIndex);
-    return max(0.0, 0.5 * (nextDistanceMeters - previousDistanceMeters));
-}`;
-    }
-
-    return `float pathSampleDistanceForIndex(ShaderState state, int pointIndex) {
-    float uniformFraction = float(pointIndex) / float(max(TRANSPORT_PATH_INTERVAL_COUNT, 1));
-    return mix(
-        state.bounds.startDistanceMeters,
-        state.bounds.endDistanceMeters,
-        clamp(uniformFraction, 0.0, 1.0)
-    );
-}
-
-float pathSampleMeasureMeters(ShaderState state, int pointIndex) {
-    float stepMeters = max(state.bounds.endDistanceMeters - state.bounds.startDistanceMeters, 0.0)
-        / float(max(TRANSPORT_PATH_INTERVAL_COUNT, 1));
-    return ((pointIndex == 0 || pointIndex == TRANSPORT_PATH_INTERVAL_COUNT) ? 0.5 : 1.0)
-        * stepMeters;
-}`;
-}
-
 function colorContribution(descriptor) {
     const facts = descriptor.color.facts;
 
     return contribution({
-        id: 'color-bruneton-display',
+        id: 'color-bruneton-display-local-flat',
         owner: 'color',
         descriptorFingerprint: descriptor.color.fingerprint,
         compatibilityTags: descriptor.color.compatibilityTags,
@@ -763,6 +775,84 @@ vec3 composeSceneLinearSrgb(ShaderState state) {
         mainHooks: Object.freeze([
             block('color-main-compose', 'composeSceneColor', 0, 'state.outputRgba = encodeDisplayOutput(composeSceneLinearSrgb(state));'),
             block('color-main-output', 'encodeOutput', 0, 'outColor = state.outputRgba;'),
+        ]),
+    });
+}
+
+function diagnosticContribution(descriptor) {
+    const diagnostic = descriptor.runtime.facts.diagnosticCacheLookup;
+    const geometryDiagnostic = descriptor.runtime.facts.diagnosticFlatGeometry;
+
+    return contribution({
+        id: 'runtime-local-cache-lookup-diagnostic',
+        owner: 'runtime',
+        descriptorFingerprint: descriptor.runtime.fingerprint,
+        compatibilityTags: descriptor.runtime.compatibilityTags,
+        provides: Object.freeze([]),
+        requires: Object.freeze([
+            'geometry.reconstructViewRay',
+            'geometry.resolveAtmospherePath',
+            'cache.lookupIncidentRadiance',
+        ]),
+        functions: Object.freeze([
+            block('diagnostic-cache-lookup-constants', 'diagnosticOutput', 0, `const bool LOCAL_CACHE_LOOKUP_DIAGNOSTIC_ENABLED = ${diagnostic.enabled ? 'true' : 'false'};
+const vec3 LOCAL_CACHE_LOOKUP_DIAGNOSTIC_POSITION_METERS = ${formatVec3(diagnostic.positionMeters)};
+const int LOCAL_CACHE_LOOKUP_DIAGNOSTIC_DIRECTION_INDEX = ${diagnostic.directionIndex};
+const float LOCAL_CACHE_LOOKUP_DIAGNOSTIC_SCALE = ${formatFloat(diagnostic.outputScale)};
+const bool LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_ENABLED = ${geometryDiagnostic.enabled ? 'true' : 'false'};
+const int LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_MODE = ${geometryDiagnostic.modeId};
+const float LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_DISTANCE_SCALE_METERS = ${formatFloat(geometryDiagnostic.distanceScaleMeters)};
+const float LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_ALTITUDE_SCALE_METERS = ${formatFloat(geometryDiagnostic.altitudeScaleMeters)};`),
+            block('diagnostic-cache-lookup-output', 'diagnosticOutput', 1, `vec4 localCacheLookupDiagnosticOutput() {
+    SpectralValue radiance = lookupIncidentRadiance(
+        LOCAL_CACHE_LOOKUP_DIAGNOSTIC_POSITION_METERS,
+        LOCAL_CACHE_LOOKUP_DIAGNOSTIC_DIRECTION_INDEX
+    );
+    vec3 display = vec3(
+        radiance.c[${diagnostic.redChannelIndex}],
+        radiance.c[${diagnostic.greenChannelIndex}],
+        radiance.c[${diagnostic.blueChannelIndex}]
+    ) * LOCAL_CACHE_LOOKUP_DIAGNOSTIC_SCALE;
+    return vec4(clamp(display, vec3(0.0), vec3(1.0)), 1.0);
+}
+
+vec4 localFlatGeometryDiagnosticOutput(ShaderState state) {
+    if (LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_MODE == 1) {
+        return vec4(clamp(state.ray.direction * 0.5 + vec3(0.5), vec3(0.0), vec3(1.0)), 1.0);
+    }
+
+    vec3 samplePositionMeters = state.ray.originMeters
+        + state.ray.direction * max(state.bounds.endDistanceMeters * 0.5, 0.0);
+
+    if (LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_MODE == 2) {
+        return vec4(
+            clamp(state.bounds.endDistanceMeters / LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_DISTANCE_SCALE_METERS, 0.0, 1.0),
+            state.bounds.hasSceneEndpoint ? 1.0 : 0.0,
+            state.bounds.hasGroundEndpoint ? 1.0 : 0.0,
+            state.bounds.valid ? 1.0 : 0.0
+        );
+    }
+
+    if (LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_MODE == 3) {
+        int zBinIndex = nearestLocalCacheZBinIndex(samplePositionMeters);
+        int rhoBinIndex = nearestLocalCacheRhoBinIndex(samplePositionMeters);
+        return vec4(
+            clamp(samplePositionMeters.z / LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_ALTITUDE_SCALE_METERS, 0.0, 1.0),
+            float(zBinIndex) / max(float(LOCAL_CACHE_Z_BIN_COUNT - 1), 1.0),
+            float(rhoBinIndex) / max(float(LOCAL_CACHE_RHO_BIN_COUNT - 1), 1.0),
+            1.0
+        );
+    }
+
+    return vec4(0.0, 0.0, 0.0, 1.0);
+}`),
+        ]),
+        mainHooks: Object.freeze([
+            block('diagnostic-cache-lookup-main', 'diagnosticOutput', 0, `if (LOCAL_FLAT_GEOMETRY_DIAGNOSTIC_ENABLED) {
+        outColor = localFlatGeometryDiagnosticOutput(state);
+    } else if (LOCAL_CACHE_LOOKUP_DIAGNOSTIC_ENABLED) {
+        outColor = localCacheLookupDiagnosticOutput();
+    }`),
         ]),
     });
 }

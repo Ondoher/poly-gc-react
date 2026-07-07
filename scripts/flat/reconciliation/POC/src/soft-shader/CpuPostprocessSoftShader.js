@@ -121,6 +121,7 @@ export default class CpuPostprocessSoftShader {
     _renderCapturedSceneEndpointProxyPixel(prepared, evaluationOutput) {
         const composition = composeCapturedSceneEndpointProxy({
             endpointContribution: prepared.endpointContribution,
+            endpointDistanceMeters: prepared.sceneIntersectionDistanceMeters,
             pathRadiance: evaluationOutput.pathRadiance.inScattered,
             viewTransmittance: evaluationOutput.pathRadiance.transmittance,
             displayAdapter: this._configuration.displayAdapter,
@@ -277,6 +278,7 @@ function composeFinalSpectralRadiance(pathRadiance, viewTransmittance, endpointR
 /**
  * @param {{
  *   readonly endpointContribution: SoftShaderEndpointContribution,
+ *   readonly endpointDistanceMeters: number | null,
  *   readonly pathRadiance: SpectralValue,
  *   readonly viewTransmittance: SpectralValue,
  *   readonly displayAdapter: ColorDisplayModel
@@ -292,6 +294,7 @@ function composeFinalSpectralRadiance(pathRadiance, viewTransmittance, endpointR
 function composeCapturedSceneEndpointProxy(request) {
     const {
         endpointContribution,
+        endpointDistanceMeters,
         pathRadiance,
         viewTransmittance,
         displayAdapter,
@@ -321,17 +324,48 @@ function composeCapturedSceneEndpointProxy(request) {
     const skyLinearSrgb = displayAdapter.radianceToLinearSrgb(pathRadiance);
     const transmittanceRgb = rgbTransmittanceBands(viewTransmittance);
     const endpointLinearSrgb = displayAdapter.displayRgbToLinearSrgb(endpointContribution.capturedSceneColorDisplayRgb);
+    const endpointRadianceScale = Number.isFinite(endpointContribution.metadata?.endpointRadianceScale)
+        ? Math.max(0, endpointContribution.metadata.endpointRadianceScale)
+        : 1;
+    const endpointCameraDistanceBoostScale = endpointCameraDistanceBoostScaleFactor(
+        endpointContribution.metadata?.endpointCameraDistanceScale,
+        endpointDistanceMeters,
+    );
+    const endpointCameraDistanceScale = 1 + endpointCameraDistanceBoostScale;
     const finalLinearSrgb = Object.freeze(skyLinearSrgb.map((value, index) =>
-        value + endpointLinearSrgb[index] * transmittanceRgb[index]));
+        value + endpointLinearSrgb[index] * transmittanceRgb[index] * endpointRadianceScale * endpointCameraDistanceScale));
     const displayRgb = displayAdapter.linearSrgbToDisplayRgb(finalLinearSrgb);
 
     return Object.freeze({
         skyLinearSrgb,
         transmittanceRgb,
         endpointLinearSrgb,
+        endpointCameraDistanceScale,
         finalLinearSrgb,
         displayRgb,
     });
+}
+
+function endpointCameraDistanceBoostScaleFactor(scaleConfig, endpointDistanceMeters) {
+    if (!scaleConfig || scaleConfig.policy !== 'reverse-square') {
+        return 0;
+    }
+
+    if (!Number.isFinite(endpointDistanceMeters)) {
+        return 0;
+    }
+
+    const referenceMeters = Number.isFinite(scaleConfig.referenceMeters) && scaleConfig.referenceMeters > 0
+        ? scaleConfig.referenceMeters
+        : 200000;
+    const minScale = Number.isFinite(scaleConfig.minScale)
+        ? Math.max(0, scaleConfig.minScale)
+        : 0.05;
+    const maxScale = Number.isFinite(scaleConfig.maxScale)
+        ? Math.max(minScale, scaleConfig.maxScale)
+        : 1;
+    const normalizedDistance = Math.max(0, endpointDistanceMeters) / referenceMeters;
+    return Math.max(minScale, Math.min(maxScale, normalizedDistance * normalizedDistance));
 }
 
 /**
