@@ -15,8 +15,8 @@ important product is the boundary shape:
 - Incident radiance is prepared before frame rendering and sampled through an
   operation-ready sampler.
 - Color/display owns RGB output and endpoint scene-color composition.
-- CPU and GPU paths consume the same logical inputs and produce the same
-  atmospheric result within documented tolerance.
+- CPU/reference validation and the GPU shader consume the same logical inputs
+  and produce the same atmospheric result within documented tolerance.
 
 Renderer color, material color, Three objects, shadows, and display RGB do not
 belong inside the core evaluator. They are part of the renderer/display
@@ -37,9 +37,9 @@ Consumer-provided models should not call each other directly. A coordinator
 asks each owner for plain facts and passes those facts onward.
 
 This matters because the same transport path must support distant sources,
-finite local sources, spherical geometry, flat geometry, CPU execution, GPU
-execution, scene-hit termination, and higher-order incident radiance without
-forking the algorithm.
+finite local sources, spherical geometry, flat geometry, CPU/reference
+evaluation, GPU shader execution, scene-hit termination, and higher-order
+incident radiance without forking the algorithm.
 
 ## Evaluation Contract
 
@@ -147,9 +147,8 @@ Separate the lifecycle clearly:
   and other cheap live values;
 - frame rendering performs only the per-pixel transport and composition work.
 
-The CPU integrated shader is useful only if it consumes the same scene-input
-contract as the GPU shader. Do not maintain separate CPU-only and GPU-only
-interpretations of the same scene.
+Reference evaluation remains a validation oracle for selected rays and
+fixtures; the production render product is the GPU shader/runtime path.
 
 ## Color And Display
 
@@ -223,15 +222,15 @@ This keeps app rendering in Three and atmospheric transport in Algorithm32.
 
 ### One Scene Input Contract
 
-CPU and GPU atmosphere paths must consume the same constructed scene inputs.
-The split should be:
+CPU/reference validation and GPU shader execution must consume equivalent
+constructed scene inputs. The split should be:
 
 ```text
-constructed scene -> color/hit/depth inputs -> CPU or GPU atmosphere backend
+constructed scene -> color/hit/depth inputs -> Reference validation or GPU shader
 ```
 
-There should not be a separate CPU scene and GPU scene with different object
-placement, lights, material behavior, or ground interpretation.
+There should not be a separate validation scene and GPU scene with different
+object placement, lights, material behavior, or ground interpretation.
 
 ### Prefer Renderer-Generated Hit Data
 

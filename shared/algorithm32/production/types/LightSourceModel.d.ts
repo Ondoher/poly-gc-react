@@ -17,24 +17,45 @@ interface LightSourceModel {
 	describe(): LightSourceModelDescriptor;
 
 	/**
-	 * Sample radiance from this light source at one point. The returned sample
-	 * contains light-source direction, distance, apparent angular radius, and
-	 * spectral radiance aligned to the requested spectral basis.
+	 * Create the concrete incident-radiance cache owned by this light source.
 	 *
-	 * @param request - Describes the point, outgoing direction, and spectral
-	 * basis to sample.
-	 * @returns The sampled radiance packet.
+	 * @param request - Supplies cache build descriptors and collaborators.
+	 * @returns The created incident-radiance cache.
 	 */
-	sampleRadiance(request: RadianceSampleRequest): RadianceSample;
+	createIncidentRadianceCache(request: unknown): IncidentRadianceCache;
 
 	/**
-	 * Sample incident radiance support owned by this light source. The returned
-	 * sample contains spectral radiance arriving at the requested point from the
-	 * light-source implementation's higher-order incident-radiance model.
+	 * Sample direct lighting at one geometry-resolved source-relative position.
 	 *
-	 * @param request - Describes the point, outgoing direction, and spectral
-	 * basis to sample.
-	 * @returns The sampled incident radiance packet.
+	 * @param request - Supplies source-relative position, atmosphere
+	 * coordinate, and spectral basis facts.
+	 * @returns The direct lighting sample.
 	 */
-	sampleIncidentRadiance(request: IncidentRadianceSampleRequest): IncidentRadianceSample;
+	sampleDirectLighting(request: unknown): DirectLightingSample;
+
+	/**
+	 * Resolve the source-owned path limit for sample-to-source transmittance.
+	 *
+	 * @param request - Supplies source-relative position and direct lighting
+	 * facts.
+	 * @returns The source path limit.
+	 */
+	resolveSourcePathLimit(request: unknown): SourcePathLimit;
+
+	/**
+	 * Optionally contribute light-source-owned shader source, symbols, and
+	 * bindings for the active descriptor.
+	 *
+	 * @param request - Supplies the active shader descriptor and setup context.
+	 * @returns The light-source shader contribution or contributions.
+	 */
+	createShaderContribution?(request: ShaderContributionRequest): ShaderContribution | readonly ShaderContribution[];
+
+	/**
+	 * Create optional renderer-lighting helpers for endpoint scene rendering.
+	 *
+	 * @param request - Supplies runtime renderer-lighting setup facts.
+	 * @returns The created renderer-lighting objects.
+	 */
+	createThreeLightingObjects?(request: unknown): unknown;
 }

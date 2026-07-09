@@ -3,9 +3,12 @@
 Status: design stage. These requirements define what the production
 Algorithm32 module must provide before the public API is frozen.
 
-The API design should be derived from this document. POC modules and the
-latest local Sun experiments are evidence inputs, not production contracts by
-themselves.
+The API design should be derived from this document, then reconciled with the
+accepted reconciliation POC conclusions. The reconciliation POC now provides
+the current production implementation detail unless an explicit recorded
+production conflict says otherwise; older requirement wording that describes
+pre-reconciliation incident-radiance sampling is superseded by setup-bound
+`IncidentRadianceSampling`.
 
 ## Requirement Principles
 
@@ -24,14 +27,14 @@ themselves.
   wherever practical.
 - Public packets must use explicit units in field names or schema docs.
 - No production decision, algorithm, numeric value, default, spectral shape, or
-  validation expectation may be promoted unless it is backed by an external
-  reference, source-backed fixture, or explicitly accepted reference log entry.
-  POC behavior is implementation evidence only; unsourced POC tuning values do
-  not become production physics facts.
+  validation expectation may be promoted unless it is backed by a third-party
+  reference, source-backed fixture, or explicitly accepted first-party
+  Algorithm32 evidence entry. POC behavior is implementation evidence only;
+  unsourced POC tuning values do not become production physics facts.
 - Derived constants are valid when their formula and every input constant can
   be traced to a published paper/source implementation, source-backed fixture,
-  or accepted reference-log entry. The derivation must be documented at the
-  promotion site so the stored scalar is reproducible.
+  or accepted first-party Algorithm32 evidence entry. The derivation must be
+  documented at the promotion site so the stored scalar is reproducible.
 - The baseline Earth/Figure-1 profile uses the accepted Algorithm32 constants
   as canon. Every promoted constant must carry per-value provenance: an
   external source, a source-backed derivation, or an accepted Algorithm32
@@ -124,8 +127,7 @@ The API must publish named interfaces for:
 - execution configuration for numerical, integration, cache, texture, and
   diagnostic controls;
 - shader runtime configuration for runtime pass behavior, selected shader mode,
-  debug view, cache/resource policy, capability policy, and render-target
-  policy;
+  cache/resource policy, capability policy, and render-target policy;
 - spectral display conversion;
 - shader texture descriptors;
 - calibration packets;
@@ -187,10 +189,12 @@ facts, atmosphere facts, geometry facts, and wavelength-aware spectral
 descriptors. They may also call the separate validation/error and pure math
 API namespace, while owning their own execution/resource work.
 
-The public facade should not expose a general `buildTexture` method. Awaited
-`setupShader` and awaited shader-handle config updates should own normal
-resource preparation. Any future tool/debug API for texture artifacts must be
-a narrower non-primary support surface with a specific consumer need.
+The public facade must not expose a general `buildTexture` or texture-artifact
+method in the first production API. Awaited `setupShader` and awaited
+shader-handle config updates own normal resource preparation. Any future
+tool/debug API for texture artifacts must be added only after a concrete
+non-app tooling consumer requires it, and it must remain a narrower
+non-primary support surface.
 
 The assumed production API shape is an object facade constructed with a
 configuration packet. The app may create one facade instance per simulation
@@ -206,11 +210,17 @@ facade-local versions so multiple facade instances can coexist safely.
 
 Runtime shader behavior must live in facade configuration, likely
 `Algorithm32Config.shader`, rather than in the Three setup request. Runtime
-configuration includes selected shader mode, debug view, cache/resource
-policy, capability failure policy, and render-target/HDR/depth policy.
+configuration includes selected shader mode, cache/resource policy, capability
+failure policy, and render-target/HDR/depth policy. Debug views are deferred
+with diagnostics and are not first-production runtime configuration.
 The Three setup request supplies app-owned attachment handles such as composer,
 scene, camera, renderer-compatible surface, and pass insertion location; it
-must not become an alternate runtime configuration packet.
+must not become an alternate runtime configuration packet. Scene binding is a
+setup-time attachment concern in the first production API. The shader handle
+may update Algorithm32 configuration and frame-sized resources, but it should
+not expose normal mutable `setScene` state; moving the shader to a different
+scene/composer/camera requires explicit teardown/re-setup unless a later
+framework integration need justifies a narrow rebind operation.
 
 Facade reconfiguration must update the shared model through replacement or
 versioned canonical snapshots. CPU/reference operations, texture/cache builds,
@@ -284,13 +294,14 @@ receives an `EvaluationRequest` as a one-call request packet, not a durable
 model. It may produce a transport path as a resolved per-run path/integration
 artifact, but the transport path is not a model because it has no durable
 identity or lifecycle beyond the execution that produced it.
-Second-order incoming radiance must be supplied through
-`LightSourceModel.sampleIncidentRadiance(...)`, not by a caller-provided
-provider interface. A concrete light-source implementation may own an internal
-`IncidentRadianceCache` behind that public boundary. That cache may privately
-own L2/local incident radiance data, fixture tables, oracle-evaluation
-strategies, sampled direction state, quadrature weights, spectral alignment,
-provenance, or sample caches.
+Second-order incoming radiance must be supplied through setup-bound
+`IncidentRadianceSampling`, not through a generic light-source per-sample
+incident-radiance method. A concrete light-source implementation owns cache
+family creation and source semantics; the concrete `IncidentRadianceCache`
+owns sampler creation, shader payloads, sampled direction state, quadrature
+weights, spectral alignment, provenance, and sample caches. `Reference` may
+use a configured default sampler, and an evaluation request may override it
+with an `incidentRadianceSampling` property, including explicit `null`.
 The runtime shader builder may own a runtime capability model if that object
 owns mutable capability state. IncidentRadianceCache and
 texture/cache packing responsibilities are assemblers: they consume validated
@@ -611,15 +622,16 @@ API namespace.
 
 ### A32-TRN-003 Incident Radiance Cache
 
-Algorithm execution must query `LightSourceModel.sampleIncidentRadiance(...)`
-for scattering work that needs already-arriving spectral radiance, including
-second-order work. A concrete light-source implementation may answer that
-method from an internal `IncidentRadianceCache`.
+Algorithm execution must query setup-bound `IncidentRadianceSampling` for
+scattering work that needs already-arriving spectral radiance, including
+second-order work. The light source owns cache-family creation and source
+semantics; a concrete `IncidentRadianceCache` owns sampler creation and shader
+payloads.
 
 The cache must be able to sample:
 
 ```text
-L1_incident = lightSource.sampleIncidentRadiance(position, incomingDirection, spectralBasis)
+L1_incident = incidentRadianceSampling.incidentRadianceSampler(cacheAccess)
 ```
 
 For flat local Sun second-order work, the accepted cache lookup domain is:
@@ -651,11 +663,20 @@ light-source implementations keyed by:
 - public light-source identity/configuration, atmosphere composition, and
   geometry interface values;
 - execution configuration;
-- `z` bins;
-- `rho` bins;
+- geometry-resolved `z` bin descriptors;
+- geometry-resolved `rho` bin descriptors;
 - incoming-direction set;
 - wavelength grid;
 - packing version.
+
+Production spatial cache resolution is derived from the selected geometry and
+cache-domain descriptors, not from global fixed defaults. Geometry owns the
+mapping from model-space/source-relative positions into the `z` and `rho`
+domains and supplies the ranges, binning policy, and resolution descriptors
+used by cache keys and shader texture dimensions. Validation fixtures may pin
+specific `z`/`rho` dimensions to make parity checks reproducible. Incoming
+direction counts remain execution/source-sampling policy, and spectral groups
+remain spectral-model/packing policy.
 
 Cache sampling must fail loudly for light-source mismatch, invalid position,
 out-of-range `rho`, stale key, missing sample, or invalid incoming direction.
@@ -718,10 +739,12 @@ spectral groups, packing policy, Sun/atmosphere-composition/geometry
 fingerprints, and any unsupported target-device requirements.
 
 The runtime facade must keep this behind awaited shader setup and awaited
-shader-handle config updates. If implementation-owned persistence or cache
-reuse provides prebuilt artifacts, the adapter must validate descriptors,
-cache keys, dimensions, packing version, source key, wavelength grid,
-direction set, and target-device compatibility before binding them.
+shader-handle config updates. First production does not expose public prebuilt
+texture-artifact import/export. If implementation-owned test persistence or
+internal cache reuse provides prebuilt artifacts later, the adapter must
+validate descriptors, cache keys, dimensions, packing version, source key,
+wavelength grid, direction set, and target-device compatibility before binding
+them.
 
 ## Runtime Shader Product Domain
 
@@ -750,8 +773,6 @@ The shader path must support:
 - distant directional atmosphere pass;
 - flat local first-order atmosphere pass;
 - flat local second-order atmosphere pass using IncidentRadianceCache;
-- debug-view mapping for transmittance, path radiance, flat ray direction, and
-  flat source direction;
 - deterministic texture upload metadata for shader-built textures and
   IncidentRadianceCache artifacts.
 
@@ -776,8 +797,9 @@ scene-color texture and depth texture, followed by an Algorithm32 fullscreen
 shader pass in the same renderer context.
 
 JSON scene packets, Raycaster captures, and full per-pixel scene-input packets
-are validation/oracle artifacts only. They may support CPU soft-shader
-comparisons, but they must not become the normal production render input.
+are validation/oracle artifacts only. They may support GPU shader comparison
+against `Reference` evaluation, but they must not become the normal production
+render input and must not imply a separate CPU-side render surface.
 
 The runtime shader attachment lifecycle should be compact from the caller's
 point of view:
@@ -816,11 +838,11 @@ true finite source.
 The public geometry value must drive camera/world conversion, atmosphere
 boundary behavior, flat top-altitude policy, no-hit sky ray distance, and
 depth interpretation. Depth near/far planes, depth precision policy, render
-target color-space/HDR policy, flat sky ray limit, and debug-view selection
-must be explicit configuration or validated derived state rather than hidden
-shader constants.
+target color-space/HDR policy, and flat sky ray limit must be explicit
+configuration or validated derived state rather than hidden shader constants.
+Debug-view selection is deferred with diagnostics.
 
-### A32-RUN-005 Runtime Capabilities, Debug Views, And Fail-Loud Binding
+### A32-RUN-005 Runtime Capabilities And Fail-Loud Binding
 
 The runtime shader builder must validate runtime capabilities before use. At minimum,
 it must detect and report unsupported WebGL/Three features required by the
@@ -831,18 +853,16 @@ and unsupported source/geometry/scattering combinations.
 
 Runtime diagnostics should expose enough information for the app or developer
 tools to detect software-renderer fallbacks, renderer capability mismatches,
-active texture/cache descriptors, selected debug view, pass mode or feature
-set, and coarse pass timing when available.
+active texture/cache descriptors, pass mode or feature set, and coarse pass
+timing when available. Stable debug views are deferred with diagnostics.
+Experiment-only or dev/test debug views may exist behind validation tooling,
+but they must not become first-production runtime shader API.
 
 The runtime shader builder and returned handle must not silently fall back from
 local second-order to first-order when an IncidentRadianceCache resource is
 missing, stale, mismatched, or unsupported. It may render an explicitly
 configured first-order mode, but a requested second-order mode must fail
 loudly at setup/resource-binding time.
-
-Stable debug views should cover at least final color, scene color, depth,
-transmittance, and path radiance. Additional source/ray/cache diagnostic views
-may be dev/test scoped until their production UX is accepted.
 
 ## Display Conversion Domain
 
@@ -853,26 +873,19 @@ outside the Algorithm32 facade boundary. The transport and shader core produce
 spectral or spectral-group radiance and transmittance as Algorithm32's core
 output; display code turns those spectral values into output colors.
 
-The display layer must be a separate consumer class or module, such as a
-hypothetical `Algorithm32DisplayConversion`, that provides a versioned mapping
-from spectral information to output color, including any chosen CIE/XYZ/RGB
-conversion, display color space, exposure, and tone mapping policy. It may
-consume the spectral component model or a spectral descriptor for wavelength
-alignment, but it must treat Algorithm32 spectral radiance/transmittance as
-input data.
+The display layer is the production `Color` abstraction. It provides a
+versioned Bruneton-backed mapping from spectral information to output color,
+including CIE/XYZ/RGB conversion, display color space, exposure, and tone
+mapping policy. It may consume the spectral component model or a spectral
+descriptor for wavelength alignment, but it must treat Algorithm32 spectral
+radiance/transmittance as input data.
 
-Display settings and debug views must not change Sun input, atmosphere
-composition input, geometry input, calibrated source power, cache keys, or
-transport facts. They must not become facade-owned state. A future physical
-star/celestial source model would need its own validated Sun/source-family
-contract before it becomes Algorithm32 core behavior.
-
-Optional visible star or celestial point-source display, if promoted from the
-POC, must be an explicit display/celestial-source extension rather than a
-hidden shader constant. It must state whether it contributes only visible
-top-of-atmosphere radiance, whether it is attenuated by view transmittance,
-whether it lights scene geometry, and how apparent magnitude or catalog data
-maps to spectral radiance.
+Display settings must not change Sun input, atmosphere composition input,
+geometry input, calibrated source power, cache keys, or transport facts. They
+must not become facade-owned state. Visible stars and celestial point-source
+rendering are app scene concerns outside the first Algorithm32 shader. If the
+app renders them, they should enter as normal scene color/depth/lighting facts
+owned by the scene pipeline, not as hidden Algorithm32 shader constants.
 
 ## Validation Domain
 
@@ -886,7 +899,6 @@ Validation must cover:
 - Sun, atmosphere composition, and geometry packet creation and sampling;
 - distant CPU path radiance;
 - flat/local single-scattering;
-- CPU soft-shader packet execution;
 - local direct incoming-radiance sampling;
 - IncidentRadianceCache sampling and packing;
 - shader texture builder keying and descriptor validation;
@@ -899,30 +911,61 @@ Validation must cover:
 
 ### A32-VAL-002 Parity And Fixture Strategy
 
-Validation helpers must be deterministic and source-backed. External reference
-logs and fixture evidence may support validation rationale, but generated
-artifacts must not become canonical facts.
+Validation helpers must be deterministic and source-backed. Third-party source
+logs, accepted first-party Algorithm32 evidence entries, and fixture evidence
+may support validation rationale, but generated artifacts must not become
+canonical facts.
 
 Stable fixtures should include enough provenance to explain constants,
 formulas, and tolerances. Stale or ambiguous fixture inputs should fail
 loudly.
+Fixtures are unit-test artifacts. Checked-in production fixtures must live in
+fixture ledgers consumed by unit tests, and every fixture row must carry
+production provenance. Formal third-party source citations go through
+`shared/algorithm32/production/references.md` using the same bracket citation
+rules used by production code. First-pass internal experiment references also
+go through `shared/algorithm32/production/references.md`: add a short code and
+brief description, then cite it as `(script <code>)` until the experiment code
+and exact script, record, artifact, criterion, or run id locators are
+collected in `shared/algorithm32/production/evidence.md`. Reconciliation
+records remain generated evidence unless promoted into a cited production
+fixture, a formal reference-backed fixture source, a short-code internal
+experiment reference, or an accepted evidence entry.
 
 ### A32-VAL-003 Runtime Shader Validation Surface
 
-Production validation may keep a CPU soft-shader scene-packet surface for
-oracle comparisons. That surface is a dev/test contract, separate from the
-normal runtime shader facade.
+Production validation may keep selected-ray and scene-packet fixtures for
+oracle comparisons against `Reference` evaluation. That surface is a dev/test
+contract, separate from the normal runtime shader facade.
 
 The validation packet may include scene color, depth or hit distance, hit
 mask, material/spectrum ids, ray directions, camera, source, and geometry, but
 it must be labeled as validation input and must not become the production
 renderer architecture.
 
-Runtime shader validation should cover live pass versus CPU soft-shader
-selected-pixel checks, image delta summaries, source/geometry family coverage,
-postprocess-versus-integrated visual comparisons, capability diagnostics, and
-local-cache binding checks. The validation API may expose diagnostics and
-readback helpers, but those helpers are not normal consumer render methods.
+Runtime shader validation should cover live pass versus `Reference`
+selected-ray or selected-pixel checks, image delta summaries,
+source/geometry family coverage, capability diagnostics, and local-cache
+binding checks. The validation API may expose diagnostics and readback
+helpers, but those helpers are not normal consumer render methods.
+
+GPU/browser readback parity is not an exact-pixel contract by default.
+Selected-pixel RGBA comparisons against `Reference` plus the production
+`Color` display path use the accepted evidence
+`gpu-selected-rgba-byte-parity`: max absolute RGB byte delta `3` for
+deterministic 8-bit display readbacks, with alpha exact unless a scene
+explicitly declares an alpha-composition claim. Record-specific looser probe
+tolerances, such as the M4 local/flat `10` byte integration bound, are not
+production defaults unless separately promoted as evidence.
+
+Controlled-region and whole-image shader comparisons must declare the metrics
+owned by the scene claim. Exact byte metrics remain required for audit, but
+visual-quality claims should also report the accepted
+`gpu-perceptual-quality-metrics`: Rec.709 display-luma deltas, weighted-RGB
+proxy deltas, and CIEDE2000-style residual diffs with a `1.0 Delta E 2000`
+just-noticeable threshold as a review aid. Those perceptual metrics guide
+quality and profile selection; they do not by themselves prove invisibility or
+replace scene-owned pass thresholds.
 
 ## API Design Implications
 
@@ -978,9 +1021,10 @@ caller-facing TypeScript-shaped surface.
   `await algorithm32.setupShader({ THREE, composer, scene, camera })`,
   or the same shape without `THREE` if Algorithm32 imports `three` as a peer
   dependency. The composer is required. This method receives the caller's
-  Three composer pipeline, asks the runtime shader builder to build the shader
-  machinery using the facade's validated configuration, and installs the
-  resulting pass. It returns a handle that owns
+  Three composer pipeline plus scene/camera attachment handles, asks the
+  runtime shader builder to build the shader machinery using the facade's
+  validated configuration, and installs the resulting pass. It returns a
+  handle that owns
   `ShaderMaterial`, fullscreen-pass/render-target setup, uniform and texture
   binding, composer pass invocation, and dispose lifecycle. Awaited setup and
   awaited handle config updates own normal resource preparation so the caller
@@ -997,11 +1041,11 @@ caller-facing TypeScript-shaped surface.
   and other Algorithm32-specific binding details should stay behind the
   adapter and public packet interfaces. Long-running texture/cache builds must
   still remain explicit awaited setup/update work outside the render frame.
-- Runtime shader capability and debug facade:
+- Runtime shader capability facade:
   preflight the selected renderer/configuration, expose hardware/software
   renderer and feature diagnostics, validate IncidentRadianceCache texture
-  compatibility, select stable debug views, and fail loudly for unsupported
-  source/geometry/scattering combinations.
+  compatibility, and fail loudly for unsupported source/geometry/scattering
+  combinations. Stable debug views remain deferred with diagnostics.
 - CPU/reference/offline facade:
   evaluate one path from configured public inputs plus `EvaluationRequest`
   when a CPU/reference/offline consumer needs spectral transport output.
@@ -1016,9 +1060,10 @@ caller-facing TypeScript-shaped surface.
   renderer adapters that need RGB conversion outside the production shader
   path.
 - Validation support:
-  fixture checks, promoted POC parity, live-pass/CPU soft-shader parity,
+  fixture checks, promoted POC parity, live-pass/reference parity,
   scene-packet oracle comparisons, shader readback probes, and diagnostic
-  helpers as dev/test APIs only.
+  helpers as dev/test APIs only. Do not promote the POC postprocess validation
+  harness.
 
 Local Sun calibration/resolution, calibration packet replay, and calibration
 invalidation belong to the upstream local Sun configuration API. They may live
@@ -1045,17 +1090,19 @@ POC verification notes:
   Algorithm32 ships the renderer adapter, these lifecycle operations are
   consumer-facing adapter API. Readback helpers remain diagnostic/dev support.
 - Current production-shape evidence keeps the live Three render-target plus
-  `DepthTexture` path, source/geometry configuration adapters, source-driven
-  Three lighting, and the CPU soft-shader oracle workflow. It discards packet
-  replay as the normal renderer architecture, standalone raw-WebGL renderers
-  as the target integration, and per-object atmosphere material duplication.
+  `DepthTexture` path, source/geometry configuration adapters, and
+  source-driven Three lighting. It discards the POC postprocess validation
+  harness, packet replay as the normal renderer architecture, standalone raw
+  WebGL renderers as the target integration, and per-object atmosphere
+  material duplication.
 - Local second-order POC evidence adds a hard runtime requirement for
   fail-loud cache binding: `flat-local-second-order-atmosphere` must consume a
   validated IncidentRadianceCache texture/descriptor and must not silently
   degrade to first-order when that resource is missing or mismatched.
 - The preserved POC contains the shared `Algorithm32AtmospherePass` shader
-  class, GLSL body, pass modes, cache uniforms, star-field uniforms, and local
-  cache builder/packing helpers. The latest live-scene wrapper behavior still
+  class, GLSL body, pass modes, cache uniforms, and local cache
+  builder/packing helpers. Star-field uniforms are app scene evidence, not
+  first-production Algorithm32 shader API. The latest live-scene wrapper behavior still
   lives in `scripts/flat/local-second-order/page/local-second-order.js` and
   `scripts/flat/local-second-order/page/subjective-scenes.js`, which import
   that POC pass and build/bind cache textures, lights, render-scale controls,
@@ -1068,8 +1115,9 @@ POC verification notes:
 Runtime shader setup owns texture/cache preparation for app consumers. Any
 runtime texture preparation must be explicit, awaitable/cancellable where
 appropriate, and outside the render frame; composer pass rendering must not
-hide long-running texture build work. A later texture-artifact API should be
-introduced only if a concrete non-app tooling consumer requires it.
+hide long-running texture build work. No separate public texture-artifact API
+ships in the first production API; introduce one later only if a concrete
+non-app tooling consumer requires it.
 
 Not every family must become a separate public class or a main-facade method.
 A compact facade is acceptable when the API remains small, but each outward
@@ -1094,11 +1142,3 @@ are accepted.
 
 - What exact normalized context packet should calibration accept from the flat
   app?
-- What non-app tooling consumers, if any, justify a separate texture-artifact
-  API after the runtime shader facade owns resource preparation?
-- Should the first production adapter require WebGL2 `Data3DTexture`, or must
-  a 2D atlas fallback ship with the initial API?
-- Which cache resolutions are production defaults versus validation fixtures?
-- What tolerance policy should govern CPU/GPU image or pixel parity?
-- What spectral-to-color display conversion controls, if any, should be part
-  of Algorithm32 rather than app presentation state?

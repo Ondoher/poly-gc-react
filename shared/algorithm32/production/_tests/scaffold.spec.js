@@ -39,6 +39,11 @@ function walkProductionFiles(relativeDirectoryPath = '.') {
 	for (const entry of entries) {
 		const entryRelativePath = path.join(relativeDirectoryPath, entry.name);
 		const entryPath = path.join(productionRootPath, entryRelativePath);
+		const productionRelativePath = path.relative(productionRootPath, entryPath).replaceAll(path.sep, '/');
+
+		if (productionRelativePath === 'quarantine' || productionRelativePath.startsWith('quarantine/')) {
+			continue;
+		}
 
 		if (entry.isDirectory()) {
 			filePaths.push(...walkProductionFiles(entryRelativePath));
@@ -46,7 +51,7 @@ function walkProductionFiles(relativeDirectoryPath = '.') {
 		}
 
 		if (entry.isFile()) {
-			filePaths.push(path.relative(productionRootPath, entryPath).replaceAll(path.sep, '/'));
+			filePaths.push(productionRelativePath);
 		}
 	}
 
@@ -185,14 +190,17 @@ function expectFocusedPrimaryModelInterfaceTypeFiles() {
 	const helperTypes = readProductionText('types/types.d.ts');
 
 	expect(helperTypes).toContain('type SpectralBasis');
-	expect(helperTypes).toContain('type RadianceSampleRequest');
-	expect(helperTypes).toContain('type IncidentRadianceSampleRequest');
+	expect(helperTypes).toContain('type DirectLightingSample');
+	expect(helperTypes).toContain('type IncidentRadianceSampling');
 	expect(helperTypes).toContain('type IncidentRadianceSample');
-	expect(helperTypes).toContain('type AtmosphereSampleRequest');
+	expect(helperTypes).toContain('type AtmosphereCoordinate');
+	expect(helperTypes).toContain('type AtmospherePath');
+	expect(helperTypes).toContain('type SourceRelativePosition');
+	expect(helperTypes).toContain('type CacheAccess');
 	expect(helperTypes).toContain('type ColorConversionRequest');
 	expect(helperTypes).toContain('type ColorSample');
-	expect(helperTypes).toContain('type RayDistanceRequest');
-	expect(helperTypes).toContain('spectral: SpectralBasis');
+	expect(helperTypes).toContain('type RaySegment');
+	expect(helperTypes).toContain('type ExecutionConfig');
 	expect(helperTypes).not.toContain('SpectralModel');
 
 	for (const relativePath of primaryFiles) {
@@ -265,16 +273,17 @@ function expectModelInterfacesHideImplementationFamilies() {
  */
 function expectInterfaceMethodJsdocStyle() {
 	const expectations = [
-		['types/AtmosphereModel.d.ts', '@param request - Describes the point, altitude, and spectral basis to'],
+		['types/AtmosphereModel.d.ts', '@param coordinate - Supplies the atmosphere coordinate to sample.'],
 		['types/AtmosphereModel.d.ts', '@returns The sampled atmosphere medium coefficients.'],
+		['types/AtmosphereModel.d.ts', '@returns The optical-depth sample.'],
 		['types/Color.d.ts', '@param request - Supplies the spectral sample and display conversion'],
 		['types/Color.d.ts', '@returns The converted display color sample.'],
-		['types/GeometryModel.d.ts', '@param request - Describes the ray origin, direction, and optional'],
-		['types/GeometryModel.d.ts', '@returns The resolved ray distance.'],
-		['types/LightSourceModel.d.ts', '@param request - Describes the point, outgoing direction, and spectral'],
-		['types/LightSourceModel.d.ts', '@returns The sampled radiance packet.'],
-		['types/LightSourceModel.d.ts', 'sampleIncidentRadiance(request: IncidentRadianceSampleRequest): IncidentRadianceSample;'],
-		['types/LightSourceModel.d.ts', '@returns The sampled incident radiance packet.'],
+		['types/GeometryModel.d.ts', '@param request - Supplies geometry-owned view ray request facts.'],
+		['types/GeometryModel.d.ts', '@returns The resolved view ray segment.'],
+		['types/GeometryModel.d.ts', '@returns The cache access packet.'],
+		['types/LightSourceModel.d.ts', '@returns The created incident-radiance cache.'],
+		['types/LightSourceModel.d.ts', '@returns The direct lighting sample.'],
+		['types/LightSourceModel.d.ts', '@returns The source path limit.'],
 	];
 
 	for (const [relativePath, expectedText] of expectations) {
@@ -284,6 +293,43 @@ function expectInterfaceMethodJsdocStyle() {
 		// Source: Algorithm32 production JSDoc guidance, 2026-06-28.
 		expect(source).toContain(expectedText);
 	}
+}
+
+/**
+ * Assert that stale scaffold-era first-slice contracts are no longer public
+ * production contracts.
+ *
+ * @returns {void}
+ */
+function expectNoStaleFirstSliceContracts() {
+	const inspectedFiles = walkProductionFiles()
+		.filter((relativePath) => !relativePath.startsWith('_tests/'))
+		.filter((relativePath) => !relativePath.includes('/_tests/'))
+		.filter((relativePath) => /\.(?:js|d\.ts)$/.test(relativePath));
+	const forbiddenSnippets = [
+		'resolveRayDistance',
+		'RayDistanceRequest',
+		'sampleIncidentRadiance',
+		'IncidentRadianceSampleRequest',
+		'debugView',
+		'setScene',
+		'setCamera',
+	];
+	const offenders = [];
+
+	for (const relativePath of inspectedFiles) {
+		const source = readProductionText(relativePath);
+
+		for (const forbiddenSnippet of forbiddenSnippets) {
+			if (source.includes(forbiddenSnippet)) {
+				offenders.push(`${relativePath}: ${forbiddenSnippet}`);
+			}
+		}
+	}
+
+	// Reason: Milestone 0 removes scaffold-era contracts superseded by the reconciliation handoff.
+	// Source: Algorithm32 Production Implementation Plan, Milestone 0.
+	expect(offenders).toEqual([]);
 }
 
 /**
@@ -437,6 +483,7 @@ function registerAlgorithm32ProductionScaffoldSpecs() {
 	it('documents string union values in ambient type JSDoc', expectStringUnionValueDocumentation);
 	it('keeps model interfaces independent of specific implementation families', expectModelInterfacesHideImplementationFamilies);
 	it('documents interface method parameters and returns', expectInterfaceMethodJsdocStyle);
+	it('removes stale first-slice scaffold contracts', expectNoStaleFirstSliceContracts);
 	it('keeps class specs in local class-named files', expectLocalClassSpecFiles);
 	it('documents class-state naming and setter conventions', expectClassStateConventionDocumentation);
 	it('keeps POC imports out of production implementation files', expectNoPocRuntimeImports);

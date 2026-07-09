@@ -1,4 +1,4 @@
-import { ScalarMath, SampleMath } from '../utils/MathUtils.js';
+import { ScalarMath, SampleMath, WavelengthMath } from '../utils/MathUtils.js';
 
 /**
  * Own the canonical spectral basis and spectral channel shape for one
@@ -154,10 +154,14 @@ export class SpectralModel {
 	 */
 	_copyBasis(basis) {
 		return Object.freeze({
-			wavelengths: Object.freeze(basis.wavelengths.map((wavelength) => Object.freeze({
-				value: wavelength.value,
-				units: wavelength.units,
-			}))),
+			wavelengths: Object.freeze(basis.wavelengths.map((wavelength) => {
+				WavelengthMath.assertWavelength(wavelength, 'SpectralBasis wavelength');
+
+				return Object.freeze({
+					value: wavelength.value,
+					units: wavelength.units,
+				});
+			})),
 		});
 	}
 

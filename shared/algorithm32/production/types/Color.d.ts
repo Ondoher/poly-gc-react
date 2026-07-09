@@ -27,4 +27,13 @@ interface Color {
 	 * @returns The converted display color sample.
 	 */
 	convert(request: ColorConversionRequest): ColorSample;
+
+	/**
+	 * Optionally contribute display-conversion shader source, symbols, and
+	 * bindings for the active descriptor.
+	 *
+	 * @param request - Supplies the active shader descriptor and setup context.
+	 * @returns The color shader contribution or contributions.
+	 */
+	createShaderContribution?(request: ShaderContributionRequest): ShaderContribution | readonly ShaderContribution[];
 }

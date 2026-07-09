@@ -1,26 +1,26 @@
 /**
  * Identify supported distance units.
  *
- * - **meter** - Length measured in meters.
- * - **kilometer** - Length measured in kilometers.
+ * - **meters** - Length measured in meters.
+ * - **kilometers** - Length measured in kilometers.
  */
-type DistanceUnits = "meter" | "kilometer";
+type DistanceUnits = "meters" | "kilometers";
 
 /**
  * Identify supported angle units.
  *
- * - **radian** - Angle measured in radians.
- * - **degree** - Angle measured in degrees.
+ * - **radians** - Angle measured in radians.
+ * - **degrees** - Angle measured in degrees.
  */
-type AngleUnits = "radian" | "degree";
+type AngleUnits = "radians" | "degrees";
 
 /**
  * Identify supported wavelength units.
  *
- * - **nanometer** - Wavelength measured in nanometers.
- * - **micrometer** - Wavelength measured in micrometers.
+ * - **nanometers** - Wavelength measured in nanometers.
+ * - **micrometers** - Wavelength measured in micrometers.
  */
-type WavelengthUnits = "nanometer" | "micrometer";
+type WavelengthUnits = "nanometers" | "micrometers";
 
 /**
  * Describe one distance quantity with explicit units.
@@ -83,6 +83,16 @@ type Position = {
 }
 
 /**
+ * Store one normalized three-dimensional vector.
+ */
+type UnitVector3 = readonly [number, number, number];
+
+/**
+ * Store one spectral vector aligned to the active spectral basis.
+ */
+type SpectralValue = readonly number[];
+
+/**
  * Describe the spectral basis requested by an Algorithm32 evaluation.
  */
 type SpectralBasis = {
@@ -93,83 +103,356 @@ type SpectralBasis = {
 }
 
 /**
- * Describe the inputs needed to sample radiance from the configured light
- * source at one point.
+ * Describe direct lighting supplied by a configured light source.
  */
-type RadianceSampleRequest = {
+type DirectLightingSample = {
 	/**
-	 * Store the model-space sample position.
+	 * Store source spectral radiance or incident scale aligned to the active
+	 * spectral basis.
 	 */
-	position: Position;
+	incidentRadiance: SpectralValue;
 
 	/**
-	 * Store the normalized outgoing direction at the sample position.
+	 * Store the normalized direction from the sample point toward the light.
 	 */
-	outgoingDirection: readonly [number, number, number];
+	directionToLight: UnitVector3;
 
 	/**
-	 * Store the active spectral basis used by the evaluation.
+	 * Store source-path transmittance when the source owns a precomputed value.
 	 */
-	spectral: SpectralBasis;
+	sourceTransmittance?: SpectralValue;
+
+	/**
+	 * Store owner-specific metadata for validation or diagnostics.
+	 */
+	metadata?: unknown;
 }
 
 /**
- * Describe the radiance sampled from one light-source point.
+ * Describe how far a source path may travel before geometry or source policy
+ * terminates it.
  */
-type RadianceSample = {
+type SourcePathLimit = {
 	/**
-	 * Store the normalized direction from the sample point toward the light
-	 * source.
+	 * Store the maximum distance in meters, or null when the source is
+	 * directional.
 	 */
-	directionToLightSource: readonly [number, number, number];
+	maxDistanceMeters: number | null;
 
 	/**
-	 * Store the light-source distance, or positive infinity when the
-	 * light-source implementation has no finite sample distance.
+	 * Explain the source-owned path limit policy.
 	 */
-	distance: Distance;
-
-	/**
-	 * Store the apparent angular radius of the light source.
-	 */
-	angularRadius: Angle;
-
-	/**
-	 * Store spectral radiance aligned to the active spectral basis.
-	 */
-	spectralRadiance: readonly number[];
+	reason: string;
 }
 
 /**
- * Describe the inputs needed to sample incident radiance from the configured
- * light source at one point.
+ * Describe incident-radiance cache identity and compatibility facts.
  */
-type IncidentRadianceSampleRequest = {
+type IncidentRadianceCacheDescriptor = {
 	/**
-	 * Store the model-space sample position.
+	 * Store the logical cache family.
 	 */
-	position: Position;
+	cacheKind: "none" | "distant" | "local";
 
 	/**
-	 * Store the normalized outgoing direction at the sample position.
+	 * Store the source-owned cache key.
 	 */
-	outgoingDirection: readonly [number, number, number];
+	sourceKey: string;
 
 	/**
-	 * Store the active spectral basis used by the evaluation.
+	 * Store the cache descriptor version.
 	 */
-	spectral: SpectralBasis;
+	version: number;
+
+	/**
+	 * Store optional logical dimension names.
+	 */
+	dimensions?: readonly string[];
+
+	/**
+	 * Store optional cache-owned shader payload family.
+	 */
+	payloadKind?: string;
+
+	/**
+	 * Store optional cache-owned shader payload dimensions.
+	 */
+	payloadDimensions?: readonly number[];
+
+	/**
+	 * Store optional cache-owned texture layout facts.
+	 */
+	texture?: unknown;
+
+	/**
+	 * Store optional cache-owned lookup facts.
+	 */
+	lookup?: unknown;
+
+	/**
+	 * Store owner-specific metadata for validation or diagnostics.
+	 */
+	metadata?: unknown;
 }
 
 /**
- * Describe incident radiance sampled from the configured light source's
- * higher-order incident-radiance support.
+ * Describe one directional incident-radiance sample.
  */
 type IncidentRadianceSample = {
 	/**
+	 * Store the incoming direction represented by this sample.
+	 */
+	incomingDirection: UnitVector3;
+
+	/**
 	 * Store incident spectral radiance aligned to the active spectral basis.
 	 */
-	spectralRadiance: readonly number[];
+	radiance: SpectralValue;
+
+	/**
+	 * Store quadrature or sample weight for this incident direction.
+	 */
+	weight: number;
+}
+
+/**
+ * Sample operation-ready incident radiance from a geometry-resolved cache
+ * access packet.
+ */
+interface IncidentRadianceSampler {
+	/**
+	 * Return directional incident samples for one cache access.
+	 *
+	 * @param cacheAccess - Supplies the geometry-resolved cache lookup.
+	 * @returns Incident-radiance samples for the lookup.
+	 */
+	(cacheAccess: CacheAccess): readonly IncidentRadianceSample[];
+}
+
+/**
+ * Describe setup-bound incident-radiance support ready for CPU/reference
+ * evaluation.
+ */
+type IncidentRadianceSampling = {
+	/**
+	 * Store the cache descriptor used to validate compatibility.
+	 */
+	cacheDescriptor: IncidentRadianceCacheDescriptor;
+
+	/**
+	 * Store the bound incident-radiance sampler.
+	 */
+	incidentRadianceSampler: IncidentRadianceSampler;
+}
+
+/**
+ * Describe one cache-owned coordinate that needs a generated incident-radiance
+ * value.
+ */
+type CacheBuildCoordinate = {
+	/**
+	 * Store the stable cache-local coordinate key.
+	 */
+	coordinateKey: string;
+
+	/**
+	 * Store numeric lookup coordinates in cache-owned order.
+	 */
+	coordinates: readonly number[];
+
+	/**
+	 * Store an optional altitude bin index.
+	 */
+	altitudeBinIndex?: number;
+
+	/**
+	 * Store an optional incoming-direction index.
+	 */
+	directionIndex?: number;
+
+	/**
+	 * Store an optional source-relative vertical bin index.
+	 */
+	zBinIndex?: number;
+
+	/**
+	 * Store an optional source-relative radial bin index.
+	 */
+	rhoBinIndex?: number;
+
+	/**
+	 * Store optional altitude in meters for cache construction.
+	 */
+	altitudeMeters?: number;
+
+	/**
+	 * Store optional source-relative radial distance in meters.
+	 */
+	rhoMeters?: number;
+
+	/**
+	 * Store the incoming direction represented by the coordinate.
+	 */
+	incomingDirection?: UnitVector3;
+
+	/**
+	 * Store owner-specific coordinate metadata.
+	 */
+	metadata?: unknown;
+}
+
+/**
+ * Describe a cache-owned rgba32f 3D texture payload for shader setup.
+ */
+type CacheShaderTexturePayload = {
+	/**
+	 * Store the texture payload kind/version.
+	 */
+	kind: string;
+
+	/**
+	 * Store the logical texture id.
+	 */
+	textureId: string;
+
+	/**
+	 * Store texture width in texels.
+	 */
+	width: number;
+
+	/**
+	 * Store texture height in texels.
+	 */
+	height: number;
+
+	/**
+	 * Store texture depth in texels.
+	 */
+	depth: number;
+
+	/**
+	 * Store the texture dimensionality.
+	 */
+	dimensionality: "3d";
+
+	/**
+	 * Store the texture format label.
+	 */
+	format: string;
+
+	/**
+	 * Store the sampler policy label.
+	 */
+	samplerPolicy: string;
+
+	/**
+	 * Store the coordinate order used by the packed payload.
+	 */
+	coordinateOrder: readonly string[];
+
+	/**
+	 * Store the number of spectral channels per RGBA group.
+	 */
+	spectralGroupSize: number;
+
+	/**
+	 * Store the number of spectral groups.
+	 */
+	spectralGroupCount: number;
+
+	/**
+	 * Store the active spectral channel count.
+	 */
+	spectralChannelCount: number;
+
+	/**
+	 * Store packed Float32-compatible RGBA values.
+	 */
+	rgbaFloat32: readonly number[];
+}
+
+/**
+ * Describe shader-facing payload metadata created by an incident-radiance
+ * cache.
+ */
+type CacheShaderPayloadDescriptor = {
+	/**
+	 * Store the payload family.
+	 */
+	payloadKind: string;
+
+	/**
+	 * Store payload dimensions in owner-defined order.
+	 */
+	dimensions: readonly number[];
+
+	/**
+	 * Store the payload format label.
+	 */
+	format: string;
+
+	/**
+	 * Store optional texture payload details.
+	 */
+	texture?: CacheShaderTexturePayload;
+
+	/**
+	 * Store optional lookup contribution details.
+	 */
+	lookup?: unknown;
+
+	/**
+	 * Store owner-specific metadata for validation or diagnostics.
+	 */
+	metadata?: unknown;
+}
+
+/**
+ * Describe a generated incident-radiance cache.
+ */
+interface IncidentRadianceCache {
+	/**
+	 * Store the cache descriptor.
+	 */
+	readonly descriptor: IncidentRadianceCacheDescriptor;
+
+	/**
+	 * Return cache-owned build coordinates.
+	 *
+	 * @returns Iterable cache build coordinates.
+	 */
+	coordinates(): Iterable<CacheBuildCoordinate>;
+
+	/**
+	 * Add one generated value to the cache.
+	 *
+	 * @param args - Supplies cache-owned coordinate and value arguments.
+	 * @returns No return value.
+	 */
+	addCoordinateToCache(...args: readonly unknown[]): void;
+
+	/**
+	 * Create an operation-ready sampler for this cache.
+	 *
+	 * @returns The bound incident-radiance sampler.
+	 */
+	createIncidentRadianceSampler(): IncidentRadianceSampler;
+
+	/**
+	 * Create a shader-facing cache payload when the cache supports GPU use.
+	 *
+	 * @returns The shader payload descriptor.
+	 */
+	createShaderPayload?(): CacheShaderPayloadDescriptor;
+
+	/**
+	 * Optionally contribute cache-owned shader source, symbols, and bindings
+	 * for the active descriptor.
+	 *
+	 * @param request - Supplies the active shader descriptor and setup context.
+	 * @returns The cache shader contribution or contributions.
+	 */
+	createShaderContribution?(request: ShaderContributionRequest): ShaderContribution | readonly ShaderContribution[];
 }
 
 /**
@@ -194,63 +477,180 @@ type LightSourceModelDescriptor = {
 }
 
 /**
- * Describe the inputs needed to sample atmosphere medium coefficients.
+ * Describe an atmosphere coordinate resolved by geometry.
  */
-type AtmosphereSampleRequest = {
+type AtmosphereCoordinate = {
 	/**
-	 * Store the model-space sample position.
+	 * Store altitude above the active atmosphere bottom boundary in meters.
 	 */
-	position: Position;
-
-	/**
-	 * Store the altitude above the configured ground reference.
-	 */
-	altitude: Distance;
-
-	/**
-	 * Store the active spectral basis used by the evaluation.
-	 */
-	spectral: SpectralBasis;
+	altitudeMeters: number;
 }
 
 /**
- * Store medium coefficients sampled at one point in the atmosphere.
+ * Describe one sampled atmosphere path point.
+ */
+type AtmospherePathSample = {
+	/**
+	 * Store the atmosphere coordinate represented by this path sample.
+	 */
+	atmosphereCoordinate: AtmosphereCoordinate;
+
+	/**
+	 * Store the effective path measure represented by this sample in meters.
+	 */
+	measureMeters: number;
+
+	/**
+	 * Store the interval length from the previous sample in meters.
+	 */
+	intervalLengthFromPreviousMeters: number;
+}
+
+/**
+ * Describe a geometry-owned atmosphere path for optical-depth integration.
+ */
+type AtmospherePath = {
+	/**
+	 * Store the start coordinate.
+	 */
+	start: AtmosphereCoordinate;
+
+	/**
+	 * Store the end coordinate.
+	 */
+	end: AtmosphereCoordinate;
+
+	/**
+	 * Store total path length in meters.
+	 */
+	lengthMeters: number;
+
+	/**
+	 * Store optional integration samples.
+	 */
+	samples?: readonly AtmospherePathSample[];
+
+	/**
+	 * Store true when the path is blocked by ground before reaching the source.
+	 */
+	blockedByGround?: boolean;
+
+	/**
+	 * Store owner-specific metadata for validation or diagnostics.
+	 */
+	metadata?: unknown;
+}
+
+/**
+ * Describe a position in the source-owned frame after geometry resolution.
+ */
+type SourceRelativePosition = {
+	/**
+	 * Store the direction from the source toward the sample point.
+	 */
+	directionFromSource: UnitVector3;
+
+	/**
+	 * Store the direction from the sample point toward the source when useful.
+	 */
+	directionToSource?: UnitVector3;
+
+	/**
+	 * Store measured distance from the finite source, or null for directional
+	 * sources.
+	 */
+	distanceFromSourceMeters: number | null;
+
+	/**
+	 * Store radial distance from the source subpoint when the active cache
+	 * family needs it.
+	 */
+	radialDistanceFromSourceSubpointMeters?: number;
+
+	/**
+	 * Store resolved altitude in meters when the active cache family needs it.
+	 */
+	altitudeMeters?: number;
+
+	/**
+	 * Store owner-specific metadata for validation or diagnostics.
+	 */
+	metadata?: unknown;
+}
+
+/**
+ * Describe a geometry-resolved incident-radiance cache lookup.
+ */
+type CacheAccess = {
+	/**
+	 * Store the logical cache key or coordinate family id.
+	 */
+	cacheKey: string;
+
+	/**
+	 * Store normalized or index-space coordinates consumed by the cache.
+	 */
+	coordinates: readonly number[];
+
+	/**
+	 * Store owner-specific metadata for validation or diagnostics.
+	 */
+	metadata?: unknown;
+}
+
+/**
+ * Store medium coefficients sampled at one atmosphere coordinate.
  */
 type AtmosphereSample = {
 	/**
-	 * Store spectral extinction coefficients aligned to the active spectral basis.
+	 * Store total extinction coefficients.
 	 */
-	extinctionCoefficient: readonly number[];
+	extinction: SpectralValue;
 
 	/**
-	 * Store spectral scattering coefficients aligned to the active spectral basis.
+	 * Store total scattering coefficients.
 	 */
-	scatteringCoefficient: readonly number[];
+	scattering: SpectralValue;
 
 	/**
-	 * Store spectral absorption coefficients aligned to the active spectral basis.
+	 * Store Rayleigh scattering coefficients.
 	 */
-	absorptionCoefficient: readonly number[];
+	rayleighScattering: SpectralValue;
 
 	/**
-	 * Store the normalized density sample used to derive the coefficients.
+	 * Store Mie scattering coefficients.
 	 */
-	density: number;
+	mieScattering: SpectralValue;
+
+	/**
+	 * Store Mie extinction coefficients.
+	 */
+	mieExtinction?: SpectralValue;
+
+	/**
+	 * Store absorption coefficients.
+	 */
+	absorption: SpectralValue;
+
+	/**
+	 * Store normalized density facts used to derive the coefficients.
+	 */
+	density: unknown;
 }
 
 /**
- * Describe the inputs needed to sample an atmosphere phase function.
+ * Store optical-depth integration output.
  */
-type PhaseSampleRequest = {
+type OpticalDepthSample = {
 	/**
-	 * Store the normalized outgoing direction from the sample point.
+	 * Store spectral optical depth.
 	 */
-	outgoingDirection: readonly [number, number, number];
+	opticalDepth: SpectralValue;
 
 	/**
-	 * Store the normalized incoming light direction at the sample point.
+	 * Store spectral transmittance when the atmosphere computes it directly.
 	 */
-	incomingDirection: readonly [number, number, number];
+	transmittance?: SpectralValue;
 }
 
 /**
@@ -258,9 +658,19 @@ type PhaseSampleRequest = {
  */
 type PhaseSample = {
 	/**
-	 * Store the scalar phase value used by the active scattering approximation.
+	 * Store optional combined phase values.
 	 */
-	value: number;
+	phase?: SpectralValue;
+
+	/**
+	 * Store Rayleigh phase value.
+	 */
+	rayleighPhase: number;
+
+	/**
+	 * Store Mie phase value.
+	 */
+	miePhase: number;
 }
 
 /**
@@ -285,35 +695,43 @@ type AtmosphereModelDescriptor = {
 }
 
 /**
- * Describe the ray whose finite integration distance geometry should resolve.
+ * Describe one model-space ray.
  */
-type RayDistanceRequest = {
+type Ray = {
 	/**
 	 * Store the model-space ray origin.
 	 */
-	origin: Position;
+	origin: Position | readonly [number, number, number];
 
 	/**
 	 * Store the normalized model-space ray direction.
 	 */
-	direction: readonly [number, number, number];
-
-	/**
-	 * Store the caller-supplied finite ray distance when an upstream
-	 * renderer or caller has already chosen the integration endpoint. Geometry
-	 * resolves the distance from its configured boundaries when this is omitted.
-	 */
-	suppliedDistance?: Distance;
+	direction: UnitVector3;
 }
 
 /**
- * Describe the finite ray distance needed by Algorithm32 execution.
+ * Describe a finite geometry-resolved view ray segment.
  */
-type ResolvedRayDistance = {
+type RaySegment = {
 	/**
-	 * Store the finite distance to integrate along the ray.
+	 * Store the ray integrated by Algorithm32.
 	 */
-	distance: Distance;
+	ray: Ray;
+
+	/**
+	 * Store the starting distance along the ray in canonical meters.
+	 */
+	startDistanceMeters: number;
+
+	/**
+	 * Store the ending distance along the ray in canonical meters.
+	 */
+	endDistanceMeters: number;
+
+	/**
+	 * Store optional geometry-owned endpoint or boundary metadata.
+	 */
+	metadata?: unknown;
 }
 
 /**
@@ -422,6 +840,21 @@ type ColorDescriptor = {
 }
 
 /**
+ * Configure numerical execution behavior for one Algorithm32 facade instance.
+ */
+type ExecutionConfig = {
+	/**
+	 * Store default view-path interval count for CPU/reference evaluation.
+	 */
+	pathIntervalCount?: number;
+
+	/**
+	 * Store source transmittance integration count when source paths need it.
+	 */
+	sourceTransmittanceIntervalCount?: number;
+}
+
+/**
  * Configure one Algorithm32 facade instance.
  */
 type Config = {
@@ -444,9 +877,20 @@ type Config = {
 	geometry: GeometryModel;
 
 	/**
+	 * Provide optional configured display conversion used by shader setup and
+	 * CPU/offline display tooling.
+	 */
+	color?: Color;
+
+	/**
 	 * Configure the spectral basis requested by Algorithm32.
 	 */
 	spectral: SpectralBasis;
+
+	/**
+	 * Configure numerical execution behavior.
+	 */
+	execution?: ExecutionConfig;
 
 	/**
 	 * Configure optional runtime shader behavior.
@@ -467,6 +911,11 @@ type ConfigSnapshot = {
 	 * Store the monotonically increasing configuration version.
 	 */
 	version: number;
+
+	/**
+	 * Store the shared model descriptor snapshot for this configuration.
+	 */
+	model: SharedModelSnapshot;
 }
 
 /**
@@ -479,9 +928,37 @@ type ShaderRuntimeConfig = {
 	mode?: string;
 
 	/**
-	 * Select the runtime shader debug view.
+	 * Store the largest renderer-produced scene-hit distance encoded for the
+	 * runtime shader, in meters.
 	 */
-	debugView?: string;
+	sceneDepthMaxMeters?: number;
+
+	/**
+	 * Store scene units to Algorithm32 meters scale for renderer-produced
+	 * scene-hit distances.
+	 */
+	distanceMultiplier?: number;
+
+	/**
+	 * Store an alias for scene units to Algorithm32 meters scale when the
+	 * host scene already names that value this way.
+	 */
+	metersPerSceneUnit?: number;
+
+	/**
+	 * Configure shader cache/resource policy.
+	 */
+	cachePolicy?: unknown;
+
+	/**
+	 * Configure runtime capability failure policy.
+	 */
+	capabilityPolicy?: unknown;
+
+	/**
+	 * Configure render-target, HDR, depth, and color-space policy.
+	 */
+	renderTargetPolicy?: unknown;
 }
 
 /**
@@ -496,18 +973,46 @@ type ShaderSetupRequest = {
 	/**
 	 * Provide the scene rendered before the Algorithm32 atmosphere pass.
 	 */
-	scene?: unknown;
+	scene: unknown;
 
 	/**
 	 * Provide the camera used to render the scene and derive atmosphere rays.
 	 */
-	camera?: unknown;
+	camera: unknown;
 
 	/**
-	 * Provide the renderer or renderer-compatible surface when setup needs
-	 * runtime capabilities or render targets.
+	 * Provide the optional Three namespace when the integration needs caller
+	 * constructors.
 	 */
-	renderer?: unknown;
+	THREE?: unknown;
+
+	/**
+	 * Provide optional initial viewport dimensions for setup-created runtime
+	 * resources. The composer may later resize the installed pass.
+	 */
+	viewportPixels?: readonly [number, number];
+
+	/**
+	 * Provide the largest renderer-produced scene-hit distance encoded for the
+	 * runtime shader, in meters.
+	 */
+	sceneDepthMaxMeters?: number;
+
+	/**
+	 * Provide scene units to Algorithm32 meters scale for renderer-produced
+	 * scene-hit distances.
+	 */
+	distanceMultiplier?: number;
+
+	/**
+	 * Provide an alias for scene units to Algorithm32 meters scale.
+	 */
+	metersPerSceneUnit?: number;
+
+	/**
+	 * Provide an optional runtime logger for non-fatal frame failures.
+	 */
+	logger?: Console;
 }
 
 /**
@@ -524,20 +1029,11 @@ interface ShaderHandle {
 	setConfig(config: Config): Promise<ConfigSnapshot>;
 
 	/**
-	 * Replace the scene used by the installed runtime shader integration.
+	 * Return deferred shader diagnostics placeholder data.
 	 *
-	 * @param scene - Supplies the replacement scene.
-	 * @returns No return value.
+	 * @returns Deferred diagnostics placeholder data.
 	 */
-	setScene(scene: unknown): void;
-
-	/**
-	 * Replace the camera used by the installed runtime shader integration.
-	 *
-	 * @param camera - Supplies the replacement camera.
-	 * @returns No return value.
-	 */
-	setCamera(camera: unknown): void;
+	getDiagnostics(): unknown;
 
 	/**
 	 * Dispose resources owned by the installed runtime shader integration.
@@ -552,21 +1048,39 @@ interface ShaderHandle {
  */
 type EvaluationRequest = {
 	/**
-	 * Store the model-space ray origin.
+	 * Store an optional geometry-owned view-ray request packet. When omitted,
+	 * the full evaluation request is passed to geometry.
 	 */
-	origin: Position;
+	viewRayRequest?: unknown;
 
 	/**
-	 * Store the normalized model-space ray direction.
+	 * Store the model-space ray origin when using the simple view-ray request
+	 * shape.
 	 */
-	direction: readonly [number, number, number];
+	origin?: Position;
+
+	/**
+	 * Store the normalized model-space ray direction when using the simple
+	 * view-ray request shape.
+	 */
+	direction?: UnitVector3;
 
 	/**
 	 * Store the caller-supplied finite ray distance when an upstream
-	 * renderer or caller has already chosen the integration endpoint. Geometry
-	 * resolves the distance from its configured boundaries when this is omitted.
+	 * renderer or caller has already chosen the integration endpoint.
 	 */
 	suppliedDistance?: Distance;
+
+	/**
+	 * Override default path interval count for this evaluation.
+	 */
+	pathIntervalCount?: number;
+
+	/**
+	 * Override configured incident-radiance sampling. Explicit null disables
+	 * incident sampling for this evaluation.
+	 */
+	incidentRadianceSampling?: IncidentRadianceSampling | null;
 
 }
 
@@ -577,11 +1091,20 @@ type EvaluationResult = {
 	/**
 	 * Store spectral path radiance aligned to the configured spectral basis.
 	 */
-	pathRadiance: readonly number[];
+	pathRadiance: SpectralValue;
 
 	/**
 	 * Store spectral transmittance aligned to the configured spectral basis.
 	 */
-	transmittance: readonly number[];
+	transmittance: SpectralValue;
 
+	/**
+	 * Store the geometry-resolved ray segment used for validation.
+	 */
+	viewRaySegment?: RaySegment;
+
+	/**
+	 * Store path integration points used for validation.
+	 */
+	pathIntegrationPoints?: readonly PathIntegrationPoint[];
 }

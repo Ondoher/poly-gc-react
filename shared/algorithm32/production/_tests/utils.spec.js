@@ -41,13 +41,13 @@ describe('Algorithm32 production generic utilities', () => {
 	it('provides pure angle helpers', () => {
 		const { add, inDegrees, inRadians, scale, subtract, toDegrees, toRadians } = AngleMath;
 
-		expect(inDegrees(90)).toEqual({ value: 90, units: 'degree' });
-		expect(inRadians(Math.PI)).toEqual({ value: Math.PI, units: 'radian' });
+		expect(inDegrees(90)).toEqual({ value: 90, units: 'degrees' });
+		expect(inRadians(Math.PI)).toEqual({ value: Math.PI, units: 'radians' });
 		expect(toRadians(inDegrees(180))).toBeCloseTo(Math.PI, 12);
 		expect(toDegrees(inRadians(Math.PI))).toBeCloseTo(180, 12);
-		expect(add(inDegrees(90), inRadians(Math.PI / 2))).toEqual({ value: 180, units: 'degree' });
-		expect(subtract(inRadians(Math.PI), inDegrees(90))).toEqual({ value: Math.PI / 2, units: 'radian' });
-		expect(scale(inDegrees(30), 2)).toEqual({ value: 60, units: 'degree' });
+		expect(add(inDegrees(90), inRadians(Math.PI / 2))).toEqual({ value: 180, units: 'degrees' });
+		expect(subtract(inRadians(Math.PI), inDegrees(90))).toEqual({ value: Math.PI / 2, units: 'radians' });
+		expect(scale(inDegrees(30), 2)).toEqual({ value: 60, units: 'degrees' });
 		expect(AngleMath.wrapDegrees(370)).toBe(10);
 		expect(AngleMath.wrapRadians(Math.PI * 3)).toBeCloseTo(Math.PI, 12);
 	});
@@ -55,25 +55,26 @@ describe('Algorithm32 production generic utilities', () => {
 	it('provides pure distance helpers', () => {
 		const { add, inKilometers, inMeters, scale, subtract, toKilometers, toMeters } = DistanceMath;
 
-		expect(inMeters(1500)).toEqual({ value: 1500, units: 'meter' });
-		expect(inKilometers(1.5)).toEqual({ value: 1.5, units: 'kilometer' });
+		expect(inMeters(1500)).toEqual({ value: 1500, units: 'meters' });
+		expect(inKilometers(1.5)).toEqual({ value: 1.5, units: 'kilometers' });
 		expect(toMeters(inKilometers(1.5))).toBe(1500);
 		expect(toKilometers(inMeters(1500))).toBe(1.5);
-		expect(add(inMeters(500), inKilometers(1))).toEqual({ value: 1500, units: 'meter' });
-		expect(subtract(inKilometers(2), inMeters(500))).toEqual({ value: 1.5, units: 'kilometer' });
-		expect(scale(inKilometers(2), 3)).toEqual({ value: 6, units: 'kilometer' });
+		expect(add(inMeters(500), inKilometers(1))).toEqual({ value: 1500, units: 'meters' });
+		expect(subtract(inKilometers(2), inMeters(500))).toEqual({ value: 1.5, units: 'kilometers' });
+		expect(scale(inKilometers(2), 3)).toEqual({ value: 6, units: 'kilometers' });
 	});
 
 	it('provides pure wavelength helpers', () => {
 		const { add, inMicrometers, inNanometers, scale, subtract, toMicrometers, toNanometers } = WavelengthMath;
 
-		expect(inNanometers(550)).toEqual({ value: 550, units: 'nanometer' });
-		expect(inMicrometers(0.55)).toEqual({ value: 0.55, units: 'micrometer' });
+		expect(inNanometers(550)).toEqual({ value: 550, units: 'nanometers' });
+		expect(inMicrometers(0.55)).toEqual({ value: 0.55, units: 'micrometers' });
 		expect(toNanometers(inMicrometers(0.55))).toBe(550);
 		expect(toMicrometers(inNanometers(550))).toBe(0.55);
-		expect(add(inNanometers(500), inMicrometers(0.05))).toEqual({ value: 550, units: 'nanometer' });
-		expect(subtract(inMicrometers(0.7), inNanometers(100))).toEqual({ value: 0.6, units: 'micrometer' });
-		expect(scale(inNanometers(250), 2)).toEqual({ value: 500, units: 'nanometer' });
+		expect(add(inNanometers(500), inMicrometers(0.05))).toEqual({ value: 550, units: 'nanometers' });
+		expect(subtract(inMicrometers(0.7), inNanometers(100))).toEqual({ value: 0.6, units: 'micrometers' });
+		expect(scale(inNanometers(250), 2)).toEqual({ value: 500, units: 'nanometers' });
+		expect(() => toNanometers({ value: 550, units: 'nanometer' })).toThrowError(/nanometers/);
 	});
 
 	it('provides pure vector-space helpers without mutating inputs', () => {

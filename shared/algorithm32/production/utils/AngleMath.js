@@ -1,5 +1,7 @@
 const DEGREES_TO_RADIANS = Math.PI / 180;
 const RADIANS_TO_DEGREES = 180 / Math.PI;
+const DEGREES = 'degrees';
+const RADIANS = 'radians';
 
 /**
  * Create an angle packet in degrees.
@@ -10,7 +12,7 @@ const RADIANS_TO_DEGREES = 180 / Math.PI;
 function inDegrees(value) {
 	return {
 		value,
-		units: 'degree',
+		units: DEGREES,
 	};
 }
 
@@ -23,7 +25,7 @@ function inDegrees(value) {
 function inRadians(value) {
 	return {
 		value,
-		units: 'radian',
+		units: RADIANS,
 	};
 }
 
@@ -34,7 +36,9 @@ function inRadians(value) {
  * @returns {number} The angle in radians.
  */
 function toRadians(angle) {
-	if (angle.units === 'degree') {
+	assertAngle(angle);
+
+	if (angle.units === DEGREES) {
 		return angle.value * DEGREES_TO_RADIANS;
 	}
 
@@ -48,7 +52,9 @@ function toRadians(angle) {
  * @returns {number} The angle in degrees.
  */
 function toDegrees(angle) {
-	if (angle.units === 'radian') {
+	assertAngle(angle);
+
+	if (angle.units === RADIANS) {
 		return angle.value * RADIANS_TO_DEGREES;
 	}
 
@@ -63,8 +69,11 @@ function toDegrees(angle) {
  * @returns {Angle} The summed angle packet.
  */
 function add(left, right) {
+	assertAngle(left, 'left angle');
+	assertAngle(right, 'right angle');
+
 	return {
-		value: left.units === 'radian' ? left.value + toRadians(right) : left.value + toDegrees(right),
+		value: left.units === RADIANS ? left.value + toRadians(right) : left.value + toDegrees(right),
 		units: left.units,
 	};
 }
@@ -77,8 +86,11 @@ function add(left, right) {
  * @returns {Angle} The difference angle packet.
  */
 function subtract(left, right) {
+	assertAngle(left, 'left angle');
+	assertAngle(right, 'right angle');
+
 	return {
-		value: left.units === 'radian' ? left.value - toRadians(right) : left.value - toDegrees(right),
+		value: left.units === RADIANS ? left.value - toRadians(right) : left.value - toDegrees(right),
 		units: left.units,
 	};
 }
@@ -91,10 +103,33 @@ function subtract(left, right) {
  * @returns {Angle} The scaled angle packet.
  */
 function scale(angle, factor) {
+	assertAngle(angle);
+
 	return {
 		value: angle.value * factor,
 		units: angle.units,
 	};
+}
+
+/**
+ * Assert that an angle packet uses the production angle unit contract.
+ *
+ * @param {unknown} angle - Supplies the candidate angle packet.
+ * @param {string} [label] - Supplies the error label.
+ * @returns {void}
+ */
+function assertAngle(angle, label = 'angle') {
+	if (!angle || typeof angle !== 'object') {
+		throw new TypeError(`${label} must be a unit-bearing angle packet.`);
+	}
+
+	if (!Number.isFinite(angle.value)) {
+		throw new TypeError(`${label}.value must be finite.`);
+	}
+
+	if (angle.units !== RADIANS && angle.units !== DEGREES) {
+		throw new TypeError(`${label}.units must be "radians" or "degrees".`);
+	}
 }
 
 /**
@@ -135,6 +170,7 @@ function wrapDegrees(degrees, options = {}) {
 
 export default Object.freeze({
 	add,
+	assertAngle,
 	inDegrees,
 	inRadians,
 	scale,

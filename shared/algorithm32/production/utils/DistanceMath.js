@@ -1,4 +1,6 @@
 const METERS_PER_KILOMETER = 1000;
+const METERS = 'meters';
+const KILOMETERS = 'kilometers';
 
 /**
  * Create a distance packet in kilometers.
@@ -9,7 +11,7 @@ const METERS_PER_KILOMETER = 1000;
 function inKilometers(value) {
 	return {
 		value,
-		units: 'kilometer',
+		units: KILOMETERS,
 	};
 }
 
@@ -22,7 +24,7 @@ function inKilometers(value) {
 function inMeters(value) {
 	return {
 		value,
-		units: 'meter',
+		units: METERS,
 	};
 }
 
@@ -33,7 +35,9 @@ function inMeters(value) {
  * @returns {number} The distance in meters.
  */
 function toMeters(distance) {
-	if (distance.units === 'kilometer') {
+	assertDistance(distance);
+
+	if (distance.units === KILOMETERS) {
 		return distance.value * METERS_PER_KILOMETER;
 	}
 
@@ -47,7 +51,9 @@ function toMeters(distance) {
  * @returns {number} The distance in kilometers.
  */
 function toKilometers(distance) {
-	if (distance.units === 'meter') {
+	assertDistance(distance);
+
+	if (distance.units === METERS) {
 		return distance.value / METERS_PER_KILOMETER;
 	}
 
@@ -62,8 +68,11 @@ function toKilometers(distance) {
  * @returns {Distance} The summed distance packet.
  */
 function add(left, right) {
+	assertDistance(left, 'left distance');
+	assertDistance(right, 'right distance');
+
 	return {
-		value: left.units === 'kilometer' ? left.value + toKilometers(right) : left.value + toMeters(right),
+		value: left.units === KILOMETERS ? left.value + toKilometers(right) : left.value + toMeters(right),
 		units: left.units,
 	};
 }
@@ -76,8 +85,11 @@ function add(left, right) {
  * @returns {Distance} The difference distance packet.
  */
 function subtract(left, right) {
+	assertDistance(left, 'left distance');
+	assertDistance(right, 'right distance');
+
 	return {
-		value: left.units === 'kilometer' ? left.value - toKilometers(right) : left.value - toMeters(right),
+		value: left.units === KILOMETERS ? left.value - toKilometers(right) : left.value - toMeters(right),
 		units: left.units,
 	};
 }
@@ -90,14 +102,38 @@ function subtract(left, right) {
  * @returns {Distance} The scaled distance packet.
  */
 function scale(distance, factor) {
+	assertDistance(distance);
+
 	return {
 		value: distance.value * factor,
 		units: distance.units,
 	};
 }
 
+/**
+ * Assert that a distance packet uses the production distance unit contract.
+ *
+ * @param {unknown} distance - Supplies the candidate distance packet.
+ * @param {string} [label] - Supplies the error label.
+ * @returns {void}
+ */
+function assertDistance(distance, label = 'distance') {
+	if (!distance || typeof distance !== 'object') {
+		throw new TypeError(`${label} must be a unit-bearing distance packet.`);
+	}
+
+	if (!Number.isFinite(distance.value)) {
+		throw new TypeError(`${label}.value must be finite.`);
+	}
+
+	if (distance.units !== METERS && distance.units !== KILOMETERS) {
+		throw new TypeError(`${label}.units must be "meters" or "kilometers".`);
+	}
+}
+
 export default Object.freeze({
 	add,
+	assertDistance,
 	inKilometers,
 	inMeters,
 	scale,

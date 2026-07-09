@@ -1,8 +1,12 @@
 # Algorithm32 Conclusions
 
-Status: working consolidation of the accepted Algorithm32 behavior, production
-boundaries, constants, and remaining choices after the cleanroom, shader-lab,
-and local-Sun multi-scattering experiment lanes.
+Status: pre-reconciliation consolidation, retained for historical context.
+For production promotion, use
+[Reconciliation Conclusions](../reconciliation/conclusions.md) and
+[Reconciliation To Production Deltas](reconciliation-production-deltas.md) as
+the current authority. Where this file conflicts with the reconciliation POC,
+the reconciliation POC wins unless an explicit production exception is
+recorded.
 
 This document treats local POC files as evidence, not production authority.
 Source-backed physics and API contracts should move into the production model;
@@ -187,7 +191,8 @@ Current scaffold/interface note:
 - The scaffold/POC lineage may still expose incident-radiance sampling as a
   light-source method. Treat that as migration residue. Reconciliation should
   move that runtime question to setup-bound incident radiance cache/support:
-  `IncidentRadianceSupport.sampleIncidentRadiance(request)`.
+  operation-ready `IncidentRadianceSampling` with
+  `incidentRadianceSampler(cacheAccess)`.
 
 Important conclusion: the inherited POC `sourceColor = { r: 1, g: 0.98, b:
 0.95 }` and rough wavelength band tinting were reverted in the latest
@@ -289,7 +294,7 @@ Owns:
   compatibility fingerprints, value semantics, packing policy, and sampling
   variants such as null, distant, or local.
 - Runtime sampling operation:
-  `IncidentRadianceSupport.sampleIncidentRadiance(request)`.
+  `IncidentRadianceSampling.incidentRadianceSampler(cacheAccess)`.
 - Returned `IncidentRadianceSample` packets: spectral radiance arriving at the
   current path sample from a collapsed direction set or explicit incoming
   directions, plus any direction/weight data transport needs.
@@ -384,7 +389,7 @@ Production-shaped data flow:
    positions and light-source-owned lighting packets.
 11. `AtmosphereModel.samplePhase`
    returns phase values for direct and incident directions.
-12. Setup-bound `IncidentRadianceSupport.sampleIncidentRadiance`
+12. Setup-bound `IncidentRadianceSampling.incidentRadianceSampler`
     returns higher-order incident radiance samples, or a zero/empty policy when
     disabled. The caller supplies only current sample facts, such as sample
     position and `AtmosphereCoordinate`; the bound support owns cache variant,
@@ -836,7 +841,7 @@ Scope for the reconciliation lane:
 - Rerun the accepted Algorithm32 transport tests using the finalized parameter
   ledger: high-level transport, finite object composition, convergence-backed
   numerical controls, local-source behavior, second-order incident radiance,
-  shader/CPU parity, and display-boundary checks.
+  GPU-vs-reference parity, and display-boundary checks.
 - Define and test the final data contract across the five reconciliation
   boundaries. Algorithm32 transport may depend on light/source, geometry,
   atmosphere, and optional incident radiance cache/support interfaces; color
@@ -850,8 +855,8 @@ Scope for the reconciliation lane:
   and the browser/gallery artifacts produced through the harness and follow-up
   runners.
 - Classify artifacts by evidence type. Objective artifacts include module
-  parity, incident-radiance oracle checks, cache-shape checks, CPU soft-shader
-  local L2, integrated GPU local L2, CPU/GPU selected-pixel parity,
+  parity, incident-radiance oracle checks, cache-shape checks, historical CPU
+  shader local L2 evidence, integrated GPU local L2, GPU-vs-reference selected-pixel parity,
   criteria/results JSON, diagnostics, and reports. Subjective/review artifacts
   include first-order versus second-order galleries, terrain and Southern
   France OBJ browser captures, with/without shader source matrices, local-vs-
@@ -978,9 +983,10 @@ the initial baseline. Candidate future profile choices include:
    choose whether ground irradiance/reflection enters the first production
    contract or remains a later atmosphere/surface extension.
 12. Shader resource contract:
-   choose minimum production target for local second-order caches: WebGL2
-   `Data3DTexture`, 2D atlas fallback, float texture requirements, and failure
-   behavior.
+   initial production target for local second-order caches is WebGL2
+   `Data3DTexture`; 2D atlas fallback is a later compatibility extension only
+   if target devices require it. Float texture requirements and failure
+   behavior still need implementation-level validation.
 13. Validation fixtures:
     decide which external source is the acceptance target for the initial
     profile and any future named profiles: Bruneton Figure 1, Bruneton spectral

@@ -9,7 +9,7 @@ import { SpectralModel } from '../SpectralModel.js';
 function wavelength(value) {
 	return {
 		value,
-		units: 'nanometer',
+		units: 'nanometers',
 	};
 }
 
@@ -67,14 +67,25 @@ describe('SpectralModel', () => {
 		wavelengths: [wavelength(500), wavelength(600)],
 	});
 		expect(model.version).toBe(8);
-		expect(model.fingerprint).toBe('spectral:2:500,600:500:nanometer,600:nanometer');
+		expect(model.fingerprint).toBe('spectral:2:500,600:500:nanometers,600:nanometers');
 		expect(descriptor).toEqual({
 			kind: 'algorithm32-spectral-model',
 			wavelengths: [wavelength(500), wavelength(600)],
 			channelCount: 2,
-			fingerprint: 'spectral:2:500,600:500:nanometer,600:nanometer',
+			fingerprint: 'spectral:2:500,600:500:nanometers,600:nanometers',
 			version: 8,
 		});
+	});
+
+	it('fails loudly when wavelength units use singular spellings', () => {
+		expect(() => new SpectralModel({
+			basis: {
+				wavelengths: [
+					{ value: 550, units: 'nanometer' },
+				],
+			},
+			version: 1,
+		})).toThrowError(/nanometers/);
 	});
 
 	it('returns wavelengths by channel index and fails on invalid indexes', () => {

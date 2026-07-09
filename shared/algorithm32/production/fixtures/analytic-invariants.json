@@ -20,13 +20,13 @@
       ],
       "assumptions": {
         "medium": "vacuum",
-        "distance": { "value": 3, "units": "kilometer" },
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "distance": { "value": 3, "units": "kilometers" },
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "extinctionCoefficient": [{ "value": 0, "units": "per-kilometer" }]
       },
       "input": {
-        "distance": { "value": 3, "units": "kilometer" },
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "distance": { "value": 3, "units": "kilometers" },
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "extinctionCoefficient": [{ "value": 0, "units": "per-kilometer" }]
       },
       "expected": {
@@ -62,13 +62,13 @@
       ],
       "assumptions": {
         "medium": "homogeneous",
-        "distance": { "value": 0, "units": "kilometer" },
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "distance": { "value": 0, "units": "kilometers" },
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "extinctionCoefficient": [{ "value": 0.2, "units": "per-kilometer" }]
       },
       "input": {
-        "distance": { "value": 0, "units": "kilometer" },
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "distance": { "value": 0, "units": "kilometers" },
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "extinctionCoefficient": [{ "value": 0.2, "units": "per-kilometer" }]
       },
       "expected": {
@@ -104,13 +104,13 @@
       ],
       "assumptions": {
         "medium": "homogeneous",
-        "distance": { "value": 3, "units": "kilometer" },
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "distance": { "value": 3, "units": "kilometers" },
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "extinctionCoefficient": [{ "value": 0.2, "units": "per-kilometer" }]
       },
       "input": {
-        "distance": { "value": 3, "units": "kilometer" },
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "distance": { "value": 3, "units": "kilometers" },
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "extinctionCoefficient": [{ "value": 0.2, "units": "per-kilometer" }]
       },
       "expected": {
@@ -146,7 +146,7 @@
       ],
       "assumptions": {
         "path": "two collinear homogeneous segments",
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "segmentOpticalDepths": [0.2, 0.4]
       },
       "input": {
@@ -199,10 +199,10 @@
       ],
       "assumptions": {
         "medium": "homogeneous",
-        "distance": { "value": 3, "units": "kilometer" },
+        "distance": { "value": 3, "units": "kilometers" },
         "wavelengths": [
-          { "value": 450, "units": "nanometer" },
-          { "value": 650, "units": "nanometer" }
+          { "value": 450, "units": "nanometers" },
+          { "value": 650, "units": "nanometers" }
         ],
         "extinctionCoefficient": [
           { "value": 0.1, "units": "per-kilometer" },
@@ -210,10 +210,10 @@
         ]
       },
       "input": {
-        "distance": { "value": 3, "units": "kilometer" },
+        "distance": { "value": 3, "units": "kilometers" },
         "wavelengths": [
-          { "value": 450, "units": "nanometer" },
-          { "value": 650, "units": "nanometer" }
+          { "value": 450, "units": "nanometers" },
+          { "value": 650, "units": "nanometers" }
         ],
         "extinctionCoefficient": [
           { "value": 0.1, "units": "per-kilometer" },
@@ -258,15 +258,15 @@
       ],
       "assumptions": {
         "medium": "homogeneous",
-        "distance": { "value": 3, "units": "kilometer" },
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "distance": { "value": 3, "units": "kilometers" },
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "species": {
           "rayleigh": { "extinctionCoefficient": [{ "value": 0.1, "units": "per-kilometer" }] },
           "mie": { "extinctionCoefficient": [{ "value": 0.2, "units": "per-kilometer" }] }
         }
       },
       "input": {
-        "distance": { "value": 3, "units": "kilometer" },
+        "distance": { "value": 3, "units": "kilometers" },
         "speciesExtinctionCoefficient": {
           "rayleigh": [{ "value": 0.1, "units": "per-kilometer" }],
           "mie": [{ "value": 0.2, "units": "per-kilometer" }]
@@ -311,11 +311,11 @@
       ],
       "assumptions": {
         "medium": "piecewise constant sampled medium",
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "sampleWeights": [
-          { "value": 0.25, "units": "kilometer" },
-          { "value": 0.75, "units": "kilometer" },
-          { "value": 2, "units": "kilometer" }
+          { "value": 0.25, "units": "kilometers" },
+          { "value": 0.75, "units": "kilometers" },
+          { "value": 2, "units": "kilometers" }
         ],
         "sampleExtinctionCoefficient": [
           [{ "value": 0.4, "units": "per-kilometer" }],
@@ -325,9 +325,9 @@
       },
       "input": {
         "sampleWeights": [
-          { "value": 0.25, "units": "kilometer" },
-          { "value": 0.75, "units": "kilometer" },
-          { "value": 2, "units": "kilometer" }
+          { "value": 0.25, "units": "kilometers" },
+          { "value": 0.75, "units": "kilometers" },
+          { "value": 2, "units": "kilometers" }
         ],
         "sampleExtinctionCoefficient": [[0.4], [0.2], [0.1]]
       },
@@ -408,7 +408,7 @@
       ],
       "assumptions": {
         "medium": "one homogeneous sample",
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "noSurfaceContribution": true,
         "noMultipleScattering": true
       },
@@ -419,7 +419,7 @@
         "incidentSpectralRadiance": 4,
         "sourceTransmittance": 0.8,
         "sourceSampleWeight": 1,
-        "stepLength": { "value": 2, "units": "kilometer" }
+        "stepLength": { "value": 2, "units": "kilometers" }
       },
       "expected": {
         "spectralRadiance": {
@@ -448,7 +448,7 @@
       ],
       "assumptions": {
         "medium": "one homogeneous sample",
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "incidentRadianceAlreadySampled": true,
         "noDirectSourceContribution": true,
         "noSurfaceContribution": true
@@ -457,7 +457,7 @@
         "viewTransmittance": 0.5,
         "scatteringCoefficient": { "value": 0.2, "units": "per-kilometer" },
         "incidentSpectralRadiance": 3,
-        "stepLength": { "value": 2, "units": "kilometer" }
+        "stepLength": { "value": 2, "units": "kilometers" }
       },
       "expected": {
         "spectralRadiance": {
@@ -486,7 +486,7 @@
       ],
       "assumptions": {
         "medium": "one homogeneous sample",
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "sourceSampleWeights": [0.5, 0.5],
         "noSurfaceContribution": true,
         "noMultipleScattering": true
@@ -498,7 +498,7 @@
         "incidentSpectralRadiance": 4,
         "sourceTransmittance": 0.8,
         "sourceSampleWeights": [0.5, 0.5],
-        "stepLength": { "value": 2, "units": "kilometer" }
+        "stepLength": { "value": 2, "units": "kilometers" }
       },
       "expected": {
         "spectralRadiance": {
@@ -527,7 +527,7 @@
       ],
       "assumptions": {
         "medium": "one homogeneous sample",
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "sourceSampleWeights": [1, 0],
         "noSurfaceContribution": true,
         "noMultipleScattering": true
@@ -539,7 +539,7 @@
         "incidentSpectralRadiance": 4,
         "sourceTransmittance": 0.8,
         "sourceSampleWeights": [1, 0],
-        "stepLength": { "value": 2, "units": "kilometer" }
+        "stepLength": { "value": 2, "units": "kilometers" }
       },
       "expected": {
         "spectralRadiance": {
@@ -573,7 +573,7 @@
       ],
       "assumptions": {
         "medium": "one homogeneous sample",
-        "wavelengths": [{ "value": 550, "units": "nanometer" }],
+        "wavelengths": [{ "value": 550, "units": "nanometers" }],
         "sourceSampleWeights": [0.25, 0.75],
         "phaseBySource": [0.25, 0.5],
         "noSurfaceContribution": true,
@@ -586,7 +586,7 @@
         "incidentSpectralRadiance": 4,
         "sourceTransmittance": 0.8,
         "sourceSampleWeights": [0.25, 0.75],
-        "stepLength": { "value": 2, "units": "kilometer" }
+        "stepLength": { "value": 2, "units": "kilometers" }
       },
       "expected": {
         "spectralRadiance": {
@@ -624,7 +624,7 @@
         "directIrradiance": 3.141592653589793,
         "cosTheta": 1,
         "viewTransmittance": 1,
-        "wavelengths": [{ "value": 550, "units": "nanometer" }]
+        "wavelengths": [{ "value": 550, "units": "nanometers" }]
       },
       "input": {
         "albedo": 0,
@@ -674,7 +674,7 @@
         "directIrradiance": 3.141592653589793,
         "cosTheta": 1,
         "viewTransmittance": 1,
-        "wavelengths": [{ "value": 550, "units": "nanometer" }]
+        "wavelengths": [{ "value": 550, "units": "nanometers" }]
       },
       "input": {
         "albedo": 1,

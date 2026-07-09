@@ -7,12 +7,13 @@ handoff after reconciliation. The production code root is
 `shared/algorithm32/production/`, which currently contains the Jasmine test
 lane, AMA reference registry, ambient `types.d.ts` homes, initial
 consumer-provided `LightSourceModel`, `AtmosphereModel`, `GeometryModel`, and `Color`
-interface files, initial `Reference` and `ShaderBuilder` implementation class
-scaffolds, the initial `SharedModel` aggregate model, the implemented
-`SpectralModel` component model, and scaffold/model guardrail specs. The
-`Reference` class now includes the cited top-level `evaluate` orchestration,
-several implemented leaf/private helper methods, and remaining unimplemented
-private helper stubs for the transport steps. The
+interface files, implemented first-slice `Algorithm32` facade lifecycle,
+`Reference` orchestration, `ShaderBuilder` setup validation,
+`SpectralCalculator`, incident-radiance setup utilities, source-owned
+distant/local light-source and incident-radiance cache families,
+`CanonicalAtmosphere`, `SphericalEarthGeometry`, `FlatEarthGeometry`, the
+initial `SharedModel` aggregate model, the implemented `SpectralModel`
+component model, and scaffold/model guardrail specs. The
 production deliverable is a usable
 shader/runtime atmosphere pass; CPU reference code is support for validation,
 internal shader texture building, cache construction, future diagnostics, and
@@ -25,13 +26,17 @@ relevant supporting implementation material; older pre-reconciliation lanes
 are replaced as implementation references. Use
 [Unsourced And Partially Sourced Facts](../reconciliation/unsourced-and-partially-sourced-facts.md)
 for remaining provenance gaps.
-The three algorithm input abstractions are Sun, atmosphere composition, and
-geometry. Algorithm32 core output is spectral or spectral-group radiance and
-transmittance; display conversion is a separate class that consumes spectral
-output when a renderer or offline tool needs RGB, exposure, tone mapping, or
-debug-color mapping. Those abstractions should be defined as public
-interfaces in the Algorithm32 API itself, not only as implementation-private
-packet shapes.
+The primary facade receives concrete configured abstraction instances at
+creation time: light source, atmosphere, geometry, optional Color/display,
+spectral basis, execution controls, and shader policy. Creation from app-level
+description or preset objects is a later convenience layer outside the core
+facade; the facade should not interpret broad profile descriptions into
+domain objects. Algorithm32 core output is spectral or spectral-group radiance
+and transmittance; display conversion is a separate `Color` abstraction that
+consumes spectral output when a renderer or offline tool needs RGB, exposure,
+tone mapping, or debug-color mapping. Those abstractions should be defined as
+public interfaces in the Algorithm32 API itself, not only as
+implementation-private packet shapes.
 The initial implementation ships one atmosphere profile: the accepted
 Algorithm32 canonical profile. Alternate atmosphere profiles are future named
 extensions, not first-implementation defaults. Every promoted constant needs
@@ -47,16 +52,16 @@ internal resource preparation behind awaited shader setup and awaited
 shader-handle config updates.
 Runtime shader behavior is part of facade configuration, likely
 `Algorithm32Config.shader`, not just setup-time data. It owns choices such as
-shader mode, debug view, cache/resource policy, capability failure policy, and
-render-target/HDR/depth policy. The Three setup request supplies attachment
-handles such as composer, scene, and camera.
+shader mode, cache/resource policy, capability failure policy, and
+render-target/HDR/depth policy. Debug views are deferred with diagnostics and
+are not first-production runtime shader API. The Three setup request supplies
+attachment handles such as composer, scene, and camera. Scene binding is setup-time
+attachment state; moving to another scene/composer/camera uses teardown and
+re-setup unless a later framework integration need justifies a narrow rebind.
 The current assumed API shape is a configured Algorithm32 facade instance, one
 per independent simulation window, coordinating a CPU/reference algorithm
 execution class and a runtime shader builder over a
 facade-owned shared configuration/facts model.
-The private helper implementation sequence for the CPU/reference execution
-class is now recorded in
-`shared/algorithm32/production/implementation/reference_plan.md`.
 The Algorithm32 algorithm means the specified atmospheric transport steps and
 calculations; the CPU/reference algorithm execution class runs CPU/reference
 operations using those calculations.
@@ -79,6 +84,11 @@ packets and Raycaster captures are validation/oracle inputs only. The facade
 should own or expose source-driven scene-light synchronization, geometry/depth
 policy, and fail-loud local-cache binding so callers do not need Algorithm32
 shader/cache domain knowledge. Stable diagnostics remain deferred.
+Shader assembly follows the reconciliation ownership split: specific
+abstraction interfaces own their shader contributions and semantic payloads,
+while `ShaderBuilder` owns the mechanical source assembly, compatibility
+checks, texture/resource preparation, bindings, pass/material installation,
+frame/update lifecycle, and cleanup.
 The production runtime shader integration should require a composer-style
 Three render pipeline. Algorithm32 setup asks its runtime shader builder to
 build the runtime shader from packaged shader source, the shared model, and
@@ -118,13 +128,25 @@ explicitly asks for historical archaeology.
 Use [Reconciliation To Production Deltas](reconciliation-production-deltas.md)
 as the working tracker for differences between the accepted reconciliation
 architecture and the current production scaffold.
+Use [Algorithm32 Implementation Plan](implementation-plan.md) as the staged
+execution outline for promoting the reconciliation POC into production code,
+tests, fixtures, and docs.
 The production top-level API shape remains primary: `Algorithm32`, the
 production dependency aggregate, `Reference`, and `ShaderBuilder` stay as the
 boundary while reconciled implementation details move underneath them.
-Type definitions should follow the reconciliation POC shapes by default
-because most production implementation code will be lifted from that code base.
-Keep production unit-bearing packet boundaries where units matter, such as
-distance.
+Use the reconciliation POC for all production implementation details unless
+there is an explicit recorded production conflict. Current recorded
+conflicts/exceptions are the retained top-level production shape,
+explicit unit-bearing boundaries for convertible quantities, deferred
+diagnostics, and the config/setup-vs-runtime failure policy.
+Type definitions and property names should use the reconciliation POC shapes
+and names because most production implementation code will be lifted from that
+code base. Rename only when a POC name is actively misleading in the production
+contract, and document the one-to-one mapping. Any quantity that can be
+represented in different units through conversion must use an explicit
+unit-bearing packet at durable/API boundaries; avoid implicit unit scalar
+types there. Unit strings inside those packets use plural spellings; singular
+spellings fail validation instead of being treated as aliases.
 Failure policy is split by lifecycle phase: fail loudly during configuration
 and setup, including constructor validation, `setConfig`, `setupShader`,
 awaited handle config updates, and resource build/bind setup; once the runtime
@@ -136,6 +158,52 @@ The production implementation lives in:
 ```text
 shared/algorithm32/production/
 ```
+
+## Fresh Bootstrap Checkpoint
+
+As of July 9, 2026, fresh agents should treat the production shader lane as an
+active implementation, not a scaffold-only design topic. The promoted concrete
+slice includes:
+
+- canonical atmosphere, spectral, display, runtime, validation, and artifact
+  constants in `constants/Algorithm32CanonicalData.js`;
+- `BrunetonColorDisplayModel` as the concrete Color/display model, including
+  CPU spectral-to-display conversion, inverse tone mapping, albedo fitting,
+  and Color-owned shader contribution;
+- concrete geometry, atmosphere, light-source, source-created cache, Color,
+  and core transport owners now provide the distant spherical and local flat
+  shader contributions through owner-local methods. Source-created incident
+  caches feed automatic shader setup through cache-owned descriptors,
+  contributions, and texture payloads. The old aggregate profile factories
+  have been moved to `shared/algorithm32/production/quarantine/` for later
+  deletion;
+- `ShaderUniformDescriptor.defaultValue` support and `ShaderBuilder` binding
+  of missing uniforms from descriptor defaults. Required shader bindings now
+  fail loudly before pass installation when no setup/resource value or uniform
+  default can satisfy them. Cache descriptor facts and cache texture payload
+  facts are also validated before resource creation.
+
+The current verification checkpoint is
+`npm run test:algorithm32:production` passing 168 specs with 0 failures, plus
+`npm run build` passing with the known Babel deoptimisation and existing
+circular-dependency warnings. The current internal short-code reference for
+promoted POC constants/display/profile shader facts is
+`(script a32-poc-color-032)` in
+`shared/algorithm32/production/references.md`. Remaining concrete work is
+resource/capability polish around the promoted path and optional source-light
+or scene-mapping adapters where runtime integration needs them. The broader
+non-spectral unit-neutral configuration migration remains a cleanup when
+those APIs are next touched.
+Browser/readback parity fixtures for scene color, ray-length/depth capture,
+hit mask, and selected-pixel output are deferred until real app composer
+integration provides stable scene color, capture, and readback surfaces.
+Renderer-produced depth/hit capture is now promoted as the reusable
+`SceneInputCapture` composer pass that runs ahead of the Algorithm32
+atmosphere pass; shader-facing object/material ID textures are intentionally
+not part of the first production atmosphere algorithm contract. Final
+Color/display composition still consumes renderer-produced hit-pixel scene
+color when composing endpoint color with Algorithm32 path radiance and
+transmittance.
 
 ## Current Authority
 
@@ -149,6 +217,11 @@ shared/algorithm32/production/
   current implementation authority for production reference/shader work.
 - [Reconciliation To Production Deltas](reconciliation-production-deltas.md)
   records the architecture/API gaps that must be resolved during promotion.
+- [Algorithm32 Implementation Plan](implementation-plan.md) is the current
+  staged execution outline for the production promotion.
+- [Production Code Architecture And POC Review](production-code-architecture-poc-review.md)
+  records the July 9, 2026 production-code review against the design and the
+  reconciliation POC.
 - [Algorithm32 Production Design](production-design.md) records the
   design-stage module boundaries, local Sun solar-zenith calibration UX/API
   notes, non-goals, promotion sequence, and open questions needed to satisfy
@@ -191,10 +264,22 @@ match each row's compact reference pointer numbers, and superscript citations
 must not be used. Class-specific specs live beside their classes
 with class-name files, such as
 `models/_tests/SpectralModel.spec.js`, and guard the facade, implementation
-collaborators, `SpectralModel`, and `SharedModel`. The latest focused lane
-covers 38 specs with 0 failures, including fixture-backed coverage for
-`Reference` segment transmittance, transport state transition, direct
-in-scattering, and incident in-scattering helpers.
+collaborators, `SpectralModel`, and `SharedModel`. The package-level scaffold
+walk intentionally ignores `quarantine/` because files there are archival,
+not active production implementation. The latest focused lane covers 168
+specs with 0 failures, including contract-alignment guards, facade
+lifecycle coverage, fixture-backed `SpectralCalculator` transport helper
+coverage, `Reference` orchestration, `ShaderBuilder` setup validation,
+descriptor synthesis, shader compatibility/assembly, required Color-owned
+output contributions, cache texture resource preparation, Three-compatible
+pass installation, reusable scene depth/hit capture, required binding
+validation, cache descriptor/payload validation, the incident-radiance cache
+coordinator, source-owned distant/local light-source/cache families, canonical atmosphere and
+spherical/flat geometry models, concrete owner-provided geometry, atmosphere,
+light-source, source-created cache, and core transport shader contributions,
+canonical data constants, concrete Color display conversion, plural unit
+validation for wavelength packets, and owner-path distant spherical / local
+flat assembly fixtures.
 
 ## Production Split
 
@@ -206,11 +291,24 @@ in-scattering, and incident in-scattering helpers.
   implementation collaborators live under `implementation/`; shared
   configuration/facts models live under `models/`, starting with
   the `SharedModel` aggregate model and the implemented `SpectralModel`;
+  concrete source-owned cache families live under `light-sources/`;
+  concrete atmosphere models live under `atmospheres/`; concrete geometry
+  models live under `geometries/`;
   generic pure numeric utilities live under `utils/`, starting with
   `ScalarMath`, `AngleMath`, `DistanceMath`, `WavelengthMath`, `VectorMath`, `ArrayMath`, and `SampleMath`.
+  `SpectralCalculator` should be promoted as a common internal utility used by
+  both `Reference` evaluation and incident-radiance cache building, not as a
+  `Reference`-owned-only helper or primary public facade API.
   Production analytic fixtures now start under `fixtures/` with
   `analytic-invariants.json`, normalized to AMA numbered references and
   compact reference pointer objects.
+  Validation fixtures are unit-test artifacts: keep them in checked-in
+  production fixture ledgers consumed by specs. Cite third-party source rows
+  through `shared/algorithm32/production/references.md`. First-pass internal
+  experiment references also live in `references.md` as short codes cited with
+  `(script <code>)`; later evidence collection adds exact script, record,
+  artifact, criterion, and run id details to
+  `shared/algorithm32/production/evidence.md`.
 - `agents/topics/apps/flat/reconciliation/`,
   `scripts/flat/reconciliation/POC/`, and
   `tmp/atmosphere/reconciliation/`: the relevant reconciliation topic, code,
@@ -261,20 +359,24 @@ cache lookup = z, rho, incomingDirection, wavelength
 ```
 
 Production Algorithm32 should expose second-order incoming radiance through
-`LightSourceModel.sampleIncidentRadiance(...)`. Specific light-source
-implementations may use `IncidentRadianceCache` internally when second-order
-transport is active. The cache is named for what it stores: spectral radiance
-arriving at a sample point from an incoming direction. It is not a caller
-option or separate provider; tests and validation may fixture or inspect the
-cache implementation through internal seams without changing the public
-algorithm API.
+setup-bound `IncidentRadianceSampling`, matching the reconciliation POC. The
+light source creates the appropriate cache family, the cache owns the sampler
+and shader payload, and `Reference` consumes a configured default sampler
+unless an evaluation request supplies an `incidentRadianceSampling` property.
+That request property overrides the default, including explicit `null` for a
+no-cache evaluation. The cache is named for what it stores: spectral radiance
+arriving at a sample point from an incoming direction. Tests and validation may
+fixture or inspect the cache implementation through internal seams without
+changing the public algorithm API.
 
 For local Sun caches, `rho` is horizontal distance from the local Sun
 subpoint on the flat plane. Incoming direction is stored in the Sun-subpoint
 local radial/tangential/up frame, not raw world coordinates. Cache keys must
 include public Sun, atmosphere composition, and geometry interface values,
-execution configuration, cache resolution, incoming-direction set, wavelength
-grid, and packing version.
+execution configuration, geometry-resolved cache-domain descriptors,
+incoming-direction set, wavelength grid, and packing version. Production
+`z`/`rho` resolution is derived from geometry/cache-domain descriptors; fixed
+dimensions are validation fixtures or named local-domain quality presets.
 
 The Three POC pass now exposes `flat-local-second-order-atmosphere`. Its
 accepted browser POC uploads IncidentRadianceCache as a WebGL2/Three
@@ -285,7 +387,7 @@ Algorithm32 spectral channels are packed into four RGBA groups:
 the flat camera ray, converts each incoming direction to the same
 Sun-subpoint local radial/tangential/up frame, samples the packed cache, and
 feeds that `L1_incident` into the same second-order accumulation shape as the
-CPU soft shader.
+CPU/reference evaluator.
 
 The current production-shape evidence keeps the Three-native render path:
 
@@ -296,26 +398,29 @@ Three scene + camera
   -> output target or screen
 ```
 
-It also keeps source/geometry adapters and CPU soft-shader validation. It
-discards packet replay as the normal renderer architecture, standalone raw
-WebGL renderers as the target integration, and per-object atmosphere material
-duplication as the primary app strategy.
+It also keeps source/geometry adapters and reference-oracle validation. It
+discards the POC postprocess validation harness, packet replay as the normal
+renderer architecture, standalone raw WebGL renderers as the target
+integration, and per-object atmosphere material duplication as the primary app
+strategy.
 
-The refined POC soft shader remains evidence, not a production class. Its
-hit-vs-sky branch is promoted into geometry-owned ray-path resolution:
-`EvaluationRequest` carries ray facts and, when already bounded by a surface
-hit, a `distanceMeters` endpoint. `GeometryModel.resolveRayPath(...)` owns the
-distinction between the POC `traceSegmentForThreeHit(...)`/`hitDistanceMeters`
-path and the `traceSkyForThreeRay(...)`/`distanceToSkyBoundary(...)` path, so
-CPU/reference algorithm execution only integrates the resolved distance.
+The refined POC postprocess validation harness remains historical evidence
+only, not a production class. Its hit-vs-sky branch is promoted into
+geometry-owned ray-path resolution: `EvaluationRequest` carries ray facts and,
+when already bounded by a surface hit, a `distanceMeters` endpoint.
+`GeometryModel.resolveRayPath(...)` owns the distinction between the POC
+`traceSegmentForThreeHit(...)`/`hitDistanceMeters` path and the
+`traceSkyForThreeRay(...)`/`distanceToSkyBoundary(...)` path, so CPU/reference
+algorithm execution only integrates the resolved distance.
 
 Accepted POC evidence in `tmp/atmosphere/local-second-order/`:
 
 - `011-local-cache-shape`: accepted the local frame cache shape after
   rejecting raw world direction caching in `010`.
-- `012-cpu-soft-shader-local-l2`: accepted CPU first-plus-second-order local
-  closest and local 90 degree cases, with distant controls carried in the same
-  matrix.
+- Local L2 validation record: historical validation evidence for CPU
+  first-plus-second-order local closest and local 90 degree cases, with
+  distant controls carried in the same matrix. Do not promote the POC
+  postprocess validation harness.
 - `018-three-integrated-local-l2-probe`: accepted the integrated Three GPU
   cache path for local closest.
 - `019-three-integrated-local-l2-probe`: accepted the integrated Three GPU
@@ -326,10 +431,11 @@ Open design followups before production promotion:
 - promote the POC cache helper into a production
   `shared/algorithm32/production/` module with typed source/cache config
   contracts;
-- replace the probe-scene validation with full-scene CPU/GPU image parity
-  against the production scene renderer and stable camera controls;
-- decide whether production GPU storage stays `Data3DTexture` or needs a 2D
-  atlas fallback for target devices;
+- replace the probe-scene validation with full-scene GPU-vs-reference image
+  or selected-pixel parity against the production scene renderer and stable
+  camera controls;
+- keep initial production GPU storage on WebGL2/Three `Data3DTexture`;
+  introduce a 2D atlas fallback later only if target devices require it;
 - add cache invalidation and stale-key failure behavior at the production
   cache manager boundary;
 - keep local direct solar-disc radiance, local ground bounce, and cone/flashlight

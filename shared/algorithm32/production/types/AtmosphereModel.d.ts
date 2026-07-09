@@ -17,21 +17,37 @@ interface AtmosphereModel {
 	describe(): AtmosphereModelDescriptor;
 
 	/**
-	 * Sample medium coefficients at one point in the atmosphere. The returned
-	 * sample contains density plus extinction, scattering, and absorption
-	 * coefficients aligned to the requested spectral basis.
+	 * Sample medium coefficients at one geometry-resolved atmosphere
+	 * coordinate.
 	 *
-	 * @param request - Describes the point, altitude, and spectral basis to
-	 * sample.
+	 * @param coordinate - Supplies the atmosphere coordinate to sample.
 	 * @returns The sampled atmosphere medium coefficients.
 	 */
-	sampleMedium(request: AtmosphereSampleRequest): AtmosphereSample;
+	sampleMedium(coordinate: AtmosphereCoordinate): AtmosphereSample;
 
 	/**
-	 * Sample the active phase function for an incoming/outgoing direction pair.
+	 * Integrate optical depth along one geometry-owned atmosphere path.
+	 *
+	 * @param path - Supplies the atmosphere path to integrate.
+	 * @returns The optical-depth sample.
+	 */
+	integrateOpticalDepth(path: AtmospherePath): OpticalDepthSample;
+
+	/**
+	 * Sample Rayleigh and Mie phase facts for an incoming/outgoing direction
+	 * pair.
 	 *
 	 * @param request - Describes the incoming and outgoing directions to sample.
-	 * @returns The sampled phase-function value.
+	 * @returns The sampled phase-function facts.
 	 */
-	samplePhase(request: PhaseSampleRequest): PhaseSample;
+	samplePhase(request: unknown): PhaseSample;
+
+	/**
+	 * Optionally contribute atmosphere-owned shader source, symbols, and
+	 * bindings for the active descriptor.
+	 *
+	 * @param request - Supplies the active shader descriptor and setup context.
+	 * @returns The atmosphere shader contribution or contributions.
+	 */
+	createShaderContribution?(request: ShaderContributionRequest): ShaderContribution | readonly ShaderContribution[];
 }

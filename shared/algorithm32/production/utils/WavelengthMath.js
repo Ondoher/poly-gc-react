@@ -1,4 +1,6 @@
 const NANOMETERS_PER_MICROMETER = 1000;
+const NANOMETERS = 'nanometers';
+const MICROMETERS = 'micrometers';
 
 /**
  * Create a wavelength packet in micrometers.
@@ -9,7 +11,7 @@ const NANOMETERS_PER_MICROMETER = 1000;
 function inMicrometers(value) {
 	return {
 		value,
-		units: 'micrometer',
+		units: MICROMETERS,
 	};
 }
 
@@ -22,7 +24,7 @@ function inMicrometers(value) {
 function inNanometers(value) {
 	return {
 		value,
-		units: 'nanometer',
+		units: NANOMETERS,
 	};
 }
 
@@ -33,7 +35,9 @@ function inNanometers(value) {
  * @returns {number} The wavelength in nanometers.
  */
 function toNanometers(wavelength) {
-	if (wavelength.units === 'micrometer') {
+	assertWavelength(wavelength);
+
+	if (wavelength.units === MICROMETERS) {
 		return wavelength.value * NANOMETERS_PER_MICROMETER;
 	}
 
@@ -47,7 +51,9 @@ function toNanometers(wavelength) {
  * @returns {number} The wavelength in micrometers.
  */
 function toMicrometers(wavelength) {
-	if (wavelength.units === 'nanometer') {
+	assertWavelength(wavelength);
+
+	if (wavelength.units === NANOMETERS) {
 		return wavelength.value / NANOMETERS_PER_MICROMETER;
 	}
 
@@ -62,8 +68,11 @@ function toMicrometers(wavelength) {
  * @returns {Wavelength} The summed wavelength packet.
  */
 function add(left, right) {
+	assertWavelength(left, 'left wavelength');
+	assertWavelength(right, 'right wavelength');
+
 	return {
-		value: left.units === 'micrometer' ? left.value + toMicrometers(right) : left.value + toNanometers(right),
+		value: left.units === MICROMETERS ? left.value + toMicrometers(right) : left.value + toNanometers(right),
 		units: left.units,
 	};
 }
@@ -76,8 +85,11 @@ function add(left, right) {
  * @returns {Wavelength} The difference wavelength packet.
  */
 function subtract(left, right) {
+	assertWavelength(left, 'left wavelength');
+	assertWavelength(right, 'right wavelength');
+
 	return {
-		value: left.units === 'micrometer' ? left.value - toMicrometers(right) : left.value - toNanometers(right),
+		value: left.units === MICROMETERS ? left.value - toMicrometers(right) : left.value - toNanometers(right),
 		units: left.units,
 	};
 }
@@ -90,14 +102,38 @@ function subtract(left, right) {
  * @returns {Wavelength} The scaled wavelength packet.
  */
 function scale(wavelength, factor) {
+	assertWavelength(wavelength);
+
 	return {
 		value: wavelength.value * factor,
 		units: wavelength.units,
 	};
 }
 
+/**
+ * Assert that a wavelength packet uses the production wavelength unit contract.
+ *
+ * @param {unknown} wavelength - Supplies the candidate wavelength packet.
+ * @param {string} [label] - Supplies the error label.
+ * @returns {void}
+ */
+function assertWavelength(wavelength, label = 'wavelength') {
+	if (!wavelength || typeof wavelength !== 'object') {
+		throw new TypeError(`${label} must be a unit-bearing wavelength packet.`);
+	}
+
+	if (!Number.isFinite(wavelength.value)) {
+		throw new TypeError(`${label}.value must be finite.`);
+	}
+
+	if (wavelength.units !== NANOMETERS && wavelength.units !== MICROMETERS) {
+		throw new TypeError(`${label}.units must be "nanometers" or "micrometers".`);
+	}
+}
+
 export default Object.freeze({
 	add,
+	assertWavelength,
 	inMicrometers,
 	inNanometers,
 	scale,

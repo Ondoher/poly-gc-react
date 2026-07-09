@@ -5,22 +5,32 @@ responsibilities and ownership boundaries should be treated as the current
 working API shape until replaced by an accepted API decision.
 
 The primary API should be a configured facade object, one instance per
-independent simulation window or render context. The facade owns validated
-Algorithm32 configuration and coordinates an internal CPU/reference algorithm
-execution class, a runtime shader builder, validation/error
-handling, and the facade-owned shared configuration/facts model. It does not
-own display conversion, live app UI state, runner state, camera choreography,
-or local Sun calibration workflows.
+independent simulation window or render context. Facade configuration is an
+object graph of already-constructed Algorithm32 abstraction instances, not a
+profile description for the facade to interpret. Application-level preset or
+description factories may be added later as convenience helpers, but they
+should resolve descriptions into concrete instances before constructing the
+facade. The facade owns validated Algorithm32 configuration and coordinates an
+internal CPU/reference algorithm execution class, a runtime shader builder,
+validation/error handling, and the facade-owned shared configuration/facts
+model. It does not own live app UI state, runner state, camera choreography, or
+local Sun calibration workflows.
 In this document, the Algorithm32 algorithm means the specified atmospheric
 transport steps and calculations; the
 CPU/reference algorithm execution class runs CPU/reference operations using
 those calculations.
-Algorithm configuration facts are owned by source, atmosphere, geometry, and
-spectral component models; algorithm execution consumes those facts for one
-specific input and returns spectral transport results.
+Algorithm configuration facts are owned by concrete light-source, atmosphere,
+geometry, spectral, and optional Color/display component instances; algorithm
+execution consumes the transport facts for one specific input and returns
+spectral transport results.
 The facade creates a shared configuration/facts model from validated config
 and passes that model reference to the CPU/reference algorithm execution class
 and the runtime shader builder.
+The core API defines the requirements those instances must satisfy: public
+interface methods, descriptor sections, required shader capabilities, binding
+requirements, and fail-loud validation points. The configured abstractions
+provide the implementations. The runtime shader builder validates and assembles
+those implementations rather than owning domain semantics itself.
 
 A separate pure math API namespace may be exported beside the facade for
 generally useful deterministic scalar, vector, unit-conversion, numeric-array,
@@ -35,10 +45,10 @@ validation/error policy.
   awaited setup call.
 - Keep long-running texture/cache generation explicit and outside frame
   rendering; the explicit operation may be `await setupShader(...)`.
-- Keep Sun, atmosphere composition, and geometry behind their public
-  interfaces.
+- Keep light source, atmosphere, geometry, and Color/display behind their
+  public instance interfaces.
 - Keep local Sun calibration upstream; the facade receives a configured
-  public `Sun`.
+  `LightSourceModel` instance, not calibration recipes or profile text.
 - Let CPU/reference evaluation and internal shader resource preparation consume
   the same canonical shared model without exposing texture/cache build
   mechanics to app callers.
@@ -53,7 +63,15 @@ caller does not manually render Algorithm32. Setup installs the Algorithm32
 pass into the composer:
 
 ```ts
-const algorithm32 = new Algorithm32(config);
+const algorithm32 = new Algorithm32({
+  lightSource,
+  atmosphere,
+  geometry,
+  color,
+  spectral,
+  execution,
+  shader,
+});
 const atmosphere = await algorithm32.setupShader({
   THREE,
   composer,
@@ -75,7 +93,8 @@ the Algorithm32 runtime shader from packaged shader source, the shared model,
 and the current `ShaderRuntimeConfig`, while using the setup request only as
 the runtime attachment location. Internally, the builder uses shader-side
 assemblers for shader source, IncidentRadianceCache artifacts owned behind
-concrete light-source implementations, and texture/cache packing artifacts; a
+concrete light-source/cache implementations, and texture/cache packing
+artifacts; a
 runtime capability model records the true renderer/device feature path; a
 runtime attachment model owns the Three/composer attachment
 facts such as composer, scene, camera, targets, resize state, pass insertion,
@@ -85,9 +104,10 @@ uniforms, samplers, textures, defines, display-conversion resources,
 frame/config values, and runtime resources on the Three shader/pass objects.
 The binder's output is live applied runtime state plus binding/update status,
 not another public data model. Then the facade installs the resulting composer
-pass and returns a handle for config updates, scene/camera replacement, debug
-views, future diagnostics, and disposal. The handle has no normal `render()`
-method because the composer owns per-frame invocation.
+pass and returns a handle for config updates, future diagnostics, and
+disposal. Moving the shader to a different composer, scene, or camera is a
+teardown and setup boundary, not a normal mutable handle update. The handle has
+no normal `render()` method because the composer owns per-frame invocation.
 
 When configuration changes, the caller replaces the facade configuration and
 lets the installed shader handle refresh resources:
@@ -162,8 +182,8 @@ sequencing, resize, future diagnostics, and disposal.
 This is the normal product path for app rendering. It exists so the caller
 does not need to make Algorithm32-specific decisions about shader material
 flags, spectral packing, local incident-cache layout, pass mode uniforms,
-render target setup, depth texture setup, source-light mapping, debug views,
-or disposal order.
+render target setup, depth texture setup, source-light mapping, or disposal
+order.
 
 `setupShader` is awaited. It may validate, build, load, bind, or upload the
 resources required by the selected runtime shader mode. It must not leave
@@ -189,9 +209,9 @@ Deferred diagnostic surface. The method name may remain reserved by the
 facade draft, but first promotion should not design or implement a stable
 public diagnostics schema. Later diagnostics may include config version,
 active descriptors, resource status, runtime capability status reported by
-adapters, selected debug view, unsupported feature combinations, and recent
-validation failures. They must not expose private cache packing internals
-except through public descriptor types.
+adapters, unsupported feature combinations, and recent validation failures.
+They must not expose private cache packing internals except through public
+descriptor types.
 
 Validation is automatic in `constructor`, `setConfig`, `setupShader`,
 `handle.setConfig`, and `evaluate`. Failures should throw or reject with
@@ -215,29 +235,32 @@ later public operations fail loudly.
 
 ```ts
 export interface Algorithm32Config {
-  inputs: Algorithm32Inputs;
+  lightSource: LightSourceModel;
+  atmosphere: AtmosphereModel;
+  geometry: GeometryModel;
+  color?: Color;
+  spectral: SpectralBasis;
   execution?: ExecutionConfig;
   shader?: ShaderRuntimeConfig;
 }
-
-export interface Algorithm32Inputs {
-  sun: Sun;
-  atmosphere: AtmosphereComposition;
-  geometry: Geometry;
-}
 ```
 
-The three entries in `inputs` are the algorithm input abstractions. Execution
-configuration controls numerical and performance policy. Shader configuration
-is runtime configuration and controls pass behavior across setup and later
-handle configuration updates. It is not just creation-time setup data.
+The light source, atmosphere, geometry, and optional Color entries are
+concrete configured abstraction instances. Each instance owns its own
+constructor/configuration options, validation, descriptor facts, CPU/reference
+hooks where relevant, and shader contribution specifics. The facade validates
+that those instances implement the required interface methods; it does not
+interpret broad application descriptions such as `profile: "local-flat"`.
+Execution configuration controls numerical and performance policy. Shader
+configuration is runtime configuration and controls pass behavior across setup
+and later handle configuration updates. It is not just creation-time setup
+data.
 Texture/cache artifacts, descriptors, packing, and upload metadata are runtime
 implementation state, not public facade configuration.
 
 ```ts
 export interface ShaderRuntimeConfig {
   mode?: ShaderRuntimeMode;
-  debugView?: ShaderDebugView;
   cachePolicy?: ShaderCachePolicy;
   capabilityPolicy?: RuntimeCapabilityPolicy;
   renderTargetPolicy?: ShaderRenderTargetPolicy;
@@ -245,19 +268,21 @@ export interface ShaderRuntimeConfig {
 ```
 
 `ShaderRuntimeConfig` owns runtime behavior choices such as selected shader
-mode, debug view, cache/resource policy, capability failure policy, and
+mode, cache/resource policy, capability failure policy, and
 render-target/HDR/depth policy. Those values participate in `constructor`,
 `setConfig`, `setupShader`, and `handle.setConfig`. Runtime attachment handles
 such as composer, scene, camera, renderer-compatible surface, and pass
 insertion location are not configuration; they remain setup/handle inputs
 because they are app-owned runtime objects.
 
-Display conversion is not part of `Algorithm32Config` because Algorithm32's
-core output is spectral radiance/transmittance. A separate
-`Algorithm32DisplayConversion`-style consumer may live beside the facade and
-consume Algorithm32 spectral output when a CPU/offline tool or runtime
-renderer needs RGB, exposure, tone mapping, or debug-color mapping. That class
-is not facade-owned state.
+Color conversion remains outside Algorithm32 transport because Algorithm32's
+core output is spectral radiance/transmittance. The production `Color`
+abstraction owns Bruneton-backed spectral-to-display conversion and consumes
+Algorithm32 spectral output when a CPU/offline tool or runtime renderer needs
+RGB, exposure, tone mapping, or debug-color mapping. When supplied to
+`Algorithm32Config`, Color is a configured facade instance used by runtime
+shader setup and optional display tooling, not part of the transport
+calculation.
 
 Local Sun altitude, diameter, latitude limits, calibration packets, orbit
 resolution, and clock synchronization are not facade configuration fields
@@ -271,7 +296,6 @@ export interface ThreeShaderSetupRequest {
   composer: EffectComposerLike;
   scene: THREE.Scene;
   camera: THREE.Camera;
-  displayConversion?: Algorithm32DisplayConversionShaderDescriptor;
 }
 ```
 
@@ -282,12 +306,9 @@ render pipeline that the app already calls every frame, plus enough
 EffectComposer-compatible surface for Algorithm32 to install a pass and infer
 renderer/size details. Runtime behavior policy comes from
 `Algorithm32Config.shader`; the setup request supplies the runtime attachment
-location, not an alternate runtime configuration packet. `displayConversion`
-is an optional shader-facing
-descriptor supplied by an external display-conversion consumer. It lets the
-runtime shader builder turn Algorithm32 spectral output into screen pixels
-without making display conversion part of `Algorithm32Config`, the shared
-aggregate model, or Algorithm32 algorithm execution.
+location, not an alternate runtime configuration packet. Color/display comes
+from the configured facade instance rather than from setup, so setup remains
+only the caller-owned runtime attachment surface.
 
 The `THREE.*` type names above are shorthand for Three-compatible runtime
 types; the implementation can still type-import from `three` while receiving
@@ -298,10 +319,6 @@ the runtime namespace from the caller.
 ```ts
 export interface Algorithm32ThreeShaderHandle {
   setConfig(config: Algorithm32Config): Promise<Algorithm32ConfigSnapshot>;
-  setDisplayConversion(descriptor: Algorithm32DisplayConversionShaderDescriptor): void;
-  setScene(scene: THREE.Scene): void;
-  setCamera(camera: THREE.Camera): void;
-  setDebugView(debugView: ShaderDebugView): void;
 
   // Deferred reserved surface.
   getDiagnostics(): ShaderDiagnostics;
@@ -320,16 +337,15 @@ validation, build, bind, or upload before the next frame renders.
 Because it is awaited configuration/setup work, `setConfig` rejects on invalid
 or failed updates rather than applying partial runtime state.
 
-`setDisplayConversion` updates the external display-conversion descriptor used
-by the installed runtime shader handle. It does not replace Algorithm32
-configuration and must not change the shared aggregate model. The descriptor
-is expected to be produced by an adjacent `Algorithm32DisplayConversion`-style
-consumer and validated against the facade's current spectral descriptor before
-use.
+Changing Color/display uses `setConfig` with a replacement Color instance, the
+same as replacing light source, atmosphere, geometry, execution, or shader
+policy. The runtime shader builder validates the Color-owned descriptor
+against the facade's current spectral descriptor before use.
 
-`setScene` and `setCamera` are for apps whose scene or camera objects change
-after setup. Apps that mutate the existing scene or camera do not need to call
-them.
+Scene, camera, and composer attachment are setup-time facts. Apps that mutate
+the existing scene or camera do not need an Algorithm32 handle call. Apps that
+replace those runtime objects should dispose the current handle and call
+`setupShader(...)` again with the new attachment.
 
 Resize should flow through the composer. Algorithm32's installed pass should
 respond to composer size changes without requiring an Algorithm32-specific
@@ -391,7 +407,7 @@ they depend on Algorithm32 atmosphere configuration and spectral meaning.
 - Local Sun configuration, calibration, calibration replay, and invalidation.
 - Private Sun/source-family fields not present on the public `Sun` interface.
 - Private atmosphere preset or coefficient derivation fields not present on
-  the public `AtmosphereComposition` interface.
+  the public `AtmosphereModel` interface.
 - Private geometry factory, projection, or app-scene fields not present on the
   public `Geometry` interface.
 - Low-level transport functions, shader uniform mappers, cache packing helpers,

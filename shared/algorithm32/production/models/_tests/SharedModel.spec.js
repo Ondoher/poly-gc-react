@@ -10,7 +10,7 @@ import { SpectralModel } from '../SpectralModel.js';
 function wavelength(value) {
 	return {
 		value,
-		units: 'nanometer',
+		units: 'nanometers',
 	};
 }
 
@@ -58,7 +58,7 @@ describe('SharedModel', () => {
 		expect(model.spectral.basis).toEqual({
 			wavelengths: [wavelength(380), wavelength(500), wavelength(620)],
 		});
-		expect(model.spectral.fingerprint).toBe('spectral:3:380,500,620:380:nanometer,500:nanometer,620:nanometer');
+		expect(model.spectral.fingerprint).toBe('spectral:3:380,500,620:380:nanometers,500:nanometers,620:nanometers');
 		expect(model.snapshot()).toEqual({
 			version: 4,
 			lightSource: {
@@ -77,7 +77,7 @@ describe('SharedModel', () => {
 				kind: 'algorithm32-spectral-model',
 				wavelengths: [wavelength(380), wavelength(500), wavelength(620)],
 				channelCount: 3,
-				fingerprint: 'spectral:3:380,500,620:380:nanometer,500:nanometer,620:nanometer',
+				fingerprint: 'spectral:3:380,500,620:380:nanometers,500:nanometers,620:nanometers',
 				version: 4,
 			},
 		});
