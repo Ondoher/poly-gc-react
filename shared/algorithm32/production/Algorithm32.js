@@ -103,10 +103,9 @@ export class Algorithm32 {
 	 */
 	async setupShader(request) {
 		this._assertUsable();
-		const buildResult = await this._shaderBuilder.build({
-			setup: request,
-			config: this.config,
-		});
+		const buildResult = await this._shaderBuilder.build(
+			this._createShaderBuildRequest(request, this.config),
+		);
 		const handle = new Algorithm32ShaderHandle({
 			facade: this,
 			setup: request,
@@ -150,6 +149,35 @@ export class Algorithm32 {
 		this._reference?.dispose();
 		this._shaderBuilder?.dispose();
 		this._disposed = true;
+	}
+
+	/**
+	 * Create the internal shader build request from public setup fields.
+	 *
+	 * @param {ShaderSetupRequest} setup - Supplies caller-owned setup handles.
+	 * @param {ConfigSnapshot} config - Supplies the accepted config snapshot.
+	 * @returns {ShaderBuildRequest} The internal build request.
+	 */
+	_createShaderBuildRequest(setup, config) {
+		const buildRequest = {
+			setup,
+			config,
+		};
+
+		for (const fieldName of [
+			'descriptor',
+			'contributions',
+			'mainRequiredSymbols',
+			'systemProvidedSymbols',
+			'bindingValues',
+			'texturePayloads',
+		]) {
+			if (setup?.[fieldName] !== undefined) {
+				buildRequest[fieldName] = setup[fieldName];
+			}
+		}
+
+		return buildRequest;
 	}
 
 	/**
@@ -341,10 +369,9 @@ class Algorithm32ShaderHandle {
 		this._assertUsable();
 		const snapshot = this._facade.setConfig(config);
 
-		const nextBuildResult = await this._facade._shaderBuilder.build({
-			setup: this._setup,
-			config: snapshot,
-		});
+		const nextBuildResult = await this._facade._shaderBuilder.build(
+			this._facade._createShaderBuildRequest(this._setup, snapshot),
+		);
 		this._disposeBuildResult();
 		this._buildResult = nextBuildResult;
 

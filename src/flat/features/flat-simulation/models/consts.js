@@ -100,7 +100,8 @@ export const DEFAULT_EARTH_FLOOR_TEXTURE = Object.freeze({
  */
 export const DEFAULT_OBSERVER_VIEW = Object.freeze({
 	altitudeKm: 0,
-	purpose: 'observer-root-elevation',
+	cameraHeightKm: 0.01,
+	purpose: 'ten-meter-rendered-camera-height',
 });
 
 /**

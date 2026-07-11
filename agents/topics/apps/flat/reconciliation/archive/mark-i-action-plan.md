@@ -10,6 +10,13 @@ usable skeleton exists. Once substantive verification begins, numbered records
 under `tmp/atmosphere/reconciliation/NNN-*` preserve what actually happened,
 when, why, what changed, and what evidence was produced.
 
+Artifact reset note: the previous `tmp/atmosphere/reconciliation/` folder is
+being preserved as `tmp/atmosphere/reconciliation_mark_i/`. After that rename,
+new Milestone 5 proof records should use a fresh
+`tmp/atmosphere/reconciliation/NNN-*` root. Older record references in this
+plan's historical sections may need to be read under the Mark I archive after
+the rename.
+
 The living implementation belongs under `scripts/flat/reconciliation/POC/`.
 Verification should prefer objective standards: deterministic comparisons,
 hard invariants, source-backed calculations, image metrics, selected-pixel
@@ -33,6 +40,53 @@ Bruneton start-fresh Experiment 32 / Step 032 baseline under
 Other missing diagnostics, criteria files, or historical convenience artifacts
 are findings unless they make the current milestone's verification claim
 impossible.
+
+## Milestone 5: External Boundary Radiance
+
+Current status: active focused experiment.
+
+Goal: prove the visible outside-atmosphere composition contract before
+promoting it into production. The POC should add an external
+boundary-radiance provider sampled along the camera ray and composed as:
+
+```text
+pathRadiance + viewTransmittance * celestialRadiance
+```
+
+Primary work:
+
+- Add a boundary-radiance role that is separate from atmosphere illumination
+  and separate from incident-radiance/L2 cache sampling.
+- Add a source-provided companion boundary-radiance provider for the visible
+  Sun disk. The light source remains the canonical owner of source facts such
+  as position/direction, spectrum/radiance, angular size, calibration, and
+  path-limit semantics; the visible-disk provider is a separate view over
+  those facts, not a duplicate source.
+- Demonstrate that stars, Moon, planets, and Sun disks can use the same
+  camera-ray boundary-radiance composition path while preserving different
+  input radiance/footprint policies.
+- Keep visible stars and visible disks out of the incident-radiance/L2 cache.
+  Optional atmosphere illumination from Moon or starfield radiance is a later
+  source/cache problem, not the first visibility proof.
+- Keep decorative/background fallback cleanup separate from celestial
+  boundary radiance. A display background is not automatically a physical
+  radiance field.
+
+Acceptance evidence:
+
+- CPU/reference or CPU-postprocess proof for the composition formula and
+  source-owned Sun disk provider.
+- GPU/browser proof using the existing shader/composer architecture that a
+  visible Sun disk and synthetic starfield/Moon/planet samples are attenuated
+  by view transmittance and composed with atmosphere path radiance.
+- Daytime star check: dim synthetic star radiance is buried by bright daytime
+  sky path radiance without globally dimming all outside-atmosphere content.
+- Bright-body check: a high-radiance body, such as the Sun disk and later Moon
+  analog, remains visible through the same path when calibrated radiance is
+  high enough.
+- A numbered record under the fresh `tmp/atmosphere/reconciliation/NNN-*`
+  root names the accepted source/layer/composition contract and any rejected
+  alternatives.
 
 ## Milestone 0: Preparation
 

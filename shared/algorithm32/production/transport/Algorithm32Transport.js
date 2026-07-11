@@ -180,6 +180,7 @@ void evaluatePathRadiance(inout ShaderState state) {
 	 */
 	_createLocalFlatShaderContribution(descriptor) {
 		const facts = resolveTransportFacts(descriptor);
+		const pathSampleHelper = transportPathSampleHelper(facts.pathSampleDistribution?.kind ?? 'uniform-distance');
 
 		return shaderContribution({
 			id: 'transport-algorithm32-local-flat',
@@ -222,21 +223,7 @@ SpectralValue computeTrapezoidSegmentTransmittance(MediumSample previousMedium, 
 	return transmittance;
 }
 
-float pathSampleDistanceForIndex(ShaderState state, int pointIndex) {
-	float uniformFraction = float(pointIndex) / float(max(TRANSPORT_PATH_INTERVAL_COUNT, 1));
-	return mix(
-		state.bounds.startDistanceMeters,
-		state.bounds.endDistanceMeters,
-		clamp(uniformFraction, 0.0, 1.0)
-	);
-}
-
-float pathSampleMeasureMeters(ShaderState state, int pointIndex) {
-	float stepMeters = max(state.bounds.endDistanceMeters - state.bounds.startDistanceMeters, 0.0)
-		/ float(max(TRANSPORT_PATH_INTERVAL_COUNT, 1));
-	return ((pointIndex == 0 || pointIndex == TRANSPORT_PATH_INTERVAL_COUNT) ? 0.5 : 1.0)
-		* stepMeters;
-}
+${pathSampleHelper}
 
 void evaluatePathRadiance(inout ShaderState state) {
 	if (!state.bounds.valid) {

@@ -95,6 +95,21 @@ describe('DistantSunIncidentRadianceCache', () => {
 		expect(contribution.bindingRequirements[0].valueKey).toBe('cache.incidentRadianceTexture');
 	});
 
+	it('records the shader altitude lookup policy in its descriptor', () => {
+		const cache = createDistantCache({
+			altitudeLookup: {
+				kind: 'linear-altitude-v1',
+			},
+		});
+
+		expect(cache.descriptor.altitudeLookup).toEqual({
+			kind: 'linear-altitude-v1',
+		});
+		expect(cache.descriptor.lookup.altitudeLookup).toEqual({
+			kind: 'linear-altitude-v1',
+		});
+	});
+
 	it('stores zero radiance for cache coordinates without in-atmosphere contribution', () => {
 		const cache = createDistantCache();
 		const coordinates = [...cache.coordinates()].filter((coordinate) => coordinate.altitudeBinIndex === 0);
@@ -124,6 +139,7 @@ describe('DistantSunIncidentRadianceCache', () => {
 		expect(() => createDistantCache().createShaderPayload()).toThrowError(/missing 0:0/);
 		expect(() => createDistantCache().createIncidentRadianceSampler()({ coordinates: [] }))
 			.toThrowError(/altitude bin/);
+		expect(() => createDistantCache({ altitudeLookup: { kind: 'other' } })).toThrowError(/altitudeLookup/);
 	});
 });
 

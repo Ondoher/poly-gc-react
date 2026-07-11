@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 import LocalSunIncidentRadianceCache from '../LocalSunIncidentRadianceCache.js';
 import LocalSunLightSource from '../LocalSunLightSource.js';
 
@@ -108,6 +110,261 @@ describe('LocalSunLightSource', () => {
 		});
 	});
 
+	it('resolves reference-relative scene light percentages', () => {
+		const source = createLocalSource();
+		const reference = source.resolveSceneLightPercent({
+			sourceRelativePosition: {
+				distanceFromSourceMeters: 10,
+				directionToSource: [0, 1, 0],
+			},
+		});
+		const half = source.resolveSceneLightPercent({
+			sourceRelativePosition: {
+				distanceFromSourceMeters: 20,
+				directionToSource: [0, 1, 0],
+			},
+		});
+
+		expect(reference.directLightPercent).toBe(1);
+		expect(reference.ambientLightPercent).toBe(1);
+		expect(half.directLightPercent).toBeCloseTo(0.25, 12);
+		expect(half.ambientLightPercent).toBeCloseTo(0.25, 12);
+		expect(half.policy).toBe('local-source-reference-incident-scene-light-percent');
+	});
+
+	it('creates source-owned Three point and ambient lights for endpoints', () => {
+		const objects = createLocalSource().addSceneLighting({
+			THREE,
+			sourceRelativePosition: {
+				distanceFromSourceMeters: 20,
+				directionToSource: [0, 1, 0],
+			},
+			sourcePositionSceneUnits: [0, 10, 0],
+			observerScenePositionUnits: [0, 0, 0],
+			calibrationScalar: 2,
+			ambientIntensity: 0.5,
+			endpointSceneLightScalePolicy: 'observer-incident-scale',
+		});
+		const ambient = objects.lights[0];
+		const pointLight = objects.lights[1];
+
+		expect(ambient instanceof THREE.AmbientLight).toBeTrue();
+		expect(pointLight instanceof THREE.PointLight).toBeTrue();
+		expect(pointLight.position.toArray()).toEqual([0, 10, 0]);
+		expect(pointLight.decay).toBe(0);
+		expect(ambient.intensity).toBeCloseTo(0.17, 12);
+		expect(pointLight.intensity).toBeCloseTo(1, 12);
+		expect(pointLight.userData).toEqual(jasmine.objectContaining({
+			algorithm32SourceLight: true,
+			sourceKey: 'test-local',
+			observerIncidentScale: 0.5,
+			endpointSceneIncidentScale: 0.5,
+			endpointSceneLightScalePolicy: 'observer-incident-scale',
+		}));
+		expect(objects.sceneObjects).toEqual([]);
+		expect(objects.metadata).toEqual(jasmine.objectContaining({
+			owner: 'LocalSunLightSource',
+			lightingPolicy: 'source-driven-flat-local-point-light',
+			ambientIntensityRange: {
+				min: 0.06,
+				max: 0.5,
+			},
+			ambientLightPercent: 0.25,
+			ambientIntensity: 0.16999999999999998,
+			pointLightIntensity: 1,
+			directionToSourceScene: [0, 1, 0],
+		}));
+	});
+
+	it('scales ambient lighting between configured bounds with local light percent', () => {
+		const objects = createLocalSource().addSceneLighting({
+			THREE,
+			sourceRelativePosition: {
+				distanceFromSourceMeters: 20,
+				directionToSource: [0, 1, 0],
+			},
+			sourcePositionSceneUnits: [0, 10, 0],
+			observerScenePositionUnits: [0, 0, 0],
+			ambientIntensityRange: {
+				min: 0.2,
+				max: 1,
+			},
+		});
+
+		expect(objects.lights[0] instanceof THREE.AmbientLight).toBeTrue();
+		expect(objects.lights[0].intensity).toBeCloseTo(0.4, 12);
+		expect(objects.metadata.ambientLightPercent).toBeCloseTo(0.25, 12);
+		expect(objects.metadata.ambientIntensityRange).toEqual({
+			min: 0.2,
+			max: 1,
+		});
+	});
+
+	it('defaults ambient bounds to absolute scene-light intensities', () => {
+		const objects = createLocalSource().addSceneLighting({
+			THREE,
+			sourceRelativePosition: {
+				distanceFromSourceMeters: 10,
+				directionToSource: [0, 1, 0],
+			},
+			sourcePositionSceneUnits: [0, 10, 0],
+			observerScenePositionUnits: [0, 0, 0],
+		});
+
+		expect(objects.lights[0] instanceof THREE.AmbientLight).toBeTrue();
+		expect(objects.lights[0].intensity).toBeCloseTo(0.5, 12);
+		expect(objects.metadata.ambientIntensityRange).toEqual({
+			min: 0.06,
+			max: 0.5,
+		});
+		expect(objects.metadata.ambientLightPercent).toBe(1);
+	});
+
+	it('adds observer-scaled scene lighting to a supplied Three scene', () => {
+		const scene = new THREE.Scene();
+		const objects = createLocalSource().addSceneLighting({
+			THREE,
+			scene,
+			sourceRelativePosition: {
+				distanceFromSourceMeters: 20,
+				directionToSource: [0, 1, 0],
+			},
+			sourcePositionSceneUnits: [0, 10, 0],
+			observerScenePositionUnits: [0, 0, 0],
+			calibrationScalar: 4,
+			ambientIntensity: 1,
+			endpointSceneLightScalePolicy: 'observer-incident-scale',
+		});
+
+		expect(objects.lights[0] instanceof THREE.AmbientLight).toBeTrue();
+		expect(objects.lights[1] instanceof THREE.PointLight).toBeTrue();
+		expect(objects.lights[0].intensity).toBeCloseTo(0.295, 12);
+		expect(objects.lights[1].intensity).toBeCloseTo(2, 12);
+		expect(scene.children).toContain(objects.lights[0]);
+		expect(scene.children).toContain(objects.lights[1]);
+		expect(objects.metadata.ambientIntensity).toBeCloseTo(0.295, 12);
+	});
+
+	it('creates source-owned Three directional shadow lights for endpoints', () => {
+		const objects = createLocalSource().addSceneLighting({
+			THREE,
+			sourceRelativePosition: {
+				distanceFromSourceMeters: 20,
+				directionToSource: [0, 1, 0],
+			},
+			sourcePositionSceneUnits: [0, 10, 0],
+			observerScenePositionUnits: [0, 0, 0],
+			shadow: {
+				enabled: true,
+				focusSceneUnits: [1, 2, 3],
+				extentSceneUnits: 5,
+				lightDistanceSceneUnits: 12,
+				mapSize: 64,
+				shadowIntensity: 0.75,
+			},
+		});
+		const sourceLight = objects.lights[1];
+		const target = objects.sceneObjects[0];
+		const expectedShadowDirection = [-1 / Math.sqrt(74), 8 / Math.sqrt(74), -3 / Math.sqrt(74)];
+
+		expect(sourceLight instanceof THREE.DirectionalLight).toBeTrue();
+		expectVectorCloseTo(sourceLight.position.toArray(), [
+			1 + expectedShadowDirection[0] * 12,
+			2 + expectedShadowDirection[1] * 12,
+			3 + expectedShadowDirection[2] * 12,
+		]);
+		expect(sourceLight.castShadow).toBeTrue();
+		expect(sourceLight.shadow.mapSize.width).toBe(64);
+		expect(sourceLight.shadow.intensity).toBe(0.75);
+		expect(sourceLight.shadow.camera.left).toBe(-5);
+		expect(sourceLight.target).toBe(target);
+		expectVectorCloseTo(sourceLight.userData.directionToSourceScene, expectedShadowDirection);
+		expect(target.position.toArray()).toEqual([1, 2, 3]);
+		expect(objects.metadata).toEqual(jasmine.objectContaining({
+			lightingPolicy: 'source-driven-flat-local-directional-shadow-light',
+			shadowPolicy: 'three-shadow-map-from-local-source-direction',
+			shadowDirectionPolicy: 'per-shadow-focus-to-local-source-position',
+		}));
+	});
+
+	it('creates one source-owned directional shadow light per shadow object', () => {
+		const objects = createLocalSource().addSceneLighting({
+			THREE,
+			sourceRelativePosition: {
+				distanceFromSourceMeters: 20,
+				directionToSource: [0, 1, 0],
+			},
+			sourcePositionSceneUnits: [0, 10, 0],
+			observerScenePositionUnits: [0, 0, 0],
+			shadow: {
+				enabled: true,
+				mapSize: 64,
+				objects: [
+					{
+						objectKey: 'near-box',
+						layerIndex: 5,
+						focusSceneUnits: [1, 2, 3],
+						extentSceneUnits: 5,
+					},
+					{
+						objectKey: 'far-box',
+						layerIndex: 6,
+						focusSceneUnits: [4, 5, 6],
+						extentSceneUnits: 20,
+					},
+				],
+			},
+		});
+		const firstLight = objects.lights[1];
+		const secondLight = objects.lights[2];
+
+		expect(objects.lights.length).toBe(3);
+		expect(firstLight instanceof THREE.DirectionalLight).toBeTrue();
+		expect(secondLight instanceof THREE.DirectionalLight).toBeTrue();
+		expect(firstLight.intensity).toBeCloseTo(secondLight.intensity);
+		expect(firstLight.castShadow).toBeTrue();
+		expect(secondLight.castShadow).toBeTrue();
+		expect(firstLight.shadow.intensity).toBe(2);
+		expect(secondLight.shadow.intensity).toBe(2);
+		expect(firstLight.shadow.camera.left).toBe(-5);
+		expect(secondLight.shadow.camera.left).toBe(-20);
+		expect(firstLight.shadow.camera.layers.mask).toBe(1 << 5);
+		expect(secondLight.shadow.camera.layers.mask).toBe(1 << 6);
+		expect(firstLight.userData.shadowObjectKey).toBe('near-box');
+		expect(secondLight.userData.shadowObjectKey).toBe('far-box');
+		expect(objects.sceneObjects[0].position.toArray()).toEqual([1, 2, 3]);
+		expect(objects.sceneObjects[1].position.toArray()).toEqual([4, 5, 6]);
+		expect(objects.metadata.shadowObjects.length).toBe(2);
+	});
+
+	it('configures app-authored Three objects for local source shadows', () => {
+		const source = createLocalSource();
+		const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1));
+
+		expect(source.configureThreeShadowObject(mesh, {
+			receiveShadow: false,
+			includeDescendants: false,
+			layerIndex: 5,
+		})).toBe(mesh);
+		expect(mesh.castShadow).toBeTrue();
+		expect(mesh.receiveShadow).toBeFalse();
+		expect(mesh.layers.mask & (1 << 5)).toBe(1 << 5);
+		expect(mesh.userData).toEqual(jasmine.objectContaining({
+			algorithm32ShadowObject: true,
+			shadowPolicy: 'three-shadow-map-from-local-source-direction',
+			shadowSourceKey: 'test-local',
+			shadowLayerIndex: 5,
+		}));
+		expect(mesh.userData.algorithm32ShadowConfiguration).toEqual(jasmine.objectContaining({
+			owner: 'LocalSunLightSource',
+			sourceKey: 'test-local',
+			shadowPolicy: 'three-shadow-map-from-local-source-direction',
+			receiveShadow: false,
+			includeDescendants: false,
+			configuredNodeCount: 1,
+		}));
+	});
+
 	it('fails loudly for invalid source configuration or lighting requests', () => {
 		expect(() => new LocalSunLightSource()).toThrowError(/configuration/);
 		expect(() => createLocalSource({ sourceKey: '' })).toThrowError(/sourceKey/);
@@ -121,6 +378,8 @@ describe('LocalSunLightSource', () => {
 				directionToSource: [0, 0, 0],
 			},
 		})).toThrowError(/non-zero/);
+		expect(() => createLocalSource().addSceneLighting({ THREE })).toThrowError(/sourcePositionSceneUnits/);
+		expect(() => createLocalSource().configureThreeShadowObject(null)).toThrowError(/Three object/);
 	});
 });
 
@@ -137,6 +396,13 @@ function createLocalSource(overrides = {}) {
 		cacheDirectionCount: 3,
 		...overrides,
 	});
+}
+
+function expectVectorCloseTo(actual, expected, precision = 12) {
+	expect(actual.length).toBe(expected.length);
+	for (let index = 0; index < expected.length; index += 1) {
+		expect(actual[index]).toBeCloseTo(expected[index], precision);
+	}
 }
 
 function createSpectralChannels() {

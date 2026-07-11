@@ -1,8 +1,12 @@
 ﻿# Reconciliation Shader Design
 
-Status: first-pass shader architecture design. This document defines how a GPU
+Status: first-pass shader architecture design plus the active Milestone 5
+reopening for external boundary radiance. This document defines how a GPU
 shader product should be assembled from the accepted CPU/reference contracts
-without moving transport ownership into renderer code.
+without moving transport ownership into renderer code. The active addition is
+to prove a camera-ray external boundary-radiance path, including a
+source-provided visible Sun disk provider, before promoting the contract to
+production.
 
 ## Table Of Contents
 
@@ -85,13 +89,22 @@ The focused test design lives in
 the shader product is assembled and installed; the test design describes what
 pixel transformations the installed shader must prove.
 
+This focused reopening adds:
+
+- external boundary-radiance sampling along the camera ray;
+- composition as `pathRadiance + viewTransmittance * celestialRadiance`;
+- a light-source-owned companion provider for the visible Sun disk;
+- visible star/Moon/planet/Sun-disk handling outside the incident-radiance/L2
+  cache.
+
 This design does not decide:
 
 - which source/geometry/cache profile an implementation plan builds first;
 - production app display policy beyond an explicit shader display mode;
 - new Algorithm32 equations or physical calibration values;
-- direct solar-disc camera radiance, ground bounce, reflective dome behavior,
-  or other transport features not accepted by the CPU reference path.
+- ground bounce, reflective dome behavior, Moon/starfield atmosphere
+  illumination through L2, or other transport features not accepted by the CPU
+  reference path.
 
 ### Design Commitments
 
@@ -2515,6 +2528,8 @@ conversion into CPU transport.
 This domain owns:
 
 - scene color plus atmosphere composition;
+- external boundary-radiance composition for visible outside-atmosphere
+  bodies;
 - zero-density scene-color passthrough;
 - spectral-to-display conversion;
 - exposure, tone mapping, and output encoding;
@@ -2531,6 +2546,23 @@ adapter directly for spectral-to-display conversion in baselines, GPU
 comparison expectations, and rendered-pixel fixture propagation. Endpoint
 spectral radiance, when available, is composed with path spectral radiance
 before display conversion.
+
+For the Milestone 5 boundary-radiance proof, visible outside-atmosphere bodies
+are not ordinary captured display RGB and are not incident-radiance/L2 cache
+samples. They are camera-ray boundary radiance sampled after the view path is
+resolved. The composition target is:
+
+```text
+finalRadiance =
+  atmospherePathRadiance
+  + viewTransmittance * externalBoundaryRadiance(viewDirection)
+```
+
+The first prototype must include a light-source-owned visible Sun disk
+provider. The same source remains the owner of atmosphere illumination facts,
+but the visible-disk provider is a separate composition role over the same
+canonical source facts. Starfield, Moon, and planet samples use the same
+external boundary-radiance path with their own radiance and footprint policy.
 
 The installed GPU shader's primary operational output is display RGB/RGBA
 written to the active Three render target or canvas. This is rooted in Three

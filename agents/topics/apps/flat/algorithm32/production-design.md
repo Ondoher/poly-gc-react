@@ -8,11 +8,12 @@ setup mechanics into the production module. Renderer-produced depth/hit
 capture is promoted as reusable runtime plumbing. Remaining shader/runtime
 work is centered on capability/resource polish and optional Three adapters.
 Browser/readback parity for scene color, ray-length/depth capture, hit mask,
-and selected-pixel output is deferred until real app composer integration
-provides stable readback surfaces. Shader-facing object/material ID textures
-are intentionally not part of the first production atmosphere algorithm
-contract; final Color/display composition still consumes renderer-produced
-hit-pixel scene color. The
+and selected-pixel output remains the next validation layer now that the flat
+and globe app integrations use real Three `EffectComposer`/`RenderPass`
+pipelines and facade-installed Algorithm32 passes. Shader-facing
+object/material ID textures are intentionally not part of the first production
+atmosphere algorithm contract; final Color/display composition still consumes
+renderer-produced hit-pixel scene color. The
 reconciliation POC conclusions are now the consolidated implementation driver
 for the production reference and shader path, including the adjusted
 abstraction ownership and data-flow contracts. The production code root is now
@@ -198,8 +199,8 @@ be promoted into. It adds:
 - `shared/algorithm32/production/light-sources/DistantSunLightSource.js` and
   `shared/algorithm32/production/light-sources/LocalSunLightSource.js` as the
   first concrete light-source implementations for direct lighting,
-  source-path limits, cache policy, and cache creation. The optional
-  Three lighting adapter from the POC remains unpromoted;
+  source-path limits, cache policy, cache creation, and source-owned Three
+  renderer-light creation;
 - `shared/algorithm32/production/light-sources/types.d.ts` as the
   source-specific ambient type home for the concrete light-source and cache
   configuration packets;
@@ -211,8 +212,8 @@ be promoted into. It adds:
 - `shared/algorithm32/production/geometries/SphericalEarthGeometry.js` and
   `shared/algorithm32/production/geometries/FlatEarthGeometry.js` as the first
   concrete geometry models for view-ray segments, atmosphere paths,
-  source-relative coordinates, cache access, and cache-build rays. The
-  optional Three endpoint object adapters from the POC remain unpromoted;
+  source-relative coordinates, cache access, cache-build rays, and
+  geometry-owned Three endpoint object creation;
 - `shared/algorithm32/production/geometries/types.d.ts` as the
   geometry-specific ambient type home;
 - `shared/algorithm32/production/implementation/ShaderBuilder.js` as the
@@ -280,14 +281,17 @@ be promoted into. It adds:
   `shared/algorithm32/production/models/_tests/SharedModel.spec.js`, and
   `shared/algorithm32/production/models/_tests/SpectralModel.spec.js`.
 
-Latest verification: `npm run test:algorithm32:production` passes 168 specs
+Latest verification: `npm run test:algorithm32:production` passes 182 specs
 with 0 failures after the facade lifecycle, contract-alignment,
 `SpectralCalculator`, cache-coordinator, concrete cache-family, light-source,
 atmosphere, geometry, canonical data, Color/display conversion, concrete
 geometry, atmosphere, light-source, source-created cache, Color, and core
 transport owner shader contributions, shader descriptor/assembly, cache texture resource,
-cache descriptor/payload validation, reusable scene depth/hit capture, and
-runtime pass implementation slices.
+cache descriptor/payload validation, reusable scene depth/hit capture,
+geometry-owned Three endpoints, and source-owned Three lighting,
+geometry-owned scene-depth cap resolution, scene-input exclusion during
+capture, real flat/globe app composer integration, and runtime pass
+implementation slices.
 
 The scaffold specs are expected to stay green while real contracts are added.
 Each new source-backed physics implementation, algorithm variation, fixture,
@@ -872,8 +876,12 @@ Interface boundary rule:
   interpreting raw flat or spherical coordinates. It owns interpretation of
   that position as incoming direction, distance-use treatment, source path
   limits, falloff, angular extent, and spectral scale.
-  Concrete solar, lunar, or other illumination behavior belongs in specific light-source
-  implementations. A source-owned cache-family method may create an
+  Concrete solar, lunar, or other illumination behavior belongs in specific
+  light-source implementations. The reconciliation boundary-radiance prototype
+  should include a source-provided companion external boundary-radiance
+  provider for a visible body, starting with the Sun disk, while atmospheric
+  illumination and camera-ray visibility remain separate roles with separate
+  composition paths. A source-owned cache-family method may create an
   incident-radiance cache, but the concrete cache artifact owns its generated
   values, sampler, shader payload, and packing/access descriptors. Its
   descriptor must record the geometry, atmosphere, spectral,
@@ -1914,7 +1922,7 @@ as render exposure or display tone mapping, not as source brightness.
   need justifies a narrow rebind operation.
 - The normal production render path is not packet replay. It is:
   `Three scene + camera -> scene color render target + DepthTexture ->
-  Algorithm32 fullscreen ShaderMaterial -> output target or screen`.
+  Algorithm32 fullscreen RawShaderMaterial -> output target or screen`.
   Raycaster/JSON scene inputs remain validation/oracle artifacts and should
   not be required by normal app rendering. CPU/reference validation may use
   selected-ray or fixture spatial hit facts equivalent to renderer hit/depth
@@ -2062,10 +2070,72 @@ as render exposure or display tone mapping, not as source brightness.
 - Local Sun clock sync should default to solar-zenith calibration: standard
   solar noon for the location/date is aligned with the local model's closest
   approach. The resulting clock offset and source power are derived state.
-- Optional visible star/celestial point-source rendering is outside
-  Algorithm32 first-production scope and should be handled by the app as part
-  of the scene. It is not an atmosphere-composition input, shader facade
-  feature, hidden shader constant, or `Color` extension.
+- Optional visible star/celestial point-source rendering is outside the
+  current production contract and should be proven first in the reconciliation
+  experimental lane. The current captured scene-color path is not a sufficient
+  physical visibility model for stars, Moon, planets, or visible Sun disks.
+  Prototype an explicit external boundary-radiance provider sampled along the
+  camera ray and composed as
+  `pathRadiance + viewTransmittance * celestialRadiance`. Stars and visible
+  disks should not be folded into the incident-radiance/L2 cache; optional
+  atmosphere illumination from Moon or starfield radiance is a separate later
+  source/cache concern. Include a light-source-owned companion provider for
+  the visible Sun disk in the prototype, while keeping illumination and
+  visibility separate.
+- Flat dome star synchronization is intentionally anchor-based. Because the
+  flat dome projection cannot globally match the real celestial sphere, the
+  app should only align the dome when it performs a time sync: compute the
+  real Sun position for the resolved time, choose the catalog star closest to
+  that Sun position in real celestial coordinates, locate the same catalog
+  star in the flat dome projection, and rotate the dome so that star's dome
+  azimuth matches the flat Sun azimuth. After that sync, the dome sky may
+  drift until the next explicit time-sync operation. Between explicit syncs,
+  the app should follow the existing flat animation-clock pattern: one
+  simulated elapsed time is projected into separate solar-day and sidereal-day
+  cycle angles. The false Sun uses the solar-day angle, and the flat star dome
+  uses the sidereal-day angle, so the Sun retains its expected motion relative
+  to the stellar reference frame without creating independent clocks. Catalog
+  projection, anchor-star alignment, and sidereal drift are separate
+  star-field correctness proofs from the atmospheric boundary-radiance
+  visibility proof.
+  The `flat32` proof implementation currently scatters `192` captured sphere
+  endpoints across the observer-local upper hemisphere in both scene modes,
+  derives its magnitude range from `POC_STARS`, and applies the same clamped
+  brightness/size mapping as the existing flat projection model. After the
+  first San Jose solar-noon visual check exposed visible noon speckles, the
+  proof calibration places analogs just beyond the atmosphere-top path,
+  restricts the minimum elevation so they remain inside the 500 km camera
+  range, and scales sphere radius by endpoint distance. After San Jose sunset
+  and sunrise-minus-one-hour checks showed no visible stars, the calibration
+  increased the endpoint RGB scale to `0.12x` while still preserving the
+  catalog-relative brightness range. `flat32` also includes an antisolar
+  calibration ladder labeled `A` through `H`; the star endpoints are captured
+  scene inputs, while the labels are DOM overlay identifiers outside the
+  atmosphere pass. Because the first visibility reports were non-monotonic,
+  `flat32` also includes a `Full Scene`/`Atmosphere Only` diagnostic. The
+  diagnostic keeps the same Algorithm32 atmosphere shader path active, but
+  rebuilds without the normal captured scene objects and keeps one captured,
+  inward-facing green shell endpoint plus its scene-depth cap points; the
+  Three clear color is also green for missed-pixel visibility. This isolates
+  whether the atmosphere pass itself is bright, dark, attenuating, or failing
+  to cover pixels before star brightness is tuned. A separate mutually
+  exclusive `Green Shell` diagnostic installs the same captured green sphere
+  without the atmosphere-only background framing. That test is for dark sky
+  regions where there should be a known bright endpoint behind the atmosphere,
+  independent of the sparse synthetic-star distribution. The accepted
+  composition invariant is that zero added atmosphere radiance plus identity
+  scene transmittance must preserve the incoming scene pixel. The Color
+  abstraction owns this invariant in both its runtime shader contribution and
+  its CPU `composeSceneLinearSrgb(...)`/`composeSceneDisplayRgb(...)` helpers.
+  It composes captured scene color through view transmittance only when the
+  captured scene endpoint lies inside the atmosphere path; if geometry reaches
+  the atmosphere boundary before the scene endpoint, scene transmittance is
+  identity. Scene hits remain a geometry/path-termination fact, not permission
+  to keep or discard the incoming color. The current green-shell diagnostic is
+  a captured scene endpoint, so it is useful for finding darkening artifacts
+  but is not a perfect beyond-atmosphere probe for every low-elevation ray.
+  A stricter follow-up diagnostic would render a green background/shell into
+  scene color while excluding it from scene-depth/hit capture.
 
 ## Promotion Sequence
 

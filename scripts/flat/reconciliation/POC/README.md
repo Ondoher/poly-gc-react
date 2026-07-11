@@ -1,65 +1,88 @@
 # Algorithm32 Reconciliation POC
 
-Status: Milestone 1 complete through Subgoal 1.4; stopped before Subgoal 1.5
-artifact generation.
+This README is not a historical log. It keeps the active POC script pointers,
+lane rules, and record process for the current Milestone 5 reconciliation
+experiment.
 
-This is the mutable reconciliation POC for Algorithm32. It is not a numbered
-experiment lane; the source here will be updated in place. Numbered records
-under `tmp/atmosphere/reconciliation/NNN-*` begin once substantive verification
-or parity evidence starts.
+## Current Purpose
 
-## Scope
+The active POC task is Milestone 5: prove the external-boundary-radiance
+contract for visible outside-atmosphere bodies before promoting it into
+production.
 
-- Keep this POC self-owned. Historical POC and experiment code may be mined or
-  ported with provenance, but this tree must not runtime-import, symlink, or
-  re-export old experiment code where it currently lives.
+Target composition:
+
+```text
+pathRadiance + viewTransmittance * celestialRadiance
+```
+
+Current design and plan:
+
+- `agents/topics/apps/flat/reconciliation/milestone-5-boundary-radiance-design.md`
+- `agents/topics/apps/flat/reconciliation/milestone-5-boundary-radiance-plan.md`
+
+## Lane Rules
+
+- Keep this POC self-owned.
+- Historical POC and experiment code may be mined or ported with provenance,
+  but this tree must not runtime-import, symlink, or re-export old experiment
+  code where it currently lives.
 - Keep complex shapes in the owning `types.d.ts` file and reference them from
   JavaScript with JSDoc.
-- Keep a compact code reference trail. Implementation files should use a
-  file-level `References:` comment for the relevant design section, action-plan
-  stage, numbered record, source audit, or external source. The chosen scheme
-  is a resolvable inline trail, not `[n]` citations against a separate index.
-  Detailed trails still belong in records/provenance.
 - Runtime class files contain one class and default-export that class.
 - Abstraction contracts live as ambient `interface` declarations plus
-  validation; do not add empty runtime base classes just to represent
-  interfaces. Use regular interface method signatures for behavior members,
-  not properties with function types. Plain value packets and descriptors can
-  remain `type` aliases.
+  validation. Do not add empty runtime base classes just to represent
+  interfaces.
+- Use regular interface method signatures for behavior members, not properties
+  with function types. Plain value packets and descriptors can remain `type`
+  aliases.
+- Keep active status docs as current snapshots. Use
+  `tmp/atmosphere/reconciliation/running-log.md` for lightweight chronology
+  and `tmp/atmosphere/reconciliation/NNN-*` records for durable evidence.
 
-## Current Scaffold
+## Runner And Experiment Scripts
 
-- `src/index.js` exposes the importable scaffold surface.
-- `src/types.d.ts` owns shared value packets.
-- Module-local `types.d.ts` files own boundary-specific packets.
-- `src/evaluation/SpectralReferenceEvaluator.js` owns the spectral-only main
-  evaluator over abstract contracts.
-- `src/calculator/SpectralCalculator.js` owns the shared calculator loop and
-  low-level transport helpers.
-- `src/atmosphere/CanonicalAtmosphere.js`,
-  `src/geometry/SphericalEarthGeometry.js`, and
-  `src/light/DistantSunLightSource.js` are the concrete M1 model classes.
-- `src/incident-radiance/DistantSunIncidentRadianceCache.js` is the concrete
-  distant L2 cache.
-- `src/provenance/buildParameterLedger.js` emits the M1 parameter ledger.
-- `src/outputs/types.d.ts` and `src/comparison/types.d.ts` own
-  post-transport output/comparison packet homes.
-- `src/setup/buildIncidentRadianceCache.js` owns the cache-build coordinator
-  shell.
-- `src/runners/smoke.js` is the lightweight M0 verification runner.
-- `src/runners/contractProbe.js` is the M1 Subgoal 1.0 abstraction-closure
-  verification runner.
-- `src/runners/m1ParameterProvenance.js`,
-  `src/runners/m1TransportHelperInvariants.js`,
-  `src/runners/m1ConcreteDistantSpherical.js`, and
-  `src/runners/m1DistantL2Cache.js` are the accepted M1 pre-artifact
-  experiment runners.
+- `src/runners/`: reconciliation runner and experiment scripts.
+- `src/runners/recordWriter.js`: numbered-record helper.
+- `browser-page/runner.js`: browser/WebGL runner.
+- `browser-jobs/browser-command.json`: browser command channel seed.
+- `src/index.js`: importable POC surface used by runners.
+- `parameters.md`: current parameter snapshot.
+- `CURRENT_STATE.md`: current POC status snapshot.
+
+## Existing POC Surface
+
+- `src/evaluation/SpectralReferenceEvaluator.js`
+- `src/calculator/SpectralCalculator.js`
+- `src/atmosphere/CanonicalAtmosphere.js`
+- `src/geometry/SphericalEarthGeometry.js`
+- `src/geometry/FlatEarthGeometry.js`
+- `src/light/DistantSunLightSource.js`
+- `src/light/LocalSunLightSource.js`
+- `src/incident-radiance/DistantSunIncidentRadianceCache.js`
+- `src/incident-radiance/LocalSunIncidentRadianceCache.js`
+- `src/color/BrunetonColorDisplayModel.js`
+- `src/soft-shader/CpuPostprocessSoftShader.js`
+- `src/three/ThreeSceneSoftShaderBridge.js`
+- `src/shader/Algorithm32ShaderAssembler.js`
+- `src/browser/BrowserShaderJobRunner.js`
 
 ## Record Process
 
-Milestone 0 does not require a formal numbered record. When substantive
-verification begins, create the next `tmp/atmosphere/reconciliation/NNN-*`
-folder and include the normal record files: `state-goal.md`, `inputs.json`,
-`command.json`, `result.json`, `provenance.json`,
-`equations-and-constants.json`, `criteria-results.json`, `diagnostics.json` or
-`diagnostics/`, `report.md`, and `run.log`.
+When substantive verification begins, create the next
+`tmp/atmosphere/reconciliation/NNN-*` folder and include the normal record
+files:
+
+- `state-goal.md`
+- `inputs.json`
+- `command.json`
+- `result.json`
+- `provenance.json`
+- `equations-and-constants.json`
+- `criteria-results.json`
+- `diagnostics.json` or `diagnostics/`
+- `report.md`
+- `run.log`
+
+Rejected or superseded records stay in place. Create a new numbered record for
+the next attempt.

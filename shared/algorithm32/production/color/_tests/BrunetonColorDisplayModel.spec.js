@@ -22,6 +22,7 @@ describe('BrunetonColorDisplayModel', () => {
 
 		expect(source).toContain('export class BrunetonColorDisplayModel');
 		expect(source).toContain('convert(request)');
+		expect(source).toContain('composeSceneDisplayRgb(request)');
 		expect(source).toContain('createShaderContribution(request)');
 		expect(source).toContain('(script a32-poc-color-032)');
 	});
@@ -95,6 +96,59 @@ describe('BrunetonColorDisplayModel', () => {
 		]);
 	});
 
+	it('composes captured scene color through the JS display abstraction', () => {
+		const model = new BrunetonColorDisplayModel();
+		const zero = CANONICAL_SPECTRAL_CHANNELS.map(() => 0);
+		const one = CANONICAL_SPECTRAL_CHANNELS.map(() => 1);
+		const sceneDisplayRgb = [0.12, 0.34, 0.56];
+
+		expectTripletClose(model.composeSceneDisplayRgb({
+			pathRadiance: zero,
+			transmittance: one,
+			sceneDisplayRgb,
+		}), sceneDisplayRgb);
+
+		const pathRadiance = CANONICAL_SPECTRAL_CHANNELS.map((_, index) => (index + 1) * 0.000001);
+		const transmittance = CANONICAL_SPECTRAL_CHANNELS.map((_, index) => index / (CANONICAL_SPECTRAL_CHANNELS.length - 1));
+		const pathLinearSrgb = model.radianceToLinearSrgb(pathRadiance);
+		const sceneLinearSrgb = model.displayRgbToLinearSrgb(sceneDisplayRgb);
+		const transmittanceRgb = model.spectralTransmittanceToRgbBands(transmittance);
+
+		expectTripletClose(transmittanceRgb, [
+			0.7857142857142857,
+			0.42857142857142855,
+			0.14285714285714285,
+		]);
+		expectTripletClose(model.composeSceneLinearSrgb({
+			pathRadiance,
+			transmittance,
+			sceneDisplayRgb,
+		}), pathLinearSrgb.map((value, index) =>
+			value + sceneLinearSrgb[index] * transmittanceRgb[index]));
+		expectTripletClose(model.composeSceneDisplayRgb({
+			pathRadiance: zero,
+			transmittance,
+			sceneDisplayRgb,
+			applySceneTransmittance: false,
+		}), sceneDisplayRgb);
+
+		const rendererLinearSceneRgb = [0.003, 0.01, 0.08];
+		const rendererDisplaySceneRgb = model.rendererLinearSrgbToDisplayRgb(rendererLinearSceneRgb);
+
+		expectTripletClose(rendererDisplaySceneRgb, [
+			0.03876,
+			0.09985282273412832,
+			0.31330415714736193,
+		]);
+		expectTripletClose(model.composeSceneDisplayRgb({
+			pathRadiance: zero,
+			transmittance,
+			sceneDisplayRgb: rendererLinearSceneRgb,
+			sceneColorSpace: 'linear-srgb',
+			applySceneTransmittance: false,
+		}), rendererDisplaySceneRgb);
+	});
+
 	it('creates the Color-owned display shader contribution', () => {
 		const model = new BrunetonColorDisplayModel();
 		const contribution = model.createShaderContribution({
@@ -123,6 +177,11 @@ describe('BrunetonColorDisplayModel', () => {
 		expect(contribution.functions[0].code).toContain('float[15]');
 		expect(contribution.functions[1].code).toContain('spectralRadianceToLinearSrgb');
 		expect(contribution.functions[1].code).toContain('spectralTransmittanceToRgbBands');
+		expect(contribution.functions[1].code).toContain('rendererLinearSrgbToDisplayRgb');
+		expect(contribution.functions[1].code).toContain('shouldApplySceneTransmittance');
+		expect(contribution.functions[1].code).toContain('state.bounds.endpointDistanceMeters <= state.bounds.endDistanceMeters');
+		expect(contribution.functions[1].code).toContain('vec3 sceneDisplayRgb = rendererLinearSrgbToDisplayRgb(state.sceneDisplayRgb);');
+		expect(contribution.functions[1].code).toContain('return pathLinearSrgb + sceneLinearSrgb * sceneTransmittanceRgb;');
 		expect(contribution.functions[2].code).toContain('encodeDisplayOutput');
 		expect(contribution.mainHooks.map((block) => block.code)).toEqual([
 			'state.outputRgba = encodeDisplayOutput(composeSceneLinearSrgb(state));',
@@ -208,4 +267,3 @@ function expectTripletClose(actual, expected) {
 		expect(actual[index]).withContext(`channel ${index}`).toBeCloseTo(expected[index], 10);
 	}
 }
-

@@ -29,6 +29,11 @@
             "filename": "flat.json",
             "code": false,
             "default": false
+        },
+        {
+            "filename": "flat32.json",
+            "code": false,
+            "default": false
         }
     ],
     "builds": "builds",

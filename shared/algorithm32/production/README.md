@@ -48,7 +48,8 @@ radiance math, while `Reference` orchestrates through it. Incident-radiance
 support now includes `buildIncidentRadianceCache`, `noIncidentRadiance`,
 source-owned distant/local cache families, matching distant/local source
 models for direct lighting and cache creation, the canonical atmosphere model,
-and spherical/flat geometry models. Canonical constants now live in a
+the `FlatSynchronizer` local-source synchronization helper, and spherical/flat
+geometry models. Canonical constants now live in a
 production data module, and `BrunetonColorDisplayModel` supplies the concrete
 Color CPU conversion plus Color-owned display shader contribution. Shader
 runtime support now includes
@@ -59,15 +60,63 @@ for the distant spherical and local flat paths, source-created incident-cache
 shader setup with cache-owned descriptors, contributions, and texture
 payloads, a core transport contribution provider, cache texture resource
 preparation, cache descriptor/payload compatibility validation, Three
-material/pass installation when an assembled setup supplies composer and Three
-handles, reusable renderer-produced scene depth/hit capture through the
+`RawShaderMaterial`/pass installation when an assembled setup supplies composer
+and Three handles, reusable renderer-produced scene depth/hit capture through the
 `SceneInputCapture` composer pass installed ahead of the fullscreen
 Algorithm32 pass, fail-loud required binding validation before pass
-installation, and handle-owned runtime disposal. The old distant spherical and local flat
+installation, facade-forwarded setup `bindingValues` for live app camera
+bindings, real `EffectComposer`/`RenderPass` integration for the flat app's
+flat and globe simulations, and handle-owned runtime disposal. The old distant spherical and local flat
 aggregate profile factories are quarantined under `quarantine/` for later
-deletion; active setup now uses owner-local contribution methods instead.
-The focused lane currently passes
-`npm run test:algorithm32:production` with 168 specs and 0 failures.
+deletion; active setup now uses owner-local contribution methods instead. The
+old flat/globe feature-local atmosphere shader components and their direct
+legacy spec were removed. The production React wrapper creates and mounts
+required geometry endpoint and source-light objects from
+`config.geometry.createThreeEndpointObjects(...)` and
+`config.lightSource.addSceneLighting(...)`; the owner-created flat
+ground and globe surface endpoints carry the `geometry-ground-boundary` tags
+and `metersPerSceneUnit = 1000` scale facts consumed by `SceneInputCapture`.
+This follows the reconciliation browser runner's composer and km-to-meter
+scene-scale conventions. The
+spherical geometry shader contribution now supports explicit observer-local
+and model-space scene frames; the flat app globe bridge uses model-space
+because its Three globe is planet-centered, while the reconciliation planet
+runner remains observer-local. Production geometries now resolve default
+scene-depth capture caps from local horizon/object endpoint ranges instead of
+scene camera star-scale `far` values. The flat and globe calibration app views
+now default the rendered camera to 10 meters above modeled ground; the flat
+renderer now consumes `observer.view.cameraHeightKm` directly instead of the old
+altitude/1.7-meter fallback, starts the camera at
+`[0, cameraHeightKm, 0]`, and initially looks horizontally along `-Z` with
+pitch `0`. Flat live shader bindings map the R3F observer-local camera
+position through `FlatEarthGeometry.mapObserverLocalScenePointToModelPosition(...)`,
+matching the flat ground basis used by the owner-created endpoints. Flat/globe
+scene components are minimal camera/canvas wrappers around the base composer.
+The R3F bridge marks the canvas with `data-algorithm32-composer-mode` so live
+checks can distinguish fallback frames from Algorithm32-composited frames, and
+it passes R3F `invalidate` into the class wrapper so demand-loop canvases
+redraw on async setup ready/failure. This app bridge is provisional consumer scaffolding, not
+correctness evidence for Algorithm32 output. Browser reconciliation smoke record
+`tmp/atmosphere/reconciliation/902-production-globe-frame-depth-smoke`
+accepted the ground-inclusive scene shape with a geometry-ground sphere hit
+mask and `sceneDepthMaxMeters = 250000`. The focused lane
+currently passes
+`npm run test:algorithm32:production` with 226 specs and 0 failures; the
+preliminary app bridge also passes `npm run test:ui:flat` with 125 specs and
+0 failures.
+
+Live app checkpoint: the local Polylith server is HTTPS on port 443. Probe the
+globe route at `https://localhost/flat/globe-simulation/` with local
+certificate validation disabled. The latest retained live artifact is
+`tmp/atmosphere/app-globe-localhost-https/images/initial-page.png`; it shows
+the Globe Simulation page shell with an empty black render area. Subsequent
+Puppeteer/canvas readback probes consumed excessive CPU and were killed, so a
+fresh agent should use lighter instrumentation and tight timeouts before
+attempting more live browser automation. The reconciliation browser runner
+still accepts the ground-inclusive composer/raycast scene, so the next live
+debug target is the app composer/Canvas render path after the fallback,
+observer-local flat binding, and demand-loop fixes, starting with the
+`data-algorithm32-composer-mode` canvas marker.
 
 GPU/browser selected-pixel parity against `Reference` plus `Color` uses the
 accepted evidence `gpu-selected-rgba-byte-parity`: max absolute RGB byte delta
@@ -82,6 +131,15 @@ Debug views are deferred with diagnostics and are not first-production runtime
 shader API. Visible stars and celestial point sources are app scene content
 outside the Algorithm32 shader.
 
+The production app integration contract lives in
+`agents/topics/apps/flat/algorithm32/integration.md`. Use it for standalone
+React/R3F setup details: API-shaped config factories, composer pass order,
+the production-shipped class-based Algorithm32 wrapper plus tiny R3F bridge in
+`shared/algorithm32/production/react/`,
+base-wrapper-owned geometry endpoint objects, source-owned lighting objects,
+app-authored solid scene inputs, scene input tags, camera/model bindings, config refresh,
+diagnostics, and troubleshooting.
+
 Fresh bootstrap pointers: after the topic docs, inspect this README,
 `references.md`, `types/types.d.ts`, `constants/Algorithm32CanonicalData.js`,
 `utils/WavelengthMath.js`,
@@ -90,22 +148,27 @@ Fresh bootstrap pointers: after the topic docs, inspect this README,
 `atmospheres/CanonicalAtmosphere.js`,
 `light-sources/DistantSunLightSource.js`,
 `light-sources/LocalSunLightSource.js`,
+`light-sources/FlatSynchronizer.js`,
 `light-sources/DistantSunIncidentRadianceCache.js`,
 `light-sources/LocalSunIncidentRadianceCache.js`,
 `transport/Algorithm32Transport.js`, and
 `implementation/ShaderBuilder.js`, plus
-`implementation/SceneInputCapture.js` to recover the current production state.
+`implementation/SceneInputCapture.js` and
+`implementation/ShaderRuntimePass.js`, then
+`react/Algorithm32AtmosphereComposer.jsx`,
+`react/Algorithm32R3FAtmosphereComposer.jsx`, and
+`react/Algorithm32ReactUtils.js` to recover the current production state.
 The promoted POC constants, display facts, and profile shader facts use the
 internal short-code citation `(script a32-poc-color-032)` until exact
 experiment records are collected in `evidence.md`. Remaining concrete runtime
-work is capability/resource polish around the promoted contribution path and
-optional source-light or scene-mapping adapters where runtime integration needs
-them. Browser/readback parity fixtures for scene color, ray-length/depth
-capture, hit mask, and selected-pixel output are deferred until real app
-composer integration provides stable scene color, capture, and readback
-surfaces. The atmosphere shader does not require shader-facing object/material
-ID textures for the transport algorithm. Final Color/display composition still
-consumes renderer-produced hit-pixel scene color.
+work is capability/resource polish around the promoted contribution path,
+source-light synchronization and scene-mapping adapters where the preliminary
+real app integration needs them, browser/readback parity fixtures for scene
+color, ray-length/depth capture, hit mask, and selected-pixel output, and
+visual review. The atmosphere shader does not require
+shader-facing object/material ID textures for the transport algorithm. Final
+Color/display composition still consumes renderer-produced hit-pixel scene
+color.
 
 The mined POC constant inventory and unresolved promotion questions are in the
 topic design doc:
@@ -139,6 +202,9 @@ Incident-radiance and source support currently includes
 distant/local source/cache families under `light-sources/`. The old
 aggregate profile and shader contribution factories live only in
 `quarantine/` as archival files pending deletion.
+`ShaderRuntimePass` uses Three `RawShaderMaterial` for the fullscreen GLSL3
+pass so Three does not inject duplicate built-in attributes into the vertex
+source.
 Implementation-only complex packet shapes live in `implementation/types.d.ts`.
 The current top-level implementation plan lives in
 `agents/topics/apps/flat/algorithm32/implementation-plan.md`.
@@ -152,9 +218,13 @@ and `FlatEarthGeometry` own view-ray segments, atmosphere paths, source-relative
 coordinates, cache access, and cache-build rays for their respective domains.
 Concrete display conversion lives under `color/`, where
 `BrunetonColorDisplayModel` owns the accepted Figure 1 spectral-to-display
-adapter and shader display blocks.
-Optional Three source-light or geometry scene-mapping adapters remain pending
-until runtime integration needs them.
+adapter and shader display blocks. Production Three endpoint helpers now live
+under `three/`: concrete spherical/flat geometries expose
+`createThreeEndpointObjects(...)` for visual ground objects plus exact raycast
+endpoints plus `resolveSceneDepthMaxMeters(...)` for the default scene-depth
+capture cap, and concrete distant/local sources expose
+`addSceneLighting(...)` for source-owned renderer lights and required
+directional-light targets.
 
 ## Models
 

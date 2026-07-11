@@ -21,7 +21,7 @@ import { createBearingDirection } from '../../../shared/observer-relative-placem
 import { POC_STARS } from '../../../shared/projection/PocStars.js';
 
 const UNIX_EPOCH_JULIAN_DATE = 2440587.5;
-const STANDING_EYE_HEIGHT_KM = 0.0017;
+const DEFAULT_CAMERA_HEIGHT_METERS = 10;
 const NORTHERN_BRIGHT_STAR_COUNT = 50;
 const STAR_SKY_DISTANCE_KM = 1000000;
 
@@ -301,19 +301,30 @@ export default class GlobeSimulationSceneModel {
 	}
 
 	/**
-	 * Create a camera anchored above the selected observer.
+	 * Resolve the camera height above the rendered spherical ground.
+	 *
+	 * @returns {number} The camera height above the sphere in kilometers.
+	 */
+	cameraHeightKm() {
+		const cameraHeightMeters = Number(this.config.cameraHeightMeters);
+
+		return (Number.isFinite(cameraHeightMeters) ? cameraHeightMeters : DEFAULT_CAMERA_HEIGHT_METERS) / 1000;
+	}
+
+	/**
+	 * Create a camera anchored above the rendered spherical ground.
 	 *
 	 * @param {{ positionKm: object, frame: { north: object, up: object } }} observer - Store the observer state.
 	 * @returns {{ positionKm: object, targetKm: object, nearKm: number, farKm: number, fov: number }} The camera state.
 	 */
 	createCamera(observer) {
+		const heightAboveSurfaceKm = this.cameraHeightKm();
+
 		return {
-			positionKm: this.addScaledVectors([
-				{ vector: observer.positionKm, scale: 1 },
-				{ vector: observer.frame.up, scale: STANDING_EYE_HEIGHT_KM },
-			]),
+			positionKm: this.scaleVector(observer.frame.up, this.config.earthRadiusKm + heightAboveSurfaceKm),
 			targetKm: { ...observer.lookTargetKm },
 			up: { ...observer.frame.up },
+			heightAboveSurfaceKm,
 			nearKm: 0.00001,
 			farKm: ASTRONOMICAL_UNIT_KM * 1.05,
 			fov: 60,

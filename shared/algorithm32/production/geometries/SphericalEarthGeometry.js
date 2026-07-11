@@ -1,3 +1,6 @@
+import * as THREE from 'three';
+
+import ExactSphereGroundObject from '../three/ExactSphereGroundObject.js';
 import VectorMath from '../utils/VectorMath.js';
 
 const IDENTITY_MATRIX4 = Object.freeze([
@@ -6,6 +9,12 @@ const IDENTITY_MATRIX4 = Object.freeze([
 	0, 0, 1, 0,
 	0, 0, 0, 1,
 ]);
+const MODEL_SPACE_SCENE_FRAME = Object.freeze({
+	kind: 'model-space',
+	up: Object.freeze([0, 1, 0]),
+	right: Object.freeze([1, 0, 0]),
+	forward: Object.freeze([0, 0, 1]),
+});
 
 /**
  * Own spherical atmosphere geometry for view rays, source paths, and cache
@@ -28,6 +37,7 @@ export class SphericalEarthGeometry {
 			topRadiusMeters,
 			observerHeightMeters = 0,
 			observerUpDirection = [0, 0, 1],
+			sceneFrame = null,
 			sourceDirection = [0, 0, 1],
 			cacheAltitudeBinCount = 1,
 			cacheBoundaryAltitudeMeters = 2,
@@ -51,13 +61,15 @@ export class SphericalEarthGeometry {
 		}
 
 		const normalizedObserverUpDirection = normalizeDirection(observerUpDirection, 'observerUpDirection');
+		const observerLocalSceneFrame = makeObserverLocalSceneFrame(normalizedObserverUpDirection);
 
 		this._configuration = Object.freeze({
 			bottomRadiusMeters,
 			topRadiusMeters,
 			observerHeightMeters,
 			observerUpDirection: normalizedObserverUpDirection,
-			observerLocalSceneFrame: makeObserverLocalSceneFrame(normalizedObserverUpDirection),
+			observerLocalSceneFrame,
+			sceneFrame: normalizeSceneFrame(sceneFrame, observerLocalSceneFrame),
 			sourceDirection: normalizeDirection(sourceDirection, 'sourceDirection'),
 			cacheAltitudeBinCount,
 			cacheBoundaryAltitudeMeters,
@@ -98,6 +110,7 @@ export class SphericalEarthGeometry {
 			cacheBoundaryAltitudeMeters: this._configuration.cacheBoundaryAltitudeMeters,
 			sourceTransmittanceIntervalCount: this._configuration.sourceTransmittanceIntervalCount,
 			observerLocalSceneFrame: this._configuration.observerLocalSceneFrame,
+			sceneFrame: this._configuration.sceneFrame,
 		});
 	}
 
@@ -118,9 +131,12 @@ export class SphericalEarthGeometry {
 	 */
 	getFrameDescriptor() {
 		return Object.freeze({
-			kind: 'observer-local-spherical-frame',
+			kind: this._configuration.sceneFrame.kind === 'model-space'
+				? 'model-space-spherical-frame'
+				: 'observer-local-spherical-frame',
 			observerUpDirection: this._configuration.observerUpDirection,
 			observerLocalSceneFrame: this._configuration.observerLocalSceneFrame,
+			sceneFrame: this._configuration.sceneFrame,
 		});
 	}
 
@@ -261,6 +277,35 @@ export class SphericalEarthGeometry {
 	}
 
 	/**
+	 * Map observer-local Three scene point to spherical model-space meters.
+	 *
+	 * @param {unknown} point - Supplies observer-local point.
+	 * @param {object} [request] - Supplies scale facts.
+	 * @returns {Position} Model-space position.
+	 */
+	mapObserverLocalScenePointToModelPosition(point, request = {}) {
+		const vector = toVector3(point, 'Observer-local scene point');
+		const metersPerSceneUnit = metersPerSceneUnitFromRequest(
+			request,
+			'Spherical geometry observer-local scene conversion',
+		);
+
+		return this._scenePointToModelPosition(vector, metersPerSceneUnit);
+	}
+
+	/**
+	 * Map observer-local Three scene direction to spherical model-space direction.
+	 *
+	 * @param {unknown} direction - Supplies observer-local direction.
+	 * @returns {UnitVector3} Model-space direction.
+	 */
+	mapObserverLocalSceneDirectionToModelDirection(direction) {
+		const vector = toVector3(direction, 'Observer-local scene direction');
+
+		return this._sceneDirectionToModelDirection(vector);
+	}
+
+	/**
 	 * Resolve a sample point into distant-cache altitude access.
 	 *
 	 * @param {object} [request] - Supplies sample and atmosphere facts.
@@ -315,6 +360,270 @@ export class SphericalEarthGeometry {
 			startDistanceMeters: 0,
 			endDistanceMeters: this.distanceToTopAtmosphereBoundary(origin, direction),
 		});
+	}
+
+	/**
+	 * Map an app-authored ground offset to the configured Three scene point.
+	 *
+	 * The input offset is expressed in the active Three scene's horizontal
+	 * ground plane as `[x, z]`. Spherical geometry owns the projection from
+	 * that tangent-plane offset onto the curved ground surface and applies
+	 * height along the normalized local surface normal.
+	 *
+	 * @param {unknown} offset - Supplies horizontal scene offset `[x, z]`.
+	 * @param {object} [request] - Supplies scene scale and optional height.
+	 * @returns {Position} Configured Three scene point.
+	 */
+	mapGroundOffsetToScenePoint(offset, request = {}) {
+		const vector = toVector2(offset, 'Ground scene offset');
+		const metersPerSceneUnit = metersPerSceneUnitFromRequest(
+			request,
+			'Spherical geometry ground scene conversion',
+		);
+		const heightAboveGroundSceneUnits = finiteNumberOrDefault(
+			request.heightAboveGroundSceneUnits,
+			0,
+			'heightAboveGroundSceneUnits',
+		);
+		const radiusSceneUnits = this._configuration.bottomRadiusMeters / metersPerSceneUnit;
+		const centerSceneUnits = this._configuration.sceneFrame.kind === 'model-space'
+			? Object.freeze([0, 0, 0])
+			: Object.freeze([0, -radiusSceneUnits, 0]);
+		const upSceneUnits = this._configuration.sceneFrame.kind === 'model-space'
+			? this._configuration.observerUpDirection
+			: Object.freeze([0, 1, 0]);
+		const rightSceneUnits = projectOntoTangentPlane([1, 0, 0], upSceneUnits);
+		const forwardSceneUnits = projectOntoTangentPlane([0, 0, 1], upSceneUnits);
+		const horizontalOffset = VectorMath.add(
+			VectorMath.scale(rightSceneUnits, vector[0]),
+			VectorMath.scale(forwardSceneUnits, vector[1]),
+		);
+		const horizontalDistanceSquared = VectorMath.dot(horizontalOffset, horizontalOffset);
+		const radialDistanceSceneUnits = Math.sqrt(Math.max(
+			0,
+			radiusSceneUnits ** 2 - horizontalDistanceSquared,
+		));
+		const surfacePoint = VectorMath.add(
+			VectorMath.add(centerSceneUnits, horizontalOffset),
+			VectorMath.scale(upSceneUnits, radialDistanceSceneUnits),
+		);
+		const surfaceNormal = VectorMath.normalize(VectorMath.subtract(surfacePoint, centerSceneUnits));
+
+		return Object.freeze(VectorMath.add(
+			surfacePoint,
+			VectorMath.scale(surfaceNormal, heightAboveGroundSceneUnits),
+		));
+	}
+
+	/**
+	 * Project a scene point to the local spherical ground along a scene direction.
+	 *
+	 * @param {unknown} point - Supplies the scene point to project.
+	 * @param {unknown} direction - Supplies the scene projection direction.
+	 * @param {object} [request] - Supplies scene scale and locality guards.
+	 * @returns {SceneVector3} Projected local ground point in scene units.
+	 */
+	projectScenePointToGroundAlongDirection(point, direction, request = {}) {
+		const vector = toVector3(point, 'Ground projection scene point');
+		const directionVector = normalizeDirection(direction, 'Ground projection scene direction');
+		const metersPerSceneUnit = metersPerSceneUnitFromRequest(
+			request,
+			'Spherical geometry ground projection',
+		);
+		const radiusSceneUnits = this._configuration.bottomRadiusMeters / metersPerSceneUnit;
+		const centerSceneUnits = this._configuration.sceneFrame.kind === 'model-space'
+			? Object.freeze([0, 0, 0])
+			: Object.freeze([0, -radiusSceneUnits, 0]);
+		const fallbackUpSceneUnits = this._configuration.sceneFrame.kind === 'model-space'
+			? this._configuration.observerUpDirection
+			: Object.freeze([0, 1, 0]);
+		const localSurface = projectScenePointToSphereSurface(
+			vector,
+			centerSceneUnits,
+			radiusSceneUnits,
+			fallbackUpSceneUnits,
+		);
+		const offsetFromCenter = VectorMath.subtract(vector, centerSceneUnits);
+		const heightAboveSurface = VectorMath.length(offsetFromCenter) - radiusSceneUnits;
+		const surfaceToleranceSceneUnits = nonNegativeFiniteOrDefault(
+			request.surfaceToleranceSceneUnits,
+			1e-6,
+			'surfaceToleranceSceneUnits',
+		);
+
+		if (heightAboveSurface <= surfaceToleranceSceneUnits) {
+			return localSurface;
+		}
+
+		const maxLocalDistanceSceneUnits = nonNegativeFiniteOrDefault(
+			request.maxLocalDistanceSceneUnits,
+			Infinity,
+			'maxLocalDistanceSceneUnits',
+		);
+		const localNormalDotMin = clamp(
+			finiteNumberOrDefault(request.localNormalDotMin, 0, 'localNormalDotMin'),
+			-1,
+			1,
+		);
+		const hit = intersectSceneRayWithSphere(
+			vector,
+			directionVector,
+			centerSceneUnits,
+			radiusSceneUnits,
+		);
+
+		if (
+			hit
+			&& isLocalSphereProjectionHit({
+				hit,
+				localSurface,
+				centerSceneUnits,
+				maxLocalDistanceSceneUnits,
+				localNormalDotMin,
+			})
+		) {
+			return hit.point;
+		}
+
+		return localSurface;
+	}
+
+	/**
+	 * Create geometry-owned Three ground endpoint objects.
+	 *
+	 * @param {GeometryThreeEndpointObjectsRequest} request - Supplies scene
+	 * scale, material, segmentation, and metadata overrides.
+	 * @returns {GeometryThreeEndpointObjects} The geometry-owned endpoint objects.
+	 */
+	createThreeEndpointObjects(request = {}) {
+		const metersPerSceneUnit = metersPerSceneUnitFromRequest(
+			request,
+			'Spherical geometry Three endpoint conversion',
+		);
+		const radiusSceneUnits = this._configuration.bottomRadiusMeters / metersPerSceneUnit;
+		const observerAltitudeSceneUnits = this._configuration.observerHeightMeters / metersPerSceneUnit;
+		const centerSceneUnits = this._configuration.sceneFrame.kind === 'model-space'
+			? Object.freeze([0, 0, 0])
+			: Object.freeze([0, -radiusSceneUnits, 0]);
+		const spectralReferenceId = request.spectralReferenceId ?? 'algorithm32-spherical-ground-object-matte';
+		const widthSegments = positiveIntegerOrDefault(request.widthSegments, 128, 'widthSegments');
+		const heightSegments = positiveIntegerOrDefault(request.heightSegments, 64, 'heightSegments');
+		const shadow = geometryEndpointShadowRequestOrNull(request.shadow);
+		const groundVisualMesh = normalizeGroundVisualMeshRequest(request.groundVisualMesh);
+		const visualGeometry = groundVisualMesh.kind === 'local-spherical-patch'
+			? createLocalSphericalGroundPatchGeometry({
+				radiusSceneUnits,
+				widthSegments,
+				heightSegments,
+				observerAltitudeSceneUnits,
+				centerSceneUnits,
+				groundVisualMesh,
+			})
+			: new THREE.SphereGeometry(
+				radiusSceneUnits,
+				widthSegments,
+				heightSegments,
+			);
+		const visualObject = new THREE.Mesh(
+			visualGeometry,
+			createVisualMaterial(request),
+		);
+		const visualPosition = groundVisualMesh.kind === 'local-spherical-patch'
+			? [0, 0, 0]
+			: centerSceneUnits;
+		const visualShape = groundVisualMesh.kind === 'local-spherical-patch'
+			? 'local-spherical-patch'
+			: 'sphere';
+		const raycastObject = new ExactSphereGroundObject({
+			radiusSceneUnits,
+			centerSceneUnits,
+			metersPerSceneUnit,
+			spectralReferenceId,
+			name: request.name ?? 'spherical-earth-ground-endpoint',
+		});
+
+		visualObject.name = `${request.name ?? 'spherical-earth-ground'}-visual`;
+		visualObject.position.set(visualPosition[0], visualPosition[1], visualPosition[2]);
+		visualObject.userData.algorithm32SceneInput = true;
+		visualObject.userData.algorithm32EndpointRole = 'geometry-ground-visual';
+		visualObject.userData.endpointKind = 'geometry-ground-boundary';
+		visualObject.userData.spectralReferenceId = spectralReferenceId;
+		visualObject.userData.metersPerSceneUnit = metersPerSceneUnit;
+		if (shadow) {
+			visualObject.receiveShadow = shadow.receiveShadow;
+			visualObject.userData.shadowPolicy = shadow.shadowPolicy;
+			visualObject.userData.shadowReceiverPolicy = 'geometry-owned-ground-receives-three-shadow-map';
+		}
+		visualObject.userData.algorithm32GroundVisualMesh = Object.freeze({
+			kind: groundVisualMesh.kind,
+			shape: visualShape,
+			hitPolicy: 'visual-mesh-not-semantic-hit-authority',
+			...(shadow ? { shadowReceiverPolicy: visualObject.userData.shadowReceiverPolicy } : {}),
+			...(visualGeometry.userData.algorithm32GroundPatch
+				? { groundPatch: visualGeometry.userData.algorithm32GroundPatch }
+				: {}),
+		});
+
+		return Object.freeze({
+			visualObjects: Object.freeze([visualObject]),
+			raycastObjects: Object.freeze([raycastObject]),
+			metadata: Object.freeze({
+				owner: 'SphericalEarthGeometry',
+				endpointKind: 'geometry-ground-boundary',
+				shape: visualShape,
+				raycastPolicy: 'geometry-owned-exact-sphere-raycast',
+				sceneCapturePolicy: 'visual-mesh-raster-depth',
+				visualMeshKind: groundVisualMesh.kind,
+				sceneFrameKind: this._configuration.sceneFrame.kind,
+				bottomRadiusMeters: this._configuration.bottomRadiusMeters,
+				radiusSceneUnits,
+				centerSceneUnits,
+				visualPositionSceneUnits: Object.freeze([...visualPosition]),
+				observerHeightMeters: this._configuration.observerHeightMeters,
+				observerAltitudeSceneUnits,
+				metersPerSceneUnit,
+				spectralReferenceId,
+				widthSegments,
+				heightSegments,
+				shadow: shadow ? Object.freeze({ ...shadow }) : null,
+				...(visualGeometry.userData.algorithm32GroundPatch
+					? { groundPatch: visualGeometry.userData.algorithm32GroundPatch }
+					: {}),
+			}),
+		});
+	}
+
+	/**
+	 * Resolve the scene-depth capture cap for geometry-owned spherical endpoints.
+	 *
+	 * @param {GeometrySceneDepthMaxMetersRequest} request - Supplies optional
+	 * camera position and minimum cap policy.
+	 * @returns {number} Scene-depth cap in Algorithm32 meters.
+	 */
+	resolveSceneDepthMaxMeters(request = {}) {
+		const scenePointToModelPosition = (position, metersPerSceneUnit) =>
+			this._scenePointToModelPosition(position, metersPerSceneUnit);
+		const cameraPositionMeters = cameraPositionMetersOrNull(request, scenePointToModelPosition);
+		const observerHeightMeters = cameraPositionMeters
+			? Math.max(0, VectorMath.length(cameraPositionMeters) - this._configuration.bottomRadiusMeters)
+			: this._configuration.observerHeightMeters;
+		const observerRadiusMeters = this._configuration.bottomRadiusMeters + observerHeightMeters;
+		const horizonDistanceMeters = Math.sqrt(Math.max(
+			0,
+			observerRadiusMeters ** 2 - this._configuration.bottomRadiusMeters ** 2,
+		));
+		const endpointExtentMeters = endpointExtentMetersOrNull(
+			request,
+			cameraPositionMeters,
+			scenePointToModelPosition,
+		);
+
+		return Math.max(
+			positiveFiniteOrDefault(request.minimumMeters, 1),
+			observerHeightMeters,
+			horizonDistanceMeters,
+			endpointExtentMeters ?? 0,
+		);
 	}
 
 	/**
@@ -433,6 +742,42 @@ export class SphericalEarthGeometry {
 		});
 	}
 
+	_scenePointToModelPosition(vector, metersPerSceneUnit) {
+		if (this._configuration.sceneFrame.kind === 'model-space') {
+			return Object.freeze([
+				vector[0] * metersPerSceneUnit,
+				vector[1] * metersPerSceneUnit,
+				vector[2] * metersPerSceneUnit,
+			]);
+		}
+
+		const frame = this._configuration.sceneFrame;
+
+		return Object.freeze(VectorMath.add(
+			VectorMath.add(
+				VectorMath.scale(frame.up, this._configuration.bottomRadiusMeters + vector[1] * metersPerSceneUnit),
+				VectorMath.scale(frame.right, vector[0] * metersPerSceneUnit),
+			),
+			VectorMath.scale(frame.forward, vector[2] * metersPerSceneUnit),
+		));
+	}
+
+	_sceneDirectionToModelDirection(vector) {
+		if (this._configuration.sceneFrame.kind === 'model-space') {
+			return normalizeDirection(vector, 'Observer-local scene direction');
+		}
+
+		const frame = this._configuration.sceneFrame;
+
+		return normalizeDirection(VectorMath.add(
+			VectorMath.add(
+				VectorMath.scale(frame.up, vector[1]),
+				VectorMath.scale(frame.right, vector[0]),
+			),
+			VectorMath.scale(frame.forward, vector[2]),
+		), 'Observer-local scene direction');
+	}
+
 	/**
 	 * Create the geometry-owned spherical shader contribution.
 	 *
@@ -442,7 +787,7 @@ export class SphericalEarthGeometry {
 	_createShaderContribution(descriptor) {
 		assertSphericalGeometryDescriptor(descriptor);
 		const facts = descriptor.geometry.facts ?? {};
-		const frame = facts.observerLocalSceneFrame ?? Object.freeze({
+		const frame = facts.sceneFrame ?? facts.observerLocalSceneFrame ?? Object.freeze({
 			up: Object.freeze([1, 0, 0]),
 			right: Object.freeze([0, 1, 0]),
 			forward: Object.freeze([0, 0, -1]),
@@ -658,10 +1003,30 @@ function makeObserverLocalSceneFrame(observerUpDirection) {
 	);
 
 	return Object.freeze({
+		kind: 'observer-local',
 		up: observerUpDirection,
 		right: Object.freeze(VectorMath.normalize(VectorMath.cross(tangent, observerUpDirection))),
 		forward: Object.freeze(VectorMath.scale(tangent, -1)),
 	});
+}
+
+/**
+ * Normalize the scene-to-model frame used by shader view-ray reconstruction.
+ *
+ * @param {unknown} sceneFrame - Supplies the configured frame mode.
+ * @param {object} observerLocalSceneFrame - Supplies the derived observer-local frame.
+ * @returns {object} Return normalized frame facts.
+ */
+function normalizeSceneFrame(sceneFrame, observerLocalSceneFrame) {
+	if (!sceneFrame || sceneFrame.kind === 'observer-local') {
+		return observerLocalSceneFrame;
+	}
+
+	if (sceneFrame.kind === 'model-space') {
+		return MODEL_SPACE_SCENE_FRAME;
+	}
+
+	throw new RangeError('SphericalEarthGeometry sceneFrame.kind must be "observer-local" or "model-space".');
 }
 
 /**
@@ -678,7 +1043,173 @@ function toVector3(value, label) {
 		return Object.freeze([vector[0], vector[1], vector[2]]);
 	}
 
+	if (Number.isFinite(value?.x) && Number.isFinite(value?.y) && Number.isFinite(value?.z)) {
+		return Object.freeze([value.x, value.y, value.z]);
+	}
+
 	throw new TypeError(`${label} must be a finite three-component vector.`);
+}
+
+/**
+ * Convert a production two-component packet or tuple to a vector tuple.
+ *
+ * @param {unknown} value - Supplies the candidate value.
+ * @param {string} label - Supplies the error label.
+ * @returns {readonly [number, number]} The vector tuple.
+ */
+function toVector2(value, label) {
+	const vector = Array.isArray(value) ? value : value?.coordinates;
+
+	if (Array.isArray(vector) && vector.length === 2 && vector.every(Number.isFinite)) {
+		return Object.freeze([vector[0], vector[1]]);
+	}
+
+	if (Number.isFinite(value?.x) && Number.isFinite(value?.z)) {
+		return Object.freeze([value.x, value.z]);
+	}
+
+	throw new TypeError(`${label} must be a finite two-component vector.`);
+}
+
+/**
+ * Resolve finite number with fallback.
+ *
+ * @param {unknown} value - Supplies candidate value.
+ * @param {number} fallback - Supplies fallback value.
+ * @param {string} label - Supplies error label.
+ * @returns {number} Finite number.
+ */
+function finiteNumberOrDefault(value, fallback, label) {
+	if (value == null) {
+		return fallback;
+	}
+
+	if (!Number.isFinite(value)) {
+		throw new TypeError(`${label} must be finite.`);
+	}
+
+	return value;
+}
+
+/**
+ * Resolve a non-negative finite value, or Infinity when explicitly supplied
+ * as the fallback.
+ *
+ * @param {unknown} value - Supplies candidate value.
+ * @param {number} fallback - Supplies fallback value.
+ * @param {string} label - Supplies error label.
+ * @returns {number} Non-negative value.
+ */
+function nonNegativeFiniteOrDefault(value, fallback, label) {
+	if (value == null) {
+		return fallback;
+	}
+
+	if (!Number.isFinite(value) || value < 0) {
+		throw new RangeError(`${label} must be a non-negative finite number.`);
+	}
+
+	return value;
+}
+
+/**
+ * Project a scene point radially to a sphere surface.
+ *
+ * @param {readonly [number, number, number]} point - Supplies scene point.
+ * @param {readonly [number, number, number]} center - Supplies sphere center.
+ * @param {number} radius - Supplies sphere radius.
+ * @param {readonly [number, number, number]} fallbackDirection - Supplies
+ * fallback surface normal when point equals center.
+ * @returns {SceneVector3} Surface point.
+ */
+function projectScenePointToSphereSurface(point, center, radius, fallbackDirection) {
+	const offset = VectorMath.subtract(point, center);
+	const normal = VectorMath.length(offset) > Number.EPSILON
+		? VectorMath.normalize(offset)
+		: normalizeDirection(fallbackDirection, 'Ground projection fallback direction');
+
+	return Object.freeze(VectorMath.add(center, VectorMath.scale(normal, radius)));
+}
+
+/**
+ * Intersect a scene ray with a scene-unit sphere.
+ *
+ * @param {readonly [number, number, number]} origin - Supplies ray origin.
+ * @param {UnitVector3} direction - Supplies normalized ray direction.
+ * @param {readonly [number, number, number]} center - Supplies sphere center.
+ * @param {number} radius - Supplies sphere radius.
+ * @returns {{ readonly distance: number, readonly point: SceneVector3 } | null} The
+ * nearest non-negative hit.
+ */
+function intersectSceneRayWithSphere(origin, direction, center, radius) {
+	const offset = VectorMath.subtract(origin, center);
+	const b = VectorMath.dot(offset, direction);
+	const c = VectorMath.dot(offset, offset) - radius ** 2;
+	const discriminant = b ** 2 - c;
+
+	if (discriminant < 0) {
+		return null;
+	}
+
+	const root = Math.sqrt(Math.max(0, discriminant));
+	const distances = [-b - root, -b + root]
+		.filter((distance) => Number.isFinite(distance) && distance >= -Number.EPSILON)
+		.map((distance) => Math.max(0, distance))
+		.sort((left, right) => left - right);
+
+	if (distances.length === 0) {
+		return null;
+	}
+
+	const distance = distances[0];
+	const point = Object.freeze(VectorMath.addScaled(origin, direction, distance));
+
+	return Object.freeze({ distance, point });
+}
+
+/**
+ * Decide whether a sphere hit belongs to the point's local ground patch.
+ *
+ * @param {object} request - Supplies hit and locality facts.
+ * @returns {boolean} True when the hit is local.
+ */
+function isLocalSphereProjectionHit(request) {
+	const {
+		hit,
+		localSurface,
+		centerSceneUnits,
+		maxLocalDistanceSceneUnits,
+		localNormalDotMin,
+	} = request;
+
+	if (
+		Number.isFinite(maxLocalDistanceSceneUnits)
+		&& hit.distance > maxLocalDistanceSceneUnits
+	) {
+		return false;
+	}
+
+	const localNormal = VectorMath.normalize(VectorMath.subtract(localSurface, centerSceneUnits));
+	const hitNormal = VectorMath.normalize(VectorMath.subtract(hit.point, centerSceneUnits));
+
+	return VectorMath.dot(localNormal, hitNormal) >= localNormalDotMin;
+}
+
+/**
+ * Project a scene direction onto the local tangent plane.
+ *
+ * @param {readonly [number, number, number]} direction - Supplies scene direction.
+ * @param {readonly [number, number, number]} up - Supplies normalized up.
+ * @returns {UnitVector3} Tangent direction.
+ */
+function projectOntoTangentPlane(direction, up) {
+	const projected = VectorMath.add(direction, VectorMath.scale(up, -VectorMath.dot(direction, up)));
+
+	if (VectorMath.length(projected) <= Number.EPSILON) {
+		throw new RangeError('Ground scene offset axes must not be parallel to observer up.');
+	}
+
+	return Object.freeze(VectorMath.normalize(projected));
 }
 
 /**
@@ -696,6 +1227,392 @@ function normalizeDirection(direction, label) {
 	}
 
 	return Object.freeze(VectorMath.normalize(vector));
+}
+
+/**
+ * Resolve meters per scene unit from request.
+ *
+ * @param {object} request - Supplies scale request.
+ * @param {string} ownerLabel - Supplies error owner label.
+ * @returns {number} Meters per scene unit.
+ */
+function metersPerSceneUnitFromRequest(request, ownerLabel) {
+	const metersPerSceneUnit = request.metersPerSceneUnit
+		?? request.distanceMultiplier
+		?? request.scaleDenominator
+		?? 1;
+
+	if (!Number.isFinite(metersPerSceneUnit) || metersPerSceneUnit <= 0) {
+		throw new TypeError(`${ownerLabel} requires a positive metersPerSceneUnit.`);
+	}
+
+	return metersPerSceneUnit;
+}
+
+/**
+ * Resolve optional camera position in Algorithm32 meters.
+ *
+ * @param {GeometrySceneDepthMaxMetersRequest} request - Supplies camera position facts.
+ * @returns {readonly [number, number, number] | null} Camera position in meters.
+ */
+function cameraPositionMetersOrNull(request, scenePointToModelPosition = null) {
+	if (request.cameraPositionMeters ?? request.cameraWorldPositionMeters) {
+		return toVector3(
+			request.cameraPositionMeters ?? request.cameraWorldPositionMeters,
+			'Camera position in meters',
+		);
+	}
+
+	const scenePosition = request.cameraPositionSceneUnits ?? request.camera?.position;
+
+	if (!scenePosition) {
+		return null;
+	}
+
+	const metersPerSceneUnit = request.metersPerSceneUnit ?? request.distanceMultiplier ?? request.scaleDenominator;
+
+	if (!Number.isFinite(metersPerSceneUnit) || metersPerSceneUnit <= 0) {
+		return null;
+	}
+
+	const vector = toVector3(scenePosition, 'Camera position in scene units');
+
+	if (typeof scenePointToModelPosition === 'function') {
+		return scenePointToModelPosition(vector, metersPerSceneUnit);
+	}
+
+	return Object.freeze([
+		vector[0] * metersPerSceneUnit,
+		vector[1] * metersPerSceneUnit,
+		vector[2] * metersPerSceneUnit,
+	]);
+}
+
+/**
+ * Resolve optional endpoint extent in Algorithm32 meters.
+ *
+ * @param {GeometrySceneDepthMaxMetersRequest} request - Supplies endpoint range facts.
+ * @param {readonly [number, number, number] | null} cameraPositionMeters - Supplies camera position.
+ * @returns {number | null} Endpoint extent in meters, or null.
+ */
+function endpointExtentMetersOrNull(request, cameraPositionMeters, scenePointToModelPosition = null) {
+	const endpointPositionMeters = endpointPositionMetersListOrNull(request, scenePointToModelPosition);
+
+	if (endpointPositionMeters && cameraPositionMeters) {
+		return endpointPositionMeters.reduce((maximum, position) => Math.max(
+			maximum,
+			VectorMath.distance(cameraPositionMeters, position),
+		), 0);
+	}
+
+	const endpointExtentMeters = request.endpointExtentMeters
+		?? request.endpointMaxDistanceMeters
+		?? request.endpointRangeMeters;
+
+	if (Number.isFinite(endpointExtentMeters) && endpointExtentMeters > 0) {
+		return endpointExtentMeters;
+	}
+
+	const endpointExtentSceneUnits = request.endpointExtentSceneUnits
+		?? request.endpointMaxDistanceSceneUnits
+		?? request.endpointRangeSceneUnits;
+
+	if (!Number.isFinite(endpointExtentSceneUnits) || endpointExtentSceneUnits <= 0) {
+		return null;
+	}
+
+	const metersPerSceneUnit = request.metersPerSceneUnit
+		?? request.distanceMultiplier
+		?? request.scaleDenominator;
+
+	if (!Number.isFinite(metersPerSceneUnit) || metersPerSceneUnit <= 0) {
+		return null;
+	}
+
+	return endpointExtentSceneUnits * metersPerSceneUnit;
+}
+
+/**
+ * Resolve optional endpoint positions in Algorithm32 meters.
+ *
+ * @param {GeometrySceneDepthMaxMetersRequest} request - Supplies endpoint positions.
+ * @returns {readonly (readonly [number, number, number])[] | null} Endpoint positions.
+ */
+function endpointPositionMetersListOrNull(request, scenePointToModelPosition = null) {
+	const endpointPositionsMeters = request.endpointPositionsMeters
+		?? request.endpointWorldPositionsMeters;
+
+	if (Array.isArray(endpointPositionsMeters)) {
+		return Object.freeze(endpointPositionsMeters.map((position) =>
+			toVector3(position, 'Endpoint position in meters')));
+	}
+
+	const endpointPositionMeters = request.endpointPositionMeters
+		?? request.endpointWorldPositionMeters;
+
+	if (endpointPositionMeters) {
+		return Object.freeze([toVector3(endpointPositionMeters, 'Endpoint position in meters')]);
+	}
+
+	const endpointPositionsSceneUnits = request.endpointPositionsSceneUnits
+		?? request.endpointWorldPositionsSceneUnits;
+	const endpointSceneUnitPositions = Array.isArray(endpointPositionsSceneUnits)
+		? endpointPositionsSceneUnits
+		: null;
+	const endpointPositionSceneUnits = request.endpointPositionSceneUnits
+		?? request.endpointWorldPositionSceneUnits;
+	const positions = endpointSceneUnitPositions
+		?? (endpointPositionSceneUnits ? [endpointPositionSceneUnits] : null);
+
+	if (!positions) {
+		return null;
+	}
+
+	const metersPerSceneUnit = request.metersPerSceneUnit
+		?? request.distanceMultiplier
+		?? request.scaleDenominator;
+
+	if (!Number.isFinite(metersPerSceneUnit) || metersPerSceneUnit <= 0) {
+		return null;
+	}
+
+	return Object.freeze(positions.map((position) => {
+		const vector = toVector3(position, 'Endpoint position in scene units');
+
+		if (typeof scenePointToModelPosition === 'function') {
+			return scenePointToModelPosition(vector, metersPerSceneUnit);
+		}
+
+		return Object.freeze([
+			vector[0] * metersPerSceneUnit,
+			vector[1] * metersPerSceneUnit,
+			vector[2] * metersPerSceneUnit,
+		]);
+	}));
+}
+
+/**
+ * Resolve a positive finite value with fallback.
+ *
+ * @param {unknown} value - Supplies candidate value.
+ * @param {number} fallback - Supplies fallback value.
+ * @returns {number} Positive finite value.
+ */
+function positiveFiniteOrDefault(value, fallback) {
+	return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+/**
+ * Normalize optional spherical ground visual mesh policy.
+ *
+ * @param {unknown} value - Supplies visual mesh request.
+ * @returns {object} Normalized visual mesh request.
+ */
+function normalizeGroundVisualMeshRequest(value) {
+	if (value == null) {
+		return Object.freeze({ kind: 'sphere' });
+	}
+
+	const candidate = typeof value === 'string' ? { kind: value } : value;
+	const kind = candidate?.kind ?? 'sphere';
+
+	if (!['sphere', 'local-spherical-patch'].includes(kind)) {
+		throw new RangeError('groundVisualMesh.kind must be "sphere" or "local-spherical-patch".');
+	}
+
+	return Object.freeze({
+		kind,
+		xExtentSceneUnits: candidate.xExtentSceneUnits,
+		zMinSceneUnits: candidate.zMinSceneUnits,
+		zMaxSceneUnits: candidate.zMaxSceneUnits,
+		surfaceLiftSceneUnits: candidate.surfaceLiftSceneUnits,
+	});
+}
+
+/**
+ * Create a local visual patch sampled from the analytic scaled sphere.
+ *
+ * @param {object} request - Supplies sphere, observer, and segmentation facts.
+ * @returns {THREE.BufferGeometry} Local spherical patch geometry.
+ */
+function createLocalSphericalGroundPatchGeometry(request) {
+	const {
+		radiusSceneUnits,
+		widthSegments,
+		heightSegments,
+		observerAltitudeSceneUnits,
+		centerSceneUnits,
+		groundVisualMesh,
+	} = request;
+	const horizonDistanceSceneUnits = Math.sqrt(Math.max(
+		0,
+		(radiusSceneUnits + observerAltitudeSceneUnits) ** 2 - radiusSceneUnits ** 2,
+	));
+	const surfaceLiftSceneUnits = nonNegativeFiniteOrDefault(
+		groundVisualMesh.surfaceLiftSceneUnits,
+		0,
+		'groundVisualMesh.surfaceLiftSceneUnits',
+	);
+	const surfaceRadiusSceneUnits = radiusSceneUnits + surfaceLiftSceneUnits;
+	const xExtent = positiveFiniteOrDefault(
+		groundVisualMesh.xExtentSceneUnits,
+		Math.max(horizonDistanceSceneUnits * 1.2, 40),
+	);
+	const zMin = Number.isFinite(groundVisualMesh.zMinSceneUnits)
+		? groundVisualMesh.zMinSceneUnits
+		: Math.min(-horizonDistanceSceneUnits * 1.8, -80);
+	const zMax = Number.isFinite(groundVisualMesh.zMaxSceneUnits)
+		? groundVisualMesh.zMaxSceneUnits
+		: Math.max(horizonDistanceSceneUnits * 0.25, 12);
+	const positions = [];
+	const indices = [];
+
+	for (let zIndex = 0; zIndex <= heightSegments; zIndex += 1) {
+		const zRatio = zIndex / heightSegments;
+		const z = zMin + (zMax - zMin) * zRatio;
+
+		for (let xIndex = 0; xIndex <= widthSegments; xIndex += 1) {
+			const xRatio = xIndex / widthSegments;
+			const x = -xExtent + xExtent * 2 * xRatio;
+
+			positions.push(x, sphereSurfaceYAt({
+				x,
+				z,
+				radiusSceneUnits: surfaceRadiusSceneUnits,
+				centerSceneUnits,
+			}), z);
+		}
+	}
+
+	for (let zIndex = 0; zIndex < heightSegments; zIndex += 1) {
+		for (let xIndex = 0; xIndex < widthSegments; xIndex += 1) {
+			const a = zIndex * (widthSegments + 1) + xIndex;
+			const b = a + 1;
+			const c = (zIndex + 1) * (widthSegments + 1) + xIndex;
+			const d = c + 1;
+
+			indices.push(a, c, b, b, c, d);
+		}
+	}
+
+	const geometry = new THREE.BufferGeometry();
+
+	geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+	geometry.setIndex(indices);
+	geometry.computeVertexNormals();
+	geometry.userData.algorithm32GroundPatch = Object.freeze({
+		kind: 'local-spherical-ground-patch',
+		surfacePolicy: 'vertices-sampled-from-analytic-scaled-sphere',
+		xRangeSceneUnits: Object.freeze([-xExtent, xExtent]),
+		zRangeSceneUnits: Object.freeze([zMin, zMax]),
+		xSegments: widthSegments,
+		zSegments: heightSegments,
+		surfaceLiftSceneUnits,
+	});
+
+	return geometry;
+}
+
+/**
+ * Resolve the visible top half of a Y-up sphere at a local x/z point.
+ *
+ * @param {object} request - Supplies local x/z and sphere radius.
+ * @returns {number} Surface y in scene units.
+ */
+function sphereSurfaceYAt({ x, z, radiusSceneUnits, centerSceneUnits }) {
+	const horizontalDistanceSquared = x ** 2 + z ** 2;
+	const offset = Math.sqrt(Math.max(0, radiusSceneUnits ** 2 - horizontalDistanceSquared));
+
+	return centerSceneUnits[1] + offset;
+}
+
+/**
+ * Create the visual ground material requested by the integration.
+ *
+ * @param {GeometryThreeEndpointObjectsRequest} request - Supplies material options.
+ * @returns {THREE.Material} The created material.
+ */
+function createVisualMaterial(request) {
+	const displayRgba = displayRgbaOrNull(request.visualMaterialDisplayRgba);
+	const materialParameters = {
+		color: displayRgba
+			? new THREE.Color(displayRgba[0] / 255, displayRgba[1] / 255, displayRgba[2] / 255)
+			: request.visualMaterialColor ?? 0x4fa33d,
+	};
+
+	if (displayRgba && displayRgba[3] < 255) {
+		materialParameters.transparent = true;
+		materialParameters.opacity = displayRgba[3] / 255;
+	}
+
+	return request.visualMaterialLighting === 'lambert'
+		? new THREE.MeshLambertMaterial(materialParameters)
+		: new THREE.MeshBasicMaterial(materialParameters);
+}
+
+/**
+ * Normalize optional endpoint shadow receiver request.
+ *
+ * @param {unknown} value - Supplies shadow request.
+ * @returns {object | null} Normalized shadow request.
+ */
+function geometryEndpointShadowRequestOrNull(value) {
+	if (!value || value.enabled !== true) {
+		return null;
+	}
+
+	return Object.freeze({
+		enabled: true,
+		receiveShadow: value.receiveShadow !== false,
+		shadowPolicy: value.shadowPolicy ?? 'geometry-ground-receives-source-shadow-map',
+	});
+}
+
+/**
+ * Resolve a positive integer with a default.
+ *
+ * @param {unknown} value - Supplies candidate value.
+ * @param {number} defaultValue - Supplies default value.
+ * @param {string} label - Supplies error label.
+ * @returns {number} Positive integer value.
+ */
+function positiveIntegerOrDefault(value, defaultValue, label) {
+	const candidate = value ?? defaultValue;
+
+	if (!Number.isFinite(candidate) || candidate < 1) {
+		throw new RangeError(`${label} must be a positive finite number.`);
+	}
+
+	return Math.max(1, Math.floor(candidate));
+}
+
+/**
+ * Normalize optional display rgba values.
+ *
+ * @param {unknown} value - Supplies candidate rgba tuple.
+ * @returns {readonly [number, number, number, number] | null} Normalized rgba.
+ */
+function displayRgbaOrNull(value) {
+	if (!Array.isArray(value) || value.length < 3 || !value.every(Number.isFinite)) {
+		return null;
+	}
+
+	return Object.freeze([
+		clampByte(value[0]),
+		clampByte(value[1]),
+		clampByte(value[2]),
+		Number.isFinite(value[3]) ? clampByte(value[3]) : 255,
+	]);
+}
+
+/**
+ * Clamp a display channel to a byte.
+ *
+ * @param {number} value - Supplies channel value.
+ * @returns {number} Byte channel.
+ */
+function clampByte(value) {
+	return Math.max(0, Math.min(255, Math.round(value)));
 }
 
 /**

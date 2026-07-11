@@ -519,6 +519,9 @@ export class ShaderBuilder {
 				uniforms,
 				sceneInputCapture,
 				logger: request.setup.logger ?? null,
+				performanceCallback: request.setup.performanceCallback,
+				performanceSampleIntervalFrames: request.setup.performanceSampleIntervalFrames,
+				performanceMaxPendingQueries: request.setup.performanceMaxPendingQueries,
 			});
 
 			if (sceneInputCapture) {
@@ -576,20 +579,29 @@ export class ShaderBuilder {
 		const needsDepthTexture = assemblyUsesValueKey(assembly, 'runtime.sceneDepthTexture');
 		const needsHitTexture = assemblyUsesValueKey(assembly, 'runtime.sceneHitTexture');
 		const needsViewportPixels = assemblyUsesValueKey(assembly, 'runtime.viewportPixels');
+		const needsSceneDepthMaxMeters = assemblyUsesValueKey(assembly, 'geometry.sceneDepthMaxMeters');
 		const missingDepthTexture = needsDepthTexture
 			&& !hasAvailableBindingValue(bindingValues, 'runtime.sceneDepthTexture');
 		const missingHitTexture = needsHitTexture
 			&& !hasAvailableBindingValue(bindingValues, 'runtime.sceneHitTexture');
 		const missingViewportPixels = needsViewportPixels
 			&& !hasAvailableBindingValue(bindingValues, 'runtime.viewportPixels');
+		const missingSceneDepthMaxMeters = needsSceneDepthMaxMeters
+			&& !hasAvailableBindingValue(bindingValues, 'geometry.sceneDepthMaxMeters');
+		let captureConfig = null;
 		let sceneInputCapture = null;
 
 		if (missingDepthTexture || missingHitTexture) {
+			captureConfig = runtimeSceneInputCaptureConfig(request, this.model.geometry);
+
 			sceneInputCapture = new SceneInputCapture({
 				THREE: request.setup.THREE,
 				scene: request.setup.scene,
 				camera: request.setup.camera,
-				...runtimeSceneInputCaptureConfig(request),
+				performanceCallback: request.setup.performanceCallback,
+				performanceSampleIntervalFrames: request.setup.performanceSampleIntervalFrames,
+				performanceMaxPendingQueries: request.setup.performanceMaxPendingQueries,
+				...captureConfig,
 			});
 			const captureValues = sceneInputCapture.bindingValues();
 
@@ -606,6 +618,13 @@ export class ShaderBuilder {
 			}
 		} else if (missingViewportPixels) {
 			bindingPatch['runtime.viewportPixels'] = createViewportPixelsBindingValue(request.setup);
+		}
+
+		if (missingSceneDepthMaxMeters) {
+			if (!captureConfig) {
+				captureConfig = runtimeSceneInputCaptureConfig(request, this.model.geometry);
+			}
+			bindingPatch['geometry.sceneDepthMaxMeters'] = captureConfig.sceneDepthMaxMeters;
 		}
 
 		return Object.freeze({
@@ -836,8 +855,9 @@ function runtimeInitialStateBlock() {
 	return `ShaderState createInitialShaderState(vec2 uv) {
 	ShaderState state;
 	state.uv = uv;
-	vec4 sceneDepthSample = texture(uSceneDepthTexture, uv);
-	vec4 sceneHitSample = texture(uSceneHitTexture, uv);
+	ivec2 sceneInputPixel = clamp(ivec2(floor(uv * uViewportPixels)), ivec2(0), ivec2(uViewportPixels) - ivec2(1));
+	vec4 sceneDepthSample = texelFetch(uSceneDepthTexture, sceneInputPixel, 0);
+	vec4 sceneHitSample = texelFetch(uSceneHitTexture, sceneInputPixel, 0);
 	vec3 depthBytes = floor(sceneDepthSample.rgb * 255.0 + 0.5);
 	state.sceneDepth = dot(depthBytes, vec3(65536.0, 256.0, 1.0)) / 16777214.0;
 	state.sceneHitMask = sceneHitSample.r > 0.5 ? 1.0 : 0.0;
@@ -848,7 +868,7 @@ function runtimeInitialStateBlock() {
 	state.incidentRadiance = zeroSpectral();
 	state.pathRadiance = zeroSpectral();
 	state.transmittance = oneSpectral();
-	state.sceneDisplayRgb = texture(uSceneColorTexture, uv).rgb;
+	state.sceneDisplayRgb = texelFetch(uSceneColorTexture, sceneInputPixel, 0).rgb;
 	state.outputRgba = vec4(state.sceneDisplayRgb, 1.0);
 	return state;
 }`;
@@ -1035,26 +1055,59 @@ function assemblyUsesValueKey(assembly, valueKey) {
  * @param {ShaderBuildRequest} request - Supplies the build request.
  * @returns {object} Return normalized capture config.
  */
-function runtimeSceneInputCaptureConfig(request) {
+function runtimeSceneInputCaptureConfig(request, geometry) {
 	const [width, height] = initialViewportPixels(request.setup);
 	const shaderConfig = request.config?.config?.shader ?? {};
 	const setup = request.setup;
+	const distanceMultiplier = positiveFiniteOrDefault(
+		setup.distanceMultiplier
+			?? setup.metersPerSceneUnit
+			?? shaderConfig.distanceMultiplier
+			?? shaderConfig.metersPerSceneUnit,
+		1,
+	);
 
 	return {
 		width,
 		height,
 		sceneDepthMaxMeters: positiveFiniteOrDefault(
-			setup.sceneDepthMaxMeters ?? shaderConfig.sceneDepthMaxMeters,
+			setup.sceneDepthMaxMeters
+				?? shaderConfig.sceneDepthMaxMeters
+				?? geometrySceneDepthMaxMeters(geometry, setup, distanceMultiplier),
 			100000,
 		),
-		distanceMultiplier: positiveFiniteOrDefault(
-			setup.distanceMultiplier
-				?? setup.metersPerSceneUnit
-				?? shaderConfig.distanceMultiplier
-				?? shaderConfig.metersPerSceneUnit,
-			1,
-		),
+		distanceMultiplier,
 	};
+}
+
+/**
+ * Resolve geometry-owned scene-depth cap fallback.
+ *
+ * @param {GeometryModel | undefined} geometry - Supplies configured geometry.
+ * @param {ShaderSetupRequest} setup - Supplies setup-time runtime facts.
+ * @param {number} distanceMultiplier - Supplies scene units to meters scale.
+ * @returns {number | null} Geometry-owned cap or null.
+ */
+function geometrySceneDepthMaxMeters(geometry, setup, distanceMultiplier) {
+	if (typeof geometry?.resolveSceneDepthMaxMeters !== 'function') {
+		return null;
+	}
+
+	const cameraPositionSceneUnits = setup.camera?.position
+		? Object.freeze([
+			setup.camera.position.x,
+			setup.camera.position.y,
+			setup.camera.position.z,
+		])
+		: null;
+	const value = geometry.resolveSceneDepthMaxMeters({
+		camera: setup.camera,
+		cameraPositionSceneUnits,
+		metersPerSceneUnit: distanceMultiplier,
+		distanceMultiplier,
+	});
+
+	return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 /**

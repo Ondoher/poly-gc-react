@@ -151,6 +151,7 @@ describe('FlatSimulationSceneModel', () => {
 		expect(scene.observer.view).toEqual(DEFAULT_OBSERVER_VIEW);
 		expect(scene.observer.position.y).toBeCloseTo(0.03048, 8);
 		expect(scene.observer.view.altitudeKm).toBe(0);
+		expect(scene.observer.view.cameraHeightKm).toBe(0.01);
 	});
 
 	it('places deterministic mountain simulation rectangles around the observer', () => {

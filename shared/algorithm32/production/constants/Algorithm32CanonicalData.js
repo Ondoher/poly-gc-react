@@ -110,6 +110,132 @@ export const STEP032_ARTIFACT_NUMERICAL_CONTROLS = Object.freeze({
 });
 
 /**
+ * Store production shader quality profiles promoted from the reconciliation
+ * performance benchmark lane.
+ *
+ * @type {readonly ShaderQualityProfile[]}
+ */
+export const SHADER_QUALITY_PROFILES = Object.freeze([
+	freezeQualityProfile({
+		id: 'ideal',
+		label: 'Ideal',
+		role: 'reference',
+		numericalControls: RUNTIME_NUMERICAL_CONTROLS,
+		notes: 'Full current Algorithm32 runtime controls.',
+	}),
+	freezeQualityProfile({
+		id: 'balanced',
+		label: 'Balanced',
+		role: 'candidate',
+		numericalControls: {
+			pathIntervalCount: 28,
+			sourceTransmittanceIntervalCount: 14,
+			incidentDirectionCount: 24,
+			incidentAltitudeBinCount: 36,
+		},
+		notes: 'Reduced dominant transport and incident-cache loop counts.',
+	}),
+	freezeQualityProfile({
+		id: 'balanced-cache-interp',
+		label: 'Balanced Cache Interp',
+		role: 'candidate',
+		numericalControls: {
+			pathIntervalCount: 28,
+			sourceTransmittanceIntervalCount: 14,
+			incidentDirectionCount: 24,
+			incidentAltitudeBinCount: 36,
+		},
+		cacheOptimization: Object.freeze({
+			altitudeLookup: Object.freeze({
+				kind: 'linear-altitude-v1',
+			}),
+		}),
+		notes: 'Balanced counts with linear interpolation between distant incident-cache altitude bins.',
+	}),
+	freezeQualityProfile({
+		id: 'adaptive-balanced',
+		label: 'Adaptive Balanced',
+		role: 'candidate',
+		numericalControls: {
+			pathIntervalCount: 28,
+			sourceTransmittanceIntervalCount: 14,
+			incidentDirectionCount: 24,
+			incidentAltitudeBinCount: 36,
+		},
+		transportOptimization: Object.freeze({
+			pathSampleDistribution: Object.freeze({
+				kind: 'tangent-density-adaptive-v1',
+			}),
+		}),
+		notes: 'Balanced counts with tangent/density-adaptive view-path samples.',
+	}),
+	freezeQualityProfile({
+		id: 'adaptive-balanced-soft',
+		label: 'Soft Adaptive Balanced',
+		role: 'candidate',
+		numericalControls: {
+			pathIntervalCount: 28,
+			sourceTransmittanceIntervalCount: 14,
+			incidentDirectionCount: 24,
+			incidentAltitudeBinCount: 36,
+		},
+		transportOptimization: Object.freeze({
+			pathSampleDistribution: Object.freeze({
+				kind: 'tangent-density-adaptive-soft-v1',
+			}),
+		}),
+		notes: 'Balanced counts with a softer blend toward tangent/density-adaptive samples.',
+	}),
+	freezeQualityProfile({
+		id: 'fast',
+		label: 'Fast',
+		role: 'candidate',
+		numericalControls: STEP032_ARTIFACT_NUMERICAL_CONTROLS,
+		notes: 'Aggressive Step032 runtime controls.',
+	}),
+	freezeQualityProfile({
+		id: 'fast-cache-interp',
+		label: 'Fast Cache Interp',
+		role: 'candidate',
+		numericalControls: STEP032_ARTIFACT_NUMERICAL_CONTROLS,
+		cacheOptimization: Object.freeze({
+			altitudeLookup: Object.freeze({
+				kind: 'linear-altitude-v1',
+			}),
+		}),
+		notes: 'Fast counts with linear interpolation between distant incident-cache altitude bins.',
+	}),
+	freezeQualityProfile({
+		id: 'draft',
+		label: 'Draft',
+		role: 'candidate',
+		numericalControls: {
+			pathIntervalCount: 12,
+			sourceTransmittanceIntervalCount: 6,
+			incidentDirectionCount: 9,
+			incidentAltitudeBinCount: 16,
+		},
+		notes: 'Very low-cost diagnostic runtime controls.',
+	}),
+]);
+
+/**
+ * Resolve a production shader quality profile by id.
+ *
+ * @param {string} profileId - Supplies the requested profile id.
+ * @returns {ShaderQualityProfile} Return the profile.
+ */
+export function shaderQualityProfileById(profileId) {
+	const profile = SHADER_QUALITY_PROFILES.find((entry) => entry.id === profileId);
+
+	if (!profile) {
+		throw new Error(`Unknown shader quality profile: ${profileId}`);
+	}
+
+	return profile;
+}
+
+/**
  * Create one immutable canonical spectral channel.
  *
  * @param {string} name - Supplies the accepted channel name.
@@ -129,5 +255,57 @@ function freezeSpectralChannel(name, wavelengthValue, solarIrradiance) {
 			value: 31.333333333333332,
 			units: 'nanometers',
 		}),
+	});
+}
+
+/**
+ * Freeze a shader quality profile and attach its work estimate.
+ *
+ * @param {object} profile - Supplies profile fields.
+ * @returns {ShaderQualityProfile} Return the frozen profile.
+ */
+function freezeQualityProfile(profile) {
+	const numericalControls = Object.freeze({ ...profile.numericalControls });
+	const workEstimate = estimateShaderQualityWork(numericalControls);
+	const idealWork = estimateShaderQualityWork(RUNTIME_NUMERICAL_CONTROLS);
+
+	return Object.freeze({
+		...profile,
+		numericalControls,
+		workEstimate,
+		estimatedWorkRatioToIdeal: workEstimate.totalDominantSpectralSteps
+			/ idealWork.totalDominantSpectralSteps,
+		transportOptimization: profile.transportOptimization ?? null,
+		cacheOptimization: profile.cacheOptimization ?? null,
+	});
+}
+
+/**
+ * Estimate the dominant per-pixel spectral loop work for one profile.
+ *
+ * @param {Algorithm32NumericalControls} controls - Supplies numerical controls.
+ * @returns {ShaderQualityWorkEstimate} Return work estimate.
+ */
+function estimateShaderQualityWork(controls) {
+	const pathPointCount = controls.pathIntervalCount + 1;
+	const sourceTransmittancePointCount = controls.sourceTransmittanceIntervalCount + 1;
+	const spectralChannelCount = CANONICAL_SPECTRAL_CHANNELS.length;
+	const incidentSpectralSteps = pathPointCount
+		* controls.incidentDirectionCount
+		* spectralChannelCount;
+	const sourceTransmittanceSpectralSteps = pathPointCount
+		* sourceTransmittancePointCount
+		* spectralChannelCount;
+	const totalDominantSpectralSteps = incidentSpectralSteps + sourceTransmittanceSpectralSteps;
+
+	return Object.freeze({
+		pathPointCount,
+		sourceTransmittancePointCount,
+		spectralChannelCount,
+		incidentDirectionCount: controls.incidentDirectionCount,
+		incidentAltitudeBinCount: controls.incidentAltitudeBinCount,
+		incidentSpectralSteps,
+		sourceTransmittanceSpectralSteps,
+		totalDominantSpectralSteps,
 	});
 }

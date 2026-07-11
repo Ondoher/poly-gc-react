@@ -1,3 +1,6 @@
+import * as THREE from 'three';
+
+import ExactFlatGroundObject from '../three/ExactFlatGroundObject.js';
 import VectorMath from '../utils/VectorMath.js';
 
 const EPSILON = 1e-9;
@@ -429,6 +432,54 @@ export class FlatEarthGeometry {
 	}
 
 	/**
+	 * Map an app-authored ground offset to the configured Three scene point.
+	 *
+	 * @param {unknown} offset - Supplies horizontal scene offset `[x, z]`.
+	 * @param {object} [request] - Supplies optional height above ground.
+	 * @returns {Position} Configured Three scene point.
+	 */
+	mapGroundOffsetToScenePoint(offset, request = {}) {
+		const vector = toVector2(offset, 'Ground scene offset');
+		const heightAboveGroundSceneUnits = finiteNumberOrDefault(
+			request.heightAboveGroundSceneUnits,
+			0,
+			'heightAboveGroundSceneUnits',
+		);
+
+		return Object.freeze([
+			vector[0],
+			heightAboveGroundSceneUnits,
+			vector[1],
+		]);
+	}
+
+	/**
+	 * Project a scene point to the flat ground plane along a scene direction.
+	 *
+	 * @param {unknown} point - Supplies the scene point to project.
+	 * @param {unknown} direction - Supplies the scene projection direction.
+	 * @returns {SceneVector3} Projected ground point in scene units.
+	 */
+	projectScenePointToGroundAlongDirection(point, direction) {
+		const vector = toVector3(point, 'Ground projection scene point');
+		const directionVector = normalizeDirection(direction, 'Ground projection scene direction');
+
+		if (Math.abs(directionVector[1]) <= Number.EPSILON) {
+			return Object.freeze([vector[0], 0, vector[2]]);
+		}
+
+		const distance = -vector[1] / directionVector[1];
+
+		if (!Number.isFinite(distance) || distance < 0) {
+			return Object.freeze([vector[0], 0, vector[2]]);
+		}
+
+		const projected = VectorMath.addScaled(vector, directionVector, distance);
+
+		return Object.freeze([projected[0], 0, projected[2]]);
+	}
+
+	/**
 	 * Map flat model-space position to observer-local scene point.
 	 *
 	 * @param {unknown} position - Supplies model-space position.
@@ -440,6 +491,138 @@ export class FlatEarthGeometry {
 		const metersPerSceneUnit = metersPerSceneUnitFromRequest(request);
 
 		return this._modelPositionToObserverLocalScenePoint(vector, metersPerSceneUnit);
+	}
+
+	/**
+	 * Create geometry-owned Three ground endpoint objects.
+	 *
+	 * @param {GeometryThreeEndpointObjectsRequest} request - Supplies scene
+	 * scale, material, segmentation, and metadata overrides.
+	 * @returns {GeometryThreeEndpointObjects} The geometry-owned endpoint objects.
+	 */
+	createThreeEndpointObjects(request = {}) {
+		const metersPerSceneUnit = metersPerSceneUnitFromRequest(request);
+		const groundExtentMeters = positiveNumberOrDefault(
+			request.groundExtentMeters,
+			flatGroundExtentMeters(this._configuration),
+			'groundExtentMeters',
+		);
+		const widthSceneUnits = groundExtentMeters / metersPerSceneUnit;
+		const depthSceneUnits = groundExtentMeters / metersPerSceneUnit;
+		const centerSceneUnits = this._modelPositionToObserverLocalScenePoint(
+			[
+				this._configuration.observerPositionMeters[0],
+				this._configuration.observerPositionMeters[1],
+				0,
+			],
+			metersPerSceneUnit,
+		);
+		const spectralReferenceId = request.spectralReferenceId ?? 'algorithm32-flat-ground-object-matte';
+		const widthSegments = positiveIntegerOrDefault(request.widthSegments, 32, 'widthSegments');
+		const heightSegments = positiveIntegerOrDefault(request.heightSegments, 32, 'heightSegments');
+		const shadow = geometryEndpointShadowRequestOrNull(request.shadow);
+		const visualObject = new THREE.Mesh(
+			new THREE.PlaneGeometry(
+				widthSceneUnits,
+				depthSceneUnits,
+				widthSegments,
+				heightSegments,
+			),
+			createVisualMaterial(request),
+		);
+		const raycastObject = new ExactFlatGroundObject({
+			centerSceneUnits,
+			widthSceneUnits,
+			depthSceneUnits,
+			metersPerSceneUnit,
+			spectralReferenceId,
+			name: request.name ?? 'flat-earth-ground-endpoint',
+		});
+
+		visualObject.name = `${request.name ?? 'flat-earth-ground'}-visual`;
+		visualObject.rotation.x = -Math.PI / 2;
+		visualObject.position.set(centerSceneUnits[0], centerSceneUnits[1], centerSceneUnits[2]);
+		visualObject.userData.algorithm32SceneInput = true;
+		visualObject.userData.algorithm32EndpointRole = 'geometry-ground-visual';
+		visualObject.userData.endpointKind = 'geometry-ground-boundary';
+		visualObject.userData.spectralReferenceId = spectralReferenceId;
+		visualObject.userData.metersPerSceneUnit = metersPerSceneUnit;
+		if (shadow) {
+			visualObject.receiveShadow = shadow.receiveShadow;
+			visualObject.userData.shadowPolicy = shadow.shadowPolicy;
+			visualObject.userData.shadowReceiverPolicy = 'geometry-owned-ground-receives-three-shadow-map';
+		}
+
+		return Object.freeze({
+			visualObjects: Object.freeze([visualObject]),
+			raycastObjects: Object.freeze([raycastObject]),
+			metadata: Object.freeze({
+				owner: 'FlatEarthGeometry',
+				endpointKind: 'geometry-ground-boundary',
+				shape: 'plane',
+				groundPlane: 'z-equals-zero',
+				groundExtentMeters,
+				widthSceneUnits,
+				depthSceneUnits,
+				centerSceneUnits,
+				observerPositionMeters: this._configuration.observerPositionMeters,
+				metersPerSceneUnit,
+				spectralReferenceId,
+				widthSegments,
+				heightSegments,
+				shadow: shadow ? Object.freeze({ ...shadow }) : null,
+			}),
+		});
+	}
+
+	/**
+	 * Resolve the scene-depth capture cap for geometry-owned flat endpoints.
+	 *
+	 * @param {GeometrySceneDepthMaxMetersRequest} request - Supplies optional
+	 * endpoint extent and minimum cap policy.
+	 * @returns {number} Scene-depth cap in Algorithm32 meters.
+	 */
+	resolveSceneDepthMaxMeters(request = {}) {
+		const groundExtentMeters = positiveNumberOrDefault(
+			request.groundExtentMeters,
+			flatGroundExtentMeters(this._configuration),
+			'groundExtentMeters',
+		);
+		const halfExtentMeters = groundExtentMeters / 2;
+		const cameraPositionMeters = cameraPositionMetersOrNull(request, this._configuration.observerPositionMeters)
+			?? this._configuration.observerPositionMeters;
+		const groundCenterMeters = Object.freeze([
+			this._configuration.observerPositionMeters[0],
+			this._configuration.observerPositionMeters[1],
+			0,
+		]);
+		const farthestGroundEndpointMeters = Math.max(
+			VectorMath.distance(cameraPositionMeters, [
+				groundCenterMeters[0] - halfExtentMeters,
+				groundCenterMeters[1] - halfExtentMeters,
+				groundCenterMeters[2],
+			]),
+			VectorMath.distance(cameraPositionMeters, [
+				groundCenterMeters[0] - halfExtentMeters,
+				groundCenterMeters[1] + halfExtentMeters,
+				groundCenterMeters[2],
+			]),
+			VectorMath.distance(cameraPositionMeters, [
+				groundCenterMeters[0] + halfExtentMeters,
+				groundCenterMeters[1] - halfExtentMeters,
+				groundCenterMeters[2],
+			]),
+			VectorMath.distance(cameraPositionMeters, [
+				groundCenterMeters[0] + halfExtentMeters,
+				groundCenterMeters[1] + halfExtentMeters,
+				groundCenterMeters[2],
+			]),
+		);
+
+		return Math.max(
+			positiveNumberOrDefault(request.minimumMeters, 1, 'minimumMeters'),
+			farthestGroundEndpointMeters,
+		);
 	}
 
 	/**
@@ -1028,7 +1211,52 @@ function toVector3(value, label) {
 		return Object.freeze([vector[0], vector[1], vector[2]]);
 	}
 
+	if (Number.isFinite(value?.x) && Number.isFinite(value?.y) && Number.isFinite(value?.z)) {
+		return Object.freeze([value.x, value.y, value.z]);
+	}
+
 	throw new TypeError(`${label} must be a finite three-component vector.`);
+}
+
+/**
+ * Convert a production two-component packet or tuple to a vector tuple.
+ *
+ * @param {unknown} value - Supplies the candidate value.
+ * @param {string} label - Supplies the error label.
+ * @returns {readonly [number, number]} The vector tuple.
+ */
+function toVector2(value, label) {
+	const vector = Array.isArray(value) ? value : value?.coordinates;
+
+	if (Array.isArray(vector) && vector.length === 2 && vector.every(Number.isFinite)) {
+		return Object.freeze([vector[0], vector[1]]);
+	}
+
+	if (Number.isFinite(value?.x) && Number.isFinite(value?.z)) {
+		return Object.freeze([value.x, value.z]);
+	}
+
+	throw new TypeError(`${label} must be a finite two-component vector.`);
+}
+
+/**
+ * Resolve finite number with fallback.
+ *
+ * @param {unknown} value - Supplies candidate value.
+ * @param {number} fallback - Supplies fallback value.
+ * @param {string} label - Supplies error label.
+ * @returns {number} Finite number.
+ */
+function finiteNumberOrDefault(value, fallback, label) {
+	if (value == null) {
+		return fallback;
+	}
+
+	if (!Number.isFinite(value)) {
+		throw new TypeError(`${label} must be finite.`);
+	}
+
+	return value;
 }
 
 /**
@@ -1055,13 +1283,177 @@ function normalizeDirection(direction, label) {
  * @returns {number} Meters per scene unit.
  */
 function metersPerSceneUnitFromRequest(request) {
-	const metersPerSceneUnit = request.metersPerSceneUnit ?? request.scaleDenominator ?? 1;
+	const metersPerSceneUnit = request.metersPerSceneUnit
+		?? request.distanceMultiplier
+		?? request.scaleDenominator
+		?? 1;
 
 	if (!Number.isFinite(metersPerSceneUnit) || metersPerSceneUnit <= 0) {
 		throw new TypeError('Flat geometry scene conversion requires a positive metersPerSceneUnit.');
 	}
 
 	return metersPerSceneUnit;
+}
+
+/**
+ * Resolve optional camera position in flat model-space meters.
+ *
+ * @param {GeometrySceneDepthMaxMetersRequest} request - Supplies camera facts.
+ * @param {Position} observerPositionMeters - Supplies the observer model point.
+ * @returns {readonly [number, number, number] | null} Camera position in meters.
+ */
+function cameraPositionMetersOrNull(request, observerPositionMeters) {
+	if (request.cameraPositionMeters ?? request.cameraWorldPositionMeters) {
+		return toVector3(
+			request.cameraPositionMeters ?? request.cameraWorldPositionMeters,
+			'Camera position in meters',
+		);
+	}
+
+	const scenePosition = request.cameraPositionSceneUnits ?? request.camera?.position;
+
+	if (!scenePosition) {
+		return null;
+	}
+
+	const metersPerSceneUnit = request.metersPerSceneUnit ?? request.distanceMultiplier ?? request.scaleDenominator;
+
+	if (!Number.isFinite(metersPerSceneUnit) || metersPerSceneUnit <= 0) {
+		return null;
+	}
+
+	const vector = toVector3(scenePosition, 'Camera position in scene units');
+
+	return Object.freeze([
+		observerPositionMeters[0] + vector[0] * metersPerSceneUnit,
+		observerPositionMeters[1] - vector[2] * metersPerSceneUnit,
+		vector[1] * metersPerSceneUnit,
+	]);
+}
+
+/**
+ * Create the visual ground material requested by the integration.
+ *
+ * @param {GeometryThreeEndpointObjectsRequest} request - Supplies material options.
+ * @returns {THREE.Material} The created material.
+ */
+function createVisualMaterial(request) {
+	const displayRgba = displayRgbaOrNull(request.visualMaterialDisplayRgba);
+	const materialParameters = {
+		color: displayRgba
+			? new THREE.Color(displayRgba[0] / 255, displayRgba[1] / 255, displayRgba[2] / 255)
+			: request.visualMaterialColor ?? 0x4fa33d,
+		side: THREE.DoubleSide,
+	};
+
+	if (displayRgba && displayRgba[3] < 255) {
+		materialParameters.transparent = true;
+		materialParameters.opacity = displayRgba[3] / 255;
+	}
+
+	return request.visualMaterialLighting === 'lambert'
+		? new THREE.MeshLambertMaterial(materialParameters)
+		: new THREE.MeshBasicMaterial(materialParameters);
+}
+
+/**
+ * Normalize optional endpoint shadow receiver request.
+ *
+ * @param {unknown} value - Supplies shadow request.
+ * @returns {object | null} Normalized shadow request.
+ */
+function geometryEndpointShadowRequestOrNull(value) {
+	if (!value || value.enabled !== true) {
+		return null;
+	}
+
+	return Object.freeze({
+		enabled: true,
+		receiveShadow: value.receiveShadow !== false,
+		shadowPolicy: value.shadowPolicy ?? 'geometry-ground-receives-source-shadow-map',
+	});
+}
+
+/**
+ * Resolve a positive number with a default.
+ *
+ * @param {unknown} value - Supplies candidate value.
+ * @param {number} defaultValue - Supplies default value.
+ * @param {string} label - Supplies error label.
+ * @returns {number} Positive number value.
+ */
+function positiveNumberOrDefault(value, defaultValue, label) {
+	const candidate = value ?? defaultValue;
+
+	if (!Number.isFinite(candidate) || candidate <= 0) {
+		throw new RangeError(`${label} must be a positive finite number.`);
+	}
+
+	return candidate;
+}
+
+/**
+ * Resolve a positive integer with a default.
+ *
+ * @param {unknown} value - Supplies candidate value.
+ * @param {number} defaultValue - Supplies default value.
+ * @param {string} label - Supplies error label.
+ * @returns {number} Positive integer value.
+ */
+function positiveIntegerOrDefault(value, defaultValue, label) {
+	const candidate = value ?? defaultValue;
+
+	if (!Number.isFinite(candidate) || candidate < 1) {
+		throw new RangeError(`${label} must be a positive finite number.`);
+	}
+
+	return Math.max(1, Math.floor(candidate));
+}
+
+/**
+ * Normalize optional display rgba values.
+ *
+ * @param {unknown} value - Supplies candidate rgba tuple.
+ * @returns {readonly [number, number, number, number] | null} Normalized rgba.
+ */
+function displayRgbaOrNull(value) {
+	if (!Array.isArray(value) || value.length < 3 || !value.every(Number.isFinite)) {
+		return null;
+	}
+
+	return Object.freeze([
+		clampByte(value[0]),
+		clampByte(value[1]),
+		clampByte(value[2]),
+		Number.isFinite(value[3]) ? clampByte(value[3]) : 255,
+	]);
+}
+
+/**
+ * Clamp a display channel to a byte.
+ *
+ * @param {number} value - Supplies channel value.
+ * @returns {number} Byte channel.
+ */
+function clampByte(value) {
+	return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+/**
+ * Resolve a renderable flat-ground extent in meters.
+ *
+ * @param {FlatEarthGeometryConfig} configuration - Supplies geometry config.
+ * @returns {number} Full ground width/depth in meters.
+ */
+function flatGroundExtentMeters(configuration) {
+	const extentCandidates = [
+		configuration.sceneSkyRayLimitMeters,
+		configuration.observerCenteredDome?.maxObserverViewRayExtentMeters,
+		configuration.topAltitudeMeters * 20,
+		10000,
+	].filter((value) => Number.isFinite(value) && value > 0);
+
+	return Math.max(...extentCandidates) * 2;
 }
 
 /**

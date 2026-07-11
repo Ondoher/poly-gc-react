@@ -130,6 +130,19 @@ export class BrunetonColorDisplayModel {
 	}
 
 	/**
+	 * Convert renderer-captured linear sRGB scene color into display RGB before
+	 * applying the Figure 1 inverse tone-map bridge.
+	 *
+	 * @param {readonly [number, number, number]} linearSrgb - Supplies renderer linear sRGB.
+	 * @returns {readonly [number, number, number]} Return display-encoded RGB.
+	 */
+	rendererLinearSrgbToDisplayRgb(linearSrgb) {
+		assertRgbTriplet(linearSrgb, 'rendererLinearSrgbToDisplayRgb');
+
+		return Object.freeze(linearSrgb.map(linearSrgbChannelToDisplayRgb));
+	}
+
+	/**
 	 * Invert the accepted Figure 1 exponential tone map for scene endpoint
 	 * composition.
 	 *
@@ -144,6 +157,64 @@ export class BrunetonColorDisplayModel {
 
 			return -Math.log(1 - clamped) / this._displayConstants.paperFigure1ToneMapK;
 		}));
+	}
+
+	/**
+	 * Collapse spectral view transmittance into the RGB bands used by the
+	 * display compositor.
+	 *
+	 * @param {SpectralValue} transmittance - Supplies canonical spectral transmittance.
+	 * @returns {readonly [number, number, number]} Return RGB transmittance bands.
+	 */
+	spectralTransmittanceToRgbBands(transmittance) {
+		assertSpectralValue(transmittance, 'transmittance');
+
+		const red = average(transmittance.slice(8));
+		const green = average(transmittance.slice(4, 9));
+		const blue = average(transmittance.slice(0, 5));
+
+		return Object.freeze([red, green, blue]);
+	}
+
+	/**
+	 * Compose spectral path radiance over the captured scene color in linear
+	 * sRGB, mirroring the runtime shader compositor.
+	 *
+	 * @param {SceneDisplayCompositionRequest} request - Supplies path and scene color facts.
+	 * @returns {readonly [number, number, number]} Return composed linear sRGB.
+	 */
+	composeSceneLinearSrgb(request) {
+		if (!request || typeof request !== 'object') {
+			throw new TypeError('Scene display composition request is required.');
+		}
+
+		assertSpectralValue(request.pathRadiance, 'pathRadiance');
+		assertSpectralValue(request.transmittance, 'transmittance');
+		assertRgbTriplet(request.sceneDisplayRgb, 'sceneDisplayRgb');
+
+		const pathLinearSrgb = this.radianceToLinearSrgb(request.pathRadiance);
+		const sceneDisplayRgb = request.sceneColorSpace === 'linear-srgb'
+			? this.rendererLinearSrgbToDisplayRgb(request.sceneDisplayRgb)
+			: request.sceneDisplayRgb;
+		const sceneLinearSrgb = this.displayRgbToLinearSrgb(sceneDisplayRgb);
+		const transmittanceRgb = this.spectralTransmittanceToRgbBands(request.transmittance);
+		const sceneTransmittanceRgb = request.applySceneTransmittance === false
+			? Object.freeze([1, 1, 1])
+			: transmittanceRgb;
+
+		return Object.freeze(pathLinearSrgb.map((value, index) =>
+			value + sceneLinearSrgb[index] * sceneTransmittanceRgb[index]));
+	}
+
+	/**
+	 * Compose spectral path radiance over the captured scene color and encode it
+	 * through the accepted display adapter.
+	 *
+	 * @param {SceneDisplayCompositionRequest} request - Supplies path and scene color facts.
+	 * @returns {readonly [number, number, number]} Return composed display RGB.
+	 */
+	composeSceneDisplayRgb(request) {
+		return this.linearSrgbToDisplayRgb(this.composeSceneLinearSrgb(request));
 	}
 
 	/**
@@ -323,6 +394,32 @@ function multiplyMatrixVector(matrix, vector) {
 }
 
 /**
+ * Average numeric values.
+ *
+ * @param {readonly number[]} values - Supplies values to average.
+ * @returns {number} Return the average.
+ */
+function average(values) {
+	return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+/**
+ * Apply the standard sRGB display transfer to one linear channel.
+ *
+ * @param {number} value - Supplies a linear channel.
+ * @returns {number} Return display-encoded channel.
+ */
+function linearSrgbChannelToDisplayRgb(value) {
+	const clamped = ScalarMath.clamp(value, 0, 1);
+
+	if (clamped <= 0.0031308) {
+		return clamped * 12.92;
+	}
+
+	return 1.055 * (clamped ** (1 / 2.4)) - 0.055;
+}
+
+/**
  * Assert a finite RGB triplet.
  *
  * @param {unknown} value - Supplies the candidate.
@@ -490,14 +587,34 @@ vec3 displayRgbToLinearSrgb(vec3 displayRgb) {
 	return -log(vec3(1.0) - clamped) / DISPLAY_TONE_MAP_K;
 }
 
+float rendererLinearSrgbChannelToDisplayRgb(float value) {
+	float clamped = clamp(value, 0.0, 1.0);
+	if (clamped <= 0.0031308) {
+		return clamped * 12.92;
+	}
+	return 1.055 * pow(clamped, 1.0 / 2.4) - 0.055;
+}
+
+vec3 rendererLinearSrgbToDisplayRgb(vec3 linearSrgb) {
+	return vec3(
+		rendererLinearSrgbChannelToDisplayRgb(linearSrgb.r),
+		rendererLinearSrgbChannelToDisplayRgb(linearSrgb.g),
+		rendererLinearSrgbChannelToDisplayRgb(linearSrgb.b)
+	);
+}
+
+bool shouldApplySceneTransmittance(ShaderState state) {
+	return state.bounds.hasSceneEndpoint
+		&& state.bounds.endpointDistanceMeters <= state.bounds.endDistanceMeters + 0.001;
+}
+
 vec3 composeSceneLinearSrgb(ShaderState state) {
 	vec3 pathLinearSrgb = spectralRadianceToLinearSrgb(state.pathRadiance);
-	if (state.bounds.hasSceneEndpoint) {
-		vec3 endpointLinearSrgb = displayRgbToLinearSrgb(state.sceneDisplayRgb);
-		vec3 transmittanceRgb = spectralTransmittanceToRgbBands(state.transmittance);
-		return pathLinearSrgb + endpointLinearSrgb * transmittanceRgb;
-	}
-	return pathLinearSrgb;
+	vec3 sceneDisplayRgb = rendererLinearSrgbToDisplayRgb(state.sceneDisplayRgb);
+	vec3 sceneLinearSrgb = displayRgbToLinearSrgb(sceneDisplayRgb);
+	vec3 transmittanceRgb = spectralTransmittanceToRgbBands(state.transmittance);
+	vec3 sceneTransmittanceRgb = shouldApplySceneTransmittance(state) ? transmittanceRgb : vec3(1.0);
+	return pathLinearSrgb + sceneLinearSrgb * sceneTransmittanceRgb;
 }`;
 }
 

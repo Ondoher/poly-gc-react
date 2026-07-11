@@ -51,6 +51,40 @@ describe('Algorithm32Transport', () => {
 		expect(flat.owner).toBe('transport');
 	});
 
+	it('applies profile path sampling controls to spherical and flat shader contributions', () => {
+		const transport = new Algorithm32Transport();
+		const spherical = transport.createShaderContribution({
+			descriptor: createDescriptor('spherical-earth-geometry', {
+				pathSampleDistribution: {
+					kind: 'tangent-density-adaptive-v1',
+				},
+			}),
+		});
+		const flat = transport.createShaderContribution({
+			descriptor: createDescriptor('flat-earth-geometry', {
+				pathSampleDistribution: {
+					kind: 'tangent-density-adaptive-soft-v1',
+				},
+			}),
+		});
+
+		expect(shaderCode(spherical)).toContain('float pathSampleFraction');
+		expect(shaderCode(spherical)).toContain('return mix(uniformFraction, adaptiveFraction, 1.0);');
+		expect(shaderCode(flat)).toContain('float pathSampleFraction');
+		expect(shaderCode(flat)).toContain('return mix(uniformFraction, adaptiveFraction, 0.35);');
+	});
+
+	it('uses uniform path sampling by default', () => {
+		const transport = new Algorithm32Transport();
+		const contribution = transport.createShaderContribution({
+			descriptor: createDescriptor('flat-earth-geometry'),
+		});
+		const code = shaderCode(contribution);
+
+		expect(code).not.toContain('float pathSampleFraction');
+		expect(code).toContain('float stepMeters = max(state.bounds.endDistanceMeters - state.bounds.startDistanceMeters, 0.0)');
+	});
+
 	it('fails loudly for unsupported geometry kinds', () => {
 		const transport = new Algorithm32Transport();
 
@@ -60,7 +94,7 @@ describe('Algorithm32Transport', () => {
 	});
 });
 
-function createDescriptor(geometryKind) {
+function createDescriptor(geometryKind, executionOverrides = {}) {
 	return {
 		descriptorId: 'descriptor',
 		variantId: 'variant',
@@ -80,11 +114,18 @@ function createDescriptor(geometryKind) {
 			execution: {
 				pathIntervalCount: 24,
 				sourceTransmittanceIntervalCount: 12,
+				...executionOverrides,
 			},
 		}),
 		color: createSection('color', {}),
 		runtime: createSection('runtime', {}),
 	};
+}
+
+function shaderCode(contribution) {
+	return contribution.functions
+		.map((block) => block.code)
+		.join('\n');
 }
 
 function createSection(fingerprint, facts) {

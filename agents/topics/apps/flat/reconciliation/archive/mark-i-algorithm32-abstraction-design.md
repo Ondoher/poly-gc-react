@@ -1,8 +1,11 @@
 # Algorithm32 Abstraction Design
 
-Status: reconciliation design target. This document records the abstraction
-shape that reconciliation should test and promote before production
-implementation freezes public packet names.
+Status: reconciliation design target, reopened for Milestone 5 external
+boundary radiance. This document records the abstraction shape that
+reconciliation should test and promote before production implementation
+freezes public packet names. The active addition is an
+`ExternalBoundaryRadiance` role for visible outside-atmosphere bodies and a
+source-provided visible Sun disk provider.
 
 ## Table Of Contents
 
@@ -12,6 +15,7 @@ implementation freezes public packet names.
 - [Configuration Facts](#configuration-facts)
 - [Abstraction Reference](#abstraction-reference)
   - [Light Source](#light-source)
+  - [External Boundary Radiance](#external-boundary-radiance)
   - [Geometry](#geometry)
   - [Atmosphere](#atmosphere)
   - [Incident Radiance Cache / Sampler](#incident-radiance-cache--sampler)
@@ -70,6 +74,8 @@ Use this working split:
 Geometry supplies spatial relation facts.
 Atmosphere supplies medium facts.
 Light source supplies lighting facts.
+External boundary radiance supplies visible outside-atmosphere radiance along
+the camera ray.
 Incident radiance cache/sampler supplies optional generated incoming-radiance facts.
 Transport combines them.
 Color/display converts the spectral result outside CPU transport.
@@ -98,6 +104,16 @@ encoding, display diagnostics, and RGB-to-spectrum inverse fitting. Transport
 coordinates the handoff and integration; it should not branch around owners,
 infer routing from caller metadata, or reinterpret contribution payloads
 itself.
+
+The Milestone 5 reopening adds one adjacent visibility role:
+`ExternalBoundaryRadiance`. It answers "what radiance arrives from beyond the
+atmosphere along this camera ray?" and composes as
+`pathRadiance + viewTransmittance * boundaryRadiance`. This role is distinct
+from a light source's atmosphere-illumination role and from
+incident-radiance/L2 cache sampling. Stars, Moon, planets, and visible Sun
+disks belong on this path for camera visibility. Optional atmosphere
+illumination from Moon or starfield radiance remains a later source/cache
+extension.
 
 ## Current Design Commitments
 
@@ -211,6 +227,8 @@ Light source owns:
 - factory behavior for concrete source-shaped cache implementations, such as
   returning a local-Sun cache object whose descriptor, coordinate generator,
   keying, and lookup policy match the light-source cache family;
+- optional factory behavior for a companion external boundary-radiance
+  provider for the source's visible body, starting with a Sun disk;
 - available-light facts used to build higher-order incident-radiance caches.
 
 Light source does not own:
@@ -230,6 +248,8 @@ Light source does not own:
   creates the concrete cache object, generated values are a joint result of
   available source light, atmosphere medium facts, geometry mapping, and
   transport integration;
+- general starfield, Moon, planet, or background ownership unless a concrete
+  light-source body explicitly exposes its own visible boundary provider;
 - display RGB conversion.
 
 The public-facing shape should move toward:
@@ -245,6 +265,44 @@ LightSource.sampleLighting({
 Exact names remain open, but the ownership rule is not: the light source
 receives resolved spatial relation facts rather than peer geometry objects or
 uninterpreted raw coordinates.
+
+### External Boundary Radiance
+
+External boundary radiance supplies camera-ray visibility for radiance that
+arrives from beyond the atmosphere. It does not illuminate the atmosphere by
+itself and is not a replacement for incident-radiance/L2 cache sampling.
+
+External boundary radiance owns:
+
+- visible-body identity and descriptor facts for compatibility;
+- camera-direction hit/footprint policy, such as disk angular radius or
+  starfield point-spread/footprint;
+- spectral or renderer-linear radiance policy accepted by the proof;
+- optional source-owned companion provider for a visible light-source body,
+  such as the Sun disk;
+- zero contribution when the camera ray does not hit the visible body or field
+  sample.
+
+External boundary radiance does not own:
+
+- atmosphere path radiance;
+- view-path transmittance calculation;
+- source-path transmittance to illuminate an atmosphere sample;
+- incident-radiance/L2 cache generation or lookup;
+- decorative app background policy.
+
+The first prototype should prove:
+
+```text
+finalRadiance =
+  atmospherePathRadiance
+  + viewTransmittance * externalBoundaryRadiance(viewDirection)
+```
+
+The Sun can be both a light source and an external boundary-radiance provider:
+the light-source role supplies scattering illumination, while the companion
+boundary provider supplies the visible disk. Those roles share canonical source
+facts but compose through separate paths.
 
 ### Geometry
 
@@ -1325,23 +1383,23 @@ Saved for later:
   would be more sympathetic to the constructed-scene/object-renderer contract;
   however, the Three.js water helpers remain the best quick POC options when
   the goal is disposable review imagery rather than production material design.
-- Visible Sun disk / direct solar-disc camera radiance:
-  keep this as a deferred source/display extension, not part of the current
-  Algorithm32 transport core. The clean design is a source-owned visible
-  emitter endpoint resolved in the postprocess shader composition layer. For a
-  distant Sun, a pixel hits the disk when the reconstructed view ray falls
-  within the light source's angular radius. For a local Sun, a pixel hits the
-  disk by ray-sphere intersection against the source position and source
-  radius. Existing scene hit/depth facts should occlude the disk when a box,
-  ground, or other scene endpoint is closer than the source endpoint.
-  Composition should stay in the established endpoint form:
-  `sourceEndpointRadiance * T_view + L_path`. The disk's spectral radiance is
-  source-owned and stays outside `evaluate(...)`; only spatial ray facts and
-  scene/source distances affect transport. Do not render the disk as a normal
-  Three mesh whose RGB is captured as surface hit color. The hard parts are
-  source-radiance calibration from spectral irradiance and apparent solid
-  angle, subpixel/analytic coverage for tiny disks, CPU/GPU parity, and a
-  display policy for saturation, tone mapping, and any POC clamping or bloom.
+- Milestone 5 visible Sun disk / direct solar-disc camera radiance:
+  this is now part of the active external-boundary-radiance proof. The clean
+  design is still a source-owned visible emitter endpoint resolved in the
+  postprocess shader composition layer. For a distant Sun, a pixel hits the
+  disk when the reconstructed view ray falls within the light source's angular
+  radius. For a local Sun, a pixel hits the disk by ray-sphere intersection
+  against the source position and source radius. Existing scene hit/depth facts
+  should occlude the disk when a box, ground, or other scene endpoint is
+  closer than the source endpoint. Composition should stay in the established
+  endpoint form: `sourceEndpointRadiance * T_view + L_path`. The disk's
+  spectral radiance is source-owned and stays outside `evaluate(...)`; only
+  spatial ray facts and scene/source distances affect transport. Do not render
+  the disk as a normal Three mesh whose RGB is captured as surface hit color.
+  The hard parts are source-radiance calibration from spectral irradiance and
+  apparent solid angle, subpixel/analytic coverage for tiny disks, CPU/GPU
+  parity, and a display policy for saturation, tone mapping, and any POC
+  clamping or bloom.
   At recent review scale (`228 x 128`, `45 deg` vertical FOV), a real distant
   Sun is only about `1.5 px` tall, and the current winter-solstice 2025 local
   false Sun at `180` degrees is about `0.44 px` tall, so naive center-sample

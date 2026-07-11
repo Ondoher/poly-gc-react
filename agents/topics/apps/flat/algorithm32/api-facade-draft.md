@@ -360,10 +360,15 @@ composer's pass API, normally:
 composer.addPass(algorithm32Pass);
 ```
 
-If production requires a specific pass position, `setupShader` should own that
-policy and use the composer API that matches it, such as `insertPass`. The
-caller should not have to construct `RenderPass`, `ShaderPass`, render targets,
-depth textures, fullscreen quads, shader materials, or Algorithm32 uniforms.
+The app owns its ordinary Three scene pass and composer lifecycle. The current
+flat/globe integration follows the reconciliation browser runner shape: create
+an `EffectComposer`, add the app's `RenderPass`, then pass that composer to
+`setupShader(...)` so Algorithm32 can install its capture/runtime pass chain.
+If production requires a specific Algorithm32 pass position, `setupShader`
+should own that policy and use the composer API that matches it, such as
+`insertPass`. The caller should not have to construct Algorithm32-specific
+`ShaderPass` equivalents, depth/hit textures, fullscreen quads, shader
+materials, uniforms, or cache resources.
 
 The actual GPU shader trigger inside this operation is a normal Three render
 of the adapter-owned fullscreen pass scene, roughly:
@@ -421,7 +426,8 @@ they depend on Algorithm32 atmosphere configuration and spectral meaning.
 
 - Should `setConfig` be named `configure` or `replaceConfig` to emphasize full
   replacement?
-- Should `setupShader` always append with `composer.addPass`, or should it
-  detect/replace the app's existing scene render pass?
+- Should `setupShader` always append the Algorithm32 pass chain with
+  `composer.addPass`, or should it support an explicit insertion point inside
+  an app-owned composer?
 - What minimal `EffectComposerLike` surface should be required so app-specific
   composer wrappers can integrate without exposing raw Three internals?

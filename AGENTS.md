@@ -1,23 +1,28 @@
 # Topic Bootstrap
 
-On bootstrap, read these lightweight shared context files:
+On bootstrap, read only:
 
 - [Active Topic](/c:/dev/poly-gc-react/agents/topics/active-topic.md)
-- [Topics Index](/c:/dev/poly-gc-react/agents/topics/README.md)
-- [Architecture Overview](/c:/dev/poly-gc-react/agents/topics/standards/architecture/overview.md)
 
-Use the active topic file as a session continuity hint. If it names an active
-topic, load that topic's README after the lightweight shared context. If it
-lists additional reload sources, load those after the active topic README. When
-switching topics, update the active topic file to the new topic id. If the user
-asks to add extra reload sources, add focused relevant paths to that same file.
-After loading the active topic README and any additional reload sources,
-announce the loaded topic and any subtopic/focus indicated by the active topic
-file or topic README.
-Use the topics index as a routing table, and use the architecture overview as
-always-on high-level architecture context. Do not load other topic-specific
-documents until the user's task clearly asks for that topic or the needed
-context cannot be inferred from the current code/files.
+After context compaction or an interrupted/resumed session, reload the active
+topic file first and follow its Fresh Agent Route before continuing work.
+
+Use the active topic file as the routing authority. If it names an active
+topic, load the topic README named there, then load only the files listed under
+`Minimal Reload Sources`. If there is no `Minimal Reload Sources` section, load
+the files listed under `Reload Sources`.
+
+Do not load the topics index, architecture overview, routing docs, archives,
+production docs, code files, or adjacent topic docs during bootstrap unless the
+current task clearly needs them. If a task needs routing, open the topics index
+or routing doc then. If a task creates or moves code, open the architecture
+overview or naming conventions then.
+
+When switching topics, update the active topic file to the new topic id and
+minimal reload set. If the user asks to add extra reload sources, add focused
+relevant paths to that same file. After loading the active topic README and
+minimal reload sources, announce the loaded topic and focus indicated by the
+active topic file or topic README.
 
 Topic continuity rules:
 

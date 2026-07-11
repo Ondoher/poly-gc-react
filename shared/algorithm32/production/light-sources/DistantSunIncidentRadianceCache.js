@@ -29,6 +29,7 @@ export class DistantSunIncidentRadianceCache {
 			directionToLight,
 			spectralBasis,
 			boundaryAltitudeMeters = 2,
+			altitudeLookup = null,
 		} = configuration;
 
 		if (
@@ -59,6 +60,7 @@ export class DistantSunIncidentRadianceCache {
 			directionToLight: Object.freeze([...directionToLight]),
 			spectralBasis,
 			boundaryAltitudeMeters,
+			altitudeLookup: normalizeAltitudeLookup(altitudeLookup),
 		});
 		this._valuesByKey = new Map();
 	}
@@ -377,6 +379,7 @@ function createDistantCacheDescriptor(configuration, valueCount) {
 			directionSequence: 'source-oriented-fibonacci-sphere',
 			directionWeight: (4 * Math.PI) / configuration.directionCount,
 			boundaryAltitudeMeters: configuration.boundaryAltitudeMeters,
+			altitudeLookup: configuration.altitudeLookup,
 		}),
 		metadata: Object.freeze({
 			altitudeBinCount: configuration.altitudeBinCount,
@@ -386,6 +389,7 @@ function createDistantCacheDescriptor(configuration, valueCount) {
 			valueCount,
 			uploadValueCount,
 		}),
+		altitudeLookup: configuration.altitudeLookup,
 	});
 }
 
@@ -400,6 +404,29 @@ function assertUnitVector(vector, label) {
 	if (!Array.isArray(vector) || vector.length !== 3 || !vector.every(Number.isFinite)) {
 		throw new TypeError(`${label} must be a finite three-component vector.`);
 	}
+}
+
+/**
+ * Normalize an optional altitude lookup policy.
+ *
+ * @param {unknown} altitudeLookup - Supplies candidate lookup policy.
+ * @returns {object | null} Return normalized policy.
+ */
+function normalizeAltitudeLookup(altitudeLookup) {
+	if (altitudeLookup == null) {
+		return null;
+	}
+
+	if (
+		typeof altitudeLookup === 'object'
+		&& ['nearest-bin', 'linear-altitude-v1'].includes(altitudeLookup.kind)
+	) {
+		return Object.freeze({
+			kind: altitudeLookup.kind,
+		});
+	}
+
+	throw new TypeError('Distant cache altitudeLookup must be nearest-bin or linear-altitude-v1.');
 }
 
 /**

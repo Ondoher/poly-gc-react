@@ -19,7 +19,7 @@ function readSource() {
 function createThreeDouble() {
 	return {
 		GLSL3: 'GLSL3',
-		ShaderMaterial: class ShaderMaterial {
+		RawShaderMaterial: class RawShaderMaterial {
 			constructor(parameters) {
 				this.parameters = parameters;
 				this.uniforms = parameters.uniforms;

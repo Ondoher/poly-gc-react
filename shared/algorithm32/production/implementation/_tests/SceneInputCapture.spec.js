@@ -43,7 +43,14 @@ describe('SceneInputCapture', () => {
 		expect(bindingValues['runtime.viewportPixels'].x).toBe(8);
 		expect(bindingValues['runtime.viewportPixels'].y).toBe(4);
 		expect(capture.needsSwap).toBe(false);
+		expect(capture._depthTarget.options.minFilter).toBe('NearestFilter');
+		expect(capture._depthTarget.options.magFilter).toBe('NearestFilter');
+		expect(capture._depthTarget.texture.generateMipmaps).toBe(false);
+		expect(capture._hitTarget.options.minFilter).toBe('NearestFilter');
+		expect(capture._hitTarget.options.magFilter).toBe('NearestFilter');
+		expect(capture._hitTarget.texture.generateMipmaps).toBe(false);
 		expect(capture._depthMaterial.parameters.fragmentShader).toContain('packNormalizedDistance24');
+		expect(capture._depthMaterial.parameters.vertexShader).toContain('projectionMatrix * modelViewMatrix * vec4(position, 1.0)');
 		expect(capture._hitMaterial.parameters.fragmentShader).toContain('gl_FragColor = vec4(1.0);');
 		expect(capture.getDiagnostics()).toEqual(jasmine.objectContaining({
 			kind: 'algorithm32-scene-input-capture-pass',
@@ -81,6 +88,39 @@ describe('SceneInputCapture', () => {
 		expect(capture.getDiagnostics()).toEqual(jasmine.objectContaining({
 			frameCount: 1,
 		}));
+	});
+
+	it('hides scene-input-excluded objects only during capture', () => {
+		const excludedObject = {
+			visible: true,
+			userData: {
+				algorithm32SceneInput: false,
+			},
+		};
+		const includedObject = {
+			visible: true,
+			userData: {
+				algorithm32SceneInput: true,
+			},
+		};
+		const scene = createSceneDouble([excludedObject, includedObject]);
+		const renderer = createRendererDouble();
+		const capture = new SceneInputCapture({
+			THREE: createThreeDouble(),
+			scene,
+			camera: createCameraDouble(),
+			width: 2,
+			height: 2,
+		});
+
+		capture.render(renderer, {}, {});
+
+		expect(renderer.visibilitySnapshots).toEqual([
+			[false, true],
+			[false, true],
+		]);
+		expect(excludedObject.visible).toBe(true);
+		expect(includedObject.visible).toBe(true);
 	});
 
 	it('resizes targets, updates viewport pixels, and disposes resources', () => {
@@ -128,6 +168,7 @@ function createThreeDouble() {
 	return {
 		RGBAFormat: 'RGBAFormat',
 		UnsignedByteType: 'UnsignedByteType',
+		NearestFilter: 'NearestFilter',
 		ClampToEdgeWrapping: 'ClampToEdgeWrapping',
 		Color: class Color {
 			constructor(value = 'black') {
@@ -193,10 +234,16 @@ function createThreeDouble() {
  *
  * @returns {object} Return scene double.
  */
-function createSceneDouble() {
+function createSceneDouble(objects = []) {
 	return {
 		overrideMaterial: 'original-material',
 		background: 'original-background',
+		objects,
+		traverse(callback) {
+			for (const object of objects) {
+				callback(object);
+			}
+		},
 	};
 }
 
@@ -235,8 +282,12 @@ function createRendererDouble() {
 		setClearColor: jasmine.createSpy('setClearColor'),
 		clear: jasmine.createSpy('clear'),
 		renderedOverrideMaterials: [],
+		visibilitySnapshots: [],
 		render: jasmine.createSpy('render').and.callFake((scene) => {
 			renderer.renderedOverrideMaterials.push(scene.overrideMaterial);
+			if (Array.isArray(scene.objects)) {
+				renderer.visibilitySnapshots.push(scene.objects.map((object) => object.visible));
+			}
 		}),
 	};
 

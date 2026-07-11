@@ -205,6 +205,11 @@ type GlobeCamera = {
 	up: FlatVector3;
 
 	/**
+	 * Store the camera height above the rendered spherical ground in kilometers.
+	 */
+	heightAboveSurfaceKm: number;
+
+	/**
 	 * Store the near clipping plane in kilometers.
 	 */
 	nearKm: number;
@@ -518,6 +523,11 @@ type GlobeSceneConfig = {
 	 * Store the spherical Earth radius in kilometers.
 	 */
 	earthRadiusKm: number;
+
+	/**
+	 * Store the camera height above the rendered spherical ground in meters.
+	 */
+	cameraHeightMeters: number;
 
 	/**
 	 * Override the source star records used for daytime visibility tests.

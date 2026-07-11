@@ -122,7 +122,7 @@ describe('GlobeSimulationSceneModel', () => {
 
 		expect(scene.surface.material).toEqual({
 			model: 'matte-solid-color',
-			color: '#3f7f45',
+			color: '#4fa33d',
 			roughness: 1,
 			metalness: 0,
 			surfaceFeatures: false,
@@ -168,21 +168,19 @@ describe('GlobeSimulationSceneModel', () => {
 		expect(axisDotEclipticNorth).toBeCloseTo(Math.cos(23.43928 * Math.PI / 180), 5);
 	});
 
-	it('places the camera at standing height above the San Jose surface point', () => {
+	it('places the camera ten meters above the rendered San Jose globe surface', () => {
 		const scene = new GlobeSimulationSceneModel({ time: fixedTime }).createScene();
 		const observer = scene.observer.positionKm;
 		const camera = scene.camera.positionKm;
 		const target = scene.camera.targetKm;
 		const observerDistance = Math.hypot(observer.x, observer.y, observer.z);
-		const cameraDistanceFromSurface = Math.hypot(
-			camera.x - observer.x,
-			camera.y - observer.y,
-			camera.z - observer.z,
-		);
+		const cameraHeightAboveSurface = Math.hypot(camera.x, camera.y, camera.z)
+			- scene.geometry.earthRadiusKm;
 
 		expect(target).toEqual(scene.sun.position);
 		expect(observerDistance).toBeCloseTo(scene.geometry.earthRadiusKm + 0.03048, 5);
-		expect(cameraDistanceFromSurface).toBeCloseTo(0.0017, 5);
+		expect(cameraHeightAboveSurface).toBeCloseTo(0.01, 5);
+		expect(scene.camera.heightAboveSurfaceKm).toBe(0.01);
 		expect(scene.root.id).toBe('san-jose-ca');
 	});
 

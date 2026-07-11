@@ -4,8 +4,10 @@ import {
 	CANONICAL_SPECTRAL_CHANNELS,
 	FIGURE1_DISPLAY_CONSTANTS,
 	RUNTIME_NUMERICAL_CONTROLS,
+	SHADER_QUALITY_PROFILES,
 	STEP032_ARTIFACT_NUMERICAL_CONTROLS,
 	VALIDATION_NUMERICAL_CONTROLS,
+	shaderQualityProfileById,
 } from '../Algorithm32CanonicalData.js';
 
 describe('Algorithm32 canonical data', () => {
@@ -97,5 +99,29 @@ describe('Algorithm32 canonical data', () => {
 			incidentDirectionCount: 17,
 			incidentAltitudeBinCount: 24,
 		});
+	});
+
+	it('promotes production shader quality profiles with optimization controls', () => {
+		expect(SHADER_QUALITY_PROFILES.map((profile) => profile.id)).toEqual([
+			'ideal',
+			'balanced',
+			'balanced-cache-interp',
+			'adaptive-balanced',
+			'adaptive-balanced-soft',
+			'fast',
+			'fast-cache-interp',
+			'draft',
+		]);
+		expect(shaderQualityProfileById('ideal').numericalControls).toEqual(RUNTIME_NUMERICAL_CONTROLS);
+		expect(shaderQualityProfileById('balanced-cache-interp').cacheOptimization.altitudeLookup).toEqual({
+			kind: 'linear-altitude-v1',
+		});
+		expect(shaderQualityProfileById('adaptive-balanced').transportOptimization.pathSampleDistribution).toEqual({
+			kind: 'tangent-density-adaptive-v1',
+		});
+		expect(shaderQualityProfileById('fast').numericalControls).toEqual(STEP032_ARTIFACT_NUMERICAL_CONTROLS);
+		expect(shaderQualityProfileById('draft').estimatedWorkRatioToIdeal)
+			.toBeLessThan(shaderQualityProfileById('fast').estimatedWorkRatioToIdeal);
+		expect(() => shaderQualityProfileById('missing')).toThrowError(/Unknown shader quality profile/);
 	});
 });

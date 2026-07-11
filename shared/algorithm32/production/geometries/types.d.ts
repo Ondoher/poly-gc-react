@@ -23,6 +23,11 @@ type SphericalEarthGeometryConfig = {
 	readonly observerUpDirection?: UnitVector3;
 
 	/**
+	 * Store how Three scene directions map into spherical model space.
+	 */
+	readonly sceneFrame?: SphericalEarthSceneFrameConfig | null;
+
+	/**
 	 * Store the configured source direction.
 	 */
 	readonly sourceDirection?: UnitVector3;
@@ -41,6 +46,16 @@ type SphericalEarthGeometryConfig = {
 	 * Store source-path optical-depth integration interval count.
 	 */
 	readonly sourceTransmittanceIntervalCount?: number;
+};
+
+/**
+ * Configure scene-direction basis mapping for spherical shader setup.
+ */
+type SphericalEarthSceneFrameConfig = {
+	/**
+	 * Use observer-local axes or direct model-space axes.
+	 */
+	readonly kind: "observer-local" | "model-space";
 };
 
 /**

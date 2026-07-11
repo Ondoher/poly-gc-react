@@ -1,3 +1,5 @@
+import ShaderPassPerformanceTimer from './ShaderPassPerformanceTimer.js';
+
 /**
  * Composer-compatible pass that captures renderer-produced scene inputs
  * consumed by the Algorithm32 runtime shader.
@@ -130,6 +132,20 @@ export class SceneInputCapture {
 	_disposed = false;
 
 	/**
+	 * Store optional depth-pass performance timer.
+	 *
+	 * @type {ShaderPassPerformanceTimer | null}
+	 */
+	_depthPerformanceTimer = null;
+
+	/**
+	 * Store optional hit-pass performance timer.
+	 *
+	 * @type {ShaderPassPerformanceTimer | null}
+	 */
+	_hitPerformanceTimer = null;
+
+	/**
 	 * Create reusable scene input capture resources.
 	 *
 	 * @param {SceneInputCaptureConfiguration} configuration - Supplies the
@@ -173,6 +189,21 @@ export class SceneInputCapture {
 			sceneDepthMaxMeters: this._sceneDepthMaxMeters,
 		});
 		this._hitMaterial = createHitMaterial(THREE);
+
+		if (typeof configuration.performanceCallback === 'function') {
+			this._depthPerformanceTimer = new ShaderPassPerformanceTimer({
+				passName: 'algorithm32-scene-depth-capture',
+				performanceCallback: configuration.performanceCallback,
+				sampleIntervalFrames: configuration.performanceSampleIntervalFrames,
+				maxPendingQueries: configuration.performanceMaxPendingQueries,
+			});
+			this._hitPerformanceTimer = new ShaderPassPerformanceTimer({
+				passName: 'algorithm32-scene-hit-capture',
+				performanceCallback: configuration.performanceCallback,
+				sampleIntervalFrames: configuration.performanceSampleIntervalFrames,
+				maxPendingQueries: configuration.performanceMaxPendingQueries,
+			});
+		}
 	}
 
 	/**
@@ -263,8 +294,8 @@ export class SceneInputCapture {
 		}
 
 		updateCameraWorldPosition(this._camera, this._depthMaterial.uniforms.uCameraWorldPosition.value);
-		this._renderWithOverride(renderer, this._depthTarget, this._depthMaterial);
-		this._renderWithOverride(renderer, this._hitTarget, this._hitMaterial);
+		this._renderWithOverride(renderer, this._depthTarget, this._depthMaterial, this._depthPerformanceTimer);
+		this._renderWithOverride(renderer, this._hitTarget, this._hitMaterial, this._hitPerformanceTimer);
 		this._frameCount += 1;
 	}
 
@@ -299,6 +330,8 @@ export class SceneInputCapture {
 
 		this._disposed = true;
 		this.enabled = false;
+		this._depthPerformanceTimer?.dispose?.();
+		this._hitPerformanceTimer?.dispose?.();
 		this._depthMaterial?.dispose?.();
 		this._hitMaterial?.dispose?.();
 		this._depthTarget?.dispose?.();
@@ -322,9 +355,10 @@ export class SceneInputCapture {
 	 * @param {unknown} renderer - Supplies the active renderer.
 	 * @param {unknown} target - Supplies the render target.
 	 * @param {unknown} material - Supplies the scene override material.
+	 * @param {ShaderPassPerformanceTimer | null} performanceTimer - Supplies optional timer.
 	 * @returns {void}
 	 */
-	_renderWithOverride(renderer, target, material) {
+	_renderWithOverride(renderer, target, material, performanceTimer = null) {
 		if (typeof renderer.setRenderTarget !== 'function') {
 			throw new TypeError('Scene input capture requires renderer.setRenderTarget().');
 		}
@@ -339,6 +373,14 @@ export class SceneInputCapture {
 		const previousOverrideMaterial = this._scene.overrideMaterial;
 		const previousBackground = this._scene.background;
 		const previousClearState = readRendererClearState(this._THREE, renderer);
+		const hiddenObjects = hideSceneInputExcludedObjects(this._scene);
+		const performanceSample = performanceTimer?.begin?.(renderer, {
+			frameCount: this._frameCount,
+			viewportPixels: Object.freeze([this._width, this._height]),
+			sceneDepthMaxMeters: this._sceneDepthMaxMeters,
+			distanceMultiplier: this._distanceMultiplier,
+			renderTargetName: target?.texture?.name ?? null,
+		}) ?? null;
 
 		try {
 			this._scene.overrideMaterial = material;
@@ -352,8 +394,10 @@ export class SceneInputCapture {
 			}
 			renderer.render(this._scene, this._camera);
 		} finally {
+			performanceTimer?.end?.(renderer, performanceSample);
 			this._scene.overrideMaterial = previousOverrideMaterial;
 			this._scene.background = previousBackground;
+			restoreSceneInputExcludedObjects(hiddenObjects);
 			restoreRendererClearState(renderer, previousClearState);
 			renderer.setRenderTarget(previousTarget);
 		}
@@ -375,10 +419,13 @@ function createRenderTarget(THREE, width, height, name) {
 		stencilBuffer: false,
 		format: THREE.RGBAFormat,
 		type: THREE.UnsignedByteType,
+		minFilter: THREE.NearestFilter,
+		magFilter: THREE.NearestFilter,
 	});
 
 	if (target.texture && typeof target.texture === 'object') {
 		target.texture.name = name;
+		target.texture.generateMipmaps = false;
 	}
 
 	return target;
@@ -563,6 +610,46 @@ function restoreRendererClearState(renderer, clearState) {
 }
 
 /**
+ * Hide objects that are visible scene content but not Algorithm32 scene inputs.
+ *
+ * @param {unknown} scene - Supplies the scene to traverse.
+ * @returns {Array<{ object: unknown, visible: boolean }>} Return visibility snapshots.
+ */
+function hideSceneInputExcludedObjects(scene) {
+	const hiddenObjects = [];
+
+	if (typeof scene?.traverse !== 'function') {
+		return hiddenObjects;
+	}
+
+	scene.traverse((object) => {
+		if (object?.userData?.algorithm32SceneInput !== false || object.visible === false) {
+			return;
+		}
+
+		hiddenObjects.push({
+			object,
+			visible: object.visible,
+		});
+		object.visible = false;
+	});
+
+	return hiddenObjects;
+}
+
+/**
+ * Restore objects hidden by the scene-input capture filter.
+ *
+ * @param {Array<{ object: unknown, visible: boolean }>} hiddenObjects - Supplies visibility snapshots.
+ * @returns {void}
+ */
+function restoreSceneInputExcludedObjects(hiddenObjects) {
+	for (const entry of hiddenObjects) {
+		entry.object.visible = entry.visible;
+	}
+}
+
+/**
  * Return a positive finite number or fallback.
  *
  * @param {unknown} value - Supplies the candidate value.
@@ -607,7 +694,7 @@ varying vec3 vWorldPosition;
 void main() {
 	vec4 worldPosition = modelMatrix * vec4(position, 1.0);
 	vWorldPosition = worldPosition.xyz;
-	gl_Position = projectionMatrix * viewMatrix * worldPosition;
+	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }
 `;
 }

@@ -52,10 +52,37 @@ interface LightSourceModel {
 	createShaderContribution?(request: ShaderContributionRequest): ShaderContribution | readonly ShaderContribution[];
 
 	/**
-	 * Create optional renderer-lighting helpers for endpoint scene rendering.
+	 * Optionally resolve source-owned renderer scene-light percentages for a
+	 * local observer or scene frame.
+	 *
+	 * @param request - Supplies source-specific scene-light facts.
+	 * @returns The resolved scene-light percentages.
+	 */
+	resolveSceneLightPercent?(request: LightSourceSceneLightPercentRequest): LightSourceSceneLightPercent;
+
+	/**
+	 * Add or create optional renderer-lighting helpers for endpoint scene
+	 * rendering. If the request supplies a scene, the source may mount the
+	 * created lights itself.
 	 *
 	 * @param request - Supplies runtime renderer-lighting setup facts.
 	 * @returns The created renderer-lighting objects.
 	 */
-	createThreeLightingObjects?(request: unknown): unknown;
+	addSceneLighting?(request: LightSourceThreeLightingRequest): LightSourceThreeLightingObjects;
+
+	/**
+	 * Optionally configure an app-authored Three object or mesh tree to cast
+	 * and receive source-owned renderer shadows.
+	 *
+	 * @param object - Supplies the Three object to configure.
+	 * @param request - Supplies optional shadow flag overrides.
+	 * @returns The configured Three object.
+	 */
+	configureThreeShadowObject?(object: unknown, request?: {
+		readonly castShadow?: boolean;
+		readonly receiveShadow?: boolean;
+		readonly includeDescendants?: boolean;
+		readonly shadowPolicy?: string;
+		readonly sourceKey?: string;
+	}): unknown;
 }

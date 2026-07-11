@@ -332,6 +332,63 @@ describe('ShaderBuilder', () => {
 		result.runtime.dispose();
 	});
 
+	it('binds geometry-resolved scene-depth cap without creating capture when no capture textures are required', async () => {
+		const composer = createComposerDouble();
+		const geometry = {
+			resolveSceneDepthMaxMeters: jasmine.createSpy('resolveSceneDepthMaxMeters')
+				.and.returnValue(456),
+		};
+		const builder = new ShaderBuilder({
+			model: {
+				version: 5,
+				geometry,
+			},
+		});
+
+		const result = await builder.build({
+			setup: {
+				composer,
+				scene: {},
+				camera: {
+					position: {
+						x: 1,
+						y: 2,
+						z: 3,
+					},
+				},
+				THREE: createThreeDouble(),
+				metersPerSceneUnit: 1000,
+			},
+			descriptor: createDescriptor(),
+			contributions: [
+				createContribution({
+					uniforms: [
+						{
+							name: 'uSceneDepthMaxMeters',
+							type: 'float',
+							valueKey: 'geometry.sceneDepthMaxMeters',
+						},
+					],
+				}),
+			],
+			mainRequiredSymbols: ['createInitialShaderState'],
+			bindingValues: {
+				runtimeGain: 4,
+			},
+		});
+
+		expect(result.runtime.sceneInputCapture).toBeNull();
+		expect(composer.passes).toEqual([result.runtime.pass]);
+		expect(geometry.resolveSceneDepthMaxMeters).toHaveBeenCalledWith(jasmine.objectContaining({
+			cameraPositionSceneUnits: [1, 2, 3],
+			metersPerSceneUnit: 1000,
+			distanceMultiplier: 1000,
+		}));
+		expect(result.runtime.uniforms.uSceneDepthMaxMeters.value).toBe(456);
+
+		result.runtime.dispose();
+	});
+
 	it('builds the descriptor from the shared model when contributions do not provide one', async () => {
 		const model = {
 			version: 9,
@@ -474,6 +531,9 @@ describe('ShaderBuilder', () => {
 		expect(result.assembly.contributions.map((contribution) => contribution.id)).toContain('runtime-three-single-camera');
 		expect(result.assembly.validationReport.providedSymbols).toContain('runtime.initialState');
 		expect(result.assembly.fragmentShaderSource).toContain('ShaderState createInitialShaderState(vec2 uv)');
+		expect(result.assembly.fragmentShaderSource).toContain('texelFetch(uSceneDepthTexture, sceneInputPixel, 0)');
+		expect(result.assembly.fragmentShaderSource).toContain('texelFetch(uSceneHitTexture, sceneInputPixel, 0)');
+		expect(result.assembly.fragmentShaderSource).toContain('texelFetch(uSceneColorTexture, sceneInputPixel, 0)');
 	});
 
 	it('fails loudly when encoded color is required without configured Color', async () => {
@@ -625,6 +685,12 @@ describe('ShaderBuilder', () => {
 		expect(result.runtime.uniforms.uSceneHitTexture.value).toBe(result.runtime.sceneInputCapture.hitTexture);
 		expect(result.runtime.uniforms.uViewportPixels.value.x).toBe(1);
 		expect(result.runtime.uniforms.uViewportPixels.value.y).toBe(1);
+		expect(model.geometry.resolveSceneDepthMaxMeters).toHaveBeenCalledWith(jasmine.objectContaining({
+			metersPerSceneUnit: 1,
+			distanceMultiplier: 1,
+		}));
+		expect(result.runtime.sceneInputCapture.getDiagnostics().sceneDepthMaxMeters).toBe(321);
+		expect(result.runtime.uniforms.uSceneDepthMaxMeters.value).toBe(321);
 
 		result.runtime.dispose();
 		expect(composer.passes).toEqual([]);
@@ -726,13 +792,21 @@ function createAutomaticShaderModel(cache) {
 	return {
 		version: 14,
 		geometry: {
+			resolveSceneDepthMaxMeters: jasmine.createSpy('resolveSceneDepthMaxMeters')
+				.and.returnValue(321),
 			createShaderContribution(request) {
 				return createContribution({
 					id: 'geometry-owner-test',
 					owner: 'geometry',
 					descriptorFingerprint: request.descriptor.geometry.fingerprint,
 					provides: ['geometry.test'],
-					uniforms: [],
+					uniforms: [
+						{
+							name: 'uSceneDepthMaxMeters',
+							type: 'float',
+							valueKey: 'geometry.sceneDepthMaxMeters',
+						},
+					],
 					functions: [],
 					bindingRequirements: [],
 				});
@@ -1102,6 +1176,17 @@ function createThreeDouble() {
 					height,
 					depth,
 				};
+				this.disposed = false;
+			}
+
+			dispose() {
+				this.disposed = true;
+			}
+		},
+		RawShaderMaterial: class RawShaderMaterial {
+			constructor(parameters) {
+				this.parameters = parameters;
+				this.uniforms = parameters.uniforms;
 				this.disposed = false;
 			}
 

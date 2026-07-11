@@ -88,6 +88,16 @@ type Position = {
 type UnitVector3 = readonly [number, number, number];
 
 /**
+ * Describe one Three scene-space vector or point in scene units.
+ */
+type SceneVector3 = readonly [number, number, number] | {
+	/**
+	 * Store the ordered scene-space coordinates.
+	 */
+	readonly coordinates: readonly [number, number, number];
+};
+
+/**
  * Store one spectral vector aligned to the active spectral basis.
  */
 type SpectralValue = readonly number[];
@@ -798,6 +808,39 @@ type ColorConversionRequest = {
 }
 
 /**
+ * Describe inputs needed to compose Algorithm32 path radiance with a captured
+ * scene pixel.
+ */
+type SceneDisplayCompositionRequest = {
+	/**
+	 * Store spectral radiance added along the view path.
+	 */
+	pathRadiance: readonly number[];
+
+	/**
+	 * Store spectral transmittance accumulated inside the atmosphere.
+	 */
+	transmittance: readonly number[];
+
+	/**
+	 * Store the captured scene pixel in display RGB.
+	 */
+	sceneDisplayRgb: readonly number[];
+
+	/**
+	 * Store the captured scene pixel color space. Runtime composer scene-color
+	 * targets currently supply linear sRGB.
+	 */
+	sceneColorSpace?: "display-rgb" | "linear-srgb";
+
+	/**
+	 * Decide whether the scene pixel lies inside the atmosphere path and should
+	 * receive view transmittance.
+	 */
+	applySceneTransmittance?: boolean;
+}
+
+/**
  * Describe display-facing color values produced from Algorithm32 spectral
  * output.
  */
@@ -852,6 +895,92 @@ type ExecutionConfig = {
 	 * Store source transmittance integration count when source paths need it.
 	 */
 	sourceTransmittanceIntervalCount?: number;
+
+	/**
+	 * Store incident direction count for shader incident-radiance cache setup.
+	 */
+	incidentDirectionCount?: number;
+
+	/**
+	 * Store incident altitude bin count for distant shader cache setup.
+	 */
+	incidentAltitudeBinCount?: number;
+
+	/**
+	 * Store cache path interval count used while building incident-radiance cache values.
+	 */
+	cachePathIntervalCount?: number;
+
+	/**
+	 * Store optional shader transport optimization facts.
+	 */
+	pathSampleDistribution?: ShaderPathSampleDistribution | null;
+}
+
+/**
+ * Configure shader view-path sample placement.
+ */
+type ShaderPathSampleDistribution = {
+	/**
+	 * Identify the sample-distribution policy.
+	 */
+	kind: "uniform-distance" | "tangent-density-adaptive-v1" | "tangent-density-adaptive-soft-v1";
+}
+
+/**
+ * Describe one shader quality profile.
+ */
+type ShaderQualityProfile = {
+	/**
+	 * Identify the profile.
+	 */
+	id: string;
+
+	/**
+	 * Store the display label.
+	 */
+	label: string;
+
+	/**
+	 * Identify whether this is the reference or a candidate profile.
+	 */
+	role: "reference" | "candidate";
+
+	/**
+	 * Store numerical controls used by the profile.
+	 */
+	numericalControls: Algorithm32NumericalControls;
+
+	/**
+	 * Store optional transport optimization facts.
+	 */
+	transportOptimization?: {
+		pathSampleDistribution?: ShaderPathSampleDistribution | null;
+	} | null;
+
+	/**
+	 * Store optional cache optimization facts.
+	 */
+	cacheOptimization?: {
+		altitudeLookup?: {
+			kind: "nearest-bin" | "linear-altitude-v1";
+		} | null;
+	} | null;
+
+	/**
+	 * Store approximate work estimate metadata.
+	 */
+	workEstimate: unknown;
+
+	/**
+	 * Store estimated work ratio relative to the ideal profile.
+	 */
+	estimatedWorkRatioToIdeal: number;
+
+	/**
+	 * Store profile notes.
+	 */
+	notes: string;
 }
 
 /**
@@ -962,6 +1091,613 @@ type ShaderRuntimeConfig = {
 }
 
 /**
+ * Configure geometry-owned scene-point projection to the ground receiver.
+ */
+type GeometryGroundProjectionRequest = {
+	/**
+	 * Store scene units to Algorithm32 meters scale.
+	 */
+	readonly metersPerSceneUnit?: number;
+
+	/**
+	 * Store an alias for scene units to Algorithm32 meters scale.
+	 */
+	readonly distanceMultiplier?: number;
+
+	/**
+	 * Store an alias for scene units to Algorithm32 meters scale.
+	 */
+	readonly scaleDenominator?: number;
+
+	/**
+	 * Treat points already this close to, or inside, the local surface as
+	 * belonging to the nearby receiver point.
+	 */
+	readonly surfaceToleranceSceneUnits?: number;
+
+	/**
+	 * Reject ray hits farther than this scene-unit distance from the original
+	 * point.
+	 */
+	readonly maxLocalDistanceSceneUnits?: number;
+
+	/**
+	 * Reject ray hits whose surface normal dot with the local projected surface
+	 * normal is lower than this value.
+	 */
+	readonly localNormalDotMin?: number;
+}
+
+/**
+ * Configure geometry-owned Three endpoint object creation.
+ */
+type GeometryThreeEndpointObjectsRequest = {
+	/**
+	 * Store scene units to Algorithm32 meters scale.
+	 */
+	readonly metersPerSceneUnit?: number;
+
+	/**
+	 * Store an alias for scene units to Algorithm32 meters scale.
+	 */
+	readonly scaleDenominator?: number;
+
+	/**
+	 * Store optional material/profile id for the returned endpoint objects.
+	 */
+	readonly spectralReferenceId?: string;
+
+	/**
+	 * Store optional Three numeric material color.
+	 */
+	readonly visualMaterialColor?: number;
+
+	/**
+	 * Store optional display-space material rgba channels.
+	 */
+	readonly visualMaterialDisplayRgba?: readonly [number, number, number, number] | readonly [number, number, number];
+
+	/**
+	 * Select whether the visual ground uses an unlit or Lambert material.
+	 */
+	readonly visualMaterialLighting?: "basic" | "lambert";
+
+	/**
+	 * Configure optional renderer shadow receiving on geometry-owned visual
+	 * endpoint objects.
+	 */
+	readonly shadow?: GeometryEndpointShadowRequest | null;
+
+	/**
+	 * Override flat-ground render extent in Algorithm32 meters.
+	 */
+	readonly groundExtentMeters?: number;
+
+	/**
+	 * Store visual geometry width/radial segment count.
+	 */
+	readonly widthSegments?: number;
+
+	/**
+	 * Store visual geometry height/depth segment count.
+	 */
+	readonly heightSegments?: number;
+
+	/**
+	 * Select the spherical ground visual receiver mesh. The exact raycast
+	 * endpoint remains the ground-hit authority.
+	 */
+	readonly groundVisualMesh?: SphericalGroundVisualMeshRequest | "sphere" | "local-spherical-patch";
+
+	/**
+	 * Store an optional base object name.
+	 */
+	readonly name?: string;
+}
+
+/**
+ * Configure geometry-owned visual endpoint shadow receiving.
+ */
+type GeometryEndpointShadowRequest = {
+	/**
+	 * Enable geometry-owned ground shadow receiving.
+	 */
+	readonly enabled?: boolean;
+
+	/**
+	 * Store whether the visual endpoint should receive Three shadows.
+	 */
+	readonly receiveShadow?: boolean;
+
+	/**
+	 * Store optional shadow policy metadata.
+	 */
+	readonly shadowPolicy?: string;
+}
+
+/**
+ * Configure the optional spherical ground visual receiver mesh.
+ */
+type SphericalGroundVisualMeshRequest = {
+	/**
+	 * Select the visual mesh shape.
+	 */
+	readonly kind?: "sphere" | "local-spherical-patch";
+
+	/**
+	 * Override local patch half width in scene units.
+	 */
+	readonly xExtentSceneUnits?: number;
+
+	/**
+	 * Override local patch minimum forward/depth coordinate in scene units.
+	 */
+	readonly zMinSceneUnits?: number;
+
+	/**
+	 * Override local patch maximum forward/depth coordinate in scene units.
+	 */
+	readonly zMaxSceneUnits?: number;
+
+	/**
+	 * Lift local patch vertices outward from the spherical surface in scene
+	 * units. This is useful for visual-only receiver overlays that should not
+	 * z-fight the canonical ground receiver.
+	 */
+	readonly surfaceLiftSceneUnits?: number;
+}
+
+/**
+ * Return geometry-owned Three endpoint objects.
+ */
+type GeometryThreeEndpointObjects = {
+	/**
+	 * Store visible objects the app should add to the scene/composer render.
+	 */
+	readonly visualObjects: readonly unknown[];
+
+	/**
+	 * Store exact raycast/input objects for scene-hit ownership.
+	 */
+	readonly raycastObjects: readonly unknown[];
+
+	/**
+	 * Store owner-specific placement, scale, and material metadata.
+	 */
+	readonly metadata: unknown;
+}
+
+/**
+ * Configure geometry-owned scene-depth cap resolution.
+ */
+type GeometrySceneDepthMaxMetersRequest = {
+	/**
+	 * Provide the active camera when available.
+	 */
+	readonly camera?: unknown;
+
+	/**
+	 * Provide camera position already converted to Algorithm32 meters.
+	 */
+	readonly cameraPositionMeters?: SceneVector3;
+
+	/**
+	 * Store an alias for camera position in Algorithm32 meters.
+	 */
+	readonly cameraWorldPositionMeters?: SceneVector3;
+
+	/**
+	 * Provide camera position in renderer scene units.
+	 */
+	readonly cameraPositionSceneUnits?: SceneVector3;
+
+	/**
+	 * Store scene units to Algorithm32 meters scale.
+	 */
+	readonly metersPerSceneUnit?: number;
+
+	/**
+	 * Store an alias for scene units to Algorithm32 meters scale.
+	 */
+	readonly distanceMultiplier?: number;
+
+	/**
+	 * Store an alias for scene units to Algorithm32 meters scale.
+	 */
+	readonly scaleDenominator?: number;
+
+	/**
+	 * Override geometry-owned endpoint extent in Algorithm32 meters when the
+	 * geometry uses a finite ground plane.
+	 */
+	readonly groundExtentMeters?: number;
+
+	/**
+	 * Store the smallest acceptable cap in Algorithm32 meters.
+	 */
+	readonly minimumMeters?: number;
+}
+
+/**
+ * Configure source-owned scene-light percentage resolution.
+ */
+type LightSourceSceneLightPercentRequest = {
+	/**
+	 * Provide source-relative facts for local finite-source light percentage.
+	 */
+	readonly sourceRelativePosition?: SourceRelativePosition;
+
+	/**
+	 * Override the source direction in scene space.
+	 */
+	readonly directionToLightScene?: UnitVector3;
+
+	/**
+	 * Store an alias for source direction in scene space.
+	 */
+	readonly directionToSourceScene?: UnitVector3;
+
+	/**
+	 * Store local scene up direction at the observer.
+	 */
+	readonly localUpScene?: UnitVector3;
+
+	/**
+	 * Store an alias for local scene up direction at the observer.
+	 */
+	readonly observerUpScene?: UnitVector3;
+
+	/**
+	 * Store the source-up dot-product value where twilight ambient begins.
+	 */
+	readonly twilightStartSourceUpDot?: number;
+
+	/**
+	 * Store the source-up dot-product value where ambient reaches full daylight.
+	 */
+	readonly fullAmbientSourceUpDot?: number;
+}
+
+/**
+ * Describe source-owned scene-light percentages.
+ */
+type LightSourceSceneLightPercent = {
+	/**
+	 * Store direct source-light percentage.
+	 */
+	readonly directLightPercent: number;
+
+	/**
+	 * Store ambient/fill scene-light percentage.
+	 */
+	readonly ambientLightPercent: number;
+
+	/**
+	 * Store the preferred aggregate local light percentage.
+	 */
+	readonly localLightPercent: number;
+
+	/**
+	 * Store the source direction dot local up direction.
+	 */
+	readonly sourceUpDot?: number;
+
+	/**
+	 * Store owner-specific policy metadata.
+	 */
+	readonly policy?: string;
+}
+
+/**
+ * Configure source-owned Three endpoint lighting object creation.
+ */
+type LightSourceThreeLightingRequest = {
+	/**
+	 * Provide the caller's Three namespace with lighting constructors.
+	 */
+	readonly THREE: unknown;
+
+	/**
+	 * Optionally provide the Three scene to receive created lighting objects.
+	 */
+	readonly scene?: unknown;
+
+	/**
+	 * Provide source-relative facts for local finite-source lighting.
+	 */
+	readonly sourceRelativePosition?: SourceRelativePosition;
+
+	/**
+	 * Provide the finite source scene-space position for local sources.
+	 */
+	readonly sourcePositionSceneUnits?: SceneVector3;
+
+	/**
+	 * Provide the observer scene-space position used for local source direction.
+	 */
+	readonly observerScenePositionUnits?: SceneVector3;
+
+	/**
+	 * Provide the focus/target scene-space point for distant directional lights.
+	 */
+	readonly focusSceneUnits?: SceneVector3;
+
+	/**
+	 * Override the source direction in scene space.
+	 */
+	readonly directionToLightScene?: UnitVector3;
+
+	/**
+	 * Store an alias for source direction in scene space.
+	 */
+	readonly directionToSourceScene?: UnitVector3;
+
+	/**
+	 * Override distant directional light placement distance in scene units.
+	 */
+	readonly lightDistanceSceneUnits?: number;
+
+	/**
+	 * Override distant source Three light intensity.
+	 */
+	readonly intensity?: number;
+
+	/**
+	 * Store local source endpoint light calibration scalar.
+	 */
+	readonly calibrationScalar?: number;
+
+	/**
+	 * Store ambient fill intensity.
+	 */
+	readonly ambientIntensity?: number;
+
+	/**
+	 * Store source-scaled ambient fill intensity bounds.
+	 */
+	readonly ambientIntensityRange?: LightSourceSceneAmbientIntensityRange;
+
+	/**
+	 * Configure optional endpoint indirect fill for local sources.
+	 */
+	readonly endpointIndirectFill?: LightSourceThreeEndpointIndirectFillRequest;
+
+	/**
+	 * Store diagnostic endpoint color/shading status.
+	 */
+	readonly endpointColorStatus?: string;
+
+	/**
+	 * Select how local endpoint scene lights are scaled.
+	 */
+	readonly endpointSceneLightScalePolicy?: "endpoint-material-shading" | "observer-incident-scale";
+
+	/**
+	 * Configure optional Three shadow-map support.
+	 */
+	readonly shadow?: LightSourceThreeShadowRequest;
+}
+
+/**
+ * Return source-owned Three lighting objects.
+ */
+type LightSourceThreeLightingObjects = {
+	/**
+	 * Store Three lights the app should add to the scene/composer render.
+	 */
+	readonly lights: readonly unknown[];
+
+	/**
+	 * Store required non-light scene objects such as directional-light targets.
+	 */
+	readonly sceneObjects?: readonly unknown[];
+
+	/**
+	 * Store owner-specific placement, intensity, shadow, and scale metadata.
+	 */
+	readonly metadata: unknown;
+}
+
+/**
+ * Configure source-scaled ambient intensity bounds.
+ */
+type LightSourceSceneAmbientIntensityRange = {
+	/**
+	 * Store the minimum ambient intensity.
+	 */
+	readonly min?: number;
+
+	/**
+	 * Store the maximum ambient intensity.
+	 */
+	readonly max?: number;
+}
+
+/**
+ * Configure optional source-owned Three shadow helpers.
+ */
+type LightSourceThreeShadowRequest = {
+	/**
+	 * Enable or disable shadow object creation/configuration.
+	 */
+	readonly enabled: boolean;
+
+	/**
+	 * Store the shadow focus/target scene-space point.
+	 */
+	readonly focusSceneUnits?: SceneVector3;
+
+	/**
+	 * Store optional keyed shadow objects. Each object request creates one
+	 * source-owned directional shadow light focused on that object.
+	 */
+	readonly objects?: readonly LightSourceThreeShadowObjectRequest[];
+
+	/**
+	 * Store optional object key metadata.
+	 */
+	readonly objectKey?: string;
+
+	/**
+	 * Store optional Three layer index used to scope a source-owned shadow
+	 * camera to the matching object caster.
+	 */
+	readonly layerIndex?: number;
+
+	/**
+	 * Store orthographic shadow extent in scene units.
+	 */
+	readonly extentSceneUnits?: number;
+
+	/**
+	 * Store optional asymmetric orthographic shadow camera bounds.
+	 */
+	readonly cameraLeft?: number;
+	readonly cameraRight?: number;
+	readonly cameraTop?: number;
+	readonly cameraBottom?: number;
+
+	/**
+	 * Store light placement distance in scene units.
+	 */
+	readonly lightDistanceSceneUnits?: number;
+
+	/**
+	 * Store shadow camera near plane in scene units.
+	 */
+	readonly cameraNear?: number;
+
+	/**
+	 * Store shadow camera far plane in scene units.
+	 */
+	readonly cameraFar?: number;
+
+	/**
+	 * Store shadow-map width and height in pixels.
+	 */
+	readonly mapSize?: number;
+
+	/**
+	 * Store shadow bias.
+	 */
+	readonly bias?: number;
+
+	/**
+	 * Store normal shadow bias.
+	 */
+	readonly normalBias?: number;
+
+	/**
+	 * Store Three shadow PCF radius.
+	 */
+	readonly radius?: number;
+
+	/**
+	 * Store Three shadow opacity for source-owned shadow maps.
+	 */
+	readonly shadowIntensity?: number;
+}
+
+/**
+ * Configure one source-owned Three shadow object.
+ */
+type LightSourceThreeShadowObjectRequest = {
+	/**
+	 * Store optional object key metadata.
+	 */
+	readonly objectKey?: string;
+
+	/**
+	 * Store optional Three layer index used to scope a source-owned shadow
+	 * camera to matching casters.
+	 */
+	readonly layerIndex?: number;
+
+	/**
+	 * Store the shadow focus/target scene-space point.
+	 */
+	readonly focusSceneUnits?: SceneVector3;
+
+	/**
+	 * Store orthographic shadow extent in scene units.
+	 */
+	readonly extentSceneUnits?: number;
+
+	/**
+	 * Store optional asymmetric orthographic shadow camera bounds.
+	 */
+	readonly cameraLeft?: number;
+	readonly cameraRight?: number;
+	readonly cameraTop?: number;
+	readonly cameraBottom?: number;
+
+	/**
+	 * Store light placement distance in scene units.
+	 */
+	readonly lightDistanceSceneUnits?: number;
+
+	/**
+	 * Store shadow camera near plane in scene units.
+	 */
+	readonly cameraNear?: number;
+
+	/**
+	 * Store shadow camera far plane in scene units.
+	 */
+	readonly cameraFar?: number;
+
+	/**
+	 * Store shadow-map width and height in pixels.
+	 */
+	readonly mapSize?: number;
+
+	/**
+	 * Store shadow bias.
+	 */
+	readonly bias?: number;
+
+	/**
+	 * Store normal shadow bias.
+	 */
+	readonly normalBias?: number;
+
+	/**
+	 * Store Three shadow PCF radius.
+	 */
+	readonly radius?: number;
+
+	/**
+	 * Store Three shadow opacity for source-owned shadow maps.
+	 */
+	readonly shadowIntensity?: number;
+}
+
+/**
+ * Configure optional local endpoint indirect fill lighting.
+ */
+type LightSourceThreeEndpointIndirectFillRequest = {
+	/**
+	 * Enable or disable indirect fill lighting.
+	 */
+	readonly enabled: boolean;
+
+	/**
+	 * Select the fill approximation policy.
+	 */
+	readonly policy?: "general-ambient-fill" | "opposite-directional-fill" | "source-direction-falloff-fill";
+
+	/**
+	 * Store fill intensity relative to the source-driven endpoint light.
+	 */
+	readonly intensityRatio?: number;
+
+	/**
+	 * Store fill placement distance in scene units.
+	 */
+	readonly distanceSceneUnits?: number;
+}
+
+/**
  * Provide caller-owned Three/runtime handles for shader setup.
  */
 type ShaderSetupRequest = {
@@ -1013,6 +1749,108 @@ type ShaderSetupRequest = {
 	 * Provide an optional runtime logger for non-fatal frame failures.
 	 */
 	logger?: Console;
+
+	/**
+	 * Provide an optional shader-pass performance callback. When omitted, the
+	 * runtime does not create pass timers or GPU timer queries.
+	 */
+	performanceCallback?: (sample: ShaderPerformanceSample) => void;
+
+	/**
+	 * Provide the pass invocation cadence for performance timer samples.
+	 * Defaults to every frame when omitted.
+	 */
+	performanceSampleIntervalFrames?: number;
+
+	/**
+	 * Limit unresolved GPU timer queries per timed pass. Defaults to one.
+	 */
+	performanceMaxPendingQueries?: number;
+
+	/**
+	 * Provide optional initial runtime binding values by shader value key.
+	 */
+	bindingValues?: Record<string, unknown>;
+
+	/**
+	 * Provide optional cache texture payloads keyed by shader value key.
+	 */
+	texturePayloads?: Record<string, CacheShaderPayloadDescriptor | CacheShaderTexturePayload>;
+
+	/**
+	 * Provide an optional explicit shader descriptor for low-level assembly.
+	 */
+	descriptor?: Algorithm32ShaderDescriptor;
+
+	/**
+	 * Provide optional owner-supplied shader contributions for low-level assembly.
+	 */
+	contributions?: readonly ShaderContribution[];
+
+	/**
+	 * Provide optional symbols required by the shared main skeleton.
+	 */
+	mainRequiredSymbols?: readonly string[];
+
+	/**
+	 * Provide optional symbols supplied by the runtime skeleton.
+	 */
+	systemProvidedSymbols?: readonly string[];
+}
+
+/**
+ * Describe one optional shader-pass performance sample.
+ */
+type ShaderPerformanceSample = {
+	/**
+	 * Store the pass that produced the sample.
+	 */
+	passName: string;
+
+	/**
+	 * Store the event phase for the sample.
+	 */
+	event: "cpu-submit" | "gpu-elapsed" | "gpu-query-error";
+
+	/**
+	 * Store the correlated sample id shared by CPU and GPU events.
+	 */
+	sampleId: number;
+
+	/**
+	 * Store callback emission time in milliseconds.
+	 */
+	timestampMs: number;
+
+	/**
+	 * Store CPU submit duration in milliseconds when available.
+	 */
+	cpuSubmitMs?: number;
+
+	/**
+	 * Store GPU elapsed duration in milliseconds when available.
+	 */
+	gpuMs?: number | null;
+
+	/**
+	 * Store whether GPU timer query support was available.
+	 */
+	gpuAvailable?: boolean;
+
+	/**
+	 * Store whether the GPU disjoint flag invalidated the sample.
+	 */
+	disjoint?: boolean;
+
+	/**
+	 * Store optional failure detail for timer-query setup/readback.
+	 */
+	errorMessage?: string;
+
+	/**
+	 * Allow pass-specific metadata.
+	 */
+	[key: string]: unknown;
 }
 
 /**

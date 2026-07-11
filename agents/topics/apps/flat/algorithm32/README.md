@@ -84,6 +84,13 @@ packets and Raycaster captures are validation/oracle inputs only. The facade
 should own or expose source-driven scene-light synchronization, geometry/depth
 policy, and fail-loud local-cache binding so callers do not need Algorithm32
 shader/cache domain knowledge. Stable diagnostics remain deferred.
+Live app note: the local Polylith server runs over HTTPS on port 443. Use
+`https://localhost/flat/globe-simulation/` with local certificate validation
+disabled for manual probes. The latest retained live artifact,
+`tmp/atmosphere/app-globe-localhost-https/images/initial-page.png`, shows the
+Globe Simulation page shell with an empty black render area. Do not repeat
+long Puppeteer/canvas readback loops without lightweight instrumentation and
+tight timeouts; the last attempt consumed excessive CPU and was killed.
 Shader assembly follows the reconciliation ownership split: specific
 abstraction interfaces own their shader contributions and semantic payloads,
 while `ShaderBuilder` owns the mechanical source assembly, compatibility
@@ -102,6 +109,12 @@ integration path, configuration boundary, and explicit exclusions. The current
 primary facade surface is `constructor`, `config` getter, `setConfig`, awaited
 `setupShader`, `evaluate`, deferred `getDiagnostics`, and `dispose`;
 `buildTexture` and `validate` are not primary app-facing methods.
+The current prescriptive app integration contract is
+[Algorithm32 App Integration Guide](integration.md). It covers the production
+React/R3F composer path for a new app, including the reusable wrapper shipped
+from `shared/algorithm32/production/react/`, geometry-owned endpoint objects,
+source-owned lighting objects, app-authored solid scene inputs, binding
+updates, config refresh, diagnostics, and troubleshooting.
 Local Sun configuration and calibration must resolve to the public Sun
 interface before reaching transport, texture building, cache, or runtime
 shader code. For Sun, atmosphere composition, and geometry, anything not
@@ -161,7 +174,7 @@ shared/algorithm32/production/
 
 ## Fresh Bootstrap Checkpoint
 
-As of July 9, 2026, fresh agents should treat the production shader lane as an
+As of July 11, 2026, fresh agents should treat the production shader lane as an
 active implementation, not a scaffold-only design topic. The promoted concrete
 slice includes:
 
@@ -181,29 +194,90 @@ slice includes:
   of missing uniforms from descriptor defaults. Required shader bindings now
   fail loudly before pass installation when no setup/resource value or uniform
   default can satisfy them. Cache descriptor facts and cache texture payload
-  facts are also validated before resource creation.
+  facts are also validated before resource creation;
+- preliminary flat-app integration now routes the flat simulation through the
+  production local-source/flat-geometry Algorithm32 path and the globe
+  simulation through the production distant-source/spherical-geometry path.
+  The active app integrations create real Three `EffectComposer` instances,
+  add `RenderPass` for the solid scene, pass those composers to
+  `Algorithm32.setupShader(...)`, provide live camera
+  matrix/model-position bindings, and bypass the old feature-local atmosphere
+  shaders. The production React wrapper now creates and mounts the required
+  geometry endpoint and source-light objects from
+  `config.geometry.createThreeEndpointObjects(...)` and
+  `config.lightSource.addSceneLighting(...)`; the owner-created
+  flat ground and globe surface endpoint objects carry the
+  `geometry-ground-boundary` tags and `metersPerSceneUnit = 1000` scale facts
+  consumed by `SceneInputCapture`. This follows the reconciliation
+  experimental browser runner's composer and km-to-meter scaling conventions.
+  The globe app bridge
+  selects the spherical geometry's `model-space` scene frame and uses a local
+  horizon/object depth cap because the app scene is planet-centered/model-space,
+  not the reconciliation planet runner's observer-local frame. The fullscreen
+  production pass uses Three `RawShaderMaterial` for its GLSL3 shader so Three
+  does not redeclare the `position` vertex attribute. This is a first
+  integration pass, not correctness evidence for Algorithm32 output;
+  source-light synchronization, scene-mapping polish, live app rendering, and
+  browser readback/visual parity remain open. The old feature-local atmosphere
+  shader components and their direct legacy spec were removed. The flat and
+  globe calibration app views now default the rendered camera to 10 meters
+  above modeled ground; the flat renderer now consumes
+  `observer.view.cameraHeightKm` directly instead of the old altitude/1.7-meter
+  fallback, starts the camera at `[0, cameraHeightKm, 0]`, and initially looks
+  horizontally along `-Z` with pitch `0`. Flat live shader bindings now map the
+  R3F observer-local camera position through
+  `FlatEarthGeometry.mapObserverLocalScenePointToModelPosition(...)`, matching
+  the flat ground basis used by the owner-created endpoint objects. Flat/globe
+  scene components are minimal camera/canvas wrappers around the base composer
+  instead of duplicating ground/light construction. The R3F bridge is reduced
+  to the smallest production shape: it supplies renderer/camera/size to the
+  class wrapper, calls the Algorithm32 frame method, and renders the wrapper's
+  solid scene as fallback while setup is pending or failed.
+
+Production geometry now also exposes `resolveSceneDepthMaxMeters(...)` for
+the default scene-depth capture cap, so app setup only supplies
+`sceneDepthMaxMeters` when it deliberately adds endpoint objects beyond the
+geometry-owned range.
 
 The current verification checkpoint is
-`npm run test:algorithm32:production` passing 168 specs with 0 failures, plus
+`npm run test:algorithm32:production` passing 229 specs with 0 failures, plus
 `npm run build` passing with the known Babel deoptimisation and existing
-circular-dependency warnings. The current internal short-code reference for
+circular-dependency warnings. The flat app integration also passes
+`npm run test:ui:flat` with 120 specs and 0 failures. The current internal short-code reference for
 promoted POC constants/display/profile shader facts is
 `(script a32-poc-color-032)` in
 `shared/algorithm32/production/references.md`. Remaining concrete work is
-resource/capability polish around the promoted path and optional source-light
+resource/capability polish around the promoted path and source-light
 or scene-mapping adapters where runtime integration needs them. The broader
 non-spectral unit-neutral configuration migration remains a cleanup when
 those APIs are next touched.
-Browser/readback parity fixtures for scene color, ray-length/depth capture,
-hit mask, and selected-pixel output are deferred until real app composer
-integration provides stable scene color, capture, and readback surfaces.
+First re-check the live HTTPS app's globe/flat canvas with lightweight
+instrumentation after the bare R3F bridge fallback and observer-local flat
+binding fixes.
+Browser/readback parity fixtures for scene color,
+ray-length/depth capture, hit mask, and selected-pixel output are the next
+validation layer once the preliminary real app composer bridge visibly renders.
+The new `flat32` app is the current vanilla debugging baseline: it performs
+the same production flat/local Algorithm32 setup directly in `src/flat32/index.js`
+without React or the flat app adapter, and uses Three's built-in
+`PointerLockControls` for stand-still mouse look. It is an integration
+POC/reference bench for fixing the real `src/flat` app; accepted behavior
+should be ported back into the real flat app integration rather than treating
+`flat32` as the product surface.
+The active `flat32` focus is the atmosphere/star dimming diagnostic. Synthetic
+stars and the A-H ladder are captured scene inputs, while their labels are DOM
+overlays outside the atmosphere pass. The latest Color/display fix prevents
+view transmittance from dimming outside-atmosphere scene pixels: captured
+scene color is multiplied by view transmittance only when the captured
+endpoint lies inside the atmosphere path. Manual visual retest remains
+pending after the passing production tests/build.
 Renderer-produced depth/hit capture is now promoted as the reusable
 `SceneInputCapture` composer pass that runs ahead of the Algorithm32
 atmosphere pass; shader-facing object/material ID textures are intentionally
 not part of the first production atmosphere algorithm contract. Final
 Color/display composition still consumes renderer-produced hit-pixel scene
-color when composing endpoint color with Algorithm32 path radiance and
-transmittance.
+color when composing endpoint color with Algorithm32 path radiance and the
+conditional scene transmittance owned by Color.
 
 ## Current Authority
 
@@ -229,6 +303,12 @@ transmittance.
 - [Algorithm32 Primary Facade API Draft](api-facade-draft.md) is the current
   design draft for the main configured facade class and the runtime shader
   handle it returns.
+- [Algorithm32 App Integration Guide](integration.md) is the prescriptive
+  production integration guide for a new React/R3F app, including config
+  factories, the reusable class-based Algorithm32 wrapper plus tiny R3F bridge
+  shipped from `shared/algorithm32/production/react/`,
+  geometry/light-source-owned scene objects, app-authored endpoints, frame
+  loops, resizing, config updates, and troubleshooting.
 
 ## Provenance Only
 
@@ -266,7 +346,7 @@ with class-name files, such as
 `models/_tests/SpectralModel.spec.js`, and guard the facade, implementation
 collaborators, `SpectralModel`, and `SharedModel`. The package-level scaffold
 walk intentionally ignores `quarantine/` because files there are archival,
-not active production implementation. The latest focused lane covers 168
+not active production implementation. The latest focused lane covers 219
 specs with 0 failures, including contract-alignment guards, facade
 lifecycle coverage, fixture-backed `SpectralCalculator` transport helper
 coverage, `Reference` orchestration, `ShaderBuilder` setup validation,
@@ -394,7 +474,7 @@ The current production-shape evidence keeps the Three-native render path:
 ```text
 Three scene + camera
   -> scene color render target + DepthTexture
-  -> Algorithm32 fullscreen ShaderMaterial
+  -> Algorithm32 fullscreen RawShaderMaterial
   -> output target or screen
 ```
 

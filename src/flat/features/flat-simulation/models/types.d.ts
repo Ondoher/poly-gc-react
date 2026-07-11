@@ -73,6 +73,11 @@ type FlatSimulationObserverView = {
 	altitudeKm: number;
 
 	/**
+	 * Store absolute camera height above the rendered ground in kilometers.
+	 */
+	cameraHeightKm?: number;
+
+	/**
 	 * Explain why the view override exists.
 	 */
 	purpose: string;

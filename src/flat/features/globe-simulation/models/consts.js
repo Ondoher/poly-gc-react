@@ -67,7 +67,7 @@ export const DEFAULT_GLOBE_TIME = '2026-06-13T13:07:44-07:00';
  */
 export const DEFAULT_GLOBE_SURFACE_MATERIAL = Object.freeze({
 	model: 'matte-solid-color',
-	color: '#3f7f45',
+	color: '#4fa33d',
 	roughness: 1,
 	metalness: 0,
 	surfaceFeatures: false,
@@ -127,6 +127,7 @@ export const DEFAULT_GLOBE_CONFIG = Object.freeze({
 	root: DEFAULT_GLOBE_ROOT,
 	time: DEFAULT_GLOBE_TIME,
 	earthRadiusKm: MEAN_EARTH_RADIUS_KM,
+	cameraHeightMeters: 10,
 	display: DEFAULT_GLOBE_DISPLAY,
 });
 

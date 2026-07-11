@@ -1,3 +1,5 @@
+import ShaderPassPerformanceTimer from './ShaderPassPerformanceTimer.js';
+
 const GLSL_DIRECTIVE_PREFIX = String.fromCharCode(35);
 
 /**
@@ -124,6 +126,13 @@ export class ShaderRuntimePass {
 	_disposed = false;
 
 	/**
+	 * Store optional runtime pass performance timer.
+	 *
+	 * @type {ShaderPassPerformanceTimer | null}
+	 */
+	_performanceTimer = null;
+
+	/**
 	 * Create an installed runtime shader pass.
 	 *
 	 * @param {ShaderRuntimePassConfiguration} configuration - Supplies pass setup.
@@ -135,7 +144,7 @@ export class ShaderRuntimePass {
 
 		const THREE = configuration.THREE;
 
-		for (const constructorName of ['ShaderMaterial', 'PlaneGeometry', 'Mesh', 'Scene', 'OrthographicCamera']) {
+		for (const constructorName of ['RawShaderMaterial', 'PlaneGeometry', 'Mesh', 'Scene', 'OrthographicCamera']) {
 			if (typeof THREE?.[constructorName] !== 'function') {
 				throw new TypeError(`Shader runtime pass requires THREE.${constructorName}.`);
 			}
@@ -145,7 +154,15 @@ export class ShaderRuntimePass {
 		this._sourceHash = configuration.sourceHash;
 		this._logger = configuration.logger ?? null;
 		this._sceneInputCapture = configuration.sceneInputCapture ?? null;
-		this._material = new THREE.ShaderMaterial({
+		this._performanceTimer = typeof configuration.performanceCallback === 'function'
+			? new ShaderPassPerformanceTimer({
+				passName: 'algorithm32-runtime-shader',
+				performanceCallback: configuration.performanceCallback,
+				sampleIntervalFrames: configuration.performanceSampleIntervalFrames,
+				maxPendingQueries: configuration.performanceMaxPendingQueries,
+			})
+			: null;
+		this._material = new THREE.RawShaderMaterial({
 			glslVersion: THREE.GLSL3 ?? '300 es',
 			vertexShader: stripGlslVersion(fullscreenVertexShader()),
 			fragmentShader: stripGlslVersion(configuration.fragmentShaderSource),
@@ -240,7 +257,18 @@ export class ShaderRuntimePass {
 			}
 
 			if (typeof renderer?.render === 'function') {
-				renderer.render(this._scene, this._camera);
+				const performanceSample = this._performanceTimer?.begin?.(renderer, {
+					frameCount: this._frameCount,
+					sourceHash: this._sourceHash,
+					renderToScreen: this.renderToScreen,
+					targetName: this.renderToScreen ? 'screen' : writeBuffer?.texture?.name ?? null,
+				}) ?? null;
+
+				try {
+					renderer.render(this._scene, this._camera);
+				} finally {
+					this._performanceTimer?.end?.(renderer, performanceSample);
+				}
 			}
 
 			this._frameCount += 1;
@@ -279,6 +307,7 @@ export class ShaderRuntimePass {
 
 		this._disposed = true;
 		this.enabled = false;
+		this._performanceTimer?.dispose?.();
 		this._material?.dispose?.();
 		this._geometry?.dispose?.();
 	}

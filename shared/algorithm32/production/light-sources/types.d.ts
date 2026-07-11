@@ -109,6 +109,56 @@ type LocalSunLightSourceConfig = {
 };
 
 /**
+ * Describe the flat-world synchronized local Sun position.
+ */
+type FlatSynchronizedPosition = {
+	/**
+	 * Identify the calibration mode used to produce this position.
+	 */
+	readonly mode: "world" | "closest";
+
+	/**
+	 * Store the resolved flat Sun latitude in degrees.
+	 */
+	readonly latitude: number;
+
+	/**
+	 * Store the resolved flat Sun longitude in degrees.
+	 */
+	readonly longitude: number;
+
+	/**
+	 * Store the latitude where the standard Sun is overhead for the UTC date.
+	 */
+	readonly startLatitude: number;
+
+	/**
+	 * Store the daily orbit anchor longitude in degrees.
+	 */
+	readonly startLongitude: number;
+
+	/**
+	 * Store the orbit anchor as an ISO timestamp.
+	 */
+	readonly startTime: string;
+
+	/**
+	 * Store the orbit angle elapsed since the anchor in degrees.
+	 */
+	readonly orbitAngleDegrees: number;
+
+	/**
+	 * Store the signed elapsed time from the anchor.
+	 */
+	readonly elapsedMilliseconds: number;
+
+	/**
+	 * Store the fixed daily orbit period.
+	 */
+	readonly orbitPeriodMilliseconds: number;
+};
+
+/**
  * Configure a distant incident-radiance cache.
  */
 type DistantIncidentRadianceCacheConfig = {

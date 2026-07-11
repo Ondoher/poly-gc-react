@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 import FlatEarthGeometry from '../FlatEarthGeometry.js';
 
 describe('FlatEarthGeometry', () => {
@@ -125,6 +127,94 @@ describe('FlatEarthGeometry', () => {
 		expect(geometry.mapModelPositionToObserverLocalScenePoint([2, -6, 4], {
 			metersPerSceneUnit: 2,
 		})).toEqual([1, 2, 3]);
+		expect(geometry.mapGroundOffsetToScenePoint([4, -5], {
+			heightAboveGroundSceneUnits: 6,
+		})).toEqual([4, 6, -5]);
+		expect(geometry.projectScenePointToGroundAlongDirection([2, 4, -3], [0, -1, 0]))
+			.toEqual([2, 0, -3]);
+		expect(geometry.projectScenePointToGroundAlongDirection([2, 4, -3], [1, 0, 0]))
+			.toEqual([2, 0, -3]);
+	});
+
+	it('creates geometry-owned Three flat endpoint objects', () => {
+		const endpoints = createGeometry().createThreeEndpointObjects({
+			metersPerSceneUnit: 2,
+			groundExtentMeters: 40,
+			name: 'test-flat',
+			visualMaterialDisplayRgba: [10, 20, 30, 128],
+			shadow: {
+				enabled: true,
+				shadowPolicy: 'test-ground-shadow-policy',
+			},
+		});
+		const visualObject = endpoints.visualObjects[0];
+		const raycastObject = endpoints.raycastObjects[0];
+		const hits = [];
+
+		raycastObject.updateMatrixWorld(true);
+		raycastObject.raycast(new THREE.Raycaster(
+			new THREE.Vector3(0, 2, 0),
+			new THREE.Vector3(0, -1, 0),
+			0,
+			100,
+		), hits);
+
+		expect(visualObject instanceof THREE.Mesh).toBeTrue();
+		expect(visualObject.geometry.type).toBe('PlaneGeometry');
+		expect(visualObject.geometry.parameters.width).toBe(20);
+		expect(visualObject.geometry.parameters.height).toBe(20);
+		expect(visualObject.rotation.x).toBeCloseTo(-Math.PI / 2, 12);
+		expect(visualObject.position.toArray()).toEqual([0, 0, -0]);
+		expect(visualObject.material.transparent).toBeTrue();
+		expect(visualObject.material.opacity).toBeCloseTo(128 / 255, 12);
+		expect(visualObject.receiveShadow).toBeTrue();
+		expect(visualObject.userData).toEqual(jasmine.objectContaining({
+			algorithm32SceneInput: true,
+			algorithm32EndpointRole: 'geometry-ground-visual',
+			endpointKind: 'geometry-ground-boundary',
+			metersPerSceneUnit: 2,
+			shadowPolicy: 'test-ground-shadow-policy',
+			shadowReceiverPolicy: 'geometry-owned-ground-receives-three-shadow-map',
+		}));
+		expect(raycastObject.userData).toEqual(jasmine.objectContaining({
+			algorithm32SceneInput: true,
+			algorithm32EndpointRole: 'geometry-ground-exact-raycast',
+			endpointKind: 'geometry-ground-boundary',
+			metersPerSceneUnit: 2,
+		}));
+		expect(hits.length).toBe(1);
+		expect(hits[0].distance).toBeCloseTo(2, 12);
+		expect(endpoints.metadata).toEqual(jasmine.objectContaining({
+			owner: 'FlatEarthGeometry',
+			groundPlane: 'z-equals-zero',
+			groundExtentMeters: 40,
+			widthSceneUnits: 20,
+			depthSceneUnits: 20,
+			centerSceneUnits: [0, 0, -0],
+			shadow: jasmine.objectContaining({
+				enabled: true,
+				receiveShadow: true,
+				shadowPolicy: 'test-ground-shadow-policy',
+			}),
+		}));
+	});
+
+	it('resolves a geometry-owned scene-depth cap from flat endpoint extent', () => {
+		const geometry = createGeometry();
+
+		expect(geometry.resolveSceneDepthMaxMeters()).toBeCloseTo(Math.hypot(10000, 10000, 2), 12);
+		expect(geometry.resolveSceneDepthMaxMeters({
+			groundExtentMeters: 40,
+		})).toBeCloseTo(Math.hypot(20, 20, 2), 12);
+		expect(geometry.resolveSceneDepthMaxMeters({
+			cameraPositionMeters: [0, 0, 12],
+			groundExtentMeters: 40,
+		})).toBeCloseTo(Math.hypot(20, 20, 12), 12);
+		expect(geometry.resolveSceneDepthMaxMeters({
+			cameraPositionSceneUnits: { x: 0, y: 3, z: 0 },
+			metersPerSceneUnit: 2,
+			groundExtentMeters: 40,
+		})).toBeCloseTo(Math.hypot(20, 20, 6), 12);
 	});
 
 	it('resolves local cache-build rays from z/rho coordinates', () => {

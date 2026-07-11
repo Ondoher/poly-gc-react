@@ -60,14 +60,24 @@ source-created incident-cache shader setup with cache-owned
 descriptors, contributions, and texture payloads, a core transport
 contribution provider, cache texture resource preparation, cache descriptor/payload
 compatibility validation, Three
-material/pass installation for assembled composer setups, fail-loud required
-binding validation before pass installation, live-frame failure logging, and
-handle-owned runtime disposal. The old aggregate profile contribution
+material/pass installation for assembled composer setups, reusable
+scene depth/hit capture, fail-loud required binding validation before pass
+installation, live-frame failure logging, and handle-owned runtime disposal.
+The active flat/globe app integrations now create real Three
+`EffectComposer` instances with `RenderPass` and pass those composers to
+`Algorithm32.setupShader(...)`; the flat floor and globe surface sphere are
+tagged as `geometry-ground-boundary` inputs at `metersPerSceneUnit = 1000`
+while decorative non-input meshes are excluded from `SceneInputCapture`. The
+old aggregate profile contribution
 factories and the old shader contribution factories have been moved to
 `shared/algorithm32/production/quarantine/` for later deletion. Missing Color
 configuration now fails loudly instead of using a default output
-contribution. Verification:
-`npm run test:algorithm32:production` passes 168 specs with 0 failures.
+contribution. Geometry-owned Three endpoint creation and source-owned Three
+lighting creation are now promoted on the concrete spherical/flat geometries
+and distant/local sources, and concrete geometries now resolve the default
+scene-depth capture cap through `resolveSceneDepthMaxMeters(...)`.
+Verification:
+`npm run test:algorithm32:production` passes 182 specs with 0 failures.
 
 - `Algorithm32.js` now owns first-slice config validation, shared model
   creation, collaborator wiring, shader handles, disposal, and loud lifecycle

@@ -23,20 +23,15 @@ agents/topics.bak/
 
 ## Bootstrap Rule
 
-On session bootstrap, load:
+On session bootstrap, load [Active Topic](active-topic.md) first. Then load the
+topic README named by that file and only the files listed under its
+`Minimal Reload Sources` section. If no minimal section exists, fall back to
+the file's `Reload Sources` section.
 
-1. [Active Topic](active-topic.md)
-2. [Context Bootstrap](context/bootstrap.md)
-3. [Routing](context/routing.md)
-4. [Architecture Overview](standards/architecture/overview.md)
-
-Then load the active product/app README and any focused reload sources listed
-by the active topic.
-
-If the active topic declares a clean-room task, restricted source boundary, or
-focused reload list, that active-topic instruction wins over the general topic
-tree. Do not mine archive, migration, historical, or unrelated app docs for
-that task unless a later user explicitly changes the active-topic rule.
+Do not load this index, routing docs, architecture docs, archives, migration
+docs, historical notes, or unrelated app docs during bootstrap unless the
+active task clearly needs them. Use this index as an opt-in routing table, not
+as default context.
 
 ## Migration Note
 
