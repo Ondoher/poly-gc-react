@@ -116,29 +116,6 @@ type SoftShaderDisplayComposition = {
     readonly finalLinearSrgb?: readonly [number, number, number] | null;
 };
 
-type CpuPostprocessSoftShaderConfig = {
-    readonly evaluator: SpectralReferenceEvaluator | { evaluate(request: SpectralEvaluationRequest): SpectralEvaluationOutput };
-    readonly sceneInputAdapter?: SoftShaderSceneInputAdapterLike;
-    readonly displayAdapter?: ColorDisplayModel;
-    readonly endpointRadianceResolver?: SoftShaderEndpointRadianceResolver | null;
-};
-
-type CpuPostprocessSoftShaderRequest = {
-    readonly sceneInput: SoftShaderSceneInputDescriptor;
-    readonly pixels: readonly SoftShaderScenePixelInput[];
-    readonly diagnosticMode?: SoftShaderDiagnosticMode | null;
-    readonly metadata?: unknown;
-};
-
-type CpuPostprocessSoftShaderOutput = {
-    readonly outputKind: 'cpu-postprocess-soft-shader';
-    readonly sceneId: string;
-    readonly pixels: readonly SoftShaderPixelOutput[];
-    readonly aggregateDiagnostics: SoftShaderAggregateDiagnostics;
-    readonly controlledRegions: readonly SoftShaderControlledRegionSummary[];
-    readonly diagnostics: readonly ReconciliationDiagnostic[];
-};
-
 type SoftShaderSelectedPixelDiagnostic = {
     readonly pixelId: string;
     readonly coordinate: SoftShaderPixelCoordinate;

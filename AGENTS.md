@@ -26,6 +26,11 @@ active topic file or topic README.
 
 Topic continuity rules:
 
+- Current-state, routing, design, and tracker documents must not accumulate
+  running history. Put chronology only in the topic's designated log file. A
+  plan may retain historical progress only as items that are checked off as
+  work completes. Replace stale current facts instead of appending successor
+  narratives.
 - After a design decision, update the relevant topic status/design docs.
 - After an implementation step, update relevant status docs with what changed,
   what was verified, and what remains next.

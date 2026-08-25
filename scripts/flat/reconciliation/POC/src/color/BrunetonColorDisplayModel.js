@@ -15,8 +15,6 @@ export default class BrunetonColorDisplayModel {
      */
     constructor(configuration = {}) {
         this._displayConstants = configuration.displayConstants ?? FIGURE1_DISPLAY_CONSTANTS;
-        this._spectralReflectanceCache = new Map();
-        this._linearSrgbBasisMatrix = null;
     }
 
     /**
@@ -32,7 +30,29 @@ export default class BrunetonColorDisplayModel {
                 paperFigure1ToneMapK: this._displayConstants.paperFigure1ToneMapK,
                 demoGammaPowerOmitted: this._displayConstants.demoGammaPowerOmitted,
                 demoWhitePointOmitted: this._displayConstants.demoWhitePointOmitted,
+                spectralIntegration: this.describeSpectralIntegration(),
             }),
+        });
+    }
+
+    /**
+     * Describe the density/bin quadrature applied before XYZ conversion.
+     *
+     * @returns {Readonly<Record<string, unknown>>} Spectral integration contract.
+     */
+    describeSpectralIntegration() {
+        return Object.freeze({
+            inputQuantity: 'spectral-radiance-density',
+            inputUnits: 'W m^-2 sr^-1 nm^-1',
+            wavelengthUnits: 'nm',
+            sampleSemantics: 'bin-average-spectral-density',
+            quadrature: 'midpoint-bin-average-density-v1',
+            equation: 'XYZ_component = sum(CIE_component(lambda_i) * L_lambda_i * DeltaLambda_i)',
+            channels: Object.freeze(CANONICAL_SPECTRAL_CHANNELS.map((channel) => Object.freeze({
+                id: channel.name,
+                centerNanometers: channel.wavelengthNanometers,
+                widthNanometers: channel.wavelengthBinWidthNanometers,
+            }))),
         });
     }
 
@@ -59,20 +79,6 @@ export default class BrunetonColorDisplayModel {
                 0,
                 1,
             )));
-    }
-
-    /**
-     * @param {readonly [number, number, number]} displayRgb - Display RGB in the Figure 1 tone-mapped domain.
-     * @returns {readonly [number, number, number]} Linear sRGB proxy before tone mapping.
-     */
-    displayRgbToLinearSrgb(displayRgb) {
-        assertRgbTriplet(displayRgb, 'displayRgbToLinearSrgb');
-
-        return Object.freeze(displayRgb.map((value) => {
-            const clamped = clamp(value, 0, 0.999999);
-
-            return -Math.log(1 - clamped) / this._displayConstants.paperFigure1ToneMapK;
-        }));
     }
 
     /**
@@ -104,88 +110,6 @@ export default class BrunetonColorDisplayModel {
         ]);
     }
 
-    /**
-     * @param {readonly [number, number, number]} linearSrgbAlbedo - Linear sRGB matte albedo.
-     * @returns {SpectralValue} Spectral reflectance fitted through the accepted Bruneton display adapter.
-     */
-    linearSrgbAlbedoToSpectralReflectance(linearSrgbAlbedo) {
-        if (
-            !Array.isArray(linearSrgbAlbedo)
-            || linearSrgbAlbedo.length !== 3
-            || !linearSrgbAlbedo.every(Number.isFinite)
-        ) {
-            throw new TypeError('linearSrgbAlbedoToSpectralReflectance requires a finite linear sRGB triplet.');
-        }
-
-        const target = Object.freeze(linearSrgbAlbedo.map((value) => clamp(value, 0, 1)));
-        const cacheKey = target.map((value) => value.toFixed(6)).join(',');
-        const cached = this._spectralReflectanceCache.get(cacheKey);
-
-        if (cached) {
-            return cached;
-        }
-
-        const matrix = this._linearSrgbBasisMatrix ?? this._buildNormalizedLinearSrgbBasisMatrix();
-        this._linearSrgbBasisMatrix = matrix;
-
-        const reflectance = Array.from({ length: CANONICAL_SPECTRAL_CHANNELS.length }, () =>
-            (target[0] + target[1] + target[2]) / 3);
-        const smoothnessWeight = 0.015;
-        const energyWeight = 0.0005;
-        const stepSize = 0.08;
-
-        for (let iteration = 0; iteration < 800; iteration += 1) {
-            const predicted = multiplyMatrixVector(matrix, reflectance);
-            const error = [
-                predicted[0] - target[0],
-                predicted[1] - target[1],
-                predicted[2] - target[2],
-            ];
-            const gradient = Array.from({ length: reflectance.length }, (_, index) =>
-                2 * (
-                    matrix[0][index] * error[0]
-                    + matrix[1][index] * error[1]
-                    + matrix[2][index] * error[2]
-                ) + 2 * energyWeight * reflectance[index]);
-
-            for (let index = 1; index < reflectance.length - 1; index += 1) {
-                gradient[index] += 2 * smoothnessWeight
-                    * (2 * reflectance[index] - reflectance[index - 1] - reflectance[index + 1]);
-            }
-
-            for (let index = 0; index < reflectance.length; index += 1) {
-                reflectance[index] = clamp(reflectance[index] - stepSize * gradient[index], 0, 1);
-            }
-        }
-
-        const spectralReflectance = Object.freeze(reflectance);
-        this._spectralReflectanceCache.set(cacheKey, spectralReflectance);
-
-        return spectralReflectance;
-    }
-
-    _buildNormalizedLinearSrgbBasisMatrix() {
-        const rows = [[], [], []];
-        const whiteResponse = this.radianceToLinearSrgb(
-            CANONICAL_SPECTRAL_CHANNELS.map(() => 1),
-        ).map((value) => Math.max(Math.abs(value), Number.EPSILON));
-
-        for (let channelIndex = 0; channelIndex < CANONICAL_SPECTRAL_CHANNELS.length; channelIndex += 1) {
-            const basis = CANONICAL_SPECTRAL_CHANNELS.map((_, index) => index === channelIndex ? 1 : 0);
-            const linear = this.radianceToLinearSrgb(basis);
-
-            rows[0].push(linear[0] / whiteResponse[0]);
-            rows[1].push(linear[1] / whiteResponse[1]);
-            rows[2].push(linear[2] / whiteResponse[2]);
-        }
-
-        return Object.freeze(rows.map((row) => Object.freeze(row)));
-    }
-}
-
-function multiplyMatrixVector(matrix, vector) {
-    return Object.freeze(matrix.map((row) =>
-        row.reduce((sum, value, index) => sum + value * vector[index], 0)));
 }
 
 function assertRgbTriplet(value, fieldName) {

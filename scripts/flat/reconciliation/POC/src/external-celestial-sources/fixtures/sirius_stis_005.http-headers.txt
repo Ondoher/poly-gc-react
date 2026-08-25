@@ -1,0 +1,12 @@
+HTTP/1.1 200 OK
+Date: Sun, 12 Jul 2026 15:00:35 GMT
+Server: Apache
+Last-Modified: Thu, 27 Oct 2022 01:09:58 GMT
+ETag: "44e80-5ebf9ccbfd1ec"
+Accept-Ranges: bytes
+Content-Length: 282240
+Content-Security-Policy: frame-ancestors 'self';
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: x-requested-with
+Content-Type: image/fits
+

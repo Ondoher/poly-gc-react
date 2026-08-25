@@ -29,6 +29,7 @@
     "@polylith/builder": "1.1.0",
     "@polylith/server": "1.1.0",
     "@types/jasmine": "^6.0.0",
+    "h5wasm": "0.10.3",
     "jasmine": "^4.5.0",
     "jasmine-core": "^4.5.0",
     "karma": "^6.4.1",

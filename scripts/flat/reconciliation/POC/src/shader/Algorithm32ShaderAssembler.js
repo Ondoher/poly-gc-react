@@ -3,7 +3,7 @@
 
 import ReconciliationConfigurationError from '../errors/ReconciliationConfigurationError.js';
 import ShaderCompatibilityValidator from './ShaderCompatibilityValidator.js';
-import { stableHash } from './stableHash.js';
+import { stableHash } from '../provenance/stableHash.js';
 
 const OWNER_ORDER = Object.freeze([
     'runtime',
@@ -12,6 +12,7 @@ const OWNER_ORDER = Object.freeze([
     'atmosphere',
     'cache',
     'transport',
+    'celestial',
     'color',
 ]);
 

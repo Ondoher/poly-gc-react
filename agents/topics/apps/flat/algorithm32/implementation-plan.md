@@ -1,20 +1,16 @@
 # Algorithm32 Production Implementation Plan
 
-This plan stages the production promotion of the reconciliation POC into
-`shared/algorithm32/production/`.
-
-The reconciliation POC is the implementation driver unless an explicit
-production conflict is recorded. Current exceptions are the retained top-level
-production API shape, explicit unit-bearing boundaries for convertible
-quantities, deferred diagnostics, and the config/setup-vs-runtime failure
-policy.
+This plan stages work in `shared/algorithm32/production/`. Current production
+code is implementation truth. Accepted reconciliation behavior and evidence
+provide CPU oracles for selected slices; reconciliation classes, schemas, and
+runtime code are not the default production implementation plan.
 
 ## Planning Rules
 
 - Keep `Algorithm32`, the production dependency aggregate, `Reference`, and
   `ShaderBuilder` as the primary production boundaries.
-- Promote reconciliation POC types and property names unless a name is
-  actively misleading in the production contract.
+- Preserve accepted physical behavior while deriving production types and
+  property names from the selected production contract.
 - Use explicit unit-bearing packets at durable/API boundaries for any quantity
   that can be represented through unit conversion.
 - Keep diagnostics, debug views, public error taxonomy, and runtime capability
@@ -77,7 +73,7 @@ lighting creation are now promoted on the concrete spherical/flat geometries
 and distant/local sources, and concrete geometries now resolve the default
 scene-depth capture cap through `resolveSceneDepthMaxMeters(...)`.
 Verification:
-`npm run test:algorithm32:production` passes 182 specs with 0 failures.
+`npm run test:algorithm32:production` passes 229 specs with 0 failures.
 
 - `Algorithm32.js` now owns first-slice config validation, shared model
   creation, collaborator wiring, shader handles, disposal, and loud lifecycle
@@ -137,6 +133,10 @@ smaller cut:
 6. Shader assembly, compatibility validation, and resource binding internals.
 7. Three composer integration and shader-handle lifecycle.
 8. Fixture, parity, and provenance promotion.
+9. Selected camera-independent transported `CelestialContributionCache`,
+   optional when disabled at runtime but required work for the active slice;
+   detailed execution is owned by its
+   [companion plan](celestial-contribution-cache-plan.md).
 
 ## Milestone 0: Contract And Scaffold Alignment
 
@@ -237,8 +237,9 @@ production API.
 - Promote `IncidentRadianceSampling`, cache descriptors, directional incident
   samples, and source/cache setup requests as explicit contracts rather than
   hidden light-source sample calls.
-- Keep `Color` as the display-conversion boundary and keep stars/celestial
-  point sources as app scene content.
+- Keep `Color` as the display-conversion boundary. Authored stars/celestial
+  meshes remain presentation content; physical visible celestial values enter
+  only through the separately selected contribution-cache extension.
 
 Acceptance gate:
 
@@ -523,6 +524,32 @@ Reference/citation criteria:
 - Remove or rewrite stale docs that imply older pre-reconciliation lanes are
   implementation authority.
 
+## Milestone 9: Celestial Contribution Cache Extension
+
+Status: selected design, not implemented. The governing contract is
+[CelestialContributionCache Design](celestial-contribution-cache-design.md),
+including requirements `CCC-R01` through `CCC-R15`. Record `067` is not
+acceptance evidence for this milestone.
+
+The canonical detailed sequence, checklists, artifacts, phase gates, and
+checked progress are owned by
+[CelestialContributionCache Implementation Plan](celestial-contribution-cache-plan.md).
+Its [Reference And Evidence Dossier](celestial-contribution-cache-references.md)
+contains the locally mined external-source identities, accepted oracle claim
+boundaries, and E0/E1 production-promotion map.
+This broader plan intentionally does not duplicate them.
+
+Milestone entry requires the existing production baseline plus the selected
+cache contract. Production cache or shader implementation cannot begin until
+the companion plan's Representation Qualification Gate A passes for at least
+one bounded source/geometry family.
+
+Milestone exit requires the companion plan's Production Gate G and
+requirements `CCC-R01` through `CCC-R15` to pass for every claimed family,
+current output to remain unchanged when the optional cache is disabled, all 15
+channels to be added exactly once, and a fresh numbered GPU/browser proof.
+Record `067` is never amended or reused.
+
 ## Deferred From First Slice
 
 - Public diagnostics envelopes, diagnostic registries, and stable runtime
@@ -531,4 +558,7 @@ Reference/citation criteria:
 - CPU shader or POC postprocess validation harness promotion.
 - Public texture artifact import/export API.
 - 2D atlas fallback for incident-radiance cache textures.
-- Algorithm32-owned stars or celestial point-source display.
+- Celestial source/acquisition types beyond the selected contribution-cache
+  configurations.
+- The textured 3D Moon successor and its spectral surface/illumination model,
+  as defined by the canonical cache design.

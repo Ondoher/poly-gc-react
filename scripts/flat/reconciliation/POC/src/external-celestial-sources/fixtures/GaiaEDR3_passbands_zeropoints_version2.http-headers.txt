@@ -1,0 +1,13 @@
+HTTP/1.1 200 
+Date: Sun, 12 Jul 2026 15:00:35 GMT
+Server: Apache
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN, SAMEORIGIN
+X-XSS-Protection: 1
+Last-Modified: Thu, 09 Sep 2021 14:42:09 GMT
+Cache-Control: private, no-cache, no-store, must-revalidate
+Content-Disposition: attachment; filename="GaiaEDR3_passbands_zeropoints_version2.zip"
+Content-Type: application/zip
+Content-Length: 27941
+X-Forwarded-Proto: https
+

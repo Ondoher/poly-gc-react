@@ -8,7 +8,7 @@ import {
     TextureBuilder,
     buildIncidentRadianceCache,
 } from '../index.js';
-import { stableHash } from '../shader/stableHash.js';
+import { stableHash } from '../provenance/stableHash.js';
 import { createM2LocalFlatModels, makeM2SeedSummary } from './createM2Models.js';
 import {
     appendRunLog,

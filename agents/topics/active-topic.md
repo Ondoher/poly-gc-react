@@ -1,100 +1,130 @@
 # Active Topic
 
-Current active topic: `flat/reconciliation`
+Current active topic: `flat/algorithm32`
 
 Parent app/topic: `flat`
 
 ## Current Focus
 
-This file is not a historical log. Keep it limited to the current active
-lane, current open items, and the smallest focused reload set needed for the
-next agent.
+The active lane is the optional **camera-independent, ray-queryable
+`CelestialContributionCache`** extension for the existing production
+Algorithm32 shader/runtime. Its canonical contract is
+[CelestialContributionCache Design](apps/flat/algorithm32/celestial-contribution-cache-design.md),
+and its ordered work is
+[CelestialContributionCache Implementation Plan](apps/flat/algorithm32/celestial-contribution-cache-plan.md).
+Applicable external research and accepted oracle routing have been mined into
+the cache-local
+[Reference And Evidence Dossier](apps/flat/algorithm32/celestial-contribution-cache-references.md).
 
-Official active lane: Algorithm32 visibility work has moved back to the
-reconciliation experimental lane.
+The user rolled back record-067's production promotion. Record `067` remains
+immutable historical evidence of that attempt, but its removed modules and
+hashes do not describe current production. Reconciliation ER0 through ER8
+remain the accepted CPU behavior/oracle.
 
-Immediate goal: Milestone 5, external boundary radiance and source-provided
-visible disks.
+The selected cache stores already atmosphere-transported extended radiance and
+point irradiance over bounded geometry-owned domains. Camera changes query the
+same generation; they do not create final cached pixels or rebuild the field.
+The design remains unimplemented and requires dimensionality/resource
+qualification plus a fresh proof.
 
-Topic README: [Reconciliation Lane](apps/flat/reconciliation/README.md)
+Topic README: [Algorithm32 Production](apps/flat/algorithm32/README.md)
 
 ## Fresh Agent Route
 
-For a compacted or resumed agent, restart here before continuing work.
+After bootstrap, compaction, or interruption:
 
-1. Load this file from `AGENTS.md`.
-2. Load [Reconciliation Lane](apps/flat/reconciliation/README.md).
-3. Load only the two files under `Minimal Reload Sources`.
-4. Do not load archive, production, app, runner, or old experiment files unless
-   the current task asks for them or the focused docs say they are needed.
-5. Announce `flat/reconciliation`, Milestone 5 external boundary radiance.
+1. Read this file.
+2. Read [Algorithm32 Production](apps/flat/algorithm32/README.md).
+3. Read only the four files under `Minimal Reload Sources`.
+4. Treat `shared/algorithm32/production/` as current implementation truth.
+5. Before production Reference/shader coding, testing, fixture, citation, or
+   evidence work, open the topic-local rules and guidance document. Open the
+   redundancy audit only for documentation cleanup.
+6. Open the cache-local reference/evidence dossier when a phase needs source or
+   oracle detail. Open reconciliation records or POC code only to audit or
+   extract an exact dossier-listed artifact.
+7. Announce `flat/algorithm32`, the rolled-back ER9 promotion, and the
+   camera-independent celestial contribution-cache focus.
 
-## Current Intent
+## Current Handoff
 
-- Prototype an `ExternalBoundaryRadiance` path sampled along the camera ray.
-- Compose visible outside-atmosphere radiance as
-  `pathRadiance + viewTransmittance * celestialRadiance`.
-- Include a source-provided companion boundary-radiance object. The
-  Sun/light source remains the canonical owner of source facts while exposing
-  both atmosphere illumination and visible Sun disk roles.
-- Keep visible stars, Moon, planets, and Sun disks out of the
-  incident-radiance/L2 cache. Optional sky illumination from Moon or starfield
-  radiance is a later source/cache concern.
-- Keep decorative or fallback display backgrounds separate from physical
-  celestial boundary radiance.
-- Preserve the production `flat32` diagnostic conclusion: captured
-  display-style star meshes still survive San Jose solar noon after
-  substantial brightness reduction, so tuning captured scene RGB is not the
-  accepted fix.
-- Keep multi-source atmosphere illumination as a future idea for
-  Tatooine-style worlds through a later `LightSourceSet` /
-  `AtmosphereIlluminationSet`; visible disks would still use the external
-  boundary-radiance path.
-
-## Artifact Note
-
-- The previous `tmp/atmosphere/reconciliation/` artifact set is preserved at
-  `tmp/atmosphere/reconciliation_mark_i/`.
-- New Milestone 5 proof work should write fresh numbered records under a new
-  `tmp/atmosphere/reconciliation/NNN-*` root.
-- Do not link runtime POC code to the preserved Mark I artifact archive.
-- Old experimental documentation has moved to
-  `agents/topics/apps/flat/reconciliation/archive/` with `mark-i-*` names.
-  Load it only for specific historical evidence or provenance.
+- Existing production topology remains fixed around `Algorithm32`,
+  `SharedModel`, `Reference`, `SpectralCalculator`, `ShaderBuilder`,
+  `ShaderRuntimePass`, configured source/atmosphere/geometry owners,
+  incident-radiance caches, and Color.
+- The cache is derived shader resource state, not `SharedModel` truth,
+  captured scene RGB, an incident-radiance/L2 cache, or a per-pixel frame.
+- Runtime adds cache results through a separate `celestialRadiance` term after
+  base atmosphere transport and before Color, without applying transmittance a
+  second time.
+- Camera/projection/viewport and foreground scene changes remain live inputs.
+  Transported-field dependencies and exact invalidation rules are owned by the
+  canonical cache design.
+- An optional disabled cache preserves current output exactly. A configured
+  missing, stale, or incompatible cache is a setup/update error.
+- The companion plan remains at Phase A0. Its cache-local source/evidence
+  inventory is complete; next freeze the common qualification harness,
+  immutable oracle manifest, samples, measurements, timing method, and budgets
+  before the bounded coordinate/resource lanes run in parallel. It is not
+  production code based on an assumed dense texture.
+- Current baseline is 229 passing production specs. The cache extension has no
+  implementation or parity result.
 
 ## Minimal Reload Sources
 
-- [Reconciliation Status](apps/flat/reconciliation/status.md)
-- [Reconciliation POC Current State](../../scripts/flat/reconciliation/POC/CURRENT_STATE.md)
+- [Algorithm32 Status](apps/flat/algorithm32/status.md)
+- [CelestialContributionCache Design](apps/flat/algorithm32/celestial-contribution-cache-design.md)
+- [CelestialContributionCache Plan](apps/flat/algorithm32/celestial-contribution-cache-plan.md)
+- [Reconciliation To Production Deltas](apps/flat/algorithm32/reconciliation-production-deltas.md)
 
 ## Open When Needed
 
-- [Milestone 5 Boundary Radiance Design](apps/flat/reconciliation/milestone-5-boundary-radiance-design.md)
-- [Milestone 5 Boundary Radiance Plan](apps/flat/reconciliation/milestone-5-boundary-radiance-plan.md)
-- [Reconciliation Unsourced And Partially Sourced Facts](apps/flat/reconciliation/unsourced-and-partially-sourced-facts.md)
-- [Reconciliation Experimental Guidelines](apps/flat/reconciliation/experimental-guidelines.md)
-- [Reconciliation POC Runners](../../scripts/flat/reconciliation/POC/src/runners)
-- [Reconciliation Browser Runner](../../scripts/flat/reconciliation/POC/browser-page/runner.js)
-- [Reconciliation Browser Command](../../scripts/flat/reconciliation/POC/browser-jobs/browser-command.json)
-- [Algorithm32 Production Status](apps/flat/algorithm32/status.md)
-- [Algorithm32 Production Implementation](../../shared/algorithm32/production/README.md)
-- [flat32 Diagnostic App](../../src/flat32/index.js)
-- [Reconciliation Archive](apps/flat/reconciliation/archive/README.md)
+- [Production Reference And GPU Shader Rules And Guidance](apps/flat/algorithm32/production-reference-and-gpu-shader-rules.md)
+- [Production Reference And GPU Shader Documentation Redundancy Audit](apps/flat/algorithm32/production-reference-and-gpu-shader-redundancy-audit.md)
+- [App Integration Guide](apps/flat/algorithm32/integration.md)
+- [Algorithm32 Production Design](apps/flat/algorithm32/production-design.md)
+- [Algorithm32 Implementation Plan](apps/flat/algorithm32/implementation-plan.md)
+- [CelestialContributionCache Reference And Evidence Dossier](apps/flat/algorithm32/celestial-contribution-cache-references.md)
+- [Reconciliation Conclusions](apps/flat/reconciliation/conclusions.md)
+- [Extra-Atmosphere Reset Design](apps/flat/reconciliation/extra-atmosphere-reset-design.md)
+- [Extra-Atmosphere Reset Plan](apps/flat/reconciliation/extra-atmosphere-reset-plan.md)
+- [Production Package README](../../shared/algorithm32/production/README.md)
+- [Production Implementation](../../shared/algorithm32/production/)
+- [Reconciliation POC](../../scripts/flat/reconciliation/POC/)
+
+## Documentation Ownership
+
+- Current routing and handoff: this file.
+- Current production state and next actions: Algorithm32 `status.md`.
+- Cross-cutting production Reference/shader coding, testing, fixture,
+  citation, evidence, and claim rules:
+  `production-reference-and-gpu-shader-rules.md`.
+- Topic-local documentation cleanup inventory:
+  `production-reference-and-gpu-shader-redundancy-audit.md`.
+- Cache-specific contract: `celestial-contribution-cache-design.md`.
+- Cache-specific ordered work, gates, and checked progress:
+  `celestial-contribution-cache-plan.md`.
+- Cache-local external research, retained source identities, oracle claim
+  boundaries, and promotion crosswalk:
+  `celestial-contribution-cache-references.md`.
+- Surrounding production architecture: `production-design.md`.
+- Current reconciliation-to-production gap: `reconciliation-production-deltas.md`.
+- Broader production milestone sequence: `implementation-plan.md`.
+- App integration after implementation: `integration.md`.
+- Accepted CPU behavior/evidence: reconciliation docs and numbered records.
+  Routine cache planning uses the local dossier; those records are exact audit
+  inputs until selected claims are promoted to production evidence.
 
 ## Active Rules
 
-- Current proof work belongs in `scripts/flat/reconciliation/POC/` and
-  `agents/topics/apps/flat/reconciliation/`. Production remains the promotion
-  destination after a numbered reconciliation record accepts the contract.
-- Treat [Archived Reconciliation Conclusions](apps/flat/reconciliation/archive/conclusions.md)
-  as historical background, not the active status log.
-- Use [Reconciliation To Production Deltas](apps/flat/algorithm32/reconciliation-production-deltas.md)
-  only when a production promotion/API conflict needs resolution.
-- Keep unresolved source/provenance work tracked through
-  [Unsourced And Partially Sourced Facts](apps/flat/reconciliation/unsourced-and-partially-sourced-facts.md).
-- Keep status/current-state docs as current snapshots. Use
-  `tmp/atmosphere/reconciliation/running-log.md` for lightweight chronology
-  and `tmp/atmosphere/reconciliation/NNN-*` records for durable evidence.
-- Do not runtime-link production code to reconciliation POC or experiment
-  code. Promote accepted behavior and contracts into
-  `shared/algorithm32/production/`.
+- Extend the existing production architecture; do not replace its facade,
+  transport, incident caches, runtime pass, configured owners, or Color.
+- Do not runtime-link production to reconciliation POC code or records.
+- Do not cache camera-specific final pixels in the canonical contribution cache.
+- Do not use captured RGB, authored meshes, or source-only exposure as
+  physical celestial radiometry.
+- Preserve one canonical owner for every source fact.
+- Use unit-bearing packets at durable/API boundaries and private canonical
+  scalars only inside validated hot paths.
+- Treat record `067` as historical only; never amend or rerun it.
+- A future proof uses a fresh numbered record and applicable GPU/browser parity.

@@ -5,6 +5,8 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 
 import { Algorithm32 } from '../../shared/algorithm32/production/Algorithm32.js';
 import CanonicalAtmosphere from '../../shared/algorithm32/production/atmospheres/CanonicalAtmosphere.js';
+import { createCanonicalSolarIrradianceDensity } from '../../shared/algorithm32/production/celestial-sources/createCanonicalSolarIrradianceDensity.js';
+import { createCanonicalSpectralDensityBasis } from '../../shared/algorithm32/production/celestial-sources/createCanonicalSpectralDensityBasis.js';
 import BrunetonColorDisplayModel from '../../shared/algorithm32/production/color/BrunetonColorDisplayModel.js';
 import {
 	CANONICAL_ATMOSPHERE_CONSTANTS,
@@ -21,6 +23,9 @@ import FlatSynchronizer from '../../shared/algorithm32/production/FlatSynchroniz
 import LocalSunLightSource from '../../shared/algorithm32/production/light-sources/LocalSunLightSource.js';
 import { POC_STARS } from '../flat/shared/projection/PocStars.js';
 
+const CANONICAL_SOLAR_IRRADIANCE_DENSITY = createCanonicalSolarIrradianceDensity(
+	createCanonicalSpectralDensityBasis(),
+);
 const METERS_PER_SCENE_UNIT = 1000;
 const CAMERA_HEIGHT_SCENE_UNITS = 0.005;
 const CAMERA_NEAR_SCENE_UNITS = 0.002;
@@ -1051,7 +1056,7 @@ function createGlobeAlgorithm32Config() {
 	return {
 		lightSource: new DistantSunLightSource({
 			directionToLight: sceneReference.directionToLightModel,
-			spectralChannels: CANONICAL_SPECTRAL_CHANNELS,
+			spectralIrradianceDensity: CANONICAL_SOLAR_IRRADIANCE_DENSITY,
 			angularRadiusRadians: 0.004675,
 			cacheAltitudeBinCount: controls.incidentAltitudeBinCount,
 			cacheDirectionCount: controls.incidentDirectionCount,

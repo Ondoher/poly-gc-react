@@ -12,6 +12,13 @@ config, incident-radiance cache preparation, shader assembly, scene
 depth/hit capture, and final composition over the scene color produced by the
 app's normal render.
 
+The user rolled back record-067's typed celestial/CPU-frame production
+promotion. No physical Sun/Moon/star browser feature currently exists in the
+production package. The selected successor is a camera-independent,
+ray-queryable cache of atmosphere-transported celestial contribution fields,
+but that surface is design-only and must not be added to app integration until
+its producer, resource lifecycle, shader query, and fresh parity proof exist.
+
 ## Integration Contract
 
 Use this shape for every production app integration:
@@ -54,6 +61,20 @@ The runtime pass reads the composer `readBuffer.texture` as scene color,
 reads `SceneInputCapture`'s RGB24 packed scene-depth texture and hit mask, and
 writes the final atmosphere-composited fullscreen output.
 
+### Planned celestial contribution-cache extension
+
+This is not a currently callable API. The selected extension preserves the
+existing composer shape and places its awaited resource lifecycle behind the
+existing Algorithm32 setup/update handle. The app will continue to supply
+camera, viewport, and scene inputs; it will not pack textures, calculate fields,
+or author celestial shader source.
+
+[CelestialContributionCache Design](celestial-contribution-cache-design.md)
+owns the field, runtime, invalidation, qualification, and failure contract. The
+exact app configuration/provider packet remains open until qualification
+passes. XA-G12 becomes applicable when the selected visible-celestial shader
+path is implemented and requires a fresh GPU/browser proof.
+
 ## Ownership Boundaries
 
 Keep the ownership split crisp:
@@ -79,6 +100,9 @@ Keep the ownership split crisp:
   `addSceneLighting(...)`.
 - Color/display owns spectral-to-display conversion, inverse tone mapping for
   captured endpoint color, and final RGB composition policy.
+- The planned `CelestialContributionCache` owns derived transported fields;
+  the canonical design owns its boundary, and the app owns neither field
+  construction nor packing.
 
 Do not move renderer state, camera controls, app scene ownership, or
 non-Algorithm32 content into Algorithm32. Do not make the app build cache
@@ -191,6 +215,12 @@ export function createSphericalDistantSunConfig({
   };
 }
 ```
+
+`CANONICAL_SPECTRAL_CHANNELS` remains the current numerical solar owner. Do not
+copy those values into app config, a visible-disk mesh, a contribution-cache
+payload, or another shader constant. The future cache producer must derive its
+visible-Sun contribution from canonical source facts without creating a second
+owner. LocalSun retains its existing separate contract.
 
 Use a local finite source with flat geometry for a local flat scene:
 
@@ -877,11 +907,9 @@ it receives scene color, hit/no-hit, and distance.
 Exclude objects that should be visible to the user but should not terminate
 Algorithm32 atmosphere rays:
 
-- star fields
 - constellation and grid overlays
-- sky domes
+- decorative sky domes and source-direction markers
 - decorative atmosphere shells
-- visible Sun meshes
 - Earth-disc decorations that are not the local ground endpoint
 - labels, helper axes, selection gizmos, and UI-adjacent overlays
 
@@ -900,6 +928,11 @@ read buffer when they are visible, but the current Color composition only uses
 scene color for hit endpoints. Decorative sky/source visuals that must appear
 in final no-hit sky pixels should usually move to a deliberate overlay pass or
 receive an explicit future composition policy.
+
+This exclusion flag is scene-capture policy only. It does not turn an authored
+star or Sun mesh into physical celestial radiometry. The planned contribution
+cache has no production consumer yet; use reconciliation CPU results only as
+validation oracles until the cache slice is implemented and proved.
 
 Transparent and alpha-blended meshes need deliberate policy. The first
 production capture treats captured geometry as an opaque hit. Exclude
@@ -1420,8 +1453,9 @@ Useful first checks:
 8. If app-authored ground-relative solids are present, confirm mesh placement,
    shadow focus points, and scene-depth endpoint points all come from geometry
    normalization.
-9. For browser parity, compare selected pixels against `Reference` plus
-   `Color` after the live app visibly renders.
+9. For the existing atmosphere browser path, compare selected pixels against
+   `Reference` plus `Color` after the live app visibly renders. A future
+   contribution-cache slice needs its own visible-celestial parity proof.
 
 Common failure modes:
 
@@ -1433,7 +1467,7 @@ Common failure modes:
 | Flat mode shows the wrong horizon or appears empty | The camera is pitched upward, or the shader camera binding uses a different basis than the flat geometry-created ground | Start the camera at the observer height, target the same height along the forward axis for pitch `0`, and update `geometry.cameraWorldPositionMeters` through `FlatEarthGeometry.mapObserverLocalScenePointToModelPosition(...)` |
 | Source direction and shadows disagree with atmosphere | Source lighting objects were not created from the same geometry/source facts or were not refreshed after a source change | Call `lightSource.addSceneLighting(...)` or its update hook from the same app state used for Algorithm32 config and bindings |
 | Depth banding or horizon artifacts | `sceneDepthMaxMeters` is much larger than endpoint distances | Use a local horizon/object cap instead of star-scale `camera.far` |
-| Decorative stars affect atmosphere hits | Star/sky meshes are captured as endpoints | Set `userData.algorithm32SceneInput = false` or render them in a separate overlay pass |
+| Decorative sky overlays affect atmosphere hits | Presentation meshes are captured as endpoints | Set `userData.algorithm32SceneInput = false` or render them in a separate overlay pass; do not treat them as physical source radiometry |
 | Endpoint color looks washed out or tinted | Renderer endpoint material/display policy does not match Color/display assumptions | Check scene color space, tone mapping, exposure, and Color inverse-tone-map policy |
 | Edge halos differ from reference | Antialiasing differs between scene color, depth, and hit captures, or app objects were placed in a different geometry frame than the depth-cap inputs | Use consistent pixel ratio/render scale, keep scene inputs pixel-exact, and route object placement plus bounding points through geometry normalization |
 | Performance collection slows the whole app | Timer queries are being collected too often or unresolved queries are accumulating | Supply `performanceCallback` only while measuring, raise `performanceSampleIntervalFrames`, and keep `performanceMaxPendingQueries` low |

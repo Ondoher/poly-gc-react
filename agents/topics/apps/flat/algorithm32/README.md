@@ -18,14 +18,30 @@ production deliverable is a usable
 shader/runtime atmosphere pass; CPU reference code is support for validation,
 internal shader texture building, cache construction, future diagnostics, and
 tests.
-Use [Reconciliation Conclusions](../reconciliation/conclusions.md) as the
-primary production implementation driver from the POC. It consolidates the
-accepted reference/shader path, adjusted abstraction ownership, and data-flow
-contracts. The reconciliation topic, code, and experiment records remain
-relevant supporting implementation material; older pre-reconciliation lanes
-are replaced as implementation references. Use
+The user rolled back record-067's typed celestial/CPU-frame production
+promotion. Its records remain historical evidence, but its removed modules do
+not describe the current production tree. The selected next extension is the
+camera-independent, ray-queryable cache of atmosphere-transported celestial
+contribution fields defined by
+[CelestialContributionCache Design](celestial-contribution-cache-design.md),
+with ordered work in
+[CelestialContributionCache Implementation Plan](celestial-contribution-cache-plan.md),
+source/evidence research localized in the
+[CelestialContributionCache Reference And Evidence Dossier](celestial-contribution-cache-references.md),
+and remaining gaps tracked by
+[Reconciliation To Production Deltas](reconciliation-production-deltas.md).
+That extension is designed but not implemented or accepted.
+
+For the selected cache, use the local reference/evidence dossier as the normal
+CPU-oracle, external-source, and claim-boundary entry point. It was mined from
+[Reconciliation Conclusions](../reconciliation/conclusions.md), the governing
+reset docs, and accepted records; reopen those sources only to audit or extract
+an exact dossier-listed artifact, never as a class-for-class production plan.
+Older pre-reconciliation lanes are replaced as implementation references. The
+cache dossier's unresolved-decision table owns selected-extension sourcing
+gaps; open
 [Unsourced And Partially Sourced Facts](../reconciliation/unsourced-and-partially-sourced-facts.md)
-for remaining provenance gaps.
+only for a broader reconciliation audit.
 The primary facade receives concrete configured abstraction instances at
 creation time: light source, atmosphere, geometry, optional Color/display,
 spectral basis, execution controls, and shader policy. Creation from app-level
@@ -123,10 +139,15 @@ stays private to that owner domain.
 
 ## Current Implementation Reference
 
-The production implementation reference is now
-[Reconciliation Conclusions](../reconciliation/conclusions.md). That document
-is supported by the reconciliation topic docs, reconciliation POC code, and
-reconciliation experiment records:
+Current code under `shared/algorithm32/production/` is the implementation
+truth. [Production Design](production-design.md) owns the surrounding
+Algorithm32 architecture, while
+[CelestialContributionCache Design](celestial-contribution-cache-design.md)
+owns the selected extension. [Reconciliation Conclusions](../reconciliation/conclusions.md)
+and the accepted CPU records supplied the source material mined into the
+[cache-local reference/evidence dossier](celestial-contribution-cache-references.md).
+Routine cache work starts with that dossier. Exact audits may use the
+reconciliation topic docs, POC code, and experiment records:
 
 - `agents/topics/apps/flat/reconciliation/`
 - `scripts/flat/reconciliation/POC/`
@@ -140,26 +161,26 @@ explicitly asks for historical archaeology.
 
 Use [Reconciliation To Production Deltas](reconciliation-production-deltas.md)
 as the working tracker for differences between the accepted reconciliation
-architecture and the current production scaffold.
-Use [Algorithm32 Implementation Plan](implementation-plan.md) as the staged
-execution outline for promoting the reconciliation POC into production code,
-tests, fixtures, and docs.
+behavior and the current production implementation.
+Use [CelestialContributionCache Implementation Plan](celestial-contribution-cache-plan.md)
+as the detailed qualification, implementation, and proof route for the
+selected cache. Use its local reference/evidence dossier for exact external
+identities, record claim boundaries, and promotion routing rather than mining
+the experiment lane again. [Algorithm32 Implementation Plan](implementation-plan.md)
+retains the broader production milestone sequence and delegates its Milestone
+9 details to that companion plan.
 The production top-level API shape remains primary: `Algorithm32`, the
 production dependency aggregate, `Reference`, and `ShaderBuilder` stay as the
 boundary while reconciled implementation details move underneath them.
-Use the reconciliation POC for all production implementation details unless
-there is an explicit recorded production conflict. Current recorded
-conflicts/exceptions are the retained top-level production shape,
-explicit unit-bearing boundaries for convertible quantities, deferred
-diagnostics, and the config/setup-vs-runtime failure policy.
-Type definitions and property names should use the reconciliation POC shapes
-and names because most production implementation code will be lifted from that
-code base. Rename only when a POC name is actively misleading in the production
-contract, and document the one-to-one mapping. Any quantity that can be
-represented in different units through conversion must use an explicit
-unit-bearing packet at durable/API boundaries; avoid implicit unit scalar
-types there. Unit strings inside those packets use plural spellings; singular
-spellings fail validation instead of being treated as aliases.
+Use only the dossier-listed reconciliation behavior and evidence where the
+selected cache needs a physical oracle; do not copy its classes or hot-path
+packet shapes by default.
+The retained top-level production shape, explicit unit-bearing durable
+boundaries, deferred diagnostics, and config/setup-vs-runtime failure policy
+remain governing production rules. Any convertible quantity uses an explicit
+unit-bearing packet at durable boundaries; private hot paths may canonicalize
+it after validation. Unit strings use plural spellings, and singular spellings
+fail validation rather than acting as aliases.
 Failure policy is split by lifecycle phase: fail loudly during configuration
 and setup, including constructor validation, `setConfig`, `setupShader`,
 awaited handle config updates, and resource build/bind setup; once the runtime
@@ -287,19 +308,34 @@ conditional scene transmittance owned by Color.
   entry point. It divides requirements into implementable ownership domains;
   define and accept this layer before freezing production API names or packet
   shapes.
-- [Reconciliation Conclusions](../reconciliation/conclusions.md) is the
-  current implementation authority for production reference/shader work.
+- [Algorithm32 Production Design](production-design.md) owns the surrounding
+  Algorithm32 architecture.
+- [Production Reference And GPU Shader Rules And Guidance](production-reference-and-gpu-shader-rules.md)
+  owns the cross-cutting production CPU-reference/GPU-shader coding, testing,
+  citation, provenance, and claim-discipline rules.
+- [Production Reference And GPU Shader Documentation Redundancy Audit](production-reference-and-gpu-shader-redundancy-audit.md)
+  lists the topic-local sections that repeat those rules and the disposition
+  for a later cleanup; it does not supersede their unique content.
+- [CelestialContributionCache Design](celestial-contribution-cache-design.md)
+  owns the selected cache contract. Current production code remains the
+  implementation truth until that extension is implemented and proved.
+- [CelestialContributionCache Implementation Plan](celestial-contribution-cache-plan.md)
+  owns the cache-specific phase order, checklists, artifacts, gates, and
+  checked progress.
+- [CelestialContributionCache Reference And Evidence Dossier](celestial-contribution-cache-references.md)
+  owns the cache-local research inventory, retained source identities, oracle
+  claim boundaries, and production-promotion crosswalk.
+- [Reconciliation Conclusions](../reconciliation/conclusions.md) supplies the
+  historical mining source and exact-record audit route; it is not the normal
+  cache handoff or current production ownership after the record-067 rollback.
 - [Reconciliation To Production Deltas](reconciliation-production-deltas.md)
   records the architecture/API gaps that must be resolved during promotion.
-- [Algorithm32 Implementation Plan](implementation-plan.md) is the current
-  staged execution outline for the production promotion.
+- [Algorithm32 Implementation Plan](implementation-plan.md) owns the broader
+  production milestone sequence and delegates detailed cache work to the
+  companion plan.
 - [Production Code Architecture And POC Review](production-code-architecture-poc-review.md)
   records the July 9, 2026 production-code review against the design and the
   reconciliation POC.
-- [Algorithm32 Production Design](production-design.md) records the
-  design-stage module boundaries, local Sun solar-zenith calibration UX/API
-  notes, non-goals, promotion sequence, and open questions needed to satisfy
-  the requirements.
 - [Algorithm32 Primary Facade API Draft](api-facade-draft.md) is the current
   design draft for the main configured facade class and the runtime shader
   handle it returns.
@@ -346,7 +382,7 @@ with class-name files, such as
 `models/_tests/SpectralModel.spec.js`, and guard the facade, implementation
 collaborators, `SpectralModel`, and `SharedModel`. The package-level scaffold
 walk intentionally ignores `quarantine/` because files there are archival,
-not active production implementation. The latest focused lane covers 219
+not active production implementation. The latest focused lane covers 229
 specs with 0 failures, including contract-alignment guards, facade
 lifecycle coverage, fixture-backed `SpectralCalculator` transport helper
 coverage, `Reference` orchestration, `ShaderBuilder` setup validation,

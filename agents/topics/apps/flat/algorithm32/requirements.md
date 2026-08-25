@@ -1,14 +1,13 @@
 # Algorithm32 Requirements
 
-Status: design stage. These requirements define what the production
-Algorithm32 module must provide before the public API is frozen.
+Status: active production requirements plus selected pre-implementation
+`CelestialContributionCache` requirements. Current production code remains
+implementation truth.
 
-The API design should be derived from this document, then reconciled with the
-accepted reconciliation POC conclusions. The reconciliation POC now provides
-the current production implementation detail unless an explicit recorded
-production conflict says otherwise; older requirement wording that describes
-pre-reconciliation incident-radiance sampling is superseded by setup-bound
-`IncidentRadianceSampling`.
+API design is derived from this document and the focused design that owns a
+selected extension. Accepted reconciliation behavior provides CPU oracles and
+evidence; reconciliation classes, schemas, and runtime code are not current
+production implementation authority.
 
 ## Requirement Principles
 
@@ -16,16 +15,16 @@ pre-reconciliation incident-radiance sampling is superseded by setup-bound
   atmosphere pass for the app render path.
 - Algorithm32 must become a shared production module under
   `shared/algorithm32/production/`.
-- The reconciliation gate must first produce a reference-backed CPU
-  implementation of Algorithm32, then a GPU shader implementation validated
-  against that CPU reference. CPU/reference code remains a support surface for
-  validation, shader texture building, cache construction, diagnostics, and
-  future test needs; it is not the end-user product surface.
+- New GPU behavior must be validated against the accepted CPU/reference oracle.
+  CPU/reference code remains a support surface for validation, shader texture
+  building, cache construction, diagnostics, and future test needs; it is not
+  the end-user product surface.
 - Production consumers must not import from `shared/algorithm32/POC/` after a
   behavior has been promoted.
 - The module should expose pure, deterministic helpers and serializable packets
   wherever practical.
-- Public packets must use explicit units in field names or schema docs.
+- Durable public packets must use explicit unit-bearing values. Do not encode
+  convertible units only in property names or prose.
 - No production decision, algorithm, numeric value, default, spectral shape, or
   validation expectation may be promoted unless it is backed by a third-party
   reference, source-backed fixture, or explicitly accepted first-party
@@ -882,10 +881,16 @@ radiance/transmittance as input data.
 
 Display settings must not change Sun input, atmosphere composition input,
 geometry input, calibrated source power, cache keys, or transport facts. They
-must not become facade-owned state. Visible stars and celestial point-source
-rendering are app scene concerns outside the first Algorithm32 shader. If the
-app renders them, they should enter as normal scene color/depth/lighting facts
-owned by the scene pipeline, not as hidden Algorithm32 shader constants.
+must not become facade-owned state.
+
+Physical visible celestial sources may enter through the optional
+`CelestialContributionCache` extension defined by
+[CelestialContributionCache Design](celestial-contribution-cache-design.md).
+Their typed source facts belong to canonical physical source owners, and their
+derived transported values belong to the cache. They must not enter as hidden
+shader constants, display values, or renderer scene RGB. Authored decorative
+stars or celestial meshes may remain app scene content, but they do not satisfy
+the physical cache contract.
 
 ## Validation Domain
 

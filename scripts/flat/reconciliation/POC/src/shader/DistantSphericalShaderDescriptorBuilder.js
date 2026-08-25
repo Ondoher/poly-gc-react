@@ -4,7 +4,7 @@
 
 import BrunetonColorDisplayModel from '../color/BrunetonColorDisplayModel.js';
 import { ALGORITHM32_BASELINE_CONSTANTS } from '../constants/consts.js';
-import { stableHash } from './stableHash.js';
+import { stableHash } from '../provenance/stableHash.js';
 
 const DEFAULT_TAGS = Object.freeze([
     'algorithm32',

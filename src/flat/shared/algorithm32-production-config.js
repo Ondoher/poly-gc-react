@@ -1,5 +1,7 @@
 import { Algorithm32 } from '../../../shared/algorithm32/production/Algorithm32.js';
 import CanonicalAtmosphere from '../../../shared/algorithm32/production/atmospheres/CanonicalAtmosphere.js';
+import { createCanonicalSolarIrradianceDensity } from '../../../shared/algorithm32/production/celestial-sources/createCanonicalSolarIrradianceDensity.js';
+import { createCanonicalSpectralDensityBasis } from '../../../shared/algorithm32/production/celestial-sources/createCanonicalSpectralDensityBasis.js';
 import BrunetonColorDisplayModel from '../../../shared/algorithm32/production/color/BrunetonColorDisplayModel.js';
 import {
 	CANONICAL_ATMOSPHERE_CONSTANTS,
@@ -16,6 +18,9 @@ import { createAlgorithm32BindingValues as createDefaultAlgorithm32BindingValues
 
 export const ALGORITHM32_METERS_PER_SCENE_UNIT = 1000;
 
+const CANONICAL_SOLAR_IRRADIANCE_DENSITY = createCanonicalSolarIrradianceDensity(
+	createCanonicalSpectralDensityBasis(),
+);
 const DEFAULT_LOCAL_SOURCE_REFERENCE_DISTANCE_METERS = 4800000;
 const DEFAULT_FLAT_BACKGROUND_DISTANCE_METERS = 100000;
 const DEFAULT_ALGORITHM32_SHADER_QUALITY_PROFILE = shaderQualityProfileById('fast');
@@ -126,7 +131,7 @@ export function createGlobeAlgorithm32Config(scene) {
 	return {
 		lightSource: new DistantSunLightSource({
 			directionToLight: sourceDirection,
-			spectralChannels: CANONICAL_SPECTRAL_CHANNELS,
+			spectralIrradianceDensity: CANONICAL_SOLAR_IRRADIANCE_DENSITY,
 			angularRadiusRadians: Math.max(Number(scene?.sun?.apparentAngularRadiusRad) || 0, 0),
 			cacheAltitudeBinCount: controls.incidentAltitudeBinCount,
 			cacheDirectionCount: controls.incidentDirectionCount,

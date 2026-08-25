@@ -1,42 +1,20 @@
 # Algorithm32 Production Design
 
-Status: design stage with tested production implementation slices. The first
-production slices have promoted facade lifecycle, reference orchestration,
-shared spectral calculator, incident-radiance setup utilities, concrete
-source/atmosphere/geometry/cache/color models, and shader assembly/runtime
-setup mechanics into the production module. Renderer-produced depth/hit
-capture is promoted as reusable runtime plumbing. Remaining shader/runtime
-work is centered on capability/resource polish and optional Three adapters.
-Browser/readback parity for scene color, ray-length/depth capture, hit mask,
-and selected-pixel output remains the next validation layer now that the flat
-and globe app integrations use real Three `EffectComposer`/`RenderPass`
-pipelines and facade-installed Algorithm32 passes. Shader-facing
-object/material ID textures are intentionally not part of the first production
-atmosphere algorithm contract; final Color/display composition still consumes
-renderer-produced hit-pixel scene color. The
-reconciliation POC conclusions are now the consolidated implementation driver
-for the production reference and shader path, including the adjusted
-abstraction ownership and data-flow contracts. The production code root is now
-`shared/algorithm32/production/`, which currently contains the focused Jasmine
-lane, reference scaffold with scaffold-era helper implementations, ambient
-`types.d.ts` homes, consumer-provided `LightSourceModel`,
-`AtmosphereModel`, `GeometryModel`, and `Color` interface files, implemented
-`Reference` and `ShaderBuilder` classes, the `SharedModel` aggregate model,
-the implemented `SpectralModel` component model, generic pure numeric utility
-objects, and scaffold/model guardrail specs.
+Status: active surrounding production architecture. The optional
+`CelestialContributionCache` extension is selected but unimplemented; its
+canonical contract lives in
+[CelestialContributionCache Design](celestial-contribution-cache-design.md).
+Current implementation truth remains `shared/algorithm32/production/`.
 
-This document defines the current production shape to build next. The API
-design should be derived from [Algorithm32 Requirements](requirements.md)
-before production names or packet shapes are frozen. Use
-[Reconciliation Conclusions](../reconciliation/conclusions.md) as the
-primary implementation guide, with the reconciliation topic, code, and
-experiment records as relevant supporting material. Older
-pre-reconciliation POC, cleanroom, shader-lab, local-second-order, and
-scattered experiment sources are no longer production implementation
-references.
+This document defines the current surrounding production shape. API design is
+derived from [Algorithm32 Requirements](requirements.md). Accepted
+reconciliation behavior and immutable records are CPU oracles and evidence;
+they are not a class/schema promotion plan or runtime dependency. Older
+pre-reconciliation POC, cleanroom, shader-lab, local-second-order, and scattered
+experiment sources are not current implementation references.
 Use [Reconciliation To Production Deltas](reconciliation-production-deltas.md)
-to track and resolve differences between this production scaffold and the
-reconciliation architecture before changing contracts.
+to track and resolve differences between accepted reconciliation behavior and
+the current production implementation before changing contracts.
 The current caller-facing API sketch is
 [Algorithm32 Primary Facade API Draft](api-facade-draft.md).
 As a production design rule, the top-level production shape remains the
@@ -44,11 +22,10 @@ primary API boundary: the `Algorithm32` facade, the production dependency
 aggregate, and the `Reference` and `ShaderBuilder` implementation classes stay
 in place while reconciled collaborators and ownership details are promoted
 beneath them.
-Use the reconciliation POC for all production implementation details unless
-there is an explicit recorded production conflict. Current recorded
-conflicts/exceptions are the retained top-level production shape, explicit
-unit-bearing boundaries for convertible quantities, deferred diagnostics, and
-the config/setup-vs-runtime failure policy.
+Promote only the accepted behavior needed by a selected production slice.
+Retain the top-level production shape, explicit unit-bearing boundaries for
+convertible quantities, deferred diagnostics, and the
+config/setup-vs-runtime failure policy.
 Type definitions and property names should use the reconciliation POC shapes
 and names because most production implementation code will be lifted from that
 code base. Rename only when a POC name is actively misleading in the production
@@ -117,25 +94,43 @@ are not part of the primary consumer facade. `SpectralCalculator` is one of
 the shared internal mechanics that both the CPU reference path and
 incident-radiance cache builder consume.
 
-The reconciliation POC handoff defines the concrete implementation targets to
-promote into production: first the reference-backed CPU Algorithm32
-implementation with sourced algorithms/constants and strict light/source,
-geometry, atmosphere, incident-radiance, and external color/display
-boundaries; then the GPU shader implementation validated against that CPU
-reference. The CPU reference defines the color/display boundary but does not
-need it to run spectral transport. The shader implementation uses the
-color/display interface to build the renderable output path. The POC handoff
-also closes the exact shape and flow of all data across configuration, model
-facts, transport packets, cache descriptors, shader bindings, spectral
-outputs, diagnostics, and color/display requests.
+The accepted reconciliation handoff defines strict source, geometry,
+atmosphere, incident-radiance, and external Color/display boundaries. A
+production slice selects the smallest required behavior independently; it does
+not automatically promote every POC class, packet, acquisition path, or CPU
+renderer.
+
+## Celestial Contribution Cache Extension
+
+The selected extension preserves the existing facade, base atmosphere
+transport, configured owners, incident-radiance caches, shader lifecycle,
+scene capture, and Color. It adds one separate derived resource family and one
+shader contribution slot after base transport and before Color.
+
+[CelestialContributionCache Design](celestial-contribution-cache-design.md)
+owns its physical measures, camera-independence rule, field qualification,
+descriptor/payload contract, runtime behavior, invalidation, failure policy,
+verification, and textured-Moon successor. This surrounding design owns only
+the architectural placement: `ShaderBuilder` coordinates awaited resource
+lifecycle, `ShaderRuntimePass` supplies live query/raster state, and Color
+converts the completed spectral sum.
+
+The [cache reference/evidence dossier](celestial-contribution-cache-references.md)
+owns the locally mined external-source identities, accepted oracle claim
+boundaries, and production-promotion crosswalk used by its plan.
+
+The cache is categorically separate from incident-radiance/L2 caches and
+renderer RGB. No production runtime imports reconciliation code or records.
 
 ## Production Inputs
 
-- [Reconciliation Conclusions](../reconciliation/conclusions.md) is the
-  consolidated POC handoff to promote from, not just evidence. It should drive
-  production implementation.
-- The reconciliation topic, reconciliation POC code, and reconciliation
-  experiment records remain relevant supporting implementation material:
+- The [CelestialContributionCache Reference And Evidence Dossier](celestial-contribution-cache-references.md)
+  supplies the cache's normal external research, accepted CPU-oracle claim
+  map, exact retained identities, and promotion routing. The production cache
+  contract remains governed by its focused design.
+- The reconciliation topic, POC code, and experiment records are exact audit
+  or selected-fixture extraction sources behind that dossier, not routine
+  implementation instructions:
   `agents/topics/apps/flat/reconciliation/`,
   `scripts/flat/reconciliation/POC/`, and
   `tmp/atmosphere/reconciliation/`.
@@ -150,13 +145,16 @@ outputs, diagnostics, and color/display requests.
   [Reference Fixtures Evidence](evidence/reference-fixtures/README.md) are
   provenance catalogs only when a named source/provenance gap requires them.
   They are not alternate implementation references.
-- Remaining work is production design and promotion, not more POC iteration by
-  default.
+- Record `065-er8-cpu-convergence-and-poc-cleanup` remains an accepted CPU
+  convergence input. Record `067-er9-production-promotion-proof` describes a
+  rolled-back promotion attempt and cannot accept this cache. Record `066`
+  remains an invalid infrastructure predecessor whose `spawn EPERM` occurred
+  before its production test process started.
 
-## Current Scaffold
+## Current Production Implementation
 
-The current scaffold is the production shell that the reconciliation POC will
-be promoted into. It adds:
+The existing production implementation remains the product being extended. Its
+current components include:
 
 - `shared/algorithm32/production/Algorithm32.js` as the documented primary
   facade class with first-slice config validation, shared-model construction,
@@ -174,12 +172,11 @@ be promoted into. It adds:
   Algorithm32 core output rather than facade-owned configuration;
 - `shared/algorithm32/production/types/types.d.ts` as the supporting
   request/sample/descriptor type home for those focused interface files,
-  including plain data contracts such as `SpectralBasis` for consumer-provided
-  model calls instead of exposing internal Algorithm32 model objects.
-  `SpectralBasis` owns only the ordered `wavelengths` list with unit-bearing
-  `Wavelength` packets; `channelCount` is derived by `SpectralModel` and
-  descriptor snapshots so the wavelength list remains the single source of
-  truth for spectral channel shape;
+  including the `SpectralBasis` union used by consumer-provided model calls.
+  Canonical production config uses the complete `SpectralDensityBasisDescriptor`
+  as the single owner of channel shape and bin meaning. Focused noncanonical
+  test bases may retain an explicit wavelength-sample list but may not
+  masquerade as the canonical density basis;
 - `shared/algorithm32/production/implementation/Reference.js` as the
   CPU/reference algorithm execution collaborator. It now orchestrates the
   reconciled owner-query flow through `SpectralCalculator` and applies
@@ -281,7 +278,7 @@ be promoted into. It adds:
   `shared/algorithm32/production/models/_tests/SharedModel.spec.js`, and
   `shared/algorithm32/production/models/_tests/SpectralModel.spec.js`.
 
-Latest verification: `npm run test:algorithm32:production` passes 182 specs
+Latest verification: `npm run test:algorithm32:production` passes 229 specs
 with 0 failures after the facade lifecycle, contract-alignment,
 `SpectralCalculator`, cache-coordinator, concrete cache-family, light-source,
 atmosphere, geometry, canonical data, Color/display conversion, concrete
@@ -626,6 +623,12 @@ self-contained code surface with explicit interfaces to adjacent boundaries:
 - `local-incident-cache`: local direct incoming-radiance oracle, cache config,
   Sun-subpoint local radial/tangential/up frame transforms, cache keying,
   fail-loud stale/mismatch behavior, and GPU packing metadata.
+- `celestial-contribution-cache`: optional camera-independent field resource in
+  geometry-owned coordinates. It contains already atmosphere-transported
+  extended radiance and point irradiance over selected source/geometry domains.
+  Current shader rays supply camera projection, pixel footprint, and foreground
+  depth at query time. It is neither shared-model truth, a viewport image, nor
+  an incident-radiance cache.
 - `texture-builder`: internal shader/runtime resource preparation that builds,
   keys, packs, and describes shader textures from the same public Sun,
   atmosphere-composition, geometry, and execution-configuration facts used by
@@ -729,8 +732,10 @@ config, or the Algorithm32 facade itself. The Color implementation supplies
 the Bruneton-backed spectral-to-display conversion and any shader-facing
 descriptor needed by the runtime shader builder.
 
-The Color abstraction consumes spectral Algorithm32 output and produces
-display-facing color for CPU/offline tools and runtime shader builder inputs.
+The Color abstraction consumes the already-composed atmosphere plus celestial
+spectral output and produces display-facing color for CPU/offline tools and
+runtime shader builder inputs. It does not build, sample, transport, or
+validate the celestial contribution cache.
 It may receive the current spectral component model or a spectral descriptor
 for wavelength alignment, but it treats radiance and transmittance as inputs
 produced by Algorithm32 rather than values it computes. Debug-view output is
@@ -750,8 +755,9 @@ The Color abstraction should own:
   output to screen color;
 - CPU/offline display conversion helpers for reports, fixtures, and parity
   comparisons that need RGB output from spectral transport results;
-- no first-production star/celestial point-source display responsibilities.
-  Stars are rendered outside Algorithm32 as part of the app's scene pipeline.
+- one post-composition display boundary for both extended and point source
+  contributions. Color does not own source magnitude, point response, angular
+  integration, visibility, or atmosphere ordering.
 
 The Color abstraction should not own Sun, atmosphere composition,
 geometry, execution configuration, cache keys, calibrated source power,
@@ -877,11 +883,13 @@ Interface boundary rule:
   that position as incoming direction, distance-use treatment, source path
   limits, falloff, angular extent, and spectral scale.
   Concrete solar, lunar, or other illumination behavior belongs in specific
-  light-source implementations. The reconciliation boundary-radiance prototype
-  should include a source-provided companion external boundary-radiance
-  provider for a visible body, starting with the Sun disk, while atmospheric
-  illumination and camera-ray visibility remain separate roles with separate
-  composition paths. A source-owned cache-family method may create an
+  source implementations. Point sources own typed spectral irradiance density;
+  extended sources own typed directional spectral radiance density. A
+  `CanonicalUniformSunDiskSource` may derive disk radiance from the same
+  canonical solar irradiance packet retained by `DistantSunLightSource` so the
+  visible disk and illumination never create separate solar arrays.
+  Atmospheric illumination and camera-ray visibility remain separate roles
+  with separate composition paths. A source-owned cache-family method may create an
   incident-radiance cache, but the concrete cache artifact owns its generated
   values, sampler, shader payload, and packing/access descriptors. Its
   descriptor must record the geometry, atmosphere, spectral,
@@ -2070,108 +2078,13 @@ as render exposure or display tone mapping, not as source brightness.
 - Local Sun clock sync should default to solar-zenith calibration: standard
   solar noon for the location/date is aligned with the local model's closest
   approach. The resulting clock offset and source power are derived state.
-- Optional visible star/celestial point-source rendering is outside the
-  current production contract and should be proven first in the reconciliation
-  experimental lane. The current captured scene-color path is not a sufficient
-  physical visibility model for stars, Moon, planets, or visible Sun disks.
-  Prototype an explicit external boundary-radiance provider sampled along the
-  camera ray and composed as
-  `pathRadiance + viewTransmittance * celestialRadiance`. Stars and visible
-  disks should not be folded into the incident-radiance/L2 cache; optional
-  atmosphere illumination from Moon or starfield radiance is a separate later
-  source/cache concern. Include a light-source-owned companion provider for
-  the visible Sun disk in the prototype, while keeping illumination and
-  visibility separate.
-- Flat dome star synchronization is intentionally anchor-based. Because the
-  flat dome projection cannot globally match the real celestial sphere, the
-  app should only align the dome when it performs a time sync: compute the
-  real Sun position for the resolved time, choose the catalog star closest to
-  that Sun position in real celestial coordinates, locate the same catalog
-  star in the flat dome projection, and rotate the dome so that star's dome
-  azimuth matches the flat Sun azimuth. After that sync, the dome sky may
-  drift until the next explicit time-sync operation. Between explicit syncs,
-  the app should follow the existing flat animation-clock pattern: one
-  simulated elapsed time is projected into separate solar-day and sidereal-day
-  cycle angles. The false Sun uses the solar-day angle, and the flat star dome
-  uses the sidereal-day angle, so the Sun retains its expected motion relative
-  to the stellar reference frame without creating independent clocks. Catalog
-  projection, anchor-star alignment, and sidereal drift are separate
-  star-field correctness proofs from the atmospheric boundary-radiance
-  visibility proof.
-  The `flat32` proof implementation currently scatters `192` captured sphere
-  endpoints across the observer-local upper hemisphere in both scene modes,
-  derives its magnitude range from `POC_STARS`, and applies the same clamped
-  brightness/size mapping as the existing flat projection model. After the
-  first San Jose solar-noon visual check exposed visible noon speckles, the
-  proof calibration places analogs just beyond the atmosphere-top path,
-  restricts the minimum elevation so they remain inside the 500 km camera
-  range, and scales sphere radius by endpoint distance. After San Jose sunset
-  and sunrise-minus-one-hour checks showed no visible stars, the calibration
-  increased the endpoint RGB scale to `0.12x` while still preserving the
-  catalog-relative brightness range. `flat32` also includes an antisolar
-  calibration ladder labeled `A` through `H`; the star endpoints are captured
-  scene inputs, while the labels are DOM overlay identifiers outside the
-  atmosphere pass. Because the first visibility reports were non-monotonic,
-  `flat32` also includes a `Full Scene`/`Atmosphere Only` diagnostic. The
-  diagnostic keeps the same Algorithm32 atmosphere shader path active, but
-  rebuilds without the normal captured scene objects and keeps one captured,
-  inward-facing green shell endpoint plus its scene-depth cap points; the
-  Three clear color is also green for missed-pixel visibility. This isolates
-  whether the atmosphere pass itself is bright, dark, attenuating, or failing
-  to cover pixels before star brightness is tuned. A separate mutually
-  exclusive `Green Shell` diagnostic installs the same captured green sphere
-  without the atmosphere-only background framing. That test is for dark sky
-  regions where there should be a known bright endpoint behind the atmosphere,
-  independent of the sparse synthetic-star distribution. The accepted
-  composition invariant is that zero added atmosphere radiance plus identity
-  scene transmittance must preserve the incoming scene pixel. The Color
-  abstraction owns this invariant in both its runtime shader contribution and
-  its CPU `composeSceneLinearSrgb(...)`/`composeSceneDisplayRgb(...)` helpers.
-  It composes captured scene color through view transmittance only when the
-  captured scene endpoint lies inside the atmosphere path; if geometry reaches
-  the atmosphere boundary before the scene endpoint, scene transmittance is
-  identity. Scene hits remain a geometry/path-termination fact, not permission
-  to keep or discard the incoming color. The current green-shell diagnostic is
-  a captured scene endpoint, so it is useful for finding darkening artifacts
-  but is not a perfect beyond-atmosphere probe for every low-elevation ray.
-  A stricter follow-up diagnostic would render a green background/shell into
-  scene color while excluding it from scene-depth/hit capture.
-
-## Promotion Sequence
-
-1. Integrate the reconciliation POC details into this design document. Remove
-   older scaffold-era alternatives where the POC is clear and there is no
-   recorded production conflict.
-2. Accept the ownership-domain requirements: API contract/governance,
-   algorithm input interfaces, local Sun calibration, execution configuration,
-   transport kernel, shader texture/cache builder, runtime shader product,
-   display conversion, validation, and non-goals.
-3. Promote the reconciled POC contract into the retained production shell:
-   `Algorithm32`, the production dependency aggregate, `Reference`, and
-   `ShaderBuilder`.
-4. Freeze the production API design: module names, exports, public interface
-   definitions, type docs, packet schemas, cache key fields, and fail-loud
-   config/setup behavior.
-5. Design the local-Sun calibration API and packet schema before exposing app
-   UX/config, so the app can offer recalibration without making brightness a
-   user-authored canonical fact.
-6. Promote light-source, atmosphere-composition, geometry, incident-radiance,
-   spectral, execution-control, and display contracts from the reconciliation
-   POC into production modules.
-7. Promote `SpectralCalculator` as a common internal utility for `Reference`
-   evaluation and incident-radiance cache building, along with CPU transport
-   helpers as validation, oracle, and cache-support surfaces, preserving the
-   reconciliation acceptance contract. Diagnostics remain deferred.
-8. Promote the always-on IncidentRadianceCache contracts, direct oracle,
-   cache builder, frame transforms, keying, and packing metadata.
-9. Promote internal shader texture/cache builders and mechanical shader
-   assembly under `ShaderBuilder`; abstraction interfaces supply only their
-   specific shader contributions and semantic payload descriptors. This work
-   runs as explicit awaited setup/update actions outside the render frame.
-10. Promote the Three adapter/pass as the usable shader product after the
-   CPU/cache support boundary is stable.
-11. Wire flat app integration to production modules only after validation proves
-   the promoted modules satisfy the reconciliation acceptance contract.
+- Physical point and extended source behavior is accepted in reconciliation,
+  but no corresponding production primitives or assembled renderer currently
+  exist. The selected cache contract and its exclusions are owned by
+  [CelestialContributionCache Design](celestial-contribution-cache-design.md).
+- The accepted composition invariant remains that zero path radiance plus
+  identity transmittance preserves the incoming endpoint. This Color/display
+  invariant is independent of whether a later celestial renderer is selected.
 
 ## Open Design Questions
 

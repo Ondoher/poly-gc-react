@@ -10,6 +10,4 @@ interface ColorDisplayModel {
     radianceToLinearSrgb(radiance: SpectralValue): readonly [number, number, number];
     radianceToDisplayRgb(radiance: SpectralValue): readonly [number, number, number];
     linearSrgbToDisplayRgb?(linearSrgb: readonly [number, number, number]): readonly [number, number, number];
-    displayRgbToLinearSrgb?(displayRgb: readonly [number, number, number]): readonly [number, number, number];
-    linearSrgbAlbedoToSpectralReflectance?(linearSrgbAlbedo: readonly [number, number, number]): SpectralValue;
 }

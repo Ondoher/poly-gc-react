@@ -1,8 +1,9 @@
 # Algorithm32 Primary Facade API Draft
 
-Status: design draft. Names are provisional, but the caller-facing
-responsibilities and ownership boundaries should be treated as the current
-working API shape until replaced by an accepted API decision.
+Status: implemented facade shape plus a selected, unimplemented celestial
+contribution-cache extension. The user rolled back record-067's sibling
+source/frame implementation; record `067` is historical evidence and does not
+describe the current API. Names in unimplemented areas remain provisional.
 
 The primary API should be a configured facade object, one instance per
 independent simulation window or render context. Facade configuration is an
@@ -31,6 +32,23 @@ interface methods, descriptor sections, required shader capabilities, binding
 requirements, and fail-loud validation points. The configured abstractions
 provide the implementations. The runtime shader builder validates and assembles
 those implementations rather than owning domain semantics itself.
+
+## Selected Celestial Cache Extension
+
+[CelestialContributionCache Design](celestial-contribution-cache-design.md)
+owns the selected physical and resource contract. No callable cache API exists
+yet.
+
+The extension retains the current facade method set and places its resource
+lifecycle behind awaited `setupShader(...)`, awaited handle configuration
+replacement, frame binding, and disposal. It does not add app-facing texture
+packing, shader-source, or per-frame build operations.
+
+The smallest canonical celestial-source provider and its configuration field
+remain open until field/resource qualification passes. Visible source facts
+must enter beside the physical owner graph, not through shader policy or the
+Three attachment request. The cache generation remains derived shader-handle
+resource state rather than `SharedModel` canonical truth.
 
 A separate pure math API namespace may be exported beside the facade for
 generally useful deterministic scalar, vector, unit-conversion, numeric-array,
@@ -421,6 +439,12 @@ they depend on Algorithm32 atmosphere configuration and spectral meaning.
 - App UI state, runner/watch state, camera choreography, and artifact-gallery
   state.
 - Validation scene packets as normal rendering inputs.
+- Live CALSPEC, LIME, or Horizons acquisition.
+- Observer/camera visibility, complete local sky background, and diffuse-field
+  models.
+- An assembled visible-celestial GPU/browser mode. The selected typed CPU
+  source/frame modules are direct production APIs until a later renderer slice
+  is independently selected and proved.
 
 ## Naming Questions
 

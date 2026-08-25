@@ -3,7 +3,7 @@
 // - tmp/atmosphere/reconciliation/010-cli-experiment-run-record-rule.
 
 import { appendFile, mkdir, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 
 export function parseRecordDirectory(argv) {
     const recordIndex = argv.indexOf('--record');
@@ -13,6 +13,26 @@ export function parseRecordDirectory(argv) {
     }
 
     return argv[recordIndex + 1];
+}
+
+/**
+ * Create one new immutable reconciliation record directory.
+ *
+ * @param {string} recordDirectory - Direct numbered child of the record root.
+ * @returns {Promise<void>} Completion promise.
+ */
+export async function createFreshRecordDirectory(recordDirectory) {
+    const root = resolve('tmp/atmosphere/reconciliation');
+    const target = resolve(recordDirectory);
+    const name = basename(target);
+
+    if (dirname(target) !== root || !/^\d{3}-[a-z0-9][a-z0-9-]*$/.test(name)) {
+        throw new Error(
+            'Record directory must be a direct numbered child of tmp/atmosphere/reconciliation/.',
+        );
+    }
+
+    await mkdir(target, { recursive: false });
 }
 
 export async function writeJson(recordDirectory, filename, value) {
