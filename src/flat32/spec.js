@@ -1,1 +1,0 @@
-import '@polylith/tests';

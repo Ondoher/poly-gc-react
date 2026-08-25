@@ -123,3 +123,6 @@ package-lock.json
 generated-images
 prepared-svgs
 colored-inlay
+
+archive/
+archives/

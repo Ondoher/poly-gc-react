@@ -20,7 +20,6 @@ The repo currently has two unit-test lanes:
 Current commands:
 
 - `npm run test:ui:gc` builds and runs the browser/UI test lane.
-- `npm run test:ui:flat` builds and runs the Flat browser/UI test lane.
 - `npm run test:ui:pipeline` builds and runs the Pipeline browser/UI test lane.
 - `npm test` currently delegates to `npm run test:ui:gc`.
 - `npm run karma` runs Karma against the already-built browser test output.
@@ -138,7 +137,6 @@ The key architectural point is:
 The intended destinations for built browser test output are:
 
 - `tests/gc/`
-- `tests/flat/`
 - `tests/pipeline/`
 
 ## How Specs Enter The Test Build

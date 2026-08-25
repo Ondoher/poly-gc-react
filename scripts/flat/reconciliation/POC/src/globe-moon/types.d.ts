@@ -1,4 +1,0 @@
-type CelestialVectorState = Readonly<{ positionKm: readonly [number, number, number]; velocityKmPerSecond: readonly [number, number, number] }>;
-type CelestialWorldState = Readonly<{ schemaVersion: 1; epochIso: string; frame: 'earth-centered-ecliptic-j2000'; units: 'km-km-per-second'; moon: CelestialVectorState & Readonly<{ radiusKm: number }>; sun: CelestialVectorState & Readonly<{ radiusKm: number }>; provenance: Readonly<Record<string, unknown>> }>;
-type GlobeObserverState = Readonly<{ schemaVersion: 1; id: string; latitudeDegrees: number; longitudeDegrees: number; elevationKm: number; positionKm: readonly [number, number, number]; validation?: Readonly<Record<string, unknown>> }>;
-type GlobeMoonObservation = Readonly<{ direction: readonly [number, number, number]; distanceKm: number; angularRadiusRadians: number; phaseAngleRadians: number; illuminatedFraction: number }>;

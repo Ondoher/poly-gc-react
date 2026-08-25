@@ -221,19 +221,16 @@ Tasks:
 
 Exit criteria:
 
-- SAT and Flat can be worked on without loading game or asset-pipeline docs.
+- SAT can be worked on without loading game or asset-pipeline docs.
 - App docs describe deployable surfaces; product docs own domain meaning.
 
 Completed notes:
 
 - SAT app status, reference notes, and prototype script now live under
   `apps/sat`.
-- Flat app docs now live under `apps/flat`; the old mixed README is preserved
-  intact as `status.md`.
-- Flat prompt, ProjectionModel API draft, and POC Phase 1 plan were copied
-  into focused docs.
-- Flat has a migration decision note that records why the first pass preserved
-  the large old README instead of splitting every section immediately.
+- Flat app documentation completed this migration phase and was subsequently
+  moved out of the repository; the current pointer is
+  [Flat Migration Tombstone](../archive/flat-moved-2026-08-25.md).
 - `apps/gc` and `apps/pipeline` remain app-surface docs that point back to
   their owning product documentation.
 

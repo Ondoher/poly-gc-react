@@ -16,8 +16,10 @@ agents/topics.bak/
 ```
 
 The standards area now contains real bootstrap and repo-wide guidance. Asset
-Pipeline 3D, Game Collection, deployable SAT/Flat app docs, and the first
-repo-level reference store have been migrated for a first pass. Archive and
+Pipeline 3D, Game Collection, deployable SAT app docs, and the first repo-level
+reference store have been migrated for a first pass. Flat materials were later
+moved out of this repository; see
+[Flat Migration Tombstone](../archive/flat-moved-2026-08-25.md). Archive and
 compatibility cleanup still need focused migration.
 
 ## Phase Status

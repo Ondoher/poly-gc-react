@@ -1,1 +1,0 @@
-import './globe-simulation.js';
