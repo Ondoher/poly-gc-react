@@ -5,9 +5,9 @@
   "main": "index.js",
   "dependencies": {
     "@fireworks-js/react": "^2.5.1",
-    "@polylith/browser": "1.1.0",
-    "@polylith/config-store": "1.1.0",
-    "@polylith/core": "1.1.0",
+    "@polylith/browser": "1.2.1",
+    "@polylith/config-store": "1.2.1",
+    "@polylith/core": "1.2.1",
     "@react-three/fiber": "^8.17.14",
     "cities.json": "^1.1.50",
     "katex": "^0.16.47",
@@ -26,8 +26,8 @@
     "three.terrain.js": "^3.0.0"
   },
   "devDependencies": {
-    "@polylith/builder": "1.1.0",
-    "@polylith/server": "1.1.0",
+    "@polylith/builder": "1.2.1",
+    "@polylith/server": "1.2.1",
     "@types/jasmine": "^6.0.0",
     "h5wasm": "0.10.3",
     "jasmine": "^4.5.0",
@@ -37,7 +37,7 @@
     "karma-jasmine": "^5.1.0",
     "karma-jasmine-html-reporter": "^2.0.0",
     "karma-spec-reporter": "^0.0.36",
-    "polylith": "1.1.0",
+    "polylith": "1.2.1",
     "puppeteer": "^19.4.1"
   },
   "nodemonConfig": {

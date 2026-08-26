@@ -6,3 +6,4 @@ Repo-wide deployment guidance.
 
 - [Checklist](checklist.md)
 - [Production Runbook](production-runbook.md)
+- [Deployable Apps Update](deployable-apps/README.md)

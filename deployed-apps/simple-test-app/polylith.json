@@ -1,0 +1,13 @@
+{
+    "multiple": true,
+    "builds": "builds",
+    "dest": "dist",
+    "apps": [
+        {
+            "name": "simple-test",
+            "filename": "simple-test.json",
+            "default": false,
+            "mount": "/simple-test"
+        }
+    ]
+}

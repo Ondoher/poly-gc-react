@@ -30,7 +30,17 @@ export default class FeedbackService extends Service {
 
 	ready() {
 		this.routerService = this.registry.subscribe("routers");
-		this.config = this.registry.subscribe("config");
+
+		let sharedRegistry = this.registry.getAttached("shared");
+		if (!sharedRegistry) {
+			throw new Error("The shared registry is not attached");
+		}
+
+		this.config = sharedRegistry.subscribe("config");
+		if (!this.config) {
+			throw new Error("The shared config service is not registered");
+		}
+
 		this.routerService.add(this.serviceName);
 	}
 

@@ -1,16 +1,15 @@
 # Active Topic
 
-There is no active topic.
+The active topic is
+[Deployable Apps Deployment Update](standards/deployment/deployable-apps/README.md).
 
-The former `flat/algorithm32` topic moved out of this repository on
-2026-08-25. Its source and research material are retained in the local
-archives named by
-[Flat Migration Tombstone](archive/flat-moved-2026-08-25.md).
+Current focus: prepare the existing `poly-gc-react` production process to
+deploy separately owned Polylith app repositories, beginning with Naginator,
+while keeping deployment orchestration in this repository.
 
 ## Fresh Agent Route
 
 1. Read this file.
-2. Do not load a topic README or reload sources until a new topic is selected.
-3. Treat references to the removed Flat, Flat32, and Algorithm32 trees as
-   historical or stale unless the current task explicitly concerns migration.
-
+2. Read the active topic README.
+3. Load only the files under its `Minimal Reload Sources` section before
+   continuing deployment work.
