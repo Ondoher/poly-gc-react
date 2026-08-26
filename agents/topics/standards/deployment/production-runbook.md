@@ -67,41 +67,39 @@ source ~/.nvm/nvm.sh
 
 ## Deploy
 
-Current deploy flow:
+The repository helper is the canonical deploy flow:
 
 ```bash
 source ~/.nvm/nvm.sh
 cd ~/poly-gc-react
-git status -sb
-git pull
-npm install
-export NODE_ENV=prod
-export NODE_OPTIONS=--max-old-space-size=4096
-rm -rf dist/pipeline dist/3d-poc
-npx polylith build sat
-pm2 restart poly-gc --update-env
-```
-
-Equivalent scripted path from the repo:
-
-```bash
 bash ./scripts/deploy/production-deploy.sh
 ```
 
-Notes:
+The helper:
 
-- `npm install` is included so deploys stay safe when dependencies change.
-- Production should build with `NODE_ENV=prod` so the server-local
-  `polylith.prod.json` app list is active.
-- The current SAT bundle needs `NODE_OPTIONS=--max-old-space-size=4096` on the
-  server because `cities.json` and KaTeX can OOM the default V8 heap.
-- `npx polylith build sat` is the current deploy build path for SAT changes;
-  it leaves the existing `gc` bundle in place and avoids rebuilding unrelated
-  apps.
-- Remove stale `dist/pipeline` and `dist/3d-poc` before restart if any
-  non-prod build was accidentally run on the server. The server serves `dist`
-  statically, so excluded app folders should not remain there.
-- `pm2 restart poly-gc --update-env` matches the live process name and refreshes environment usage.
+- refuses to pull over tracked working-tree or index changes while preserving
+  ignored server-local production files;
+- pulls the main repository with fast-forward-only behavior;
+- synchronizes and checks out every submodule at the gitlink pinned by the
+  main release;
+- installs root dependencies and installs each direct deployed app with
+  `npm ci` from its committed lockfile;
+- sets `NODE_ENV=prod`, `GC_ENV=prod`, and
+  `NODE_OPTIONS=--max-old-space-size=4096`;
+- removes the complete generated `dist` tree before the production `--all`
+  build, preventing removed or excluded apps from remaining public;
+- builds the production overlay's resident GC and SAT apps plus discovered
+  Naginator;
+- restarts `poly-gc`, waits up to 30 seconds for GC, and runs positive and
+  negative HTTP smoke checks; and
+- prints PM2 status and recent logs.
+
+The root repository intentionally uses `npm install --include=dev` because its
+lockfile is ignored and its Polylith build tooling is a development dependency.
+Naginator has its own committed lockfile and uses `npm ci --include=dev`.
+
+Helper defaults:
+
 - The deploy helper script assumes:
   - app name: `poly-gc`
   - repo dir: `~/poly-gc-react`
@@ -110,6 +108,7 @@ Notes:
   - `APP_NAME`
   - `APP_DIR`
   - `NVM_DIR`
+  - `BASE_URL`
 - The live process currently runs from:
   - cwd: `/home/codex/poly-gc-react`
   - script: `npm start`
@@ -132,11 +131,52 @@ Then smoke test the site in a browser:
 - load `https://apps.uber-geek.com/gc`
 - load the Mahjongg screen
 - load `https://apps.uber-geek.com/sat`
+- load `https://apps.uber-geek.com/nag/`
+- load `https://apps.uber-geek.com/nag/notification-test` directly
+- verify the Naginator manifest and service worker load beneath `/nag/`
+- verify `https://apps.uber-geek.com/nag/api/notifications/vapid-public-key`
+  returns JSON without exposing the private key
 - verify `https://apps.uber-geek.com/pipeline` returns 404
 - verify `https://apps.uber-geek.com/3d-poc` returns 404
+- verify `https://apps.uber-geek.com/simple-test` returns 404
 - hard refresh if a browser cache is suspected after a JS/CSS bundle change
 - verify a fresh board starts
 - verify restart, undo, redo, hint, and feedback/help entry points still open
+
+The automated checks prove composition and configuration, not Web Push delivery.
+After the first deployment, install `/nag/` from Safari on the target iPhone,
+schedule the 30-second notification, leave and lock the device, open the
+notification, and acknowledge it in the reopened PWA.
+
+## Rollback
+
+The main commit and its Naginator gitlink are one release. Record the current
+main revision before deploying. To restore a prior release that still includes
+Naginator:
+
+```bash
+source ~/.nvm/nvm.sh
+cd ~/poly-gc-react
+git switch --detach <previous-main-revision>
+git submodule sync --recursive
+git submodule update --init --recursive
+npm install --include=dev
+npm --prefix deployed-apps/naginator ci --include=dev
+export NODE_ENV=prod
+export GC_ENV=prod
+export NODE_OPTIONS=--max-old-space-size=4096
+rm -rf -- "$PWD/dist"
+npm run build
+pm2 restart poly-gc --update-env
+```
+
+If rolling back to a revision from before Naginator was present, run
+`git submodule deinit -f --all` before switching revisions, confirm that
+`deployed-apps/naginator` is gone afterward, and omit its `npm ci` command.
+Removing the complete `dist` tree ensures `/nag/` cannot survive that rollback
+as stale static output. Run the same resident-app and absent-route checks after
+rollback. Return the checkout to `main` deliberately before the next normal
+pull deployment.
 
 ## Logs
 
@@ -159,5 +199,7 @@ Run that if startup-on-reboot needs to be re-established or repaired.
 
 - The repo remote on the server is HTTPS GitHub:
   - `https://github.com/Ondoher/poly-gc-react.git`
+- The Naginator submodule also uses a public HTTPS GitHub remote, so the server
+  does not require a separate SSH deploy key for the current repository.
 - Because the deploy flow is `git pull`, avoid overwriting the server-local untracked production files.
 - If `git pull` ever reports local changes or merge conflicts, stop and inspect before forcing anything.

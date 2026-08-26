@@ -29,8 +29,12 @@ Polylith server. Naginator is the first real deployed app.
   without deciding who must create it. The combined deployment host registers
   production config; Naginator's standalone development host registers
   development config.
-- The temporary `simple-test-app` proved the registry contract and must be
-  removed before the next commit so it cannot be discovered in production.
+- The deployment host's ignored configuration owns Naginator's `nag.mongo` and
+  `nag.webPush` settings. Local composition reuses Naginator's stable
+  development VAPID pair; production has a separately generated server-local
+  pair and does not expose or commit its private key.
+- The temporary `simple-test-app` has been removed from source and generated
+  output. Naginator is now the only discovered deployment app.
 
 ## Possible Future Direction
 
@@ -111,9 +115,10 @@ is used only when that app runs as the standalone root.
 
 ## Recommended Deployment Shape
 
-Place the Naginator repository at `deployed-apps/naginator` as a pinned Git
-submodule. A release of this repository then selects a Naginator release by
-committing the desired submodule revision.
+The Naginator repository is pinned at `deployed-apps/naginator` as a Git
+submodule using its public HTTPS remote. The current pin is
+`b27b1514188396f1c18a355bf93376a8358ecea4`. A release of this repository
+selects a Naginator release by committing the desired submodule revision.
 
 This is intentionally a **pull deployment model**. For simplicity, the
 deployment repository knows every deployed app, pins its source revision, and
@@ -155,27 +160,26 @@ because its release composition and rollback point are visible in one main
 repository commit. The Polylith discovery, initialization-order, and shared
 registry contracts should remain usable under either delivery model.
 
+### Deferred Secret Provisioning
+
+Application source delivery and secret delivery are separate channels. A
+deployed app may eventually own an authenticated out-of-band process that
+provisions or rotates its deployment secrets, but secrets must never be placed
+in the app repository, submodule revision, build output, or release artifact.
+
+Until that process exists, the deployment operator provisions app secrets in
+the host's ignored server-local configuration. A future mechanism must scope
+write authority to the app's owned configuration namespace, avoid returning or
+logging secret values, validate the resulting configuration before activation,
+and support deliberate rotation and recovery.
+
 ## Required Updates
 
-- Add Naginator as a pinned submodule under `deployed-apps/`.
-- Add submodule synchronization and checkout to the production deploy script.
-- Install deployed-app dependencies before building.
-- Make the deploy script explicitly set the production environment. The
-  current helper does not set `NODE_ENV=prod`, although the runbook does.
-- Reconcile the current build mismatch: the helper builds `--all`, while the
-  manual runbook builds only SAT. The simplest reliable contract is a
-  production `--all` build after discovery contains only intentional apps.
-- Clean an app's `dist/<mount>` destination before rebuilding it and remove the
-  destination when undeploying it, because the static server can otherwise
-  expose stale output.
-- Add Naginator smoke checks and rollback instructions to the production
-  runbook.
-- Ensure the production server has Git credentials for the Naginator
-  repository if it is private.
-- Keep this repository on the published Polylith release containing registry
-  attachment, deployment setup, and enforced master-before-discovered
-  initialization. Version 1.2.1 is the first consumed release with the final
-  contracts.
+- Commit and push the composed release after developer review.
+- Run the production helper and confirm its build, PM2, positive-route, and
+  absent-route checks.
+- Complete the installed, suspended-iPhone Web Push round trip on the deployed
+  `/nag/` origin.
 
 ## Release And Rollback Contract
 
@@ -197,9 +201,9 @@ make the released Naginator revision independent of the main release commit.
 - Discovered app configuration currently comes from the app's base
   `polylith.json`; it should therefore remain deployment-neutral unless
   Polylith later adds discovered-app environment overlays.
-- The root lockfile is currently ignored and the deploy uses `npm install`.
-  Naginator should at least carry a committed lockfile and use `npm ci` for its
-  independently owned dependencies.
+- The root lockfile is ignored, so the deployment helper uses
+  `npm install --include=dev` there. Naginator carries its own committed
+  lockfile and is installed independently with `npm ci --include=dev`.
 - Building directly into the live `dist` directory is not atomic. A later
   hardening pass may stage and swap build output, but that is not required to
   introduce the first deployed app.
@@ -217,17 +221,37 @@ make the released Naginator revision independent of the main release commit.
 - [x] GC no longer registers or starts shared deployment services.
 - [x] GC has no local config implementation or declaration; its feedback
   service resolves config through the local registry's `shared` attachment.
-- [x] GC-to-simple-test config sharing returned HTTP 200 in a live local test.
-- [ ] Remove `simple-test-app` before the next commit.
+- [x] The temporary `simple-test-app` source and stale `dist/simple-test`
+  output were removed; its route now returns HTTP 404.
 - [x] Local Polylith npm links were removed and published version 1.2.1 is
   installed for all six Polylith packages. A full build and live shared-config
   and GC route checks passed against the installed release.
-- [ ] Add the Naginator repository at a pinned revision.
-- [ ] Update and verify the production deployment workflow.
+- [x] The Naginator notification POC is committed and published for pinning.
+- [x] Ignored development and production host configuration now supplies the
+  complete Naginator Mongo and VAPID contract. Both VAPID pairs were validated;
+  production generated its key material directly on the server.
+- [x] Naginator is pinned at published commit `b27b151` under
+  `deployed-apps/naginator`, and its dependencies install from its committed
+  lockfile.
+- [x] The composed `--all` build produced `dist/nag`. Live checks passed for
+  `/nag/`, its deep link, manifest, service worker, shared-config VAPID route,
+  GC, and the absent simple-test route.
+- [x] The production helper now performs fast-forward pulls, pinned submodule
+  checkout, root and deployed-app installs, explicit production environment
+  selection, full generated-output cleanup, composed `--all` build, PM2
+  restart, readiness waiting, and positive/negative HTTP smoke checks. Its Bash
+  syntax passes.
+- [x] The production runbook documents the canonical deploy helper, Naginator
+  checks, device acceptance test, and submodule-aware rollback.
+- [ ] Execute the first full deployment after the developer commits and pushes
+  the release.
 - [ ] Later, evaluate extracting shared bootstrap from GC before making GC a
   deployed app.
 - [ ] Later, evaluate an authenticated, artifact-based push deployment
   protocol after the pull model is operational.
+- [ ] Later, design authenticated out-of-band secret provisioning so an app
+  can manage only its owned deployment namespace without putting secrets in
+  source or release artifacts.
 
 ## Minimal Reload Sources
 

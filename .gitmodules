@@ -1,0 +1,3 @@
+[submodule "deployed-apps/naginator"]
+	path = deployed-apps/naginator
+	url = https://github.com/Ondoher/naginator.git
