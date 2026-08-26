@@ -117,7 +117,7 @@ is used only when that app runs as the standalone root.
 
 The Naginator repository is pinned at `deployed-apps/naginator` as a Git
 submodule using its public HTTPS remote. The current pin is
-`36aaa891640c3bc636343e3b2158665bb8e63203`. A release of this repository
+`cae4ceb37ede69f047396ea237caa4f148da1112`. A release of this repository
 selects a Naginator release by committing the desired submodule revision.
 
 This is intentionally a **pull deployment model**. For simplicity, the
@@ -175,7 +175,7 @@ and support deliberate rotation and recovery.
 
 ## Required Updates
 
-- Commit and push the composed release containing Naginator pin `36aaa89`.
+- Commit and push the composed release containing Naginator pin `cae4ceb`.
 - Run the production helper and verify the updated Naginator deployment.
 - Complete the installed, suspended-iPhone Web Push round trip on the deployed
   `/nag/` origin.
@@ -248,10 +248,15 @@ make the released Naginator revision independent of the main release commit.
   checks. Independent verification confirmed the revisions, Node v24.14.1,
   online `poly-gc` process, route results, and an 87-character public VAPID
   key response without exposing private key material.
-- [x] The next Naginator pin was advanced locally to `36aaa89`. Its exact
-  lockfile install, 90 client tests, 24 server tests, and the root composed
-  build completed successfully.
-- [ ] Commit and push the root release containing Naginator `36aaa89`, then run
+- [x] Main release `3bc4f24`, with Naginator advanced to `36aaa89`, was deployed
+  successfully. Before release, its exact lockfile install, 90 client tests,
+  24 server tests, and the root composed build passed. Production independently
+  verified the root and app revisions, online PM2 process, expected route
+  statuses, retired-route 404s, and valid public VAPID response shape.
+- [x] The next Naginator pin was advanced locally to `cae4ceb`. Its 92 client
+  tests, 24 server tests, and the root composed build completed successfully;
+  package, lockfile, and Polylith configuration were unchanged.
+- [ ] Commit and push the root release containing Naginator `cae4ceb`, then run
   the production helper and repeat the production smoke checks.
 - [ ] Complete the installed, suspended-iPhone Web Push round trip on the
   deployed `/nag/` origin.
