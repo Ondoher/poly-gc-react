@@ -117,7 +117,7 @@ is used only when that app runs as the standalone root.
 
 The Naginator repository is pinned at `deployed-apps/naginator` as a Git
 submodule using its public HTTPS remote. The current pin is
-`b27b1514188396f1c18a355bf93376a8358ecea4`. A release of this repository
+`36aaa891640c3bc636343e3b2158665bb8e63203`. A release of this repository
 selects a Naginator release by committing the desired submodule revision.
 
 This is intentionally a **pull deployment model**. For simplicity, the
@@ -175,9 +175,8 @@ and support deliberate rotation and recovery.
 
 ## Required Updates
 
-- Commit and push the composed release after developer review.
-- Run the production helper and confirm its build, PM2, positive-route, and
-  absent-route checks.
+- Commit and push the composed release containing Naginator pin `36aaa89`.
+- Run the production helper and verify the updated Naginator deployment.
 - Complete the installed, suspended-iPhone Web Push round trip on the deployed
   `/nag/` origin.
 
@@ -243,8 +242,19 @@ make the released Naginator revision independent of the main release commit.
   syntax passes.
 - [x] The production runbook documents the canonical deploy helper, Naginator
   checks, device acceptance test, and submodule-aware rollback.
-- [ ] Execute the first full deployment after the developer commits and pushes
-  the release.
+- [x] Main release `801cae0`, with Naginator pinned at `b27b151`, was deployed
+  successfully. The production helper completed dependency installation,
+  composed build, PM2 restart, positive-route checks, and retired-route 404
+  checks. Independent verification confirmed the revisions, Node v24.14.1,
+  online `poly-gc` process, route results, and an 87-character public VAPID
+  key response without exposing private key material.
+- [x] The next Naginator pin was advanced locally to `36aaa89`. Its exact
+  lockfile install, 90 client tests, 24 server tests, and the root composed
+  build completed successfully.
+- [ ] Commit and push the root release containing Naginator `36aaa89`, then run
+  the production helper and repeat the production smoke checks.
+- [ ] Complete the installed, suspended-iPhone Web Push round trip on the
+  deployed `/nag/` origin.
 - [ ] Later, evaluate extracting shared bootstrap from GC before making GC a
   deployed app.
 - [ ] Later, evaluate an authenticated, artifact-based push deployment
