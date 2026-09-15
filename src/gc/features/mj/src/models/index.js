@@ -1,2 +1,2 @@
-import "./feedback-model.js";
-import "./tile-metrics-model.js";
+import './feedback-model.js';
+import './tile-metrics-model.js';

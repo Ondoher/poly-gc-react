@@ -89,9 +89,7 @@ function buildUsedSpaces(board, placedTiles, grid) {
 }
 
 function isUsed(usedSpaces, x, y, z) {
-	return usedSpaces[z] !== undefined
-		&& usedSpaces[z][y] !== undefined
-		&& usedSpaces[z][y].has(x);
+	return usedSpaces[z] !== undefined && usedSpaces[z][y] !== undefined && usedSpaces[z][y].has(x);
 }
 
 function isTileOpen(board, tile, placedTileSet, usedSpaces, grid) {
@@ -108,22 +106,19 @@ function isTileOpen(board, tile, placedTileSet, usedSpaces, grid) {
 	} else if (x === 29) {
 		goodAcross = true;
 	} else {
-		goodAcross = (
-			!isUsed(usedSpaces, x + 2, y, z)
-			&& !isUsed(usedSpaces, x + 2, y + 1, z)
-		) || (
-			!isUsed(usedSpaces, x - 1, y, z)
-			&& !isUsed(usedSpaces, x - 1, y + 1, z)
-		);
+		goodAcross =
+			(!isUsed(usedSpaces, x + 2, y, z) && !isUsed(usedSpaces, x + 2, y + 1, z)) ||
+			(!isUsed(usedSpaces, x - 1, y, z) && !isUsed(usedSpaces, x - 1, y + 1, z));
 	}
 
 	if (z === grid.depth - 1) {
 		goodUp = true;
 	} else {
-		goodUp = !isUsed(usedSpaces, x, y, z + 1)
-			&& !isUsed(usedSpaces, x + 1, y, z + 1)
-			&& !isUsed(usedSpaces, x, y + 1, z + 1)
-			&& !isUsed(usedSpaces, x + 1, y + 1, z + 1);
+		goodUp =
+			!isUsed(usedSpaces, x, y, z + 1) &&
+			!isUsed(usedSpaces, x + 1, y, z + 1) &&
+			!isUsed(usedSpaces, x, y + 1, z + 1) &&
+			!isUsed(usedSpaces, x + 1, y + 1, z + 1);
 	}
 
 	return goodAcross && goodUp;
@@ -215,9 +210,9 @@ export function countTilesFreedByRemoval(board, tile, openTiles, options = {}) {
 
 	for (let candidate = 0; candidate < board.count; candidate++) {
 		if (
-			candidate !== tile
-			&& !openBefore.has(candidate)
-			&& isTileOpen(board, candidate, placedAfter, usedAfter, grid)
+			candidate !== tile &&
+			!openBefore.has(candidate) &&
+			isTileOpen(board, candidate, placedAfter, usedAfter, grid)
 		) {
 			freed++;
 		}
@@ -248,45 +243,38 @@ export function scoreOpenTiles(board, openTiles, referenceTiles = [], options = 
 	const freedRankByCount = new Map(
 		uniqueFreedCounts.map((count, index) => {
 			return [count, uniqueFreedCounts.length - index];
-		})
+		}),
 	);
 
-	return candidates.map((tile, index) => {
-		const position = getPosition(board, tile);
-		const freedCount = freedCounts[index];
-		const freedRank = freedRankByCount.get(freedCount);
-		const horizontalIntersections = countHorizontalIntersections(
-			board,
-			tile,
-			horizontalMasks,
-			settings
-		);
-		const verticalIntersections = countVerticalIntersections(
-			board,
-			tile,
-			verticalMasks,
-			settings
-		);
-		const zWeight = (position.z + 0.5) / zDenominator;
-		const centeredZWeight = (zWeight - 0.5) * 2;
-		const zPressure = Math.max(0.25, 1 + (centeredZWeight * zBias));
-		const weight = freedRank
-			* zPressure
-			* Math.pow(settings.horizontalMultiplier, horizontalIntersections)
-			* Math.pow(settings.verticalMultiplier, verticalIntersections);
+	return candidates
+		.map((tile, index) => {
+			const position = getPosition(board, tile);
+			const freedCount = freedCounts[index];
+			const freedRank = freedRankByCount.get(freedCount);
+			const horizontalIntersections = countHorizontalIntersections(board, tile, horizontalMasks, settings);
+			const verticalIntersections = countVerticalIntersections(board, tile, verticalMasks, settings);
+			const zWeight = (position.z + 0.5) / zDenominator;
+			const centeredZWeight = (zWeight - 0.5) * 2;
+			const zPressure = Math.max(0.25, 1 + centeredZWeight * zBias);
+			const weight =
+				freedRank *
+				zPressure *
+				Math.pow(settings.horizontalMultiplier, horizontalIntersections) *
+				Math.pow(settings.verticalMultiplier, verticalIntersections);
 
-		return {
-			tile,
-			weight,
-			freedCount,
-			freedRank,
-			z: position.z,
-			zWeight,
-			zPressure,
-			horizontalIntersections,
-			verticalIntersections,
-		};
-	}).sort((a, b) => a.weight - b.weight || a.tile - b.tile);
+			return {
+				tile,
+				weight,
+				freedCount,
+				freedRank,
+				z: position.z,
+				zWeight,
+				zPressure,
+				horizontalIntersections,
+				verticalIntersections,
+			};
+		})
+		.sort((a, b) => a.weight - b.weight || a.tile - b.tile);
 }
 
 export function getDifficultyWindow(scoredTiles, options = {}) {

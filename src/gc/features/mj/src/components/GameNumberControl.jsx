@@ -1,5 +1,5 @@
-import React from "react";
-import CssRect from "./CssRect.jsx";
+import React from 'react';
+import CssRect from './CssRect.jsx';
 
 export default class GameNumberControl extends React.Component {
 	constructor(props) {
@@ -52,11 +52,7 @@ export default class GameNumberControl extends React.Component {
 	render() {
 		return (
 			<div className="mj-game-number-control-stack">
-				<CssRect
-					className="mj-game-number-wrap mj-game-number-control"
-					size="small"
-					variant="inset"
-				>
+				<CssRect className="mj-game-number-wrap mj-game-number-control" size="small" variant="inset">
 					<input
 						className="mj-text-edit-control-input mj-game-number-input"
 						type="text"

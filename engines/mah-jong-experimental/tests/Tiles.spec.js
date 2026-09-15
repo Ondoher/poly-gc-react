@@ -1,11 +1,11 @@
 import Grid from '../Grid.js';
 import GameRules from '../GameRules.js';
-import { GeneratorState } from '../GeneratorState.js';
+import {GeneratorState} from '../GeneratorState.js';
 import FaceInventory from '../FaceInventory.js';
 import GeneratedPair from '../GeneratedPair.js';
 import TilePicker from '../TilePicker.js';
 import Tiles from '../Tiles.js';
-import { DIFFICULTY_SETTINGS } from '../difficulty-settings.js';
+import {DIFFICULTY_SETTINGS} from '../difficulty-settings.js';
 
 describe('Tiles', () => {
 	function createLayout() {
@@ -61,11 +61,13 @@ describe('Tiles', () => {
 		expect(tilePicker.selectTileKey.calls.argsFor(1)).toEqual([[0]]);
 		expect(pair instanceof GeneratedPair).toBe(true);
 		expect(pair.tiles).toEqual([0, 1]);
-		expect(state.softLinks.find({
-			type: 'open-tiles',
-			role: 'after-removal',
-			sourceTiles: [0, 1],
-		})[0].tiles).toEqual([]);
+		expect(
+			state.softLinks.find({
+				type: 'open-tiles',
+				role: 'after-removal',
+				sourceTiles: [0, 1],
+			})[0].tiles,
+		).toEqual([]);
 		expect(state.getPlacedTileCount()).toBe(0);
 	});
 
@@ -76,10 +78,12 @@ describe('Tiles', () => {
 
 		state.placeTile(0).placeTile(1).placeTile(2).placeTile(3);
 
-		expect(tiles.getOpenSoftLinkTiles({
-			removeTiles: [0, 1],
-			ignoreTiles: [0, 1],
-		})).toEqual([2, 3]);
+		expect(
+			tiles.getOpenSoftLinkTiles({
+				removeTiles: [0, 1],
+				ignoreTiles: [0, 1],
+			}),
+		).toEqual([2, 3]);
 		expect(state.hasTile(0)).toBe(true);
 		expect(state.hasTile(1)).toBe(true);
 	});
@@ -98,22 +102,26 @@ describe('Tiles', () => {
 		let rules = new GameRules();
 		let state = createState();
 		let tiles = new Tiles(rules, state);
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 
 		state.placeTile(0).placeTile(1).placeTile(2).placeTile(3);
 
 		expect(tiles.recordSoftLinks(pair)).toBe(pair);
-		expect(state.softLinks.find({
-			type: 'open-tiles',
-			role: 'after-removal',
-			sourceTiles: [0, 1],
-		})).toEqual([{
-			id: 1,
-			type: 'open-tiles',
-			role: 'after-removal',
-			sourceTiles: [0, 1],
-			tiles: [2, 3],
-		}]);
+		expect(
+			state.softLinks.find({
+				type: 'open-tiles',
+				role: 'after-removal',
+				sourceTiles: [0, 1],
+			}),
+		).toEqual([
+			{
+				id: 1,
+				type: 'open-tiles',
+				role: 'after-removal',
+				sourceTiles: [0, 1],
+				tiles: [2, 3],
+			},
+		]);
 	});
 
 	it('tracks unavailable tiles for reason-agnostic selection filtering', () => {

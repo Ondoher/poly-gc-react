@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { spawnSync } from 'child_process';
-import { ROOT_DIR, sanitizeOutputScope } from '../shared/asset-paths.js';
+import {spawnSync} from 'child_process';
+import {ROOT_DIR, sanitizeOutputScope} from '../shared/asset-paths.js';
 
 const DEFAULT_CONFIG = 'scripts/data/3d-assets/json/asset-pipeline.json';
 const STAGE_COMMANDS = Object.freeze({
@@ -19,12 +19,8 @@ const STAGE_COMMANDS = Object.freeze({
 const configPath = path.resolve(ROOT_DIR, readArgument('--config') || DEFAULT_CONFIG);
 const config = readJson(configPath);
 const requestedJobIds = readPositionalArguments();
-const selectedJobIds = requestedJobIds.length > 0
-	? requestedJobIds
-	: [config.defaultJob].filter(Boolean);
-const jobs = selectedJobIds.length > 0
-	? selectedJobIds.map((jobId) => findJob(config, jobId))
-	: config.jobs || [];
+const selectedJobIds = requestedJobIds.length > 0 ? requestedJobIds : [config.defaultJob].filter(Boolean);
+const jobs = selectedJobIds.length > 0 ? selectedJobIds.map((jobId) => findJob(config, jobId)) : config.jobs || [];
 
 if (jobs.length === 0) {
 	throw new Error('No asset pipeline jobs selected.');
@@ -42,7 +38,7 @@ function runJob(job) {
 	const outputScope = sanitizeOutputScope(job.outputScope || job.tilesetId || '');
 	const env = {
 		...process.env,
-		...(outputScope ? { FACE_OUTPUT_SCOPE: outputScope, PIPELINE_TILESET_ID: outputScope } : {}),
+		...(outputScope ? {FACE_OUTPUT_SCOPE: outputScope, PIPELINE_TILESET_ID: outputScope} : {}),
 	};
 
 	if (job.sourceDir) {
@@ -83,7 +79,7 @@ function writePocManifest(config) {
 		tiles: config.poc.tiles || [],
 	};
 
-	fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+	fs.mkdirSync(path.dirname(outputPath), {recursive: true});
 	fs.writeFileSync(outputPath, JSON.stringify(manifest, null, 2));
 	console.log(`\nWrote ${path.relative(ROOT_DIR, outputPath)}`);
 }
@@ -138,5 +134,3 @@ function readPositionalArguments() {
 	}
 	return positional;
 }
-
-

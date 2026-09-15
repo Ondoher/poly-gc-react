@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 const API_BASE = 'api/pipeline';
 
@@ -45,7 +45,7 @@ export default class ServerModel extends Service {
 	}
 
 	assetUrl(filename, cacheKey = '') {
-		const params = new URLSearchParams({ path: filename });
+		const params = new URLSearchParams({path: filename});
 		if (cacheKey) {
 			params.set('v', cacheKey);
 		}
@@ -74,7 +74,7 @@ export default class ServerModel extends Service {
 		return this.requestJson({
 			url: `${API_BASE}/tilesets/active`,
 			method: 'POST',
-			body: { tilesetId },
+			body: {tilesetId},
 			fallbackMessage: 'Unable to set the active tileset.',
 		});
 	}
@@ -86,8 +86,8 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async loadMetadataState({ metadataKind = 'tileset', tilesetSource = 'wiki' } = {}) {
-		const params = new URLSearchParams({ kind: metadataKind });
+	async loadMetadataState({metadataKind = 'tileset', tilesetSource = 'wiki'} = {}) {
+		const params = new URLSearchParams({kind: metadataKind});
 
 		if (metadataKind === 'tileset') {
 			params.set('source', tilesetSource);
@@ -99,7 +99,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async recreateMetadata({ metadataKind = 'tileset', tilesetSource = 'wiki' } = {}) {
+	async recreateMetadata({metadataKind = 'tileset', tilesetSource = 'wiki'} = {}) {
 		const params = metadataParams(metadataKind, tilesetSource);
 
 		return this.requestJson({
@@ -109,7 +109,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async saveMetadata(metadata, { metadataKind = 'tileset', tilesetSource = 'wiki' } = {}) {
+	async saveMetadata(metadata, {metadataKind = 'tileset', tilesetSource = 'wiki'} = {}) {
 		const params = metadataParams(metadataKind, tilesetSource);
 
 		return this.requestJson({
@@ -120,7 +120,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async preprocessMetadata(metadata, { metadataKind = 'tileset', tilesetSource = 'wiki' } = {}) {
+	async preprocessMetadata(metadata, {metadataKind = 'tileset', tilesetSource = 'wiki'} = {}) {
 		const params = metadataParams(metadataKind, tilesetSource);
 
 		return this.requestJson({
@@ -145,7 +145,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async rebuildOptionalPartAssignment({ tilesetId = '', bulkOptions = {}, manualAssignments = {} } = {}) {
+	async rebuildOptionalPartAssignment({tilesetId = '', bulkOptions = {}, manualAssignments = {}} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/optional-parts/rebuild?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
@@ -157,7 +157,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async saveOptionalPartBindingActions({ tilesetId = '', currencyDate = '', actionsByFace = {} } = {}) {
+	async saveOptionalPartBindingActions({tilesetId = '', currencyDate = '', actionsByFace = {}} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/optional-parts/bindings?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
@@ -170,7 +170,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async saveSourceAssignmentBindingActions({ tilesetId = '', currencyDate = '', actionsByFace = {} } = {}) {
+	async saveSourceAssignmentBindingActions({tilesetId = '', currencyDate = '', actionsByFace = {}} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/source-assignment/bindings?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
@@ -191,7 +191,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async acceptOptionalPartAssignment({ tilesetId = '', currencyDate = '' } = {}) {
+	async acceptOptionalPartAssignment({tilesetId = '', currencyDate = ''} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/optional-parts/accept?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
@@ -207,12 +207,12 @@ export default class ServerModel extends Service {
 		return this.requestJson({
 			url: `${API_BASE}/reference-structure/save`,
 			method: 'POST',
-			body: { structure },
+			body: {structure},
 			fallbackMessage: 'Unable to save the reference structure.',
 		});
 	}
 
-	async regenerateSourceAssignment({ tilesetId = '', currencyDate = '', actionsByFace = {} } = {}) {
+	async regenerateSourceAssignment({tilesetId = '', currencyDate = '', actionsByFace = {}} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/source-assignment/regenerate?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
@@ -225,7 +225,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async acceptSourceAssignment({ tilesetId = '', currencyDate = '', actionsByFace = {} } = {}) {
+	async acceptSourceAssignment({tilesetId = '', currencyDate = '', actionsByFace = {}} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/source-assignment/accept?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
@@ -245,7 +245,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async rerenderFinalRenderingOptions({ tilesetId = '', options = {} } = {}) {
+	async rerenderFinalRenderingOptions({tilesetId = '', options = {}} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/final-rendering-options/rerender?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
@@ -257,7 +257,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async acceptFinalRenderingOptions({ tilesetId = '', options = {} } = {}) {
+	async acceptFinalRenderingOptions({tilesetId = '', options = {}} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/final-rendering-options/accept?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
@@ -276,7 +276,7 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async saveBaseTileSelection({ tilesetId = '', currencyDate = '', variantId = '' } = {}) {
+	async saveBaseTileSelection({tilesetId = '', currencyDate = '', variantId = ''} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/base-tile-selection?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
@@ -289,29 +289,29 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async startAssetGeneration({ tilesetId = '', faceKeys = [] } = {}) {
+	async startAssetGeneration({tilesetId = '', faceKeys = []} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/asset-generation/start?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
-			body: { tilesetId, faceKeys },
+			body: {tilesetId, faceKeys},
 			fallbackMessage: 'Unable to start asset generation.',
 		});
 	}
 
-	async cancelAssetGeneration({ tilesetId = '' } = {}) {
+	async cancelAssetGeneration({tilesetId = ''} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/asset-generation/cancel?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
-			body: { tilesetId },
+			body: {tilesetId},
 			fallbackMessage: 'Unable to cancel asset generation.',
 		});
 	}
 
-	async resetAssetGeneration({ tilesetId = '' } = {}) {
+	async resetAssetGeneration({tilesetId = ''} = {}) {
 		return this.requestJson({
 			url: `${API_BASE}/asset-generation/reset?tilesetId=${encodeURIComponent(tilesetId)}`,
 			method: 'POST',
-			body: { tilesetId },
+			body: {tilesetId},
 			fallbackMessage: 'Unable to reset generated assets.',
 		});
 	}
@@ -338,11 +338,11 @@ export default class ServerModel extends Service {
 		});
 	}
 
-	async requestJson({ url, method = 'GET', body = null, fallbackMessage = 'Pipeline request failed.' }) {
+	async requestJson({url, method = 'GET', body = null, fallbackMessage = 'Pipeline request failed.'}) {
 		const result = await this.io.send({
 			url,
 			method,
-			...(body ? { body } : {}),
+			...(body ? {body} : {}),
 		});
 
 		if (!result.success) {
@@ -354,7 +354,7 @@ export default class ServerModel extends Service {
 }
 
 function metadataParams(metadataKind, tilesetSource) {
-	const params = new URLSearchParams({ kind: metadataKind });
+	const params = new URLSearchParams({kind: metadataKind});
 
 	if (metadataKind === 'tileset') {
 		params.set('source', tilesetSource);

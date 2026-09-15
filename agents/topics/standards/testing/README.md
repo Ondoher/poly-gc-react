@@ -1,8 +1,3 @@
 # Testing
 
-Repo-wide testing guidance.
-
-## Main Documents
-
-- [Testing](testing.md)
-- [Implementation Plan](implementation-plan.md)
+[Testing](testing.md) records local test lanes and domain scenarios, with references to canonical testing rules.

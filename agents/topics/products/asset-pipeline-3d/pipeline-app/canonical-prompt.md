@@ -11,7 +11,9 @@ advancing a multi-stage Mahjong 3D asset pipeline. The app is a local
 single-developer tool. It should favor clear feature boundaries and simple
 request/response workflows over production multi-user infrastructure.
 
-The app must follow a registry-centered REMVC shape:
+Engineering rules come from the [folder manifest](../../../standards/manifest.md), [canonical REMVC](C:/Users/gande/.codex/documentation/standards/remvc.md#preferred-flow), [React](C:/Users/gande/.codex/documentation/standards/react.md#presentation-boundary), [app shells](C:/Users/gande/.codex/documentation/standards/app-shells.md#shell-ownership), and the [Pipeline overlay](../../../standards/overlay.md). This prompt owns Pipeline product requirements and concrete app integration paths.
+
+Use these Pipeline ownership locations:
 
 - `src/pipeline/main` owns application bootstrap and React root mounting only.
 - `src/pipeline/features/app` owns the visible shell: header, tabs, page
@@ -25,10 +27,7 @@ The app must follow a registry-centered REMVC shape:
 - Shared presentation primitives that are only shared inside the pipeline app
   live flat under `src/pipeline/components`.
 
-The main entry point must not directly import individual stage features.
-Feature activation is Polylith/build-file driven through `@polylith/features`.
-Each feature should have build metadata and an `index.js` entry that registers
-its controller/view/page side effects.
+Feature activation follows [canonical activation](C:/Users/gande/.codex/documentation/standards/remvc.md#feature-activation-and-privacy), using Pipeline build metadata and `@polylith/features`.
 
 Use these app services:
 
@@ -57,17 +56,9 @@ The server must support clean browser URLs:
 - page changes push the page slug into browser history
 - browser back/forward remounts the matching registered page without pushing a
   new history entry
-- initial load prefers a valid URL slug and otherwise selects the first
-  available registered page
+- initial and unknown URLs follow [canonical initial/not-found behavior](C:/Users/gande/.codex/documentation/standards/app-shells.md#empty-initial-and-not-found-states); select the concrete default page explicitly during implementation
 
-React communication rules:
-
-- React pages and shared components talk only to their owning page view.
-- Components never talk directly to controllers.
-- Views are thin coordinators. They expose page state to React and relay user
-  intent back to controllers.
-- Controllers own server/model calls, workflow transitions, and cross-page
-  navigation.
+React communication and controller-owned loading follow [canonical view/presentation responsibilities](C:/Users/gande/.codex/documentation/standards/remvc.md#views-and-react-presentation).
 
 The app shell must provide:
 
@@ -95,62 +86,61 @@ Implement these current pages:
 
 1. Reference Approval
 
-   - Stage 0 reference binding and palette review page.
-   - Reviews active `reference-structure.json`.
-   - Supports semantic part/component selection, bind, unbind, draft save,
-     accept, palette review, unknown/addable color swatches, complete/incomplete
-     status, and part-box preview mode.
-   - Loads reference data after the page component mounts so the component/view
-     lifecycle is ready before data is requested.
+    - Stage 0 reference binding and palette review page.
+    - Reviews active `reference-structure.json`.
+    - Supports semantic part/component selection, bind, unbind, draft save,
+      accept, palette review, unknown/addable color swatches, complete/incomplete
+      status, and part-box preview mode.
+    - Reference data loading waits for presentation subscriptions to be ready.
+      The controller owns the request and receives an explicit readiness relay
+      through the view.
 
 2. Optional Parts
 
-   - Reviews source-side optional label/glyph expectations after normalization
-     and before alignment.
-   - Supports per-face optional decisions, source hint controls, candidate
-     component selection, bind/unbind/clear behavior, accept, and a
-     guarded Reset action.
-   - Reset is tileset-scoped: warn the user, then rebuild the current tileset's
-     `pipeline.json` from its recorded source manifest and canonical bootstrap,
-     rerun Source Normalization and Optional Part Assignment, and reload the
-     page.
-   - Accept promotes optional decisions, runs Alignment and Source Semantic
-     Assignment on the server, then advances the app to Assignment.
+    - Reviews source-side optional label/glyph expectations after normalization
+      and before alignment.
+    - Supports per-face optional decisions, source hint controls, candidate
+      component selection, bind/unbind/clear behavior, accept, and a
+      guarded Reset action.
+    - Reset is tileset-scoped: warn the user, then rebuild the current tileset's
+      `pipeline.json` from its recorded source manifest and canonical bootstrap,
+      rerun Source Normalization and Optional Part Assignment, and reload the
+      page.
+    - Accept promotes optional decisions, runs Alignment and Source Semantic
+      Assignment on the server, then advances the app to Assignment.
 
 3. Assignment
 
-   - Reviews source semantic bindings after alignment.
-   - Shows every canonical source-side semantic part in each face, including
-     source-bound, source-unbound, source-absent, and unknown-source parts.
-   - Treats accepted/reviewed source-unbound parts as satisfied source
-     absences. They remain visible and can be rebound later, but they do not
-     count as unbound issues.
-   - Supports part/component selection, bind components, unbind components,
-     change assignment configuration, rerun assignment, Source Approval
-     acceptance, and part-box view mode.
-   - Part-box mode draws one union bounds box per bound source part, uses the
-     same part selection state as the part list, and turns off when the user
-     selects an individual component.
-   - Accept runs first Final Rendering Composition on the server and advances
-     the app to Render Review only after that render succeeds.
+    - Reviews source semantic bindings after alignment.
+    - Shows every canonical source-side semantic part in each face, including
+      source-bound, source-unbound, source-absent, and unknown-source parts.
+    - Treats accepted/reviewed source-unbound parts as satisfied source
+      absences. They remain visible and can be rebound later, but they do not
+      count as unbound issues.
+    - Supports part/component selection, bind components, unbind components,
+      change assignment configuration, rerun assignment, Source Approval
+      acceptance, and part-box view mode.
+    - Part-box mode draws one union bounds box per bound source part, uses the
+      same part selection state as the part list, and turns off when the user
+      selects an individual component.
+    - Accept runs first Final Rendering Composition on the server and advances
+      the app to Render Review only after that render succeeds.
 
 4. Render Review
 
-   - User-facing page for Stage 6 Final Rendering Options. The internal feature
-     and API names may remain `final-rendering-options` if they map to existing
-     backend routes/artifacts.
-   - Reviews final color SVGs and effective rendering options.
-   - Supports suit-level defaults, per-face overrides, generated/source/omit
-     label and glyph choices where relevant, free-form artwork mirror and
-     preserve-color controls, rerender, reload, and accept.
-   - Page-level actions such as Reload, Rerender, and Accept live in the page
-     header so the options/card list can scroll independently.
+    - User-facing page for Stage 6 Final Rendering Options. The internal feature
+      and API names may remain `final-rendering-options` if they map to existing
+      backend routes/artifacts.
+    - Reviews final color SVGs and effective rendering options.
+    - Supports suit-level defaults, per-face overrides, generated/source/omit
+      label and glyph choices where relevant, free-form artwork mirror and
+      preserve-color controls, rerender, reload, and accept.
+    - Page-level actions such as Reload, Rerender, and Accept live in the page
+      header so the options/card list can scroll independently.
 
 Shared presentation requirements:
 
-- Use contained page layouts. The app shell owns the outer viewport and tabs;
-  each page owns its own page header and internal scroll region. Pages must not
-  assume shell chrome dimensions.
+- Layout follows [canonical shell ownership](C:/Users/gande/.codex/documentation/standards/app-shells.md#shell-ownership) and the [Pipeline shell overlay](../../../standards/overlay.md#replace-pipeline-top-tabs).
 - Use a consistent review-card language across review pages.
 - Shared primitives include `Button`, `Pill`, `ColorSwatch`, `BoundsBox`, and
   `PartsComponentSelector`.
@@ -204,6 +194,4 @@ Asset Review page requirements:
   live-progress/queue-observation channel if spinner-level feedback is not
   enough. Do not add multi-user account/session/authorization complexity.
 
-Keep implementation conservative and aligned with the existing repo style.
-Prefer feature-local helpers until behavior is proven shared. Promote only
-reusable presentation primitives into `src/pipeline/components`.
+Component promotion follows [canonical shared-component ownership](C:/Users/gande/.codex/documentation/standards/react.md#shared-and-feature-local-ownership). Local card nesting and task-focused copy requirements are recorded in the [new-page runbook](new-page-runbook.md).

@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 const BASE_TILE_SELECTION_PAGE_ID = 'asset-base-tile-selection';
 
@@ -55,7 +55,7 @@ export default class FinalRenderingOptionsController extends Service {
 	}
 
 	getState() {
-		return { ...this.state };
+		return {...this.state};
 	}
 
 	setTilesetId(tilesetId) {
@@ -83,7 +83,7 @@ export default class FinalRenderingOptionsController extends Service {
 		callback?.();
 	}
 
-	async load({ force = false, quiet = false } = {}) {
+	async load({force = false, quiet = false} = {}) {
 		if (!force && (this.state.processing || this.state.finalRenderingOptions)) {
 			return;
 		}
@@ -91,7 +91,7 @@ export default class FinalRenderingOptionsController extends Service {
 		this.setState({
 			processing: true,
 			processingLabel: quiet ? '' : 'Loading render review',
-			...(quiet ? {} : { status: 'Loading render review...' }),
+			...(quiet ? {} : {status: 'Loading render review...'}),
 		});
 
 		try {
@@ -110,13 +110,13 @@ export default class FinalRenderingOptionsController extends Service {
 				status: `Final rendering load failed: ${error.message}`,
 			});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
 	async rerender(options = {}) {
 		if (!this.state.finalRenderingOptions?.faces) {
-			this.setState({ status: 'No final rendering options loaded' });
+			this.setState({status: 'No final rendering options loaded'});
 			return;
 		}
 
@@ -134,25 +134,27 @@ export default class FinalRenderingOptionsController extends Service {
 
 			this.setState({
 				status: result.ok ? 'Final rendering rebuilt' : 'Final rendering failed; inspect process output',
-				messageDialog: result.ok ? null : {
-					title: 'Final Rendering',
-					message: result.stderr || result.error || 'Final rendering did not complete cleanly.',
-				},
+				messageDialog: result.ok
+					? null
+					: {
+							title: 'Final Rendering',
+							message: result.stderr || result.error || 'Final rendering did not complete cleanly.',
+						},
 			});
 
 			if (result.ok) {
-				await this.load({ force: true, quiet: true });
+				await this.load({force: true, quiet: true});
 			}
 		} catch (error) {
-			this.setState({ status: `Final rendering failed: ${error.message}` });
+			this.setState({status: `Final rendering failed: ${error.message}`});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
 	async accept(options = {}) {
 		if (!this.state.finalRenderingOptions?.faces) {
-			this.setState({ status: 'No final rendering options loaded' });
+			this.setState({status: 'No final rendering options loaded'});
 			return;
 		}
 
@@ -173,7 +175,10 @@ export default class FinalRenderingOptionsController extends Service {
 					status: 'Final rendering failed; inspect process output',
 					messageDialog: {
 						title: 'Final Rendering',
-						message: rerenderResult.stderr || rerenderResult.error || 'Final rendering did not complete cleanly.',
+						message:
+							rerenderResult.stderr ||
+							rerenderResult.error ||
+							'Final rendering did not complete cleanly.',
 					},
 				});
 				return;
@@ -186,20 +191,23 @@ export default class FinalRenderingOptionsController extends Service {
 
 			this.setState({
 				status: `Accepted final rendering options for ${result.acceptedFaceCount || 0} faces`,
-				messageDialog: result.ok ? null : {
-					title: 'Render Review',
-					message: result.stderr || result.message || 'Render review acceptance did not complete cleanly.',
-				},
+				messageDialog: result.ok
+					? null
+					: {
+							title: 'Render Review',
+							message:
+								result.stderr || result.message || 'Render review acceptance did not complete cleanly.',
+						},
 			});
 			if (result.ok) {
 				await this.openBaseTileSelection();
 			} else {
-				await this.load({ force: true, quiet: true });
+				await this.load({force: true, quiet: true});
 			}
 		} catch (error) {
-			this.setState({ status: `Final rendering acceptance failed: ${error.message}` });
+			this.setState({status: `Final rendering acceptance failed: ${error.message}`});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -207,19 +215,19 @@ export default class FinalRenderingOptionsController extends Service {
 		const page = this.app.requestPage(BASE_TILE_SELECTION_PAGE_ID);
 
 		if (!page) {
-			this.setState({ status: 'Render review accepted, but the Base Tile page is not available.' });
+			this.setState({status: 'Render review accepted, but the Base Tile page is not available.'});
 			return;
 		}
 
 		const baseTileSelection = this.registry.subscribe('asset-base-tile-selection-controller');
 
 		if (baseTileSelection) {
-			await baseTileSelection.load({ force: true, quiet: true });
+			await baseTileSelection.load({force: true, quiet: true});
 		}
 	}
 
 	dismissMessageDialog() {
-		this.setState({ messageDialog: null });
+		this.setState({messageDialog: null});
 	}
 
 	assetUrl(path) {

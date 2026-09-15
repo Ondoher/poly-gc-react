@@ -3,12 +3,7 @@ import Button from './Button.jsx';
 
 export default class ViewSelector extends React.Component {
 	render() {
-		const {
-			ariaLabel = 'View mode',
-			options = [],
-			value = '',
-			onChange,
-		} = this.props;
+		const {ariaLabel = 'View mode', options = [], value = '', onChange} = this.props;
 
 		return (
 			<div className="pipeline-view-selector" role="group" aria-label={ariaLabel}>

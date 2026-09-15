@@ -1,63 +1,48 @@
-import { Service } from "@polylith/core";
-import FeedbackDb from "../db/FeedbackDb.js";
-import TelemetryDb from "../db/TelemetryDb.js";
+import {Service} from '@polylith/core';
+import FeedbackDb from '../db/FeedbackDb.js';
+import TelemetryDb from '../db/TelemetryDb.js';
 
-const ALLOWED_SKILL_LEVELS = new Set([
-	"beginner",
-	"intermediate",
-	"experienced",
-]);
+const ALLOWED_SKILL_LEVELS = new Set(['beginner', 'intermediate', 'experienced']);
 
-const ALLOWED_DIFFICULTY_FEELINGS = new Set([
-	"too-easy",
-	"about-right",
-	"too-hard",
-]);
+const ALLOWED_DIFFICULTY_FEELINGS = new Set(['too-easy', 'about-right', 'too-hard']);
 
-const ALLOWED_FAIRNESS_FEELINGS = new Set([
-	"fair",
-	"frustrating",
-	"very-frustrating",
-]);
+const ALLOWED_FAIRNESS_FEELINGS = new Set(['fair', 'frustrating', 'very-frustrating']);
 
 export default class FeedbackService extends Service {
 	constructor(registry) {
-		super("feedback", registry);
-		this.implement(["ready", "routes"]);
+		super('feedback', registry);
+		this.implement(['ready', 'routes']);
 		this.feedbackDb = null;
 		this.telemetryDb = null;
 	}
 
 	ready() {
-		this.routerService = this.registry.subscribe("routers");
+		this.routerService = this.registry.subscribe('routers');
 
-		let sharedRegistry = this.registry.getAttached("shared");
+		let sharedRegistry = this.registry.getAttached('shared');
 		if (!sharedRegistry) {
-			throw new Error("The shared registry is not attached");
+			throw new Error('The shared registry is not attached');
 		}
 
-		this.config = sharedRegistry.subscribe("config");
+		this.config = sharedRegistry.subscribe('config');
 		if (!this.config) {
-			throw new Error("The shared config service is not registered");
+			throw new Error('The shared config service is not registered');
 		}
 
 		this.routerService.add(this.serviceName);
 	}
 
 	routes(express, router, app) {
-		router.post("/api/feedback", this.submitFeedback.bind(this));
-		router.post("/api/telemetry", this.submitTelemetry.bind(this));
+		router.post('/api/feedback', this.submitFeedback.bind(this));
+		router.post('/api/telemetry', this.submitTelemetry.bind(this));
 	}
 
 	getFeedbackDb() {
 		if (!this.feedbackDb) {
 			this.feedbackDb = new FeedbackDb({
-				uri: this.config.get("mongo.uri", "mongodb://127.0.0.1:27017"),
-				dbName: this.config.get("mongo.db", "poly_gc_dev"),
-				collectionName: this.config.get(
-					"mongo.collections.feedback",
-					"feedback"
-				),
+				uri: this.config.get('mongo.uri', 'mongodb://127.0.0.1:27017'),
+				dbName: this.config.get('mongo.db', 'poly_gc_dev'),
+				collectionName: this.config.get('mongo.collections.feedback', 'feedback'),
 			});
 		}
 
@@ -67,12 +52,9 @@ export default class FeedbackService extends Service {
 	getTelemetryDb() {
 		if (!this.telemetryDb) {
 			this.telemetryDb = new TelemetryDb({
-				uri: this.config.get("mongo.uri", "mongodb://127.0.0.1:27017"),
-				dbName: this.config.get("mongo.db", "poly_gc_dev"),
-				collectionName: this.config.get(
-					"mongo.collections.telemetry",
-					"telemetry"
-				),
+				uri: this.config.get('mongo.uri', 'mongodb://127.0.0.1:27017'),
+				dbName: this.config.get('mongo.db', 'poly_gc_dev'),
+				collectionName: this.config.get('mongo.collections.telemetry', 'telemetry'),
 			});
 		}
 
@@ -80,11 +62,11 @@ export default class FeedbackService extends Service {
 	}
 
 	coerceEnum(value, allowedValues) {
-		if (typeof value !== "string") {
-			return "";
+		if (typeof value !== 'string') {
+			return '';
 		}
 
-		return allowedValues.has(value) ? value : "";
+		return allowedValues.has(value) ? value : '';
 	}
 
 	/**
@@ -98,7 +80,7 @@ export default class FeedbackService extends Service {
 			return [];
 		}
 
-		return value.reduce(function(result, pair) {
+		return value.reduce(function (result, pair) {
 			if (!Array.isArray(pair) || pair.length !== 2) {
 				return result;
 			}
@@ -122,7 +104,7 @@ export default class FeedbackService extends Service {
 	 * @returns {string} Return the telemetry id string or an empty string when unavailable.
 	 */
 	coerceTelemetryId(value) {
-		return typeof value === "string" ? value.trim() : "";
+		return typeof value === 'string' ? value.trim() : '';
 	}
 
 	/**
@@ -141,17 +123,17 @@ export default class FeedbackService extends Service {
 	 * @returns {string} Return the escaped comment text.
 	 */
 	escapeComment(value) {
-		if (typeof value !== "string") {
-			return "";
+		if (typeof value !== 'string') {
+			return '';
 		}
 
 		return value
 			.trim()
-			.replaceAll("&", "&amp;")
-			.replaceAll("<", "&lt;")
-			.replaceAll(">", "&gt;")
-			.replaceAll("\"", "&quot;")
-			.replaceAll("'", "&#39;");
+			.replaceAll('&', '&amp;')
+			.replaceAll('<', '&lt;')
+			.replaceAll('>', '&gt;')
+			.replaceAll('"', '&quot;')
+			.replaceAll("'", '&#39;');
 	}
 
 	/**
@@ -161,7 +143,7 @@ export default class FeedbackService extends Service {
 	 * @returns {MjStoredTelemetryRecord | null} Return the sanitized telemetry record or null when the payload is invalid.
 	 */
 	buildTelemetryRecord(body) {
-		if (!body || typeof body !== "object" || Array.isArray(body)) {
+		if (!body || typeof body !== 'object' || Array.isArray(body)) {
 			return null;
 		}
 
@@ -171,17 +153,10 @@ export default class FeedbackService extends Service {
 		return {
 			submittedAt: this.createSubmittedAt(),
 			boardNbr: Number.isFinite(boardNbr) ? boardNbr : null,
-			difficulty: typeof body.difficulty === "string" ? body.difficulty : "",
-			layout: typeof body.layout === "string" ? body.layout : "",
-			elapsedTimeMs: Number.isFinite(elapsedTimeMs)
-				? Math.max(0, Math.floor(elapsedTimeMs))
-				: 0,
-			result:
-				body.result === "won" ||
-				body.result === "lost" ||
-				body.result === "abandoned"
-					? body.result
-					: "",
+			difficulty: typeof body.difficulty === 'string' ? body.difficulty : '',
+			layout: typeof body.layout === 'string' ? body.layout : '',
+			elapsedTimeMs: Number.isFinite(elapsedTimeMs) ? Math.max(0, Math.floor(elapsedTimeMs)) : 0,
+			result: body.result === 'won' || body.result === 'lost' || body.result === 'abandoned' ? body.result : '',
 			tileSequence: this.coerceTileSequence(body.tileSequence),
 		};
 	}
@@ -221,13 +196,13 @@ export default class FeedbackService extends Service {
 	buildFeedbackContext(body, fallbackBoardNbr) {
 		let context = body.context;
 
-		if (!context || typeof context !== "object" || Array.isArray(context)) {
+		if (!context || typeof context !== 'object' || Array.isArray(context)) {
 			return {
 				boardNbr: fallbackBoardNbr,
-				difficulty: "",
-				layout: "",
+				difficulty: '',
+				layout: '',
 				elapsedTimeMs: 0,
-				result: "",
+				result: '',
 				tileSequence: [],
 			};
 		}
@@ -237,17 +212,13 @@ export default class FeedbackService extends Service {
 
 		return {
 			boardNbr: Number.isFinite(boardNbr) ? boardNbr : fallbackBoardNbr,
-			difficulty: typeof context.difficulty === "string" ? context.difficulty : "",
-			layout: typeof context.layout === "string" ? context.layout : "",
-			elapsedTimeMs: Number.isFinite(elapsedTimeMs)
-				? Math.max(0, Math.floor(elapsedTimeMs))
-				: 0,
+			difficulty: typeof context.difficulty === 'string' ? context.difficulty : '',
+			layout: typeof context.layout === 'string' ? context.layout : '',
+			elapsedTimeMs: Number.isFinite(elapsedTimeMs) ? Math.max(0, Math.floor(elapsedTimeMs)) : 0,
 			result:
-				context.result === "won" ||
-				context.result === "lost" ||
-				context.result === "abandoned"
+				context.result === 'won' || context.result === 'lost' || context.result === 'abandoned'
 					? context.result
-					: "",
+					: '',
 			tileSequence: this.coerceTileSequence(context.tileSequence),
 		};
 	}
@@ -262,10 +233,8 @@ export default class FeedbackService extends Service {
 		let includeContext = body.includeContext === true;
 		let telemetryId = this.coerceTelemetryId(body.telemetryId);
 		let comment = this.escapeComment(body.comment);
-		let difficultyLabel =
-			typeof body.difficultyLabel === "string" ? body.difficultyLabel : "";
-		let layoutTitle =
-			typeof body.layoutTitle === "string" ? body.layoutTitle : "";
+		let difficultyLabel = typeof body.difficultyLabel === 'string' ? body.difficultyLabel : '';
+		let layoutTitle = typeof body.layoutTitle === 'string' ? body.layoutTitle : '';
 
 		return {
 			submittedAt: this.createSubmittedAt(),
@@ -275,22 +244,13 @@ export default class FeedbackService extends Service {
 			includeContext,
 			telemetryId: telemetryId || null,
 			skillLevel: this.coerceEnum(body.skillLevel, ALLOWED_SKILL_LEVELS),
-			difficultyFeeling: this.coerceEnum(
-				body.difficultyFeeling,
-				ALLOWED_DIFFICULTY_FEELINGS
-			),
-			fairnessFeeling: this.coerceEnum(
-				body.fairnessFeeling,
-				ALLOWED_FAIRNESS_FEELINGS
-			),
+			difficultyFeeling: this.coerceEnum(body.difficultyFeeling, ALLOWED_DIFFICULTY_FEELINGS),
+			fairnessFeeling: this.coerceEnum(body.fairnessFeeling, ALLOWED_FAIRNESS_FEELINGS),
 			comment,
-			context: includeContext
-				&& !telemetryId
-				? this.buildFeedbackContext(
-					body,
-					Number.isFinite(boardNbr) ? boardNbr : null
-				)
-				: null,
+			context:
+				includeContext && !telemetryId
+					? this.buildFeedbackContext(body, Number.isFinite(boardNbr) ? boardNbr : null)
+					: null,
 		};
 	}
 
@@ -311,13 +271,13 @@ export default class FeedbackService extends Service {
 		}
 
 		if (feedback.includeContext !== true) {
-			return "";
+			return '';
 		}
 
 		let telemetry = this.buildTelemetryRecordFromFeedback(body, feedback.boardNbr);
 
 		if (!telemetry) {
-			return "";
+			return '';
 		}
 
 		let insertedId = await this.getTelemetryDb().insertTelemetry(telemetry);
@@ -333,10 +293,10 @@ export default class FeedbackService extends Service {
 	async submitFeedback(req, res) {
 		let body = req.body;
 
-		if (!body || typeof body !== "object" || Array.isArray(body)) {
+		if (!body || typeof body !== 'object' || Array.isArray(body)) {
 			return res.status(400).json({
 				success: false,
-				reason: "feedback.invalid_body",
+				reason: 'feedback.invalid_body',
 			});
 		}
 
@@ -356,11 +316,11 @@ export default class FeedbackService extends Service {
 				id: String(insertedId),
 			});
 		} catch (error) {
-			console.error("Unable to save feedback");
+			console.error('Unable to save feedback');
 			console.error(error);
 			return res.status(500).json({
 				success: false,
-				reason: "feedback.save_failed",
+				reason: 'feedback.save_failed',
 			});
 		}
 	}
@@ -377,7 +337,7 @@ export default class FeedbackService extends Service {
 		if (!telemetry) {
 			return res.status(400).json({
 				success: false,
-				reason: "telemetry.invalid_body",
+				reason: 'telemetry.invalid_body',
 			});
 		}
 
@@ -388,11 +348,11 @@ export default class FeedbackService extends Service {
 				id: String(insertedId),
 			});
 		} catch (error) {
-			console.error("Unable to save telemetry");
+			console.error('Unable to save telemetry');
 			console.error(error);
 			return res.status(500).json({
 				success: false,
-				reason: "telemetry.save_failed",
+				reason: 'telemetry.save_failed',
 			});
 		}
 	}

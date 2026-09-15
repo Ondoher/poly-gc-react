@@ -12,7 +12,6 @@ export default class FaceAvoidance {
 		this.faceAvoidance = new Map();
 	}
 
-
 	/**
 	 * Return the accumulated soft penalty for assigning a face group to a tile.
 	 * These penalties are used only during generation face assignment; they do
@@ -56,12 +55,8 @@ export default class FaceAvoidance {
 		}
 
 		let current = tileAvoidance.get(faceGroup) || 0;
-		let next = Math.min(
-			this.state.faceAvoidanceRules.maxWeight ?? 8,
-			current + weight
-		);
+		let next = Math.min(this.state.faceAvoidanceRules.maxWeight ?? 8, current + weight);
 
 		tileAvoidance.set(faceGroup, next);
 	}
-
 }

@@ -126,10 +126,7 @@ export default class SoftLinks {
 				return false;
 			}
 
-			if (
-				options.sourceTiles !== undefined
-				&& !this.includesAll(link.sourceTiles ?? [], options.sourceTiles)
-			) {
+			if (options.sourceTiles !== undefined && !this.includesAll(link.sourceTiles ?? [], options.sourceTiles)) {
 				return false;
 			}
 

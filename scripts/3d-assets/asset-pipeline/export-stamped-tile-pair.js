@@ -1,16 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import * as THREE from 'three';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg/src/index.js';
-import {
-	BASE_TILE_MODELS_DIR,
-	ROOT_DIR,
-} from '../shared/asset-paths.js';
-import { PipelineModel } from '../svg-preprocessor/PipelineModel.js';
-import { applyBaseTileTextureMaterials } from './base-tile-texture-materials.js';
-import { installNodeGltfExportShim } from './node-gltf-export-shim.js';
+import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {Brush, Evaluator, SUBTRACTION} from 'three-bvh-csg/src/index.js';
+import {BASE_TILE_MODELS_DIR, ROOT_DIR} from '../shared/asset-paths.js';
+import {PipelineModel} from '../svg-preprocessor/PipelineModel.js';
+import {applyBaseTileTextureMaterials} from './base-tile-texture-materials.js';
+import {installNodeGltfExportShim} from './node-gltf-export-shim.js';
 
 class NodeFileReader {
 	constructor() {
@@ -58,11 +55,11 @@ async function main() {
 	});
 	await model.start();
 
-	const variant = buildStampedBodyVariant({ model, options });
+	const variant = buildStampedBodyVariant({model, options});
 	const faceHash = model.hashAssetPipelineFaceInput(options.faceKey);
 	const stageHash = model.hashAssetGenerationStageInput(options.faceKey, 'stamped-body');
-	fs.mkdirSync(path.dirname(variant.outputGlb), { recursive: true });
-	fs.mkdirSync(path.dirname(variant.outputMetadata), { recursive: true });
+	fs.mkdirSync(path.dirname(variant.outputGlb), {recursive: true});
+	fs.mkdirSync(path.dirname(variant.outputMetadata), {recursive: true});
 
 	const stampedAsset = await buildStampedBodyAsset(variant);
 	await exportSceneAsGlb(stampedAsset.group, variant.name, variant.outputGlb);
@@ -88,7 +85,7 @@ async function main() {
 	}
 }
 
-function buildStampedBodyVariant({ model, options }) {
+function buildStampedBodyVariant({model, options}) {
 	const assetPipeline = model.getAssetPipeline();
 	const faceState = assetPipeline.faces?.[options.faceKey];
 	const cutterMetadataPath = resolveRepoPath(options.cutterMetadata || faceState?.artifacts?.cutterMetadata || '');
@@ -98,8 +95,12 @@ function buildStampedBodyVariant({ model, options }) {
 	const baseTileVariant = readBaseTileVariant(selectedBaseTileVariantId);
 	const body = baseTileVariant.body || {};
 	const modelFaceKey = `${options.tilesetId}-${options.faceKey}`;
-	const outputGlb = resolveRepoPath(options.outputGlb || path.join(model.pipelineDir, 'models', 'stamped-body', `${options.faceKey}.glb`));
-	const outputMetadata = resolveRepoPath(options.outputMetadata || path.join(model.pipelineDir, 'json', 'stamped-body', `${options.faceKey}.json`));
+	const outputGlb = resolveRepoPath(
+		options.outputGlb || path.join(model.pipelineDir, 'models', 'stamped-body', `${options.faceKey}.glb`),
+	);
+	const outputMetadata = resolveRepoPath(
+		options.outputMetadata || path.join(model.pipelineDir, 'json', 'stamped-body', `${options.faceKey}.json`),
+	);
 
 	if (!cutterMetadataPath) {
 		throw new Error(`Missing cutter metadata artifact for ${options.tilesetId}/${options.faceKey}.`);
@@ -157,15 +158,15 @@ async function buildStampedBodyAsset(variant) {
 				topSurfaceY,
 				appliedPlacement: null,
 				texturedMeshNames,
-				notes: [
-					'Cutter metadata is empty; stamped output is the selected base tile body without carving.',
-				],
+				notes: ['Cutter metadata is empty; stamped output is the selected base tile body without carving.'],
 			}),
 		};
 	}
 
 	if (!variant.cutterModelPath) {
-		throw new Error(`Cutter metadata is non-empty but cutter model is missing for ${variant.tilesetId}/${variant.faceKey}.`);
+		throw new Error(
+			`Cutter metadata is non-empty but cutter model is missing for ${variant.tilesetId}/${variant.faceKey}.`,
+		);
 	}
 
 	const cutterScene = await loadGlbScene(variant.cutterModelPath);
@@ -183,7 +184,7 @@ async function buildStampedBodyAsset(variant) {
 	baseBrush.name = variant.meshName;
 	baseBrush.updateMatrixWorld(true);
 
-	const appliedPlacement = cutterPlacement({ variant, cutterMetadata, topSurfaceY });
+	const appliedPlacement = cutterPlacement({variant, cutterMetadata, topSurfaceY});
 	const cutterBrush = createPlacedCutterBrush({
 		cutterMesh,
 		cutterMetadata,
@@ -228,10 +229,10 @@ async function buildStampedBodyAsset(variant) {
 	disposeMesh(cutterBrush);
 	disposeMesh(bodyMesh);
 
-	return { group, metadata };
+	return {group, metadata};
 }
 
-function stampedMetadata({ variant, cutterMetadata, mode, topSurfaceY, appliedPlacement, texturedMeshNames, notes }) {
+function stampedMetadata({variant, cutterMetadata, mode, topSurfaceY, appliedPlacement, texturedMeshNames, notes}) {
 	return {
 		faceKey: variant.faceKey,
 		tilesetId: variant.tilesetId,
@@ -272,7 +273,7 @@ function stampedMetadata({ variant, cutterMetadata, mode, topSurfaceY, appliedPl
 	};
 }
 
-function cutterPlacement({ variant, cutterMetadata, topSurfaceY }) {
+function cutterPlacement({variant, cutterMetadata, topSurfaceY}) {
 	return {
 		footprintScale: variant.cutterFootprintScale,
 		depthScale: variant.cutterDepthScale,
@@ -283,13 +284,9 @@ function cutterPlacement({ variant, cutterMetadata, topSurfaceY }) {
 	};
 }
 
-function createPlacedCutterBrush({ cutterMesh, cutterMetadata, placement, evaluatorAttributes }) {
+function createPlacedCutterBrush({cutterMesh, cutterMetadata, placement, evaluatorAttributes}) {
 	const cutterGeometry = cutterMesh.geometry.clone();
-	cutterGeometry.scale(
-		placement.footprintScale,
-		placement.depthScale,
-		placement.footprintScale,
-	);
+	cutterGeometry.scale(placement.footprintScale, placement.depthScale, placement.footprintScale);
 	ensureGeometryAttributes(cutterGeometry, evaluatorAttributes);
 	cutterGeometry.computeVertexNormals();
 
@@ -356,7 +353,7 @@ function cloneMeshForExport(mesh, name) {
 	return clone;
 }
 
-function cloneSupportMeshesForExport(root, { targetMesh, supportMeshNames }) {
+function cloneSupportMeshesForExport(root, {targetMesh, supportMeshNames}) {
 	if (supportMeshNames.length === 0) {
 		return [];
 	}
@@ -389,10 +386,7 @@ async function loadGlbScene(glbPath) {
 	}
 
 	const glbBuffer = fs.readFileSync(glbPath);
-	const arrayBuffer = glbBuffer.buffer.slice(
-		glbBuffer.byteOffset,
-		glbBuffer.byteOffset + glbBuffer.byteLength,
-	);
+	const arrayBuffer = glbBuffer.buffer.slice(glbBuffer.byteOffset, glbBuffer.byteOffset + glbBuffer.byteLength);
 	const gltf = await loader.parseAsync(arrayBuffer, `${path.dirname(glbPath)}${path.sep}`);
 	return gltf.scene;
 }
@@ -416,7 +410,7 @@ async function exportSceneAsGlb(group, sceneName, outputPath) {
 	scene.name = sceneName;
 	scene.add(group);
 
-	const glb = await exporter.parseAsync(scene, { binary: true });
+	const glb = await exporter.parseAsync(scene, {binary: true});
 	fs.writeFileSync(outputPath, Buffer.from(glb));
 	console.log(`Exported ${relativePath(outputPath)}`);
 }
@@ -440,9 +434,7 @@ function readBaseTileVariant(variantId) {
 	}
 
 	const metadataPath = resolveRepoPath(manifestVariant.metadata || '');
-	const metadata = metadataPath && fs.existsSync(metadataPath)
-		? readJson(metadataPath)
-		: {};
+	const metadata = metadataPath && fs.existsSync(metadataPath) ? readJson(metadataPath) : {};
 
 	return {
 		...manifestVariant,
@@ -455,10 +447,7 @@ function readBaseTileVariant(variantId) {
 }
 
 function supportMeshNamesForVariant(baseTileVariant) {
-	return [
-		...(baseTileVariant.supportMeshNames || []),
-		...(baseTileVariant.carving?.preserveMeshNames || []),
-	]
+	return [...(baseTileVariant.supportMeshNames || []), ...(baseTileVariant.carving?.preserveMeshNames || [])]
 		.filter((name) => typeof name === 'string' && name.trim())
 		.map((name) => name.trim())
 		.filter((name, index, names) => names.indexOf(name) === index);
@@ -467,18 +456,21 @@ function supportMeshNamesForVariant(baseTileVariant) {
 function getTileTopSurfaceY(body) {
 	const height = Number.isFinite(body.height) ? body.height : 0.5;
 	const bevelThickness = Number.isFinite(body.bevelThickness) ? body.bevelThickness : 0;
-	return (height / 2) + bevelThickness;
+	return height / 2 + bevelThickness;
 }
 
 function cloneMaterial(material) {
 	if (Array.isArray(material)) {
 		return material.map((entry) => entry.clone());
 	}
-	return material?.clone?.() || new THREE.MeshStandardMaterial({
-		color: '#f2ece2',
-		roughness: 0.7,
-		metalness: 0.02,
-	});
+	return (
+		material?.clone?.() ||
+		new THREE.MeshStandardMaterial({
+			color: '#f2ece2',
+			roughness: 0.7,
+			metalness: 0.02,
+		})
+	);
 }
 
 function materialList(material) {

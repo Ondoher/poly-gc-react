@@ -1,25 +1,25 @@
-import React from "react";
-import ModalDialog from "./ModalDialog.jsx";
-import FeedbackDialogStepOne from "./FeedbackDialogStepOne.jsx";
-import FeedbackDialogStepTwo from "./FeedbackDialogStepTwo.jsx";
-import SettingsButton from "./SettingsButton.jsx";
+import React from 'react';
+import ModalDialog from './ModalDialog.jsx';
+import FeedbackDialogStepOne from './FeedbackDialogStepOne.jsx';
+import FeedbackDialogStepTwo from './FeedbackDialogStepTwo.jsx';
+import SettingsButton from './SettingsButton.jsx';
 
 const SKILL_LEVELS = [
-	{id: "beginner", label: "Beginner"},
-	{id: "intermediate", label: "Intermediate"},
-	{id: "experienced", label: "Experienced"},
+	{id: 'beginner', label: 'Beginner'},
+	{id: 'intermediate', label: 'Intermediate'},
+	{id: 'experienced', label: 'Experienced'},
 ];
 
 const DIFFICULTY_FEELINGS = [
-	{id: "too-easy", label: "Too easy"},
-	{id: "about-right", label: "About right"},
-	{id: "too-hard", label: "Too hard"},
+	{id: 'too-easy', label: 'Too easy'},
+	{id: 'about-right', label: 'About right'},
+	{id: 'too-hard', label: 'Too hard'},
 ];
 
 const FAIRNESS_FEELINGS = [
-	{id: "fair", label: "It was fun"},
-	{id: "frustrating", label: "About as expected"},
-	{id: "very-frustrating", label: "Made me frustrated"},
+	{id: 'fair', label: 'It was fun'},
+	{id: 'frustrating', label: 'About as expected'},
+	{id: 'very-frustrating', label: 'Made me frustrated'},
 ];
 
 export default class FeedbackDialog extends React.Component {
@@ -29,10 +29,10 @@ export default class FeedbackDialog extends React.Component {
 		this.state = {
 			currentStep: 1,
 			includeContext: true,
-			skillLevel: "",
-			difficultyFeeling: "",
-			fairnessFeeling: "",
-			comment: "",
+			skillLevel: '',
+			difficultyFeeling: '',
+			fairnessFeeling: '',
+			comment: '',
 		};
 	}
 
@@ -41,16 +41,16 @@ export default class FeedbackDialog extends React.Component {
 			this.setState({
 				currentStep: 1,
 				includeContext: this.props.canIncludeContext !== false,
-				skillLevel: "",
-				difficultyFeeling: "",
-				fairnessFeeling: "",
-				comment: "",
+				skillLevel: '',
+				difficultyFeeling: '',
+				fairnessFeeling: '',
+				comment: '',
 			});
 		}
 	}
 
 	onToggleIncludeContext() {
-		this.setState(function(prevState) {
+		this.setState(function (prevState) {
 			return {
 				includeContext: !prevState.includeContext,
 			};
@@ -108,29 +108,27 @@ export default class FeedbackDialog extends React.Component {
 	}
 
 	renderChoiceButtons(options, selectedValue, onSelect) {
-		return options.map(function(option) {
+		return options.map(function (option) {
 			return (
 				<button
 					key={option.id}
 					type="button"
 					className="mj-feedback-dialog-radio"
 					role="radio"
-					aria-checked={selectedValue === option.id ? "true" : "false"}
+					aria-checked={selectedValue === option.id ? 'true' : 'false'}
 					onClick={onSelect.bind(this, option.id)}
 				>
 					<span
 						className={
 							selectedValue === option.id
-								? "mj-feedback-dialog-radio-dot is-selected"
-								: "mj-feedback-dialog-radio-dot"
+								? 'mj-feedback-dialog-radio-dot is-selected'
+								: 'mj-feedback-dialog-radio-dot'
 						}
 						aria-hidden="true"
 					>
 						<span className="mj-feedback-dialog-radio-dot-inner"></span>
 					</span>
-					<span className="mj-feedback-dialog-radio-copy">
-						{option.label}
-					</span>
+					<span className="mj-feedback-dialog-radio-copy">{option.label}</span>
 				</button>
 			);
 		}, this);
@@ -147,9 +145,7 @@ export default class FeedbackDialog extends React.Component {
 				className="mj-feedback-dialog is-spacious"
 				panelClassName="mj-feedback-dialog-panel"
 				bodyClassName={
-					isFirstStep
-						? "mj-feedback-dialog-body is-step-one"
-						: "mj-feedback-dialog-body is-step-two"
+					isFirstStep ? 'mj-feedback-dialog-body is-step-one' : 'mj-feedback-dialog-body is-step-two'
 				}
 				title="Feedback"
 				titleId="mj-feedback-dialog-title"
@@ -160,31 +156,21 @@ export default class FeedbackDialog extends React.Component {
 						<SettingsButton
 							className="mj-feedback-dialog-cancel"
 							selected={false}
-							onClick={
-								isFirstStep
-									? this.props.onClose
-									: this.onRetreatStep.bind(this)
-							}
+							onClick={isFirstStep ? this.props.onClose : this.onRetreatStep.bind(this)}
 						>
-							{isFirstStep ? "Cancel" : "Back"}
+							{isFirstStep ? 'Cancel' : 'Back'}
 						</SettingsButton>
 						<SettingsButton
 							className="mj-feedback-dialog-confirm"
 							selected={false}
-							onClick={
-								isFirstStep
-									? this.onAdvanceStep.bind(this)
-									: this.onSubmit.bind(this)
-							}
+							onClick={isFirstStep ? this.onAdvanceStep.bind(this) : this.onSubmit.bind(this)}
 						>
-							{isFirstStep ? "Continue" : "Send feedback"}
+							{isFirstStep ? 'Continue' : 'Send feedback'}
 						</SettingsButton>
 					</React.Fragment>
 				}
 			>
-				<div className="mj-feedback-dialog-step-label">
-					{isFirstStep ? "Step 1 of 2" : "Step 2 of 2"}
-				</div>
+				<div className="mj-feedback-dialog-step-label">{isFirstStep ? 'Step 1 of 2' : 'Step 2 of 2'}</div>
 				{isFirstStep ? (
 					<FeedbackDialogStepOne
 						difficultyFeelings={DIFFICULTY_FEELINGS}

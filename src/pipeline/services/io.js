@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 export default class IoService extends Service {
 	constructor(registry) {
@@ -54,10 +54,10 @@ export default class IoService extends Service {
 			method,
 			headers: {
 				Accept: 'application/json',
-				...(body ? { 'Content-Type': 'application/json' } : {}),
+				...(body ? {'Content-Type': 'application/json'} : {}),
 				...(options.headers || {}),
 			},
-			...(body ? { body } : {}),
+			...(body ? {body} : {}),
 		};
 	}
 
@@ -66,9 +66,7 @@ export default class IoService extends Service {
 			return null;
 		}
 
-		const body = typeof options.body === 'string'
-			? parseJsonResponse(options.body)
-			: options.body;
+		const body = typeof options.body === 'string' ? parseJsonResponse(options.body) : options.body;
 
 		const nextBody = this.withSourceStateToken(options.url, body);
 
@@ -93,10 +91,12 @@ export default class IoService extends Service {
 			success,
 			status: response.status,
 			data: payload,
-			...(success ? {} : {
-				failureMode: response.ok ? 'application' : 'http',
-				message: payload?.message || `Request failed: ${response.status}`,
-			}),
+			...(success
+				? {}
+				: {
+						failureMode: response.ok ? 'application' : 'http',
+						message: payload?.message || `Request failed: ${response.status}`,
+					}),
 		};
 	}
 
@@ -113,7 +113,9 @@ export default class IoService extends Service {
 	}
 
 	isSourceStateResponse(url) {
-		return /(?:^|\/)api\/pipeline\/(?:source-normalization|source-assignment\/(?:save-draft|regenerate|accept))(?:\?|$)/.test(url);
+		return /(?:^|\/)api\/pipeline\/(?:source-normalization|source-assignment\/(?:save-draft|regenerate|accept))(?:\?|$)/.test(
+			url,
+		);
 	}
 }
 
@@ -123,10 +125,11 @@ function parseJsonResponse(responseText) {
 	} catch (error) {
 		return {
 			ok: false,
-			message: String(responseText || '')
-				.replace(/<[^>]+>/g, ' ')
-				.replace(/\s+/g, ' ')
-				.trim() || error.message,
+			message:
+				String(responseText || '')
+					.replace(/<[^>]+>/g, ' ')
+					.replace(/\s+/g, ' ')
+					.trim() || error.message,
 		};
 	}
 }

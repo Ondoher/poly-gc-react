@@ -1,4 +1,4 @@
-import { renderGeneratedAssetPreview, closeGeneratedAssetPreviewRenderer } from './generated-asset-preview-renderer.js';
+import {renderGeneratedAssetPreview, closeGeneratedAssetPreviewRenderer} from './generated-asset-preview-renderer.js';
 
 await main();
 

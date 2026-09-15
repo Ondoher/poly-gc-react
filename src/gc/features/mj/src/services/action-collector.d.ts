@@ -2,40 +2,36 @@
  * Describe one replayable gameplay action captured from the live MJ session.
  */
 type MjGameplayAction =
-	MjSessionStartedAction |
-	MjSessionElapsedAction |
-	MjSessionEndedAction |
-	MjDeadEndAction |
-	MjTilePairAction;
+	MjSessionStartedAction | MjSessionElapsedAction | MjSessionEndedAction | MjDeadEndAction | MjTilePairAction;
 
 /**
  * Describe the start of one gameplay session.
  */
 type MjSessionStartedAction = {
-	type: "session-started";
+	type: 'session-started';
 	recordedAt?: number;
 	boardNbr: number | null;
 	difficulty: string;
 	layout: string;
-}
+};
 
 /**
  * Describe one elapsed-time update for the active gameplay session.
  */
 type MjSessionElapsedAction = {
-	type: "session-elapsed";
+	type: 'session-elapsed';
 	recordedAt?: number;
 	elapsedTimeMs: number;
-}
+};
 
 /**
  * Describe the end of one gameplay session.
  */
 type MjSessionEndedAction = {
-	type: "session-ended";
+	type: 'session-ended';
 	recordedAt?: number;
-	result: "won" | "abandoned";
-}
+	result: 'won' | 'abandoned';
+};
 
 /**
  * Describe one recoverable dead-end marker inside the active gameplay session.
@@ -44,19 +40,19 @@ type MjSessionEndedAction = {
  * replay stream as a sentinel tile pair of `[-1, -1]`.
  */
 type MjDeadEndAction = {
-	type: "dead-end";
+	type: 'dead-end';
 	recordedAt?: number;
-}
+};
 
 /**
  * Describe one tile-pair action in the active gameplay session.
  */
 type MjTilePairAction = {
-	type: "play-pair" | "undo-pair" | "redo-pair";
+	type: 'play-pair' | 'undo-pair' | 'redo-pair';
 	recordedAt?: number;
 	tile1: TileKey;
 	tile2: TileKey;
-}
+};
 
 /**
  * Describe the service that collects MJ gameplay actions and rebroadcasts them.

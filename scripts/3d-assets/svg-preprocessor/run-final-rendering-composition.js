@@ -1,11 +1,13 @@
-import { FinalRenderingCompositionRunner } from './FinalRenderingCompositionRunner.js';
-import { readArgument, requireArgument } from './cli-arguments.js';
+import {FinalRenderingCompositionRunner} from './FinalRenderingCompositionRunner.js';
+import {readArgument, requireArgument} from './cli-arguments.js';
 
 async function main() {
 	const runner = new FinalRenderingCompositionRunner();
 	const pipelineStatePath = readArgument('--pipeline-state');
 	if (pipelineStatePath) {
-		throw new Error('--pipeline-state is no longer accepted. Final Rendering reads the model-owned pipeline state.');
+		throw new Error(
+			'--pipeline-state is no longer accepted. Final Rendering reads the model-owned pipeline state.',
+		);
 	}
 
 	const summary = await runner.run({

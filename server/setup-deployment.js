@@ -1,4 +1,4 @@
-import { ConfigService } from './services/config.js';
+import {ConfigService} from './services/config.js';
 
 /**
  * Register and start the services owned by this deployment host.
@@ -13,7 +13,7 @@ import { ConfigService } from './services/config.js';
  * }} context - Carry the deployment setup context supplied by Polylith.
  * @returns {Promise<void>}
  */
-export default async function setupDeployment({ sharedRegistry, serverRoot }) {
-    new ConfigService(sharedRegistry, serverRoot);
-    await sharedRegistry.start();
+export default async function setupDeployment({sharedRegistry, serverRoot}) {
+	new ConfigService(sharedRegistry, serverRoot);
+	await sharedRegistry.start();
 }

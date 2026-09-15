@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 export default class AssetReviewController extends Service {
 	constructor(registry) {
@@ -57,7 +57,7 @@ export default class AssetReviewController extends Service {
 	}
 
 	getState() {
-		return { ...this.state };
+		return {...this.state};
 	}
 
 	setTilesetId(tilesetId) {
@@ -86,7 +86,7 @@ export default class AssetReviewController extends Service {
 		callback?.();
 	}
 
-	async load({ force = false, quiet = false } = {}) {
+	async load({force = false, quiet = false} = {}) {
 		if (!force && (this.state.processing || this.state.assetReview)) {
 			return;
 		}
@@ -94,7 +94,7 @@ export default class AssetReviewController extends Service {
 		this.setState({
 			processing: true,
 			processingLabel: quiet ? '' : 'Loading generated assets',
-			...(quiet ? {} : { status: 'Loading generated assets...' }),
+			...(quiet ? {} : {status: 'Loading generated assets...'}),
 		});
 
 		try {
@@ -118,7 +118,7 @@ export default class AssetReviewController extends Service {
 				},
 			});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -126,58 +126,70 @@ export default class AssetReviewController extends Service {
 		return this.pipeline.assetUrl(path, cacheKey);
 	}
 
-	async startGeneration({ quiet = false, faceKeys = [] } = {}) {
+	async startGeneration({quiet = false, faceKeys = []} = {}) {
 		if (!this.state.tilesetId) {
-			this.setState({ status: 'No tileset selected for asset generation.' });
+			this.setState({status: 'No tileset selected for asset generation.'});
 			return;
 		}
 
 		const cleanFaceKeys = cleanFaceKeysForRequest(faceKeys);
 		await this.subscribeProgress();
 		for (const faceKey of cleanFaceKeys) {
-			this.updateFace(faceKey, (face) => this.assetProgress.applyGenerationEventToReviewFace(face, {
-				faceKey,
-				status: 'queued',
-			}));
+			this.updateFace(faceKey, (face) =>
+				this.assetProgress.applyGenerationEventToReviewFace(face, {
+					faceKey,
+					status: 'queued',
+				}),
+			);
 		}
 		this.setState({
-			...(quiet ? {} : { status: cleanFaceKeys.length === 1 ? `Queued ${cleanFaceKeys[0]} for asset generation...` : 'Starting asset generation...' }),
+			...(quiet
+				? {}
+				: {
+						status:
+							cleanFaceKeys.length === 1
+								? `Queued ${cleanFaceKeys[0]} for asset generation...`
+								: 'Starting asset generation...',
+					}),
 			generationRunning: true,
 			messageDialog: null,
 		});
 
-		this.generationPromise = this.pipeline.startAssetGeneration({
-			tilesetId: this.state.tilesetId,
-			faceKeys: cleanFaceKeys,
-		}).then(async (result) => {
-			this.setState({
-				generationRunning: false,
-				status: result.cancelled
-					? 'Asset generation queue canceled.'
-					: result.summary
-					? `${result.summary.readyCount || 0} generated tile assets ready`
-					: 'Asset generation completed.',
+		this.generationPromise = this.pipeline
+			.startAssetGeneration({
+				tilesetId: this.state.tilesetId,
+				faceKeys: cleanFaceKeys,
+			})
+			.then(async (result) => {
+				this.setState({
+					generationRunning: false,
+					status: result.cancelled
+						? 'Asset generation queue canceled.'
+						: result.summary
+							? `${result.summary.readyCount || 0} generated tile assets ready`
+							: 'Asset generation completed.',
+				});
+				await this.load({force: true, quiet: true});
+				return result;
+			})
+			.catch((error) => {
+				this.setState({
+					generationRunning: false,
+					status: `Asset generation failed: ${error.message}`,
+					messageDialog: {
+						title: 'Asset Generation',
+						message: error.message,
+					},
+				});
+				return null;
 			});
-			await this.load({ force: true, quiet: true });
-			return result;
-		}).catch((error) => {
-			this.setState({
-				generationRunning: false,
-				status: `Asset generation failed: ${error.message}`,
-				messageDialog: {
-					title: 'Asset Generation',
-					message: error.message,
-				},
-			});
-			return null;
-		});
 
 		return this.generationPromise;
 	}
 
 	async cancelGeneration() {
 		if (!this.state.tilesetId) {
-			this.setState({ status: 'No tileset selected for asset generation.' });
+			this.setState({status: 'No tileset selected for asset generation.'});
 			return null;
 		}
 
@@ -196,7 +208,7 @@ export default class AssetReviewController extends Service {
 				generationRunning: false,
 				status: 'Asset generation queue canceled.',
 			});
-			await this.load({ force: true, quiet: true });
+			await this.load({force: true, quiet: true});
 			return result;
 		} catch (error) {
 			this.setState({
@@ -208,13 +220,13 @@ export default class AssetReviewController extends Service {
 			});
 			return null;
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
 	async resetGeneration() {
 		if (!this.state.tilesetId) {
-			this.setState({ status: 'No tileset selected for asset generation.' });
+			this.setState({status: 'No tileset selected for asset generation.'});
 			return null;
 		}
 
@@ -234,7 +246,7 @@ export default class AssetReviewController extends Service {
 				generationRunning: false,
 				status: 'Generated assets reset to ungenerated.',
 			});
-			await this.load({ force: true, quiet: true });
+			await this.load({force: true, quiet: true});
 			return result;
 		} catch (error) {
 			this.setState({
@@ -246,7 +258,7 @@ export default class AssetReviewController extends Service {
 			});
 			return null;
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -280,11 +292,23 @@ export default class AssetReviewController extends Service {
 
 		await watch();
 		await this.stream.on(this.assetProgress.namespace(), 'connect', watch);
-		await this.stream.on(this.assetProgress.namespace(), 'assetGenerationSnapshot', this.onProgressEvent.bind(this));
+		await this.stream.on(
+			this.assetProgress.namespace(),
+			'assetGenerationSnapshot',
+			this.onProgressEvent.bind(this),
+		);
 		await this.stream.on(this.assetProgress.namespace(), 'assetGenerationStarted', this.onProgressEvent.bind(this));
-		await this.stream.on(this.assetProgress.namespace(), 'assetGenerationProgress', this.onProgressEvent.bind(this));
+		await this.stream.on(
+			this.assetProgress.namespace(),
+			'assetGenerationProgress',
+			this.onProgressEvent.bind(this),
+		);
 		await this.stream.on(this.assetProgress.namespace(), 'assetGenerationFaceReady', this.onFaceReady.bind(this));
-		await this.stream.on(this.assetProgress.namespace(), 'assetGenerationComplete', this.onGenerationComplete.bind(this));
+		await this.stream.on(
+			this.assetProgress.namespace(),
+			'assetGenerationComplete',
+			this.onGenerationComplete.bind(this),
+		);
 		await this.stream.on(this.assetProgress.namespace(), 'assetGenerationFailed', this.onProgressEvent.bind(this));
 		this.progressSubscribedFor = tilesetId;
 	}
@@ -296,7 +320,7 @@ export default class AssetReviewController extends Service {
 
 		if (!event.faceKey) {
 			if (event.eventName === 'assetGenerationStarted') {
-				this.load({ force: true, quiet: true });
+				this.load({force: true, quiet: true});
 			}
 			return;
 		}
@@ -314,7 +338,7 @@ export default class AssetReviewController extends Service {
 		if (event.faceKey) {
 			this.updateFace(event.faceKey, (face) => this.assetProgress.markReviewFaceReady(face));
 		}
-		await this.load({ force: true, quiet: true });
+		await this.load({force: true, quiet: true});
 	}
 
 	async onGenerationComplete(event = {}) {
@@ -322,7 +346,7 @@ export default class AssetReviewController extends Service {
 			return;
 		}
 
-		await this.load({ force: true, quiet: true });
+		await this.load({force: true, quiet: true});
 	}
 
 	updateFace(faceKey, updater) {
@@ -347,15 +371,19 @@ export default class AssetReviewController extends Service {
 	}
 
 	dismissMessageDialog() {
-		this.setState({ messageDialog: null });
+		this.setState({messageDialog: null});
 	}
 }
 
 new AssetReviewController();
 
 function cleanFaceKeysForRequest(faceKeys) {
-	return [...new Set([].concat(faceKeys || [])
-		.map((faceKey) => String(faceKey || '').trim())
-		.filter(Boolean))]
-		.sort((left, right) => left.localeCompare(right));
+	return [
+		...new Set(
+			[]
+				.concat(faceKeys || [])
+				.map((faceKey) => String(faceKey || '').trim())
+				.filter(Boolean),
+		),
+	].sort((left, right) => left.localeCompare(right));
 }

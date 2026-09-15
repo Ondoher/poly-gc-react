@@ -1,6 +1,6 @@
 # Pipeline App
 
-This area owns the Polylith `pipeline` approval app: shell ownership, page
+This area documents the Polylith `pipeline` approval app: shell ownership, page
 registration, routing, feature boundaries, view services, current review pages,
 shared presentation surfaces, and the app-side Asset Review page.
 
@@ -41,9 +41,12 @@ Current shell behavior:
 - The active tileset manifest records routing facts only. Canonical tileset
   state remains owned by each `pipeline.json`.
 - Page activation is Polylith/build-file driven through `@polylith/features`.
-  Do not directly import individual stage features from `src/pipeline/index.js`.
 
 Review page data is intentionally decoupled from canonical backend storage.
 The app consumes server-synthesized review views and sends user intent as
 domain actions through views/controllers and `server-model`; the server owns
 canonical mutation.
+
+## Standards Adoption Status
+
+The [new-page runbook](new-page-runbook.md) now references canonical routing, controller-owned loading, and shared-component criteria, with approved Pipeline exceptions in the [overlay](../../../standards/overlay.md). Documentation reconciliation does not certify application compliance. The next implementation review must choose an explicit initial page and assess existing page-order fallback, full-route metadata, and readiness/loading integration against those contracts.

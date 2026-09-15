@@ -1,6 +1,6 @@
-import React from "react";
-import ModalDialog from "./ModalDialog.jsx";
-import SettingsButton from "./SettingsButton.jsx";
+import React from 'react';
+import ModalDialog from './ModalDialog.jsx';
+import SettingsButton from './SettingsButton.jsx';
 
 export default class StartupConsentDialog extends React.Component {
 	constructor(props) {
@@ -87,53 +87,40 @@ export default class StartupConsentDialog extends React.Component {
 					</SettingsButton>
 				}
 			>
-						<div className="mj-startup-consent-section">
-							<h3 className="mj-startup-consent-heading">
-								Help us make this game better
-							</h3>
-							<p className="mj-startup-consent-copy">
-								We're running some user experience experiments and
-								would really appreciate your help. If you check
-								this box it will allow us to collect anonymous information
-								about how you play the game. You also always
-								have an opportunity to give us feedback.
-							</p>
-							<button
-								type="button"
-								className="mj-startup-consent-checkbox"
-								role="checkbox"
-								aria-checked={this.state.telemetryConsent ? "true" : "false"}
-								onClick={this.onToggleTelemetryConsent.bind(this)}
-							>
-								<span
-									className={
-										this.state.telemetryConsent
-											? "mj-startup-consent-checkbox-box is-checked"
-											: "mj-startup-consent-checkbox-box"
-									}
-									aria-hidden="true"
-								>
-									<span className="mj-startup-consent-checkbox-mark">
-										✓
-									</span>
-								</span>
-								<span className="mj-startup-consent-checkbox-copy">
-									Yes, I like fun
-								</span>
-							</button>
-						</div>
-						<div className="mj-startup-consent-section">
-							<h3 className="mj-startup-consent-heading">
-								Starting difficulty
-							</h3>
-							<p className="mj-startup-consent-copy">
-								Choose the difficulty you want to start with. You can
-								change this later in settings.
-							</p>
-							<div className="mj-startup-consent-difficulty-grid">
-								{this.renderDifficultyOptions()}
-							</div>
-						</div>
+				<div className="mj-startup-consent-section">
+					<h3 className="mj-startup-consent-heading">Help us make this game better</h3>
+					<p className="mj-startup-consent-copy">
+						We're running some user experience experiments and would really appreciate your help. If you
+						check this box it will allow us to collect anonymous information about how you play the game.
+						You also always have an opportunity to give us feedback.
+					</p>
+					<button
+						type="button"
+						className="mj-startup-consent-checkbox"
+						role="checkbox"
+						aria-checked={this.state.telemetryConsent ? 'true' : 'false'}
+						onClick={this.onToggleTelemetryConsent.bind(this)}
+					>
+						<span
+							className={
+								this.state.telemetryConsent
+									? 'mj-startup-consent-checkbox-box is-checked'
+									: 'mj-startup-consent-checkbox-box'
+							}
+							aria-hidden="true"
+						>
+							<span className="mj-startup-consent-checkbox-mark">✓</span>
+						</span>
+						<span className="mj-startup-consent-checkbox-copy">Yes, I like fun</span>
+					</button>
+				</div>
+				<div className="mj-startup-consent-section">
+					<h3 className="mj-startup-consent-heading">Starting difficulty</h3>
+					<p className="mj-startup-consent-copy">
+						Choose the difficulty you want to start with. You can change this later in settings.
+					</p>
+					<div className="mj-startup-consent-difficulty-grid">{this.renderDifficultyOptions()}</div>
+				</div>
 			</ModalDialog>
 		);
 	}

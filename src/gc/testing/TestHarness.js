@@ -1,7 +1,7 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { act } from 'react-dom/test-utils';
-import { Registry } from '@polylith/core';
+import {createRoot} from 'react-dom/client';
+import {act} from 'react-dom/test-utils';
+import {Registry} from '@polylith/core';
 
 import GameCenterContext from 'common/GameCenterContext.js';
 
@@ -80,7 +80,7 @@ export default class TestHarness {
 			return this;
 		}
 
-		Object.entries(registryOrServices).forEach(function([name, service]) {
+		Object.entries(registryOrServices).forEach(function ([name, service]) {
 			this.registry.register(name, service);
 		}, this);
 		return this;
@@ -134,7 +134,7 @@ export default class TestHarness {
 			this.root.render(
 				<GameCenterContext.Provider value={contextValue}>
 					<Component {...mergedProps} />
-				</GameCenterContext.Provider>
+				</GameCenterContext.Provider>,
 			);
 		});
 

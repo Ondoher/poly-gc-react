@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export default function FeedbackDialogStepTwo(props) {
 	return (
@@ -22,21 +22,21 @@ export default function FeedbackDialogStepTwo(props) {
 				{props.canIncludeContext ? (
 					<React.Fragment>
 						<p className="mj-feedback-dialog-copy">
-							This can also include basic play information such as tile choices,
-							undo and redo use, peek use, and game duration.
+							This can also include basic play information such as tile choices, undo and redo use, peek
+							use, and game duration.
 						</p>
 						<button
 							type="button"
 							className="mj-feedback-dialog-checkbox"
 							role="checkbox"
-							aria-checked={props.includeContext ? "true" : "false"}
+							aria-checked={props.includeContext ? 'true' : 'false'}
 							onClick={props.onToggleIncludeContext}
 						>
 							<span
 								className={
 									props.includeContext
-										? "mj-feedback-dialog-checkbox-box is-checked"
-										: "mj-feedback-dialog-checkbox-box"
+										? 'mj-feedback-dialog-checkbox-box is-checked'
+										: 'mj-feedback-dialog-checkbox-box'
 								}
 								aria-hidden="true"
 							>

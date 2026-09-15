@@ -61,4 +61,3 @@ Rendering must not treat diagnostic alignment artifacts as mutable state.
 Alignment answers how source geometry can fit reference structure. Source
 Assignment answers what source geometry means. Final Rendering answers what
 the accepted source/reference facts should output.
-

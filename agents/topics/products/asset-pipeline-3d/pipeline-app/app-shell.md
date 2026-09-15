@@ -10,6 +10,8 @@ This document replaces the earlier `incremental-page-extraction.md` topic name.
 Incremental page extraction was the preparation phase; the current subject is
 the full pipeline UI refactor.
 
+Engineering rules are owned by the [manifest](../../../standards/manifest.md), [overlay](../../../standards/overlay.md), and their canonical standards. Checkpoints below are historical evidence; earlier route fields, page-order defaults, load triggers, and extraction preferences do not override the reconciled [new-page runbook](new-page-runbook.md).
+
 ## Current Intent
 
 The pipeline UI is being rebuilt as a registry-centered REMVC application:
@@ -32,30 +34,7 @@ Do not bring old `App.jsx` orchestration back into the live app.
 
 ## Extracted Stash Context
 
-The earlier stashed topic `pipeline-app-refactor` is historical, but several
-decisions still define the live refactor:
-
-- `main` and `app` are deliberately different concepts. `main` owns startup and
-  React root mounting; `features/app` owns the visible shell and page mounting
-  boundary.
-- The app shell is a feature. It can be swapped or iterated independently from
-  stage pages.
-- Feature activation is build-file driven through the pipeline build
-  configuration and feature side-effect imports. Do not add one-off direct
-  imports for individual stage features into `src/pipeline/index.js`.
-- Each feature should own its `build.json`, local CSS assets, controller,
-  view-service registration, React component, and sibling `.d.ts` service
-  contracts when service files are introduced.
-- `app-pages` stores page id, label, route, order, and controller service name.
-  Page records can be re-added to update a page and are returned in stable
-  sorted order.
-- `views` maps stable view ids to view service names. It keeps stage
-  controllers from importing React page components directly.
-- Registered views are REMVC view services. React components are presentation
-  returned by those services.
-- Feature models should own page-specific derived review/editing state.
-  `server-model` should remain the shared pipeline API boundary rather than
-  becoming the owner of every page's derived UI model.
+The earlier `pipeline-app-refactor` stash recorded the historical `main`/`features/app` split, `app-pages`/`views` registration, and shared `server-model` boundary. Current integration examples and canonical references are in the [new-page runbook](new-page-runbook.md). The stash's full `route` field and extraction criteria are historical, superseded instructions.
 
 Stashed implementation details not carried forward wholesale:
 
@@ -70,20 +49,7 @@ Stashed implementation details not carried forward wholesale:
 
 ## Current Pattern
 
-For each restored page feature:
-
-- register a page with `app-pages` from the feature controller
-- register the feature view service with `views`
-- let the feature controller own model/server calls and workflow transitions
-- let the feature view remain a thin coordinator between controller and React
-- let the React page talk only to its page view
-- keep page-specific helpers inside the feature
-- move reusable presentation primitives into the flat `src/pipeline/components`
-  folder only once more than one page needs them
-
-React components never talk directly to controllers. Views do not own domain
-work; they relay component events to controllers and expose current page state
-to React.
+See the [new-page runbook](new-page-runbook.md) for current Pipeline integration examples and canonical engineering references. Shared registration and paired service identities are owned by the [overlay](../../../standards/overlay.md); this log does not define separate engineering rules.
 
 ## Current Feature State
 
@@ -380,14 +346,7 @@ Historical caution for the bridge checkpoint:
 
 ## Guardrails
 
-- Preserve the existing user workflow while restoring or refining pages.
-- Keep stage behavior inside the owning feature controller/model/view boundary.
-- Keep React components presentation-focused and route events through views.
-- Prefer page-local helpers before introducing shared abstractions.
-- Move repeated presentation primitives into `src/pipeline/components` only
-  when multiple live pages actually need the same behavior.
-- Keep old bridge checkpoints as historical context; the live direction is now
-  the restored REMVC shell and page-feature architecture.
+Preserve the existing review workflow. Engineering boundaries and component promotion follow the canonical references in the [new-page runbook](new-page-runbook.md). Old bridge checkpoints below remain historical evidence.
 
 ## Next Refactor Step
 

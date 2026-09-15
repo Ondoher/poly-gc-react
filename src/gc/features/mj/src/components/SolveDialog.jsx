@@ -1,13 +1,11 @@
-import React from "react";
-import CssRect from "./CssRect.jsx";
-import ModalDialog from "./ModalDialog.jsx";
-import ScalingCanvas from "./ScalingCanvas.jsx";
-import SettingsButton from "./SettingsButton.jsx";
-import layouts from "../data/layouts.js";
-import Engine from "../engine/Engine.js";
-import {
-	applyDifficultyPreset,
-} from "../engine/difficultyPresets.js";
+import React from 'react';
+import CssRect from './CssRect.jsx';
+import ModalDialog from './ModalDialog.jsx';
+import ScalingCanvas from './ScalingCanvas.jsx';
+import SettingsButton from './SettingsButton.jsx';
+import layouts from '../data/layouts.js';
+import Engine from '../engine/Engine.js';
+import {applyDifficultyPreset} from '../engine/difficultyPresets.js';
 
 class SolveDialogDelegator {
 	delegateInbound() {}
@@ -48,11 +46,10 @@ export default class SolveDialog extends React.Component {
 		) {
 			this.syncBoardFromProps();
 		}
-
 	}
 
 	createTilesFromBoard(board) {
-		return (board?.pieces || []).map(function(piece, idx) {
+		return (board?.pieces || []).map(function (piece, idx) {
 			return {
 				id: idx,
 				x: piece.pos.x,
@@ -70,7 +67,7 @@ export default class SolveDialog extends React.Component {
 
 		let highlighted = new Set(highlightedTileIds);
 
-		return engine.board.pieces.reduce(function(tiles, piece, idx) {
+		return engine.board.pieces.reduce(function (tiles, piece, idx) {
 			if (!engine.placedTiles.has(idx)) {
 				return tiles;
 			}
@@ -92,7 +89,7 @@ export default class SolveDialog extends React.Component {
 		let playedMs = this.props.timings?.tile?.played || 180;
 
 		// Match the solve-only CSS: quick hint-style pulse sequence, then fade.
-		return Math.round((peekMs * 3.4545 * 0.9) + playedMs);
+		return Math.round(peekMs * 3.4545 * 0.9 + playedMs);
 	}
 
 	getSolutionBackAnimationMs() {
@@ -100,7 +97,7 @@ export default class SolveDialog extends React.Component {
 		let undoMs = this.props.timings?.tile?.undo || 240;
 
 		// Match the solve-back CSS: quick flash, then fade the restored tiles in.
-		return Math.round((peekMs * 3.4545 * 0.65) + undoMs);
+		return Math.round(peekMs * 3.4545 * 0.65 + undoMs);
 	}
 
 	syncBoardFromProps() {
@@ -153,20 +150,25 @@ export default class SolveDialog extends React.Component {
 			return;
 		}
 
-		await new Promise(function(resolve) {
-			this.setState({
-				tiles: this.createVisibleTilesFromEngine(
-					this.engine,
-					[restoredPair.tile1, restoredPair.tile2],
-					'solve-back'
-				),
-				stepPairIndex: this.state.stepPairIndex - 1,
-				highlightedTileIds: [restoredPair.tile1, restoredPair.tile2],
-				isAnimatingStep: true,
-			}, function() {
-				window.setTimeout(resolve, this.getSolutionBackAnimationMs());
-			});
-		}.bind(this));
+		await new Promise(
+			function (resolve) {
+				this.setState(
+					{
+						tiles: this.createVisibleTilesFromEngine(
+							this.engine,
+							[restoredPair.tile1, restoredPair.tile2],
+							'solve-back',
+						),
+						stepPairIndex: this.state.stepPairIndex - 1,
+						highlightedTileIds: [restoredPair.tile1, restoredPair.tile2],
+						isAnimatingStep: true,
+					},
+					function () {
+						window.setTimeout(resolve, this.getSolutionBackAnimationMs());
+					},
+				);
+			}.bind(this),
+		);
 
 		this.setState({
 			tiles: this.createVisibleTilesFromEngine(this.engine),
@@ -181,21 +183,26 @@ export default class SolveDialog extends React.Component {
 		let solution = this.solution || [];
 		let pairIndex = this.state.stepPairIndex;
 		let tile1 = solution[pairIndex * 2];
-		let tile2 = solution[(pairIndex * 2) + 1];
+		let tile2 = solution[pairIndex * 2 + 1];
 
 		if (tile1 === undefined || tile2 === undefined) {
 			return;
 		}
 
-		await new Promise(function(resolve) {
-			this.setState({
-				tiles: this.createVisibleTilesFromEngine(this.engine, [tile1, tile2], 'solve-hint'),
-				highlightedTileIds: [tile1, tile2],
-				isAnimatingStep: true,
-			}, function() {
-				window.setTimeout(resolve, this.getSolutionHintAnimationMs());
-			});
-		}.bind(this));
+		await new Promise(
+			function (resolve) {
+				this.setState(
+					{
+						tiles: this.createVisibleTilesFromEngine(this.engine, [tile1, tile2], 'solve-hint'),
+						highlightedTileIds: [tile1, tile2],
+						isAnimatingStep: true,
+					},
+					function () {
+						window.setTimeout(resolve, this.getSolutionHintAnimationMs());
+					},
+				);
+			}.bind(this),
+		);
 
 		this.engine.playPair(tile1, tile2);
 		this.setState({
@@ -207,14 +214,14 @@ export default class SolveDialog extends React.Component {
 	}
 
 	getCanvasClassName(metricSetId) {
-		let tilesetClassName = this.props.tilesetClassName || "ivory";
-		let selectedMetricSetId = metricSetId || "tiny";
+		let tilesetClassName = this.props.tilesetClassName || 'ivory';
+		let selectedMetricSetId = metricSetId || 'tiny';
 
 		return [
 			`${tilesetClassName}-${selectedMetricSetId}`,
 			`${selectedMetricSetId}-face`,
 			`${selectedMetricSetId}-size`,
-		].join(" ");
+		].join(' ');
 	}
 
 	getTotalPairs() {
@@ -222,10 +229,10 @@ export default class SolveDialog extends React.Component {
 	}
 
 	getStepButtonClassName(isEnabled) {
-		let className = "mj-solve-dialog-nav-button";
+		let className = 'mj-solve-dialog-nav-button';
 
 		if (!isEnabled) {
-			className += " is-disabled";
+			className += ' is-disabled';
 		}
 
 		return className;
@@ -255,10 +262,10 @@ export default class SolveDialog extends React.Component {
 			<div className="mj-solve-dialog-sidebar">
 				<h3 className="mj-solve-dialog-heading">Solution playback</h3>
 				<div className="mj-solve-dialog-context">
-					{this.renderContextItem("Game number", this.props.boardNbr)}
-					{this.renderContextItem("Difficulty", this.props.difficultyLabel)}
-					{this.renderContextItem("Layout", this.props.layoutTitle)}
-					{this.renderContextItem("Step", `${this.state.stepPairIndex} / ${totalPairs}`)}
+					{this.renderContextItem('Game number', this.props.boardNbr)}
+					{this.renderContextItem('Difficulty', this.props.difficultyLabel)}
+					{this.renderContextItem('Layout', this.props.layoutTitle)}
+					{this.renderContextItem('Step', `${this.state.stepPairIndex} / ${totalPairs}`)}
 				</div>
 			</div>
 		);
@@ -284,11 +291,7 @@ export default class SolveDialog extends React.Component {
 	renderBoard() {
 		return (
 			<div className="mj-solve-dialog-board-frame">
-				<CssRect
-					className="mj-solve-dialog-board-rect"
-					size="large"
-					variant="inset"
-				>
+				<CssRect className="mj-solve-dialog-board-rect" size="large" variant="inset">
 					<ScalingCanvas
 						className="mj-solve-dialog-board-stage"
 						cssVarPrefix="mj-solve"

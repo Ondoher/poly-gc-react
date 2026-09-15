@@ -1,18 +1,16 @@
-import React from "react";
+import React from 'react';
 
 export default class Timer extends React.Component {
-	constructor (props) {
+	constructor(props) {
 		super(props);
 
 		if (props.delegator) {
-			props.delegator.delegateInbound(this, [
-				'setTime'
-			]);
+			props.delegator.delegateInbound(this, ['setTime']);
 		}
 
 		this.state = {
-			duration: ''
-		}
+			duration: '',
+		};
 	}
 
 	getDurationString(time) {
@@ -28,8 +26,8 @@ export default class Timer extends React.Component {
 	setTime(time) {
 		var duration = this.getDurationString(time);
 		this.setState({
-			duration: duration
-		})
+			duration: duration,
+		});
 	}
 
 	render() {
@@ -41,6 +39,6 @@ export default class Timer extends React.Component {
 					{display}
 				</div>
 			</React.Fragment>
-		)
+		);
 	}
 }

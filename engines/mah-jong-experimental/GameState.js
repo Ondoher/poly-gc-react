@@ -240,10 +240,12 @@ export default class GameState {
 			return false;
 		}
 
-		return left.x < right.x + right.width
-			&& left.x + left.width > right.x
-			&& left.y < right.y + right.height
-			&& left.y + left.height > right.y;
+		return (
+			left.x < right.x + right.width &&
+			left.x + left.width > right.x &&
+			left.y < right.y + right.height &&
+			left.y + left.height > right.y
+		);
 	}
 
 	/**
@@ -267,9 +269,11 @@ export default class GameState {
 
 			let referencePosition = this.getPosition(referenceTileKey);
 
-			return referencePosition
-				&& referencePosition.z === position.z
-				&& this.hasFootprintOverlap(referenceTileKey, tileKey);
+			return (
+				referencePosition &&
+				referencePosition.z === position.z &&
+				this.hasFootprintOverlap(referenceTileKey, tileKey)
+			);
 		}).length;
 	}
 
@@ -282,8 +286,7 @@ export default class GameState {
 	 */
 	countDepthIntersections(referenceTileKeys, tileKey) {
 		return referenceTileKeys.filter((referenceTileKey) => {
-			return referenceTileKey !== tileKey
-				&& this.hasFootprintOverlap(referenceTileKey, tileKey);
+			return referenceTileKey !== tileKey && this.hasFootprintOverlap(referenceTileKey, tileKey);
 		}).length;
 	}
 
@@ -322,8 +325,7 @@ export default class GameState {
 
 		let {x, y, z} = position;
 
-		return this.isOccupied({x: x - 1, y, z})
-			|| this.isOccupied({x: x - 1, y: y + 1, z});
+		return this.isOccupied({x: x - 1, y, z}) || this.isOccupied({x: x - 1, y: y + 1, z});
 	}
 
 	/**
@@ -341,8 +343,7 @@ export default class GameState {
 
 		let {x, y, z} = position;
 
-		return this.isOccupied({x: x + 2, y, z})
-			|| this.isOccupied({x: x + 2, y: y + 1, z});
+		return this.isOccupied({x: x + 2, y, z}) || this.isOccupied({x: x + 2, y: y + 1, z});
 	}
 
 	/**

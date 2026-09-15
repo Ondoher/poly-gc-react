@@ -1,23 +1,23 @@
-import { Service } from "@polylith/core";
+import {Service} from '@polylith/core';
 
 export default class RoutersService extends Service {
-    constructor(registry) {
-        super('routers', registry);
+	constructor(registry) {
+		super('routers', registry);
 
-        this.implement(['start', 'add', 'get']);
-    }
+		this.implement(['start', 'add', 'get']);
+	}
 
-    start() {
-        this.serviceNames = [];
-    }
+	start() {
+		this.serviceNames = [];
+	}
 
-    add(name) {
-        this.serviceNames.push(name)
-    }
+	add(name) {
+		this.serviceNames.push(name);
+	}
 
-    get() {
-        return this.serviceNames;
-    }
+	get() {
+		return this.serviceNames;
+	}
 }
 
 new RoutersService();

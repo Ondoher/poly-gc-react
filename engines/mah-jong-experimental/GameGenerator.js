@@ -1,11 +1,11 @@
 import Random from '../../src/gc/utils/random.js';
 import Grid from './Grid.js';
-import { GeneratorState } from './GeneratorState.js';
+import {GeneratorState} from './GeneratorState.js';
 import GameRules from './GameRules.js';
 import Faces from './Faces.js';
 import Suspensions from './Suspensions.js';
 import Tiles from './Tiles.js';
-import { DIFFICULTY_LEVELS, resolveDifficultySettings } from './difficulty-settings.js';
+import {DIFFICULTY_LEVELS, resolveDifficultySettings} from './difficulty-settings.js';
 
 /**
  * Use this class to explore extracting Mahjongg board generation from the
@@ -175,10 +175,7 @@ export default class GameGenerator {
 	createGameState(layout, boardNbr) {
 		let gameState = new GeneratorState(this.createGrid());
 
-		gameState
-			.setBoardNbr(boardNbr)
-			.setLayout(layout)
-			.configureBoard();
+		gameState.setBoardNbr(boardNbr).setLayout(layout).configureBoard();
 
 		return gameState;
 	}
@@ -198,7 +195,7 @@ export default class GameGenerator {
 	 * @param {GenerateParameters} [parameters]
 	 * @returns {DifficultySettings}
 	 */
-	resolveSettings(parameters = { difficulty: DIFFICULTY_LEVELS.standard }) {
+	resolveSettings(parameters = {difficulty: DIFFICULTY_LEVELS.standard}) {
 		return resolveDifficultySettings(parameters);
 	}
 
@@ -226,8 +223,7 @@ export default class GameGenerator {
 	 *
 	 * @returns {void}
 	 */
-	initializeGeneration() {
-	}
+	initializeGeneration() {}
 
 	/**
 	 * Initialize structural tile-selection orchestration.
@@ -454,7 +450,6 @@ export default class GameGenerator {
 		this.occupyAllTiles();
 	}
 
-
 	/**
 	 * Generate a new game payload.
 	 *
@@ -463,7 +458,7 @@ export default class GameGenerator {
 	 * @param {GenerateParameters} [parameters={ difficulty: 'standard' }]
 	 * @returns {GeneratorPayload}
 	 */
-	generate(layout, boardNbr, parameters = { difficulty: DIFFICULTY_LEVELS.standard }) {
+	generate(layout, boardNbr, parameters = {difficulty: DIFFICULTY_LEVELS.standard}) {
 		Random.randomize(boardNbr);
 		let settings = this.resolveSettings(parameters);
 		let gameState = this.createGameState(layout, boardNbr);

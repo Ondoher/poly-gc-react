@@ -1,18 +1,17 @@
-import React from "react";
-import GameNumberControl from "./GameNumberControl.jsx";
-import RaisedButton from "./RaisedButton.jsx";
+import React from 'react';
+import GameNumberControl from './GameNumberControl.jsx';
+import RaisedButton from './RaisedButton.jsx';
 
 function isLocalHost() {
-	if (typeof window === "undefined" || !window.location) {
+	if (typeof window === 'undefined' || !window.location) {
 		return false;
 	}
 
 	var host = window.location.hostname;
-	return host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+	return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
 }
 
 export default class LeftHud extends React.Component {
-
 	renderDifficultyLabel() {
 		var difficulty = this.props.difficulty;
 		var difficulties = this.props.difficulties || {};
@@ -28,7 +27,6 @@ export default class LeftHud extends React.Component {
 		return String(difficulty).charAt(0).toUpperCase() + String(difficulty).slice(1);
 	}
 
-
 	renderDifficulty() {
 		let label = this.renderDifficultyLabel();
 		if (!label) {
@@ -39,16 +37,11 @@ export default class LeftHud extends React.Component {
 			<div className="mj-left-hud-difficulty-label" aria-label={`Difficulty ${label}`}>
 				{label}
 			</div>
-		)
+		);
 	}
 
 	renderGameNumber() {
-		return (
-			<GameNumberControl
-				delegator={this.props.delegator}
-				boardNbr={this.props.boardNbr}
-			/>
-		)
+		return <GameNumberControl delegator={this.props.delegator} boardNbr={this.props.boardNbr} />;
 	}
 
 	renderDebugButtons() {
@@ -58,48 +51,32 @@ export default class LeftHud extends React.Component {
 			return '';
 		}
 
-
 		return (
 			<>
-				<RaisedButton
-						className="mj-game-number-half-solution-button"
-						onClick={this.props.onPlayHalfSolution}
-				>
+				<RaisedButton className="mj-game-number-half-solution-button" onClick={this.props.onPlayHalfSolution}>
 					Half Solve
 				</RaisedButton>
-				<RaisedButton
-					className="mj-game-number-lose-button"
-					onClick={this.props.onLoseDebug}
-				>
+				<RaisedButton className="mj-game-number-lose-button" onClick={this.props.onLoseDebug}>
 					Lose
 				</RaisedButton>
 			</>
-		)
+		);
 	}
 
 	renderMainButtons() {
 		return (
 			<>
-				<RaisedButton
-					className="mj-game-number-solve-button"
-					onClick={this.props.onSolve}
-				>
+				<RaisedButton className="mj-game-number-solve-button" onClick={this.props.onSolve}>
 					Solution
 				</RaisedButton>
-				<RaisedButton
-					className="mj-game-number-settings-button"
-					onClick={this.props.onSettings}
-				>
+				<RaisedButton className="mj-game-number-settings-button" onClick={this.props.onSettings}>
 					Settings
 				</RaisedButton>
-				<RaisedButton
-					className="mj-game-number-help-button"
-					onClick={this.props.onHelp}
-				>
+				<RaisedButton className="mj-game-number-help-button" onClick={this.props.onHelp}>
 					Help
 				</RaisedButton>
 			</>
-		)
+		);
 	}
 
 	renderFirstGroup() {
@@ -108,15 +85,11 @@ export default class LeftHud extends React.Component {
 				{this.renderGameNumber()}
 				{this.renderDebugButtons()}
 			</div>
-		)
+		);
 	}
 
 	renderSecondGroup() {
-		return (
-			<div className="mj-left-hud-standard-group">
-				{this.renderMainButtons()}
-			</div>
-		)
+		return <div className="mj-left-hud-standard-group">{this.renderMainButtons()}</div>;
 	}
 
 	renderMain() {
@@ -128,20 +101,16 @@ export default class LeftHud extends React.Component {
 					{this.renderSecondGroup()}
 				</div>
 			</>
-		)
+		);
 	}
 
 	render() {
-		var className = "mj-left-hud";
+		var className = 'mj-left-hud';
 
 		if (this.props.className) {
 			className = `${className} ${this.props.className}`;
 		}
 
-		return (
-			<div className={className}>
-				{this.renderMain()}
-			</div>
-		);
+		return <div className={className}>{this.renderMain()}</div>;
 	}
 }

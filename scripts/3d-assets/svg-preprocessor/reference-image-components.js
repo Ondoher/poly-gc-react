@@ -3,12 +3,12 @@ import opentype from 'opentype.js';
 import paper from 'paper';
 
 export const STANDARD_PALETTE = Object.freeze([
-	{ color: '#F6F610', rgb: [246, 246, 16] },
-	{ color: '#FF9900', rgb: [255, 153, 0] },
-	{ color: '#0505D1', rgb: [5, 5, 209] },
-	{ color: '#2FC906', rgb: [47, 201, 6] },
-	{ color: '#FC1D05', rgb: [252, 29, 5] },
-	{ color: '#000000', rgb: [0, 0, 0] },
+	{color: '#F6F610', rgb: [246, 246, 16]},
+	{color: '#FF9900', rgb: [255, 153, 0]},
+	{color: '#0505D1', rgb: [5, 5, 209]},
+	{color: '#2FC906', rgb: [47, 201, 6]},
+	{color: '#FC1D05', rgb: [252, 29, 5]},
+	{color: '#000000', rgb: [0, 0, 0]},
 ]);
 
 export async function extractReferenceImageComponents(referencePath, options = {}) {
@@ -17,7 +17,7 @@ export async function extractReferenceImageComponents(referencePath, options = {
 		palette: options.palette,
 		segmentationDistanceThreshold: options.segmentationDistanceThreshold,
 	};
-	const components = getAlphaComponents(image.data, image.width, image.height, { paletteOnly: true, ...paletteOptions })
+	const components = getAlphaComponents(image.data, image.width, image.height, {paletteOnly: true, ...paletteOptions})
 		.filter((component) => component.pixels >= (options.minPixels || 20))
 		.map((component) => ({
 			...component,
@@ -31,7 +31,7 @@ export async function extractReferenceImageComponents(referencePath, options = {
 
 	return {
 		image,
-		canvas: { width: image.width, height: image.height },
+		canvas: {width: image.width, height: image.height},
 		components,
 		labelComponent,
 		artworkComponents,
@@ -39,10 +39,7 @@ export async function extractReferenceImageComponents(referencePath, options = {
 }
 
 export async function readRgba(filePath) {
-	const { data, info } = await sharp(filePath)
-		.ensureAlpha()
-		.raw()
-		.toBuffer({ resolveWithObject: true });
+	const {data, info} = await sharp(filePath).ensureAlpha().raw().toBuffer({resolveWithObject: true});
 
 	return {
 		width: info.width,
@@ -61,7 +58,10 @@ export function getAlphaComponents(data, width, height, options = {}) {
 	const components = [];
 
 	for (let index = 0; index < width * height; index += 1) {
-		if (data[(index * 4) + 3] > threshold && (!paletteOnly || isPalettePixel(data, index, palette, segmentationDistanceThreshold))) {
+		if (
+			data[index * 4 + 3] > threshold &&
+			(!paletteOnly || isPalettePixel(data, index, palette, segmentationDistanceThreshold))
+		) {
 			visible[index] = 1;
 		}
 	}
@@ -90,7 +90,12 @@ export function getAlphaComponents(data, width, height, options = {}) {
 				right = Math.max(right, currentX);
 				bottom = Math.max(bottom, currentY);
 
-				for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+				for (const [dx, dy] of [
+					[1, 0],
+					[-1, 0],
+					[0, 1],
+					[0, -1],
+				]) {
 					const nextX = currentX + dx;
 					const nextY = currentY + dy;
 
@@ -98,7 +103,7 @@ export function getAlphaComponents(data, width, height, options = {}) {
 						continue;
 					}
 
-					const nextIndex = (nextY * width) + nextX;
+					const nextIndex = nextY * width + nextX;
 
 					if (visible[nextIndex] && !seen[nextIndex]) {
 						seen[nextIndex] = 1;
@@ -128,22 +133,21 @@ export function sampleDominantColor(image, bounds, options = {}) {
 
 export function samplePaletteColors(image, bounds, options = {}) {
 	const palette = normalizePalette(options.palette);
-	const counts = new Map(palette.map(({ color }) => [color, 0]));
+	const counts = new Map(palette.map(({color}) => [color, 0]));
 
 	for (let y = Math.max(0, bounds.top); y <= Math.min(image.height - 1, bounds.bottom); y += 1) {
 		for (let x = Math.max(0, bounds.left); x <= Math.min(image.width - 1, bounds.right); x += 1) {
-			const offset = ((y * image.width) + x) * 4;
+			const offset = (y * image.width + x) * 4;
 			const alpha = image.data[offset + 3];
 
 			if (alpha <= 20) {
 				continue;
 			}
 
-			const color = nearestPaletteColor([
-				image.data[offset],
-				image.data[offset + 1],
-				image.data[offset + 2],
-			], palette);
+			const color = nearestPaletteColor(
+				[image.data[offset], image.data[offset + 1], image.data[offset + 2]],
+				palette,
+			);
 			counts.set(color, counts.get(color) + 1);
 		}
 	}
@@ -172,9 +176,11 @@ function isPalettePixel(data, index, palette, segmentationDistanceThreshold) {
 }
 
 function nearestPaletteDistance(rgb, palette = STANDARD_PALETTE) {
-	return Math.min(...normalizePalette(palette).map((entry) => (
-		square(rgb[0] - entry.rgb[0]) + square(rgb[1] - entry.rgb[1]) + square(rgb[2] - entry.rgb[2])
-	)));
+	return Math.min(
+		...normalizePalette(palette).map(
+			(entry) => square(rgb[0] - entry.rgb[0]) + square(rgb[1] - entry.rgb[1]) + square(rgb[2] - entry.rgb[2]),
+		),
+	);
 }
 
 function normalizePalette(palette = STANDARD_PALETTE) {
@@ -211,13 +217,16 @@ export function findTopLabelComponent(components, options = {}) {
 		: [];
 
 	if (labelColorCandidates.length > 0) {
-		return labelColorCandidates
-			.sort((left, right) => left.area - right.area || left.top - right.top || left.left - right.left)[0];
+		return labelColorCandidates.sort(
+			(left, right) => left.area - right.area || left.top - right.top || left.left - right.left,
+		)[0];
 	}
 
-	return candidates
-		.sort((left, right) => left.top - right.top || left.left - right.left || left.pixels - right.pixels)[0]
-		|| null;
+	return (
+		candidates.sort(
+			(left, right) => left.top - right.top || left.left - right.left || left.pixels - right.pixels,
+		)[0] || null
+	);
 }
 
 async function findGlyphLabelComponent(image, components, options) {
@@ -226,15 +235,19 @@ async function findGlyphLabelComponent(image, components, options) {
 	}
 
 	const candidates = components.filter((component) => isPlausibleLabelCandidate(component, image, options));
-	const scored = await Promise.all(candidates.map(async (component) => ({
-		component,
-		score: await scoreGlyphCandidate(image, component, options, components),
-	})));
+	const scored = await Promise.all(
+		candidates.map(async (component) => ({
+			component,
+			score: await scoreGlyphCandidate(image, component, options, components),
+		})),
+	);
 
-	return scored
-		.filter((entry) => entry.score >= (options.glyphScoreThreshold ?? 0.2))
-		.sort((left, right) => right.score - left.score || left.component.pixels - right.component.pixels)[0]?.component
-		|| null;
+	return (
+		scored
+			.filter((entry) => entry.score >= (options.glyphScoreThreshold ?? 0.2))
+			.sort((left, right) => right.score - left.score || left.component.pixels - right.component.pixels)[0]
+			?.component || null
+	);
 }
 
 function isPlausibleLabelCandidate(component, image, options) {
@@ -255,18 +268,16 @@ function isPlausibleLabelCandidate(component, image, options) {
 
 function componentLocationMatches(component, image, location) {
 	const [vertical, horizontal] = location.split('-');
-	const centerX = (component.left + (component.width / 2)) / image.width;
-	const centerY = (component.top + (component.height / 2)) / image.height;
-	const verticalMatches = vertical === 'top'
-		? centerY < 0.36
-		: vertical === 'bottom'
-			? centerY > 0.64
-			: centerY >= 0.30 && centerY <= 0.70;
-	const horizontalMatches = horizontal === 'left'
-		? centerX < 0.42
-		: horizontal === 'right'
-			? centerX > 0.58
-			: centerX >= 0.30 && centerX <= 0.70;
+	const centerX = (component.left + component.width / 2) / image.width;
+	const centerY = (component.top + component.height / 2) / image.height;
+	const verticalMatches =
+		vertical === 'top' ? centerY < 0.36 : vertical === 'bottom' ? centerY > 0.64 : centerY >= 0.3 && centerY <= 0.7;
+	const horizontalMatches =
+		horizontal === 'left'
+			? centerX < 0.42
+			: horizontal === 'right'
+				? centerX > 0.58
+				: centerX >= 0.3 && centerX <= 0.7;
 
 	return verticalMatches && horizontalMatches;
 }
@@ -290,11 +301,7 @@ async function scoreGlyphCandidate(image, component, options, components) {
 			: 0
 		: 0.5;
 
-	return (shapeScore * 0.55)
-		+ (aspectScore * 0.2)
-		+ (sizeScore * 0.09)
-		+ (uniquenessScore * 0.08)
-		+ (colorScore * 0.08);
+	return shapeScore * 0.55 + aspectScore * 0.2 + sizeScore * 0.09 + uniquenessScore * 0.08 + colorScore * 0.08;
 }
 
 async function renderComponentMask(image, component) {
@@ -304,8 +311,8 @@ async function renderComponentMask(image, component) {
 		for (let x = 0; x < component.width; x += 1) {
 			const sourceX = component.left + x;
 			const sourceY = component.top + y;
-			const sourceIndex = ((sourceY * image.width) + sourceX) * 4;
-			cropped[(y * component.width) + x] = image.data[sourceIndex + 3] > 20 ? 255 : 0;
+			const sourceIndex = (sourceY * image.width + sourceX) * 4;
+			cropped[y * component.width + x] = image.data[sourceIndex + 3] > 20 ? 255 : 0;
 		}
 	}
 
@@ -316,7 +323,7 @@ async function renderComponentMask(image, component) {
 			channels: 1,
 		},
 	})
-		.resize(32, 32, { fit: 'fill' })
+		.resize(32, 32, {fit: 'fill'})
 		.raw()
 		.toBuffer();
 }
@@ -330,22 +337,22 @@ async function renderGlyphMask(labelText, fontPath, targetWidth, targetHeight) {
 	const padding = 4;
 	const width = Math.max(1, targetWidth);
 	const height = Math.max(1, targetHeight);
-	const scale = Math.min((width - (padding * 2)) / bounds.width, (height - (padding * 2)) / bounds.height);
-	const translateX = padding + ((width - (padding * 2) - (bounds.width * scale)) / 2) - (bounds.left * scale);
-	const translateY = padding + ((height - (padding * 2) - (bounds.height * scale)) / 2) - (bounds.top * scale);
+	const scale = Math.min((width - padding * 2) / bounds.width, (height - padding * 2) / bounds.height);
+	const translateX = padding + (width - padding * 2 - bounds.width * scale) / 2 - bounds.left * scale;
+	const translateY = padding + (height - padding * 2 - bounds.height * scale) / 2 - bounds.top * scale;
 	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
 	<path fill="#000" transform="matrix(${scale} 0 0 ${scale} ${translateX} ${translateY})" d="${pathData}"/>
 </svg>`;
 
 	return sharp(Buffer.from(svg))
-		.resize(32, 32, { fit: 'fill' })
+		.resize(32, 32, {fit: 'fill'})
 		.ensureAlpha()
 		.raw()
 		.toBuffer()
 		.then((rgba) => {
 			const mask = Buffer.alloc(32 * 32);
 			for (let index = 0; index < mask.length; index += 1) {
-				mask[index] = rgba[(index * 4) + 3] > 20 ? 255 : 0;
+				mask[index] = rgba[index * 4 + 3] > 20 ? 255 : 0;
 			}
 			return mask;
 		});
@@ -372,11 +379,7 @@ function maskIntersectionOverUnion(leftMask, rightMask) {
 }
 
 function aspectSimilarity(component, labelText) {
-	const expectedAspect = /^[NSWE]$/i.test(labelText)
-		? 0.65
-		: labelText === '1'
-			? 0.45
-			: 0.6;
+	const expectedAspect = /^[NSWE]$/i.test(labelText) ? 0.65 : labelText === '1' ? 0.45 : 0.6;
 	const aspect = component.width / Math.max(1, component.height);
 	const ratio = Math.min(aspect, expectedAspect) / Math.max(aspect, expectedAspect);
 
@@ -422,9 +425,7 @@ function triangularScore(value, min, max) {
 	}
 
 	const middle = (min + max) / 2;
-	return value <= middle
-		? (value - min) / (middle - min)
-		: (max - value) / (max - middle);
+	return value <= middle ? (value - min) / (middle - min) : (max - value) / (max - middle);
 }
 
 export function centerOf(bounds) {
@@ -441,4 +442,3 @@ function compareByPosition(left, right) {
 function square(value) {
 	return value * value;
 }
-

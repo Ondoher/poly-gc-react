@@ -29,4 +29,3 @@ if (report.static.errors.length > 0) {
 }
 
 console.log(`Validation passed for ${faceKey}; status=${report.status}`);
-

@@ -2,15 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import opentype from 'opentype.js';
 import paper from 'paper';
-import {
-	ASSET_FONTS_DIR,
-	LARGE_FACES_DIR,
-	preparedSvgPath,
-	sourceSvgPath,
-} from '../shared/asset-paths.js';
-import { loadFacePreprocessingMetadataEntry } from './face-preprocessing-metadata.js';
-import { groupAnalogComponents } from './analog-component-matcher.js';
-import { Colors } from './ColorPalette.js';
+import {ASSET_FONTS_DIR, LARGE_FACES_DIR, preparedSvgPath, sourceSvgPath} from '../shared/asset-paths.js';
+import {loadFacePreprocessingMetadataEntry} from './face-preprocessing-metadata.js';
+import {groupAnalogComponents} from './analog-component-matcher.js';
+import {Colors} from './ColorPalette.js';
 import {
 	findSmallIsolatedCandidates,
 	getComponentUnionBounds,
@@ -18,17 +13,13 @@ import {
 	makePaintPathWithKnockouts,
 	selectKnockoutComponents,
 } from './normalized-face-components.js';
-import {
-	extractReferenceImageComponents,
-	nearestPaletteColor,
-	readRgba,
-} from './reference-image-components.js';
-import { extractSourceSvgComponents } from './source-svg-components.js';
-import { sourceToReferenceTransform, unionBounds } from './visual-component-alignment.js';
+import {extractReferenceImageComponents, nearestPaletteColor, readRgba} from './reference-image-components.js';
+import {extractSourceSvgComponents} from './source-svg-components.js';
+import {sourceToReferenceTransform, unionBounds} from './visual-component-alignment.js';
 
 const FACE_KEY = process.argv[2];
 const FACE_VIEWBOX = '0 0 94 136';
-const LARGE_FACE_CANVAS = Object.freeze({ width: 164, height: 238 });
+const LARGE_FACE_CANVAS = Object.freeze({width: 164, height: 238});
 const DRAGON_SAFE_REFERENCE_BOX_RATIO = Object.freeze({
 	left: 24 / 164,
 	top: 25 / 238,
@@ -51,7 +42,9 @@ const DRAGON_FACE = /^dragon-[grw]$/.test(FACE_KEY || '');
 const MIN_SOURCE_PAINT_AREA = 4;
 
 if (!FACE_KEY) {
-	console.error('Usage: node scripts/3d-assets/svg-preprocessor/export-preprocessed-generic-special-face-svg.js <face-key>');
+	console.error(
+		'Usage: node scripts/3d-assets/svg-preprocessor/export-preprocessed-generic-special-face-svg.js <face-key>',
+	);
 	process.exit(1);
 }
 
@@ -72,23 +65,25 @@ let hueShadesByHue = Colors.hueShadesByHue(sourcePaintComponents.map(sourcePaint
 
 if (DRAGON_FACE) {
 	const dragonOutput = await makeDragonOutput(sourcePaintComponents, sourceExtracted.viewBox);
-	fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+	fs.mkdirSync(path.dirname(outputPath), {recursive: true});
 	fs.writeFileSync(outputPath, dragonOutput);
 	console.log(`Wrote ${path.relative(process.cwd(), outputPath)}`);
 	process.exit(0);
 }
 
-const sourceGroups = groupAnalogComponents(sourcePaintComponents, { expandedGap: 0 });
+const sourceGroups = groupAnalogComponents(sourcePaintComponents, {expandedGap: 0});
 const reference = await extractReferenceImageComponents(referencePath, {
 	labelColor: metadata.labelColor,
 	labelText: metadata.labelText,
 	fontPath: GLUTEN_FONT,
 });
-hueShadesByHue = Colors.hueShadesByHue([
-	...sourcePaintComponents.map(sourcePaintColor),
-	...reference.components.map((component) => component.dominantColor),
-	metadata.labelColor,
-].filter(Boolean));
+hueShadesByHue = Colors.hueShadesByHue(
+	[
+		...sourcePaintComponents.map(sourcePaintColor),
+		...reference.components.map((component) => component.dominantColor),
+		metadata.labelColor,
+	].filter(Boolean),
+);
 const roles = makeReferenceRoles(reference);
 const assignments = assignSourceGroupsToRoles(sourceGroups, roles);
 let overlapPaletteColors = new Map();
@@ -97,32 +92,42 @@ const roleColorMappingItems = [
 	...roleColorMappings(assignments.main, roles.main),
 	...roleColorMappings(assignments.character, roles.character),
 ].filter((item) => item.source && item.target);
-hueShadesByHue = Colors.mappedHueShadesByHue(roleColorMappingItems, [
-	...sourcePaintComponents.map(sourcePaintColor),
-	...reference.components.map((component) => component.dominantColor),
-	metadata.labelColor,
-].filter(Boolean));
+hueShadesByHue = Colors.mappedHueShadesByHue(
+	roleColorMappingItems,
+	[
+		...sourcePaintComponents.map(sourcePaintColor),
+		...reference.components.map((component) => component.dominantColor),
+		metadata.labelColor,
+	].filter(Boolean),
+);
 overlapPaletteColors = Colors.overlapPaletteColorMap([
 	...roleColorOverlaps(assignments.main, roles.main),
 	...roleColorOverlaps(assignments.character, roles.character),
 ]);
-const labelPath = metadata.labelText && glyphOutputPresent('number', true)
-	? makeLabelPath(glutenFont, metadata, roles.label?.bounds)
-	: '';
+const labelPath =
+	metadata.labelText && glyphOutputPresent('number', true)
+		? makeLabelPath(glutenFont, metadata, roles.label?.bounds)
+		: '';
 const characterOutputWanted = glyphOutputPresent('character', FLOWER_OR_SEASON);
-const assignedCharacterPaths = characterOutputWanted && roles.character && assignments.character.length > 0
-	? renderRole({
-		id: 'character',
-		role: roles.character,
-		sourceGroups: assignments.character,
-		sourceComponents,
-		color: glyphOutputColor('character') || roles.character.dominantColor,
-		forceColor: Boolean(glyphOutputColor('character')),
-	})
-	: '';
-const generatedCharacterPath = characterOutputWanted && !assignedCharacterPaths && shouldGenerateCharacterPath()
-	? makeCharacterPath(metadata.characterText, roles.character?.bounds, glyphOutputColor('character') || roles.character?.dominantColor)
-	: '';
+const assignedCharacterPaths =
+	characterOutputWanted && roles.character && assignments.character.length > 0
+		? renderRole({
+				id: 'character',
+				role: roles.character,
+				sourceGroups: assignments.character,
+				sourceComponents,
+				color: glyphOutputColor('character') || roles.character.dominantColor,
+				forceColor: Boolean(glyphOutputColor('character')),
+			})
+		: '';
+const generatedCharacterPath =
+	characterOutputWanted && !assignedCharacterPaths && shouldGenerateCharacterPath()
+		? makeCharacterPath(
+				metadata.characterText,
+				roles.character?.bounds,
+				glyphOutputColor('character') || roles.character?.dominantColor,
+			)
+		: '';
 const characterPaths = assignedCharacterPaths || generatedCharacterPath;
 const mainArtworkPaths = renderRole({
 	id: 'main-artwork',
@@ -146,25 +151,27 @@ ${labelPath ? `	<g id="number">\n${indent(labelPath, 2)}\n	</g>\n` : ''}${charac
 </svg>
 `;
 
-fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+fs.mkdirSync(path.dirname(outputPath), {recursive: true});
 fs.writeFileSync(outputPath, output);
 console.log(`Wrote ${path.relative(process.cwd(), outputPath)}`);
 
 async function makeDragonOutput(components, sourceViewBox) {
 	const referenceWhiteBox = await getDragonWhiteReferenceBounds();
-	const dragonReference = await extractReferenceImageComponents(referencePath, { minPixels: 4 });
-	const referenceComponents = dragonReference.artworkComponents.length
-		? dragonReference.artworkComponents
-		: [];
-	const dragonColorOverlaps = [{
-		items: components.map((component) => ({
-			key: componentPaletteKey(component),
-			source: sourcePaintColor(component),
-			target: referencePaintColorForComponent(component, components, referenceComponents) || dragonColor(FACE_KEY),
-			weight: component.pixels || component.area || 1,
-			sourceIndex: component.sourceIndex,
-		})),
-	}];
+	const dragonReference = await extractReferenceImageComponents(referencePath, {minPixels: 4});
+	const referenceComponents = dragonReference.artworkComponents.length ? dragonReference.artworkComponents : [];
+	const dragonColorOverlaps = [
+		{
+			items: components.map((component) => ({
+				key: componentPaletteKey(component),
+				source: sourcePaintColor(component),
+				target:
+					referencePaintColorForComponent(component, components, referenceComponents) ||
+					dragonColor(FACE_KEY),
+				weight: component.pixels || component.area || 1,
+				sourceIndex: component.sourceIndex,
+			})),
+		},
+	];
 	overlapPaletteColors = Colors.overlapPaletteColorMap(dragonColorOverlaps);
 	hueShadesByHue = Colors.mappedHueShadesByHue(
 		dragonColorOverlaps.flatMap((overlap) => overlap.items),
@@ -181,17 +188,23 @@ async function makeDragonOutput(components, sourceViewBox) {
 	const transform = boundsToTransform(sourceArtBounds, fittedReferenceArtBox);
 	const color = dragonColor(FACE_KEY);
 	const artPaths = components
-		.map((component, index) => makePaintPathWithKnockouts({
-			component,
-			color: outputPaintColor(component, referencePaintColorForComponent(component, components, referenceComponents) || color),
-			transform,
-			attributes: {
-				id: `dragon-art-part-${index + 1}`,
-				'data-special-role': 'dragon-art',
-				'data-dragon-calibration': 'source-white-box-family-transform',
-				'data-reference-color': referencePaintColorForComponent(component, components, referenceComponents) || color,
-			},
-		}))
+		.map((component, index) =>
+			makePaintPathWithKnockouts({
+				component,
+				color: outputPaintColor(
+					component,
+					referencePaintColorForComponent(component, components, referenceComponents) || color,
+				),
+				transform,
+				attributes: {
+					id: `dragon-art-part-${index + 1}`,
+					'data-special-role': 'dragon-art',
+					'data-dragon-calibration': 'source-white-box-family-transform',
+					'data-reference-color':
+						referencePaintColorForComponent(component, components, referenceComponents) || color,
+				},
+			}),
+		)
 		.map((sourceFragment) => indent(sourceFragment, 2))
 		.join('\n');
 
@@ -219,16 +232,13 @@ function sourceToReferenceUniformFitMatrix(sourceBounds, targetPixelBounds) {
 	const targetBounds = referencePixelsToViewBox(targetPixelBounds);
 	const sourceWidth = sourceBounds.right - sourceBounds.left;
 	const sourceHeight = sourceBounds.bottom - sourceBounds.top;
-	const scale = Math.min(
-		targetBounds.width / sourceWidth,
-		targetBounds.height / sourceHeight,
-	);
-	const sourceCenterX = sourceBounds.left + (sourceWidth / 2);
-	const sourceCenterY = sourceBounds.top + (sourceHeight / 2);
-	const targetCenterX = targetBounds.left + (targetBounds.width / 2);
-	const targetCenterY = targetBounds.top + (targetBounds.height / 2);
-	const translateX = targetCenterX - (sourceCenterX * scale);
-	const translateY = targetCenterY - (sourceCenterY * scale);
+	const scale = Math.min(targetBounds.width / sourceWidth, targetBounds.height / sourceHeight);
+	const sourceCenterX = sourceBounds.left + sourceWidth / 2;
+	const sourceCenterY = sourceBounds.top + sourceHeight / 2;
+	const targetCenterX = targetBounds.left + targetBounds.width / 2;
+	const targetCenterY = targetBounds.top + targetBounds.height / 2;
+	const translateX = targetCenterX - sourceCenterX * scale;
+	const translateY = targetCenterY - sourceCenterY * scale;
 
 	return {
 		a: scale,
@@ -248,20 +258,20 @@ function boundsToTransform(sourceBounds, targetBounds) {
 		b: 0,
 		c: 0,
 		d: scaleY,
-		e: targetBounds.left - (sourceBounds.left * scaleX),
-		f: targetBounds.top - (sourceBounds.top * scaleY),
+		e: targetBounds.left - sourceBounds.left * scaleX,
+		f: targetBounds.top - sourceBounds.top * scaleY,
 	});
 }
 
 function transformBounds(bounds, matrix) {
 	const points = [
-		{ x: bounds.left, y: bounds.top },
-		{ x: bounds.right, y: bounds.top },
-		{ x: bounds.right, y: bounds.bottom },
-		{ x: bounds.left, y: bounds.bottom },
+		{x: bounds.left, y: bounds.top},
+		{x: bounds.right, y: bounds.top},
+		{x: bounds.right, y: bounds.bottom},
+		{x: bounds.left, y: bounds.bottom},
 	].map((point) => ({
-		x: (matrix.a * point.x) + (matrix.c * point.y) + matrix.e,
-		y: (matrix.b * point.x) + (matrix.d * point.y) + matrix.f,
+		x: matrix.a * point.x + matrix.c * point.y + matrix.e,
+		y: matrix.b * point.x + matrix.d * point.y + matrix.f,
 	}));
 	const left = Math.min(...points.map((point) => point.x));
 	const top = Math.min(...points.map((point) => point.y));
@@ -293,14 +303,14 @@ function centeredFitBox(sourceArtBounds, targetBox) {
 	const scale = Math.min(targetBox.width / artWidth, targetBox.height / artHeight);
 	const width = artWidth * scale;
 	const height = artHeight * scale;
-	const centerX = targetBox.left + (targetBox.width / 2);
-	const centerY = targetBox.top + (targetBox.height / 2);
+	const centerX = targetBox.left + targetBox.width / 2;
+	const centerY = targetBox.top + targetBox.height / 2;
 
 	return {
-		left: centerX - (width / 2),
-		top: centerY - (height / 2),
-		right: centerX + (width / 2),
-		bottom: centerY + (height / 2),
+		left: centerX - width / 2,
+		top: centerY - height / 2,
+		right: centerX + width / 2,
+		bottom: centerY + height / 2,
 		width,
 		height,
 	};
@@ -313,9 +323,7 @@ async function getSourceDragonWhiteBox(fallbackComponents, fallbackViewBox) {
 		const whiteSource = fs.readFileSync(whiteSourcePath, 'utf8');
 		const whiteExtracted = extractSourceSvgComponents(whiteSource);
 		const whiteOuterBox = whiteExtracted.viewBox ? viewBoxToBounds(whiteExtracted.viewBox) : null;
-		const currentOuterBox = fallbackViewBox
-			? viewBoxToBounds(fallbackViewBox)
-			: whiteOuterBox;
+		const currentOuterBox = fallbackViewBox ? viewBoxToBounds(fallbackViewBox) : whiteOuterBox;
 		const whiteBox = findWhiteDragonRectangleBox(whiteExtracted.components);
 
 		if (whiteBox && whiteOuterBox && currentOuterBox) {
@@ -360,10 +368,10 @@ function referencePaddingRatios(referenceWhiteBox) {
 }
 
 function boxFromPaddingRatios(outerBox, ratios) {
-	const left = outerBox.left + (outerBox.width * ratios.left);
-	const top = outerBox.top + (outerBox.height * ratios.top);
-	const right = outerBox.right - (outerBox.width * ratios.right);
-	const bottom = outerBox.bottom - (outerBox.height * ratios.bottom);
+	const left = outerBox.left + outerBox.width * ratios.left;
+	const top = outerBox.top + outerBox.height * ratios.top;
+	const right = outerBox.right - outerBox.width * ratios.right;
+	const bottom = outerBox.bottom - outerBox.height * ratios.bottom;
 
 	return {
 		left,
@@ -376,12 +384,15 @@ function boxFromPaddingRatios(outerBox, ratios) {
 }
 
 function findWhiteDragonRectangleBox(components) {
-	return components
-		.filter((component) => !component.tileLayerCandidate)
-		.filter((component) => !component.negativeSpaceCandidate)
-		.filter((component) => isPaint(component.fill) || isPaint(component.stroke))
-		.filter((component) => isRectangleLikeComponent(component))
-		.sort((left, right) => right.bounds.width * right.bounds.height - left.bounds.width * left.bounds.height)[0]?.bounds || null;
+	return (
+		components
+			.filter((component) => !component.tileLayerCandidate)
+			.filter((component) => !component.negativeSpaceCandidate)
+			.filter((component) => isPaint(component.fill) || isPaint(component.stroke))
+			.filter((component) => isRectangleLikeComponent(component))
+			.sort((left, right) => right.bounds.width * right.bounds.height - left.bounds.width * left.bounds.height)[0]
+			?.bounds || null
+	);
 }
 
 function isRectangleLikeComponent(component) {
@@ -402,7 +413,7 @@ function transformedPathArea(component) {
 	let item = null;
 	try {
 		item = new paper.CompoundPath(component.pathData);
-		const transform = component.transform || { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+		const transform = component.transform || {a: 1, b: 0, c: 0, d: 1, e: 0, f: 0};
 		item.transform(new paper.Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
 		return Math.abs(item.area);
 	} catch {
@@ -419,8 +430,8 @@ function simulatedSourceDragonWhiteBox(sourceArtBounds, referenceArtBounds, refe
 	const bottomRatio = (referenceArtBounds.bottom - referenceWhiteBox.top) / referenceWhiteBox.height;
 	const sourceWidth = sourceArtBounds.width / Math.max(0.000001, rightRatio - leftRatio);
 	const sourceHeight = sourceArtBounds.height / Math.max(0.000001, bottomRatio - topRatio);
-	const left = sourceArtBounds.left - (sourceWidth * leftRatio);
-	const top = sourceArtBounds.top - (sourceHeight * topRatio);
+	const left = sourceArtBounds.left - sourceWidth * leftRatio;
+	const top = sourceArtBounds.top - sourceHeight * topRatio;
 
 	return {
 		left,
@@ -467,7 +478,7 @@ function getAlphaBounds(image, filePath) {
 
 	for (let y = 0; y < image.height; y += 1) {
 		for (let x = 0; x < image.width; x += 1) {
-			const alpha = image.data[((y * image.width + x) * 4) + 3];
+			const alpha = image.data[(y * image.width + x) * 4 + 3];
 
 			if (alpha <= 8) {
 				continue;
@@ -523,8 +534,10 @@ function isFrameLikeAlphaShape(image, bounds) {
 		}),
 	];
 
-	return edgeCoverage.every((coverage) => coverage >= 0.18)
-		&& edgeCoverage.filter((coverage) => coverage >= 0.35).length >= 2;
+	return (
+		edgeCoverage.every((coverage) => coverage >= 0.18) &&
+		edgeCoverage.filter((coverage) => coverage >= 0.35).length >= 2
+	);
 }
 
 function alphaCoverage(image, bounds) {
@@ -535,7 +548,7 @@ function alphaCoverage(image, bounds) {
 		for (let x = Math.max(0, bounds.left); x <= Math.min(image.width - 1, bounds.right); x += 1) {
 			total += 1;
 
-			if (image.data[((y * image.width + x) * 4) + 3] > 8) {
+			if (image.data[(y * image.width + x) * 4 + 3] > 8) {
 				visible += 1;
 			}
 		}
@@ -579,25 +592,22 @@ function makeReferenceRoles(referenceData) {
 		? selectTopCharacterComponents(referenceData.artworkComponents, referenceData.labelComponent)
 		: [];
 	const characterComponentSet = new Set(characterComponents);
-	const mainComponents = referenceData.artworkComponents
-		.filter((component) => !characterComponentSet.has(component));
+	const mainComponents = referenceData.artworkComponents.filter((component) => !characterComponentSet.has(component));
 
 	return {
-		label: referenceData.labelComponent
-			? makeRole('label', [referenceData.labelComponent])
-			: null,
-		character: characterComponents.length > 0
-			? makeRole('character', characterComponents)
-			: null,
+		label: referenceData.labelComponent ? makeRole('label', [referenceData.labelComponent]) : null,
+		character: characterComponents.length > 0 ? makeRole('character', characterComponents) : null,
 		main: makeRole('main-artwork', mainComponents),
 	};
 }
 
 function selectTopCharacterComponents(components, labelComponent) {
-	const outerBounds = unionBounds([...(labelComponent ? [labelComponent] : []), ...components].map((component) => component.bounds || component));
+	const outerBounds = unionBounds(
+		[...(labelComponent ? [labelComponent] : []), ...components].map((component) => component.bounds || component),
+	);
 	const labelSide = labelComponent ? getSide(labelComponent, outerBounds) : null;
-	const characterCorner = glyphCorner('character', 'referenceCorner')
-		|| cornerForSide(labelSide === 'left' ? 'right' : 'left');
+	const characterCorner =
+		glyphCorner('character', 'referenceCorner') || cornerForSide(labelSide === 'left' ? 'right' : 'left');
 	const candidates = findSmallIsolatedCandidates(components, outerBounds, {
 		topBandRatio: 0.4,
 		maxAreaRatio: 0.22,
@@ -607,9 +617,14 @@ function selectTopCharacterComponents(components, labelComponent) {
 		.filter((candidate) => candidate.topBand)
 		.filter((candidate) => candidate.normalizedCenter.y < 0.34)
 		.filter((candidate) => candidateMatchesCorner(candidate, characterCorner))
-		.filter((candidate) => !labelSide || !glyphCorner('character', 'referenceCorner') || candidate.side !== labelSide)
-		.sort((left, right) => cornerDistance(left, characterCorner) - cornerDistance(right, characterCorner)
-			|| right.area - left.area);
+		.filter(
+			(candidate) => !labelSide || !glyphCorner('character', 'referenceCorner') || candidate.side !== labelSide,
+		)
+		.sort(
+			(left, right) =>
+				cornerDistance(left, characterCorner) - cornerDistance(right, characterCorner) ||
+				right.area - left.area,
+		);
 
 	return candidates.slice(0, 1).map((candidate) => candidate.item);
 }
@@ -621,8 +636,8 @@ function makeRole(name, components) {
 		components,
 		bounds,
 		center: {
-			x: bounds.left + (bounds.width / 2),
-			y: bounds.top + (bounds.height / 2),
+			x: bounds.left + bounds.width / 2,
+			y: bounds.top + bounds.height / 2,
 		},
 		dominantColor: dominantComponentColor(components),
 	};
@@ -630,7 +645,9 @@ function makeRole(name, components) {
 
 function assignSourceGroupsToRoles(groups, roles) {
 	const sourceOuter = unionBounds(groups.map((group) => group.bounds));
-	const roleOuter = unionBounds([roles.label, roles.character, roles.main].filter(Boolean).map((role) => role.bounds));
+	const roleOuter = unionBounds(
+		[roles.label, roles.character, roles.main].filter(Boolean).map((role) => role.bounds),
+	);
 	const assignments = {
 		label: [],
 		character: [],
@@ -638,13 +655,18 @@ function assignSourceGroupsToRoles(groups, roles) {
 	};
 
 	const shouldRemoveSourceLabel = glyphSourcePresent('number', FLOWER_OR_SEASON || metadata.sourceContainsLabel);
-	const labelGroup = shouldRemoveSourceLabel && roles.label
-		? findSourceLabelGroup(groups, roles, sourceOuter, roleOuter)
-		: null;
+	const labelGroup =
+		shouldRemoveSourceLabel && roles.label ? findSourceLabelGroup(groups, roles, sourceOuter, roleOuter) : null;
 	const shouldFindCharacter = glyphSourcePresent('character', FLOWER_OR_SEASON);
-	const characterGroups = shouldFindCharacter && roles.character
-		? findCharacterSourceGroups(groups.filter((group) => group !== labelGroup), roles, sourceOuter, roleOuter)
-		: [];
+	const characterGroups =
+		shouldFindCharacter && roles.character
+			? findCharacterSourceGroups(
+					groups.filter((group) => group !== labelGroup),
+					roles,
+					sourceOuter,
+					roleOuter,
+				)
+			: [];
 	const characterGroupSet = new Set(characterGroups);
 
 	if (labelGroup) {
@@ -669,20 +691,21 @@ function findSourceLabelGroup(groups, roles, sourceOuter, roleOuter) {
 		return findClosestGroup(groups, roles.label, sourceOuter, roleOuter);
 	}
 
-	const targetCorner = glyphCorner('number', 'sourceCorner')
-		|| cornerForSide(getSide(roles.label, roleOuter));
+	const targetCorner = glyphCorner('number', 'sourceCorner') || cornerForSide(getSide(roles.label, roleOuter));
 	const candidates = findSmallIsolatedCandidates(groups, sourceOuter, {
 		topBandRatio: 0.4,
 		maxAreaRatio: 0.22,
 		minWidth: 5,
 		minHeight: 12,
-		})
+	})
 		.filter((candidate) => candidate.topBand)
 		.filter((candidate) => candidate.normalizedCenter.y < 0.36)
 		.filter((candidate) => candidate.areaRatio > 0.015)
 		.filter((candidate) => candidateMatchesCorner(candidate, targetCorner))
-		.sort((left, right) => cornerDistance(left, targetCorner) - cornerDistance(right, targetCorner)
-			|| right.area - left.area);
+		.sort(
+			(left, right) =>
+				cornerDistance(left, targetCorner) - cornerDistance(right, targetCorner) || right.area - left.area,
+		);
 
 	return candidates[0]?.item || null;
 }
@@ -702,8 +725,7 @@ function findCharacterSourceGroups(groups, roles, sourceOuter, roleOuter) {
 		}
 	}
 
-	const targetCorner = glyphCorner('character', 'sourceCorner')
-		|| cornerForSide(getSide(roles.character, roleOuter));
+	const targetCorner = glyphCorner('character', 'sourceCorner') || cornerForSide(getSide(roles.character, roleOuter));
 	const candidates = findSmallIsolatedCandidates(groups, sourceOuter, {
 		topBandRatio: 0.4,
 		maxAreaRatio: 0.26,
@@ -714,29 +736,35 @@ function findCharacterSourceGroups(groups, roles, sourceOuter, roleOuter) {
 		.filter((candidate) => candidate.normalizedCenter.y < 0.38)
 		.filter((candidate) => candidate.normalizedBottom < 0.62)
 		.filter((candidate) => candidateMatchesCorner(candidate, targetCorner))
-		.sort((left, right) => cornerDistance(left, targetCorner) - cornerDistance(right, targetCorner)
-			|| groupArea(right) - groupArea(left));
+		.sort(
+			(left, right) =>
+				cornerDistance(left, targetCorner) - cornerDistance(right, targetCorner) ||
+				groupArea(right) - groupArea(left),
+		);
 
 	return candidates[0]?.item ? [candidates[0].item] : [];
 }
 
 function findClosestSourceGlyphGroup(groups, sourceOuter, targetCorner) {
-	return findSmallIsolatedCandidates(groups, sourceOuter, {
-		topBandRatio: 0.4,
-		maxAreaRatio: 0.26,
-		minWidth: 5,
-		minHeight: 5,
-	})
-		.filter((candidate) => candidate.topBand)
-		.filter((candidate) => candidate.normalizedCenter.y < 0.36)
-		.filter((candidate) => candidate.normalizedBottom < 0.4)
-		.sort((left, right) => cornerDistance(left, targetCorner) - cornerDistance(right, targetCorner)
-			|| left.area - right.area)[0]?.item || null;
+	return (
+		findSmallIsolatedCandidates(groups, sourceOuter, {
+			topBandRatio: 0.4,
+			maxAreaRatio: 0.26,
+			minWidth: 5,
+			minHeight: 5,
+		})
+			.filter((candidate) => candidate.topBand)
+			.filter((candidate) => candidate.normalizedCenter.y < 0.36)
+			.filter((candidate) => candidate.normalizedBottom < 0.4)
+			.sort(
+				(left, right) =>
+					cornerDistance(left, targetCorner) - cornerDistance(right, targetCorner) || left.area - right.area,
+			)[0]?.item || null
+	);
 }
 
 function findSeasonCharacterSourceGroups(groups, characterGroup, roles, sourceOuter, roleOuter) {
-	const targetCorner = glyphCorner('character', 'sourceCorner')
-		|| cornerForSide(getSide(roles.character, roleOuter));
+	const targetCorner = glyphCorner('character', 'sourceCorner') || cornerForSide(getSide(roles.character, roleOuter));
 	const metadataColor = characterGroup.dominantColor;
 	const candidates = findSmallIsolatedCandidates(groups, sourceOuter, {
 		topBandRatio: 0.4,
@@ -749,13 +777,14 @@ function findSeasonCharacterSourceGroups(groups, characterGroup, roles, sourceOu
 		.filter((candidate) => candidate.normalizedCenter.y < 0.33)
 		.filter((candidate) => candidate.normalizedBottom < 0.36)
 		.filter((candidate) => candidateMatchesCorner(candidate, targetCorner))
-		.sort((left, right) => cornerDistance(left, targetCorner) - cornerDistance(right, targetCorner)
-			|| left.item.bounds.left - right.item.bounds.left);
+		.sort(
+			(left, right) =>
+				cornerDistance(left, targetCorner) - cornerDistance(right, targetCorner) ||
+				left.item.bounds.left - right.item.bounds.left,
+		);
 
 	const selected = candidates.map((candidate) => candidate.item);
-	return selected.includes(characterGroup)
-		? selected
-		: [characterGroup, ...selected];
+	return selected.includes(characterGroup) ? selected : [characterGroup, ...selected];
 }
 
 function findSourceGlyphGroupByBounds(groups, name) {
@@ -764,52 +793,59 @@ function findSourceGlyphGroupByBounds(groups, name) {
 		return null;
 	}
 
-	return groups
-		.map((group) => ({
-			group,
-			score: boundsDistance(group.bounds, targetBounds),
-		}))
-		.filter((candidate) => candidate.score < 2)
-		.sort((left, right) => left.score - right.score)[0]?.group || null;
+	return (
+		groups
+			.map((group) => ({
+				group,
+				score: boundsDistance(group.bounds, targetBounds),
+			}))
+			.filter((candidate) => candidate.score < 2)
+			.sort((left, right) => left.score - right.score)[0]?.group || null
+	);
 }
 
 function findClosestGroup(groups, role, sourceOuter, roleOuter) {
-	return groups
-		.map((group) => ({
-			group,
-			distance: distance(
-				normalizedCenter(group, sourceOuter),
-				normalizedCenter(role, roleOuter),
-			),
-		}))
-		.sort((left, right) => left.distance - right.distance)[0]?.group || null;
+	return (
+		groups
+			.map((group) => ({
+				group,
+				distance: distance(normalizedCenter(group, sourceOuter), normalizedCenter(role, roleOuter)),
+			}))
+			.sort((left, right) => left.distance - right.distance)[0]?.group || null
+	);
 }
 
-function renderRole({ id, role, sourceGroups: assignedGroups, sourceComponents, color, forceColor = false }) {
+function renderRole({id, role, sourceGroups: assignedGroups, sourceComponents, color, forceColor = false}) {
 	if (!role || assignedGroups.length === 0) {
 		return '';
 	}
 
-	const components = assignedGroups
-		.flatMap((group) => group.components)
-		.sort(compareByRenderOrder);
+	const components = assignedGroups.flatMap((group) => group.components).sort(compareByRenderOrder);
 	const sourceBounds = unionBounds(components.map((component) => component.bounds));
 	const transform = sourceToReferenceTransform(sourceBounds, role.bounds, LARGE_FACE_CANVAS);
 	const cutoutComponents = selectKnockoutComponents(sourceComponents, components, {
 		maxArea: Infinity,
 	});
-	const paths = components.map((component, index) => makePaintPathWithKnockouts({
-		component,
-		color: outputPaintColor(component, forceColor
-			? color
-			: referencePaintColorForComponent(component, components, role.components) || color || nearestPaintColor(component), { force: forceColor }),
-		knockouts: cutoutComponents.filter((cutout) => isRelatedKnockout(component, cutout)),
-		transform,
-		attributes: {
-			id: `${id}-part-${index + 1}`,
-			'data-special-role': id,
-		},
-	}));
+	const paths = components.map((component, index) =>
+		makePaintPathWithKnockouts({
+			component,
+			color: outputPaintColor(
+				component,
+				forceColor
+					? color
+					: referencePaintColorForComponent(component, components, role.components) ||
+							color ||
+							nearestPaintColor(component),
+				{force: forceColor},
+			),
+			knockouts: cutoutComponents.filter((cutout) => isRelatedKnockout(component, cutout)),
+			transform,
+			attributes: {
+				id: `${id}-part-${index + 1}`,
+				'data-special-role': id,
+			},
+		}),
+	);
 
 	return `<g id="${id}">
 ${indent(paths.join('\n'), 1)}
@@ -825,9 +861,10 @@ function roleColorMappings(assignedGroups, role) {
 
 	return components.map((component) => ({
 		source: sourcePaintColor(component),
-		target: referencePaintColorForComponent(component, components, role.components)
-			|| role.dominantColor
-			|| nearestPaintColor(component),
+		target:
+			referencePaintColorForComponent(component, components, role.components) ||
+			role.dominantColor ||
+			nearestPaintColor(component),
 	}));
 }
 
@@ -838,17 +875,20 @@ function roleColorOverlaps(assignedGroups, role) {
 
 	const assignedComponents = assignedGroups.flatMap((group) => group.components);
 
-	return [{
-		items: assignedComponents.map((component) => ({
-			key: componentPaletteKey(component),
-			source: sourcePaintColor(component),
-			target: referencePaintColorForComponent(component, assignedComponents, role.components)
-				|| role.dominantColor
-				|| nearestPaintColor(component),
-			weight: component.pixels || component.area || 1,
-			sourceIndex: component.sourceIndex,
-		})),
-	}];
+	return [
+		{
+			items: assignedComponents.map((component) => ({
+				key: componentPaletteKey(component),
+				source: sourcePaintColor(component),
+				target:
+					referencePaintColorForComponent(component, assignedComponents, role.components) ||
+					role.dominantColor ||
+					nearestPaintColor(component),
+				weight: component.pixels || component.area || 1,
+				sourceIndex: component.sourceIndex,
+			})),
+		},
+	];
 }
 
 function referencePaintColorForComponent(component, sourceComponents, referenceComponents) {
@@ -885,20 +925,22 @@ function analogousReferenceComponent(component, sourceComponents, referenceCompo
 	const referenceBounds = unionBounds(referenceComponents.map(matchBounds));
 	const candidateComponents = perceivedReferenceCandidates(component, referenceComponents);
 
-	return candidateComponents
-		.map((referenceComponent) => ({
-			component: referenceComponent,
-			distance: analogousReferenceScore(component, referenceComponent, sourceBounds, referenceBounds),
-		}))
-		.sort((left, right) => left.distance - right.distance)[0]?.component || null;
+	return (
+		candidateComponents
+			.map((referenceComponent) => ({
+				component: referenceComponent,
+				distance: analogousReferenceScore(component, referenceComponent, sourceBounds, referenceBounds),
+			}))
+			.sort((left, right) => left.distance - right.distance)[0]?.component || null
+	);
 }
 
 function perceivedReferenceCandidates(component, referenceComponents) {
 	const sourceHue = Colors.perceivedHue(sourcePaintColor(component));
 	const sameHue = sourceHue
-		? referenceComponents.filter((referenceComponent) => (
-			Colors.perceivedHue(referenceComponent.dominantColor) === sourceHue
-		))
+		? referenceComponents.filter(
+				(referenceComponent) => Colors.perceivedHue(referenceComponent.dominantColor) === sourceHue,
+			)
 		: [];
 
 	return sameHue.length > 0 ? sameHue : referenceComponents;
@@ -911,12 +953,10 @@ function analogousReferenceScore(component, referenceComponent, sourceBounds, re
 	const centerScore = hasBounds ? distance(sourcePoint, referencePoint) : 0;
 	const sourceAreaRatio = hasBounds ? normalizedArea(component, sourceBounds) : 0;
 	const referenceAreaRatio = hasBounds ? normalizedArea(referenceComponent, referenceBounds) : 0;
-	const areaScore = hasBounds
-		? Math.abs(Math.log((sourceAreaRatio + 0.0001) / (referenceAreaRatio + 0.0001)))
-		: 0;
+	const areaScore = hasBounds ? Math.abs(Math.log((sourceAreaRatio + 0.0001) / (referenceAreaRatio + 0.0001))) : 0;
 	const colorScore = perceivedReferenceComponentColorDistance(sourcePaintColor(component), referenceComponent);
 
-	return centerScore + (areaScore * 0.04) + ((colorScore ?? 0) * 1.2);
+	return centerScore + areaScore * 0.04 + (colorScore ?? 0) * 1.2;
 }
 
 function perceivedReferenceComponentColorDistance(sourceColor, referenceComponent) {
@@ -1002,8 +1042,8 @@ function makeLabelPath(font, metadata, labelBounds) {
 	const target = referencePixelsToViewBox(labelBounds);
 	const scaleX = target.width / bounds.width;
 	const scaleY = target.height / bounds.height;
-	const translateX = target.left - (bounds.left * scaleX);
-	const translateY = target.top - (bounds.top * scaleY);
+	const translateX = target.left - bounds.left * scaleX;
+	const translateY = target.top - bounds.top * scaleY;
 	const transform = `matrix(${format(scaleX)} 0 0 ${format(scaleY)} ${format(translateX)} ${format(translateY)})`;
 
 	return `<path fill="${glyphOutputColor('number') || metadata.labelColor}" data-generated-font="Gluten 800" transform="${transform}" d="${pathData}"/>`;
@@ -1029,8 +1069,8 @@ function makeCharacterPath(characterText, characterBounds, color) {
 	const scale = Math.min(target.width / bounds.width, target.height / bounds.height);
 	const width = bounds.width * scale;
 	const height = bounds.height * scale;
-	const translateX = target.left + ((target.width - width) / 2) - (bounds.left * scale);
-	const translateY = target.top + ((target.height - height) / 2) - (bounds.top * scale);
+	const translateX = target.left + (target.width - width) / 2 - bounds.left * scale;
+	const translateY = target.top + (target.height - height) / 2 - bounds.top * scale;
 	const transform = `matrix(${format(scale)} 0 0 ${format(scale)} ${format(translateX)} ${format(translateY)})`;
 	const fontName = path.basename(fontPath);
 
@@ -1040,12 +1080,8 @@ function makeCharacterPath(characterText, characterBounds, color) {
 }
 
 function findCharacterFontPath(characterText) {
-	const configuredPath = metadata.characterFontPath
-		? path.resolve(process.cwd(), metadata.characterFontPath)
-		: null;
-	const candidates = configuredPath
-		? [configuredPath, ...CJK_FONT_CANDIDATES]
-		: CJK_FONT_CANDIDATES;
+	const configuredPath = metadata.characterFontPath ? path.resolve(process.cwd(), metadata.characterFontPath) : null;
+	const candidates = configuredPath ? [configuredPath, ...CJK_FONT_CANDIDATES] : CJK_FONT_CANDIDATES;
 
 	return candidates.find((candidate) => fontContainsText(candidate, characterText)) || null;
 }
@@ -1072,13 +1108,14 @@ function selectPaintComponents(components) {
 }
 
 function isRelatedToGroup(group, cutout) {
-	return group.components.some((component) => (
-		cutout.area < component.area
-		&& cutout.center.x >= component.bounds.left
-		&& cutout.center.x <= component.bounds.right
-		&& cutout.center.y >= component.bounds.top
-		&& cutout.center.y <= component.bounds.bottom
-	));
+	return group.components.some(
+		(component) =>
+			cutout.area < component.area &&
+			cutout.center.x >= component.bounds.left &&
+			cutout.center.x <= component.bounds.right &&
+			cutout.center.y >= component.bounds.top &&
+			cutout.center.y <= component.bounds.bottom,
+	);
 }
 
 function referencePixelsToViewBox(bounds) {
@@ -1189,10 +1226,10 @@ function parsePaintRgb(paint) {
 
 	return hex
 		? [
-			Number.parseInt(hex.slice(0, 2), 16),
-			Number.parseInt(hex.slice(2, 4), 16),
-			Number.parseInt(hex.slice(4, 6), 16),
-		]
+				Number.parseInt(hex.slice(0, 2), 16),
+				Number.parseInt(hex.slice(2, 4), 16),
+				Number.parseInt(hex.slice(4, 6), 16),
+			]
 		: null;
 }
 
@@ -1227,8 +1264,8 @@ function normalizedBottom(item, outerBounds) {
 
 function getSide(item, outerBounds) {
 	const center = item.center || {
-		x: item.bounds.left + (item.bounds.width / 2),
-		y: item.bounds.top + (item.bounds.height / 2),
+		x: item.bounds.left + item.bounds.width / 2,
+		y: item.bounds.top + item.bounds.height / 2,
 	};
 
 	return (center.x - outerBounds.left) / Math.max(1, outerBounds.width) < 0.5 ? 'left' : 'right';
@@ -1239,10 +1276,12 @@ function distance(left, right) {
 }
 
 function boundsDistance(left, right) {
-	return Math.abs(left.left - right.left)
-		+ Math.abs(left.top - right.top)
-		+ Math.abs(left.right - right.right)
-		+ Math.abs(left.bottom - right.bottom);
+	return (
+		Math.abs(left.left - right.left) +
+		Math.abs(left.top - right.top) +
+		Math.abs(left.right - right.right) +
+		Math.abs(left.bottom - right.bottom)
+	);
 }
 
 function cornerForSide(side) {
@@ -1256,8 +1295,7 @@ function shouldUseCharacterRole() {
 }
 
 function shouldGenerateCharacterPath() {
-	return Boolean(metadata.characterText)
-		&& metadata.glyphLayout?.character?.sourcePresent === false;
+	return Boolean(metadata.characterText) && metadata.glyphLayout?.character?.sourcePresent === false;
 }
 
 function glyphSourcePresent(name, fallback) {
@@ -1310,7 +1348,7 @@ function indent(value, depth) {
 	const prefix = '\t'.repeat(depth);
 	return value
 		.split('\n')
-		.map((line) => line.trim() ? `${prefix}${line}` : line)
+		.map((line) => (line.trim() ? `${prefix}${line}` : line))
 		.join('\n');
 }
 
@@ -1325,4 +1363,3 @@ function escapeAttribute(value) {
 function format(value) {
 	return Number(value.toFixed(6)).toString();
 }
-

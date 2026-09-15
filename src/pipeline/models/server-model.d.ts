@@ -33,7 +33,7 @@ interface ServerModelService {
 	 *
 	 * @param options - Metadata kind and optional tileset source.
 	 */
-	loadMetadataState(options?: { metadataKind?: string; tilesetSource?: string }): Promise<object>;
+	loadMetadataState(options?: {metadataKind?: string; tilesetSource?: string}): Promise<object>;
 
 	/**
 	 * Load the current reference structure from the pipeline API.
@@ -106,7 +106,7 @@ interface ServerModelService {
 	 *
 	 * @param options - Metadata kind and optional tileset source.
 	 */
-	recreateMetadata(options?: { metadataKind?: string; tilesetSource?: string }): Promise<object>;
+	recreateMetadata(options?: {metadataKind?: string; tilesetSource?: string}): Promise<object>;
 
 	/**
 	 * Save reviewed metadata through the pipeline API.
@@ -114,7 +114,7 @@ interface ServerModelService {
 	 * @param metadata - The metadata payload to persist.
 	 * @param options - Metadata kind and optional tileset source.
 	 */
-	saveMetadata(metadata: object, options?: { metadataKind?: string; tilesetSource?: string }): Promise<object>;
+	saveMetadata(metadata: object, options?: {metadataKind?: string; tilesetSource?: string}): Promise<object>;
 
 	/**
 	 * Save reviewed metadata and run preprocessing.
@@ -122,14 +122,14 @@ interface ServerModelService {
 	 * @param metadata - The metadata payload to preprocess.
 	 * @param options - Metadata kind and optional tileset source.
 	 */
-	preprocessMetadata(metadata: object, options?: { metadataKind?: string; tilesetSource?: string }): Promise<object>;
+	preprocessMetadata(metadata: object, options?: {metadataKind?: string; tilesetSource?: string}): Promise<object>;
 
 	/**
 	 * Accept optional part assignment decisions and run downstream stages.
 	 *
 	 * @param options - Source tileset id and currency date.
 	 */
-	acceptOptionalPartAssignment(options?: { tilesetId?: string; currencyDate?: string }): Promise<object>;
+	acceptOptionalPartAssignment(options?: {tilesetId?: string; currencyDate?: string}): Promise<object>;
 
 	/**
 	 * Accept source assignment review data and run final rendering.
@@ -178,21 +178,21 @@ interface ServerModelService {
 	 *
 	 * @param options - Tileset id for the generated asset run.
 	 */
-	startAssetGeneration(options?: { tilesetId?: string; faceKeys?: string[] }): Promise<object>;
+	startAssetGeneration(options?: {tilesetId?: string; faceKeys?: string[]}): Promise<object>;
 
 	/**
 	 * Cancel pending generated asset pipeline work for a tileset.
 	 *
 	 * @param options - Tileset id for the generated asset run.
 	 */
-	cancelAssetGeneration(options?: { tilesetId?: string }): Promise<object>;
+	cancelAssetGeneration(options?: {tilesetId?: string}): Promise<object>;
 
 	/**
 	 * Clear generated assets and reset generated asset state for a tileset.
 	 *
 	 * @param options - Tileset id for the generated asset run.
 	 */
-	resetAssetGeneration(options?: { tilesetId?: string }): Promise<object>;
+	resetAssetGeneration(options?: {tilesetId?: string}): Promise<object>;
 
 	/**
 	 * Load generated final tile asset review data.

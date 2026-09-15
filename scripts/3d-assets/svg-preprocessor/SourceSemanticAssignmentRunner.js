@@ -1,8 +1,8 @@
-import { promises as fs } from 'fs';
+import {promises as fs} from 'fs';
 import path from 'path';
-import { OUTPUT_3D_DIR, ROOT_DIR } from '../shared/asset-paths.js';
-import { DEFAULT_REFERENCE_STRUCTURE_PATH } from './reference-structure-components.js';
-import { tilesetJsonDir, tilesetOutputRoot } from './pipeline-output-paths.js';
+import {OUTPUT_3D_DIR, ROOT_DIR} from '../shared/asset-paths.js';
+import {DEFAULT_REFERENCE_STRUCTURE_PATH} from './reference-structure-components.js';
+import {tilesetJsonDir, tilesetOutputRoot} from './pipeline-output-paths.js';
 
 export const DEFAULT_SOURCE_SEMANTIC_ASSIGNMENT_TILESET_ID = 'wiki';
 
@@ -46,11 +46,10 @@ export class SourceSemanticAssignmentRunner {
 			throw new Error('SourceSemanticAssignmentRunner requires a PipelineModel.');
 		}
 
-		const referenceStructurePath = pipelineModel.referenceFile || this.path.resolve(
-			this.rootDir,
-			options.referenceStructurePath || DEFAULT_REFERENCE_STRUCTURE_PATH,
-		);
-		const referenceStructure = pipelineModel.reference || await this.readJson(referenceStructurePath);
+		const referenceStructurePath =
+			pipelineModel.referenceFile ||
+			this.path.resolve(this.rootDir, options.referenceStructurePath || DEFAULT_REFERENCE_STRUCTURE_PATH);
+		const referenceStructure = pipelineModel.reference || (await this.readJson(referenceStructurePath));
 		const generatedOn = this.clock();
 		const faceKeys = Object.keys(referenceStructure.faces || {})
 			.filter((faceKey) => pipelineModel.hasFace(faceKey))
@@ -102,14 +101,7 @@ export class SourceSemanticAssignmentRunner {
 	 * @param {SourceSemanticAssignmentCreateReportOptions} options - Report identity and selected face fields.
 	 * @returns {SourceSemanticAssignmentReport} Empty report for the run.
 	 */
-	createReport({
-		tilesetId,
-		referenceStructure,
-		referenceStructurePath,
-		generatedOn,
-		requestedFaceKey,
-		faceKeys,
-	}) {
+	createReport({tilesetId, referenceStructure, referenceStructurePath, generatedOn, requestedFaceKey, faceKeys}) {
 		return {
 			schemaVersion: 1,
 			tilesetId,
@@ -143,7 +135,9 @@ export class SourceSemanticAssignmentRunner {
 		const faceState = pipelineModel.getFace(faceKey);
 
 		if (!faceState?.state || typeof faceState.state !== 'object' || Array.isArray(faceState.state)) {
-			throw new Error(`Source Semantic Assignment requires canonical inline face state for ${faceKey}. Regenerate the model-owned pipeline state through intake.`);
+			throw new Error(
+				`Source Semantic Assignment requires canonical inline face state for ${faceKey}. Regenerate the model-owned pipeline state through intake.`,
+			);
 		}
 
 		if ((faceState.state.alignment?.matches || []).length === 0) {
@@ -189,7 +183,10 @@ export class SourceSemanticAssignmentRunner {
 
 		const semanticMapPath = this.path.resolve(tilesetJsonDir(tilesetId, 'semantic-map'), `${faceKey}.json`);
 		await this.writeJson(semanticMapPath, semanticMap);
-		pipelineModel.applySemanticAssignment(faceKey, modelAssignmentFromSemanticMap(faceKey, faceState.state, semanticMap));
+		pipelineModel.applySemanticAssignment(
+			faceKey,
+			modelAssignmentFromSemanticMap(faceKey, faceState.state, semanticMap),
+		);
 
 		report.assignmentCount += semanticMap.assignments.length;
 		report.diagnosticCount += semanticMap.diagnostics.length;
@@ -225,18 +222,18 @@ export class SourceSemanticAssignmentRunner {
 	}
 
 	async writeJson(outputPath, content) {
-		await this.fs.mkdir(this.path.dirname(outputPath), { recursive: true });
+		await this.fs.mkdir(this.path.dirname(outputPath), {recursive: true});
 		await this.fs.writeFile(outputPath, `${JSON.stringify(content, null, 2)}\n`, 'utf8');
 	}
 
-	recordStateUpdate({ tilesetId, faceKey, generatedOn, stage }) {
+	recordStateUpdate({tilesetId, faceKey, generatedOn, stage}) {
 		if (!this.updateState) {
 			return;
 		}
 		this.updateState({
 			tilesetId,
 			faceKey,
-			...(generatedOn ? { generatedOn } : {}),
+			...(generatedOn ? {generatedOn} : {}),
 			stages: {
 				semanticAssignment: stage,
 			},
@@ -252,17 +249,9 @@ export class SourceSemanticAssignmentRunner {
 	normalizePath(filePath) {
 		return this.path.relative(this.rootDir, filePath).replaceAll('\\', '/');
 	}
-
 }
 
-function alignmentMapFromAlignmentMatches({
-	tilesetId,
-	faceKey,
-	faceState,
-	referenceSetId,
-	referenceFace,
-	generatedOn,
-}) {
+function alignmentMapFromAlignmentMatches({tilesetId, faceKey, faceState, referenceSetId, referenceFace, generatedOn}) {
 	const diagnostics = [];
 	const sourcePartMappings = [];
 	const candidates = [];
@@ -274,9 +263,10 @@ function alignmentMapFromAlignmentMatches({
 		if (referencePartIds.length !== 1) {
 			diagnostics.push({
 				level: 'warning',
-				code: referencePartIds.length === 0
-					? 'match-without-reference-part'
-					: 'match-with-multiple-reference-parts',
+				code:
+					referencePartIds.length === 0
+						? 'match-without-reference-part'
+						: 'match-with-multiple-reference-parts',
 				mappingId,
 				alignmentId: match.id || null,
 				referenceComponentIds: match.reference || [],
@@ -356,17 +346,24 @@ function reviewStatusForPart(faceState, partId) {
 		return 'accepted';
 	}
 
-	return Object.values(faceState?.bindings || {})
-		.filter((binding) => binding?.partId === partId)
-		.reduce((status, binding) => strongestReviewedStatus(status, binding.strength === 'accepted' ? 'accepted' : null), null)
-		|| 'inferred';
+	return (
+		Object.values(faceState?.bindings || {})
+			.filter((binding) => binding?.partId === partId)
+			.reduce(
+				(status, binding) =>
+					strongestReviewedStatus(status, binding.strength === 'accepted' ? 'accepted' : null),
+				null,
+			) || 'inferred'
+	);
 }
 
 function strengthForPart(faceState, partId) {
-	return Object.values(faceState?.bindings || {})
-		.filter((binding) => binding?.partId === partId)
-		.reduce((strength, binding) => strongestBindingStrength(strength, binding.strength || null), null)
-		|| 'tentative';
+	return (
+		Object.values(faceState?.bindings || {})
+			.filter((binding) => binding?.partId === partId)
+			.reduce((strength, binding) => strongestBindingStrength(strength, binding.strength || null), null) ||
+		'tentative'
+	);
 }
 
 function semanticContextFromCanonicalState(faceState, faceKey) {
@@ -375,11 +372,17 @@ function semanticContextFromCanonicalState(faceState, faceKey) {
 
 	for (const [componentId, binding] of Object.entries(faceState?.bindings || {})) {
 		bindings[componentId] = {
-			...(binding.partId ? { partId: binding.partId } : {}),
+			...(binding.partId ? {partId: binding.partId} : {}),
 			source: binding.source || '',
 			strength: canonicalSourceBindingStrength(binding.strength),
-			reviewStatus: binding.reviewStatus || (binding.strength === 'accepted' || binding.strength === 'strong' ? 'reviewed' : binding.strength === 'none' ? 'needs-review' : 'inferred'),
-			...(binding.updatedOn ? { updatedOn: binding.updatedOn } : {}),
+			reviewStatus:
+				binding.reviewStatus ||
+				(binding.strength === 'accepted' || binding.strength === 'strong'
+					? 'reviewed'
+					: binding.strength === 'none'
+						? 'needs-review'
+						: 'inferred'),
+			...(binding.updatedOn ? {updatedOn: binding.updatedOn} : {}),
 		};
 	}
 
@@ -390,7 +393,7 @@ function semanticContextFromCanonicalState(faceState, faceKey) {
 				strength: 'none',
 				source: 'part-review',
 				reviewStatus: 'accepted',
-				...(part.updatedOn ? { updatedOn: part.updatedOn } : {}),
+				...(part.updatedOn ? {updatedOn: part.updatedOn} : {}),
 			};
 		}
 	}
@@ -404,13 +407,18 @@ function semanticContextFromCanonicalState(faceState, faceKey) {
 
 function modelAssignmentFromSemanticMap(faceKey, existingState, semanticMap) {
 	const canonicalState = applyCanonicalSemanticAssignmentState(faceKey, existingState, semanticMap);
-	const bindings = Object.fromEntries(Object.entries(canonicalState.bindings || {})
-		.filter(([, binding]) => binding?.partId && binding.strength !== 'none')
-		.map(([componentId, binding]) => [componentId, {
-			componentId,
-			partId: binding.partId,
-			strength: binding.strength,
-		}]));
+	const bindings = Object.fromEntries(
+		Object.entries(canonicalState.bindings || {})
+			.filter(([, binding]) => binding?.partId && binding.strength !== 'none')
+			.map(([componentId, binding]) => [
+				componentId,
+				{
+					componentId,
+					partId: binding.partId,
+					strength: binding.strength,
+				},
+			]),
+	);
 	const parts = {};
 
 	for (const [partId, part] of Object.entries(canonicalState.parts || {})) {
@@ -428,46 +436,58 @@ function modelAssignmentFromSemanticMap(faceKey, existingState, semanticMap) {
 		delete parts[partId].acceptedOn;
 	}
 
-	return { parts, bindings };
+	return {parts, bindings};
 }
 
 function applyCanonicalSemanticAssignmentState(faceKey, faceState, semanticMap, generatedOn) {
 	return {
 		...(faceState || {}),
-		bindings: canonicalBindingsFromSemanticAssignment(faceKey, faceState?.bindings || {}, faceState?.parts || {}, semanticMap, generatedOn),
+		bindings: canonicalBindingsFromSemanticAssignment(
+			faceKey,
+			faceState?.bindings || {},
+			faceState?.parts || {},
+			semanticMap,
+			generatedOn,
+		),
 		parts: canonicalPartsFromSemanticAssignment(faceState?.parts || {}, semanticMap, generatedOn),
 	};
 }
 
 function canonicalBindingsFromSemanticAssignment(faceKey, existingBindings, existingParts, semanticMap, generatedOn) {
 	const semanticComponentIds = new Set(Object.keys(semanticMap.bindings || {}));
-	const nextBindings = Object.fromEntries(Object.entries(existingBindings || {})
-		.filter(([componentId, binding]) => semanticComponentIds.has(componentId)
-			|| acceptedPartBindingShouldBePreserved(existingParts, binding)
-			|| (binding?.source && !isSemanticAssignmentBindingSource(binding.source))));
+	const nextBindings = Object.fromEntries(
+		Object.entries(existingBindings || {}).filter(
+			([componentId, binding]) =>
+				semanticComponentIds.has(componentId) ||
+				acceptedPartBindingShouldBePreserved(existingParts, binding) ||
+				(binding?.source && !isSemanticAssignmentBindingSource(binding.source)),
+		),
+	);
 
 	for (const [componentId, binding] of Object.entries(semanticMap.bindings || {})) {
-		const partId = typeof binding.partId === 'string' && binding.partId
-			? binding.partId
-			: null;
-		if (!partId
-			&& binding.strength === 'none'
-			&& acceptedPartBindingShouldBePreserved(existingParts, nextBindings[componentId])) {
+		const partId = typeof binding.partId === 'string' && binding.partId ? binding.partId : null;
+		if (
+			!partId &&
+			binding.strength === 'none' &&
+			acceptedPartBindingShouldBePreserved(existingParts, nextBindings[componentId])
+		) {
 			continue;
 		}
-		if (acceptedPartBindingShouldBePreserved(existingParts, { ...binding, partId })) {
+		if (acceptedPartBindingShouldBePreserved(existingParts, {...binding, partId})) {
 			continue;
 		}
 
-		const acceptedOptionalPart = existingParts?.[partId]?.accepted
-			&& existingParts?.[partId]?.optional === true;
+		const acceptedOptionalPart = existingParts?.[partId]?.accepted && existingParts?.[partId]?.optional === true;
 		nextBindings[componentId] = {
 			...(nextBindings[componentId] || {}),
 			componentId,
 			partId,
 			strength: acceptedOptionalPart
 				? 'accepted'
-				: strongestBindingStrength(nextBindings[componentId]?.strength, canonicalSourceBindingStrength(binding.strength)),
+				: strongestBindingStrength(
+						nextBindings[componentId]?.strength,
+						canonicalSourceBindingStrength(binding.strength),
+					),
 			source: binding.source || 'source-semantic-assignment',
 			reviewStatus: acceptedOptionalPart
 				? 'accepted'
@@ -487,14 +507,14 @@ function acceptedPartBindingShouldBePreserved(existingParts, binding) {
 }
 
 function canonicalPartsFromSemanticAssignment(existingParts, semanticMap, generatedOn) {
-	const nextParts = { ...(existingParts || {}) };
-	const assignedPartIds = new Set((semanticMap.assignments || [])
-		.map((assignment) => assignment.referencePartId)
-		.filter(Boolean));
+	const nextParts = {...(existingParts || {})};
+	const assignedPartIds = new Set(
+		(semanticMap.assignments || []).map((assignment) => assignment.referencePartId).filter(Boolean),
+	);
 
 	for (const [partId, part] of Object.entries(nextParts)) {
 		if (!assignedPartIds.has(partId)) {
-			nextParts[partId] = { ...part };
+			nextParts[partId] = {...part};
 		}
 	}
 
@@ -530,14 +550,14 @@ function canonicalPartsFromSemanticAssignment(existingParts, semanticMap, genera
 
 		nextParts[partId] = {
 			...previousPartWithoutReview,
-			...(sourceComponentIds.length > 0 ? {
-				...(alignmentSourceBounds ? { alignmentSourceBounds } : {}),
-				...(alignmentAlignedBounds ? { alignmentAlignedBounds } : {}),
-				...(alignmentTransform ? { alignmentTransform } : {}),
-			} : {}),
-			...(accepted || nextReviewStatus === 'accepted'
-				? { accepted: true }
+			...(sourceComponentIds.length > 0
+				? {
+						...(alignmentSourceBounds ? {alignmentSourceBounds} : {}),
+						...(alignmentAlignedBounds ? {alignmentAlignedBounds} : {}),
+						...(alignmentTransform ? {alignmentTransform} : {}),
+					}
 				: {}),
+			...(accepted || nextReviewStatus === 'accepted' ? {accepted: true} : {}),
 			updatedOn: generatedOn,
 		};
 	}
@@ -559,7 +579,10 @@ function isSemanticAssignmentBindingSource(source) {
 }
 
 function semanticAssignmentIdForComponent(assignments, componentId) {
-	return assignments.find((assignment) => (assignment.sourceComponentIds || []).includes(componentId))?.assignmentId || null;
+	return (
+		assignments.find((assignment) => (assignment.sourceComponentIds || []).includes(componentId))?.assignmentId ||
+		null
+	);
 }
 
 function sourcePartStateFromAssignment(assignment) {
@@ -567,8 +590,9 @@ function sourcePartStateFromAssignment(assignment) {
 		state: assignment.sourceComponentIds?.length > 0 ? 'bound' : 'unbound',
 		strength: assignment.sourceComponentIds?.length > 0 ? assignment.strength || 'tentative' : 'none',
 		source: assignment.strategy || 'source-semantic-assignment',
-		reviewStatus: assignment.reviewStatus || (assignment.sourceComponentIds?.length > 0 ? 'inferred' : 'needs-review'),
-		...(assignment.unboundReason ? { reason: assignment.unboundReason } : {}),
+		reviewStatus:
+			assignment.reviewStatus || (assignment.sourceComponentIds?.length > 0 ? 'inferred' : 'needs-review'),
+		...(assignment.unboundReason ? {reason: assignment.unboundReason} : {}),
 	};
 }
 
@@ -673,16 +697,22 @@ export function assignSourceSemantics({
 			}
 			const previousPartState = previousPartStates[referencePartId];
 			const previousStrongComponentIds = strongComponentIdsForPart(previousBindingRecords, referencePartId);
-			const rebindingComponentIds = availableMappingComponentIds(mapping, previousBindingRecords, referencePartId);
+			const rebindingComponentIds = availableMappingComponentIds(
+				mapping,
+				previousBindingRecords,
+				referencePartId,
+			);
 
 			if (previousPartState?.reviewStatus === 'accepted') {
 				sourceSemanticPartStates[referencePartId] = normalizeSourceSemanticPartState(previousPartState);
 				continue;
 			}
 
-			if (previousPartState?.state === 'unbound'
-				&& rebindingComponentIds.length === 0
-				&& !referenceFace?.parts?.[referencePartId]?.allowEmpty) {
+			if (
+				previousPartState?.state === 'unbound' &&
+				rebindingComponentIds.length === 0 &&
+				!referenceFace?.parts?.[referencePartId]?.allowEmpty
+			) {
 				const assignment = assignmentFromBindingRecord({
 					faceKey,
 					referencePartId,
@@ -697,12 +727,13 @@ export function assignSourceSemantics({
 				continue;
 			}
 
-			const assignmentMapping = previousPartState?.state === 'unbound'
-				? {
-					...mapping,
-					sourceComponentIds: rebindingComponentIds,
-				}
-				: mapping;
+			const assignmentMapping =
+				previousPartState?.state === 'unbound'
+					? {
+							...mapping,
+							sourceComponentIds: rebindingComponentIds,
+						}
+					: mapping;
 			let assignment = assignmentFromMapping({
 				faceKey,
 				referencePartId,
@@ -729,7 +760,6 @@ export function assignSourceSemantics({
 				referencePartId,
 				existingAssignment ? mergeAssignments(existingAssignment, assignment) : assignment,
 			);
-
 		}
 	}
 
@@ -738,30 +768,39 @@ export function assignSourceSemantics({
 			continue;
 		}
 		if (previousPartStates[referencePartId]?.reviewStatus === 'accepted') {
-			sourceSemanticPartStates[referencePartId] = normalizeSourceSemanticPartState(previousPartStates[referencePartId]);
+			sourceSemanticPartStates[referencePartId] = normalizeSourceSemanticPartState(
+				previousPartStates[referencePartId],
+			);
 			continue;
 		}
 
-		assignmentsByReferencePartId.set(referencePartId, assignmentFromStrongBindingRecords({
-			faceKey,
+		assignmentsByReferencePartId.set(
 			referencePartId,
-			referencePart: referenceFace?.parts?.[referencePartId] || null,
-			componentIds,
-			previousSemanticMap,
-			previousBindingRecords,
-		}));
+			assignmentFromStrongBindingRecords({
+				faceKey,
+				referencePartId,
+				referencePart: referenceFace?.parts?.[referencePartId] || null,
+				componentIds,
+				previousSemanticMap,
+				previousBindingRecords,
+			}),
+		);
 	}
 
-	const unmatchedReferenceComponentIds = new Set((alignmentMap.diagnostics || [])
-		.filter((diagnostic) => diagnostic.code === 'unmatched-reference-components')
-		.flatMap((diagnostic) => diagnostic.referenceComponentIds || []));
+	const unmatchedReferenceComponentIds = new Set(
+		(alignmentMap.diagnostics || [])
+			.filter((diagnostic) => diagnostic.code === 'unmatched-reference-components')
+			.flatMap((diagnostic) => diagnostic.referenceComponentIds || []),
+	);
 
 	for (const [referencePartId, referencePart] of Object.entries(referenceFace?.parts || {})) {
 		if (assignmentsByReferencePartId.has(referencePartId) || referencePart?.allowEmpty) {
 			continue;
 		}
 		if (previousPartStates[referencePartId]?.reviewStatus === 'accepted') {
-			sourceSemanticPartStates[referencePartId] = normalizeSourceSemanticPartState(previousPartStates[referencePartId]);
+			sourceSemanticPartStates[referencePartId] = normalizeSourceSemanticPartState(
+				previousPartStates[referencePartId],
+			);
 			continue;
 		}
 		const referenceComponentIds = uniqueValues(referencePart.componentIds || []);
@@ -806,19 +845,22 @@ export function assignSourceSemantics({
 			continue;
 		}
 
-		assignmentsByReferencePartId.set(referencePartId, assignmentFromBindingRecord({
-			faceKey,
+		assignmentsByReferencePartId.set(
 			referencePartId,
-			referencePart: referenceFace?.parts?.[referencePartId] || null,
-			partState,
-			previousAssignment: previousAssignmentForPart(previousSemanticMap, referencePartId),
-		}));
+			assignmentFromBindingRecord({
+				faceKey,
+				referencePartId,
+				referencePart: referenceFace?.parts?.[referencePartId] || null,
+				partState,
+				previousAssignment: previousAssignmentForPart(previousSemanticMap, referencePartId),
+			}),
+		);
 		sourceSemanticPartStates[referencePartId] = normalizeSourceSemanticPartState(partState);
 	}
 
 	const assignments = [...assignmentsByReferencePartId.values()];
 	for (const assignment of assignments) {
-		const { bindings, partState } = bindingRecordsFromAssignment(assignment);
+		const {bindings, partState} = bindingRecordsFromAssignment(assignment);
 		Object.assign(sourceSemanticBindings, bindings);
 		if (partState) {
 			sourceSemanticPartStates[assignment.referencePartId] = partState;
@@ -833,13 +875,16 @@ export function assignSourceSemantics({
 			};
 		}
 	}
-	const sourceSemanticComponents = Object.fromEntries(Object.keys(sourceSemanticBindings)
-		.sort((left, right) => left.localeCompare(right))
-		.map((componentId) => [componentId, { componentId }]));
-	const status = diagnostics.some((diagnostic) => diagnostic.level === 'warning')
-		|| assignments.some((assignment) => assignment.reviewStatus === 'needs-review')
-		? 'needs-review'
-		: 'inferred';
+	const sourceSemanticComponents = Object.fromEntries(
+		Object.keys(sourceSemanticBindings)
+			.sort((left, right) => left.localeCompare(right))
+			.map((componentId) => [componentId, {componentId}]),
+	);
+	const status =
+		diagnostics.some((diagnostic) => diagnostic.level === 'warning') ||
+		assignments.some((assignment) => assignment.reviewStatus === 'needs-review')
+			? 'needs-review'
+			: 'inferred';
 
 	return {
 		schemaVersion: 1,
@@ -880,10 +925,7 @@ function mergeAssignments(existingAssignment, nextAssignment) {
 		...existingAssignment.referenceComponentIds,
 		...nextAssignment.referenceComponentIds,
 	]);
-	const alignmentIds = uniqueValues([
-		...existingAssignment.alignmentIds,
-		...nextAssignment.alignmentIds,
-	]);
+	const alignmentIds = uniqueValues([...existingAssignment.alignmentIds, ...nextAssignment.alignmentIds]);
 	const assignmentType = 'source';
 
 	return {
@@ -893,13 +935,20 @@ function mergeAssignments(existingAssignment, nextAssignment) {
 		alignmentIds,
 		alignmentCandidateId: existingAssignment.alignmentCandidateId || nextAssignment.alignmentCandidateId,
 		assignmentType,
-		strength: strongestAssignmentStrength(existingAssignment.strength, nextAssignment.strength, sourceComponentIds.length),
-		strategy: uniqueValues([existingAssignment.strategy, nextAssignment.strategy]).join('+') || existingAssignment.strategy,
+		strength: strongestAssignmentStrength(
+			existingAssignment.strength,
+			nextAssignment.strength,
+			sourceComponentIds.length,
+		),
+		strategy:
+			uniqueValues([existingAssignment.strategy, nextAssignment.strategy]).join('+') ||
+			existingAssignment.strategy,
 		score: existingAssignment.score ?? nextAssignment.score,
 		scoreKind: existingAssignment.scoreKind ?? nextAssignment.scoreKind,
-		reviewStatus: existingAssignment.reviewStatus === 'needs-review' || nextAssignment.reviewStatus === 'needs-review'
-			? 'needs-review'
-			: existingAssignment.reviewStatus,
+		reviewStatus:
+			existingAssignment.reviewStatus === 'needs-review' || nextAssignment.reviewStatus === 'needs-review'
+				? 'needs-review'
+				: existingAssignment.reviewStatus,
 		provenance: {
 			...existingAssignment.provenance,
 			mappingIds: uniqueValues([
@@ -912,13 +961,7 @@ function mergeAssignments(existingAssignment, nextAssignment) {
 	};
 }
 
-function assignmentFromMapping({
-	faceKey,
-	referencePartId,
-	referencePart,
-	mapping,
-	diagnostics,
-}) {
+function assignmentFromMapping({faceKey, referencePartId, referencePart, mapping, diagnostics}) {
 	const sourceComponentIds = uniqueValues(mapping.sourceComponentIds || []);
 	const assignmentType = 'source';
 	const needsReview = sourceComponentIds.length === 0;
@@ -947,14 +990,15 @@ function assignmentFromMapping({
 		alignmentIds: uniqueValues(mapping.alignmentIds || []),
 		alignmentCandidateId: mapping.alignmentCandidateId || null,
 		assignmentType,
-		strength: assignmentType === 'source' && sourceComponentIds.length > 0
-			? normalizeAssignmentStrength(mapping.strength || 'tentative')
-			: 'none',
+		strength:
+			assignmentType === 'source' && sourceComponentIds.length > 0
+				? normalizeAssignmentStrength(mapping.strength || 'tentative')
+				: 'none',
 		strategy: mapping.strategy || 'alignment-source-part-mapping',
 		score: mapping.score ?? null,
 		scoreKind: mapping.scoreKind ?? null,
 		identityResolver: mapping.identityResolver || null,
-		reviewStatus: needsReview ? 'needs-review' : (mapping.reviewStatus || 'inferred'),
+		reviewStatus: needsReview ? 'needs-review' : mapping.reviewStatus || 'inferred',
 		provenance: {
 			stage: 'source-semantic-assignment',
 			source: 'alignment-source-part-mapping',
@@ -966,8 +1010,10 @@ function assignmentFromMapping({
 }
 
 function previousAssignmentForPart(previousSemanticMap, referencePartId) {
-	return (previousSemanticMap?.assignments || [])
-		.find((assignment) => assignment.referencePartId === referencePartId) || null;
+	return (
+		(previousSemanticMap?.assignments || []).find((assignment) => assignment.referencePartId === referencePartId) ||
+		null
+	);
 }
 
 function assignmentFromBindingRecord({
@@ -980,42 +1026,43 @@ function assignmentFromBindingRecord({
 }) {
 	const normalizedPartState = normalizeSourceSemanticPartState(partState);
 	const assignmentType = 'source';
-	const { bindingStrength, ...previousAssignmentFields } = previousAssignment || {};
+	const {bindingStrength, ...previousAssignmentFields} = previousAssignment || {};
 
 	return {
 		...previousAssignmentFields,
 		assignmentId: previousAssignment?.assignmentId || `assign.${faceKey}.${referencePartId}`,
-		sourcePartId: normalizedPartState.state === 'unbound'
-			? referencePartId
-			: previousAssignment?.sourcePartId || referencePartId,
+		sourcePartId:
+			normalizedPartState.state === 'unbound'
+				? referencePartId
+				: previousAssignment?.sourcePartId || referencePartId,
 		referencePartId,
 		globalPartId: previousAssignment?.globalPartId || referencePart?.globalPartId || null,
 		role: previousAssignment?.role || referencePart?.role || null,
 		contentKind: previousAssignment?.contentKind || referencePart?.contentKind || null,
 		colorStrategy: previousAssignment?.colorStrategy || referencePart?.colorStrategy || null,
 		sourceComponentIds: [],
-		referenceComponentIds: uniqueValues(previousAssignment?.referenceComponentIds || referencePart?.componentIds || []),
+		referenceComponentIds: uniqueValues(
+			previousAssignment?.referenceComponentIds || referencePart?.componentIds || [],
+		),
 		assignmentType,
 		strength: 'none',
 		strategy: 'source-part-state',
 		reviewStatus: normalizedPartState.reviewStatus,
-		...(normalizedPartState.state === 'unbound' ? {
-			unboundReason: normalizedPartState.reason || previousAssignment?.unboundReason || 'manual',
-		} : {}),
+		...(normalizedPartState.state === 'unbound'
+			? {
+					unboundReason: normalizedPartState.reason || previousAssignment?.unboundReason || 'manual',
+				}
+			: {}),
 		provenance: {
 			...(previousAssignment?.provenance || {}),
 			stage: 'source-semantic-assignment',
 			source: 'part-state',
-			...(blockedMappingId ? { blockedMappingId } : {}),
+			...(blockedMappingId ? {blockedMappingId} : {}),
 		},
 	};
 }
 
-function assignmentFromUnmatchedReferencePart({
-	faceKey,
-	referencePartId,
-	referencePart,
-}) {
+function assignmentFromUnmatchedReferencePart({faceKey, referencePartId, referencePart}) {
 	return {
 		assignmentId: `assign.${faceKey}.${referencePartId}`,
 		sourcePartId: referencePartId,
@@ -1058,7 +1105,9 @@ function assignmentFromStrongBindingRecords({
 		role: previousAssignment?.role || referencePart?.role || null,
 		contentKind: previousAssignment?.contentKind || referencePart?.contentKind || null,
 		sourceComponentIds: uniqueValues(componentIds),
-		referenceComponentIds: uniqueValues(previousAssignment?.referenceComponentIds || referencePart?.componentIds || []),
+		referenceComponentIds: uniqueValues(
+			previousAssignment?.referenceComponentIds || referencePart?.componentIds || [],
+		),
 		assignmentType: 'source',
 		strength: bindingStrength,
 		strategy: 'manual',
@@ -1074,12 +1123,17 @@ function assignmentFromStrongBindingRecords({
 function bindingRecordsFromAssignment(assignment) {
 	if ((assignment.sourceComponentIds || []).length > 0) {
 		return {
-			bindings: Object.fromEntries(uniqueValues(assignment.sourceComponentIds || []).map((componentId) => [componentId, {
-				partId: assignment.referencePartId,
-				strength: normalizeAssignmentStrength(assignment.strength),
-				reviewStatus: assignment.reviewStatus || 'inferred',
-				source: assignment.strategy || 'alignment-source-part-mapping',
-			}])),
+			bindings: Object.fromEntries(
+				uniqueValues(assignment.sourceComponentIds || []).map((componentId) => [
+					componentId,
+					{
+						partId: assignment.referencePartId,
+						strength: normalizeAssignmentStrength(assignment.strength),
+						reviewStatus: assignment.reviewStatus || 'inferred',
+						source: assignment.strategy || 'alignment-source-part-mapping',
+					},
+				]),
+			),
 			partState: {
 				state: 'bound',
 				strength: normalizeAssignmentStrength(assignment.strength),
@@ -1114,19 +1168,20 @@ function normalizeSourceSemanticPartState(partState) {
 		state: 'unbound',
 		strength: 'none',
 		reviewStatus: partState.reviewStatus || 'needs-review',
-		...(partState.reason ? { reason: partState.reason } : {}),
+		...(partState.reason ? {reason: partState.reason} : {}),
 	};
 }
 
 function countBoundSourceSemanticBindings(bindings) {
-	return Object.values(bindings || {})
-		.filter((binding) => binding?.partId && binding.strength !== 'none')
-		.length;
+	return Object.values(bindings || {}).filter((binding) => binding?.partId && binding.strength !== 'none').length;
 }
 
 function strongComponentIdsForPart(bindings, partId) {
 	return Object.entries(bindings || {})
-		.filter(([, binding]) => binding?.partId === partId && (binding.strength === 'strong' || binding.strength === 'accepted'))
+		.filter(
+			([, binding]) =>
+				binding?.partId === partId && (binding.strength === 'strong' || binding.strength === 'accepted'),
+		)
 		.map(([componentId]) => componentId);
 }
 
@@ -1147,18 +1202,15 @@ function strongComponentIdsByPart(bindings) {
 }
 
 function strongestBindingStrengthForComponents(bindings, componentIds) {
-	return componentIds.some((componentId) => bindings?.[componentId]?.strength === 'accepted')
-		? 'accepted'
-		: 'strong';
+	return componentIds.some((componentId) => bindings?.[componentId]?.strength === 'accepted') ? 'accepted' : 'strong';
 }
 
 function availableMappingComponentIds(mapping, bindings, partId) {
-	return uniqueValues(mapping?.sourceComponentIds || [])
-		.filter((componentId) => {
-			const binding = bindings?.[componentId];
+	return uniqueValues(mapping?.sourceComponentIds || []).filter((componentId) => {
+		const binding = bindings?.[componentId];
 
-			return !binding?.partId || binding.partId === partId || !['strong', 'accepted'].includes(binding.strength);
-		});
+		return !binding?.partId || binding.partId === partId || !['strong', 'accepted'].includes(binding.strength);
+	});
 }
 
 function allAlignmentSourceComponentIds(alignmentMap) {

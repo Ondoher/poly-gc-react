@@ -1,9 +1,9 @@
-import React from "react";
+import React from 'react';
 import GameCenterContext from 'common/GameCenterContext.js';
 
 export default class Pages extends React.Component {
-    static contextType = GameCenterContext;
-	constructor (props) {
+	static contextType = GameCenterContext;
+	constructor(props) {
 		super(props);
 
 		this.serviceName = props.serviceName;
@@ -38,10 +38,10 @@ export default class Pages extends React.Component {
 	}
 
 	added(pages) {
-		this.setState({pages: pages})
+		this.setState({pages: pages});
 	}
 
-	async getPageComponent(name, state={}) {
+	async getPageComponent(name, state = {}) {
 		state = {...state, ...this.state};
 
 		var pages = state.pages || {};
@@ -52,7 +52,7 @@ export default class Pages extends React.Component {
 		}
 
 		if (page.component) {
-			return page.component
+			return page.component;
 		}
 
 		var component = await page.service.render();
@@ -61,7 +61,7 @@ export default class Pages extends React.Component {
 		}
 
 		page.component = component;
-		state = {...state, pages: pages}
+		state = {...state, pages: pages};
 		this.setState(state);
 
 		return page.component;
@@ -77,7 +77,7 @@ export default class Pages extends React.Component {
 		this.previousPage = this.state.currentPage;
 
 		this.setState({
-			currentPage: name
+			currentPage: name,
 		});
 	}
 
@@ -92,17 +92,17 @@ export default class Pages extends React.Component {
 		var state = {
 			pages: viewState.pages,
 			ready: true,
-		}
+		};
 		this.firstPage = viewState.current;
 
 		if (this.firstPage) {
 			state = {...state, currentPage: this.firstPage};
-			this.getPageComponent(this.firstPage, state)
+			this.getPageComponent(this.firstPage, state);
 		}
 
 		this.setState(state);
 		this.updatePageStates();
-}
+	}
 
 	render() {
 		if (!this.state.ready) return;
@@ -111,7 +111,7 @@ export default class Pages extends React.Component {
 		var childNames = Object.keys(pages);
 		var children = [];
 
-		childNames.forEach(function(child) {
+		childNames.forEach(function (child) {
 			var page = pages[child];
 			if (page.component) {
 				children.push(page.component);
@@ -122,6 +122,6 @@ export default class Pages extends React.Component {
 			<div style={this.props.style} id={this.props.id} className={this.props.className} key={this.props.id}>
 				{children}
 			</div>
-		)
+		);
 	}
 }

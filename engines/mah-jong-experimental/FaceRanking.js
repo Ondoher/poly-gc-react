@@ -1,11 +1,7 @@
-import FaceAvoidance from "./FaceAvoidance.js";
-import {
-	getRankedWindow,
-	selectRankedCandidate,
-} from './ranked-window.js';
+import FaceAvoidance from './FaceAvoidance.js';
+import {getRankedWindow, selectRankedCandidate} from './ranked-window.js';
 
 export class FaceRanking {
-
 	/**
 	 * Create a face-ranking helper over the generator state and its shared
 	 * face inventory.
@@ -39,7 +35,6 @@ export class FaceRanking {
 
 		return preferred ? baseSortValue * multiplier : baseSortValue;
 	}
-
 
 	/**
 	 * Calculate the combined avoidance penalty for assigning a face group to a
@@ -81,9 +76,7 @@ export class FaceRanking {
 			return 1;
 		}
 
-		let closenessRatio = reusedCount <= 1
-			? 1
-			: 1 - (reusedIndex / (reusedCount - 1));
+		let closenessRatio = reusedCount <= 1 ? 1 : 1 - reusedIndex / (reusedCount - 1);
 		let extra = Math.floor(easeStrength * closenessRatio * duplicateScale);
 
 		return 1 + extra;
@@ -113,7 +106,7 @@ export class FaceRanking {
 		let candidates = [];
 
 		for (let [faceGroup, faceSet] of this.inventory.faceSets) {
-			let { faces } = faceSet;
+			let {faces} = faceSet;
 
 			if (faces.length < requiredFaces) {
 				continue;
@@ -127,21 +120,17 @@ export class FaceRanking {
 			let dups = this.getFaceGroupDuplicateCount(distance, assignedFacePairs.length) - 1;
 
 			let weightFactor = this.getAvoidancePenalty(faceGroup, tiles);
-			if (weightFactor !== 0)  {
+			if (weightFactor !== 0) {
 				weightFactor = 1 / weightFactor;
 			}
 
 			// Lower assignment-history distance values rank toward easier selection.
 			distanceFactor = this.getAdjustedDistanceFactor(distanceFactor);
 
-			let preferredFactor =  preferredFaceGroup === faceGroup ?
-				faceAssignmentRules.preferredMultiplier ?? 0.5 :
-				1;
+			let preferredFactor =
+				preferredFaceGroup === faceGroup ? (faceAssignmentRules.preferredMultiplier ?? 0.5) : 1;
 
-			let finalFactor = baseFactor *
-				pairCountFactor *
-				distanceFactor *
-				preferredFactor;
+			let finalFactor = baseFactor * pairCountFactor * distanceFactor * preferredFactor;
 
 			if (weightFactor !== 0 && distance === -1) {
 				finalFactor = weightFactor;
@@ -156,7 +145,7 @@ export class FaceRanking {
 			candidates.push(candidate);
 		}
 
-		let compare = function(left, right) {
+		let compare = function (left, right) {
 			return left.sortValue - right.sortValue || left.faceGroup - right.faceGroup;
 		};
 
@@ -168,7 +157,7 @@ export class FaceRanking {
 			for (let idx = 0; idx < candidate.dups; idx++) {
 				expanded.push(candidate);
 			}
-		})
+		});
 
 		return expanded.map((candidate) => candidate.faceGroup);
 	}
@@ -204,5 +193,4 @@ export class FaceRanking {
 			minWindowRatio: this.state.getMinWindowRatio(),
 		});
 	}
-
 }

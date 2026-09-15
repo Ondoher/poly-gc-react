@@ -27,23 +27,23 @@ The SVG-shaped input/output boundary for each SVG-consuming stage lives in
 
 ## Stage Summary
 
-| Stage | Owns | Gate |
-| --- | --- | --- |
-| 0. Reference setup | PNG-derived reference structure and semantic part bindings. | Required reference parts are resolved. |
-| 1. Tileset intake | Source inventory, copied source SVGs, and initial `pipeline.json`. | Source attribution and face inventory are usable. |
-| 2. Source normalization | Non-semantic source geometry artifacts, including visible paint-layer flattening for distinct overlapping opaque fills. | Normalized component artifact is available or the face is marked unusable. |
-| 3. Optional part assignment | Source-side optional label/glyph presence, absence, and reservations. | Optional parts are accepted as bound or source-absent. |
-| 4. Source alignment | Visual correspondence between source candidates and reference parts. | Compact matches and placement fields are written. |
-| 5. Source assignment | Accepted source bindings and accepted source absence. | Source bindings/parts are accepted for rendering. |
-| 6. Final rendering composition | Output policy, layout, color, generated glyphs, and final rendered SVGs. | Rendered color SVG artifact pointers are current for accepted source state. |
-| 7. Visual approval | Acceptance or correction routing for export-ready visual output. | Visual result is accepted for exact inputs. |
-| 8. Prepared SVG export | Canonical prepared SVGs and validation artifacts. | Prepared SVGs pass validation. |
-| 9. Cutter SVG simplification | Cutter-facing SVG geometry cleanup after accepted/rendered output. | Simplified SVG is valid and traceable to rendered/source evidence. |
-| 10. Base tile selection and asset planning | Selected base tile and queue planning. | Base tile is selected and build plan is known. |
-| 11. SVG cutter generation | Cutter GLB and cutter metadata. | Cutter artifacts exist for the face hash. |
-| 12. Stamped body generation | Carved/stamped body GLB and metadata. | Stamped body artifacts exist for the face hash. |
-| 13. Colored inlay generation | Colored inlay GLB and metadata. | Inlay artifacts exist for the face hash. |
-| 14. Asset review | Reviewable generated asset status and preview. | Generated output is ready, previewable, and reviewable. |
+| Stage                                      | Owns                                                                                                                    | Gate                                                                        |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 0. Reference setup                         | PNG-derived reference structure and semantic part bindings.                                                             | Required reference parts are resolved.                                      |
+| 1. Tileset intake                          | Source inventory, copied source SVGs, and initial `pipeline.json`.                                                      | Source attribution and face inventory are usable.                           |
+| 2. Source normalization                    | Non-semantic source geometry artifacts, including visible paint-layer flattening for distinct overlapping opaque fills. | Normalized component artifact is available or the face is marked unusable.  |
+| 3. Optional part assignment                | Source-side optional label/glyph presence, absence, and reservations.                                                   | Optional parts are accepted as bound or source-absent.                      |
+| 4. Source alignment                        | Visual correspondence between source candidates and reference parts.                                                    | Compact matches and placement fields are written.                           |
+| 5. Source assignment                       | Accepted source bindings and accepted source absence.                                                                   | Source bindings/parts are accepted for rendering.                           |
+| 6. Final rendering composition             | Output policy, layout, color, generated glyphs, and final rendered SVGs.                                                | Rendered color SVG artifact pointers are current for accepted source state. |
+| 7. Visual approval                         | Acceptance or correction routing for export-ready visual output.                                                        | Visual result is accepted for exact inputs.                                 |
+| 8. Prepared SVG export                     | Canonical prepared SVGs and validation artifacts.                                                                       | Prepared SVGs pass validation.                                              |
+| 9. Cutter SVG simplification               | Cutter-facing SVG geometry cleanup after accepted/rendered output.                                                      | Simplified SVG is valid and traceable to rendered/source evidence.          |
+| 10. Base tile selection and asset planning | Selected base tile and queue planning.                                                                                  | Base tile is selected and build plan is known.                              |
+| 11. SVG cutter generation                  | Cutter GLB and cutter metadata.                                                                                         | Cutter artifacts exist for the face hash.                                   |
+| 12. Stamped body generation                | Carved/stamped body GLB and metadata.                                                                                   | Stamped body artifacts exist for the face hash.                             |
+| 13. Colored inlay generation               | Colored inlay GLB and metadata.                                                                                         | Inlay artifacts exist for the face hash.                                    |
+| 14. Asset review                           | Reviewable generated asset status and preview.                                                                          | Generated output is ready, previewable, and reviewable.                     |
 
 ## Ownership Rules
 

@@ -21,20 +21,20 @@ export function debounce(cb, duration, maxDuration) {
 	var toHdl;
 	var start = Date.now() - maxDuration;
 
-	return function(...args) {
+	return function (...args) {
 		var now = Date.now();
 		var ms;
 
 		if (toHdl) {
-		var end = Math.min(now + duration, start + maxDuration);
+			var end = Math.min(now + duration, start + maxDuration);
 			ms = end - now;
 			clearTimeout(toHdl);
 		} else {
-			start =  now;
+			start = now;
 			ms = duration;
 		}
 
-		toHdl = setTimeout(function() {
+		toHdl = setTimeout(function () {
 			toHdl = false;
 			try {
 				cb(...args);

@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import * as THREE from 'three';
 import sharp from 'sharp';
-import { ROOT_DIR } from '../shared/asset-paths.js';
+import {ROOT_DIR} from '../shared/asset-paths.js';
 
 /**
  * Applies base-tile material texture maps declared in base tile metadata.
@@ -66,10 +66,7 @@ async function loadDataTexture(texturePath) {
 		throw new Error(`Missing base tile texture: ${texturePath}.`);
 	}
 
-	const image = await sharp(resolved)
-		.ensureAlpha()
-		.raw()
-		.toBuffer({ resolveWithObject: true });
+	const image = await sharp(resolved).ensureAlpha().raw().toBuffer({resolveWithObject: true});
 	const texture = new THREE.DataTexture(
 		new Uint8Array(image.data),
 		image.info.width,

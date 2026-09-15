@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import {fileURLToPath} from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(here, '..', '..');
@@ -29,19 +29,13 @@ function isAbsolutePath(value) {
 
 export function normalizePath(filePath) {
 	const normalized = forceToPosix(filePath);
-	const absolutePath = isAbsolutePath(normalized)
-		? normalized
-		: forceToPosix(path.resolve(ROOT_DIR, normalized));
+	const absolutePath = isAbsolutePath(normalized) ? normalized : forceToPosix(path.resolve(ROOT_DIR, normalized));
 	const relativePath = forceToPosix(path.relative(ROOT_DIR, absolutePath));
 
-	return relativePath.startsWith('../') || relativePath === '..'
-		? absolutePath
-		: relativePath;
+	return relativePath.startsWith('../') || relativePath === '..' ? absolutePath : relativePath;
 }
 
 export function resolvePath(filePath) {
 	const normalized = forceToPosix(filePath);
-	return isAbsolutePath(normalized)
-		? normalized
-		: path.resolve(ROOT_DIR, normalized);
+	return isAbsolutePath(normalized) ? normalized : path.resolve(ROOT_DIR, normalized);
 }

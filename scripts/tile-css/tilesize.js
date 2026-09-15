@@ -1,16 +1,10 @@
-
 import path from 'node:path/posix';
 import {readFile, writeFile} from 'node:fs/promises';
-import parseArgs  from 'minimist';
-import { getOptions, getOption } from './options.js';
-import { forceToPosix, readJsonFile } from './utils.js';
-import { GRID_DEPTH, GRID_WIDTH, GRID_HEIGHT } from './table-size.js';
-import {
-	buildMetrics,
-	getCanvasDimensions,
-	getSizeDefinition,
-	gridToCssPosition,
-} from './metrics.js';
+import parseArgs from 'minimist';
+import {getOptions, getOption} from './options.js';
+import {forceToPosix, readJsonFile} from './utils.js';
+import {GRID_DEPTH, GRID_WIDTH, GRID_HEIGHT} from './table-size.js';
+import {buildMetrics, getCanvasDimensions, getSizeDefinition, gridToCssPosition} from './metrics.js';
 
 var argv = parseArgs(process.argv.slice(2));
 var params = argv._;
@@ -24,7 +18,7 @@ var flags = {
 	bpad: 'b',
 	size: 's',
 	config: 'c',
-}
+};
 
 var size;
 var configFilename;
@@ -48,15 +42,13 @@ var scriptDir = forceToPosix(new URL('.', import.meta.url).pathname);
 var scriptCommand = 'node .\\scripts\\tile-css\\tilesize.js';
 var defaultConfigFilename = path.join(scriptDir, 'tile-sizes.json');
 
-async function renderInstructions()
-{
+async function renderInstructions() {
 	var filename = path.join(scriptDir, 'ts-instructions.txt');
-	var instructions = await readFile(filename, {encoding:'utf-8'});
+	var instructions = await readFile(filename, {encoding: 'utf-8'});
 	console.log(instructions);
-};
+}
 
-async function loadSizeOptions()
-{
+async function loadSizeOptions() {
 	size = getOption(argv, 'size', 's') || params[0] || 'normal';
 	configFilename = getOption(argv, 'config', 'c') || defaultConfigFilename;
 
@@ -88,8 +80,7 @@ async function loadSizeOptions()
 // to calculate position, 0, 0, 6 is in the top left,
 
 function outputComment() {
-	return(
-`/*******************************************************************************
+	return `/*******************************************************************************
 This file auto generated for tile type: ${name}
 
 Tile shape
@@ -111,12 +102,11 @@ face:   ${faceWidth}, ${faceHeight}
 cell:   ${gridWidth}, ${gridHeight}
 *******************************************************************************/
 
-`)
+`;
 }
 
 function renderCanvasSize() {
-	return (
-`/*==============================================================================
+	return `/*==============================================================================
 The size of the canvas based on the tile dimensions
 */
 .${name}.board-canvas {
@@ -124,12 +114,11 @@ The size of the canvas based on the tile dimensions
 	height: ${canvasHeight}px;
 }
 
-`)
+`;
 }
 
 function renderPreviewMaxSize() {
-	return (
-`/*==============================================================================
+	return `/*==============================================================================
 The preview surface size when this tile size is the maximum available size
 */
 .preview-max-${name} {
@@ -137,25 +126,22 @@ The preview surface size when this tile size is the maximum available size
 	height: ${canvasHeight}px;
 }
 
-`)
+`;
 }
 
 async function writeCssFile(css) {
 	await writeFile(outputFilename, css, 'utf-8');
 }
 
-function gridToCss(x, y, z)
-{
+function gridToCss(x, y, z) {
 	return gridToCssPosition(x, y, z, metrics);
 }
 
 var canvasWidth;
 var canvasHeight;
 
-function renderDefaults()
-{
-	return (
-`/*==============================================================================
+function renderDefaults() {
+	return `/*==============================================================================
 Common css for all tiles
 */
 .${name} .tile {
@@ -187,25 +173,21 @@ Common css for all tiles
 	pointer-events: none;
 }
 .${name} .highlight:after {opacity: 1;}
-`)
+`;
 }
 
-function outputGrid()
-{
-	var result = (
-
-`/*==============================================================================
+function outputGrid() {
+	var result = `/*==============================================================================
 Defines absolute position for each cell in the grid. Add these classes to a tile
 to position it in the correct grid cell.
 
 The correct class to use looks like this: pos-<x>-<y>-<z>
 */
-`)
+`;
 
 	for (var z = 0; z < 7; z++)
 		for (var y = 0; y < GRID_HEIGHT; y++)
-			for (var x = 0; x < GRID_WIDTH; x++)
-			{
+			for (var x = 0; x < GRID_WIDTH; x++) {
 				var coord = gridToCss(x, y, z);
 
 				var style = `.${name} .pos-${x}-${y}-${z} {`;
@@ -216,13 +198,11 @@ The correct class to use looks like this: pos-<x>-<y>-<z>
 
 				result += style + '\n';
 			}
-	return result
+	return result;
 }
 
-async function main()
-{
-	if (params.length === 0 || params.length > 2)
-	{
+async function main() {
+	if (params.length === 0 || params.length > 2) {
 		await renderInstructions();
 		process.exit(1);
 	}
@@ -231,8 +211,14 @@ async function main()
 	outputFilename = params[1] || `${name}.css`;
 	await loadSizeOptions();
 
-	if (width === undefined || height === undefined || depthx === undefined || depthy === undefined || rightPad === undefined || bottomPad === undefined)
-	{
+	if (
+		width === undefined ||
+		height === undefined ||
+		depthx === undefined ||
+		depthy === undefined ||
+		rightPad === undefined ||
+		bottomPad === undefined
+	) {
 		await renderInstructions();
 		process.exit(1);
 	}

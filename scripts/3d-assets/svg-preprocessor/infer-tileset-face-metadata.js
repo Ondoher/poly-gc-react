@@ -1,13 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import {
-	ASSETS_3D_JSON_DIR,
-	OUTPUT_3D_DIR,
-	WIKI_SOURCE_SVGS_DIR,
-} from '../shared/asset-paths.js';
-import { findSmallIsolatedCandidates, getComponentUnionBounds } from './normalized-face-components.js';
-import { extractSourceSvgComponents } from './source-svg-components.js';
-import { normalizePath, writeJson } from './preprocessed-face-validation-utils.js';
+import {ASSETS_3D_JSON_DIR, OUTPUT_3D_DIR, WIKI_SOURCE_SVGS_DIR} from '../shared/asset-paths.js';
+import {findSmallIsolatedCandidates, getComponentUnionBounds} from './normalized-face-components.js';
+import {extractSourceSvgComponents} from './source-svg-components.js';
+import {normalizePath, writeJson} from './preprocessed-face-validation-utils.js';
 
 const FACE_METADATA_PATH = path.resolve(ASSETS_3D_JSON_DIR, 'face-preprocessing-metadata.json');
 const OUTPUT_DIR = path.resolve(OUTPUT_3D_DIR, 'metadata-inference');
@@ -17,7 +13,8 @@ const outputPath = path.resolve(process.cwd(), readArgument('--output') || DEFAU
 const tilesetId = readArgument('--tileset-id') || inferTilesetId(sourceDir);
 const faceMetadata = JSON.parse(fs.readFileSync(FACE_METADATA_PATH, 'utf8'));
 
-const files = fs.readdirSync(sourceDir)
+const files = fs
+	.readdirSync(sourceDir)
 	.filter((file) => file.toLowerCase().endsWith('.svg'))
 	.sort((left, right) => left.localeCompare(right));
 const metadata = {
@@ -38,9 +35,7 @@ for (const file of files) {
 		.filter((component) => !component.tileLayerCandidate)
 		.filter((component) => !component.negativeSpaceCandidate);
 	const allBounds = getComponentUnionBounds(paintComponents);
-	const glyphCandidates = allBounds
-		? findSourceGlyphCandidates(paintComponents, allBounds)
-		: [];
+	const glyphCandidates = allBounds ? findSourceGlyphCandidates(paintComponents, allBounds) : [];
 	const entry = {
 		sourceFile: normalizePath(svgPath),
 		canvas: canvasFromViewBox(extracted.viewBox, allBounds),
@@ -59,7 +54,13 @@ for (const file of files) {
 		entry.character = character;
 	}
 
-	if (entry.number || entry.character || entry.glyphCandidates.length > 0 || faceInfo.labelText || faceMetadata[faceKey]) {
+	if (
+		entry.number ||
+		entry.character ||
+		entry.glyphCandidates.length > 0 ||
+		faceInfo.labelText ||
+		faceMetadata[faceKey]
+	) {
 		metadata.tilesetGlyphs[faceKey] = entry;
 	}
 }
@@ -106,9 +107,8 @@ function inferNumber(metadata, glyphCandidates, allBounds) {
 		};
 	}
 
-	const expectedCorner = metadata.glyphLayout?.number?.sourceCorner
-		|| metadata.referenceGlyphs?.number?.location
-		|| 'topLeft';
+	const expectedCorner =
+		metadata.glyphLayout?.number?.sourceCorner || metadata.referenceGlyphs?.number?.location || 'topLeft';
 	const candidate = pickCandidate(glyphCandidates, {
 		expectedCorner,
 		expectedColor: metadata.labelColor,
@@ -117,15 +117,16 @@ function inferNumber(metadata, glyphCandidates, allBounds) {
 
 	return candidate
 		? {
-			present: true,
-			text: metadata.labelText,
-			color: candidate.item.sourceComponent.fill || candidate.item.sourceComponent.stroke || metadata.labelColor,
-			location: relativePosition(candidate.item, allBounds),
-			corner: candidate.nearestCorner,
-			bounds: compactBounds(candidate.item.sourceComponent),
-			inference: 'source-isolated-candidate',
-		}
-		: { present: false, text: metadata.labelText, color: metadata.labelColor };
+				present: true,
+				text: metadata.labelText,
+				color:
+					candidate.item.sourceComponent.fill || candidate.item.sourceComponent.stroke || metadata.labelColor,
+				location: relativePosition(candidate.item, allBounds),
+				corner: candidate.nearestCorner,
+				bounds: compactBounds(candidate.item.sourceComponent),
+				inference: 'source-isolated-candidate',
+			}
+		: {present: false, text: metadata.labelText, color: metadata.labelColor};
 }
 
 function sourceNumberPresent(metadata) {
@@ -146,32 +147,39 @@ function inferCharacter(faceKey, metadata, glyphCandidates, allBounds) {
 
 	return candidate
 		? {
-			present: true,
-			color: candidate.item.sourceComponent.fill || candidate.item.sourceComponent.stroke || '',
-			location: relativePosition(candidate.item, allBounds),
-			corner: candidate.nearestCorner,
-			bounds: compactBounds(candidate.item.sourceComponent),
-			inference: 'source-isolated-candidate',
-		}
-		: { present: false };
+				present: true,
+				color: candidate.item.sourceComponent.fill || candidate.item.sourceComponent.stroke || '',
+				location: relativePosition(candidate.item, allBounds),
+				corner: candidate.nearestCorner,
+				bounds: compactBounds(candidate.item.sourceComponent),
+				inference: 'source-isolated-candidate',
+			}
+		: {present: false};
 }
 
-function pickCandidate(glyphCandidates, { expectedCorner, excludedCorner = null, expectedColor = null, maxAreaRatio = null }) {
+function pickCandidate(
+	glyphCandidates,
+	{expectedCorner, excludedCorner = null, expectedColor = null, maxAreaRatio = null},
+) {
 	const candidates = glyphCandidates
 		.filter((candidate) => !excludedCorner || candidate.nearestCorner !== excludedCorner)
 		.filter((candidate) => maxAreaRatio == null || candidate.areaRatio <= maxAreaRatio);
 
-	return candidates.sort((left, right) => {
-		const leftCorner = cornerOrLocationDistance(left, expectedCorner);
-		const rightCorner = cornerOrLocationDistance(right, expectedCorner);
-		const leftColorMismatch = colorMismatch(left, expectedColor);
-		const rightColorMismatch = colorMismatch(right, expectedColor);
+	return (
+		candidates.sort((left, right) => {
+			const leftCorner = cornerOrLocationDistance(left, expectedCorner);
+			const rightCorner = cornerOrLocationDistance(right, expectedCorner);
+			const leftColorMismatch = colorMismatch(left, expectedColor);
+			const rightColorMismatch = colorMismatch(right, expectedColor);
 
-		return leftCorner - rightCorner
-			|| leftColorMismatch - rightColorMismatch
-			|| left.normalizedCenter.y - right.normalizedCenter.y
-			|| left.area - right.area;
-	})[0] || null;
+			return (
+				leftCorner - rightCorner ||
+				leftColorMismatch - rightColorMismatch ||
+				left.normalizedCenter.y - right.normalizedCenter.y ||
+				left.area - right.area
+			);
+		})[0] || null
+	);
 }
 
 function formatCandidate(candidate) {
@@ -181,8 +189,12 @@ function formatCandidate(candidate) {
 		color: component.fill || component.stroke || null,
 		location: candidate.relativePosition,
 		nearestCorner: candidate.nearestCorner,
-		cornerDistances: Object.fromEntries(Object.entries(candidate.cornerDistances)
-			.map(([corner, distanceValue]) => [corner, Number(distanceValue.toFixed(4))])),
+		cornerDistances: Object.fromEntries(
+			Object.entries(candidate.cornerDistances).map(([corner, distanceValue]) => [
+				corner,
+				Number(distanceValue.toFixed(4)),
+			]),
+		),
 		areaRatio: Number(candidate.areaRatio.toFixed(4)),
 		bounds: compactBounds(component),
 	};
@@ -237,12 +249,12 @@ function canvasFromViewBox(viewBox, fallbackBounds) {
 
 	return fallbackBounds
 		? {
-			left: fallbackBounds.left,
-			top: fallbackBounds.top,
-			width: fallbackBounds.width,
-			height: fallbackBounds.height,
-		}
-		: { left: 0, top: 0, width: 164, height: 238 };
+				left: fallbackBounds.left,
+				top: fallbackBounds.top,
+				width: fallbackBounds.width,
+				height: fallbackBounds.height,
+			}
+		: {left: 0, top: 0, width: 164, height: 238};
 }
 
 function compactBounds(component) {
@@ -261,10 +273,9 @@ function relativePosition(candidate, bounds) {
 	const x = (center.x - bounds.left) / Math.max(1, bounds.width);
 	const y = (center.y - bounds.top) / Math.max(1, bounds.height);
 
-	return [
-		y < 0.36 ? 'top' : y > 0.68 ? 'bottom' : 'middle',
-		x < 0.36 ? 'left' : x > 0.64 ? 'right' : 'center',
-	].join('-');
+	return [y < 0.36 ? 'top' : y > 0.68 ? 'bottom' : 'middle', x < 0.36 ? 'left' : x > 0.64 ? 'right' : 'center'].join(
+		'-',
+	);
 }
 
 function cornerOrLocationDistance(candidate, cornerOrLocation) {
@@ -336,4 +347,3 @@ function inferBasicFaceMetadata(faceKey) {
 
 	return {};
 }
-

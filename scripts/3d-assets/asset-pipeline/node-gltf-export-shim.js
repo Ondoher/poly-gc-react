@@ -64,7 +64,7 @@ class NodeCanvas {
 
 				for (let py = startY; py < endY; py += 1) {
 					for (let px = startX; px < endX; px += 1) {
-						const offset = ((py * canvas.width) + px) * 4;
+						const offset = (py * canvas.width + px) * 4;
 						pixels[offset] = color[0];
 						pixels[offset + 1] = color[1];
 						pixels[offset + 2] = color[2];
@@ -89,16 +89,22 @@ class NodeCanvas {
 					if (py < 0 || py >= canvas.height) {
 						continue;
 					}
-					const sourceY = Math.min(image.height - 1, Math.max(0, Math.floor((ty / targetHeight) * image.height)));
+					const sourceY = Math.min(
+						image.height - 1,
+						Math.max(0, Math.floor((ty / targetHeight) * image.height)),
+					);
 
 					for (let tx = 0; tx < targetWidth; tx += 1) {
 						const px = startX + tx;
 						if (px < 0 || px >= canvas.width) {
 							continue;
 						}
-						const sourceX = Math.min(image.width - 1, Math.max(0, Math.floor((tx / targetWidth) * image.width)));
-						const sourceOffset = ((sourceY * image.width) + sourceX) * 4;
-						const targetOffset = ((py * canvas.width) + px) * 4;
+						const sourceX = Math.min(
+							image.width - 1,
+							Math.max(0, Math.floor((tx / targetWidth) * image.width)),
+						);
+						const sourceOffset = (sourceY * image.width + sourceX) * 4;
+						const targetOffset = (py * canvas.width + px) * 4;
 						pixels[targetOffset] = source[sourceOffset];
 						pixels[targetOffset + 1] = source[sourceOffset + 1];
 						pixels[targetOffset + 2] = source[sourceOffset + 2];
@@ -114,11 +120,11 @@ class NodeCanvas {
 					for (let tx = 0; tx < width; tx += 1) {
 						const px = x + tx;
 						const py = y + ty;
-						const targetOffset = ((ty * width) + tx) * 4;
+						const targetOffset = (ty * width + tx) * 4;
 						if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) {
 							continue;
 						}
-						const sourceOffset = ((py * canvas.width) + px) * 4;
+						const sourceOffset = (py * canvas.width + px) * 4;
 						data[targetOffset] = pixels[sourceOffset];
 						data[targetOffset + 1] = pixels[sourceOffset + 1];
 						data[targetOffset + 2] = pixels[sourceOffset + 2];
@@ -161,7 +167,7 @@ class NodeCanvas {
 			.png()
 			.toBuffer();
 
-		callback(new Blob([buffer], { type: mimeType }));
+		callback(new Blob([buffer], {type: mimeType}));
 	}
 }
 
@@ -176,7 +182,9 @@ class NodeImageBitmap {
 }
 
 function parseCanvasColor(value) {
-	const color = String(value || '').trim().toLowerCase();
+	const color = String(value || '')
+		.trim()
+		.toLowerCase();
 	const hex = /^#([0-9a-f]{6})$/i.exec(color);
 	if (hex) {
 		return [
@@ -191,7 +199,7 @@ function parseCanvasColor(value) {
 
 class NodeObjectUrl {
 	createObjectURL(blob) {
-		const url = `blob:node-gltf-shim-${objectUrlIndex += 1}`;
+		const url = `blob:node-gltf-shim-${(objectUrlIndex += 1)}`;
 		objectUrlBlobs.set(url, blob);
 		return url;
 	}
@@ -217,16 +225,9 @@ async function nodeFetch(url) {
 
 async function nodeCreateImageBitmap(blob) {
 	const buffer = Buffer.from(await blob.arrayBuffer());
-	const image = await sharp(buffer)
-		.ensureAlpha()
-		.raw()
-		.toBuffer({ resolveWithObject: true });
+	const image = await sharp(buffer).ensureAlpha().raw().toBuffer({resolveWithObject: true});
 
-	return new NodeImageBitmap(
-		new Uint8ClampedArray(image.data),
-		image.info.width,
-		image.info.height,
-	);
+	return new NodeImageBitmap(new Uint8ClampedArray(image.data), image.info.width, image.info.height);
 }
 
 export function installNodeGltfExportShim() {

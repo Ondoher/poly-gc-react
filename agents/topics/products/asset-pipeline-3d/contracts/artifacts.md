@@ -34,28 +34,28 @@ assetPipeline.faces[faceKey].artifacts.cutterSvg
 
 ## Current Artifact Map
 
-| Artifact | Role | Owner |
-| --- | --- | --- |
-| `scripts/data/asset-pipeline/manifests/<tilesetId>.json` | source input | Tileset intake |
-| `scripts/output/asset-pipeline/source-svgs/<tilesetId>/<faceKey>.svg` | generated source copy | Tileset intake |
-| `scripts/output/asset-pipeline/<tilesetId>/pipeline.json` | canonical state | `PipelineModel` |
-| `scripts/output/asset-pipeline/tilesets.json` | routing manifest | Tileset selection |
-| `scripts/output/asset-pipeline/<tilesetId>/json/normalized-components/<faceKey>.json` | durable fact artifact | Source normalization |
-| `scripts/output/asset-pipeline/<tilesetId>/images/identified-components-svg/<faceKey>.svg` | human review output | Source normalization |
-| `scripts/output/asset-pipeline/<tilesetId>/images/identified-shapes-svg/<faceKey>.svg` | human review output | Source normalization |
-| `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-add-optional-svg/<faceKey>.svg` | human review output | Final rendering |
-| `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-layout-svg/<faceKey>.svg` | human review output | Final rendering |
-| `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-color-svg/<faceKey>.svg` | generated/review output | Final rendering |
-| `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-color-review-png/<faceKey>.png` | human review output | Final rendering |
-| `scripts/output/asset-pipeline/prepared-svgs/<tilesetId>/<faceKey>.svg` | generated output | Prepared SVG export |
-| `scripts/output/asset-pipeline/<tilesetId>/images/cutter-2d-svg/<faceKey>.svg` | generated output | Cutter-2D |
-| `scripts/output/asset-pipeline/<tilesetId>/models/svg-cutter/<faceKey>.glb` | generated output | SVG cutter |
-| `scripts/output/asset-pipeline/<tilesetId>/json/svg-cutter/<faceKey>.json` | generated output | SVG cutter |
-| `scripts/output/asset-pipeline/<tilesetId>/models/stamped-body/<faceKey>.glb` | generated output | Stamped body |
-| `scripts/output/asset-pipeline/<tilesetId>/json/stamped-body/<faceKey>.json` | generated output | Stamped body |
-| `scripts/output/asset-pipeline/<tilesetId>/models/colored-inlay/<faceKey>.glb` | generated output | Colored inlay |
-| `scripts/output/asset-pipeline/<tilesetId>/json/colored-inlay/<faceKey>.json` | generated output | Colored inlay |
-| `scripts/output/asset-pipeline/<tilesetId>/images/generated-asset-preview-png/<faceKey>.png` | generated output | Asset preview |
+| Artifact                                                                                          | Role                    | Owner                |
+| ------------------------------------------------------------------------------------------------- | ----------------------- | -------------------- |
+| `scripts/data/asset-pipeline/manifests/<tilesetId>.json`                                          | source input            | Tileset intake       |
+| `scripts/output/asset-pipeline/source-svgs/<tilesetId>/<faceKey>.svg`                             | generated source copy   | Tileset intake       |
+| `scripts/output/asset-pipeline/<tilesetId>/pipeline.json`                                         | canonical state         | `PipelineModel`      |
+| `scripts/output/asset-pipeline/tilesets.json`                                                     | routing manifest        | Tileset selection    |
+| `scripts/output/asset-pipeline/<tilesetId>/json/normalized-components/<faceKey>.json`             | durable fact artifact   | Source normalization |
+| `scripts/output/asset-pipeline/<tilesetId>/images/identified-components-svg/<faceKey>.svg`        | human review output     | Source normalization |
+| `scripts/output/asset-pipeline/<tilesetId>/images/identified-shapes-svg/<faceKey>.svg`            | human review output     | Source normalization |
+| `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-add-optional-svg/<faceKey>.svg` | human review output     | Final rendering      |
+| `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-layout-svg/<faceKey>.svg`       | human review output     | Final rendering      |
+| `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-color-svg/<faceKey>.svg`        | generated/review output | Final rendering      |
+| `scripts/output/asset-pipeline/<tilesetId>/images/final-rendering-color-review-png/<faceKey>.png` | human review output     | Final rendering      |
+| `scripts/output/asset-pipeline/prepared-svgs/<tilesetId>/<faceKey>.svg`                           | generated output        | Prepared SVG export  |
+| `scripts/output/asset-pipeline/<tilesetId>/images/cutter-2d-svg/<faceKey>.svg`                    | generated output        | Cutter-2D            |
+| `scripts/output/asset-pipeline/<tilesetId>/models/svg-cutter/<faceKey>.glb`                       | generated output        | SVG cutter           |
+| `scripts/output/asset-pipeline/<tilesetId>/json/svg-cutter/<faceKey>.json`                        | generated output        | SVG cutter           |
+| `scripts/output/asset-pipeline/<tilesetId>/models/stamped-body/<faceKey>.glb`                     | generated output        | Stamped body         |
+| `scripts/output/asset-pipeline/<tilesetId>/json/stamped-body/<faceKey>.json`                      | generated output        | Stamped body         |
+| `scripts/output/asset-pipeline/<tilesetId>/models/colored-inlay/<faceKey>.glb`                    | generated output        | Colored inlay        |
+| `scripts/output/asset-pipeline/<tilesetId>/json/colored-inlay/<faceKey>.json`                     | generated output        | Colored inlay        |
+| `scripts/output/asset-pipeline/<tilesetId>/images/generated-asset-preview-png/<faceKey>.png`      | generated output        | Asset preview        |
 
 ## Durable Facts
 

@@ -1,5 +1,5 @@
-import React from "react";
-import CssRect from "./CssRect.jsx";
+import React from 'react';
+import CssRect from './CssRect.jsx';
 
 export default class TextEditControl extends React.Component {
 	constructor(props) {
@@ -19,12 +19,7 @@ export default class TextEditControl extends React.Component {
 		}
 
 		return (
-			<CssRect
-				tag="label"
-				size={this.props.size}
-				variant={this.props.variant || 'inset'}
-				className={className}
-			>
+			<CssRect tag="label" size={this.props.size} variant={this.props.variant || 'inset'} className={className}>
 				<input
 					className={inputClassName}
 					type={this.props.type || 'text'}

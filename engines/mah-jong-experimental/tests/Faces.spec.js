@@ -1,9 +1,9 @@
 import Grid from '../Grid.js';
-import { GeneratorState } from '../GeneratorState.js';
+import {GeneratorState} from '../GeneratorState.js';
 import FaceInventory from '../FaceInventory.js';
 import Faces from '../Faces.js';
 import GeneratedPair from '../GeneratedPair.js';
-import { DIFFICULTY_SETTINGS } from '../difficulty-settings.js';
+import {DIFFICULTY_SETTINGS} from '../difficulty-settings.js';
 
 describe('Faces', () => {
 	function createLayout() {
@@ -42,7 +42,7 @@ describe('Faces', () => {
 	it('can use an injected face inventory when a test or caller needs one', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState();
-		let faces = new Faces(state, { faceInventory });
+		let faces = new Faces(state, {faceInventory});
 
 		expect(faces.faceInventory).toBe(faceInventory);
 		expect(state.faceInventory).toBe(faceInventory);
@@ -52,7 +52,7 @@ describe('Faces', () => {
 	it('initializes the face inventory for the board size', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState(faceInventory);
-		let faces = new Faces(state, { faceInventory });
+		let faces = new Faces(state, {faceInventory});
 
 		spyOn(faceInventory, 'initialize').and.callThrough();
 
@@ -64,51 +64,46 @@ describe('Faces', () => {
 	it('selects one matching face pair from the ranked face group', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState(faceInventory);
-		let faces = new Faces(state, { faceInventory });
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
-		let facePair = { faceGroup: 1, face1: 4, face2: 5 };
+		let faces = new Faces(state, {faceInventory});
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
+		let facePair = {faceGroup: 1, face1: 4, face2: 5};
 
 		spyOn(faces.faceRanking, 'selectRankedFaceGroup').and.returnValue(1);
 		spyOn(faceInventory, 'selectPairFromGroup').and.returnValue(facePair);
 
 		expect(faces.selectFacesForPair(pair)).toBe(facePair);
-		expect(faces.faceRanking.selectRankedFaceGroup).toHaveBeenCalledWith(
-			2,
-			pair
-		);
+		expect(faces.faceRanking.selectRankedFaceGroup).toHaveBeenCalledWith(2, pair);
 		expect(faceInventory.selectPairFromGroup).toHaveBeenCalledWith(1);
 	});
 
 	it('throws when no ranked face group can be selected', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState(faceInventory);
-		let faces = new Faces(state, { faceInventory });
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let faces = new Faces(state, {faceInventory});
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 
 		spyOn(faces.faceRanking, 'selectRankedFaceGroup').and.returnValue(null);
 
-		expect(() => faces.selectFacesForPair(pair))
-			.toThrowError('Unable to select a face group during generation');
+		expect(() => faces.selectFacesForPair(pair)).toThrowError('Unable to select a face group during generation');
 	});
 
 	it('throws when the selected face group cannot provide a face pair', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState(faceInventory);
-		let faces = new Faces(state, { faceInventory });
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let faces = new Faces(state, {faceInventory});
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 
 		spyOn(faces.faceRanking, 'selectRankedFaceGroup').and.returnValue(1);
 		spyOn(faceInventory, 'selectPairFromGroup').and.returnValue(null);
 
-		expect(() => faces.selectFacesForPair(pair))
-			.toThrowError('Selected face group could not provide a face pair');
+		expect(() => faces.selectFacesForPair(pair)).toThrowError('Selected face group could not provide a face pair');
 	});
 
 	it('selects one full face set from the ranked face group', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState(faceInventory);
-		let faces = new Faces(state, { faceInventory });
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let faces = new Faces(state, {faceInventory});
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 		let fullFaceSet = {
 			faceGroup: 1,
 			faces: [4, 5, 6, 7],
@@ -118,43 +113,40 @@ describe('Faces', () => {
 		spyOn(faceInventory, 'selectFullFaceSet').and.returnValue(fullFaceSet);
 
 		expect(faces.selectFullFaceSet(pair)).toBe(fullFaceSet);
-		expect(faces.faceRanking.selectRankedFaceGroup).toHaveBeenCalledWith(
-			4,
-			pair
-		);
+		expect(faces.faceRanking.selectRankedFaceGroup).toHaveBeenCalledWith(4, pair);
 		expect(faceInventory.selectFullFaceSet).toHaveBeenCalledWith(1);
 	});
 
 	it('throws when no ranked full face set group can be selected', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState(faceInventory);
-		let faces = new Faces(state, { faceInventory });
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let faces = new Faces(state, {faceInventory});
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 
 		spyOn(faces.faceRanking, 'selectRankedFaceGroup').and.returnValue(null);
 
-		expect(() => faces.selectFullFaceSet(pair))
-			.toThrowError('Unable to select a full face set during generation');
+		expect(() => faces.selectFullFaceSet(pair)).toThrowError('Unable to select a full face set during generation');
 	});
 
 	it('throws when the selected face group cannot provide a full face set', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState(faceInventory);
-		let faces = new Faces(state, { faceInventory });
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let faces = new Faces(state, {faceInventory});
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 
 		spyOn(faces.faceRanking, 'selectRankedFaceGroup').and.returnValue(1);
 		spyOn(faceInventory, 'selectFullFaceSet').and.returnValue(null);
 
-		expect(() => faces.selectFullFaceSet(pair))
-			.toThrowError('Selected face group could not provide a full face set');
+		expect(() => faces.selectFullFaceSet(pair)).toThrowError(
+			'Selected face group could not provide a full face set',
+		);
 	});
 
 	it('does not choose a preferred face group when face avoidance is disabled', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState(faceInventory);
-		let faces = new Faces(state, { faceInventory });
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let faces = new Faces(state, {faceInventory});
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 
 		expect(faces.preparePairForFaceAssignment(pair)).toBe(pair);
 		expect(pair.preferredFaceGroup).toBe(-1);
@@ -162,10 +154,9 @@ describe('Faces', () => {
 
 	it('chooses the lowest-avoidance face group as a soft assignment preference', () => {
 		let faceInventory = new FaceInventory();
-		let state = createState(faceInventory)
-			.setupFaceAvoidanceRules({enabled: true});
-		let faces = new Faces(state, { faceInventory });
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let state = createState(faceInventory).setupFaceAvoidanceRules({enabled: true});
+		let faces = new Faces(state, {faceInventory});
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 
 		faceInventory.faceSets = new Map([
 			[1, {id: 1, suit: 'bamboo', faces: [4, 5]}],
@@ -184,9 +175,8 @@ describe('Faces', () => {
 
 	it('keeps an existing preferred face group during face-assignment preparation', () => {
 		let faceInventory = new FaceInventory();
-		let state = createState(faceInventory)
-			.setupFaceAvoidanceRules({enabled: true});
-		let faces = new Faces(state, { faceInventory });
+		let state = createState(faceInventory).setupFaceAvoidanceRules({enabled: true});
+		let faces = new Faces(state, {faceInventory});
 		let pair = new GeneratedPair({
 			tile1: 0,
 			tile2: 1,
@@ -204,9 +194,9 @@ describe('Faces', () => {
 	it('assigns a selected face pair to one prepared tile pair and game state', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState(faceInventory);
-		let faces = new Faces(state, { faceInventory });
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
-		let facePair = { faceGroup: 3, face1: 12, face2: 13 };
+		let faces = new Faces(state, {faceInventory});
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
+		let facePair = {faceGroup: 3, face1: 12, face2: 13};
 
 		spyOn(faces, 'selectFacesForPair').and.returnValue(facePair);
 
@@ -215,18 +205,19 @@ describe('Faces', () => {
 		expect(pair.faces).toEqual([12, 13]);
 		expect(state.getFace(0)).toBe(12);
 		expect(state.getFace(1)).toBe(13);
-		expect(faceInventory.assignedFacePairs).toEqual([{
-			tile1: 0,
-			tile2: 1,
-			faceGroup: 3,
-		}]);
+		expect(faceInventory.assignedFacePairs).toEqual([
+			{
+				tile1: 0,
+				tile2: 1,
+				faceGroup: 3,
+			},
+		]);
 	});
 
 	it('does not apply face avoidance when the rule is disabled', () => {
 		let faceInventory = new FaceInventory();
-		let state = createState(faceInventory)
-			.setupFaceAvoidanceRules({enabled: false, weight: 4});
-		let faces = new Faces(state, { faceInventory });
+		let state = createState(faceInventory).setupFaceAvoidanceRules({enabled: false, weight: 4});
+		let faces = new Faces(state, {faceInventory});
 		let pair = new GeneratedPair({
 			tile1: 0,
 			tile2: 1,
@@ -246,9 +237,8 @@ describe('Faces', () => {
 
 	it('applies configured face avoidance to open soft links', () => {
 		let faceInventory = new FaceInventory();
-		let state = createState(faceInventory)
-			.setupFaceAvoidanceRules({enabled: true, weight: 4});
-		let faces = new Faces(state, { faceInventory });
+		let state = createState(faceInventory).setupFaceAvoidanceRules({enabled: true, weight: 4});
+		let faces = new Faces(state, {faceInventory});
 		let pair = new GeneratedPair({
 			tile1: 0,
 			tile2: 1,
@@ -269,9 +259,8 @@ describe('Faces', () => {
 
 	it('uses a default face-avoidance weight when none is configured', () => {
 		let faceInventory = new FaceInventory();
-		let state = createState(faceInventory)
-			.setupFaceAvoidanceRules({enabled: true});
-		let faces = new Faces(state, { faceInventory });
+		let state = createState(faceInventory).setupFaceAvoidanceRules({enabled: true});
+		let faces = new Faces(state, {faceInventory});
 		let pair = new GeneratedPair({
 			tile1: 0,
 			tile2: 1,
@@ -291,14 +280,13 @@ describe('Faces', () => {
 
 	it('applies face avoidance after assigning the selected face pair', () => {
 		let faceInventory = new FaceInventory();
-		let state = createState(faceInventory)
-			.setupFaceAvoidanceRules({enabled: true, weight: 2});
-		let faces = new Faces(state, { faceInventory });
+		let state = createState(faceInventory).setupFaceAvoidanceRules({enabled: true, weight: 2});
+		let faces = new Faces(state, {faceInventory});
 		let pair = new GeneratedPair({
 			tile1: 0,
 			tile2: 1,
 		});
-		let facePair = { faceGroup: 3, face1: 12, face2: 13 };
+		let facePair = {faceGroup: 3, face1: 12, face2: 13};
 
 		state.softLinks.createLink('open-tiles', {
 			role: 'after-removal',
@@ -318,11 +306,8 @@ describe('Faces', () => {
 	it('assigns face pairs to every prepared tile pair', () => {
 		let faceInventory = new FaceInventory();
 		let state = createState(faceInventory);
-		let faces = new Faces(state, { faceInventory });
-		let preparedPairs = [
-			new GeneratedPair({ tile1: 0, tile2: 1 }),
-			new GeneratedPair({ tile1: 2, tile2: 3 }),
-		];
+		let faces = new Faces(state, {faceInventory});
+		let preparedPairs = [new GeneratedPair({tile1: 0, tile2: 1}), new GeneratedPair({tile1: 2, tile2: 3})];
 		let calls = [];
 
 		spyOn(faces, 'preparePairForFaceAssignment').and.callFake((pair) => {
@@ -343,12 +328,7 @@ describe('Faces', () => {
 		expect(faces.assignFacesToPreparedPairs(preparedPairs)).toBe(preparedPairs);
 		expect(faces.preparePairForFaceAssignment).toHaveBeenCalledTimes(2);
 		expect(faces.assignFacesToPair).toHaveBeenCalledTimes(2);
-		expect(calls).toEqual([
-			'prepare:0',
-			'assign:0',
-			'prepare:2',
-			'assign:2',
-		]);
+		expect(calls).toEqual(['prepare:0', 'assign:0', 'prepare:2', 'assign:2']);
 		expect(preparedPairs[0].faces.length).toBe(2);
 		expect(preparedPairs[1].faces.length).toBe(2);
 	});

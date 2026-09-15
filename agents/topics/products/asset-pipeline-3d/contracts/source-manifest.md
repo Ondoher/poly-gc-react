@@ -16,23 +16,23 @@ The intake script expects:
 
 ```json
 {
-  "description": "...",
-  "source": "scripts/data/3d-assets/sprite-sheets/traditional.svg",
-  "sheetId": "traditional",
-  "outputDir": "scripts/data/3d-assets/sprite-source-svgs/traditional",
-  "sourceSvgHints": {},
-  "faces": {
-    "b-1": {
-      "sourceGroupId": "BAMBOO_1",
-      "output": "scripts/data/3d-assets/sprite-source-svgs/traditional/b-1.svg",
-      "viewBox": {
-        "left": 0,
-        "top": 205,
-        "width": 69,
-        "height": 89
-      }
-    }
-  }
+	"description": "...",
+	"source": "scripts/data/3d-assets/sprite-sheets/traditional.svg",
+	"sheetId": "traditional",
+	"outputDir": "scripts/data/3d-assets/sprite-source-svgs/traditional",
+	"sourceSvgHints": {},
+	"faces": {
+		"b-1": {
+			"sourceGroupId": "BAMBOO_1",
+			"output": "scripts/data/3d-assets/sprite-source-svgs/traditional/b-1.svg",
+			"viewBox": {
+				"left": 0,
+				"top": 205,
+				"width": 69,
+				"height": 89
+			}
+		}
+	}
 }
 ```
 
@@ -70,13 +70,10 @@ Shape:
 
 ```json
 {
-  "schemaVersion": 1,
-  "activeTilesetId": "wiki",
-  "tilesets": [
-    { "tilesetId": "traditional" },
-    { "tilesetId": "wiki" }
-  ],
-  "updatedOn": "2026-05-16T00:00:00.000Z"
+	"schemaVersion": 1,
+	"activeTilesetId": "wiki",
+	"tilesets": [{"tilesetId": "traditional"}, {"tilesetId": "wiki"}],
+	"updatedOn": "2026-05-16T00:00:00.000Z"
 }
 ```
 

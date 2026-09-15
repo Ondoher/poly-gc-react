@@ -24,18 +24,9 @@ export default class AppShell extends React.Component {
 			return;
 		}
 
-		this.pagesUpdatedListener = this.props.appView.listen(
-			'pages-updated',
-			this.onPagesUpdated.bind(this),
-		);
-		this.pageMountedListener = this.props.appView.listen(
-			'page-mounted',
-			this.onPageMounted.bind(this),
-		);
-		this.tilesetsUpdatedListener = this.props.appView.listen(
-			'tilesets-updated',
-			this.onTilesetsUpdated.bind(this),
-		);
+		this.pagesUpdatedListener = this.props.appView.listen('pages-updated', this.onPagesUpdated.bind(this));
+		this.pageMountedListener = this.props.appView.listen('page-mounted', this.onPageMounted.bind(this));
+		this.tilesetsUpdatedListener = this.props.appView.listen('tilesets-updated', this.onTilesetsUpdated.bind(this));
 		this.syncFromView();
 	}
 
@@ -54,10 +45,10 @@ export default class AppShell extends React.Component {
 	}
 
 	onPagesUpdated(pages) {
-		this.setState({ pages });
+		this.setState({pages});
 	}
 
-	onPageMounted({ component, page }) {
+	onPageMounted({component, page}) {
 		this.setState({
 			activePageId: page.id,
 			pageComponent: component,
@@ -119,9 +110,7 @@ export default class AppShell extends React.Component {
 		const pages = this.state.pages;
 
 		if (pages.length === 0) {
-			return (
-				<span className="app-shell-tabs-empty">No pages registered</span>
-			);
+			return <span className="app-shell-tabs-empty">No pages registered</span>;
 		}
 
 		return pages.map((page) => {
@@ -168,9 +157,7 @@ export default class AppShell extends React.Component {
 					disabled={this.state.tilesetsLoading || tilesets.length === 0}
 					onChange={this.onTilesetChange.bind(this)}
 				>
-					{tilesets.length === 0 ? (
-						<option value="">No tilesets</option>
-					) : null}
+					{tilesets.length === 0 ? <option value="">No tilesets</option> : null}
 					{tilesets.map((tileset) => (
 						<option key={tileset.id} value={tileset.id}>
 							{tileset.label || tileset.id}
@@ -191,9 +178,7 @@ export default class AppShell extends React.Component {
 					</nav>
 					{this.renderTilesetSelector()}
 				</header>
-				<main className="app-shell-body">
-					{this.renderPageRegion()}
-				</main>
+				<main className="app-shell-body">{this.renderPageRegion()}</main>
 			</div>
 		);
 	}

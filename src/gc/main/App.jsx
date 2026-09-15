@@ -7,24 +7,22 @@ export default class App extends React.Component {
 		this.registry = this.props.registry;
 	}
 
-	render () {
+	render() {
 		var breadCrumbs = this.registry.subscribe('bread-crumbs');
 		var pagesService = this.registry.subscribe('pages-provider');
 
 		var view = pagesService.getView('main-pages');
-		var pages = view.getComponent()
+		var pages = view.getComponent();
 
 		var contextValue = {
 			registry: this.registry,
 			mainPages: view,
-		}
+		};
 
 		return (
 			<GameCenterContext.Provider value={contextValue}>
-				<React.Fragment>
-					{pages}
-				</React.Fragment>
+				<React.Fragment>{pages}</React.Fragment>
 			</GameCenterContext.Provider>
-		)
+		);
 	}
 }

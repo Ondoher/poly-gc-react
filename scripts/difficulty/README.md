@@ -241,10 +241,10 @@ Batch output includes suspension instrumentation for engine-generated boards:
 - `Picker short-horizon collapse rate` shows how often selected candidate
   probes collapsed inside the configured horizon
 - `Picker average horizontal intersections` and `Picker average vertical
-  intersections` show how much the picker is selecting tiles entangled with the
+intersections` show how much the picker is selecting tiles entangled with the
   reference set
 - `Picker average candidates`, `Picker average window size`, and `Picker
-  average window start` show how broad the active selection window was
+average window start` show how broad the active selection window was
 - `Picker normal first/second`, `Picker suspension first/second/third`, and
   `Picker released partner` counts show which generation paths used the picker
 

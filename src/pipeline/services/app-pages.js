@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 export default class AppPagesService extends Service {
 	constructor(registry) {
@@ -33,11 +33,11 @@ export default class AppPagesService extends Service {
 	}
 
 	get() {
-		return [...this.pages].sort((left, right) => (
+		return [...this.pages].sort((left, right) =>
 			left.order === right.order
 				? String(left.id || '').localeCompare(String(right.id || ''))
-				: left.order - right.order
-		));
+				: left.order - right.order,
+		);
 	}
 
 	getById(id) {

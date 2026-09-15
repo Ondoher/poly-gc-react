@@ -1,26 +1,32 @@
 {
-	"resources": [{
-		"dest": "mj/css",
-		"cwd": "assets/css",
-		"glob": "**/*.css",
-		"keepNest": true
-	},
-	{
-		"dest" : "mj/images",
-		"cwd": "assets/images",
-		"glob": "**/*.{png,jpg,svg,exr}",
-		"keepNest": true
-	}],
-	"loadables" : [{
-		"name" : "mahjongg",
-		"index": "src/index.js",
-		"prefix": "mj:",
-		"css": [{
+	"resources": [
+		{
 			"dest": "mj/css",
 			"cwd": "assets/css",
 			"glob": "**/*.css",
 			"keepNest": true
-		}]
-	}],
-	"index" : "index.js"
+		},
+		{
+			"dest": "mj/images",
+			"cwd": "assets/images",
+			"glob": "**/*.{png,jpg,svg,exr}",
+			"keepNest": true
+		}
+	],
+	"loadables": [
+		{
+			"name": "mahjongg",
+			"index": "src/index.js",
+			"prefix": "mj:",
+			"css": [
+				{
+					"dest": "mj/css",
+					"cwd": "assets/css",
+					"glob": "**/*.css",
+					"keepNest": true
+				}
+			]
+		}
+	],
+	"index": "index.js"
 }

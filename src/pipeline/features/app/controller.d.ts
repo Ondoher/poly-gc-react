@@ -18,7 +18,7 @@ interface AppControllerService {
 		pageComponent: import('react').ReactNode;
 		pages: AppPageRecord[];
 		activeTilesetId: string;
-		tilesets: Array<{ id: string; label?: string; active?: boolean }>;
+		tilesets: Array<{id: string; label?: string; active?: boolean}>;
 		tilesetsLoading: boolean;
 	};
 
@@ -39,7 +39,7 @@ interface AppControllerService {
 	 *
 	 * @param pageId - Identify the page to activate.
 	 */
-	requestPage(pageId: string, options?: { history?: 'push' | 'replace' | 'none' }): AppPageRecord | null;
+	requestPage(pageId: string, options?: {history?: 'push' | 'replace' | 'none'}): AppPageRecord | null;
 
 	/**
 	 * Request activation of one manifest-backed tileset.

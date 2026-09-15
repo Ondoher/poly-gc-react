@@ -7,10 +7,7 @@ const REPO_ROOT = path.resolve(__dirname, '../..');
 
 export async function resolve(specifier, context, nextResolve) {
 	if (specifier.startsWith('utils/')) {
-		return nextResolve(
-			pathToFileURL(path.join(REPO_ROOT, 'src/gc', specifier)).href,
-			context
-		);
+		return nextResolve(pathToFileURL(path.join(REPO_ROOT, 'src/gc', specifier)).href, context);
 	}
 
 	return nextResolve(specifier, context);

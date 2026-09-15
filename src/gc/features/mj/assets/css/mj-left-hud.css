@@ -1,86 +1,86 @@
 .mj-left-hud {
-    --mj-left-hud-control-width: 104px;
-    grid-area: left;
-    min-width: 0;
-    min-height: 0;
-    display: grid;
-    grid-template-rows: auto 1fr;
-    align-content: start;
-    padding-top: 44px;
-    padding-left: 22px;
+	--mj-left-hud-control-width: 104px;
+	grid-area: left;
+	min-width: 0;
+	min-height: 0;
+	display: grid;
+	grid-template-rows: auto 1fr;
+	align-content: start;
+	padding-top: 44px;
+	padding-left: 22px;
 }
 
 .mj-board-page.mj-shell-mode:not(.is-expanded) .mj-left-hud {
-    padding-top: 30px;
-    padding-left: 12px;
+	padding-top: 30px;
+	padding-left: 12px;
 }
 
 .mj-game-number-control-stack {
-    justify-self: start;
-    align-self: start;
-    display: grid;
-    row-gap: 5px;
-    justify-items: start;
+	justify-self: start;
+	align-self: start;
+	display: grid;
+	row-gap: 5px;
+	justify-items: start;
 }
 
 .mj-game-number-control {
-    position: relative;
-    z-index: 2;
-    display: grid;
-    grid-template-columns: 1fr 34px;
-    align-items: stretch;
-    width: var(--mj-left-hud-control-width);
-    height: 28px;
+	position: relative;
+	z-index: 2;
+	display: grid;
+	grid-template-columns: 1fr 34px;
+	align-items: stretch;
+	width: var(--mj-left-hud-control-width);
+	height: 28px;
 }
 
 .mj-shuffle-button-control {
-    width: 34px;
-    height: 100%;
+	width: 34px;
+	height: 100%;
 }
 
 .mj-left-hud {
-    transition:
-        opacity 140ms ease-out,
-        transform 180ms ease-out;
+	transition:
+		opacity 140ms ease-out,
+		transform 180ms ease-out;
 }
 
 .mj-left-hud-stack,
 .left-hud-stack {
-    justify-self: start;
-    align-self: start;
-    display: grid;
-    width: var(--mj-left-hud-control-width);
-    row-gap: 5px;
-    justify-items: stretch;
+	justify-self: start;
+	align-self: start;
+	display: grid;
+	width: var(--mj-left-hud-control-width);
+	row-gap: 5px;
+	justify-items: stretch;
 }
 
 .mj-left-hud-meta-group {
-    display: grid;
-    justify-items: start;
+	display: grid;
+	justify-items: start;
 }
 
 .mj-left-hud-groups {
-    display: grid;
-    row-gap: 5px;
-    justify-items: stretch;
+	display: grid;
+	row-gap: 5px;
+	justify-items: stretch;
 }
 
 .mj-left-hud-main-group,
 .mj-left-hud-standard-group {
-    display: grid;
-    row-gap: 5px;
-    justify-items: stretch;
+	display: grid;
+	row-gap: 5px;
+	justify-items: stretch;
 }
 
 .mj-left-hud-difficulty-label {
-    color: var(--mj-ui-text-color);
-    font-family: var(--mj-ui-font-family);
-    font-size: 14px;
-    font-style: italic;
-    font-weight: bold;
-    text-shadow: 0 1px 0 var(--mj-ui-text-shadow);
-    padding-left: 4px;
-    line-height: 1.1;
+	color: var(--mj-ui-text-color);
+	font-family: var(--mj-ui-font-family);
+	font-size: 14px;
+	font-style: italic;
+	font-weight: bold;
+	text-shadow: 0 1px 0 var(--mj-ui-text-shadow);
+	padding-left: 4px;
+	line-height: 1.1;
 }
 
 .mj-left-hud .mj-game-number-solve-button,
@@ -88,14 +88,14 @@
 .mj-left-hud .mj-game-number-help-button,
 .mj-left-hud .mj-game-number-half-solution-button,
 .mj-left-hud .mj-game-number-lose-button {
-    min-width: var(--mj-left-hud-control-width);
-    max-width: var(--mj-left-hud-control-width);
-    width: 100%;
-    min-height: 28px;
-    padding: 0 10px;
-    --mj-raised-button-face-top: rgba(98, 25, 21, 0.92);
-    --mj-raised-button-face-bottom: rgba(98, 25, 21, 0.92);
-    --mj-raised-button-face-ring: rgba(214, 145, 40, 0.82);
+	min-width: var(--mj-left-hud-control-width);
+	max-width: var(--mj-left-hud-control-width);
+	width: 100%;
+	min-height: 28px;
+	padding: 0 10px;
+	--mj-raised-button-face-top: rgba(98, 25, 21, 0.92);
+	--mj-raised-button-face-bottom: rgba(98, 25, 21, 0.92);
+	--mj-raised-button-face-ring: rgba(214, 145, 40, 0.82);
 }
 
 .mj-left-hud .mj-game-number-solve-button .mj-raised-button-label,
@@ -103,85 +103,85 @@
 .mj-left-hud .mj-game-number-help-button .mj-raised-button-label,
 .mj-left-hud .mj-game-number-half-solution-button .mj-raised-button-label,
 .mj-left-hud .mj-game-number-lose-button .mj-raised-button-label {
-    font-size: 14px;
+	font-size: 14px;
 }
 
 @media screen and (orientation: portrait) and (max-width: 900px) {
-    .mj-board-page.mj-shell-mode:not(.is-expanded) {
-        --mj-left-hud-control-width: 118px;
-        display: block;
-        margin-top: 10px;
-        padding-top: 0;
-        padding-left: 0;
-        padding-right: 10px;
-        min-height: 0;
-        width: 100%;
-    }
+	.mj-board-page.mj-shell-mode:not(.is-expanded) {
+		--mj-left-hud-control-width: 118px;
+		display: block;
+		margin-top: 10px;
+		padding-top: 0;
+		padding-left: 0;
+		padding-right: 10px;
+		min-height: 0;
+		width: 100%;
+	}
 
-    .mj-board-page.mj-shell-mode:not(.is-expanded) .mj-left-hud {
-        padding-top: 6px;
-        padding-left: 0;
-        padding-right: 0;
-        width: 100%;
-    }
+	.mj-board-page.mj-shell-mode:not(.is-expanded) .mj-left-hud {
+		padding-top: 6px;
+		padding-left: 0;
+		padding-right: 0;
+		width: 100%;
+	}
 
-    .mj-shell-mode .left-hud-stack,
-    .mj-shell-mode .mj-left-hud-stack {
-        width: 100%;
-        display: grid;
-        grid-template-areas: "left right";
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        column-gap: 14px;
-        align-items: start;
-        justify-items: stretch;
-        margin-bottom: 40px;
-    }
+	.mj-shell-mode .left-hud-stack,
+	.mj-shell-mode .mj-left-hud-stack {
+		width: 100%;
+		display: grid;
+		grid-template-areas: 'left right';
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		column-gap: 14px;
+		align-items: start;
+		justify-items: stretch;
+		margin-bottom: 40px;
+	}
 
-    .mj-shell-mode .mj-left-hud-meta-group {
-        width: 100%;
-    }
+	.mj-shell-mode .mj-left-hud-meta-group {
+		width: 100%;
+	}
 
-    .mj-shell-mode .mj-left-hud-main-group,
-    .mj-shell-mode .mj-left-hud-standard-group {
-        width: 100%;
-        row-gap: 6px;
-        justify-self: stretch;
-        align-self: start;
-    }
+	.mj-shell-mode .mj-left-hud-main-group,
+	.mj-shell-mode .mj-left-hud-standard-group {
+		width: 100%;
+		row-gap: 6px;
+		justify-self: stretch;
+		align-self: start;
+	}
 
-    .mj-shell-mode .mj-left-hud-main-group {
-        grid-area: left;
-    }
+	.mj-shell-mode .mj-left-hud-main-group {
+		grid-area: left;
+	}
 
-    .mj-shell-mode .mj-left-hud-standard-group {
-        grid-area: right;
-    }
-    .mj-shell-mode .mj-left-hud-difficulty-label {
-        padding-left: 2px;
-        font-size: 16px;
-        margin-bottom: 6px;
-    }
+	.mj-shell-mode .mj-left-hud-standard-group {
+		grid-area: right;
+	}
+	.mj-shell-mode .mj-left-hud-difficulty-label {
+		padding-left: 2px;
+		font-size: 16px;
+		margin-bottom: 6px;
+	}
 
-    .mj-shell-mode .mj-game-number-control-stack {
-        width: 100%;
-        justify-self: start;
-        align-self: start;
-        row-gap: 6px;
-    }
+	.mj-shell-mode .mj-game-number-control-stack {
+		width: 100%;
+		justify-self: start;
+		align-self: start;
+		row-gap: 6px;
+	}
 
-    .mj-shell-mode .mj-game-number-control {
-        width: 100%;
-    }
+	.mj-shell-mode .mj-game-number-control {
+		width: 100%;
+	}
 
-    .mj-shell-mode .mj-left-hud .mj-game-number-solve-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-settings-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-help-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-half-solution-button,
-    .mj-shell-mode .mj-left-hud .mj-game-number-lose-button {
-        min-width: 0;
-        max-width: none;
-        width: 100%;
-        padding-left: 6px;
-        padding-right: 6px;
-    }
+	.mj-shell-mode .mj-left-hud .mj-game-number-solve-button,
+	.mj-shell-mode .mj-left-hud .mj-game-number-settings-button,
+	.mj-shell-mode .mj-left-hud .mj-game-number-help-button,
+	.mj-shell-mode .mj-left-hud .mj-game-number-half-solution-button,
+	.mj-shell-mode .mj-left-hud .mj-game-number-lose-button {
+		min-width: 0;
+		max-width: none;
+		width: 100%;
+		padding-left: 6px;
+		padding-right: 6px;
+	}
 }

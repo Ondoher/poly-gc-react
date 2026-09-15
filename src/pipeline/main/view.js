@@ -1,6 +1,6 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import {createRoot} from 'react-dom/client';
 import App from './App.jsx';
 
 export default class MainView extends Service {
@@ -20,11 +20,9 @@ export default class MainView extends Service {
 			this.root = createRoot(domNode);
 		}
 
-		this.root.render(React.createElement(
-			React.StrictMode,
-			null,
-			React.createElement(App, { registry: this.registry }, component),
-		));
+		this.root.render(
+			React.createElement(React.StrictMode, null, React.createElement(App, {registry: this.registry}, component)),
+		);
 	}
 }
 

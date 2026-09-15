@@ -16,11 +16,11 @@ future tile pair.
 
 1. `placeWeightedNormalPair()` selects a structural tile pair.
 2. `createGeneratedPairRecord()` creates a pending face-assignment record with:
-   - `tiles`
-   - `preferredFaceGroup`
-   - `faceGroup: false`
-   - `avoidanceTargets`
-   - `avoidanceWeight`
+    - `tiles`
+    - `preferredFaceGroup`
+    - `faceGroup: false`
+    - `avoidanceTargets`
+    - `avoidanceWeight`
 3. `removeGeneratedPair()` removes the selected structural tile pair from the
    working board and appends it to the solution path.
 4. The pending record is pushed into `engine.pendingPairs`.
@@ -33,7 +33,7 @@ assigned.
 `createGeneratedPairRecord()` calls:
 
 ```js
-this.getPreferredFaceGroup(2, [tile1, tile2])
+this.getPreferredFaceGroup(2, [tile1, tile2]);
 ```
 
 This only does work when face avoidance is enabled.
@@ -132,21 +132,21 @@ When a suspension is released:
 The intended experimental split is:
 
 - `Faces.assignFacesToPreparedPairs()`
-  - orchestrates deferred normal tile-pair face assignment
+    - orchestrates deferred normal tile-pair face assignment
 - `Faces.selectFacesForPair()`
-  - asks ranking for a selected face group, then asks inventory for a concrete
-    face pair
+    - asks ranking for a selected face group, then asks inventory for a concrete
+      face pair
 - `FaceRanking.rankFaceGroups()`
-  - builds the ordered face-group list
+    - builds the ordered face-group list
 - future `FaceRanking` or `Faces` ranked-window method
-  - applies difficulty-window selection before concrete face selection
+    - applies difficulty-window selection before concrete face selection
 - `FaceInventory.selectPairFromGroup()`
-  - removes and returns a concrete face pair from the selected group
+    - removes and returns a concrete face pair from the selected group
 - `FaceAvoidance`
-  - stores and queries shared avoidance pressure for the generation run
+    - stores and queries shared avoidance pressure for the generation run
 - `Tiles.recordSoftLinks()`
-  - records structural soft-link metadata before the selected tile pair is
-    committed and removed
+    - records structural soft-link metadata before the selected tile pair is
+      committed and removed
 
 The experimental engine should not skip the ranked-window step permanently.
 Selecting the first ranked group is acceptable only as a temporary integration
@@ -161,18 +161,18 @@ build against the live behavior without losing the intended class boundaries.
 
 - `GeneratedPair` carries the normal tile-pair metadata needed for deferred face
   assignment:
-  - `tile1`
-  - `tile2`
-  - `preferredFaceGroup`
-  - `faceGroup`
-  - `faces`
+    - `tile1`
+    - `tile2`
+    - `preferredFaceGroup`
+    - `faceGroup`
+    - `faces`
 - `SoftLinks` carries non-structural generation links in `GeneratorState`,
   including `open-tiles` / `after-removal` records keyed by source tiles.
 - `Faces` exists as the face-domain orchestrator.
 - `Faces` owns:
-  - `FaceInventory`
-  - shared `FaceAvoidance`
-  - `FaceRanking`
+    - `FaceInventory`
+    - shared `FaceAvoidance`
+    - `FaceRanking`
 - `FaceInventory` can initialize face sets and select concrete face pairs.
 - `FaceInventory.canSelectFromGroup(...)` can test selected-group
   availability.
@@ -195,22 +195,22 @@ build against the live behavior without losing the intended class boundaries.
 ### Next Face Tasks In Live-Flow Order
 
 1. Mark avoidance after assignment.
-   - Live equivalent: `markFaceAvoidanceForTargets(...)`.
-   - Experimental target: after `Faces.assignFacesToPair(pair)`, query
-     `GeneratorState.softLinks` for matching `open-tiles` / `after-removal`
-     records and use `GeneratorState.faceAvoidanceRules.weight` to update
-     `FaceAvoidance`.
-   - Implemented as `Faces.applyFaceAvoidance(pair)`.
+    - Live equivalent: `markFaceAvoidanceForTargets(...)`.
+    - Experimental target: after `Faces.assignFacesToPair(pair)`, query
+      `GeneratorState.softLinks` for matching `open-tiles` / `after-removal`
+      records and use `GeneratorState.faceAvoidanceRules.weight` to update
+      `FaceAvoidance`.
+    - Implemented as `Faces.applyFaceAvoidance(pair)`.
 2. Add full-face-set selection for suspensions.
-   - Live equivalent: `drawWeightedFaceSetForTiles(...)`.
-   - Experimental target: `Faces.selectFullFaceSet(...)`.
-   - This is implemented as a neutral face-domain capability. Future
-     `Suspensions` should decide how to split or reserve the selected faces.
+    - Live equivalent: `drawWeightedFaceSetForTiles(...)`.
+    - Experimental target: `Faces.selectFullFaceSet(...)`.
+    - This is implemented as a neutral face-domain capability. Future
+      `Suspensions` should decide how to split or reserve the selected faces.
 3. Add suspension release face assignment.
-   - Live equivalent: reserved faces are stored on the suspension and assigned
-     when released.
-   - Experimental target: `Suspensions` coordinates with `Faces`; `GameGenerator`
-     should not reach directly into face inventory.
+    - Live equivalent: reserved faces are stored on the suspension and assigned
+      when released.
+    - Experimental target: `Suspensions` coordinates with `Faces`; `GameGenerator`
+      should not reach directly into face inventory.
 
 ### Immediate Recommended Step
 

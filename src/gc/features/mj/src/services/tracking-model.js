@@ -1,4 +1,4 @@
-import { Service, Registry } from "@polylith/core";
+import {Service, Registry} from '@polylith/core';
 
 /**
  * Build one compact gameplay session snapshot from emitted MJ gameplay
@@ -10,15 +10,15 @@ export default class TrackingModelService extends Service {
 	 * @param {Registry} [registry] - Manage service lookup and registration.
 	 */
 	constructor(registry) {
-		super("mj:tracking-model", registry);
+		super('mj:tracking-model', registry);
 		this.implement([
-			"start",
-			"ready",
-			"getSessionSnapshot",
-			"getFeedbackContextSnapshot",
-			"hasSessionHistory",
-			"hasFeedbackContext",
-			"clearSession"
+			'start',
+			'ready',
+			'getSessionSnapshot',
+			'getFeedbackContextSnapshot',
+			'hasSessionHistory',
+			'hasFeedbackContext',
+			'clearSession',
 		]);
 	}
 
@@ -39,10 +39,10 @@ export default class TrackingModelService extends Service {
 	 * Mark the tracking-model service as ready by wiring its dependent services.
 	 */
 	ready() {
-		this.actionCollector = this.registry.subscribe("mj:action-collector");
+		this.actionCollector = this.registry.subscribe('mj:action-collector');
 
 		if (this.actionCollector) {
-			this.actionCollector.listen("action", this.onAction.bind(this));
+			this.actionCollector.listen('action', this.onAction.bind(this));
 		}
 	}
 
@@ -58,7 +58,7 @@ export default class TrackingModelService extends Service {
 			difficulty: action.difficulty,
 			layout: action.layout,
 			elapsedTimeMs: 0,
-			result: "",
+			result: '',
 			completed: false,
 			tileSequence: [],
 		};
@@ -74,7 +74,7 @@ export default class TrackingModelService extends Service {
 			this.currentSession &&
 			this.currentSession.completed !== true &&
 			Array.isArray(this.currentSession.tileSequence) &&
-			this.currentSession.tileSequence.length > 0
+			this.currentSession.tileSequence.length > 0,
 		);
 	}
 
@@ -87,7 +87,7 @@ export default class TrackingModelService extends Service {
 		return Boolean(
 			this.currentSession &&
 			Array.isArray(this.currentSession.tileSequence) &&
-			this.currentSession.tileSequence.length > 0
+			this.currentSession.tileSequence.length > 0,
 		);
 	}
 
@@ -115,7 +115,7 @@ export default class TrackingModelService extends Service {
 		this.currentSession.result = result;
 		this.currentSession.completed = true;
 		this.lastCompletedSession = this.getSessionSnapshot();
-		this.fire("session-complete", this.lastCompletedSession);
+		this.fire('session-complete', this.lastCompletedSession);
 	}
 
 	/**
@@ -124,39 +124,39 @@ export default class TrackingModelService extends Service {
 	 * @param {MjGameplayAction} action - Describe one gameplay action from the live session.
 	 */
 	onAction(action) {
-		if (!action || typeof action.type !== "string") {
+		if (!action || typeof action.type !== 'string') {
 			return;
 		}
 
 		switch (action.type) {
-			case "session-started":
+			case 'session-started':
 				if (this.hasPlayableHistory()) {
-					this.finalizeSession("abandoned");
+					this.finalizeSession('abandoned');
 				}
 				this.currentSession = this.createSession(action);
 				break;
 
-			case "session-elapsed":
+			case 'session-elapsed':
 				if (this.currentSession) {
 					this.currentSession.elapsedTimeMs = action.elapsedTimeMs;
 				}
 				break;
 
-			case "session-ended":
+			case 'session-ended':
 				if (this.currentSession) {
 					this.finalizeSession(action.result);
 				}
 				break;
 
-			case "dead-end":
+			case 'dead-end':
 				if (this.currentSession) {
 					this.currentSession.tileSequence.push([-1, -1]);
 				}
 				break;
 
-			case "play-pair":
-			case "undo-pair":
-			case "redo-pair":
+			case 'play-pair':
+			case 'undo-pair':
+			case 'redo-pair':
 				if (this.currentSession) {
 					this.currentSession.tileSequence.push([action.tile1, action.tile2]);
 				}
@@ -176,7 +176,7 @@ export default class TrackingModelService extends Service {
 
 		return {
 			...this.currentSession,
-			tileSequence: this.currentSession.tileSequence.map(function(pair) {
+			tileSequence: this.currentSession.tileSequence.map(function (pair) {
 				return [pair[0], pair[1]];
 			}),
 		};
@@ -201,7 +201,7 @@ export default class TrackingModelService extends Service {
 
 		return {
 			...this.lastCompletedSession,
-			tileSequence: this.lastCompletedSession.tileSequence.map(function(pair) {
+			tileSequence: this.lastCompletedSession.tileSequence.map(function (pair) {
 				return [pair[0], pair[1]];
 			}),
 		};

@@ -62,14 +62,14 @@ The active placeholder production shape is `classic-soft`:
 
 ```json
 {
-  "width": 0.79,
-  "height": 0.5,
-  "depth": 1.08,
-  "radius": 0.105,
-  "bevelSize": 0.028,
-  "bevelThickness": 0.038,
-  "bevelSegments": 4,
-  "curveSegments": 16
+	"width": 0.79,
+	"height": 0.5,
+	"depth": 1.08,
+	"radius": 0.105,
+	"bevelSize": 0.028,
+	"bevelThickness": 0.038,
+	"bevelSegments": 4,
+	"curveSegments": 16
 }
 ```
 
@@ -108,7 +108,7 @@ Current placeholder metadata uses:
 
 ```json
 {
-  "meshName": "baseTileBody"
+	"meshName": "baseTileBody"
 }
 ```
 
@@ -129,18 +129,18 @@ The production base tile should replace a temporary manifest entry like this:
 
 ```json
 {
-  "id": "production-ivory",
-  "label": "Production Ivory",
-  "description": "Reusable ivory Mahjong tile body.",
-  "kind": "base-tile-glb",
-  "temporary": false,
-  "glb": "scripts/data/3d-assets/models/base-tiles/production-ivory.glb",
-  "metadata": "scripts/data/3d-assets/models/base-tiles/production-ivory.json",
-  "body": {
-    "width": 0.79,
-    "height": 0.5,
-    "depth": 1.08
-  }
+	"id": "production-ivory",
+	"label": "Production Ivory",
+	"description": "Reusable ivory Mahjong tile body.",
+	"kind": "base-tile-glb",
+	"temporary": false,
+	"glb": "scripts/data/3d-assets/models/base-tiles/production-ivory.glb",
+	"metadata": "scripts/data/3d-assets/models/base-tiles/production-ivory.json",
+	"body": {
+		"width": 0.79,
+		"height": 0.5,
+		"depth": 1.08
+	}
 }
 ```
 
@@ -148,25 +148,25 @@ And the metadata file should include at least:
 
 ```json
 {
-  "schemaVersion": 1,
-  "id": "production-ivory",
-  "label": "Production Ivory",
-  "kind": "base-tile-glb",
-  "temporary": false,
-  "meshName": "baseTileBody",
-  "glb": "scripts/data/3d-assets/models/base-tiles/production-ivory.glb",
-  "metadata": "scripts/data/3d-assets/models/base-tiles/production-ivory.json",
-  "body": {
-    "width": 0.79,
-    "height": 0.5,
-    "depth": 1.08,
-    "radius": 0.105,
-    "bevelThickness": 0.038
-  },
-  "material": {
-    "color": "#f2ece2",
-    "opacity": 1
-  }
+	"schemaVersion": 1,
+	"id": "production-ivory",
+	"label": "Production Ivory",
+	"kind": "base-tile-glb",
+	"temporary": false,
+	"meshName": "baseTileBody",
+	"glb": "scripts/data/3d-assets/models/base-tiles/production-ivory.glb",
+	"metadata": "scripts/data/3d-assets/models/base-tiles/production-ivory.json",
+	"body": {
+		"width": 0.79,
+		"height": 0.5,
+		"depth": 1.08,
+		"radius": 0.105,
+		"bevelThickness": 0.038
+	},
+	"material": {
+		"color": "#f2ece2",
+		"opacity": 1
+	}
 }
 ```
 

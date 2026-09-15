@@ -1,1 +1,1 @@
-import "./PagesProvider.js";
+import './PagesProvider.js';

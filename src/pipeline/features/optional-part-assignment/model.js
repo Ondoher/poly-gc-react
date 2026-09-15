@@ -1,15 +1,10 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 import OptionalFaceOptionsModel from './models/OptionalFaceOptionsModel.js';
 
 export default class OptionalPartAssignmentModel extends Service {
 	constructor(registry) {
 		super('optional-part-assignment-model', registry);
-		this.implement([
-			'assignmentFaces',
-			'initialBulkOptions',
-			'initialManualAssignments',
-			'summary',
-		]);
+		this.implement(['assignmentFaces', 'initialBulkOptions', 'initialManualAssignments', 'summary']);
 	}
 
 	assignmentFaces(optionalPartAssignment) {
@@ -30,9 +25,7 @@ export default class OptionalPartAssignmentModel extends Service {
 	summary(optionalPartAssignment) {
 		const faces = this.assignmentFaces(optionalPartAssignment);
 
-		return faces.length
-			? OptionalFaceOptionsModel.summarizeFaces(faces)
-			: optionalPartAssignment?.summary || null;
+		return faces.length ? OptionalFaceOptionsModel.summarizeFaces(faces) : optionalPartAssignment?.summary || null;
 	}
 }
 

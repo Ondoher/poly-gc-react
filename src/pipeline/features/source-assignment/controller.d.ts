@@ -31,7 +31,7 @@ interface SourceAssignmentControllerService {
 	 *
 	 * @param options - Optional load behavior flags.
 	 */
-	load(options?: { force?: boolean; quiet?: boolean }): Promise<void>;
+	load(options?: {force?: boolean; quiet?: boolean}): Promise<void>;
 
 	/**
 	 * Set current source assignment selection for a face.

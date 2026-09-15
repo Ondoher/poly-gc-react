@@ -64,7 +64,7 @@ export function getRankedWindow(candidates, options = {}) {
  */
 export function selectRankedCandidate(candidates, options = {}) {
 	let windowDetails = getRankedWindow(candidates, options);
-	let { window } = windowDetails;
+	let {window} = windowDetails;
 
 	if (window.length === 0) {
 		return null;

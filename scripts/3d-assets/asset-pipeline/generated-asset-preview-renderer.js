@@ -1,10 +1,10 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { pathToFileURL } from 'url';
+import {pathToFileURL} from 'url';
 import puppeteer from 'puppeteer';
-import { ROOT_DIR } from '../shared/asset-paths.js';
-import { PipelineModel } from '../svg-preprocessor/PipelineModel.js';
+import {ROOT_DIR} from '../shared/asset-paths.js';
+import {PipelineModel} from '../svg-preprocessor/PipelineModel.js';
 
 const PREVIEW_WIDTH = 512;
 const PREVIEW_HEIGHT = 384;
@@ -27,17 +27,24 @@ let browserPromise = null;
  * @param {boolean} [options.noPipelineState=false] - Skip canonical state updates.
  * @returns {Promise<{outputPng: string}>} Rendered preview path.
  */
-export async function renderGeneratedAssetPreview({ tilesetId, faceKey, referenceName = 'default-large-faces', inputGlb = '', outputPng = '', noPipelineState = false }) {
+export async function renderGeneratedAssetPreview({
+	tilesetId,
+	faceKey,
+	referenceName = 'default-large-faces',
+	inputGlb = '',
+	outputPng = '',
+	noPipelineState = false,
+}) {
 	const model = new PipelineModel({
 		referenceName,
 		tileSetName: tilesetId,
 	});
 	await model.start();
 
-	const variant = buildPreviewVariant({ model, tilesetId, faceKey, inputGlb, outputPng });
+	const variant = buildPreviewVariant({model, tilesetId, faceKey, inputGlb, outputPng});
 	const faceHash = model.hashAssetPipelineFaceInput(faceKey);
 	const stageHash = model.hashAssetGenerationStageInput(faceKey, 'preview-png');
-	fs.mkdirSync(path.dirname(variant.outputPng), { recursive: true });
+	fs.mkdirSync(path.dirname(variant.outputPng), {recursive: true});
 
 	await renderGlbPreviewPng(variant);
 
@@ -78,7 +85,7 @@ export async function closeGeneratedAssetPreviewRenderer() {
 	await closeBrowser(browser);
 }
 
-function buildPreviewVariant({ model, tilesetId, faceKey, inputGlb, outputPng }) {
+function buildPreviewVariant({model, tilesetId, faceKey, inputGlb, outputPng}) {
 	const assetPipeline = model.getAssetPipeline();
 	const faceState = assetPipeline.faces?.[faceKey];
 	const finalGlb = resolveRepoPath(inputGlb || faceState?.artifacts?.inlayModel || '');
@@ -118,7 +125,7 @@ async function renderGlbPreviewPng(variant) {
 			waitUntil: 'domcontentloaded',
 			timeout: 30000,
 		});
-		await page.waitForFunction(() => window.previewReady || window.previewError, { timeout: 60000 });
+		await page.waitForFunction(() => window.previewReady || window.previewError, {timeout: 60000});
 		const error = await page.evaluate(() => window.previewError || '');
 		if (error) {
 			throw new Error(error);
@@ -129,7 +136,7 @@ async function renderGlbPreviewPng(variant) {
 		fs.writeFileSync(variant.outputPng, Buffer.from(png, 'base64'));
 	} finally {
 		closePage(page);
-		fs.rmSync(tempDir, { recursive: true, force: true });
+		fs.rmSync(tempDir, {recursive: true, force: true});
 	}
 }
 
@@ -154,12 +161,7 @@ async function getBrowser() {
 async function launchBrowser() {
 	return puppeteer.launch({
 		headless: 'new',
-		args: [
-			'--allow-file-access-from-files',
-			'--disable-gpu-sandbox',
-			'--no-sandbox',
-			'--use-gl=swiftshader',
-		],
+		args: ['--allow-file-access-from-files', '--disable-gpu-sandbox', '--no-sandbox', '--use-gl=swiftshader'],
 		defaultViewport: {
 			width: PREVIEW_WIDTH,
 			height: PREVIEW_HEIGHT,

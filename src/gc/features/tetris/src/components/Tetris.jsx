@@ -1,13 +1,13 @@
-import React, { Component } from "react";
-import PlayMatrix from "./PlayMatrix";
-import Page from 'components/Page.jsx'
-import Matrix from "./Matrix";
+import React, {Component} from 'react';
+import PlayMatrix from './PlayMatrix';
+import Page from 'components/Page.jsx';
+import Matrix from './Matrix';
 
 export default class Tetris extends Component {
-	constructor (props) {
+	constructor(props) {
 		super(props);
 
-		this.state = {gameOver: false, paused: false}
+		this.state = {gameOver: false, paused: false};
 		this.playMatrixDelegator = this.props.delegator.newDelegator();
 		this.messages = [];
 	}
@@ -15,7 +15,13 @@ export default class Tetris extends Component {
 	componentDidMount() {
 		if (this.props.delegator) {
 			this.props.delegator.delegateInbound(this, [
-				'drawOnDeck', 'drawHold', 'drawScore', 'drawLevel', 'startGame', 'drawPaused', 'drawGameOver'
+				'drawOnDeck',
+				'drawHold',
+				'drawScore',
+				'drawLevel',
+				'startGame',
+				'drawPaused',
+				'drawGameOver',
 			]);
 			this.props.delegator.delegateOutbound(this, ['play', 'escape', 'pause', 'resume']);
 		}
@@ -40,7 +46,7 @@ export default class Tetris extends Component {
 	}
 
 	queueMessage(message) {
-		this.messages.push({message: message, start: Date.now(), opacity: 1})
+		this.messages.push({message: message, start: Date.now(), opacity: 1});
 	}
 
 	dequeueMessage() {
@@ -49,7 +55,7 @@ export default class Tetris extends Component {
 		// if there is a new message, start the opacity clock now
 		if (this.messages.length !== 0) {
 			this.messages[0].start = Date.now();
-			return true
+			return true;
 		}
 
 		return false;
@@ -62,7 +68,7 @@ export default class Tetris extends Component {
 	message(message) {
 		this.queueMessage(message);
 		this.setState({messages: true});
-		if (!this.messageTimer) this.messageTimer = setInterval(this.messageTick.bind(this), 50)
+		if (!this.messageTimer) this.messageTimer = setInterval(this.messageTick.bind(this), 50);
 	}
 
 	messageTick() {
@@ -76,49 +82,48 @@ export default class Tetris extends Component {
 		// message timed out, setup for next
 		if (delta > timeout) {
 			if (!this.dequeueMessage()) {
-				clearInterval(this.messageTimer)
+				clearInterval(this.messageTimer);
 				this.messageTimer = false;
-				this.setState({messages: false})
+				this.setState({messages: false});
 			}
 			return;
 		}
 
 		var opacity = 1 - delta / timeout;
 		message.opacity = opacity;
-		this.setState({messageDelta: delta})
+		this.setState({messageDelta: delta});
 	}
 
 	startGame() {
-		this.setState({gameOver: false})
+		this.setState({gameOver: false});
 	}
 
 	drawGameOver() {
-		this.setState({gameOver: true})
+		this.setState({gameOver: true});
 	}
 
 	drawPaused(paused) {
-		this.setState({paused: paused})
+		this.setState({paused: paused});
 	}
 	drawOnDeck(pieces) {
-		this.setState({onDeck: pieces})
+		this.setState({onDeck: pieces});
 	}
 
 	drawHold(matrix) {
-		this.setState({hold: matrix})
+		this.setState({hold: matrix});
 	}
 
 	drawScore(points, score, comment) {
 		this.setState({score: score});
 		if (comment) {
-			this.message(`${comment} ${points} points`)
+			this.message(`${comment} ${points} points`);
 		}
 	}
 
-	drawLevel(goal, level, comment)
-	{
+	drawLevel(goal, level, comment) {
 		this.setState({goal, level});
 		if (comment) {
-			this.message(comment)
+			this.message(comment);
 		}
 	}
 
@@ -132,49 +137,46 @@ export default class Tetris extends Component {
 				<div className="hold-title">HOLD</div>
 				<div className="hold-pieces">
 					<div className={className}>
-						<Matrix matrix={hold}/>
+						<Matrix matrix={hold} />
 					</div>
 				</div>
 			</div>
-		)
+		);
 	}
 
 	renderOneOnDeck(idx, matrix) {
-		var classNames = ['game-ondeck-one', 'game-ondeck-two', 'game-ondeck-three']
+		var classNames = ['game-ondeck-one', 'game-ondeck-two', 'game-ondeck-three'];
 		var className = `tetris-normal-side matrix ${classNames[idx]}`;
 		return (
 			<div key={`ondeck-${idx}`} className={className}>
-				<Matrix matrix={matrix}/>
+				<Matrix matrix={matrix} />
 			</div>
-		)
+		);
 	}
 	renderOnDeck() {
 		if (!this.state.onDeck) return;
-		var onDeck = this.state.onDeck.map(function(onDeck, idx)
-		{
+		var onDeck = this.state.onDeck.map(function (onDeck, idx) {
 			return this.renderOneOnDeck(idx, onDeck);
-		}, this)
+		}, this);
 
 		return (
 			<div className="game-ondeck">
 				<div className="ondeck-title">NEXT</div>
-				<div className="ondeck-pieces">
-					{onDeck}
-				</div>
+				<div className="ondeck-pieces">{onDeck}</div>
 			</div>
-		)
+		);
 	}
 
 	renderMessage() {
 		var message = this.getCurrentMessage();
 		if (!message) return;
-		var styles = {opacity: message.opacity}
+		var styles = {opacity: message.opacity};
 
 		return (
 			<div className="small-message">
 				<div style={styles}>{message.message}</div>
 			</div>
-		)
+		);
 	}
 
 	renderStats() {
@@ -189,35 +191,25 @@ export default class Tetris extends Component {
 				<div className="level">{level}</div>
 				<div className="goal">{goal}</div>
 			</div>
-		)
+		);
 	}
 
 	renderGameRight() {
-		return (
-			<div className="game-right">
-				{this.renderOnDeck()}
-			</div>
-		)
+		return <div className="game-right">{this.renderOnDeck()}</div>;
 	}
 
 	renderPlayButton() {
-		return(
-			<div className="play-button" onClick={this.onPlayClick.bind(this)}></div>
-		)
+		return <div className="play-button" onClick={this.onPlayClick.bind(this)}></div>;
 	}
 
 	renderPauseButton() {
 		if (this.state.paused) return;
-		return(
-			<div className="pause-button" onClick={this.onPauseClick.bind(this)}></div>
-		)
+		return <div className="pause-button" onClick={this.onPauseClick.bind(this)}></div>;
 	}
 
 	renderResumeButton() {
 		if (!this.state.paused) return;
-		return(
-			<div className="resume-button" onClick={this.onResumeClick.bind(this)}></div>
-		)
+		return <div className="resume-button" onClick={this.onResumeClick.bind(this)}></div>;
 	}
 
 	renderGameLeft() {
@@ -228,7 +220,7 @@ export default class Tetris extends Component {
 				{this.renderPauseButton()}
 				{this.renderResumeButton()}
 			</div>
-		)
+		);
 	}
 
 	renderGameOver() {
@@ -237,20 +229,16 @@ export default class Tetris extends Component {
 			<div className="gameover-cover" onClick={this.escape.bind(this)}>
 				<div className="gameover"></div>
 			</div>
-		)
+		);
 	}
 
 	renderPlayArea() {
-		var playMatrix = !this.state.paused ?
-			<PlayMatrix delegator = {this.playMatrixDelegator}	/> :
-			''
+		var playMatrix = !this.state.paused ? <PlayMatrix delegator={this.playMatrixDelegator} /> : '';
 		return (
 			<div className="game-play">
-				<div className="game-play-grid">
-					{playMatrix}
-				</div>
+				<div className="game-play-grid">{playMatrix}</div>
 			</div>
-		)
+		);
 	}
 
 	renderMain() {
@@ -262,16 +250,15 @@ export default class Tetris extends Component {
 				{this.renderPlayArea()}
 				{this.renderGameRight()}
 			</div>
-		)
+		);
 	}
-
 
 	renderHeader() {
 		return (
 			<div className="game-header">
 				<div className="game-title"></div>
 			</div>
-		)
+		);
 	}
 
 	renderGameSpace() {
@@ -281,7 +268,7 @@ export default class Tetris extends Component {
 				{this.renderMain()}
 				{this.renderGameOver()}
 			</div>
-		)
+		);
 	}
 
 	render() {
@@ -289,9 +276,7 @@ export default class Tetris extends Component {
 		var pageClassName = 'page tetris-page ';
 		return (
 			<Page serviceName={this.props.serviceName} className={pageClassName}>
-				<div className="tetris-content">
-					{this.renderGameSpace()}
-				</div>
+				<div className="tetris-content">{this.renderGameSpace()}</div>
 			</Page>
 		);
 	}

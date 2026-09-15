@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 export default class MainController extends Service {
 	constructor(registry) {

@@ -38,7 +38,7 @@ export default class ReferenceApprovalPage extends React.Component {
 		this.updateListener = this.props.pageView.listen('updated', (state) => {
 			this.setState(state);
 		});
-		this.props.pageView.load({ quiet: true });
+		this.props.pageView.load({quiet: true});
 	}
 
 	componentWillUnmount() {
@@ -53,14 +53,14 @@ export default class ReferenceApprovalPage extends React.Component {
 
 	onSelectionChange(faceKey, selection, details = {}) {
 		if (details.source === 'component') {
-			this.setState({ partBoxMode: false });
+			this.setState({partBoxMode: false});
 		}
 
 		this.props.pageView.setSelection(faceKey, selection);
 	}
 
 	render() {
-		const { structure, processing, messageDialog } = this.state;
+		const {structure, processing, messageDialog} = this.state;
 
 		return (
 			<section className="reference-approval-page">
@@ -75,8 +75,8 @@ export default class ReferenceApprovalPage extends React.Component {
 	}
 
 	renderHeader() {
-		const { pageView } = this.props;
-		const { structure, selection, summary, dirty, processing, partBoxMode } = this.state;
+		const {pageView} = this.props;
+		const {structure, selection, summary, dirty, processing, partBoxMode} = this.state;
 
 		return (
 			<header className="reference-approval-header">
@@ -91,17 +91,29 @@ export default class ReferenceApprovalPage extends React.Component {
 					/>
 				</div>
 				<div className="reference-approval-actions">
-					<Button active={partBoxMode} onClick={() => this.togglePartBoxMode()}>Part Boxes</Button>
-					<Button onClick={() => pageView.load({ force: true })} disabled={processing}>Reload</Button>
-					<Button variant="primary" onClick={() => pageView.saveDraft()} disabled={processing || !structure || !dirty}>Save Draft</Button>
-					<Button variant="accept" onClick={() => pageView.accept()} disabled={processing || !structure}>Accept</Button>
+					<Button active={partBoxMode} onClick={() => this.togglePartBoxMode()}>
+						Part Boxes
+					</Button>
+					<Button onClick={() => pageView.load({force: true})} disabled={processing}>
+						Reload
+					</Button>
+					<Button
+						variant="primary"
+						onClick={() => pageView.saveDraft()}
+						disabled={processing || !structure || !dirty}
+					>
+						Save Draft
+					</Button>
+					<Button variant="accept" onClick={() => pageView.accept()} disabled={processing || !structure}>
+						Accept
+					</Button>
 				</div>
 			</header>
 		);
 	}
 
 	renderGrid() {
-		const { structure } = this.state;
+		const {structure} = this.state;
 		const faces = Object.entries(structure.faces || {});
 		const paletteColorSet = this.props.pageView.paletteColorSet(structure.referenceSet?.palette);
 
@@ -114,9 +126,13 @@ export default class ReferenceApprovalPage extends React.Component {
 						face={face}
 						selection={this.state.selection}
 						pageView={this.props.pageView}
-						onSelectionChange={(nextFaceKey, selection, details) => this.onSelectionChange(nextFaceKey, selection, details)}
+						onSelectionChange={(nextFaceKey, selection, details) =>
+							this.onSelectionChange(nextFaceKey, selection, details)
+						}
 						onBind={(nextFaceKey) => this.props.pageView.bindSelection(nextFaceKey)}
-						onUnbind={(nextFaceKey, partId, componentIds) => this.props.pageView.unbindPart(nextFaceKey, partId, componentIds)}
+						onUnbind={(nextFaceKey, partId, componentIds) =>
+							this.props.pageView.unbindPart(nextFaceKey, partId, componentIds)
+						}
 						onAddPaletteColor={(color) => this.props.pageView.addPaletteColor(color)}
 						paletteColorSet={paletteColorSet}
 						partBoxMode={this.state.partBoxMode}
@@ -150,14 +166,21 @@ export default class ReferenceApprovalPage extends React.Component {
 	renderMessageDialog(messageDialog) {
 		return (
 			<div className="pipeline-dialog-overlay" role="presentation">
-				<section className="pipeline-dialog" role="dialog" aria-modal="true" aria-labelledby="reference-approval-dialog-title">
+				<section
+					className="pipeline-dialog"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="reference-approval-dialog-title"
+				>
 					<header>
 						<h2 id="reference-approval-dialog-title">{messageDialog.title}</h2>
 					</header>
 					<p>{messageDialog.message}</p>
 					<footer>
 						<span />
-						<Button variant="primary" onClick={() => this.props.pageView.dismissMessageDialog()}>OK</Button>
+						<Button variant="primary" onClick={() => this.props.pageView.dismissMessageDialog()}>
+							OK
+						</Button>
 					</footer>
 				</section>
 			</div>
@@ -167,12 +190,14 @@ export default class ReferenceApprovalPage extends React.Component {
 
 class ReferenceStructureCard extends React.Component {
 	cardContext() {
-		const { faceKey, face, selection } = this.props;
+		const {faceKey, face, selection} = this.props;
 		const partEntries = Object.entries(face.parts || {});
 		const components = face.components || [];
 		const selectedPartId = selection?.faceKey === faceKey ? selection.partId : '';
 		const selectedComponentIds = selection?.faceKey === faceKey ? selection.componentIds : [];
-		const componentSelectionExplicit = Boolean(selection?.faceKey === faceKey && selection.componentSelectionExplicit);
+		const componentSelectionExplicit = Boolean(
+			selection?.faceKey === faceKey && selection.componentSelectionExplicit,
+		);
 		const bindings = face.bindings || [];
 		const selectedPartBinding = bindings.find((binding) => binding.partId === selectedPartId);
 		const selectedBoundComponentIds = selectedPartBinding?.componentIds || [];
@@ -187,20 +212,22 @@ class ReferenceStructureCard extends React.Component {
 			canBind: Boolean(selectedPartId && selectedComponentIds.length > 0),
 			selectedPartBinding,
 			canUnbind: Boolean(
-				selectedPartBinding
-				&& componentSelectionExplicit
-				&& selectedComponentIds.some((componentId) => selectedBoundComponentIds.includes(componentId)),
+				selectedPartBinding &&
+				componentSelectionExplicit &&
+				selectedComponentIds.some((componentId) => selectedBoundComponentIds.includes(componentId)),
 			),
 			allPartsBound: partEntries.length > 0 && partEntries.every(([, part]) => part.bindingStatus === 'bound'),
-			partColors: Object.fromEntries(partEntries.map(([partId], index) => [
-				partId,
-				STRUCTURE_PART_COLORS[index % STRUCTURE_PART_COLORS.length],
-			])),
+			partColors: Object.fromEntries(
+				partEntries.map(([partId], index) => [
+					partId,
+					STRUCTURE_PART_COLORS[index % STRUCTURE_PART_COLORS.length],
+				]),
+			),
 		};
 	}
 
 	render() {
-		const { faceKey, face } = this.props;
+		const {faceKey, face} = this.props;
 		const canvas = {
 			left: 0,
 			top: 0,
@@ -210,11 +237,16 @@ class ReferenceStructureCard extends React.Component {
 		const context = this.cardContext();
 
 		return (
-			<article className={[
-				'structure-card',
-				context.isFocusedFace ? 'focused-structure-card' : '',
-				context.allPartsBound ? 'complete-structure-card' : '',
-			].filter(Boolean).join(' ')} data-review-face={faceKey}>
+			<article
+				className={[
+					'structure-card',
+					context.isFocusedFace ? 'focused-structure-card' : '',
+					context.allPartsBound ? 'complete-structure-card' : '',
+				]
+					.filter(Boolean)
+					.join(' ')}
+				data-review-face={faceKey}
+			>
 				{this.renderPreview(canvas, context)}
 				{this.renderSelector(context)}
 			</article>
@@ -222,85 +254,114 @@ class ReferenceStructureCard extends React.Component {
 	}
 
 	renderPreview(canvas, context) {
-		const { faceKey, face, pageView, partBoxMode, onSelectionChange, highlightUnboundComponents } = this.props;
-		const { components, selectedPartId, selectedComponentIds, componentSelectionExplicit, partColors } = context;
+		const {faceKey, face, pageView, partBoxMode, onSelectionChange, highlightUnboundComponents} = this.props;
+		const {components, selectedPartId, selectedComponentIds, componentSelectionExplicit, partColors} = context;
 
 		return (
 			<div className="structure-card-preview">
 				<div
-					className={[
-						'face-preview',
-						partBoxMode ? 'reference-part-box-preview' : '',
-					].filter(Boolean).join(' ')}
-					style={{ aspectRatio: `${canvas.width} / ${canvas.height}` }}
+					className={['face-preview', partBoxMode ? 'reference-part-box-preview' : '']
+						.filter(Boolean)
+						.join(' ')}
+					style={{aspectRatio: `${canvas.width} / ${canvas.height}`}}
 				>
 					{face.sourceFile ? <img src={pageView.assetUrl(face.sourceFile)} alt={faceKey} /> : null}
-					{partBoxMode ? this.referencePartBoxes(context).map((partBox) => {
-						const selected = selectedPartId === partBox.partId;
-						const dimmed = Boolean(selectedPartId && !selected);
+					{partBoxMode
+						? this.referencePartBoxes(context).map((partBox) => {
+								const selected = selectedPartId === partBox.partId;
+								const dimmed = Boolean(selectedPartId && !selected);
 
-						return (
-							<BoundsBox
-								key={partBox.partId}
-								bounds={partBox.bounds}
-								canvas={canvas}
-								className={[
-									'reference-part-bounds',
-									selected ? 'selected-reference-part-bounds' : '',
-									dimmed ? 'dimmed-reference-part-bounds' : '',
-								].filter(Boolean).join(' ')}
-								style={structurePartColorStyle(partBox.color)}
-								title={partBox.title}
-								onClick={() => onSelectionChange?.(faceKey, partSelectorSelection(selectedPartId, {
-									id: partBox.partId,
-									componentIds: partBox.componentIds,
-								}))}
-							/>
-						);
-					}) : components.map((component, index) => {
-						const componentPartId = component.partIds?.[0] || '';
-						const isPendingSelected = selectedComponentIds.includes(component.componentId);
-						const isSelectedPartComponent = Boolean(selectedPartId && component.partIds?.includes(selectedPartId));
-						const isEditingSelectedPart = Boolean(isSelectedPartComponent && componentSelectionExplicit);
-						const isSelected = isPendingSelected || (isSelectedPartComponent && !isEditingSelectedPart);
-						const isUnbound = (component.partIds || []).length === 0;
-						const componentColor = partColors[componentPartId] || (isPendingSelected ? partColors[selectedPartId] : '');
+								return (
+									<BoundsBox
+										key={partBox.partId}
+										bounds={partBox.bounds}
+										canvas={canvas}
+										className={[
+											'reference-part-bounds',
+											selected ? 'selected-reference-part-bounds' : '',
+											dimmed ? 'dimmed-reference-part-bounds' : '',
+										]
+											.filter(Boolean)
+											.join(' ')}
+										style={structurePartColorStyle(partBox.color)}
+										title={partBox.title}
+										onClick={() =>
+											onSelectionChange?.(
+												faceKey,
+												partSelectorSelection(selectedPartId, {
+													id: partBox.partId,
+													componentIds: partBox.componentIds,
+												}),
+											)
+										}
+									/>
+								);
+							})
+						: components.map((component, index) => {
+								const componentPartId = component.partIds?.[0] || '';
+								const isPendingSelected = selectedComponentIds.includes(component.componentId);
+								const isSelectedPartComponent = Boolean(
+									selectedPartId && component.partIds?.includes(selectedPartId),
+								);
+								const isEditingSelectedPart = Boolean(
+									isSelectedPartComponent && componentSelectionExplicit,
+								);
+								const isSelected =
+									isPendingSelected || (isSelectedPartComponent && !isEditingSelectedPart);
+								const isUnbound = (component.partIds || []).length === 0;
+								const componentColor =
+									partColors[componentPartId] ||
+									(isPendingSelected ? partColors[selectedPartId] : '');
 
-						return (
-							<BoundsBox
-								key={component.componentId || index}
-								bounds={component.bounds}
-								canvas={canvas}
-								className={[
-									'reference-component',
-									isSelected ? 'selected-reference-component' : '',
-									component.bindingStatus === 'bound' ? 'bound-reference-component' : '',
-									highlightUnboundComponents && isUnbound ? 'highlight-unbound-reference-component' : '',
-								].filter(Boolean).join(' ')}
-								style={structurePartColorStyle(componentColor)}
-								title={[
-									component.componentId,
-									componentPartId,
-									component.dominantColor,
-									`${component.bounds?.width || 0}x${component.bounds?.height || 0}`,
-								].filter(Boolean).join(' / ')}
-								onClick={() => onSelectionChange?.(faceKey, componentSelectorSelection({
-									partId: selectedPartId,
-									componentIds: selectedComponentIds,
-								}, {
-									id: component.componentId,
-									partIds: [...(component.partIds || [])],
-								}))}
-							/>
-						);
-					})}
+								return (
+									<BoundsBox
+										key={component.componentId || index}
+										bounds={component.bounds}
+										canvas={canvas}
+										className={[
+											'reference-component',
+											isSelected ? 'selected-reference-component' : '',
+											component.bindingStatus === 'bound' ? 'bound-reference-component' : '',
+											highlightUnboundComponents && isUnbound
+												? 'highlight-unbound-reference-component'
+												: '',
+										]
+											.filter(Boolean)
+											.join(' ')}
+										style={structurePartColorStyle(componentColor)}
+										title={[
+											component.componentId,
+											componentPartId,
+											component.dominantColor,
+											`${component.bounds?.width || 0}x${component.bounds?.height || 0}`,
+										]
+											.filter(Boolean)
+											.join(' / ')}
+										onClick={() =>
+											onSelectionChange?.(
+												faceKey,
+												componentSelectorSelection(
+													{
+														partId: selectedPartId,
+														componentIds: selectedComponentIds,
+													},
+													{
+														id: component.componentId,
+														partIds: [...(component.partIds || [])],
+													},
+												),
+											)
+										}
+									/>
+								);
+							})}
 				</div>
 			</div>
 		);
 	}
 
 	referencePartBoxes(context) {
-		const { pageView } = this.props;
+		const {pageView} = this.props;
 
 		return context.partEntries
 			.map(([partId, part]) => {
@@ -361,35 +422,48 @@ class ReferenceStructureCard extends React.Component {
 				onUnbind={() => onUnbind?.(faceKey, context.selectedPartId, context.selectedComponentIds)}
 				partsTitle="Semantic Parts"
 				componentsTitle="Detected Components"
-				parts={context.partEntries.map(([partId, part]) => this.referencePartRow({
-					faceKey,
-					partId,
-					part,
-					selectedPartId: context.selectedPartId,
-					partColors: context.partColors,
-					paletteColorSet,
-					highlightUnboundParts,
-					onAddPaletteColor,
-				}))}
-				components={sortedComponents.map((component) => this.referenceComponentRow({
-					faceKey,
-					face,
-					component,
-					components: context.components,
-					selectedPartId: context.selectedPartId,
-					selectedComponentIds: context.selectedComponentIds,
-					componentSelectionExplicit: context.componentSelectionExplicit,
-					partColors: context.partColors,
-					paletteColorSet,
-					highlightUnboundComponents,
-					onAddPaletteColor,
-				}))}
+				parts={context.partEntries.map(([partId, part]) =>
+					this.referencePartRow({
+						faceKey,
+						partId,
+						part,
+						selectedPartId: context.selectedPartId,
+						partColors: context.partColors,
+						paletteColorSet,
+						highlightUnboundParts,
+						onAddPaletteColor,
+					}),
+				)}
+				components={sortedComponents.map((component) =>
+					this.referenceComponentRow({
+						faceKey,
+						face,
+						component,
+						components: context.components,
+						selectedPartId: context.selectedPartId,
+						selectedComponentIds: context.selectedComponentIds,
+						componentSelectionExplicit: context.componentSelectionExplicit,
+						partColors: context.partColors,
+						paletteColorSet,
+						highlightUnboundComponents,
+						onAddPaletteColor,
+					}),
+				)}
 			/>
 		);
 	}
 
-	referencePartRow({ faceKey, partId, part, selectedPartId, partColors, paletteColorSet, highlightUnboundParts, onAddPaletteColor }) {
-		const { pageView } = this.props;
+	referencePartRow({
+		faceKey,
+		partId,
+		part,
+		selectedPartId,
+		partColors,
+		paletteColorSet,
+		highlightUnboundParts,
+		onAddPaletteColor,
+	}) {
+		const {pageView} = this.props;
 		const componentCount = part.componentIds?.length || 0;
 		const colorSwatch = pageView.referenceColorSwatch(part, paletteColorSet);
 		const isUnbound = (part.componentIds || []).length === 0;
@@ -398,7 +472,8 @@ class ReferenceStructureCard extends React.Component {
 			id: partId,
 			componentIds: [...(part.componentIds || [])],
 			label: pageView.partLabel(partId, part),
-			status: part.bindingStatus === 'bound' ? `${componentCount} comp${componentCount === 1 ? '' : 's'}` : 'unbound',
+			status:
+				part.bindingStatus === 'bound' ? `${componentCount} comp${componentCount === 1 ? '' : 's'}` : 'unbound',
 			selected: selectedPartId === partId,
 			bound: part.bindingStatus === 'bound',
 			highlight: highlightUnboundParts && isUnbound,
@@ -411,15 +486,29 @@ class ReferenceStructureCard extends React.Component {
 					known={colorSwatch.known}
 					addable={Boolean(colorSwatch.color && !colorSwatch.known)}
 					title={colorSwatch.known ? colorSwatch.title : `${colorSwatch.title}. Add to palette.`}
-					onClick={colorSwatch.color && !colorSwatch.known ? () => onAddPaletteColor?.(colorSwatch.color) : null}
+					onClick={
+						colorSwatch.color && !colorSwatch.known ? () => onAddPaletteColor?.(colorSwatch.color) : null
+					}
 					disabled={!colorSwatch.color || colorSwatch.known}
 				/>
 			),
 		};
 	}
 
-	referenceComponentRow({ faceKey, face, component, components, selectedPartId, selectedComponentIds, componentSelectionExplicit, partColors, paletteColorSet, highlightUnboundComponents, onAddPaletteColor }) {
-		const { pageView } = this.props;
+	referenceComponentRow({
+		faceKey,
+		face,
+		component,
+		components,
+		selectedPartId,
+		selectedComponentIds,
+		componentSelectionExplicit,
+		partColors,
+		paletteColorSet,
+		highlightUnboundComponents,
+		onAddPaletteColor,
+	}) {
+		const {pageView} = this.props;
 		const componentPartId = component.partIds?.[0] || '';
 		const componentPart = componentPartId ? face.parts?.[componentPartId] : null;
 		const isPendingSelected = selectedComponentIds.includes(component.componentId);
@@ -440,12 +529,9 @@ class ReferenceStructureCard extends React.Component {
 			highlight: highlightUnboundComponents && isUnbound,
 			reviewKey: `${faceKey}:${component.componentId}`,
 			style: structurePartColorStyle(componentColor),
-			title: [
-				component.componentId,
-				componentPartId,
-				component.dominantColor,
-				`${component.pixels} px`,
-			].filter(Boolean).join(' / '),
+			title: [component.componentId, componentPartId, component.dominantColor, `${component.pixels} px`]
+				.filter(Boolean)
+				.join(' / '),
 			afterLabel: (
 				<ColorSwatch
 					className="structure-palette-swatch"
@@ -453,7 +539,9 @@ class ReferenceStructureCard extends React.Component {
 					known={colorSwatch.known}
 					addable={Boolean(colorSwatch.color && !colorSwatch.known)}
 					title={colorSwatch.known ? colorSwatch.title : `${colorSwatch.title}. Add to palette.`}
-					onClick={colorSwatch.color && !colorSwatch.known ? () => onAddPaletteColor?.(colorSwatch.color) : null}
+					onClick={
+						colorSwatch.color && !colorSwatch.known ? () => onAddPaletteColor?.(colorSwatch.color) : null
+					}
 					disabled={!colorSwatch.color || colorSwatch.known}
 				/>
 			),
@@ -461,7 +549,13 @@ class ReferenceStructureCard extends React.Component {
 	}
 }
 
-function ReferenceStructureHeaderSummary({ summary, onAddPaletteColor, onShowFirstIncompleteFace, onShowFirstUnboundPart, onShowFirstUnboundComponent }) {
+function ReferenceStructureHeaderSummary({
+	summary,
+	onAddPaletteColor,
+	onShowFirstIncompleteFace,
+	onShowFirstUnboundPart,
+	onShowFirstUnboundComponent,
+}) {
 	const safeSummary = summary || {
 		incompleteFaceCount: 0,
 		unboundPartCount: 0,
@@ -469,23 +563,24 @@ function ReferenceStructureHeaderSummary({ summary, onAddPaletteColor, onShowFir
 		unknownPaletteColorCount: 0,
 		unknownPaletteColors: [],
 	};
-	const unknownColorSwatches = safeSummary.unknownPaletteColors.length > 0 ? (
-		<>
-			{safeSummary.unknownPaletteColors.slice(0, 5).map((color) => (
-				<ColorSwatch
-					key={color}
-					className="structure-palette-swatch structure-header-color-swatch"
-					color={color}
-					known={false}
-					addable={true}
-					title={`Add ${color} to palette`}
-					aria-label={`Add ${color} to palette`}
-					onClick={() => onAddPaletteColor?.(color)}
-				/>
-			))}
-			{safeSummary.unknownPaletteColors.length > 5 ? <b aria-label="More unknown colors">...</b> : null}
-		</>
-	) : null;
+	const unknownColorSwatches =
+		safeSummary.unknownPaletteColors.length > 0 ? (
+			<>
+				{safeSummary.unknownPaletteColors.slice(0, 5).map((color) => (
+					<ColorSwatch
+						key={color}
+						className="structure-palette-swatch structure-header-color-swatch"
+						color={color}
+						known={false}
+						addable={true}
+						title={`Add ${color} to palette`}
+						aria-label={`Add ${color} to palette`}
+						onClick={() => onAddPaletteColor?.(color)}
+					/>
+				))}
+				{safeSummary.unknownPaletteColors.length > 5 ? <b aria-label="More unknown colors">...</b> : null}
+			</>
+		) : null;
 
 	return (
 		<div className="structure-header-summary" aria-label="Reference structure review summary">
@@ -531,9 +626,13 @@ function structurePartColorStyle(color) {
 
 function hexToRgba(color, alpha, fallbackRgb) {
 	const normalized = String(color || '').replace(/^#/, '');
-	const hex = normalized.length === 3
-		? normalized.split('').map((digit) => digit + digit).join('')
-		: normalized;
+	const hex =
+		normalized.length === 3
+			? normalized
+					.split('')
+					.map((digit) => digit + digit)
+					.join('')
+			: normalized;
 	const value = Number.parseInt(hex, 16);
 
 	if (!Number.isFinite(value) || hex.length !== 6) {
@@ -544,11 +643,14 @@ function hexToRgba(color, alpha, fallbackRgb) {
 }
 
 function unionBounds(boundsList) {
-	const validBounds = boundsList.filter((bounds) => bounds
-		&& Number.isFinite(bounds.left)
-		&& Number.isFinite(bounds.top)
-		&& Number.isFinite(bounds.right)
-		&& Number.isFinite(bounds.bottom));
+	const validBounds = boundsList.filter(
+		(bounds) =>
+			bounds &&
+			Number.isFinite(bounds.left) &&
+			Number.isFinite(bounds.top) &&
+			Number.isFinite(bounds.right) &&
+			Number.isFinite(bounds.bottom),
+	);
 
 	if (validBounds.length === 0) {
 		return null;

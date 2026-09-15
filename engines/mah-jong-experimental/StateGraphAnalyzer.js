@@ -101,7 +101,7 @@ export default class StateGraphAnalyzer {
 		return new StateGraphAnalyzer(
 			this.rules,
 			this.gameState,
-			this.createStateCopyWithRemovedTiles(removedTileKeys)
+			this.createStateCopyWithRemovedTiles(removedTileKeys),
 		);
 	}
 
@@ -114,12 +114,15 @@ export default class StateGraphAnalyzer {
 	 * @returns {TileKey[]}
 	 */
 	pickShortHorizonProbePair(openTileKeys) {
-		return openTileKeys.slice().sort((left, right) => {
-			let leftZ = this.analyzedState.getPosition(left)?.z ?? Number.MAX_SAFE_INTEGER;
-			let rightZ = this.analyzedState.getPosition(right)?.z ?? Number.MAX_SAFE_INTEGER;
+		return openTileKeys
+			.slice()
+			.sort((left, right) => {
+				let leftZ = this.analyzedState.getPosition(left)?.z ?? Number.MAX_SAFE_INTEGER;
+				let rightZ = this.analyzedState.getPosition(right)?.z ?? Number.MAX_SAFE_INTEGER;
 
-			return leftZ - rightZ || left - right;
-		}).slice(0, 2);
+				return leftZ - rightZ || left - right;
+			})
+			.slice(0, 2);
 	}
 
 	/**

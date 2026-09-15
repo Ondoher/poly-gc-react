@@ -105,10 +105,10 @@ Planned direction:
 - use the same runtime sizing logic that limits available tile sizes to also attach a parent MJ UI scale class
 - use that class to override control-specific dimensions rather than replacing the base control rules
 - likely override targets include:
-  - `Game #` control width and height
-  - shuffle button width
-  - shuffle icon dimensions
-  - right-HUD rail and icon sizes
+    - `Game #` control width and height
+    - shuffle button width
+    - shuffle icon dimensions
+    - right-HUD rail and icon sizes
 
 Example pattern:
 

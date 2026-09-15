@@ -1,96 +1,114 @@
-import fs from "fs";
-import path from "path";
-import { execFile } from "child_process";
-import { access, mkdir, readFile, writeFile } from "fs/promises";
+import fs from 'fs';
+import path from 'path';
+import {execFile} from 'child_process';
+import {access, mkdir, readFile, writeFile} from 'fs/promises';
 import {
 	BASE_TILE_MODELS_DIR,
 	LARGE_FACES_DIR,
 	OUTPUT_3D_DIR,
 	OUTPUT_VALIDATION_DIR,
 	sanitizeOutputScope,
-} from "../../scripts/3d-assets/shared/asset-paths.js";
-import { loadFacePreprocessingMetadata } from "../../scripts/3d-assets/svg-preprocessor/face-preprocessing-metadata.js";
-import { BASE_OUTPUT, PipelineModel } from "../../scripts/3d-assets/svg-preprocessor/PipelineModel.js";
-import { getFacePaths } from "../../scripts/3d-assets/svg-preprocessor/preprocessed-face-validation-utils.js";
-import { tilesetImageDir, tilesetOutputRoot } from "../../scripts/3d-assets/svg-preprocessor/pipeline-output-paths.js";
-import { extractSourceSvgComponents } from "../../scripts/3d-assets/svg-preprocessor/source-svg-components.js";
-import { readTilesetManifest, setActiveTileset, TILESET_MANIFEST_PATH } from "../../scripts/3d-assets/svg-preprocessor/tileset-manifest.js";
-import { renderGeneratedAssetPreview } from "../../scripts/3d-assets/asset-pipeline/generated-asset-preview-renderer.js";
-import { getAssetPipelineStream } from "./asset-pipeline-stream.js";
-import { initializePipelineStream } from "./stream.js";
+} from '../../scripts/3d-assets/shared/asset-paths.js';
+import {loadFacePreprocessingMetadata} from '../../scripts/3d-assets/svg-preprocessor/face-preprocessing-metadata.js';
+import {BASE_OUTPUT, PipelineModel} from '../../scripts/3d-assets/svg-preprocessor/PipelineModel.js';
+import {getFacePaths} from '../../scripts/3d-assets/svg-preprocessor/preprocessed-face-validation-utils.js';
+import {tilesetImageDir, tilesetOutputRoot} from '../../scripts/3d-assets/svg-preprocessor/pipeline-output-paths.js';
+import {extractSourceSvgComponents} from '../../scripts/3d-assets/svg-preprocessor/source-svg-components.js';
+import {
+	readTilesetManifest,
+	setActiveTileset,
+	TILESET_MANIFEST_PATH,
+} from '../../scripts/3d-assets/svg-preprocessor/tileset-manifest.js';
+import {renderGeneratedAssetPreview} from '../../scripts/3d-assets/asset-pipeline/generated-asset-preview-renderer.js';
+import {getAssetPipelineStream} from './asset-pipeline-stream.js';
+import {initializePipelineStream} from './stream.js';
 
-const INFERENCE_DIR = path.resolve(OUTPUT_3D_DIR, "metadata-inference");
-const DEFAULT_REFERENCE_STRUCTURE_ID = "default-large-faces";
-const DEFAULT_REFERENCE_STRUCTURE_DIR = path.resolve(OUTPUT_3D_DIR, "reference-structure", DEFAULT_REFERENCE_STRUCTURE_ID);
-const REFERENCE_STRUCTURE_FILENAME = "reference-structure.json";
-const SVG_CUTTER_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-svg-cutter.js");
-const SVG_CUTTER_SIMPLIFICATION_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "experiment-paper-flatten-svg.js");
-const SVG_CUTTER_SIMPLIFICATION_FLATNESS = "0.05";
-const STAMPED_BODY_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-stamped-tile-pair.js");
-const COLORED_INLAY_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-stamped-tile-inlay.js");
-const GENERATED_ASSET_PREVIEW_SCRIPT = path.resolve("scripts", "3d-assets", "asset-pipeline", "export-generated-asset-preview.js");
-const CUTTER_SIMPLIFICATION_EXPERIMENT_FACE = "flower-3";
-const CUTTER_SIMPLIFICATION_EXPERIMENT_FLATNESS = Object.freeze([0.25, 0.15, 0.10, 0.075, 0.05]);
+const INFERENCE_DIR = path.resolve(OUTPUT_3D_DIR, 'metadata-inference');
+const DEFAULT_REFERENCE_STRUCTURE_ID = 'default-large-faces';
+const DEFAULT_REFERENCE_STRUCTURE_DIR = path.resolve(
+	OUTPUT_3D_DIR,
+	'reference-structure',
+	DEFAULT_REFERENCE_STRUCTURE_ID,
+);
+const REFERENCE_STRUCTURE_FILENAME = 'reference-structure.json';
+const SVG_CUTTER_SCRIPT = path.resolve('scripts', '3d-assets', 'asset-pipeline', 'export-svg-cutter.js');
+const SVG_CUTTER_SIMPLIFICATION_SCRIPT = path.resolve(
+	'scripts',
+	'3d-assets',
+	'asset-pipeline',
+	'experiment-paper-flatten-svg.js',
+);
+const SVG_CUTTER_SIMPLIFICATION_FLATNESS = '0.05';
+const STAMPED_BODY_SCRIPT = path.resolve('scripts', '3d-assets', 'asset-pipeline', 'export-stamped-tile-pair.js');
+const COLORED_INLAY_SCRIPT = path.resolve('scripts', '3d-assets', 'asset-pipeline', 'export-stamped-tile-inlay.js');
+const GENERATED_ASSET_PREVIEW_SCRIPT = path.resolve(
+	'scripts',
+	'3d-assets',
+	'asset-pipeline',
+	'export-generated-asset-preview.js',
+);
+const CUTTER_SIMPLIFICATION_EXPERIMENT_FACE = 'flower-3';
+const CUTTER_SIMPLIFICATION_EXPERIMENT_FLATNESS = Object.freeze([0.25, 0.15, 0.1, 0.075, 0.05]);
 const activeAssetGenerationRuns = new Map();
 const METADATA_KINDS = Object.freeze({
 	reference: {
-		metadataPath: process.env.PIPELINE_REFERENCE_METADATA_PATH ||
-			path.resolve(INFERENCE_DIR, "reference-glyphs.json"),
-		inferScript: path.resolve("scripts", "3d-assets", "svg-preprocessor", "infer-reference-face-metadata.js"),
+		metadataPath:
+			process.env.PIPELINE_REFERENCE_METADATA_PATH || path.resolve(INFERENCE_DIR, 'reference-glyphs.json'),
+		inferScript: path.resolve('scripts', '3d-assets', 'svg-preprocessor', 'infer-reference-face-metadata.js'),
 		inferArgs: [],
 	},
 	tileset: {
-		inferScript: path.resolve("scripts", "3d-assets", "svg-preprocessor", "infer-tileset-face-metadata.js"),
+		inferScript: path.resolve('scripts', '3d-assets', 'svg-preprocessor', 'infer-tileset-face-metadata.js'),
 		inferArgs: [],
 	},
 });
 
 export default function pipelineRouter(express, router, app) {
 	initializePipelineStream(app).catch((error) => {
-		console.warn("Pipeline Socket.IO stream failed to initialize.", error);
+		console.warn('Pipeline Socket.IO stream failed to initialize.', error);
 	});
 	getAssetPipelineStream();
 	resumePendingAssetGenerationQueues().catch((error) => {
-		console.warn("Pending asset generation queue resume failed.", error);
+		console.warn('Pending asset generation queue resume failed.', error);
 	});
 
-	router.get("/api/pipeline/state", getState);
-	router.get("/api/pipeline/tilesets", getTilesets);
-	router.post("/api/pipeline/tilesets/active", setActiveTilesetRoute);
-	router.post("/api/pipeline/recreate", recreateMetadata);
-	router.post("/api/pipeline/save", saveReviewed);
-	router.post("/api/pipeline/preprocess", preprocessReviewed);
-	router.get("/api/pipeline/reference-structure", getReferenceStructure);
-	router.post("/api/pipeline/reference-structure/save", saveReferenceStructure);
-	router.get("/api/pipeline/source-assignment", getSourceAssignment);
-	router.post("/api/pipeline/source-assignment/regenerate", regenerateSourceAssignment);
-	router.post("/api/pipeline/source-assignment/accept", acceptSourceAssignment);
-	router.get("/api/pipeline/optional-parts", getOptionalPartAssignment);
-	router.post("/api/pipeline/optional-parts/rebuild", rebuildOptionalPartAssignment);
-	router.post("/api/pipeline/optional-parts/bindings", saveOptionalPartBindingActions);
-	router.post("/api/pipeline/optional-parts/reset", resetOptionalPartAssignment);
-	router.post("/api/pipeline/optional-parts/accept", acceptOptionalPartAssignment);
-	router.post("/api/pipeline/source-assignment/bindings", saveSourceAssignmentBindingActions);
-	router.get("/api/pipeline/final-rendering-options", getFinalRenderingOptions);
-	router.post("/api/pipeline/final-rendering-options/rerender", rerenderFinalRenderingOptions);
-	router.post("/api/pipeline/final-rendering-options/accept", acceptFinalRenderingOptions);
-	router.get("/api/pipeline/base-tile-selection", getBaseTileSelection);
-	router.post("/api/pipeline/base-tile-selection", saveBaseTileSelection);
-	router.post("/api/pipeline/asset-generation/start", startAssetGeneration);
-	router.post("/api/pipeline/asset-generation/cancel", cancelAssetGeneration);
-	router.post("/api/pipeline/asset-generation/reset", resetAssetGeneration);
-	router.get("/api/pipeline/asset-review", getAssetReview);
-	router.get("/api/pipeline/experiments/cutter-simplification", getCutterSimplificationExperiment);
-	router.post("/api/pipeline/experiments/cutter-simplification/generate", generateCutterSimplificationExperiment);
-	router.get("/api/pipeline/reference/:fileName", sendReferenceImage);
-	router.get("/api/pipeline/asset", sendAsset);
-	router.get("*", function(_request, response) {
-		if (app && typeof app.sendIndex === "function") {
+	router.get('/api/pipeline/state', getState);
+	router.get('/api/pipeline/tilesets', getTilesets);
+	router.post('/api/pipeline/tilesets/active', setActiveTilesetRoute);
+	router.post('/api/pipeline/recreate', recreateMetadata);
+	router.post('/api/pipeline/save', saveReviewed);
+	router.post('/api/pipeline/preprocess', preprocessReviewed);
+	router.get('/api/pipeline/reference-structure', getReferenceStructure);
+	router.post('/api/pipeline/reference-structure/save', saveReferenceStructure);
+	router.get('/api/pipeline/source-assignment', getSourceAssignment);
+	router.post('/api/pipeline/source-assignment/regenerate', regenerateSourceAssignment);
+	router.post('/api/pipeline/source-assignment/accept', acceptSourceAssignment);
+	router.get('/api/pipeline/optional-parts', getOptionalPartAssignment);
+	router.post('/api/pipeline/optional-parts/rebuild', rebuildOptionalPartAssignment);
+	router.post('/api/pipeline/optional-parts/bindings', saveOptionalPartBindingActions);
+	router.post('/api/pipeline/optional-parts/reset', resetOptionalPartAssignment);
+	router.post('/api/pipeline/optional-parts/accept', acceptOptionalPartAssignment);
+	router.post('/api/pipeline/source-assignment/bindings', saveSourceAssignmentBindingActions);
+	router.get('/api/pipeline/final-rendering-options', getFinalRenderingOptions);
+	router.post('/api/pipeline/final-rendering-options/rerender', rerenderFinalRenderingOptions);
+	router.post('/api/pipeline/final-rendering-options/accept', acceptFinalRenderingOptions);
+	router.get('/api/pipeline/base-tile-selection', getBaseTileSelection);
+	router.post('/api/pipeline/base-tile-selection', saveBaseTileSelection);
+	router.post('/api/pipeline/asset-generation/start', startAssetGeneration);
+	router.post('/api/pipeline/asset-generation/cancel', cancelAssetGeneration);
+	router.post('/api/pipeline/asset-generation/reset', resetAssetGeneration);
+	router.get('/api/pipeline/asset-review', getAssetReview);
+	router.get('/api/pipeline/experiments/cutter-simplification', getCutterSimplificationExperiment);
+	router.post('/api/pipeline/experiments/cutter-simplification/generate', generateCutterSimplificationExperiment);
+	router.get('/api/pipeline/reference/:fileName', sendReferenceImage);
+	router.get('/api/pipeline/asset', sendAsset);
+	router.get('*', function (_request, response) {
+		if (app && typeof app.sendIndex === 'function') {
 			app.sendIndex(response);
 			return;
 		}
 
-		response.sendFile(path.resolve("dist", "pipeline", "index.html"));
+		response.sendFile(path.resolve('dist', 'pipeline', 'index.html'));
 	});
 }
 
@@ -99,12 +117,16 @@ async function getState(req, res) {
 		const metadataKind = getMetadataKind(req);
 		const manifest = await readTilesetManifest();
 		const source = getTilesetSource(req, metadataKind, manifest);
-		const config = metadataKind !== "tileset" || source?.metadataPath
-			? metadataConfigFor(metadataKind, source)
-			: null;
+		const config =
+			metadataKind !== 'tileset' || source?.metadataPath ? metadataConfigFor(metadataKind, source) : null;
 		const metadataResult = config
 			? await readMetadataOrNull(metadataKind, config, source)
-			: { metadata: null, error: source ? `Tileset metadata path is not recorded for ${source.id}.` : "No active tileset is recorded in the tileset manifest." };
+			: {
+					metadata: null,
+					error: source
+						? `Tileset metadata path is not recorded for ${source.id}.`
+						: 'No active tileset is recorded in the tileset manifest.',
+				};
 		const metadata = metadataResult.metadata;
 		const outputScope = outputScopeForMetadata(metadata);
 		res.json({
@@ -147,7 +169,7 @@ async function setActiveTilesetRoute(req, res) {
 		if (!tilesetId) {
 			return res.status(400).json({
 				ok: false,
-				message: "Missing tilesetId.",
+				message: 'Missing tilesetId.',
 			});
 		}
 
@@ -172,18 +194,15 @@ async function recreateMetadata(req, res) {
 		const source = getTilesetSource(req, metadataKind, manifest);
 		const config = metadataConfigFor(metadataKind, source);
 		const metadataPath = resolveMetadataPath(config.metadataPath);
-		const command = [
-			config.inferScript,
-			...config.inferArgs,
-		];
+		const command = [config.inferScript, ...config.inferArgs];
 
-		if (metadataKind === "tileset") {
+		if (metadataKind === 'tileset') {
 			command.push(
-				"--source-dir",
+				'--source-dir',
 				resolveMetadataPath(source.sourceDir),
-				"--tileset-id",
+				'--tileset-id',
 				source.id,
-				"--output",
+				'--output',
 				metadataPath,
 			);
 		}
@@ -191,7 +210,10 @@ async function recreateMetadata(req, res) {
 		const result = await runNodeCommand(command);
 		const metadataWasWritten = await fileExists(metadataPath);
 		const metadata = metadataWasWritten
-			? await enrichMetadata(metadataKind, normalizePayload(metadataKind, await readJsonAsync(metadataPath), source))
+			? await enrichMetadata(
+					metadataKind,
+					normalizePayload(metadataKind, await readJsonAsync(metadataPath), source),
+				)
 			: null;
 		const outputScope = outputScopeForMetadata(metadata);
 
@@ -259,22 +281,24 @@ async function preprocessReviewed(req, res) {
 				metadataKind,
 				tilesetSource: source?.id || null,
 				sourceTilesetId: manifest.activeTilesetId || source?.id || null,
-				message: "No face keys found in preprocessing metadata.",
+				message: 'No face keys found in preprocessing metadata.',
 				results: {},
 				paths: outputPaths(config, outputScope, source),
 			});
 		}
 
 		const command = [
-			path.resolve("scripts", "3d-assets", "svg-preprocessor", "run-preprocessed-face-pipeline.js"),
-			"--metadata",
+			path.resolve('scripts', '3d-assets', 'svg-preprocessor', 'run-preprocessed-face-pipeline.js'),
+			'--metadata',
 			metadataPath,
 		];
 		const result = await runNodeCommand(command, {
 			env: {
 				...process.env,
-				...(outputScope ? { FACE_OUTPUT_SCOPE: outputScope } : {}),
-				...(payload?.sourceDir && !process.env.FACE_SOURCE_SVGS_DIR ? { FACE_SOURCE_SVGS_DIR: payload.sourceDir } : {}),
+				...(outputScope ? {FACE_OUTPUT_SCOPE: outputScope} : {}),
+				...(payload?.sourceDir && !process.env.FACE_SOURCE_SVGS_DIR
+					? {FACE_SOURCE_SVGS_DIR: payload.sourceDir}
+					: {}),
 			},
 		});
 
@@ -290,9 +314,11 @@ async function preprocessReviewed(req, res) {
 			stdout: result.stdout,
 			stderr: result.stderr,
 			metadata: await enrichMetadata(metadataKind, payload),
-			results: Object.fromEntries(await Promise.all(
-				faceKeys.map(async (faceKey) => [faceKey, await combinedImageResult(faceKey, outputScope)])
-			)),
+			results: Object.fromEntries(
+				await Promise.all(
+					faceKeys.map(async (faceKey) => [faceKey, await combinedImageResult(faceKey, outputScope)]),
+				),
+			),
 			paths: outputPaths(config, outputScope, source),
 		});
 	} catch (error) {
@@ -306,7 +332,10 @@ async function getReferenceStructure(req, res) {
 		const structureDir = referenceStructureDir(referenceSetId);
 		const structurePath = path.resolve(structureDir, REFERENCE_STRUCTURE_FILENAME);
 
-		if (!isInsideDirectory(structurePath, path.resolve(OUTPUT_3D_DIR, "reference-structure")) || !(await fileExists(structurePath))) {
+		if (
+			!isInsideDirectory(structurePath, path.resolve(OUTPUT_3D_DIR, 'reference-structure')) ||
+			!(await fileExists(structurePath))
+		) {
 			return res.status(404).json({
 				ok: false,
 				message: `Missing reference structure: ${relativePath(structurePath)}`,
@@ -327,10 +356,10 @@ async function saveReferenceStructure(req, res) {
 	try {
 		const payload = req.body?.structure || req.body;
 
-		if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+		if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
 			return res.status(400).json({
 				ok: false,
-				message: "Reference structure payload must be an object.",
+				message: 'Reference structure payload must be an object.',
 			});
 		}
 
@@ -339,14 +368,14 @@ async function saveReferenceStructure(req, res) {
 		const structurePath = path.resolve(structureDir, REFERENCE_STRUCTURE_FILENAME);
 		const active = stampReferenceStructureLifecycle(payload);
 
-		if (!isInsideDirectory(structurePath, path.resolve(OUTPUT_3D_DIR, "reference-structure"))) {
+		if (!isInsideDirectory(structurePath, path.resolve(OUTPUT_3D_DIR, 'reference-structure'))) {
 			return res.status(400).json({
 				ok: false,
-				message: "Invalid reference structure output path.",
+				message: 'Invalid reference structure output path.',
 			});
 		}
 
-		await mkdir(path.dirname(structurePath), { recursive: true });
+		await mkdir(path.dirname(structurePath), {recursive: true});
 		await writeJson(structurePath, active);
 		res.json({
 			ok: true,
@@ -381,7 +410,7 @@ async function getSourceAssignment(req, res) {
 
 			faces[faceKey] = {
 				faceKey,
-				status: "canonical",
+				status: 'canonical',
 				pipelineStatus: null,
 				sourceParts: canonicalSourcePreviewParts(faceState),
 				sourceFile: artifact.sourceFile || model.getFaceSourceSvgPath(faceKey),
@@ -437,8 +466,8 @@ async function acceptSourceAssignment(req, res) {
 	try {
 		const tilesetId = await requestedTilesetId(req);
 		const model = await loadPipelineModel(tilesetId);
-		const currencyDate = req.body?.currencyDate || req.body?.sourceStateUpdatedOn || "";
-		const actionsByFace = normalizeBindingActionRequest(req.body, { allowEmpty: true });
+		const currencyDate = req.body?.currencyDate || req.body?.sourceStateUpdatedOn || '';
+		const actionsByFace = normalizeBindingActionRequest(req.body, {allowEmpty: true});
 
 		assertPipelineCurrencyDate(model, currencyDate);
 		const updatedFaceKeys = applyBindingActionsByFace(model, actionsByFace);
@@ -462,9 +491,7 @@ async function acceptSourceAssignment(req, res) {
 			}
 		}
 
-		const acceptedModel = updatedFaceKeys.length > 0
-			? await loadPipelineModel(tilesetId)
-			: model;
+		const acceptedModel = updatedFaceKeys.length > 0 ? await loadPipelineModel(tilesetId) : model;
 		const faces = [];
 
 		for (const [faceKey] of acceptedModel.getFaceEntries()) {
@@ -486,7 +513,7 @@ async function acceptSourceAssignment(req, res) {
 				sourceStateUpdatedOn: acceptedModel.getCurrencyDate(),
 				acceptedFaceCount: faces.length,
 				faces,
-				stage: "final-rendering",
+				stage: 'final-rendering',
 				semanticRefresh,
 				finalRendering,
 			});
@@ -500,7 +527,7 @@ async function acceptSourceAssignment(req, res) {
 			acceptedFaceCount: faces.length,
 			faces,
 			updatedFaceKeys,
-			nextPage: "final-rendering-options",
+			nextPage: 'final-rendering-options',
 			semanticRefresh,
 			finalRendering,
 		});
@@ -513,8 +540,8 @@ async function regenerateSourceAssignment(req, res) {
 	try {
 		const tilesetId = await requestedTilesetId(req);
 		const model = await loadPipelineModel(tilesetId);
-		const currencyDate = req.body?.currencyDate || req.body?.sourceStateUpdatedOn || "";
-		const actionsByFace = normalizeBindingActionRequest(req.body, { allowEmpty: true });
+		const currencyDate = req.body?.currencyDate || req.body?.sourceStateUpdatedOn || '';
+		const actionsByFace = normalizeBindingActionRequest(req.body, {allowEmpty: true});
 
 		assertPipelineCurrencyDate(model, currencyDate);
 		const updatedFaceKeys = applyBindingActionsByFace(model, actionsByFace);
@@ -524,14 +551,14 @@ async function regenerateSourceAssignment(req, res) {
 
 		const stages = await runAlignmentAndSemanticAssignment(tilesetId);
 
-		if (!stages.ok && stages.stage === "alignment") {
+		if (!stages.ok && stages.stage === 'alignment') {
 			return res.json({
 				ok: false,
 				tilesetId,
 				currencyDate: model.getCurrencyDate(),
 				sourceStateUpdatedOn: model.getCurrencyDate(),
 				updatedFaceKeys,
-				stage: "alignment",
+				stage: 'alignment',
 				alignment: stages.alignment,
 			});
 		}
@@ -562,7 +589,8 @@ async function getOptionalPartAssignment(req, res) {
 		const manualAssignments = optionalPartConfig.manualAssignments
 			? sanitizeOptionalPartManualAssignments(optionalPartConfig.manualAssignments)
 			: null;
-		const faceKeys = model.getFaceEntries()
+		const faceKeys = model
+			.getFaceEntries()
 			.filter(([faceKey, faceState]) => canonicalOptionalPartEntries(faceState, faceKey).length > 0)
 			.map(([faceKey]) => faceKey)
 			.sort((left, right) => left.localeCompare(right));
@@ -573,9 +601,10 @@ async function getOptionalPartAssignment(req, res) {
 			const normalizedPath = model.getNormalizedComponentsPath(faceKey);
 
 			const assignment = optionalAssignmentFromCanonicalState(tilesetId, faceKey, faceState);
-			const normalized = normalizedPath && await fileExists(resolveRepoPath(normalizedPath))
-				? await readJsonAsync(normalizedPath)
-				: null;
+			const normalized =
+				normalizedPath && (await fileExists(resolveRepoPath(normalizedPath)))
+					? await readJsonAsync(normalizedPath)
+					: null;
 			const optionalParts = canonicalOptionalPreviewParts(faceState, assignment);
 			const componentReservations = canonicalOptionalPreviewReservations(faceState, assignment);
 			const components = optionalPreviewComponents(normalized, assignment, faceState);
@@ -624,7 +653,7 @@ async function rebuildOptionalPartAssignment(req, res) {
 		const bulkOptions = sanitizeOptionalPartBulkOptions(req.body?.bulkOptions || {});
 		const manualAssignments = sanitizeOptionalPartManualAssignments(req.body?.manualAssignments || {});
 		const model = await loadPipelineModel(tilesetId);
-		const scriptPath = path.resolve("scripts", "3d-assets", "svg-preprocessor", "run-optional-part-assignment.js");
+		const scriptPath = path.resolve('scripts', '3d-assets', 'svg-preprocessor', 'run-optional-part-assignment.js');
 
 		model.setOptionalPartAssignmentConfig({
 			bulkOptions,
@@ -632,11 +661,7 @@ async function rebuildOptionalPartAssignment(req, res) {
 		});
 		await model.save();
 
-		const command = [
-			scriptPath,
-			"--tileset-id",
-			tilesetId,
-		];
+		const command = [scriptPath, '--tileset-id', tilesetId];
 		const result = await runNodeCommand(command);
 
 		res.json({
@@ -656,30 +681,30 @@ async function rebuildOptionalPartAssignment(req, res) {
 
 async function saveOptionalPartBindingActions(req, res) {
 	return saveBindingActions(req, res, {
-		routeName: "Optional Parts",
-		unbindMode: "reserve",
+		routeName: 'Optional Parts',
+		unbindMode: 'reserve',
 	});
 }
 
 async function saveSourceAssignmentBindingActions(req, res) {
 	return saveBindingActions(req, res, {
-		routeName: "Source Assignment",
-		unbindMode: "exclude",
+		routeName: 'Source Assignment',
+		unbindMode: 'exclude',
 	});
 }
 
-async function saveBindingActions(req, res, { routeName, unbindMode }) {
+async function saveBindingActions(req, res, {routeName, unbindMode}) {
 	try {
 		const tilesetId = await requestedTilesetId(req);
 		const model = await loadPipelineModel(tilesetId);
-		const currencyDate = req.body?.currencyDate || req.body?.sourceStateUpdatedOn || "";
+		const currencyDate = req.body?.currencyDate || req.body?.sourceStateUpdatedOn || '';
 		const actionsByFace = normalizeBindingActionRequest(req.body);
 		const updatedFaceKeys = [];
 
 		assertPipelineCurrencyDate(model, currencyDate);
 
 		for (const [faceKey, actions] of Object.entries(actionsByFace)) {
-			model.applySourceBindingActions(faceKey, actions, { unbindMode });
+			model.applySourceBindingActions(faceKey, actions, {unbindMode});
 			updatedFaceKeys.push(faceKey);
 		}
 
@@ -703,9 +728,9 @@ async function saveBindingActions(req, res, { routeName, unbindMode }) {
 async function resetOptionalPartAssignment(req, res) {
 	try {
 		const tilesetId = await requestedTilesetId(req);
-		const sourceManifest = path.join("scripts", "data", "asset-pipeline", "manifests", `${tilesetId}.json`);
+		const sourceManifest = path.join('scripts', 'data', 'asset-pipeline', 'manifests', `${tilesetId}.json`);
 		const sourceManifestPath = path.resolve(process.cwd(), sourceManifest);
-		const pipelineState = path.join("scripts", "output", "asset-pipeline", tilesetId, "pipeline.json");
+		const pipelineState = path.join('scripts', 'output', 'asset-pipeline', tilesetId, 'pipeline.json');
 
 		if (!(await fileExists(sourceManifestPath))) {
 			return res.status(404).json({
@@ -715,20 +740,20 @@ async function resetOptionalPartAssignment(req, res) {
 		}
 
 		const intakeCommand = [
-			path.resolve("scripts", "3d-assets", "svg-preprocessor", "intake-source-svg-manifest.js"),
-			"--tileset-id",
+			path.resolve('scripts', '3d-assets', 'svg-preprocessor', 'intake-source-svg-manifest.js'),
+			'--tileset-id',
 			tilesetId,
-			"--manifest",
+			'--manifest',
 			relativePath(sourceManifestPath),
 		];
 		const normalizationCommand = [
-			path.resolve("scripts", "3d-assets", "svg-preprocessor", "run-source-normalization.js"),
-			"--tileset-id",
+			path.resolve('scripts', '3d-assets', 'svg-preprocessor', 'run-source-normalization.js'),
+			'--tileset-id',
 			tilesetId,
 		];
 		const optionalCommand = [
-			path.resolve("scripts", "3d-assets", "svg-preprocessor", "run-optional-part-assignment.js"),
-			"--tileset-id",
+			path.resolve('scripts', '3d-assets', 'svg-preprocessor', 'run-optional-part-assignment.js'),
+			'--tileset-id',
 			tilesetId,
 		];
 		const intake = await runNodeCommand(intakeCommand);
@@ -737,7 +762,7 @@ async function resetOptionalPartAssignment(req, res) {
 			return res.json({
 				ok: false,
 				tilesetId,
-				stage: "intake",
+				stage: 'intake',
 				command: commandLabel(intakeCommand),
 				intake,
 			});
@@ -749,7 +774,7 @@ async function resetOptionalPartAssignment(req, res) {
 			return res.json({
 				ok: false,
 				tilesetId,
-				stage: "normalization",
+				stage: 'normalization',
 				command: commandLabel(normalizationCommand),
 				intake,
 				normalization,
@@ -761,7 +786,7 @@ async function resetOptionalPartAssignment(req, res) {
 		return res.json({
 			ok: optionalPartAssignment.status === 0,
 			tilesetId,
-			stage: optionalPartAssignment.status === 0 ? "optional-part-assignment" : "optional-part-assignment-failed",
+			stage: optionalPartAssignment.status === 0 ? 'optional-part-assignment' : 'optional-part-assignment-failed',
 			sourceManifest: relativePath(sourceManifestPath),
 			pipelineState,
 			commands: {
@@ -828,8 +853,8 @@ async function acceptOptionalPartAssignment(req, res) {
 			...baseResponse,
 			ok: true,
 			stage: stages.stage,
-			nextPage: "source-assignment",
-			message: "Optional parts accepted; alignment and source assignment regenerated.",
+			nextPage: 'source-assignment',
+			message: 'Optional parts accepted; alignment and source assignment regenerated.',
 		});
 	} catch (error) {
 		sendError(res, error);
@@ -841,7 +866,7 @@ async function getFinalRenderingOptions(req, res) {
 		const tilesetId = await requestedTilesetId(req);
 		const sourceDir = tilesetOutputRoot(tilesetId);
 
-		if (!isInsideDirectory(sourceDir, path.resolve("scripts", "output", "asset-pipeline"))) {
+		if (!isInsideDirectory(sourceDir, path.resolve('scripts', 'output', 'asset-pipeline'))) {
 			return res.status(404).json({
 				ok: false,
 				message: `Invalid final rendering directory: ${relativePath(sourceDir)}`,
@@ -857,7 +882,7 @@ async function getFinalRenderingOptions(req, res) {
 				tilesetId,
 				path: relativePath(tilesetStatePath),
 				readyForRenderReview: false,
-				message: "Source Assignment has not been accepted for the current pipeline state.",
+				message: 'Source Assignment has not been accepted for the current pipeline state.',
 				rendering: tilesetState.rendering || null,
 				suitOptions: {},
 				faceOptions: {},
@@ -881,7 +906,7 @@ async function getFinalRenderingOptions(req, res) {
 			faces[faceKey] = {
 				faceKey,
 				family,
-				status: hasColorSvg ? "ready" : "not-run",
+				status: hasColorSvg ? 'ready' : 'not-run',
 				sourceFile: faceState?.artifacts?.sourceSvg || null,
 				colorSvg: hasColorSvg ? colorSvg : null,
 				colorPng: hasColorPng ? colorPng : null,
@@ -913,9 +938,9 @@ async function rerenderFinalRenderingOptions(req, res) {
 		const tilesetId = await requestedTilesetId(req);
 		const model = await loadPipelineModel(tilesetId);
 		const sourceDir = tilesetOutputRoot(tilesetId);
-		const tilesetStatePath = path.resolve(sourceDir, "pipeline.json");
+		const tilesetStatePath = path.resolve(sourceDir, 'pipeline.json');
 
-		if (!isInsideDirectory(sourceDir, path.resolve("scripts", "output", "asset-pipeline"))) {
+		if (!isInsideDirectory(sourceDir, path.resolve('scripts', 'output', 'asset-pipeline'))) {
 			return res.status(400).json({
 				ok: false,
 				message: `Invalid final rendering directory: ${relativePath(sourceDir)}`,
@@ -932,7 +957,7 @@ async function rerenderFinalRenderingOptions(req, res) {
 			return res.status(409).json({
 				ok: false,
 				tilesetId,
-				message: "Source Assignment must be accepted before final rendering can be regenerated.",
+				message: 'Source Assignment must be accepted before final rendering can be regenerated.',
 			});
 		}
 
@@ -964,9 +989,9 @@ async function acceptFinalRenderingOptions(req, res) {
 		const tilesetId = await requestedTilesetId(req);
 		const model = await loadPipelineModel(tilesetId);
 		const sourceDir = tilesetOutputRoot(tilesetId);
-		const tilesetStatePath = path.resolve(sourceDir, "pipeline.json");
+		const tilesetStatePath = path.resolve(sourceDir, 'pipeline.json');
 
-		if (!isInsideDirectory(sourceDir, path.resolve("scripts", "output", "asset-pipeline"))) {
+		if (!isInsideDirectory(sourceDir, path.resolve('scripts', 'output', 'asset-pipeline'))) {
 			return res.status(400).json({
 				ok: false,
 				message: `Invalid final rendering directory: ${relativePath(sourceDir)}`,
@@ -983,7 +1008,7 @@ async function acceptFinalRenderingOptions(req, res) {
 			return res.status(409).json({
 				ok: false,
 				tilesetId,
-				message: "Source Assignment must be accepted before final rendering can be accepted.",
+				message: 'Source Assignment must be accepted before final rendering can be accepted.',
 			});
 		}
 
@@ -994,7 +1019,7 @@ async function acceptFinalRenderingOptions(req, res) {
 		});
 		const svgFaces = tilesetSvgFaces(saved.tilesetState);
 		const faceKeys = Object.keys(svgFaces).sort((left, right) => left.localeCompare(right));
-		const assetPipelineInitialization = model.initializeAssetPipelineFromRenderingAcceptance({ faceKeys });
+		const assetPipelineInitialization = model.initializeAssetPipelineFromRenderingAcceptance({faceKeys});
 		const acceptedState = await model.save();
 
 		res.json({
@@ -1002,7 +1027,7 @@ async function acceptFinalRenderingOptions(req, res) {
 			tilesetId,
 			acceptedFaceCount: faceKeys.length,
 			assetPipelineInitialization,
-			nextPage: "asset-base-tile-selection",
+			nextPage: 'asset-base-tile-selection',
 			rendering: acceptedState.rendering || {},
 			assetPipeline: acceptedState.assetPipeline || {},
 		});
@@ -1017,13 +1042,17 @@ async function getBaseTileSelection(req, res) {
 		const model = await loadPipelineModel(tilesetId);
 		const manifest = await loadBaseTileManifest();
 		const persistedVariantId = model.getSelectedBaseTileVariantId();
-		const selectedVariantId = manifest.variants.some((variant) => variant.id === persistedVariantId && !variant.previewOnly)
+		const selectedVariantId = manifest.variants.some(
+			(variant) => variant.id === persistedVariantId && !variant.previewOnly,
+		)
 			? persistedVariantId
-			: manifest.variants.find((variant) => !variant.previewOnly)?.id || "";
-		const variants = await Promise.all(manifest.variants.map(async (variant) => ({
-			...(await enrichBaseTileSelectionVariant(variant)),
-			selected: variant.id === selectedVariantId,
-		})));
+			: manifest.variants.find((variant) => !variant.previewOnly)?.id || '';
+		const variants = await Promise.all(
+			manifest.variants.map(async (variant) => ({
+				...(await enrichBaseTileSelectionVariant(variant)),
+				selected: variant.id === selectedVariantId,
+			})),
+		);
 
 		res.json({
 			ok: true,
@@ -1057,9 +1086,9 @@ async function enrichBaseTileSelectionVariant(variant) {
 		kind: metadata.kind || variant.kind,
 		temporary: Boolean(metadata.temporary ?? variant.temporary),
 		previewOnly: Boolean(metadata.previewOnly ?? variant.previewOnly),
-		previewMaterialSource: metadata.previewMaterialSource || variant.previewMaterialSource || "",
-		meshName: metadata.meshName || variant.meshName || "",
-		carvingMeshName: metadata.carvingMeshName || variant.carvingMeshName || metadata.carving?.targetMeshName || "",
+		previewMaterialSource: metadata.previewMaterialSource || variant.previewMaterialSource || '',
+		meshName: metadata.meshName || variant.meshName || '',
+		carvingMeshName: metadata.carvingMeshName || variant.carvingMeshName || metadata.carving?.targetMeshName || '',
 		supportMeshNames: [
 			...(Array.isArray(metadata.supportMeshNames) ? metadata.supportMeshNames : []),
 			...(Array.isArray(metadata.carving?.preserveMeshNames) ? metadata.carving.preserveMeshNames : []),
@@ -1075,7 +1104,7 @@ async function enrichBaseTileSelectionVariant(variant) {
 }
 
 async function readBaseTileVariantMetadata(metadataPath) {
-	const filename = metadataPath ? path.resolve(process.cwd(), metadataPath) : "";
+	const filename = metadataPath ? path.resolve(process.cwd(), metadataPath) : '';
 	if (!filename || !isInsideDirectory(filename, BASE_TILE_MODELS_DIR) || !(await fileExists(filename))) {
 		return null;
 	}
@@ -1087,8 +1116,8 @@ async function saveBaseTileSelection(req, res) {
 	try {
 		const tilesetId = await requestedTilesetId(req);
 		const model = await loadPipelineModel(tilesetId);
-		const currencyDate = req.body?.currencyDate || "";
-		const variantId = String(req.body?.variantId || "").trim();
+		const currencyDate = req.body?.currencyDate || '';
+		const variantId = String(req.body?.variantId || '').trim();
 		const manifest = await loadBaseTileManifest();
 		const variant = manifest.variants.find((candidate) => candidate.id === variantId);
 
@@ -1097,7 +1126,7 @@ async function saveBaseTileSelection(req, res) {
 		if (!variant) {
 			return res.status(400).json({
 				ok: false,
-				message: `Unknown base tile variant: ${variantId || "(missing)"}.`,
+				message: `Unknown base tile variant: ${variantId || '(missing)'}.`,
 			});
 		}
 
@@ -1132,8 +1161,8 @@ async function saveBaseTileSelection(req, res) {
 			currencyDate: model.getCurrencyDate(),
 			selectedVariantId: variantId,
 			selectedVariant: variant,
-			nextPage: "asset-review",
-			...(plan ? { plan } : {}),
+			nextPage: 'asset-review',
+			...(plan ? {plan} : {}),
 			assetPipeline: model.getAssetPipeline(),
 		});
 	} catch (error) {
@@ -1146,7 +1175,7 @@ async function startAssetGeneration(req, res) {
 		const tilesetId = await requestedTilesetId(req);
 		const requestedFaceKeys = req.body?.faceKeys || req.body?.faceKey;
 		const faceKeys = cleanQueueFaceKeys(requestedFaceKeys ? [].concat(requestedFaceKeys) : []);
-		res.json(await runAssetGenerationForTileset(tilesetId, { faceKeys }));
+		res.json(await runAssetGenerationForTileset(tilesetId, {faceKeys}));
 	} catch (error) {
 		sendError(res, error);
 	}
@@ -1179,12 +1208,12 @@ async function resetAssetGeneration(req, res) {
 		await model.save();
 
 		const assetPipeline = model.getAssetPipeline();
-		getAssetPipelineStream().emitProgress(tilesetId, "assetGenerationComplete", {
-			stage: "asset-generation",
+		getAssetPipelineStream().emitProgress(tilesetId, 'assetGenerationComplete', {
+			stage: 'asset-generation',
 			completed: 0,
 			total: 0,
 			percent: 100,
-			message: "Generated asset state reset.",
+			message: 'Generated asset state reset.',
 		});
 
 		res.json({
@@ -1200,10 +1229,10 @@ async function resetAssetGeneration(req, res) {
 	}
 }
 
-async function runAssetGenerationForTileset(tilesetId, { faceKeys = [] } = {}) {
+async function runAssetGenerationForTileset(tilesetId, {faceKeys = []} = {}) {
 	const safeTilesetId = sanitizeOutputScope(tilesetId);
 	if (!safeTilesetId) {
-		return Promise.reject(new Error("A valid tileset id is required."));
+		return Promise.reject(new Error('A valid tileset id is required.'));
 	}
 
 	const model = await loadPipelineModel(safeTilesetId);
@@ -1212,15 +1241,16 @@ async function runAssetGenerationForTileset(tilesetId, { faceKeys = [] } = {}) {
 	if (activeRun) {
 		if (activeRun.baseTileVariantId !== baseTileVariantId) {
 			activeRun.cancelled = true;
-			throw new Error(`Asset generation is stopping because the selected base tile changed from ${activeRun.baseTileVariantId} to ${baseTileVariantId}. Start generation again after the current face stops.`);
+			throw new Error(
+				`Asset generation is stopping because the selected base tile changed from ${activeRun.baseTileVariantId} to ${baseTileVariantId}. Start generation again after the current face stops.`,
+			);
 		}
 		return activeRun.promise;
 	}
 
-	const run = runAssetGeneration(safeTilesetId, { faceKeys })
-		.finally(() => {
-			activeAssetGenerationRuns.delete(safeTilesetId);
-		});
+	const run = runAssetGeneration(safeTilesetId, {faceKeys}).finally(() => {
+		activeAssetGenerationRuns.delete(safeTilesetId);
+	});
 	activeAssetGenerationRuns.set(safeTilesetId, {
 		baseTileVariantId,
 		cancelled: false,
@@ -1230,10 +1260,10 @@ async function runAssetGenerationForTileset(tilesetId, { faceKeys = [] } = {}) {
 	return run;
 }
 
-async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
-	let activeTilesetId = "";
-	let failedFaceKey = "";
-	let failedStepId = "";
+async function runAssetGeneration(tilesetId, {faceKeys = []} = {}) {
+	let activeTilesetId = '';
+	let failedFaceKey = '';
+	let failedStepId = '';
 	try {
 		activeTilesetId = tilesetId;
 		let model = await loadPipelineModel(tilesetId);
@@ -1244,48 +1274,61 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 			await clearAssetGenerationQueue(model);
 		}
 		const requestedFaceKeys = cleanQueueFaceKeys(faceKeys);
-		const plan = requestedFaceKeys.length > 0
-			? model.planAssetGeneration({ faceKeys: requestedFaceKeys })
-			: pendingQueue && pendingQueue.baseTileVariantId === selectedBaseTileVariantId
-			? model.planAssetGeneration({
-				faceKeys: mergeQueuedFaceKeysWithRetryableFaces(model, pendingQueue.faceKeys),
-			})
-			: model.planAssetGeneration();
+		const plan =
+			requestedFaceKeys.length > 0
+				? model.planAssetGeneration({faceKeys: requestedFaceKeys})
+				: pendingQueue && pendingQueue.baseTileVariantId === selectedBaseTileVariantId
+					? model.planAssetGeneration({
+							faceKeys: mergeQueuedFaceKeysWithRetryableFaces(model, pendingQueue.faceKeys),
+						})
+					: model.planAssetGeneration();
 		await writeAssetGenerationQueue(model, {
 			baseTileVariantId: plan.baseTileVariantId,
 			faceKeys: plan.plannedFaces.map((face) => face.faceKey),
 		});
-		const faceHashes = new Map(plan.plannedFaces.map((face) => [
-			face.faceKey,
-			model.hashAssetPipelineFaceInput(face.faceKey),
-		]));
-		const finalHashes = new Map(plan.plannedFaces.map((face) => [
-			face.faceKey,
-			model.hashAssetPipelineFinalInput(face.faceKey, { baseTileVariantId: plan.baseTileVariantId }),
-		]));
-		const stageHashes = new Map(plan.plannedFaces.map((face) => [
-			face.faceKey,
-			Object.fromEntries(assetGenerationBuildSteps().map((step) => [
-				step.id,
-				model.hashAssetGenerationStageInput(face.faceKey, step.id, { baseTileVariantId: plan.baseTileVariantId }),
-			])),
-		]));
+		const faceHashes = new Map(
+			plan.plannedFaces.map((face) => [face.faceKey, model.hashAssetPipelineFaceInput(face.faceKey)]),
+		);
+		const finalHashes = new Map(
+			plan.plannedFaces.map((face) => [
+				face.faceKey,
+				model.hashAssetPipelineFinalInput(face.faceKey, {baseTileVariantId: plan.baseTileVariantId}),
+			]),
+		);
+		const stageHashes = new Map(
+			plan.plannedFaces.map((face) => [
+				face.faceKey,
+				Object.fromEntries(
+					assetGenerationBuildSteps().map((step) => [
+						step.id,
+						model.hashAssetGenerationStageInput(face.faceKey, step.id, {
+							baseTileVariantId: plan.baseTileVariantId,
+						}),
+					]),
+				),
+			]),
+		);
 		await model.save();
 		const buildSteps = assetGenerationBuildSteps();
-		const plannedStepsByFace = new Map(plan.plannedFaces.map((face) => [
-			face.faceKey,
-			assetGenerationPendingSteps(model, face.faceKey, buildSteps, {
-				inputHash: faceHashes.get(face.faceKey),
-				finalHash: finalHashes.get(face.faceKey),
-				stageHashes: stageHashes.get(face.faceKey),
-			}),
-		]));
+		const plannedStepsByFace = new Map(
+			plan.plannedFaces.map((face) => [
+				face.faceKey,
+				assetGenerationPendingSteps(model, face.faceKey, buildSteps, {
+					inputHash: faceHashes.get(face.faceKey),
+					finalHash: finalHashes.get(face.faceKey),
+					stageHashes: stageHashes.get(face.faceKey),
+				}),
+			]),
+		);
 		const activeFaces = plan.plannedFaces;
-		const total = [...plannedStepsByFace.values()].reduce((sum, steps) => sum + steps.length, plan.skippedFaces.length);
+		const total = [...plannedStepsByFace.values()].reduce(
+			(sum, steps) => sum + steps.length,
+			plan.skippedFaces.length,
+		);
 		let completed = 0;
 
-		stream.emitProgress(tilesetId, "assetGenerationStarted", {
-			stage: "asset-generation",
+		stream.emitProgress(tilesetId, 'assetGenerationStarted', {
+			stage: 'asset-generation',
 			total,
 			baseTileVariantId: plan.baseTileVariantId,
 			plannedFaceKeys: activeFaces.map((face) => face.faceKey),
@@ -1294,8 +1337,8 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 
 		for (const face of plan.skippedFaces) {
 			completed += 1;
-			stream.emitProgress(tilesetId, "assetGenerationProgress", {
-				stage: "asset-generation",
+			stream.emitProgress(tilesetId, 'assetGenerationProgress', {
+				stage: 'asset-generation',
 				faceKey: face.faceKey,
 				status: face.status,
 				completed,
@@ -1337,8 +1380,8 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 					},
 				});
 
-				if (step.id === "cutter-2d") {
-					stream.emitProgress(tilesetId, "assetGenerationProgress", {
+				if (step.id === 'cutter-2d') {
+					stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 						stage: step.id,
 						stageLabel: step.label,
 						faceKey: face.faceKey,
@@ -1349,7 +1392,7 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						message: `${step.label}: ${face.faceKey}`,
 					});
 					try {
-						await runCutter2dGeneration({ tilesetId, faceKey: face.faceKey });
+						await runCutter2dGeneration({tilesetId, faceKey: face.faceKey});
 						model = await assertAssetGenerationBaseTileCurrent(tilesetId, plan.baseTileVariantId);
 					} catch (error) {
 						if (isAssetGenerationBaseTileChangedError(error)) {
@@ -1358,10 +1401,10 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						const message = assetGenerationFailureMessage(error);
 						model = await loadPipelineModel(tilesetId);
 						model.updateAssetGenerationFace(face.faceKey, {
-							status: "failed",
+							status: 'failed',
 							inputHash: faceHashes.get(face.faceKey),
 							queue: {
-								status: "failed",
+								status: 'failed',
 								baseTileVariantId: plan.baseTileVariantId,
 								currentStep: step.id,
 							},
@@ -1377,12 +1420,15 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						await model.save();
 						await removeAssetGenerationQueueFace(model, face.faceKey);
 
-						completed += assetGenerationRemainingPendingStepCount(plannedStepsByFace.get(face.faceKey), step.id);
-						stream.emitProgress(tilesetId, "assetGenerationProgress", {
+						completed += assetGenerationRemainingPendingStepCount(
+							plannedStepsByFace.get(face.faceKey),
+							step.id,
+						);
+						stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 							stage: step.id,
 							stageLabel: step.label,
 							faceKey: face.faceKey,
-							status: "failed",
+							status: 'failed',
 							completed,
 							total,
 							percent: total ? Math.round((completed / total) * 100) : 100,
@@ -1393,8 +1439,8 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 					}
 				}
 
-				if (step.id === "svg-cutter") {
-					stream.emitProgress(tilesetId, "assetGenerationProgress", {
+				if (step.id === 'svg-cutter') {
+					stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 						stage: step.id,
 						stageLabel: step.label,
 						faceKey: face.faceKey,
@@ -1419,10 +1465,10 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						const message = assetGenerationFailureMessage(error);
 						model = await loadPipelineModel(tilesetId);
 						model.updateAssetGenerationFace(face.faceKey, {
-							status: "failed",
+							status: 'failed',
 							inputHash: faceHashes.get(face.faceKey),
 							queue: {
-								status: "failed",
+								status: 'failed',
 								baseTileVariantId: plan.baseTileVariantId,
 								currentStep: step.id,
 							},
@@ -1438,12 +1484,15 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						await model.save();
 						await removeAssetGenerationQueueFace(model, face.faceKey);
 
-						completed += assetGenerationRemainingPendingStepCount(plannedStepsByFace.get(face.faceKey), step.id);
-						stream.emitProgress(tilesetId, "assetGenerationProgress", {
+						completed += assetGenerationRemainingPendingStepCount(
+							plannedStepsByFace.get(face.faceKey),
+							step.id,
+						);
+						stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 							stage: step.id,
 							stageLabel: step.label,
 							faceKey: face.faceKey,
-							status: "failed",
+							status: 'failed',
 							completed,
 							total,
 							percent: total ? Math.round((completed / total) * 100) : 100,
@@ -1454,8 +1503,8 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 					}
 				}
 
-				if (step.id === "stamped-body") {
-					stream.emitProgress(tilesetId, "assetGenerationProgress", {
+				if (step.id === 'stamped-body') {
+					stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 						stage: step.id,
 						stageLabel: step.label,
 						faceKey: face.faceKey,
@@ -1466,7 +1515,7 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						message: `${step.label}: ${face.faceKey}`,
 					});
 					try {
-						await runStampedBodyGeneration({ tilesetId, faceKey: face.faceKey });
+						await runStampedBodyGeneration({tilesetId, faceKey: face.faceKey});
 						model = await assertAssetGenerationBaseTileCurrent(tilesetId, plan.baseTileVariantId);
 					} catch (error) {
 						if (isAssetGenerationBaseTileChangedError(error)) {
@@ -1475,10 +1524,10 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						const message = assetGenerationFailureMessage(error);
 						model = await loadPipelineModel(tilesetId);
 						model.updateAssetGenerationFace(face.faceKey, {
-							status: "failed",
+							status: 'failed',
 							inputHash: faceHashes.get(face.faceKey),
 							queue: {
-								status: "failed",
+								status: 'failed',
 								baseTileVariantId: plan.baseTileVariantId,
 								currentStep: step.id,
 							},
@@ -1494,12 +1543,15 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						await model.save();
 						await removeAssetGenerationQueueFace(model, face.faceKey);
 
-						completed += assetGenerationRemainingPendingStepCount(plannedStepsByFace.get(face.faceKey), step.id);
-						stream.emitProgress(tilesetId, "assetGenerationProgress", {
+						completed += assetGenerationRemainingPendingStepCount(
+							plannedStepsByFace.get(face.faceKey),
+							step.id,
+						);
+						stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 							stage: step.id,
 							stageLabel: step.label,
 							faceKey: face.faceKey,
-							status: "failed",
+							status: 'failed',
 							completed,
 							total,
 							percent: total ? Math.round((completed / total) * 100) : 100,
@@ -1510,8 +1562,8 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 					}
 				}
 
-				if (step.id === "colored-inlay") {
-					stream.emitProgress(tilesetId, "assetGenerationProgress", {
+				if (step.id === 'colored-inlay') {
+					stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 						stage: step.id,
 						stageLabel: step.label,
 						faceKey: face.faceKey,
@@ -1522,7 +1574,7 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						message: `${step.label}: ${face.faceKey}`,
 					});
 					try {
-						await runColoredInlayGeneration({ tilesetId, faceKey: face.faceKey });
+						await runColoredInlayGeneration({tilesetId, faceKey: face.faceKey});
 						model = await assertAssetGenerationBaseTileCurrent(tilesetId, plan.baseTileVariantId);
 					} catch (error) {
 						if (isAssetGenerationBaseTileChangedError(error)) {
@@ -1531,10 +1583,10 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						const message = assetGenerationFailureMessage(error);
 						model = await loadPipelineModel(tilesetId);
 						model.updateAssetGenerationFace(face.faceKey, {
-							status: "failed",
+							status: 'failed',
 							inputHash: faceHashes.get(face.faceKey),
 							queue: {
-								status: "failed",
+								status: 'failed',
 								baseTileVariantId: plan.baseTileVariantId,
 								currentStep: step.id,
 							},
@@ -1550,12 +1602,15 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						await model.save();
 						await removeAssetGenerationQueueFace(model, face.faceKey);
 
-						completed += assetGenerationRemainingPendingStepCount(plannedStepsByFace.get(face.faceKey), step.id);
-						stream.emitProgress(tilesetId, "assetGenerationProgress", {
+						completed += assetGenerationRemainingPendingStepCount(
+							plannedStepsByFace.get(face.faceKey),
+							step.id,
+						);
+						stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 							stage: step.id,
 							stageLabel: step.label,
 							faceKey: face.faceKey,
-							status: "failed",
+							status: 'failed',
 							completed,
 							total,
 							percent: total ? Math.round((completed / total) * 100) : 100,
@@ -1566,8 +1621,8 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 					}
 				}
 
-				if (step.id === "preview-png") {
-					stream.emitProgress(tilesetId, "assetGenerationProgress", {
+				if (step.id === 'preview-png') {
+					stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 						stage: step.id,
 						stageLabel: step.label,
 						faceKey: face.faceKey,
@@ -1578,7 +1633,7 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						message: `${step.label}: ${face.faceKey}`,
 					});
 					try {
-						await runGeneratedAssetPreview({ tilesetId, faceKey: face.faceKey });
+						await runGeneratedAssetPreview({tilesetId, faceKey: face.faceKey});
 						model = await assertAssetGenerationBaseTileCurrent(tilesetId, plan.baseTileVariantId);
 					} catch (error) {
 						if (isAssetGenerationBaseTileChangedError(error)) {
@@ -1587,10 +1642,10 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						const message = assetGenerationFailureMessage(error);
 						model = await loadPipelineModel(tilesetId);
 						model.updateAssetGenerationFace(face.faceKey, {
-							status: "failed",
+							status: 'failed',
 							inputHash: faceHashes.get(face.faceKey),
 							queue: {
-								status: "failed",
+								status: 'failed',
 								baseTileVariantId: plan.baseTileVariantId,
 								currentStep: step.id,
 							},
@@ -1606,12 +1661,15 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 						await model.save();
 						await removeAssetGenerationQueueFace(model, face.faceKey);
 
-						completed += assetGenerationRemainingPendingStepCount(plannedStepsByFace.get(face.faceKey), step.id);
-						stream.emitProgress(tilesetId, "assetGenerationProgress", {
+						completed += assetGenerationRemainingPendingStepCount(
+							plannedStepsByFace.get(face.faceKey),
+							step.id,
+						);
+						stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 							stage: step.id,
 							stageLabel: step.label,
 							faceKey: face.faceKey,
-							status: "failed",
+							status: 'failed',
 							completed,
 							total,
 							percent: total ? Math.round((completed / total) * 100) : 100,
@@ -1623,7 +1681,7 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 				}
 
 				completed += 1;
-				stream.emitProgress(tilesetId, "assetGenerationProgress", {
+				stream.emitProgress(tilesetId, 'assetGenerationProgress', {
 					stage: step.id,
 					stageLabel: step.label,
 					faceKey: face.faceKey,
@@ -1635,7 +1693,7 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 				});
 				await delay(step.delayMs);
 			}
-			failedStepId = "";
+			failedStepId = '';
 			if (faceFailed) {
 				continue;
 			}
@@ -1650,10 +1708,10 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 			});
 			await model.save();
 			await removeAssetGenerationQueueFace(model, face.faceKey);
-			stream.emitProgress(tilesetId, "assetGenerationFaceReady", {
-				stage: "asset-generation",
+			stream.emitProgress(tilesetId, 'assetGenerationFaceReady', {
+				stage: 'asset-generation',
 				faceKey: face.faceKey,
-				status: "ready",
+				status: 'ready',
 				completed,
 				total,
 				percent: total ? Math.round((completed / total) * 100) : 100,
@@ -1665,8 +1723,8 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 		await clearAssetGenerationQueue(model);
 		const assetPipeline = model.getAssetPipeline();
 
-		stream.emitProgress(tilesetId, "assetGenerationComplete", {
-			stage: "asset-generation",
+		stream.emitProgress(tilesetId, 'assetGenerationComplete', {
+			stage: 'asset-generation',
 			completed,
 			total,
 			percent: 100,
@@ -1693,14 +1751,14 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 					await model.save();
 					await clearAssetGenerationQueue(model);
 				} catch (saveError) {
-					console.warn("Failed to clear generated asset queue after base tile change.", saveError);
+					console.warn('Failed to clear generated asset queue after base tile change.', saveError);
 				}
 			}
 			getAssetPipelineStream().clearQueueState(tilesetId);
-			getAssetPipelineStream().emitProgress(tilesetId, "assetGenerationComplete", {
-				stage: failedStepId || "asset-generation",
+			getAssetPipelineStream().emitProgress(tilesetId, 'assetGenerationComplete', {
+				stage: failedStepId || 'asset-generation',
 				faceKey: failedFaceKey || null,
-				status: "cancelled",
+				status: 'cancelled',
 				completed: 0,
 				total: 0,
 				percent: 100,
@@ -1724,24 +1782,24 @@ async function runAssetGeneration(tilesetId, { faceKeys = [] } = {}) {
 			try {
 				const model = await loadPipelineModel(tilesetId);
 				model.updateAssetGenerationFace(failedFaceKey, {
-					status: "failed",
+					status: 'failed',
 					queue: {
-						status: "failed",
-						currentStep: failedStepId || "asset-generation",
+						status: 'failed',
+						currentStep: failedStepId || 'asset-generation',
 					},
 					failure: {
-						step: failedStepId || "asset-generation",
+						step: failedStepId || 'asset-generation',
 						message: assetGenerationFailureMessage(error),
 					},
 				});
 				await model.save();
 				await removeAssetGenerationQueueFace(model, failedFaceKey);
 			} catch (saveError) {
-				console.warn("Failed to record generated asset failure.", saveError);
+				console.warn('Failed to record generated asset failure.', saveError);
 			}
 		}
-		getAssetPipelineStream().emitProgress(tilesetId, "assetGenerationFailed", {
-			stage: failedStepId || "asset-generation",
+		getAssetPipelineStream().emitProgress(tilesetId, 'assetGenerationFailed', {
+			stage: failedStepId || 'asset-generation',
 			faceKey: failedFaceKey || null,
 			message: error.message,
 		});
@@ -1814,51 +1872,54 @@ async function generateCutterSimplificationExperiment(req, res) {
 	}
 }
 
-async function runSvgCutterGeneration({ tilesetId, faceKey, completed = 0, total = 0 }) {
+async function runSvgCutterGeneration({tilesetId, faceKey, completed = 0, total = 0}) {
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const stream = getAssetPipelineStream();
 	const model = await loadPipelineModel(tilesetId);
-	const cutterSvgPath = resolveRepoPath(model.getAssetPipeline().faces?.[faceKey]?.artifacts?.cutterSvg || "");
+	const cutterSvgPath = resolveRepoPath(model.getAssetPipeline().faces?.[faceKey]?.artifacts?.cutterSvg || '');
 	if (!cutterSvgPath || !(await fileExists(cutterSvgPath))) {
 		throw new Error(`Missing cutter-2D SVG artifact for ${tilesetId}/${faceKey}.`);
 	}
-	const result = await runNodeCommand([
-		SVG_CUTTER_SCRIPT,
-		"--tileset-id",
-		tilesetId,
-		"--face-key",
-		faceKey,
-		"--svg-path",
-		cutterSvgPath,
-		"--skip-union",
-	], {
-		activeRun,
-		maxBuffer: 20 * 1024 * 1024,
-		onStdoutLine: (line) => {
-			const progress = parseAssetStageProgressLine(line);
-			if (!progress || progress.stage !== "svg-cutter") {
-				return;
-			}
+	const result = await runNodeCommand(
+		[
+			SVG_CUTTER_SCRIPT,
+			'--tileset-id',
+			tilesetId,
+			'--face-key',
+			faceKey,
+			'--svg-path',
+			cutterSvgPath,
+			'--skip-union',
+		],
+		{
+			activeRun,
+			maxBuffer: 20 * 1024 * 1024,
+			onStdoutLine: (line) => {
+				const progress = parseAssetStageProgressLine(line);
+				if (!progress || progress.stage !== 'svg-cutter') {
+					return;
+				}
 
-			stream.emitProgress(tilesetId, "assetGenerationProgress", {
-				stage: "svg-cutter",
-				stageLabel: "Preparing SVG Cutter",
-				faceKey,
-				status: "building",
-				completed,
-				total,
-				percent: total ? Math.round((completed / total) * 100) : 100,
-				stageProgress: progress,
-				message: cutterProgressMessage(progress, faceKey),
-			});
+				stream.emitProgress(tilesetId, 'assetGenerationProgress', {
+					stage: 'svg-cutter',
+					stageLabel: 'Preparing SVG Cutter',
+					faceKey,
+					status: 'building',
+					completed,
+					total,
+					percent: total ? Math.round((completed / total) * 100) : 100,
+					stageProgress: progress,
+					message: cutterProgressMessage(progress, faceKey),
+				});
+			},
 		},
-	});
+	);
 	throwIfAssetGenerationCancelled(activeRun);
 
 	if (result.status !== 0) {
 		const details = [result.stderr, filterAssetStageProgressOutput(result.stdout), result.error]
 			.filter(Boolean)
-			.join("\n")
+			.join('\n')
 			.trim();
 		const error = new Error(details || `SVG cutter generation failed for ${tilesetId}/${faceKey}.`);
 		error.statusCode = 500;
@@ -1868,38 +1929,38 @@ async function runSvgCutterGeneration({ tilesetId, faceKey, completed = 0, total
 	return result;
 }
 
-async function runCutter2dGeneration({ tilesetId, faceKey }) {
+async function runCutter2dGeneration({tilesetId, faceKey}) {
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const model = await loadPipelineModel(tilesetId);
-	const inputSvgPath = resolveRepoPath(model.getFinalRenderingColorSvgPath(faceKey) || "");
-	const outputSvgPath = path.resolve(model.pipelineDir, "images", "cutter-2d-svg", `${faceKey}.svg`);
+	const inputSvgPath = resolveRepoPath(model.getFinalRenderingColorSvgPath(faceKey) || '');
+	const outputSvgPath = path.resolve(model.pipelineDir, 'images', 'cutter-2d-svg', `${faceKey}.svg`);
 
 	if (!inputSvgPath || !(await fileExists(inputSvgPath))) {
 		throw new Error(`Missing final-rendering SVG for cutter-2D generation: ${tilesetId}/${faceKey}.`);
 	}
 
-	await mkdir(path.dirname(outputSvgPath), { recursive: true });
-	const result = await runNodeCommand([
-		SVG_CUTTER_SIMPLIFICATION_SCRIPT,
-		"--input",
-		inputSvgPath,
-		"--output",
-		outputSvgPath,
-		"--mode",
-		"unite-all",
-		"--flatness",
-		SVG_CUTTER_SIMPLIFICATION_FLATNESS,
-	], {
-		activeRun,
-		maxBuffer: 10 * 1024 * 1024,
-	});
+	await mkdir(path.dirname(outputSvgPath), {recursive: true});
+	const result = await runNodeCommand(
+		[
+			SVG_CUTTER_SIMPLIFICATION_SCRIPT,
+			'--input',
+			inputSvgPath,
+			'--output',
+			outputSvgPath,
+			'--mode',
+			'unite-all',
+			'--flatness',
+			SVG_CUTTER_SIMPLIFICATION_FLATNESS,
+		],
+		{
+			activeRun,
+			maxBuffer: 10 * 1024 * 1024,
+		},
+	);
 	throwIfAssetGenerationCancelled(activeRun);
 
 	if (result.status !== 0) {
-		const details = [result.stderr, result.stdout, result.error]
-			.filter(Boolean)
-			.join("\n")
-			.trim();
+		const details = [result.stderr, result.stdout, result.error].filter(Boolean).join('\n').trim();
 		const error = new Error(details || `Cutter-2D SVG generation failed for ${tilesetId}/${faceKey}.`);
 		error.statusCode = 500;
 		throw error;
@@ -1908,7 +1969,7 @@ async function runCutter2dGeneration({ tilesetId, faceKey }) {
 	model.updateAssetGenerationFace(faceKey, {
 		inputHash: model.hashAssetPipelineFaceInput(faceKey),
 		stageHashes: {
-			"cutter-2d": model.hashAssetGenerationStageInput(faceKey, "cutter-2d"),
+			'cutter-2d': model.hashAssetGenerationStageInput(faceKey, 'cutter-2d'),
 		},
 		artifacts: {
 			cutterSvg: relativePath(outputSvgPath),
@@ -1920,25 +1981,16 @@ async function runCutter2dGeneration({ tilesetId, faceKey }) {
 	return outputSvgPath;
 }
 
-async function runStampedBodyGeneration({ tilesetId, faceKey }) {
+async function runStampedBodyGeneration({tilesetId, faceKey}) {
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
-	const result = await runNodeCommand([
-		STAMPED_BODY_SCRIPT,
-		"--tileset-id",
-		tilesetId,
-		"--face-key",
-		faceKey,
-	], {
+	const result = await runNodeCommand([STAMPED_BODY_SCRIPT, '--tileset-id', tilesetId, '--face-key', faceKey], {
 		activeRun,
 		maxBuffer: 20 * 1024 * 1024,
 	});
 	throwIfAssetGenerationCancelled(activeRun);
 
 	if (result.status !== 0) {
-		const details = [result.stderr, result.stdout, result.error]
-			.filter(Boolean)
-			.join("\n")
-			.trim();
+		const details = [result.stderr, result.stdout, result.error].filter(Boolean).join('\n').trim();
 		const error = new Error(details || `Stamped body generation failed for ${tilesetId}/${faceKey}.`);
 		error.statusCode = 500;
 		throw error;
@@ -1947,32 +1999,24 @@ async function runStampedBodyGeneration({ tilesetId, faceKey }) {
 	return result;
 }
 
-async function runColoredInlayGeneration({ tilesetId, faceKey }) {
+async function runColoredInlayGeneration({tilesetId, faceKey}) {
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const model = await loadPipelineModel(tilesetId);
-	const renderedSvgPath = resolveRepoPath(model.getFinalRenderingColorSvgPath(faceKey) || "");
+	const renderedSvgPath = resolveRepoPath(model.getFinalRenderingColorSvgPath(faceKey) || '');
 	if (!renderedSvgPath || !(await fileExists(renderedSvgPath))) {
 		throw new Error(`Missing final-rendering SVG artifact for colored inlay: ${tilesetId}/${faceKey}.`);
 	}
-	const result = await runNodeCommand([
-		COLORED_INLAY_SCRIPT,
-		"--tileset-id",
-		tilesetId,
-		"--face-key",
-		faceKey,
-		"--rendered-svg",
-		renderedSvgPath,
-	], {
-		activeRun,
-		maxBuffer: 20 * 1024 * 1024,
-	});
+	const result = await runNodeCommand(
+		[COLORED_INLAY_SCRIPT, '--tileset-id', tilesetId, '--face-key', faceKey, '--rendered-svg', renderedSvgPath],
+		{
+			activeRun,
+			maxBuffer: 20 * 1024 * 1024,
+		},
+	);
 	throwIfAssetGenerationCancelled(activeRun);
 
 	if (result.status !== 0) {
-		const details = [result.stderr, result.stdout, result.error]
-			.filter(Boolean)
-			.join("\n")
-			.trim();
+		const details = [result.stderr, result.stdout, result.error].filter(Boolean).join('\n').trim();
 		const error = new Error(details || `Colored inlay generation failed for ${tilesetId}/${faceKey}.`);
 		error.statusCode = 500;
 		throw error;
@@ -1981,14 +2025,20 @@ async function runColoredInlayGeneration({ tilesetId, faceKey }) {
 	return result;
 }
 
-async function runGeneratedAssetPreview({ tilesetId, faceKey }) {
-	return renderGeneratedAssetPreview({ tilesetId, faceKey });
+async function runGeneratedAssetPreview({tilesetId, faceKey}) {
+	return renderGeneratedAssetPreview({tilesetId, faceKey});
 }
 
 function cutterSimplificationExperimentDefinitions(model) {
 	return CUTTER_SIMPLIFICATION_EXPERIMENT_FLATNESS.map((flatness) => {
-		const id = `flat-${String(flatness).replace(".", "p")}`;
-		const baseDir = path.join(model.pipelineDir, "experiments", "cutter-simplification", CUTTER_SIMPLIFICATION_EXPERIMENT_FACE, id);
+		const id = `flat-${String(flatness).replace('.', 'p')}`;
+		const baseDir = path.join(
+			model.pipelineDir,
+			'experiments',
+			'cutter-simplification',
+			CUTTER_SIMPLIFICATION_EXPERIMENT_FACE,
+			id,
+		);
 		return {
 			id,
 			label: `Flatness ${flatness}`,
@@ -2009,112 +2059,139 @@ function cutterSimplificationExperimentDefinitions(model) {
 
 async function cutterSimplificationExperimentVariants(model) {
 	const definitions = cutterSimplificationExperimentDefinitions(model);
-	return Promise.all(definitions.map(async (variant) => {
-		const artifacts = Object.fromEntries(await Promise.all(Object.entries(variant.paths).map(async ([key, filename]) => [
-			key,
-			(await fileExists(filename)) ? relativePath(filename) : "",
-		])));
-		const stats = artifacts.simplifiedSvg ? await cutterSimplificationSvgStats(resolveRepoPath(artifacts.simplifiedSvg)) : null;
-		return {
-			id: variant.id,
-			label: variant.label,
-			flatness: variant.flatness,
-			ready: Boolean(artifacts.previewPng && artifacts.inlayModel),
-			artifacts,
-			stats,
-		};
-	}));
+	return Promise.all(
+		definitions.map(async (variant) => {
+			const artifacts = Object.fromEntries(
+				await Promise.all(
+					Object.entries(variant.paths).map(async ([key, filename]) => [
+						key,
+						(await fileExists(filename)) ? relativePath(filename) : '',
+					]),
+				),
+			);
+			const stats = artifacts.simplifiedSvg
+				? await cutterSimplificationSvgStats(resolveRepoPath(artifacts.simplifiedSvg))
+				: null;
+			return {
+				id: variant.id,
+				label: variant.label,
+				flatness: variant.flatness,
+				ready: Boolean(artifacts.previewPng && artifacts.inlayModel),
+				artifacts,
+				stats,
+			};
+		}),
+	);
 }
 
-async function generateCutterSimplificationExperimentVariant({ tilesetId, faceKey, variant }) {
+async function generateCutterSimplificationExperimentVariant({tilesetId, faceKey, variant}) {
 	const model = await loadPipelineModel(tilesetId);
-	const sourceSvg = resolveRepoPath(model.getFinalRenderingColorSvgPath(faceKey) || "");
+	const sourceSvg = resolveRepoPath(model.getFinalRenderingColorSvgPath(faceKey) || '');
 	if (!sourceSvg || !(await fileExists(sourceSvg))) {
 		throw new Error(`Missing final-rendering SVG for ${tilesetId}/${faceKey}.`);
 	}
 
 	for (const filename of Object.values(variant.paths)) {
-		await mkdir(path.dirname(filename), { recursive: true });
+		await mkdir(path.dirname(filename), {recursive: true});
 	}
 
-	await runExperimentCommand([
-		SVG_CUTTER_SIMPLIFICATION_SCRIPT,
-		"--input",
-		sourceSvg,
-		"--output",
-		variant.paths.simplifiedSvg,
-		"--mode",
-		"unite-all",
-		"--flatness",
-		String(variant.flatness),
-	], `SVG simplification failed for ${variant.id}.`);
+	await runExperimentCommand(
+		[
+			SVG_CUTTER_SIMPLIFICATION_SCRIPT,
+			'--input',
+			sourceSvg,
+			'--output',
+			variant.paths.simplifiedSvg,
+			'--mode',
+			'unite-all',
+			'--flatness',
+			String(variant.flatness),
+		],
+		`SVG simplification failed for ${variant.id}.`,
+	);
 
-	await runExperimentCommand([
-		SVG_CUTTER_SCRIPT,
-		"--tileset-id",
-		tilesetId,
-		"--face-key",
-		faceKey,
-		"--svg-path",
-		variant.paths.simplifiedSvg,
-		"--output-glb",
-		variant.paths.cutterModel,
-		"--output-metadata",
-		variant.paths.cutterMetadata,
-		"--skip-union",
-		"--no-pipeline-state",
-	], `SVG cutter failed for ${variant.id}.`, { maxBuffer: 20 * 1024 * 1024 });
+	await runExperimentCommand(
+		[
+			SVG_CUTTER_SCRIPT,
+			'--tileset-id',
+			tilesetId,
+			'--face-key',
+			faceKey,
+			'--svg-path',
+			variant.paths.simplifiedSvg,
+			'--output-glb',
+			variant.paths.cutterModel,
+			'--output-metadata',
+			variant.paths.cutterMetadata,
+			'--skip-union',
+			'--no-pipeline-state',
+		],
+		`SVG cutter failed for ${variant.id}.`,
+		{maxBuffer: 20 * 1024 * 1024},
+	);
 
-	await runExperimentCommand([
-		STAMPED_BODY_SCRIPT,
-		"--tileset-id",
-		tilesetId,
-		"--face-key",
-		faceKey,
-		"--cutter-model",
-		variant.paths.cutterModel,
-		"--cutter-metadata",
-		variant.paths.cutterMetadata,
-		"--output-glb",
-		variant.paths.stampedModel,
-		"--output-metadata",
-		variant.paths.stampedMetadata,
-		"--no-pipeline-state",
-	], `Stamped body failed for ${variant.id}.`, { maxBuffer: 20 * 1024 * 1024 });
+	await runExperimentCommand(
+		[
+			STAMPED_BODY_SCRIPT,
+			'--tileset-id',
+			tilesetId,
+			'--face-key',
+			faceKey,
+			'--cutter-model',
+			variant.paths.cutterModel,
+			'--cutter-metadata',
+			variant.paths.cutterMetadata,
+			'--output-glb',
+			variant.paths.stampedModel,
+			'--output-metadata',
+			variant.paths.stampedMetadata,
+			'--no-pipeline-state',
+		],
+		`Stamped body failed for ${variant.id}.`,
+		{maxBuffer: 20 * 1024 * 1024},
+	);
 
-	await runExperimentCommand([
-		COLORED_INLAY_SCRIPT,
-		"--tileset-id",
-		tilesetId,
-		"--face-key",
-		faceKey,
-		"--rendered-svg",
-		sourceSvg,
-		"--stamped-model",
-		variant.paths.stampedModel,
-		"--stamped-metadata",
-		variant.paths.stampedMetadata,
-		"--cutter-metadata",
-		variant.paths.cutterMetadata,
-		"--output-glb",
-		variant.paths.inlayModel,
-		"--output-metadata",
-		variant.paths.inlayMetadata,
-		"--no-pipeline-state",
-	], `Colored inlay failed for ${variant.id}.`, { maxBuffer: 20 * 1024 * 1024 });
+	await runExperimentCommand(
+		[
+			COLORED_INLAY_SCRIPT,
+			'--tileset-id',
+			tilesetId,
+			'--face-key',
+			faceKey,
+			'--rendered-svg',
+			sourceSvg,
+			'--stamped-model',
+			variant.paths.stampedModel,
+			'--stamped-metadata',
+			variant.paths.stampedMetadata,
+			'--cutter-metadata',
+			variant.paths.cutterMetadata,
+			'--output-glb',
+			variant.paths.inlayModel,
+			'--output-metadata',
+			variant.paths.inlayMetadata,
+			'--no-pipeline-state',
+		],
+		`Colored inlay failed for ${variant.id}.`,
+		{maxBuffer: 20 * 1024 * 1024},
+	);
 
-	await runExperimentCommand([
-		GENERATED_ASSET_PREVIEW_SCRIPT,
-		"--tileset-id",
-		tilesetId,
-		"--face-key",
-		faceKey,
-		"--input-glb",
-		variant.paths.inlayModel,
-		"--output-png",
-		variant.paths.previewPng,
-		"--no-pipeline-state",
-	], `Preview PNG failed for ${variant.id}.`, { maxBuffer: 20 * 1024 * 1024 });
+	await runExperimentCommand(
+		[
+			GENERATED_ASSET_PREVIEW_SCRIPT,
+			'--tileset-id',
+			tilesetId,
+			'--face-key',
+			faceKey,
+			'--input-glb',
+			variant.paths.inlayModel,
+			'--output-png',
+			variant.paths.previewPng,
+			'--no-pipeline-state',
+		],
+		`Preview PNG failed for ${variant.id}.`,
+		{maxBuffer: 20 * 1024 * 1024},
+	);
 }
 
 async function runExperimentCommand(command, fallbackMessage, options = {}) {
@@ -2127,7 +2204,7 @@ async function runExperimentCommand(command, fallbackMessage, options = {}) {
 
 	const details = [result.stderr, filterAssetStageProgressOutput(result.stdout), result.error]
 		.filter(Boolean)
-		.join("\n")
+		.join('\n')
 		.trim();
 	const error = new Error(details || fallbackMessage);
 	error.statusCode = 500;
@@ -2135,9 +2212,9 @@ async function runExperimentCommand(command, fallbackMessage, options = {}) {
 }
 
 async function cutterSimplificationSvgStats(filename) {
-	const source = await readFile(filename, "utf8");
+	const source = await readFile(filename, 'utf8');
 	const pathMatch = source.match(/\sd="([^"]+)"/);
-	const pathData = pathMatch?.[1] || "";
+	const pathData = pathMatch?.[1] || '';
 	return {
 		bytes: Buffer.byteLength(source),
 		pathChars: pathData.length,
@@ -2147,16 +2224,14 @@ async function cutterSimplificationSvgStats(filename) {
 }
 
 function assetGenerationFailureMessage(error) {
-	const lines = String(error?.message || "Generated asset step failed.")
+	const lines = String(error?.message || 'Generated asset step failed.')
 		.split(/\r?\n/)
 		.map((line) => line.trim())
 		.filter(Boolean);
-	return lines.find((line) => line.startsWith("Error:"))
-		|| lines[0]
-		|| "Generated asset step failed.";
+	return lines.find((line) => line.startsWith('Error:')) || lines[0] || 'Generated asset step failed.';
 }
 
-async function writeFinalRenderingOptions({ model, tilesetId, options }) {
+async function writeFinalRenderingOptions({model, tilesetId, options}) {
 	const tilesetState = model.requireState();
 	const currentRendering = tilesetState.rendering || {};
 	const renderingOverrides = outputOverridesFromEffectiveOptions({
@@ -2179,15 +2254,16 @@ async function writeFinalRenderingOptions({ model, tilesetId, options }) {
 }
 
 async function runAlignmentAndSemanticAssignment(tilesetId) {
-	const alignmentScriptPath = path.resolve("scripts", "3d-assets", "svg-preprocessor", "run-source-alignment.js");
-	const semanticScriptPath = path.resolve("scripts", "3d-assets", "svg-preprocessor", "run-source-semantic-assignment.js");
-	const pipelineStatePath = path.resolve(tilesetOutputRoot(tilesetId), "pipeline.json");
+	const alignmentScriptPath = path.resolve('scripts', '3d-assets', 'svg-preprocessor', 'run-source-alignment.js');
+	const semanticScriptPath = path.resolve(
+		'scripts',
+		'3d-assets',
+		'svg-preprocessor',
+		'run-source-semantic-assignment.js',
+	);
+	const pipelineStatePath = path.resolve(tilesetOutputRoot(tilesetId), 'pipeline.json');
 	const referenceStructurePath = path.resolve(DEFAULT_REFERENCE_STRUCTURE_DIR, REFERENCE_STRUCTURE_FILENAME);
-	const alignmentCommand = [
-		alignmentScriptPath,
-		"--tileset-id",
-		tilesetId,
-	];
+	const alignmentCommand = [alignmentScriptPath, '--tileset-id', tilesetId];
 	const alignmentResult = await runNodeCommand(alignmentCommand);
 	const alignment = {
 		command: commandLabel(alignmentCommand),
@@ -2200,17 +2276,13 @@ async function runAlignmentAndSemanticAssignment(tilesetId) {
 	if (alignmentResult.status !== 0) {
 		return {
 			ok: false,
-			stage: "alignment",
+			stage: 'alignment',
 			alignment,
 			semanticAssignment: null,
 		};
 	}
 
-	const semanticCommand = [
-		semanticScriptPath,
-		"--tileset-id",
-		tilesetId,
-	];
+	const semanticCommand = [semanticScriptPath, '--tileset-id', tilesetId];
 	const semanticResult = await runNodeCommand(semanticCommand);
 	const semanticAssignment = {
 		command: commandLabel(semanticCommand),
@@ -2222,19 +2294,15 @@ async function runAlignmentAndSemanticAssignment(tilesetId) {
 
 	return {
 		ok: semanticResult.status === 0,
-		stage: semanticResult.status === 0 ? "source-assignment" : "semantic-assignment",
+		stage: semanticResult.status === 0 ? 'source-assignment' : 'semantic-assignment',
 		alignment,
 		semanticAssignment,
 	};
 }
 
 async function runFinalRenderingComposition(tilesetId) {
-	const scriptPath = path.resolve("scripts", "3d-assets", "svg-preprocessor", "run-final-rendering-composition.js");
-	const command = [
-		scriptPath,
-		"--tileset-id",
-		tilesetId,
-	];
+	const scriptPath = path.resolve('scripts', '3d-assets', 'svg-preprocessor', 'run-final-rendering-composition.js');
+	const command = [scriptPath, '--tileset-id', tilesetId];
 	const result = await runNodeCommand(command);
 
 	return {
@@ -2255,7 +2323,7 @@ function effectiveFinalRenderingOutputOptions(tilesetState) {
 	);
 }
 
-function outputOverridesFromEffectiveOptions({ defaultOptions, options, tilesetId }) {
+function outputOverridesFromEffectiveOptions({defaultOptions, options, tilesetId}) {
 	const normalizedDefaults = normalizeFinalRenderingOutputOptions(defaultOptions || {});
 	const normalizedOptions = normalizeFinalRenderingOutputOptions(options || {});
 	const suits = {};
@@ -2292,37 +2360,32 @@ function diffFinalRenderingOptionGroup(defaultGroup = {}, group = {}) {
 		}
 	}
 
-	const layout = JSON.stringify(group.layout || {}) !== JSON.stringify(defaultGroup.layout || {})
-		? group.layout
-		: null;
-	const color = JSON.stringify(group.color || {}) !== JSON.stringify(defaultGroup.color || {})
-		? group.color
-		: null;
-	const transform = JSON.stringify(group.transform || {}) !== JSON.stringify(defaultGroup.transform || {})
-		? group.transform
-		: null;
-	const artwork = JSON.stringify(group.artwork || {}) !== JSON.stringify(defaultGroup.artwork || {})
-		? group.artwork
-		: null;
+	const layout =
+		JSON.stringify(group.layout || {}) !== JSON.stringify(defaultGroup.layout || {}) ? group.layout : null;
+	const color = JSON.stringify(group.color || {}) !== JSON.stringify(defaultGroup.color || {}) ? group.color : null;
+	const transform =
+		JSON.stringify(group.transform || {}) !== JSON.stringify(defaultGroup.transform || {}) ? group.transform : null;
+	const artwork =
+		JSON.stringify(group.artwork || {}) !== JSON.stringify(defaultGroup.artwork || {}) ? group.artwork : null;
 
 	if (Object.keys(parts).length === 0 && !layout && !color && !transform && !artwork) {
 		return null;
 	}
 
 	return {
-		...(group.suitId ? { suitId: group.suitId } : {}),
-		...(group.faceKey ? { faceKey: group.faceKey } : {}),
+		...(group.suitId ? {suitId: group.suitId} : {}),
+		...(group.faceKey ? {faceKey: group.faceKey} : {}),
 		parts,
-		...(layout ? { layout } : {}),
-		...(color ? { color } : {}),
-		...(transform ? { transform } : {}),
-		...(artwork ? { artwork } : {}),
+		...(layout ? {layout} : {}),
+		...(color ? {color} : {}),
+		...(transform ? {transform} : {}),
+		...(artwork ? {artwork} : {}),
 	};
 }
 
 function finalRenderingPartFingerprint(part) {
 	if (!part) {
-		return "";
+		return '';
 	}
 
 	return JSON.stringify({
@@ -2352,7 +2415,7 @@ function mergeFinalRenderingOutputOptions(previousOptions, options, tilesetId) {
 }
 
 function mergeFinalRenderingOptionGroups(previousGroups = {}, nextGroups = {}) {
-	const merged = { ...(previousGroups || {}) };
+	const merged = {...(previousGroups || {})};
 
 	for (const [groupId, nextGroup] of Object.entries(nextGroups || {})) {
 		const previousGroup = previousGroups?.[groupId] || {};
@@ -2360,30 +2423,38 @@ function mergeFinalRenderingOptionGroups(previousGroups = {}, nextGroups = {}) {
 			...previousGroup,
 			...nextGroup,
 			parts: mergeFinalRenderingPartOptions(previousGroup.parts, nextGroup.parts),
-			...(previousGroup.layout || nextGroup.layout ? {
-				layout: {
-					...(previousGroup.layout || {}),
-					...(nextGroup.layout || {}),
-				},
-			} : {}),
-			...(previousGroup.color || nextGroup.color ? {
-				color: {
-					...(previousGroup.color || {}),
-					...(nextGroup.color || {}),
-				},
-			} : {}),
-			...(previousGroup.transform || nextGroup.transform ? {
-				transform: {
-					...(previousGroup.transform || {}),
-					...(nextGroup.transform || {}),
-				},
-			} : {}),
-			...(previousGroup.artwork || nextGroup.artwork ? {
-				artwork: {
-					...(previousGroup.artwork || {}),
-					...(nextGroup.artwork || {}),
-				},
-			} : {}),
+			...(previousGroup.layout || nextGroup.layout
+				? {
+						layout: {
+							...(previousGroup.layout || {}),
+							...(nextGroup.layout || {}),
+						},
+					}
+				: {}),
+			...(previousGroup.color || nextGroup.color
+				? {
+						color: {
+							...(previousGroup.color || {}),
+							...(nextGroup.color || {}),
+						},
+					}
+				: {}),
+			...(previousGroup.transform || nextGroup.transform
+				? {
+						transform: {
+							...(previousGroup.transform || {}),
+							...(nextGroup.transform || {}),
+						},
+					}
+				: {}),
+			...(previousGroup.artwork || nextGroup.artwork
+				? {
+						artwork: {
+							...(previousGroup.artwork || {}),
+							...(nextGroup.artwork || {}),
+						},
+					}
+				: {}),
 		};
 	}
 
@@ -2391,7 +2462,7 @@ function mergeFinalRenderingOptionGroups(previousGroups = {}, nextGroups = {}) {
 }
 
 function mergeFinalRenderingPartOptions(previousParts = {}, nextParts = {}) {
-	const merged = { ...(previousParts || {}) };
+	const merged = {...(previousParts || {})};
 
 	for (const [partId, nextPart] of Object.entries(nextParts || {})) {
 		merged[partId] = {
@@ -2415,13 +2486,18 @@ function normalizeFinalRenderingOutputOptions(options) {
 			...(options?.defaults || {}),
 		},
 		suits: normalizedSuits,
-		faces: Object.fromEntries(Object.entries(options?.faces || {})
-			.map(([faceKey, faceOptions]) => [faceKey, normalizeFinalRenderingOptionGroup({
-				...faceOptions,
-				faceKey: faceOptions?.faceKey || faceKey,
-				suitId: faceOptions?.suitId || finalRenderingFaceFamily(faceKey),
-			})])
-			.sort((left, right) => left[0].localeCompare(right[0]))),
+		faces: Object.fromEntries(
+			Object.entries(options?.faces || {})
+				.map(([faceKey, faceOptions]) => [
+					faceKey,
+					normalizeFinalRenderingOptionGroup({
+						...faceOptions,
+						faceKey: faceOptions?.faceKey || faceKey,
+						suitId: faceOptions?.suitId || finalRenderingFaceFamily(faceKey),
+					}),
+				])
+				.sort((left, right) => left[0].localeCompare(right[0])),
+		),
 	};
 }
 
@@ -2443,34 +2519,38 @@ function normalizeFinalRenderingSuitOptions(suits) {
 
 function sanitizeFinalRenderingOptions(options) {
 	return {
-		suits: Object.fromEntries(Object.entries(options?.suits || {})
-			.map(([suitId, suitOptions]) => [
-				sanitizeOutputScope(suitId),
-				normalizeFinalRenderingOptionGroup({
-					...suitOptions,
-					suitId: sanitizeOutputScope(suitId),
-				}),
-			])
-			.filter(([suitId, suitOptions]) => suitId && hasFinalRenderingGroupOptions(suitOptions))
-			.sort((left, right) => left[0].localeCompare(right[0]))),
-		faces: Object.fromEntries(Object.entries(options?.faces || {})
-			.map(([faceKey, faceOptions]) => [
-				sanitizeOutputScope(faceKey),
-				normalizeFinalRenderingOptionGroup({
-					...faceOptions,
-					faceKey: sanitizeOutputScope(faceKey),
-					suitId: sanitizeOutputScope(faceOptions?.suitId || finalRenderingFaceFamily(faceKey)),
-				}),
-			])
-			.filter(([faceKey, faceOptions]) => faceKey && hasFinalRenderingGroupOptions(faceOptions))
-			.sort((left, right) => left[0].localeCompare(right[0]))),
+		suits: Object.fromEntries(
+			Object.entries(options?.suits || {})
+				.map(([suitId, suitOptions]) => [
+					sanitizeOutputScope(suitId),
+					normalizeFinalRenderingOptionGroup({
+						...suitOptions,
+						suitId: sanitizeOutputScope(suitId),
+					}),
+				])
+				.filter(([suitId, suitOptions]) => suitId && hasFinalRenderingGroupOptions(suitOptions))
+				.sort((left, right) => left[0].localeCompare(right[0])),
+		),
+		faces: Object.fromEntries(
+			Object.entries(options?.faces || {})
+				.map(([faceKey, faceOptions]) => [
+					sanitizeOutputScope(faceKey),
+					normalizeFinalRenderingOptionGroup({
+						...faceOptions,
+						faceKey: sanitizeOutputScope(faceKey),
+						suitId: sanitizeOutputScope(faceOptions?.suitId || finalRenderingFaceFamily(faceKey)),
+					}),
+				])
+				.filter(([faceKey, faceOptions]) => faceKey && hasFinalRenderingGroupOptions(faceOptions))
+				.sort((left, right) => left[0].localeCompare(right[0])),
+		),
 	};
 }
 
 function normalizeFinalRenderingOptionGroup(group) {
 	const parts = {};
 
-	for (const partId of ["label", "glyph"]) {
+	for (const partId of ['label', 'glyph']) {
 		const part = normalizeFinalRenderingPartOption(group?.parts?.[partId], partId);
 		if (part) {
 			parts[partId] = part;
@@ -2478,125 +2558,128 @@ function normalizeFinalRenderingOptionGroup(group) {
 	}
 
 	return {
-		...(group?.suitId ? { suitId: group.suitId } : {}),
-		...(group?.faceKey ? { faceKey: group.faceKey } : {}),
+		...(group?.suitId ? {suitId: group.suitId} : {}),
+		...(group?.faceKey ? {faceKey: group.faceKey} : {}),
 		parts,
-		...(group?.layout ? { layout: group.layout } : {}),
-		...(group?.color ? { color: group.color } : {}),
-		...(group?.transform ? { transform: normalizeFinalRenderingTransformOptions(group.transform) } : {}),
-		...(group?.artwork ? { artwork: normalizeFinalRenderingArtworkOptions(group.artwork) } : {}),
+		...(group?.layout ? {layout: group.layout} : {}),
+		...(group?.color ? {color: group.color} : {}),
+		...(group?.transform ? {transform: normalizeFinalRenderingTransformOptions(group.transform)} : {}),
+		...(group?.artwork ? {artwork: normalizeFinalRenderingArtworkOptions(group.artwork)} : {}),
 	};
 }
 
 function hasFinalRenderingGroupOptions(group) {
-	return Object.keys(group?.parts || {}).length > 0
-		|| Object.keys(group?.layout || {}).length > 0
-		|| Object.keys(group?.color || {}).length > 0
-		|| Object.keys(group?.transform || {}).length > 0
-		|| Object.keys(group?.artwork || {}).length > 0;
+	return (
+		Object.keys(group?.parts || {}).length > 0 ||
+		Object.keys(group?.layout || {}).length > 0 ||
+		Object.keys(group?.color || {}).length > 0 ||
+		Object.keys(group?.transform || {}).length > 0 ||
+		Object.keys(group?.artwork || {}).length > 0
+	);
 }
 
 function normalizeFinalRenderingTransformOptions(transform) {
-	if (!transform || typeof transform !== "object" || Array.isArray(transform)) {
+	if (!transform || typeof transform !== 'object' || Array.isArray(transform)) {
 		return {};
 	}
 
 	return {
-		...("reflectX" in transform ? { reflectX: Boolean(transform.reflectX) } : {}),
+		...('reflectX' in transform ? {reflectX: Boolean(transform.reflectX)} : {}),
 	};
 }
 
 function normalizeFinalRenderingArtworkOptions(artwork) {
-	if (!artwork || typeof artwork !== "object" || Array.isArray(artwork)) {
+	if (!artwork || typeof artwork !== 'object' || Array.isArray(artwork)) {
 		return {};
 	}
 
 	return {
-		...("preserveColors" in artwork ? { preserveColors: Boolean(artwork.preserveColors) } : {}),
+		...('preserveColors' in artwork ? {preserveColors: Boolean(artwork.preserveColors)} : {}),
 	};
 }
 
 function normalizeFinalRenderingPartOption(part, partId) {
-	if (!part || typeof part !== "object" || Array.isArray(part)) {
+	if (!part || typeof part !== 'object' || Array.isArray(part)) {
 		return null;
 	}
 
 	const renderMode = normalizeFinalRenderingRenderMode(part.renderMode || renderModeFromPartOption(part));
-	const outputPresent = renderMode !== "omit";
-	const source = renderMode === "generated"
-		? "generated"
-		: renderMode === "omit"
-			? "omit"
-		: renderMode === "source-preferred"
-			? "source-preferred"
-			: part.source || "default-on";
+	const outputPresent = renderMode !== 'omit';
+	const source =
+		renderMode === 'generated'
+			? 'generated'
+			: renderMode === 'omit'
+				? 'omit'
+				: renderMode === 'source-preferred'
+					? 'source-preferred'
+					: part.source || 'default-on';
 
 	return {
 		partId,
-		contentKind: partId === "glyph" ? "glyph" : "label",
-		...(part.role ? { role: part.role } : {}),
+		contentKind: partId === 'glyph' ? 'glyph' : 'label',
+		...(part.role ? {role: part.role} : {}),
 		outputPresent,
 		source,
 		renderMode,
-		reviewStatus: part.reviewStatus || "reviewed",
+		reviewStatus: part.reviewStatus || 'reviewed',
 	};
 }
 
 function normalizeFinalRenderingRenderMode(value) {
-	return ["source-preferred", "generated", "omit"].includes(value) ? value : "source-preferred";
+	return ['source-preferred', 'generated', 'omit'].includes(value) ? value : 'source-preferred';
 }
 
 function renderModeFromPartOption(part) {
 	if (part.outputPresent === false) {
-		return "omit";
+		return 'omit';
 	}
 
-	if (part.source === "generated") {
-		return "generated";
+	if (part.source === 'generated') {
+		return 'generated';
 	}
 
-	return "source-preferred";
+	return 'source-preferred';
 }
 
 function finalRenderingFaceParts(outputOptions, faceKey, family) {
 	const suitParts = outputOptions.suits?.[family]?.parts || {};
 	const faceParts = outputOptions.faces?.[faceKey]?.parts || {};
 
-	return Object.fromEntries(["label", "glyph"].map((partId) => {
-		const suitPart = suitParts[partId] || {};
-		const facePart = faceParts[partId] || null;
-		const activePart = facePart || suitPart || {};
-		const renderMode = renderModeFromPartOption(activePart);
+	return Object.fromEntries(
+		['label', 'glyph'].map((partId) => {
+			const suitPart = suitParts[partId] || {};
+			const facePart = faceParts[partId] || null;
+			const activePart = facePart || suitPart || {};
+			const renderMode = renderModeFromPartOption(activePart);
 
-		return [partId, {
-			partId,
-			contentKind: partId === "glyph" ? "glyph" : "label",
-			role: activePart.role || null,
-			colorStrategy: activePart.colorStrategy || null,
-			renderKind: renderKindFromRenderMode(renderMode),
-			alternates: null,
-			outputPresent: activePart.outputPresent !== false,
-			source: activePart.source || null,
-			renderMode,
-			hasFaceOverride: Boolean(facePart),
-			reviewStatus: activePart.reviewStatus || "reviewed",
-		}];
-	}));
+			return [
+				partId,
+				{
+					partId,
+					contentKind: partId === 'glyph' ? 'glyph' : 'label',
+					role: activePart.role || null,
+					colorStrategy: activePart.colorStrategy || null,
+					renderKind: renderKindFromRenderMode(renderMode),
+					alternates: null,
+					outputPresent: activePart.outputPresent !== false,
+					source: activePart.source || null,
+					renderMode,
+					hasFaceOverride: Boolean(facePart),
+					reviewStatus: activePart.reviewStatus || 'reviewed',
+				},
+			];
+		}),
+	);
 }
 
 function renderKindFromRenderMode(renderMode) {
-	return renderMode === "omit"
-		? "omit"
-		: renderMode === "generated"
-			? "generated"
-			: "source";
+	return renderMode === 'omit' ? 'omit' : renderMode === 'generated' ? 'generated' : 'source';
 }
 
 function finalRenderingFaceCanMirrorArtwork(faceState) {
 	const mainArtwork = faceState?.state?.parts?.mainArtwork || null;
 
-	return mainArtwork?.contentKind === "artwork"
-		&& mainArtwork.colorStrategy === "freeform-palette";
+	return mainArtwork?.contentKind === 'artwork' && mainArtwork.colorStrategy === 'freeform-palette';
 }
 
 function finalRenderingFaceCanPreserveArtworkColors(faceState) {
@@ -2608,33 +2691,39 @@ function finalRenderingOptionsSummary(faces) {
 
 	return {
 		faceCount: faceEntries.length,
-		readyCount: faceEntries.filter((face) => face.status === "ready").length,
-		unresolvedRenderCount: faceEntries.filter((face) => face.status !== "ready").length,
+		readyCount: faceEntries.filter((face) => face.status === 'ready').length,
+		unresolvedRenderCount: faceEntries.filter((face) => face.status !== 'ready').length,
 	};
 }
 
 function finalRenderingFaceFamily(faceKey) {
-	const prefix = String(faceKey || "").split("-")[0];
-	return canonicalFinalRenderingFamily({
-		b: "bamboo",
-		c: "character",
-		d: "dot",
-		dragon: "dragon",
-		flower: "flower",
-		season: "season",
-		wind: "wind",
-	}[prefix] || prefix || "other");
+	const prefix = String(faceKey || '').split('-')[0];
+	return canonicalFinalRenderingFamily(
+		{
+			b: 'bamboo',
+			c: 'character',
+			d: 'dot',
+			dragon: 'dragon',
+			flower: 'flower',
+			season: 'season',
+			wind: 'wind',
+		}[prefix] ||
+			prefix ||
+			'other',
+	);
 }
 
 function canonicalFinalRenderingFamily(family) {
-	return {
-		characters: "character",
-		dots: "dot",
-		dragons: "dragon",
-		flowers: "flower",
-		seasons: "season",
-		winds: "wind",
-	}[family] || family;
+	return (
+		{
+			characters: 'character',
+			dots: 'dot',
+			dragons: 'dragon',
+			flowers: 'flower',
+			seasons: 'season',
+			winds: 'wind',
+		}[family] || family
+	);
 }
 
 function sanitizeOptionalPartBulkOptions(bulkOptions) {
@@ -2643,45 +2732,54 @@ function sanitizeOptionalPartBulkOptions(bulkOptions) {
 
 	return {
 		...bulkOptions,
-		families: Object.fromEntries(Object.entries(families).map(([family, familyOptions]) => [
-			family,
-			sanitizeOptionalPartOptionGroup(familyOptions),
-		])),
-		faces: Object.fromEntries(Object.entries(faces)
-			.map(([faceKey, faceOptions]) => [
-				sanitizeOutputScope(faceKey),
-				sanitizeOptionalPartOptionGroup(faceOptions),
-			])
-			.filter(([faceKey, faceOptions]) => faceKey && Object.keys(faceOptions).length > 0)
-			.sort((left, right) => left[0].localeCompare(right[0]))),
+		families: Object.fromEntries(
+			Object.entries(families).map(([family, familyOptions]) => [
+				family,
+				sanitizeOptionalPartOptionGroup(familyOptions),
+			]),
+		),
+		faces: Object.fromEntries(
+			Object.entries(faces)
+				.map(([faceKey, faceOptions]) => [
+					sanitizeOutputScope(faceKey),
+					sanitizeOptionalPartOptionGroup(faceOptions),
+				])
+				.filter(([faceKey, faceOptions]) => faceKey && Object.keys(faceOptions).length > 0)
+				.sort((left, right) => left[0].localeCompare(right[0])),
+		),
 	};
 }
 
 function sanitizeOptionalPartOptionGroup(options) {
-	return Object.fromEntries(Object.entries(options || {}).map(([key, option]) => {
-		if (key === "layout" || !option || typeof option !== "object" || Array.isArray(option)) {
-			return [key, option];
-		}
+	return Object.fromEntries(
+		Object.entries(options || {}).map(([key, option]) => {
+			if (key === 'layout' || !option || typeof option !== 'object' || Array.isArray(option)) {
+				return [key, option];
+			}
 
-		return [key, {
-			searchSource: option.searchSource !== false,
-			...(validOptionalPartHintRegion(option.region) ? { region: option.region } : {}),
-		}];
-	}));
+			return [
+				key,
+				{
+					searchSource: option.searchSource !== false,
+					...(validOptionalPartHintRegion(option.region) ? {region: option.region} : {}),
+				},
+			];
+		}),
+	);
 }
 
 function validOptionalPartHintRegion(region) {
 	return new Set([
-		"top-left",
-		"top-center",
-		"top-right",
-		"middle-left",
-		"center",
-		"middle-right",
-		"bottom-left",
-		"bottom-right",
-		"either-corner",
-		"no-preference",
+		'top-left',
+		'top-center',
+		'top-right',
+		'middle-left',
+		'center',
+		'middle-right',
+		'bottom-left',
+		'bottom-right',
+		'either-corner',
+		'no-preference',
 	]).has(region);
 }
 
@@ -2689,30 +2787,38 @@ function sanitizeOptionalPartManualAssignments(manualAssignments) {
 	const faces = manualAssignments?.faces || {};
 
 	return {
-		faces: Object.fromEntries(Object.entries(faces)
-			.map(([faceKey, parts]) => [
-				sanitizeOutputScope(faceKey),
-				sanitizeOptionalPartManualFaceAssignments(parts),
-			])
-			.filter(([faceKey, parts]) => faceKey && Object.keys(parts).length > 0)
-		.sort((left, right) => left[0].localeCompare(right[0]))),
+		faces: Object.fromEntries(
+			Object.entries(faces)
+				.map(([faceKey, parts]) => [
+					sanitizeOutputScope(faceKey),
+					sanitizeOptionalPartManualFaceAssignments(parts),
+				])
+				.filter(([faceKey, parts]) => faceKey && Object.keys(parts).length > 0)
+				.sort((left, right) => left[0].localeCompare(right[0])),
+		),
 	};
 }
 
 function sanitizeOptionalPartManualFaceAssignments(parts) {
-	if (!parts || typeof parts !== "object" || Array.isArray(parts)) {
+	if (!parts || typeof parts !== 'object' || Array.isArray(parts)) {
 		return {};
 	}
 
-	return Object.fromEntries(Object.entries(parts)
-		.map(([partId, componentIds]) => [
-			sanitizeOutputScope(partId),
-			[...new Set((Array.isArray(componentIds) ? componentIds : [])
-				.filter((componentId) => typeof componentId === "string" && componentId.trim())
-				.map((componentId) => componentId.trim()))].sort((left, right) => left.localeCompare(right)),
-		])
-		.filter(([partId]) => partId)
-		.sort((left, right) => left[0].localeCompare(right[0])));
+	return Object.fromEntries(
+		Object.entries(parts)
+			.map(([partId, componentIds]) => [
+				sanitizeOutputScope(partId),
+				[
+					...new Set(
+						(Array.isArray(componentIds) ? componentIds : [])
+							.filter((componentId) => typeof componentId === 'string' && componentId.trim())
+							.map((componentId) => componentId.trim()),
+					),
+				].sort((left, right) => left.localeCompare(right)),
+			])
+			.filter(([partId]) => partId)
+			.sort((left, right) => left[0].localeCompare(right[0])),
+	);
 }
 
 function sourcePreviewFaceKeys(tilesetState) {
@@ -2751,9 +2857,7 @@ async function loadPipelineModel(tilesetId, referenceName = DEFAULT_REFERENCE_ST
 }
 
 function resolveRepoPath(filePath) {
-	return path.isAbsolute(filePath)
-		? filePath
-		: path.resolve(process.cwd(), filePath);
+	return path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);
 }
 
 function assertPipelineCurrencyDate(model, currencyDate) {
@@ -2767,24 +2871,29 @@ function assertPipelineCurrencyDate(model, currencyDate) {
 	}
 }
 
-function normalizeBindingActionRequest(body = {}, { allowEmpty = false } = {}) {
-	const actionsByFace = body.actionsByFace && typeof body.actionsByFace === "object" && !Array.isArray(body.actionsByFace)
-		? body.actionsByFace
-		: body.faceKey
-			? { [body.faceKey]: body.actions || {} }
-			: body.actions && looksLikeActionsByFace(body.actions)
-				? body.actions
-				: {};
+function normalizeBindingActionRequest(body = {}, {allowEmpty = false} = {}) {
+	const actionsByFace =
+		body.actionsByFace && typeof body.actionsByFace === 'object' && !Array.isArray(body.actionsByFace)
+			? body.actionsByFace
+			: body.faceKey
+				? {[body.faceKey]: body.actions || {}}
+				: body.actions && looksLikeActionsByFace(body.actions)
+					? body.actions
+					: {};
 
 	if (Object.keys(actionsByFace).length === 0) {
 		if (allowEmpty) {
 			return {};
 		}
-		throw new Error("Binding update requires actionsByFace or faceKey plus actions.");
+		throw new Error('Binding update requires actionsByFace or faceKey plus actions.');
 	}
 
-	return Object.fromEntries(Object.entries(actionsByFace)
-		.map(([faceKey, actions]) => [normalizeBindingActionFaceKey(faceKey), normalizeBindingActionMap(actions)]));
+	return Object.fromEntries(
+		Object.entries(actionsByFace).map(([faceKey, actions]) => [
+			normalizeBindingActionFaceKey(faceKey),
+			normalizeBindingActionMap(actions),
+		]),
+	);
 }
 
 function applyBindingActionsByFace(model, actionsByFace) {
@@ -2799,12 +2908,9 @@ function applyBindingActionsByFace(model, actionsByFace) {
 }
 
 function looksLikeActionsByFace(actions) {
-	return Object.values(actions || {}).some((value) => (
-		value
-		&& typeof value === "object"
-		&& !Array.isArray(value)
-		&& !("action" in value)
-	));
+	return Object.values(actions || {}).some(
+		(value) => value && typeof value === 'object' && !Array.isArray(value) && !('action' in value),
+	);
 }
 
 function normalizeBindingActionFaceKey(faceKey) {
@@ -2820,65 +2926,71 @@ function normalizeBindingActionMap(actions) {
 		? actions.map((action) => [action?.componentId, action])
 		: Object.entries(actions || {});
 
-	return Object.fromEntries(actionEntries
-		.map(([componentId, action]) => {
-			const normalized = normalizeBindingAction(componentId, action);
-			return [normalized.componentId, normalized];
-		})
-		.sort((left, right) => left[0].localeCompare(right[0])));
+	return Object.fromEntries(
+		actionEntries
+			.map(([componentId, action]) => {
+				const normalized = normalizeBindingAction(componentId, action);
+				return [normalized.componentId, normalized];
+			})
+			.sort((left, right) => left[0].localeCompare(right[0])),
+	);
 }
 
 function normalizeBindingAction(componentId, action) {
-	if (!action || typeof action !== "object" || Array.isArray(action)) {
-		throw new Error(`Invalid binding action for ${componentId || "(missing component)"}.`);
+	if (!action || typeof action !== 'object' || Array.isArray(action)) {
+		throw new Error(`Invalid binding action for ${componentId || '(missing component)'}.`);
 	}
 
-	const normalizedComponentId = typeof action.componentId === "string" && action.componentId
-		? action.componentId
-		: componentId;
-	const actionType = action.action || "none";
-	const partId = typeof action.partId === "string" ? action.partId : "";
+	const normalizedComponentId =
+		typeof action.componentId === 'string' && action.componentId ? action.componentId : componentId;
+	const actionType = action.action || 'none';
+	const partId = typeof action.partId === 'string' ? action.partId : '';
 
-	if (typeof normalizedComponentId !== "string" || normalizedComponentId.length === 0) {
-		throw new Error("Binding action requires componentId.");
+	if (typeof normalizedComponentId !== 'string' || normalizedComponentId.length === 0) {
+		throw new Error('Binding action requires componentId.');
 	}
-	if (!["bind", "unbind", "none"].includes(actionType)) {
+	if (!['bind', 'unbind', 'none'].includes(actionType)) {
 		throw new Error(`Invalid binding action for ${normalizedComponentId}: ${actionType}`);
 	}
-	if (actionType === "bind" && !partId) {
+	if (actionType === 'bind' && !partId) {
 		throw new Error(`Binding action ${normalizedComponentId} requires partId.`);
 	}
 
 	return {
 		componentId: normalizedComponentId,
 		action: actionType,
-		...(partId ? { partId } : {}),
+		...(partId ? {partId} : {}),
 	};
 }
 
 function optionalAssignmentFromCanonicalState(tilesetId, faceKey, faceState) {
-	const optionalParts = Object.fromEntries(canonicalOptionalPartEntries(faceState, faceKey)
-		.map(([partId, part]) => [partId, {
+	const optionalParts = Object.fromEntries(
+		canonicalOptionalPartEntries(faceState, faceKey).map(([partId, part]) => [
 			partId,
-			contentKind: part.contentKind || null,
-			role: part.role || null,
-			text: part.text || null,
-			sourceState: canonicalOptionalPartSourceState(faceState, partId, part),
-			hint: part.hint || null,
-			suggestedComponentIds: [],
-			suggestedBounds: null,
-			strength: strongestCanonicalBindingStrength(faceState, partId) || "none",
-			reviewStatus: reviewStatusFromCanonicalBindings(faceState, partId)
-				|| reviewStatusFromCanonicalPart(faceState, part)
-				|| "needs-review",
-			candidates: [],
-		}]));
+			{
+				partId,
+				contentKind: part.contentKind || null,
+				role: part.role || null,
+				text: part.text || null,
+				sourceState: canonicalOptionalPartSourceState(faceState, partId, part),
+				hint: part.hint || null,
+				suggestedComponentIds: [],
+				suggestedBounds: null,
+				strength: strongestCanonicalBindingStrength(faceState, partId) || 'none',
+				reviewStatus:
+					reviewStatusFromCanonicalBindings(faceState, partId) ||
+					reviewStatusFromCanonicalPart(faceState, part) ||
+					'needs-review',
+				candidates: [],
+			},
+		]),
+	);
 
 	return {
 		schemaVersion: 1,
 		tilesetId,
 		faceKey,
-		status: "canonical",
+		status: 'canonical',
 		face: describeFace(faceKey),
 		sourceFile: faceState?.artifacts?.sourceSvg || null,
 		sourceBounds: null,
@@ -2894,29 +3006,29 @@ function optionalAssignmentFromCanonicalState(tilesetId, faceKey, faceState) {
 }
 
 function canonicalOptionalPartEntries(faceState, faceKey) {
-	return Object.entries(faceState?.state?.parts || {})
-		.filter(([, part]) => part?.optional === true);
+	return Object.entries(faceState?.state?.parts || {}).filter(([, part]) => part?.optional === true);
 }
 
 function isOptionalPartForFace(faceKey, partId) {
-	if (partId === "label") {
+	if (partId === 'label') {
 		return true;
 	}
 
-	return partId === "glyph" && ["flower", "season"].includes(describeFace(faceKey).family);
+	return partId === 'glyph' && ['flower', 'season'].includes(describeFace(faceKey).family);
 }
 
 function canonicalOptionalPartSourceState(faceState, partId, part) {
-	const bound = Object.values(faceState?.state?.bindings || {})
-		.some((binding) => binding?.partId === partId && isMeaningfulOptionalStrength(binding.strength));
+	const bound = Object.values(faceState?.state?.bindings || {}).some(
+		(binding) => binding?.partId === partId && isMeaningfulOptionalStrength(binding.strength),
+	);
 
 	if (bound) {
-		return "candidate-found";
+		return 'candidate-found';
 	}
 	if (part?.accepted) {
-		return "source-absent";
+		return 'source-absent';
 	}
-	return "needs-review";
+	return 'needs-review';
 }
 
 function describeFace(faceKey) {
@@ -2936,24 +3048,26 @@ function optionalPreviewComponents(normalized, assignment, faceState = null) {
 	const keptComponentIds = new Set(normalized.alignmentComponentIds || []);
 	const assignedPartByComponentId = canonicalOptionalAssignedPartByComponentId(faceState, assignment);
 
-	return normalized.components.filter((component) => isNormalizerKeptComponent(component, keptComponentIds)).map((component) => ({
-		componentId: component.componentId,
-		sourceElementId: component.sourceElementId,
-		sourceIndex: component.sourceIndex,
-		tagName: component.tagName,
-		className: component.className,
-		fill: component.fill,
-		stroke: component.stroke,
-		strokeWidth: component.strokeWidth,
-		fillRule: component.fillRule || null,
-		clipRule: component.clipRule || null,
-		pathData: component.pathData,
-		transform: component.transform || null,
-		bounds: component.bounds,
-		center: component.center,
-		area: component.area,
-		assignedOptionalPartId: assignedPartByComponentId.get(component.componentId) || "",
-	}));
+	return normalized.components
+		.filter((component) => isNormalizerKeptComponent(component, keptComponentIds))
+		.map((component) => ({
+			componentId: component.componentId,
+			sourceElementId: component.sourceElementId,
+			sourceIndex: component.sourceIndex,
+			tagName: component.tagName,
+			className: component.className,
+			fill: component.fill,
+			stroke: component.stroke,
+			strokeWidth: component.strokeWidth,
+			fillRule: component.fillRule || null,
+			clipRule: component.clipRule || null,
+			pathData: component.pathData,
+			transform: component.transform || null,
+			bounds: component.bounds,
+			center: component.center,
+			area: component.area,
+			assignedOptionalPartId: assignedPartByComponentId.get(component.componentId) || '',
+		}));
 }
 
 function canonicalOptionalPreviewParts(faceState, assignment) {
@@ -2971,10 +3085,11 @@ function canonicalOptionalPreviewParts(faceState, assignment) {
 			sourceState: sourceStateFromCanonicalPart(statePart, part, bindingComponentIds),
 			suggestedComponentIds: bindingComponentIds,
 			suggestedBounds: null,
-			strength: strongestCanonicalBindingStrength(faceState, partId) || part.strength || "none",
-			reviewStatus: reviewStatusFromCanonicalBindings(faceState, partId)
-				|| reviewStatusFromCanonicalPart(faceState, statePart)
-				|| "needs-review",
+			strength: strongestCanonicalBindingStrength(faceState, partId) || part.strength || 'none',
+			reviewStatus:
+				reviewStatusFromCanonicalBindings(faceState, partId) ||
+				reviewStatusFromCanonicalPart(faceState, statePart) ||
+				'needs-review',
 		};
 	}
 
@@ -2987,22 +3102,27 @@ function canonicalOptionalPreviewReservations(faceState, assignment) {
 	return [...bindingsByPartId.entries()].map(([partId, componentIds]) => ({
 		partId,
 		componentIds,
-		strength: strongestCanonicalBindingStrength(faceState, partId) || "tentative",
-		reviewStatus: reviewStatusFromCanonicalBindings(faceState, partId) || "inferred",
+		strength: strongestCanonicalBindingStrength(faceState, partId) || 'tentative',
+		reviewStatus: reviewStatusFromCanonicalBindings(faceState, partId) || 'inferred',
 	}));
 }
 
 function optionalBindingActionMap(faceState, assignment) {
 	const optionalPartIds = new Set(Object.keys(assignment.optionalParts || {}));
 
-	return Object.fromEntries(Object.entries(faceState?.state?.bindings || {})
-		.filter(([, binding]) => binding?.partId && optionalPartIds.has(binding.partId))
-		.map(([componentId, binding]) => [componentId, {
-			componentId,
-			partId: binding.partId,
-			action: "none",
-		}])
-		.sort((left, right) => left[0].localeCompare(right[0])));
+	return Object.fromEntries(
+		Object.entries(faceState?.state?.bindings || {})
+			.filter(([, binding]) => binding?.partId && optionalPartIds.has(binding.partId))
+			.map(([componentId, binding]) => [
+				componentId,
+				{
+					componentId,
+					partId: binding.partId,
+					action: 'none',
+				},
+			])
+			.sort((left, right) => left[0].localeCompare(right[0])),
+	);
 }
 
 function canonicalOptionalBindingComponentIdsByPartId(faceState, assignment) {
@@ -3020,7 +3140,10 @@ function canonicalOptionalBindingComponentIdsByPartId(faceState, assignment) {
 
 		const componentIds = byPartId.get(binding.partId) || [];
 		componentIds.push(componentId);
-		byPartId.set(binding.partId, componentIds.sort((left, right) => left.localeCompare(right)));
+		byPartId.set(
+			binding.partId,
+			componentIds.sort((left, right) => left.localeCompare(right)),
+		);
 	}
 
 	return byPartId;
@@ -3040,14 +3163,14 @@ function canonicalOptionalAssignedPartByComponentId(faceState, assignment) {
 
 function sourceStateFromCanonicalPart(statePart, artifactPart, bindingComponentIds) {
 	if (bindingComponentIds.length > 0) {
-		return "candidate-found";
+		return 'candidate-found';
 	}
 
 	if (statePart?.accepted) {
-		return "source-absent";
+		return 'source-absent';
 	}
 
-	return "needs-review";
+	return 'needs-review';
 }
 
 function strongestCanonicalBindingStrength(faceState, partId) {
@@ -3055,38 +3178,38 @@ function strongestCanonicalBindingStrength(faceState, partId) {
 		.filter((binding) => binding?.partId === partId)
 		.map((binding) => binding.strength);
 
-	if (strengths.includes("accepted")) {
-		return "accepted";
+	if (strengths.includes('accepted')) {
+		return 'accepted';
 	}
 
-	if (strengths.includes("strong")) {
-		return "strong";
+	if (strengths.includes('strong')) {
+		return 'strong';
 	}
 
-	if (strengths.includes("tentative")) {
-		return "tentative";
+	if (strengths.includes('tentative')) {
+		return 'tentative';
 	}
 
-	return strengths.includes("none") ? "none" : null;
+	return strengths.includes('none') ? 'none' : null;
 }
 
 function isMeaningfulOptionalStrength(strength) {
-	return ["tentative", "strong", "accepted"].includes(strength);
+	return ['tentative', 'strong', 'accepted'].includes(strength);
 }
 
 function reviewStatusFromCanonicalBindings(faceState, partId) {
 	const strength = strongestCanonicalBindingStrength(faceState, partId);
 
-	if (strength === "accepted") {
-		return "reviewed";
+	if (strength === 'accepted') {
+		return 'reviewed';
 	}
 
-	if (strength === "strong") {
-		return "reviewed";
+	if (strength === 'strong') {
+		return 'reviewed';
 	}
 
-	if (strength === "tentative") {
-		return "inferred";
+	if (strength === 'tentative') {
+		return 'inferred';
 	}
 
 	return null;
@@ -3094,7 +3217,7 @@ function reviewStatusFromCanonicalBindings(faceState, partId) {
 
 function reviewStatusFromCanonicalPart(faceState, statePart) {
 	if (statePart?.accepted) {
-		return "reviewed";
+		return 'reviewed';
 	}
 
 	return null;
@@ -3105,8 +3228,7 @@ function isNormalizerKeptComponent(component, keptComponentIds) {
 		return keptComponentIds.has(component.componentId);
 	}
 
-	return !component.classification?.tileLayerCandidate
-		&& !component.classification?.negativeSpaceCandidate;
+	return !component.classification?.tileLayerCandidate && !component.classification?.negativeSpaceCandidate;
 }
 
 function optionalAssignmentSummary(faces, report) {
@@ -3116,9 +3238,10 @@ function optionalAssignmentSummary(faces, report) {
 	return {
 		faceCount: faceEntries.length,
 		optionalPartCount: optionalParts.length || report?.optionalPartCount || 0,
-		candidateCount: optionalParts.filter((part) => part.sourceState === "candidate-found").length,
-		needsReviewCount: faceEntries.filter((face) => face.status === "needs-review").length,
-		warningCount: report?.warningCount || faceEntries.reduce((total, face) => total + (face.diagnostics || []).length, 0),
+		candidateCount: optionalParts.filter((part) => part.sourceState === 'candidate-found').length,
+		needsReviewCount: faceEntries.filter((face) => face.status === 'needs-review').length,
+		warningCount:
+			report?.warningCount || faceEntries.reduce((total, face) => total + (face.diagnostics || []).length, 0),
 	};
 }
 
@@ -3141,51 +3264,58 @@ function optionalBulkPresets(faces) {
 		for (const part of Object.values(face.optionalParts || {})) {
 			const partPreset = group.parts[part.partId] || {
 				partId: part.partId,
-				role: part.role || "",
-				contentKind: part.contentKind || "",
+				role: part.role || '',
+				contentKind: part.contentKind || '',
 				expectedCount: 0,
 				foundCount: 0,
 				regions: {},
 			};
-			const region = part.hint?.region || "unspecified";
+			const region = part.hint?.region || 'unspecified';
 
 			partPreset.expectedCount += 1;
-			partPreset.foundCount += part.sourceState === "candidate-found" ? 1 : 0;
+			partPreset.foundCount += part.sourceState === 'candidate-found' ? 1 : 0;
 			partPreset.regions[region] = (partPreset.regions[region] || 0) + 1;
 			group.parts[part.partId] = partPreset;
 		}
 	}
 
-	return Array.from(groups.values()).map((group) => ({
-		...group,
-		parts: Object.fromEntries(Object.entries(group.parts).map(([partId, part]) => {
-			const regions = Object.entries(part.regions).sort((left, right) => right[1] - left[1]);
+	return Array.from(groups.values())
+		.map((group) => ({
+			...group,
+			parts: Object.fromEntries(
+				Object.entries(group.parts).map(([partId, part]) => {
+					const regions = Object.entries(part.regions).sort((left, right) => right[1] - left[1]);
 
-			return [partId, {
-				...part,
-				presetRegion: regions.length === 1 ? regions[0][0] : "mixed",
-			}];
-		})),
-	})).sort((left, right) => left.family.localeCompare(right.family));
+					return [
+						partId,
+						{
+							...part,
+							presetRegion: regions.length === 1 ? regions[0][0] : 'mixed',
+						},
+					];
+				}),
+			),
+		}))
+		.sort((left, right) => left.family.localeCompare(right.family));
 }
 
 function faceFamily(faceKey) {
-	const match = /^([a-z]+)-/.exec(faceKey || "");
-	return match ? match[1] : "other";
+	const match = /^([a-z]+)-/.exec(faceKey || '');
+	return match ? match[1] : 'other';
 }
 
 function stampReferenceStructureLifecycle(structure) {
 	const now = new Date().toISOString();
 	const lifecycle = {
 		...(structure.lifecycle || {}),
-		status: "active",
+		status: 'active',
 		generatedOn: structure.lifecycle?.generatedOn || structure.generatedOn || null,
 		updatedOn: now,
 	};
 
 	return {
 		...structure,
-		status: "active",
+		status: 'active',
 		lifecycle,
 		updatedOn: lifecycle.updatedOn,
 	};
@@ -3198,11 +3328,11 @@ function referenceStructureDir(referenceSetId) {
 		return DEFAULT_REFERENCE_STRUCTURE_DIR;
 	}
 
-	return path.resolve(OUTPUT_3D_DIR, "reference-structure", safeReferenceSetId);
+	return path.resolve(OUTPUT_3D_DIR, 'reference-structure', safeReferenceSetId);
 }
 
 function getMetadataKind(req) {
-	const requested = req.query.kind || req.body?.metadataKind || "tileset";
+	const requested = req.query.kind || req.body?.metadataKind || 'tileset';
 
 	if (METADATA_KINDS[requested]) {
 		return requested;
@@ -3223,11 +3353,11 @@ async function requestedTilesetId(req) {
 		return manifest.activeTilesetId;
 	}
 
-	throw new Error("No active tileset is recorded in the tileset manifest.");
+	throw new Error('No active tileset is recorded in the tileset manifest.');
 }
 
 function getTilesetSource(req, metadataKind, manifest = null) {
-	if (metadataKind !== "tileset") {
+	if (metadataKind !== 'tileset') {
 		return null;
 	}
 
@@ -3248,12 +3378,12 @@ function getTilesetSource(req, metadataKind, manifest = null) {
 function metadataConfigFor(metadataKind, source) {
 	const config = METADATA_KINDS[metadataKind];
 
-	if (metadataKind !== "tileset") {
+	if (metadataKind !== 'tileset') {
 		return config;
 	}
 
 	if (!source) {
-		throw new Error("No active tileset is recorded in the tileset manifest.");
+		throw new Error('No active tileset is recorded in the tileset manifest.');
 	}
 
 	if (!source.metadataPath) {
@@ -3269,10 +3399,10 @@ function metadataConfigFor(metadataKind, source) {
 function sourceOptions(manifest = null) {
 	return manifest?.tilesets?.length
 		? manifest.tilesets.map((tileset) => ({
-			id: tileset.tilesetId,
-			label: tilesetLabel(tileset.tilesetId),
-			active: tileset.tilesetId === manifest.activeTilesetId,
-		}))
+				id: tileset.tilesetId,
+				label: tilesetLabel(tileset.tilesetId),
+				active: tileset.tilesetId === manifest.activeTilesetId,
+			}))
 		: [];
 }
 
@@ -3284,11 +3414,13 @@ function tilesetSourceFromManifestEntry(entry) {
 }
 
 function tilesetLabel(tilesetId) {
-	return String(tilesetId || "")
-		.split(/[-_\s]+/)
-		.filter(Boolean)
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(" ") || "Tileset";
+	return (
+		String(tilesetId || '')
+			.split(/[-_\s]+/)
+			.filter(Boolean)
+			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+			.join(' ') || 'Tileset'
+	);
 }
 
 async function readMetadata(metadataKind, config, source = null) {
@@ -3316,7 +3448,7 @@ async function readMetadataOrNull(metadataKind, config, source = null) {
 }
 
 function normalizePayload(metadataKind, payload, source = null) {
-	if (metadataKind !== "tileset" || !payload || typeof payload !== "object" || Array.isArray(payload)) {
+	if (metadataKind !== 'tileset' || !payload || typeof payload !== 'object' || Array.isArray(payload)) {
 		return payload;
 	}
 
@@ -3328,7 +3460,7 @@ function normalizePayload(metadataKind, payload, source = null) {
 }
 
 async function enrichMetadata(metadataKind, metadata) {
-	if (metadataKind !== "tileset") {
+	if (metadataKind !== 'tileset') {
 		return metadata;
 	}
 
@@ -3366,17 +3498,17 @@ async function sourceComponentsForEntry(entry) {
 		return [];
 	}
 
-	const source = await readFile(sourcePath, "utf8");
+	const source = await readFile(sourcePath, 'utf8');
 	const extracted = extractSourceSvgComponents(source);
 	const allBounds = entry.canvas
 		? {
-			left: entry.canvas.left,
-			top: entry.canvas.top,
-			right: entry.canvas.left + entry.canvas.width,
-			bottom: entry.canvas.top + entry.canvas.height,
-			width: entry.canvas.width,
-			height: entry.canvas.height,
-		}
+				left: entry.canvas.left,
+				top: entry.canvas.top,
+				right: entry.canvas.left + entry.canvas.width,
+				bottom: entry.canvas.top + entry.canvas.height,
+				width: entry.canvas.width,
+				height: entry.canvas.height,
+			}
 		: boundsUnion(extracted.components.map((component) => component.bounds));
 
 	return extracted.components
@@ -3401,13 +3533,15 @@ function formatSourceComponent(component, allBounds) {
 }
 
 function isFacePaintComponent(component) {
-	return !component.tileLayerCandidate
-		&& !component.negativeSpaceCandidate
-		&& (isPaint(component.fill) || isPaint(component.stroke));
+	return (
+		!component.tileLayerCandidate &&
+		!component.negativeSpaceCandidate &&
+		(isPaint(component.fill) || isPaint(component.stroke))
+	);
 }
 
 function isPaint(value) {
-	return value && value !== "none" && !String(value).startsWith("url(");
+	return value && value !== 'none' && !String(value).startsWith('url(');
 }
 
 function boundsUnion(boundsList) {
@@ -3448,10 +3582,9 @@ function relativePosition(item, bounds) {
 	const x = (center.x - bounds.left) / Math.max(1, bounds.width);
 	const y = (center.y - bounds.top) / Math.max(1, bounds.height);
 
-	return [
-		y < 0.36 ? "top" : y > 0.68 ? "bottom" : "middle",
-		x < 0.36 ? "left" : x > 0.64 ? "right" : "center",
-	].join("-");
+	return [y < 0.36 ? 'top' : y > 0.68 ? 'bottom' : 'middle', x < 0.36 ? 'left' : x > 0.64 ? 'right' : 'center'].join(
+		'-',
+	);
 }
 
 function nearestCorner(item, bounds) {
@@ -3471,11 +3604,11 @@ function nearestCorner(item, bounds) {
 }
 
 async function readJsonAsync(filename) {
-	return JSON.parse(await readFile(filename, "utf8"));
+	return JSON.parse(await readFile(filename, 'utf8'));
 }
 
 function baseTileManifestPath() {
-	return path.resolve(BASE_TILE_MODELS_DIR, "base-tile-manifest.json");
+	return path.resolve(BASE_TILE_MODELS_DIR, 'base-tile-manifest.json');
 }
 
 async function loadBaseTileManifest() {
@@ -3490,11 +3623,11 @@ async function loadBaseTileManifest() {
 			.map((variant) => ({
 				id: variant.id,
 				label: variant.label || variant.id,
-				description: variant.description || "",
-				kind: variant.kind || "base-tile-glb",
+				description: variant.description || '',
+				kind: variant.kind || 'base-tile-glb',
 				temporary: Boolean(variant.temporary),
 				previewOnly: Boolean(variant.previewOnly),
-				previewMaterialSource: variant.previewMaterialSource || "",
+				previewMaterialSource: variant.previewMaterialSource || '',
 				glb: normalizeRepoAssetPath(variant.glb),
 				metadata: normalizeRepoAssetPath(variant.metadata),
 				body: variant.body || {},
@@ -3503,11 +3636,11 @@ async function loadBaseTileManifest() {
 }
 
 function normalizeRepoAssetPath(filename) {
-	return filename ? relativePath(path.resolve(process.cwd(), filename)) : "";
+	return filename ? relativePath(path.resolve(process.cwd(), filename)) : '';
 }
 
 async function writeJson(filename, payload) {
-	await writeFile(filename, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+	await writeFile(filename, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
 async function fileExists(filename) {
@@ -3522,35 +3655,40 @@ async function fileExists(filename) {
 async function runNodeCommand(command, options = {}) {
 	const activeRun = options.activeRun || null;
 	return new Promise((resolve) => {
-		let pendingStdoutLine = "";
-		const child = execFile(process.execPath, command, {
-			cwd: process.cwd(),
-			env: options.env || process.env,
-			maxBuffer: options.maxBuffer || 10 * 1024 * 1024,
-		}, (error, stdout, stderr) => {
-			activeRun?.childProcesses?.delete(child);
-			flushCommandStdoutLine(options, pendingStdoutLine);
-			pendingStdoutLine = "";
-			if (!error) {
+		let pendingStdoutLine = '';
+		const child = execFile(
+			process.execPath,
+			command,
+			{
+				cwd: process.cwd(),
+				env: options.env || process.env,
+				maxBuffer: options.maxBuffer || 10 * 1024 * 1024,
+			},
+			(error, stdout, stderr) => {
+				activeRun?.childProcesses?.delete(child);
+				flushCommandStdoutLine(options, pendingStdoutLine);
+				pendingStdoutLine = '';
+				if (!error) {
+					resolve({
+						status: 0,
+						error: null,
+						stdout,
+						stderr,
+					});
+					return;
+				}
+
 				resolve({
-					status: 0,
-					error: null,
-					stdout,
-					stderr,
+					status: typeof error.code === 'number' ? error.code : 1,
+					error: error.message,
+					stdout: error.stdout || stdout || '',
+					stderr: error.stderr || stderr || '',
 				});
-				return;
-			}
+			},
+		);
 
-			resolve({
-				status: typeof error.code === "number" ? error.code : 1,
-				error: error.message,
-				stdout: error.stdout || stdout || "",
-				stderr: error.stderr || stderr || "",
-			});
-		});
-
-		child.stdout?.setEncoding("utf8");
-		child.stdout?.on("data", (chunk) => {
+		child.stdout?.setEncoding('utf8');
+		child.stdout?.on('data', (chunk) => {
 			pendingStdoutLine = dispatchCommandStdoutLines(options, pendingStdoutLine, String(chunk));
 		});
 		activeRun?.childProcesses?.add(child);
@@ -3562,7 +3700,7 @@ async function runNodeCommand(command, options = {}) {
 
 function dispatchCommandStdoutLines(options, pendingLine, chunk) {
 	const lines = `${pendingLine}${chunk}`.split(/\r?\n/);
-	const nextPendingLine = lines.pop() || "";
+	const nextPendingLine = lines.pop() || '';
 	for (const line of lines) {
 		flushCommandStdoutLine(options, line);
 	}
@@ -3570,7 +3708,7 @@ function dispatchCommandStdoutLines(options, pendingLine, chunk) {
 }
 
 function flushCommandStdoutLine(options, line) {
-	const cleanLine = String(line || "").trim();
+	const cleanLine = String(line || '').trim();
 	if (!cleanLine) {
 		return;
 	}
@@ -3580,14 +3718,14 @@ function flushCommandStdoutLine(options, line) {
 function parseAssetStageProgressLine(line) {
 	try {
 		const progress = JSON.parse(line);
-		if (progress?.event !== "assetStageProgress") {
+		if (progress?.event !== 'assetStageProgress') {
 			return null;
 		}
 		const total = Number(progress.total);
 		const current = Number(progress.current);
 		return {
-			stage: String(progress.stage || ""),
-			phase: String(progress.phase || ""),
+			stage: String(progress.stage || ''),
+			phase: String(progress.phase || ''),
 			current: Number.isFinite(current) ? current : 0,
 			total: Number.isFinite(total) ? total : 0,
 			percent: Number.isFinite(progress.percent)
@@ -3595,11 +3733,11 @@ function parseAssetStageProgressLine(line) {
 				: total > 0
 					? Math.round((current / total) * 100)
 					: 0,
-			message: String(progress.message || ""),
-			activity: String(progress.activity || ""),
+			message: String(progress.message || ''),
+			activity: String(progress.activity || ''),
 			active: Boolean(progress.active),
 			ping: Boolean(progress.ping),
-			timestamp: String(progress.timestamp || ""),
+			timestamp: String(progress.timestamp || ''),
 		};
 	} catch {
 		return null;
@@ -3607,10 +3745,10 @@ function parseAssetStageProgressLine(line) {
 }
 
 function filterAssetStageProgressOutput(output) {
-	return String(output || "")
+	return String(output || '')
 		.split(/\r?\n/)
 		.filter((line) => !parseAssetStageProgressLine(line))
-		.join("\n")
+		.join('\n')
 		.trim();
 }
 
@@ -3623,103 +3761,121 @@ function cutterProgressMessage(progress, faceKey) {
 }
 
 function cutterProgressPhaseLabel(phase) {
-	if (phase === "parse") {
-		return "parsing SVG";
+	if (phase === 'parse') {
+		return 'parsing SVG';
 	}
-	if (phase === "extrude") {
-		return "extruding SVG paths";
+	if (phase === 'extrude') {
+		return 'extruding SVG paths';
 	}
-	if (phase === "normalize") {
-		return "normalizing cutter solids";
+	if (phase === 'normalize') {
+		return 'normalizing cutter solids';
 	}
-	if (phase === "union") {
-		return "unioning cutter solids";
+	if (phase === 'union') {
+		return 'unioning cutter solids';
 	}
-	if (phase === "export") {
-		return "exporting cutter GLB";
+	if (phase === 'export') {
+		return 'exporting cutter GLB';
 	}
-	return "preparing SVG cutter";
+	return 'preparing SVG cutter';
 }
 
 function canonicalSourceSemanticStrength(strength) {
-	if (strength === "accepted") {
-		return "accepted";
+	if (strength === 'accepted') {
+		return 'accepted';
 	}
-	if (strength === "strong") {
-		return "strong";
+	if (strength === 'strong') {
+		return 'strong';
 	}
-	if (strength === "none") {
-		return "none";
+	if (strength === 'none') {
+		return 'none';
 	}
-	if (strength === "tentative") {
-		return "tentative";
+	if (strength === 'tentative') {
+		return 'tentative';
 	}
 
-	throw new Error(`Invalid canonical source semantic binding strength: ${strength || "(missing)"}`);
+	throw new Error(`Invalid canonical source semantic binding strength: ${strength || '(missing)'}`);
 }
 
 function canonicalSourcePreviewParts(faceState) {
-	return Object.fromEntries(Object.entries(faceState?.state?.parts || {})
-		.map(([partId, part]) => [partId, {
-			partId,
-			...(part.globalPartId ? { globalPartId: part.globalPartId } : {}),
-			...(part.role ? { role: part.role } : {}),
-			...(part.contentKind ? { contentKind: part.contentKind } : {}),
-			...(part.colorStrategy ? { colorStrategy: part.colorStrategy } : {}),
-			...(part.text ? { text: part.text } : {}),
-			...(part.color ? { color: part.color } : {}),
-			...(part.allowEmpty ? { allowEmpty: true } : {}),
-			...(part.accepted ? { accepted: true, reviewStatus: "accepted" } : {}),
-		}])
-		.sort((left, right) => left[0].localeCompare(right[0])));
+	return Object.fromEntries(
+		Object.entries(faceState?.state?.parts || {})
+			.map(([partId, part]) => [
+				partId,
+				{
+					partId,
+					...(part.globalPartId ? {globalPartId: part.globalPartId} : {}),
+					...(part.role ? {role: part.role} : {}),
+					...(part.contentKind ? {contentKind: part.contentKind} : {}),
+					...(part.colorStrategy ? {colorStrategy: part.colorStrategy} : {}),
+					...(part.text ? {text: part.text} : {}),
+					...(part.color ? {color: part.color} : {}),
+					...(part.allowEmpty ? {allowEmpty: true} : {}),
+					...(part.accepted ? {accepted: true, reviewStatus: 'accepted'} : {}),
+				},
+			])
+			.sort((left, right) => left[0].localeCompare(right[0])),
+	);
 }
 
 function sourceAssignmentBindingsForView(bindings) {
-	return Object.fromEntries(Object.entries(bindings || {})
-		.map(([componentId, binding]) => [componentId, {
-			...(binding.partId ? { partId: binding.partId } : {}),
-			strength: canonicalSourceSemanticStrength(binding.strength),
-			reviewStatus: binding.strength === "accepted" || binding.strength === "strong"
-				? "reviewed"
-				: binding.strength === "none" ? "needs-review" : "inferred",
-		}])
-		.sort((left, right) => left[0].localeCompare(right[0])));
+	return Object.fromEntries(
+		Object.entries(bindings || {})
+			.map(([componentId, binding]) => [
+				componentId,
+				{
+					...(binding.partId ? {partId: binding.partId} : {}),
+					strength: canonicalSourceSemanticStrength(binding.strength),
+					reviewStatus:
+						binding.strength === 'accepted' || binding.strength === 'strong'
+							? 'reviewed'
+							: binding.strength === 'none'
+								? 'needs-review'
+								: 'inferred',
+				},
+			])
+			.sort((left, right) => left[0].localeCompare(right[0])),
+	);
 }
 
 function sourceAssignmentPartStatesForView(parts) {
-	return Object.fromEntries(Object.entries(parts || {})
-		.filter(([, part]) => part?.accepted)
-		.map(([partId, part]) => [partId, {
-			state: "unbound",
-			strength: "none",
-			reviewStatus: "accepted",
-		}])
-		.sort((left, right) => left[0].localeCompare(right[0])));
+	return Object.fromEntries(
+		Object.entries(parts || {})
+			.filter(([, part]) => part?.accepted)
+			.map(([partId, part]) => [
+				partId,
+				{
+					state: 'unbound',
+					strength: 'none',
+					reviewStatus: 'accepted',
+				},
+			])
+			.sort((left, right) => left[0].localeCompare(right[0])),
+	);
 }
 
 async function writeMetadata(config, payload) {
-	if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-		throw new Error("Metadata payload must be an object.");
+	if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+		throw new Error('Metadata payload must be an object.');
 	}
 
 	const metadataPath = resolveMetadataPath(config.metadataPath);
-	await mkdir(path.dirname(metadataPath), { recursive: true });
+	await mkdir(path.dirname(metadataPath), {recursive: true});
 	await writeJson(metadataPath, payload);
 }
 
 async function combinedImageResult(faceKey, outputScope = null) {
-	const paths = getFacePaths(faceKey, { outputScope });
+	const paths = getFacePaths(faceKey, {outputScope});
 
 	return {
-		sourceReferenceResult: await fileExists(paths.sourceReferenceResult) ? relativePath(paths.sourceReferenceResult) : null,
-		report: await fileExists(paths.report) ? relativePath(paths.report) : null,
+		sourceReferenceResult: (await fileExists(paths.sourceReferenceResult))
+			? relativePath(paths.sourceReferenceResult)
+			: null,
+		report: (await fileExists(paths.report)) ? relativePath(paths.report) : null,
 	};
 }
 
 function outputPaths(config, outputScope = null, source = null) {
-	const validationPath = outputScope
-		? path.resolve(OUTPUT_VALIDATION_DIR, outputScope)
-		: OUTPUT_VALIDATION_DIR;
+	const validationPath = outputScope ? path.resolve(OUTPUT_VALIDATION_DIR, outputScope) : OUTPUT_VALIDATION_DIR;
 
 	return {
 		source: source?.id || null,
@@ -3734,7 +3890,9 @@ function outputScopeForMetadata(metadata) {
 		return null;
 	}
 
-	return sanitizeOutputScope(metadata.outputScope || metadata.tilesetId || metadata.tilesetName || metadata.sourceDir);
+	return sanitizeOutputScope(
+		metadata.outputScope || metadata.tilesetId || metadata.tilesetName || metadata.sourceDir,
+	);
 }
 
 function resolveMetadataPath(filename) {
@@ -3746,83 +3904,83 @@ async function sendReferenceImage(req, res) {
 	const imagePath = path.resolve(LARGE_FACES_DIR, safeName);
 
 	if (!isInsideDirectory(imagePath, LARGE_FACES_DIR) || !(await fileExists(imagePath))) {
-		return res.status(404).send("Image not found");
+		return res.status(404).send('Image not found');
 	}
 
 	sendFile(res, imagePath);
 }
 
 async function sendAsset(req, res) {
-	const assetPath = path.resolve(process.cwd(), req.query.path || "");
+	const assetPath = path.resolve(process.cwd(), req.query.path || '');
 
 	if (!isInsideDirectory(assetPath, process.cwd()) || !(await fileExists(assetPath))) {
-		return res.status(404).send("Asset not found");
+		return res.status(404).send('Asset not found');
 	}
 
 	sendFile(res, assetPath);
 }
 
 function sendFile(res, filename) {
-	res.setHeader("Content-Type", contentTypeFor(filename));
-	res.setHeader("Cache-Control", "no-cache");
+	res.setHeader('Content-Type', contentTypeFor(filename));
+	res.setHeader('Cache-Control', 'no-cache');
 	fs.createReadStream(filename).pipe(res);
 }
 
 function contentTypeFor(filename) {
 	const extension = path.extname(filename).toLowerCase();
 
-	if (extension === ".svg") {
-		return "image/svg+xml";
+	if (extension === '.svg') {
+		return 'image/svg+xml';
 	}
 
-	if (extension === ".png") {
-		return "image/png";
+	if (extension === '.png') {
+		return 'image/png';
 	}
 
-	if (extension === ".jpg" || extension === ".jpeg") {
-		return "image/jpeg";
+	if (extension === '.jpg' || extension === '.jpeg') {
+		return 'image/jpeg';
 	}
 
-	if (extension === ".json") {
-		return "application/json; charset=utf-8";
+	if (extension === '.json') {
+		return 'application/json; charset=utf-8';
 	}
 
-	return "application/octet-stream";
+	return 'application/octet-stream';
 }
 
 function isInsideDirectory(filename, directory) {
 	const relative = path.relative(directory, filename);
-	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+	return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
 function relativePath(filename) {
-	return path.relative(process.cwd(), filename).replaceAll("\\", "/");
+	return path.relative(process.cwd(), filename).replaceAll('\\', '/');
 }
 
 function commandLabel(command) {
-	return ["node", ...command.map((part) => path.isAbsolute(part) ? relativePath(part) : part)].join(" ");
+	return ['node', ...command.map((part) => (path.isAbsolute(part) ? relativePath(part) : part))].join(' ');
 }
 
 function assetGenerationQueuePath(model) {
-	return path.join(model.pipelineDir, "json", "asset-generation-queue", "queue.json");
+	return path.join(model.pipelineDir, 'json', 'asset-generation-queue', 'queue.json');
 }
 
 async function readAssetGenerationQueue(model) {
 	try {
-		const payload = JSON.parse(await readFile(assetGenerationQueuePath(model), "utf8"));
-		const baseTileVariantId = String(payload.baseTileVariantId || "").trim();
+		const payload = JSON.parse(await readFile(assetGenerationQueuePath(model), 'utf8'));
+		const baseTileVariantId = String(payload.baseTileVariantId || '').trim();
 		const faceKeys = cleanQueueFaceKeys(payload.faceKeys || []);
 		if (!baseTileVariantId || faceKeys.length === 0) {
 			return null;
 		}
-		return { baseTileVariantId, faceKeys };
+		return {baseTileVariantId, faceKeys};
 	} catch {
 		return null;
 	}
 }
 
 async function writeAssetGenerationQueue(model, queue) {
-	const baseTileVariantId = String(queue?.baseTileVariantId || "").trim();
+	const baseTileVariantId = String(queue?.baseTileVariantId || '').trim();
 	const faceKeys = cleanQueueFaceKeys(queue?.faceKeys || []);
 	const filename = assetGenerationQueuePath(model);
 
@@ -3831,8 +3989,8 @@ async function writeAssetGenerationQueue(model, queue) {
 		return;
 	}
 
-	await mkdir(path.dirname(filename), { recursive: true });
-	await writeFile(filename, `${JSON.stringify({ baseTileVariantId, faceKeys }, null, 2)}\n`, "utf8");
+	await mkdir(path.dirname(filename), {recursive: true});
+	await writeFile(filename, `${JSON.stringify({baseTileVariantId, faceKeys}, null, 2)}\n`, 'utf8');
 }
 
 async function removeAssetGenerationQueueFace(model, faceKey) {
@@ -3850,7 +4008,7 @@ async function removeAssetGenerationQueueFace(model, faceKey) {
 async function cancelAssetGenerationQueue(tilesetId) {
 	const safeTilesetId = sanitizeOutputScope(tilesetId);
 	if (!safeTilesetId) {
-		throw new Error("A valid tileset id is required.");
+		throw new Error('A valid tileset id is required.');
 	}
 
 	const activeRun = activeAssetGenerationRuns.get(safeTilesetId);
@@ -3866,12 +4024,12 @@ async function cancelAssetGenerationQueue(tilesetId) {
 	await model.save();
 	await clearAssetGenerationQueue(model);
 	getAssetPipelineStream().clearQueueState(safeTilesetId);
-	getAssetPipelineStream().emitProgress(safeTilesetId, "assetGenerationComplete", {
-		stage: "asset-generation",
+	getAssetPipelineStream().emitProgress(safeTilesetId, 'assetGenerationComplete', {
+		stage: 'asset-generation',
 		completed: 0,
 		total: 0,
 		percent: 100,
-		message: "Asset generation queue canceled.",
+		message: 'Asset generation queue canceled.',
 	});
 	return model;
 }
@@ -3879,7 +4037,7 @@ async function cancelAssetGenerationQueue(tilesetId) {
 async function clearAssetGenerationQueue(model) {
 	const filename = assetGenerationQueuePath(model);
 	try {
-		await fs.promises.rm(filename, { force: true });
+		await fs.promises.rm(filename, {force: true});
 	} catch {
 		// The queue file is runtime state; absence means no pending work.
 	}
@@ -3897,10 +4055,10 @@ async function assetReviewQueueState(model, liveQueueState = {}) {
 	}
 
 	return {
-		activeFaceKey: "",
+		activeFaceKey: '',
 		queuedFaceKeys: queue.faceKeys,
-		currentStep: "",
-		stageLabel: "",
+		currentStep: '',
+		stageLabel: '',
 	};
 }
 
@@ -3909,13 +4067,15 @@ async function assertAssetGenerationBaseTileCurrent(tilesetId, expectedBaseTileV
 	const activeRun = activeAssetGenerationRuns.get(tilesetId);
 	const selectedBaseTileVariantId = model.getSelectedBaseTileVariantId();
 	if (activeRun?.cancelled) {
-		const error = new Error("Asset generation was canceled.");
-		error.code = "ASSET_GENERATION_CANCELLED";
+		const error = new Error('Asset generation was canceled.');
+		error.code = 'ASSET_GENERATION_CANCELLED';
 		throw error;
 	}
 	if (selectedBaseTileVariantId !== expectedBaseTileVariantId) {
-		const error = new Error(`Asset generation stopped because the selected base tile changed from ${expectedBaseTileVariantId} to ${selectedBaseTileVariantId || "(none)"}.`);
-		error.code = "ASSET_GENERATION_BASE_TILE_CHANGED";
+		const error = new Error(
+			`Asset generation stopped because the selected base tile changed from ${expectedBaseTileVariantId} to ${selectedBaseTileVariantId || '(none)'}.`,
+		);
+		error.code = 'ASSET_GENERATION_BASE_TILE_CHANGED';
 		throw error;
 	}
 	return model;
@@ -3926,17 +4086,17 @@ function throwIfAssetGenerationCancelled(activeRun) {
 		return;
 	}
 
-	const error = new Error("Asset generation was canceled.");
-	error.code = "ASSET_GENERATION_CANCELLED";
+	const error = new Error('Asset generation was canceled.');
+	error.code = 'ASSET_GENERATION_CANCELLED';
 	throw error;
 }
 
 function isAssetGenerationBaseTileChangedError(error) {
-	return error?.code === "ASSET_GENERATION_BASE_TILE_CHANGED";
+	return error?.code === 'ASSET_GENERATION_BASE_TILE_CHANGED';
 }
 
 function isAssetGenerationCancelledError(error) {
-	return error?.code === "ASSET_GENERATION_CANCELLED";
+	return error?.code === 'ASSET_GENERATION_CANCELLED';
 }
 
 async function resumePendingAssetGenerationQueues() {
@@ -3950,7 +4110,7 @@ async function resumePendingAssetGenerationQueues() {
 
 async function pendingAssetGenerationQueueTilesetIds() {
 	try {
-		const entries = await fs.promises.readdir(BASE_OUTPUT, { withFileTypes: true });
+		const entries = await fs.promises.readdir(BASE_OUTPUT, {withFileTypes: true});
 		const tilesetIds = [];
 
 		for (const entry of entries) {
@@ -3958,7 +4118,7 @@ async function pendingAssetGenerationQueueTilesetIds() {
 				continue;
 			}
 
-			const queuePath = path.join(BASE_OUTPUT, entry.name, "json", "asset-generation-queue", "queue.json");
+			const queuePath = path.join(BASE_OUTPUT, entry.name, 'json', 'asset-generation-queue', 'queue.json');
 			if (await fileExists(queuePath)) {
 				tilesetIds.push(entry.name);
 			}
@@ -3971,9 +4131,13 @@ async function pendingAssetGenerationQueueTilesetIds() {
 }
 
 function cleanQueueFaceKeys(faceKeys) {
-	return [...new Set((faceKeys || [])
-		.filter((faceKey) => typeof faceKey === "string" && /^[a-zA-Z0-9_-]+$/.test(faceKey))
-		.sort((left, right) => left.localeCompare(right)))];
+	return [
+		...new Set(
+			(faceKeys || [])
+				.filter((faceKey) => typeof faceKey === 'string' && /^[a-zA-Z0-9_-]+$/.test(faceKey))
+				.sort((left, right) => left.localeCompare(right)),
+		),
+	];
 }
 
 function mergeQueuedFaceKeysWithRetryableFaces(model, queuedFaceKeys) {
@@ -3984,9 +4148,9 @@ function mergeQueuedFaceKeysWithRetryableFaces(model, queuedFaceKeys) {
 	for (const faceKey of model.getFaceKeys()) {
 		const face = assetPipeline.faces?.[faceKey] || {};
 		const inputHash = model.hashAssetPipelineFaceInput(faceKey);
-		const finalHash = model.hashAssetPipelineFinalInput(faceKey, { baseTileVariantId });
-		const renderedSvg = model.getFinalRenderingColorSvgPath(faceKey) || "";
-		const ready = model.isAssetGenerationFaceReady(face, { inputHash, finalHash, renderedSvg });
+		const finalHash = model.hashAssetPipelineFinalInput(faceKey, {baseTileVariantId});
+		const renderedSvg = model.getFinalRenderingColorSvgPath(faceKey) || '';
+		const ready = model.isAssetGenerationFaceReady(face, {inputHash, finalHash, renderedSvg});
 		if (!ready) {
 			queued.add(faceKey);
 		}
@@ -3997,16 +4161,16 @@ function mergeQueuedFaceKeysWithRetryableFaces(model, queuedFaceKeys) {
 
 function assetGenerationSummary(faces, model = null) {
 	const entries = Object.entries(faces || {});
-	const baseTileVariantId = model?.getSelectedBaseTileVariantId?.() || "";
+	const baseTileVariantId = model?.getSelectedBaseTileVariantId?.() || '';
 	const counts = entries.reduce((summary, [faceKey, face]) => {
-		const inputHash = model?.hashAssetPipelineFaceInput?.(faceKey) || face?.inputHash || "";
-		const finalHash = model?.hashAssetPipelineFinalInput?.(faceKey, { baseTileVariantId }) || face?.finalHash || "";
-		const renderedSvg = model ? model.getFinalRenderingColorSvgPath(faceKey) || "" : "";
-		const status = model?.isAssetGenerationFaceReady?.(face, { inputHash, finalHash, renderedSvg })
-			? "ready"
-			: face?.status || "unavailable";
+		const inputHash = model?.hashAssetPipelineFaceInput?.(faceKey) || face?.inputHash || '';
+		const finalHash = model?.hashAssetPipelineFinalInput?.(faceKey, {baseTileVariantId}) || face?.finalHash || '';
+		const renderedSvg = model ? model.getFinalRenderingColorSvgPath(faceKey) || '' : '';
+		const status = model?.isAssetGenerationFaceReady?.(face, {inputHash, finalHash, renderedSvg})
+			? 'ready'
+			: face?.status || 'unavailable';
 		summary[status] = (summary[status] || 0) + 1;
-		if (face?.queue?.status === "skipped") {
+		if (face?.queue?.status === 'skipped') {
 			summary.skipped = (summary.skipped || 0) + 1;
 		}
 		return summary;
@@ -4026,72 +4190,87 @@ function assetGenerationSummary(faces, model = null) {
 
 async function assetReviewFaces(model, faces, queueState = {}) {
 	const baseTileVariantId = model.getSelectedBaseTileVariantId();
-	const activeFaceKey = queueState.activeFaceKey || "";
+	const activeFaceKey = queueState.activeFaceKey || '';
 	const queuedFaceKeys = new Set(queueState.queuedFaceKeys || []);
-	return Promise.all(Object.keys(model.faces())
-		.sort((left, right) => left.localeCompare(right))
-		.map(async (faceKey) => {
-			const face = faces[faceKey] || {};
-			const inputHash = model.hashAssetPipelineFaceInput(faceKey);
-			const finalHash = model.hashAssetPipelineFinalInput(faceKey, { baseTileVariantId });
-			const renderedSvg = model.getFinalRenderingColorSvgPath(faceKey) || "";
-			const finalAsset = face.artifacts?.inlayModel || "";
-			const previewPng = face.artifacts?.previewPng || "";
-			const finalAssetExists = finalAsset ? await fileExists(resolveRepoPath(finalAsset)) : false;
-			const previewPngExists = previewPng ? await fileExists(resolveRepoPath(previewPng)) : false;
-			const hasReviewableFinalAsset = finalAssetExists && Boolean(face.finalHash);
-			const ready = hasReviewableFinalAsset && previewPngExists && model.isAssetGenerationFaceReady(face, { inputHash, finalHash, renderedSvg });
-			const building = !ready && activeFaceKey === faceKey;
-			const queued = !ready && !building && queuedFaceKeys.has(faceKey);
-			const failed = !ready && face.status === "failed";
-			const stale = hasReviewableFinalAsset && !ready && !building && !queued && !failed;
-			const unavailable = !hasReviewableFinalAsset && !building && !queued && !failed;
-			const liveQueue = building
-				? {
-					status: "building",
-					currentStep: queueState.stageLabel || queueState.currentStep || "",
-					stageProgress: queueState.stageProgress || null,
-				}
-				: queued
+	return Promise.all(
+		Object.keys(model.faces())
+			.sort((left, right) => left.localeCompare(right))
+			.map(async (faceKey) => {
+				const face = faces[faceKey] || {};
+				const inputHash = model.hashAssetPipelineFaceInput(faceKey);
+				const finalHash = model.hashAssetPipelineFinalInput(faceKey, {baseTileVariantId});
+				const renderedSvg = model.getFinalRenderingColorSvgPath(faceKey) || '';
+				const finalAsset = face.artifacts?.inlayModel || '';
+				const previewPng = face.artifacts?.previewPng || '';
+				const finalAssetExists = finalAsset ? await fileExists(resolveRepoPath(finalAsset)) : false;
+				const previewPngExists = previewPng ? await fileExists(resolveRepoPath(previewPng)) : false;
+				const hasReviewableFinalAsset = finalAssetExists && Boolean(face.finalHash);
+				const ready =
+					hasReviewableFinalAsset &&
+					previewPngExists &&
+					model.isAssetGenerationFaceReady(face, {inputHash, finalHash, renderedSvg});
+				const building = !ready && activeFaceKey === faceKey;
+				const queued = !ready && !building && queuedFaceKeys.has(faceKey);
+				const failed = !ready && face.status === 'failed';
+				const stale = hasReviewableFinalAsset && !ready && !building && !queued && !failed;
+				const unavailable = !hasReviewableFinalAsset && !building && !queued && !failed;
+				const liveQueue = building
 					? {
-						status: "queued",
-					}
+							status: 'building',
+							currentStep: queueState.stageLabel || queueState.currentStep || '',
+							stageProgress: queueState.stageProgress || null,
+						}
+					: queued
+						? {
+								status: 'queued',
+							}
+						: null;
+				const liveBuild = building
+					? {
+							currentStep: queueState.stageLabel || queueState.currentStep || '',
+							stageProgress: queueState.stageProgress || null,
+						}
 					: null;
-			const liveBuild = building
-				? {
-					currentStep: queueState.stageLabel || queueState.currentStep || "",
-					stageProgress: queueState.stageProgress || null,
-				}
-				: null;
 
-			const currentAsset = ready
-				? {
-					glb: finalAsset,
-					metadata: face.artifacts?.inlayMetadata || "",
-					previewPng: previewPngExists ? previewPng : "",
-					cacheKey: face.finalHash,
-				}
-				: null;
+				const currentAsset = ready
+					? {
+							glb: finalAsset,
+							metadata: face.artifacts?.inlayMetadata || '',
+							previewPng: previewPngExists ? previewPng : '',
+							cacheKey: face.finalHash,
+						}
+					: null;
 
-			return {
-				faceKey,
-				state: ready ? "ready" : failed ? "failed" : building ? "building" : queued ? "queued" : stale ? "stale" : "unavailable",
-				ready,
-				building,
-				queued,
-				stale,
-				failed,
-				unavailable,
-				asset: currentAsset,
-				queue: liveQueue,
-				build: liveBuild,
-				inputHash,
-				finalHash,
-				recordedFinalHash: face.finalHash || "",
-				stageHashes: face.stageHashes || {},
-				failure: face.failure || null,
-			};
-		}));
+				return {
+					faceKey,
+					state: ready
+						? 'ready'
+						: failed
+							? 'failed'
+							: building
+								? 'building'
+								: queued
+									? 'queued'
+									: stale
+										? 'stale'
+										: 'unavailable',
+					ready,
+					building,
+					queued,
+					stale,
+					failed,
+					unavailable,
+					asset: currentAsset,
+					queue: liveQueue,
+					build: liveBuild,
+					inputHash,
+					finalHash,
+					recordedFinalHash: face.finalHash || '',
+					stageHashes: face.stageHashes || {},
+					failure: face.failure || null,
+				};
+			}),
+	);
 }
 
 function assetReviewSummary(faces) {
@@ -4114,58 +4293,61 @@ function assetReviewSummary(faces) {
 function assetGenerationBuildSteps() {
 	return [
 		{
-			id: "preview-svg",
-			label: "Checking preview SVG",
-			status: "building",
-			queueStatus: "building",
+			id: 'preview-svg',
+			label: 'Checking preview SVG',
+			status: 'building',
+			queueStatus: 'building',
 			delayMs: 16,
 		},
 		{
-			id: "cutter-2d",
-			label: "Preparing cutter SVG",
-			status: "building",
-			queueStatus: "building",
+			id: 'cutter-2d',
+			label: 'Preparing cutter SVG',
+			status: 'building',
+			queueStatus: 'building',
 			delayMs: 20,
 		},
 		{
-			id: "svg-cutter",
-			label: "Preparing SVG cutter",
-			status: "building",
-			queueStatus: "building",
+			id: 'svg-cutter',
+			label: 'Preparing SVG cutter',
+			status: 'building',
+			queueStatus: 'building',
 			delayMs: 20,
 		},
 		{
-			id: "stamped-body",
-			label: "Preparing stamped tile body",
-			status: "building",
-			queueStatus: "building",
+			id: 'stamped-body',
+			label: 'Preparing stamped tile body',
+			status: 'building',
+			queueStatus: 'building',
 			delayMs: 20,
 		},
 		{
-			id: "colored-inlay",
-			label: "Preparing colored inlay",
-			status: "building",
-			queueStatus: "building",
+			id: 'colored-inlay',
+			label: 'Preparing colored inlay',
+			status: 'building',
+			queueStatus: 'building',
 			delayMs: 20,
 		},
 		{
-			id: "preview-png",
-			label: "Rendering review preview",
-			status: "building",
-			queueStatus: "building",
+			id: 'preview-png',
+			label: 'Rendering review preview',
+			status: 'building',
+			queueStatus: 'building',
 			delayMs: 20,
 		},
 	];
 }
 
-function assetGenerationPendingSteps(model, faceKey, buildSteps, { inputHash, finalHash, stageHashes }) {
+function assetGenerationPendingSteps(model, faceKey, buildSteps, {inputHash, finalHash, stageHashes}) {
 	const face = model.getAssetPipeline().faces?.[faceKey] || {};
-	return buildSteps.filter((step) => !model.isAssetGenerationStageReady(face, {
-		stageId: step.id,
-		inputHash,
-		finalHash,
-		stageHash: stageHashes?.[step.id] || "",
-	}));
+	return buildSteps.filter(
+		(step) =>
+			!model.isAssetGenerationStageReady(face, {
+				stageId: step.id,
+				inputHash,
+				finalHash,
+				stageHash: stageHashes?.[step.id] || '',
+			}),
+	);
 }
 
 function assetGenerationRemainingPendingStepCount(pendingSteps = [], currentStepId) {
@@ -4175,9 +4357,7 @@ function assetGenerationRemainingPendingStepCount(pendingSteps = [], currentStep
 
 function completedStepIds(steps, currentStepId) {
 	const index = steps.findIndex((step) => step.id === currentStepId);
-	return index >= 0
-		? steps.slice(0, index + 1).map((step) => step.id)
-		: [];
+	return index >= 0 ? steps.slice(0, index + 1).map((step) => step.id) : [];
 }
 
 function delay(milliseconds) {
@@ -4191,8 +4371,8 @@ function sendError(res, error) {
 	res.status(error.statusCode || 500).json({
 		ok: false,
 		message: error.message,
-		...(error.expectedUpdatedOn ? { expectedUpdatedOn: error.expectedUpdatedOn } : {}),
-		...(error.actualUpdatedOn ? { actualUpdatedOn: error.actualUpdatedOn } : {}),
+		...(error.expectedUpdatedOn ? {expectedUpdatedOn: error.expectedUpdatedOn} : {}),
+		...(error.actualUpdatedOn ? {actualUpdatedOn: error.actualUpdatedOn} : {}),
 		stack: error.stack,
 	});
 }

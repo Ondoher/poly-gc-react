@@ -11,7 +11,7 @@ type ReferenceApprovalState = {
 	status: string;
 	processing: boolean;
 	processingLabel: string;
-	messageDialog: { title: string; message: string } | null;
+	messageDialog: {title: string; message: string} | null;
 	summary: ReferenceApprovalSummary;
 };
 
@@ -34,7 +34,7 @@ interface ReferenceApprovalControllerService {
 	 *
 	 * @param options - Control reload prompting and loading messages.
 	 */
-	load(options?: { force?: boolean; quiet?: boolean }): Promise<void>;
+	load(options?: {force?: boolean; quiet?: boolean}): Promise<void>;
 
 	/**
 	 * Persist the current reference structure draft.

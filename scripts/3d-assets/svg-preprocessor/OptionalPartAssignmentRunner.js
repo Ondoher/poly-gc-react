@@ -1,9 +1,9 @@
-import { promises as fs } from 'fs';
+import {promises as fs} from 'fs';
 import path from 'path';
-import { OUTPUT_3D_DIR, ROOT_DIR } from '../shared/asset-paths.js';
-import { groupAnalogComponents } from './analog-component-matcher.js';
-import { getComponentUnionBounds } from './normalized-face-components.js';
-import { tilesetJsonDir, tilesetOutputRoot } from './pipeline-output-paths.js';
+import {OUTPUT_3D_DIR, ROOT_DIR} from '../shared/asset-paths.js';
+import {groupAnalogComponents} from './analog-component-matcher.js';
+import {getComponentUnionBounds} from './normalized-face-components.js';
+import {tilesetJsonDir, tilesetOutputRoot} from './pipeline-output-paths.js';
 
 export const DEFAULT_OPTIONAL_PART_TILESET_ID = 'wiki';
 
@@ -52,10 +52,11 @@ export class OptionalPartAssignmentRunner {
 		const manualAssignments = optionalPartConfig.manualAssignments || null;
 		const optionalPartsDir = tilesetJsonDir(activeTilesetId, 'optional-parts');
 		const generatedOn = this.clock();
-		const faceEntries = pipelineModel.getFaceEntries()
+		const faceEntries = pipelineModel
+			.getFaceEntries()
 			.filter(([faceKey]) => !requestedFaceKey || faceKey === requestedFaceKey)
 			.sort(([left], [right]) => left.localeCompare(right));
-		const report = this.createReport({ tilesetId: activeTilesetId, generatedOn });
+		const report = this.createReport({tilesetId: activeTilesetId, generatedOn});
 
 		for (const [faceKey, faceState] of faceEntries) {
 			await this.processFace({
@@ -98,7 +99,7 @@ export class OptionalPartAssignmentRunner {
 	 * @param {OptionalPartCreateReportOptions} options - Report identity fields.
 	 * @returns {OptionalPartAssignmentReport} Empty report for the run.
 	 */
-	createReport({ tilesetId, generatedOn }) {
+	createReport({tilesetId, generatedOn}) {
 		return {
 			schemaVersion: 1,
 			tilesetId,
@@ -199,15 +200,17 @@ export class OptionalPartAssignmentRunner {
 			pipelineState,
 			normalized,
 		});
-		const sourceSpecs = this.sourcePartSpecsForFace(faceKey, bulkOptions, sourceMetadata)
-			.sort((left, right) => this.optionalPartSpecPriority(left) - this.optionalPartSpecPriority(right));
+		const sourceSpecs = this.sourcePartSpecsForFace(faceKey, bulkOptions, sourceMetadata).sort(
+			(left, right) => this.optionalPartSpecPriority(left) - this.optionalPartSpecPriority(right),
+		);
 		const components = normalized.components || [];
 		const alignmentComponentIds = new Set(normalized.alignmentComponentIds || []);
-		const sourceComponents = components.filter((component) => (
-			alignmentComponentIds.has(component.componentId)
-			&& !component.classification?.tileLayerCandidate
-			&& !component.classification?.negativeSpaceCandidate
-		));
+		const sourceComponents = components.filter(
+			(component) =>
+				alignmentComponentIds.has(component.componentId) &&
+				!component.classification?.tileLayerCandidate &&
+				!component.classification?.negativeSpaceCandidate,
+		);
 		const sourceBounds = normalized.alignmentBounds || getComponentUnionBounds(sourceComponents);
 		const candidateUnits = this.makeCandidateUnits(sourceComponents, sourceBounds);
 		const optionalParts = {};
@@ -226,21 +229,19 @@ export class OptionalPartAssignmentRunner {
 			const manualComponentIds = manualFaceAssignments[spec.partId] || [];
 			const candidates = effectiveSpec.searchSource
 				? this.scoreCandidatesForSpec(candidateUnits, effectiveSpec)
-					.filter((candidate) => !this.candidateUsesReservedComponent(candidate, reservedComponentIds))
-					.filter((candidate) => this.candidateMatchesContextualSpec(candidate, effectiveSpec))
-					.filter((candidate) => candidate.score >= 0.35)
-					.slice(0, 6)
+						.filter((candidate) => !this.candidateUsesReservedComponent(candidate, reservedComponentIds))
+						.filter((candidate) => this.candidateMatchesContextualSpec(candidate, effectiveSpec))
+						.filter((candidate) => candidate.score >= 0.35)
+						.slice(0, 6)
 				: [];
-			const rawManualCandidate = this.manualCandidateForSpec(
-				manualComponentIds,
-				sourceComponents,
-				sourceBounds,
-			);
-			const manualCandidate = rawManualCandidate
-				&& !this.candidateUsesReservedComponent(rawManualCandidate, reservedComponentIds)
-				? rawManualCandidate
-				: null;
-			const suggested = hasManualAssignment ? manualCandidate : this.suggestedCandidateForSpec(effectiveSpec, candidates);
+			const rawManualCandidate = this.manualCandidateForSpec(manualComponentIds, sourceComponents, sourceBounds);
+			const manualCandidate =
+				rawManualCandidate && !this.candidateUsesReservedComponent(rawManualCandidate, reservedComponentIds)
+					? rawManualCandidate
+					: null;
+			const suggested = hasManualAssignment
+				? manualCandidate
+				: this.suggestedCandidateForSpec(effectiveSpec, candidates);
 			const autoAcceptScore = this.autoAcceptScoreForSpec(effectiveSpec);
 			const state = !effectiveSpec.searchSource
 				? 'source-absent'
@@ -248,10 +249,19 @@ export class OptionalPartAssignmentRunner {
 					? 'candidate-found'
 					: 'needs-review';
 			const strength = manualCandidate ? 'strong' : state === 'candidate-found' ? 'tentative' : 'none';
-			const reviewStatus = manualCandidate ? 'reviewed' : state === 'candidate-found' ? 'inferred' : 'needs-review';
+			const reviewStatus = manualCandidate
+				? 'reviewed'
+				: state === 'candidate-found'
+					? 'inferred'
+					: 'needs-review';
 			const bindingSuggestion = strength === 'none' ? null : suggested;
 			const candidateList = manualCandidate
-				? [manualCandidate, ...candidates.filter((candidate) => !sameComponentIdSet(candidate.componentIds, manualCandidate.componentIds))]
+				? [
+						manualCandidate,
+						...candidates.filter(
+							(candidate) => !sameComponentIdSet(candidate.componentIds, manualCandidate.componentIds),
+						),
+					]
 				: candidates;
 
 			optionalParts[spec.partId] = {
@@ -312,7 +322,9 @@ export class OptionalPartAssignmentRunner {
 			tilesetId,
 			faceKey,
 			generatedOn,
-			sourceFile: sourceFile ? this.normalizePath(this.path.resolve(this.rootDir, sourceFile)) : normalized.sourceFile,
+			sourceFile: sourceFile
+				? this.normalizePath(this.path.resolve(this.rootDir, sourceFile))
+				: normalized.sourceFile,
 			normalizedComponents: this.normalizePath(normalizedPath),
 			status: diagnostics.some((diagnostic) => diagnostic.level === 'warning') ? 'needs-review' : 'ready',
 			face,
@@ -320,8 +332,7 @@ export class OptionalPartAssignmentRunner {
 			summary: {
 				sourceComponentCount: sourceComponents.length,
 				candidateUnitCount: candidateUnits.length,
-				candidateCount: Object.values(optionalParts)
-					.reduce((total, part) => total + part.candidates.length, 0),
+				candidateCount: Object.values(optionalParts).reduce((total, part) => total + part.candidates.length, 0),
 			},
 			optionalParts,
 			metadataSeed,
@@ -402,11 +413,12 @@ export class OptionalPartAssignmentRunner {
 			return firstCandidate;
 		}
 
-		const completeSourceElementCandidate = candidates.find((candidate) => (
-			candidate.unitKind === 'source-element-group'
-			&& candidate.score >= firstCandidate.score - 0.16
-			&& isProperComponentSuperset(candidate.componentIds, firstCandidate.componentIds)
-		));
+		const completeSourceElementCandidate = candidates.find(
+			(candidate) =>
+				candidate.unitKind === 'source-element-group' &&
+				candidate.score >= firstCandidate.score - 0.16 &&
+				isProperComponentSuperset(candidate.componentIds, firstCandidate.componentIds),
+		);
 
 		return completeSourceElementCandidate || firstCandidate;
 	}
@@ -428,9 +440,11 @@ export class OptionalPartAssignmentRunner {
 	}
 
 	optionalAssignmentReservedComponentIds(faceState) {
-		return new Set(Object.entries(faceState?.state?.bindings || {})
-			.filter(([, binding]) => binding?.strength === 'strong' && !binding.partId)
-			.map(([componentId]) => componentId));
+		return new Set(
+			Object.entries(faceState?.state?.bindings || {})
+				.filter(([, binding]) => binding?.strength === 'strong' && !binding.partId)
+				.map(([componentId]) => componentId),
+		);
 	}
 
 	modelAssignmentFromArtifact(artifact) {
@@ -453,7 +467,7 @@ export class OptionalPartAssignmentRunner {
 				};
 			}
 		}
-		return { parts, bindings };
+		return {parts, bindings};
 	}
 
 	/**
@@ -466,12 +480,20 @@ export class OptionalPartAssignmentRunner {
 	 */
 	sourcePartSpecsForFace(faceKey, bulkOptions = null, sourceMetadata = null) {
 		const face = this.describeFace(faceKey);
-		const spec = (partId, contentKind, role, region, metadataKey) => this.applyBulkOption(
-			this.makeSourcePartSpec(partId, contentKind, role, region, metadataKey, this.expectedLabelForSpec(face, partId, role)),
-			face,
-			metadataKey,
-			bulkOptions,
-		);
+		const spec = (partId, contentKind, role, region, metadataKey) =>
+			this.applyBulkOption(
+				this.makeSourcePartSpec(
+					partId,
+					contentKind,
+					role,
+					region,
+					metadataKey,
+					this.expectedLabelForSpec(face, partId, role),
+				),
+				face,
+				metadataKey,
+				bulkOptions,
+			);
 		const metadataSpecs = this.metadataSourcePartSpecs(face, bulkOptions, sourceMetadata);
 
 		if (metadataSpecs.length > 0) {
@@ -497,33 +519,25 @@ export class OptionalPartAssignmentRunner {
 		}
 
 		if (face.family === 'character') {
-			return [
-				spec('label', 'label', 'suit-label', 'top-left', 'label'),
-			];
+			return [spec('label', 'label', 'suit-label', 'top-left', 'label')];
 		}
 
 		if (face.family === 'wind') {
-			return [
-				spec('label', 'label', 'wind-label', 'top-left', 'label'),
-			];
+			return [spec('label', 'label', 'wind-label', 'top-left', 'label')];
 		}
 
 		if (face.family === 'bamboo' || face.family === 'dot') {
-			return [
-				spec('label', 'label', 'suit-label', 'top-left', 'label'),
-			];
+			return [spec('label', 'label', 'suit-label', 'top-left', 'label')];
 		}
 
 		if (face.family === 'dragon') {
-			return [
-				spec('label', 'label', 'dragon-label', 'top-right', 'label'),
-			];
+			return [spec('label', 'label', 'dragon-label', 'top-right', 'label')];
 		}
 
 		return [];
 	}
 
-	sourceMetadataForFace({ faceKey, faceState, pipelineState, normalized }) {
+	sourceMetadataForFace({faceKey, faceState, pipelineState, normalized}) {
 		const face = this.describeFace(faceKey);
 		const suitKeys = this.pipelineSuitKeys(face.family);
 		const configurationParts = this.mergedPartOptions({
@@ -562,7 +576,7 @@ export class OptionalPartAssignmentRunner {
 		};
 	}
 
-	mergedPartOptions({ root, suitKeys, faceKey }) {
+	mergedPartOptions({root, suitKeys, faceKey}) {
 		const parts = {};
 		const defaults = root?.defaults || {};
 		const overrides = root?.overrides || {};
@@ -593,35 +607,31 @@ export class OptionalPartAssignmentRunner {
 			wind: 'winds',
 		};
 
-		return [
-			pluralByFamily[family] || family,
-			family,
-		].filter(Boolean);
+		return [pluralByFamily[family] || family, family].filter(Boolean);
 	}
 
 	metadataSourcePartSpecs(face, bulkOptions, sourceMetadata = null) {
-		return this.metadataSourcePartEntries(sourceMetadata)
-			.map(([partId, part]) => {
-				const spec = {
-					...this.makeSourcePartSpec(
-						part.partId || partId,
-						part.contentKind || 'artwork',
-						part.role || partId,
-						part.region || 'top-left',
-						part.metadataKey ?? this.optionalPartMetadataKey(part.partId || partId),
-						part.expectedLabel ?? this.expectedLabelForSpec(face, part.partId || partId, part.role || partId),
-					),
-					searchSource: part.searchSource !== false,
-					initialCandidateScoring: part.initialCandidateScoring || null,
-				};
-
-				return this.applyBulkOption(
-					spec,
-					face,
+		return this.metadataSourcePartEntries(sourceMetadata).map(([partId, part]) => {
+			const spec = {
+				...this.makeSourcePartSpec(
+					part.partId || partId,
+					part.contentKind || 'artwork',
+					part.role || partId,
+					part.region || 'top-left',
 					part.metadataKey ?? this.optionalPartMetadataKey(part.partId || partId),
-					bulkOptions,
-				);
-			});
+					part.expectedLabel ?? this.expectedLabelForSpec(face, part.partId || partId, part.role || partId),
+				),
+				searchSource: part.searchSource !== false,
+				initialCandidateScoring: part.initialCandidateScoring || null,
+			};
+
+			return this.applyBulkOption(
+				spec,
+				face,
+				part.metadataKey ?? this.optionalPartMetadataKey(part.partId || partId),
+				bulkOptions,
+			);
+		});
 	}
 
 	optionalPartMetadataKey(partId) {
@@ -674,11 +684,13 @@ export class OptionalPartAssignmentRunner {
 		}
 
 		if (face.family === 'dragon') {
-			return {
-				r: 'C',
-				g: 'F',
-				w: 'P',
-			}[face.value] || null;
+			return (
+				{
+					r: 'C',
+					g: 'F',
+					w: 'P',
+				}[face.value] || null
+			);
 		}
 
 		if (role === 'suit-label' || ['bamboo', 'character', 'dot', 'flower', 'season'].includes(face.family)) {
@@ -688,7 +700,7 @@ export class OptionalPartAssignmentRunner {
 		return null;
 	}
 
-	initialCandidateScoringForPart({ root, part }) {
+	initialCandidateScoringForPart({root, part}) {
 		const defaults = root?.defaults?.optionalPartAssignment?.initialCandidateScoring || {};
 		const override = part.sourceSearch?.initialCandidateScoring || {};
 
@@ -800,9 +812,7 @@ export class OptionalPartAssignmentRunner {
 			}
 		}
 
-		return face.family === 'season'
-			? 'label-left-character-right'
-			: 'label-right-character-left';
+		return face.family === 'season' ? 'label-left-character-right' : 'label-right-character-left';
 	}
 
 	/**
@@ -818,10 +828,7 @@ export class OptionalPartAssignmentRunner {
 			dot: 'd',
 		};
 
-		return [
-			family,
-			shortByFamily[family],
-		].filter(Boolean);
+		return [family, shortByFamily[family]].filter(Boolean);
 	}
 
 	/**
@@ -858,12 +865,14 @@ export class OptionalPartAssignmentRunner {
 	 */
 	makeCandidateUnits(components, sourceBounds) {
 		const byParent = new Map();
-		const units = components.map((component) => this.makeCandidateUnit({
-			componentIds: [component.componentId],
-			components: [component],
-			sourceBounds,
-			unitKind: 'component',
-		}));
+		const units = components.map((component) =>
+			this.makeCandidateUnit({
+				componentIds: [component.componentId],
+				components: [component],
+				sourceBounds,
+				unitKind: 'component',
+			}),
+		);
 
 		for (const component of components) {
 			if (!component.parentComponentId) {
@@ -880,34 +889,40 @@ export class OptionalPartAssignmentRunner {
 				continue;
 			}
 
-			units.push(this.makeCandidateUnit({
-				componentIds: parentComponents.map((component) => component.componentId),
-				components: parentComponents,
-				sourceBounds,
-				unitKind: 'source-element-group',
-			}));
+			units.push(
+				this.makeCandidateUnit({
+					componentIds: parentComponents.map((component) => component.componentId),
+					components: parentComponents,
+					sourceBounds,
+					unitKind: 'source-element-group',
+				}),
+			);
 		}
 
 		for (const neighborGroup of this.neighborSameColorGroups(components)) {
-			units.push(this.makeCandidateUnit({
-				componentIds: neighborGroup.map((component) => component.componentId),
-				components: neighborGroup,
-				sourceBounds,
-				unitKind: 'same-color-neighbor-group',
-			}));
+			units.push(
+				this.makeCandidateUnit({
+					componentIds: neighborGroup.map((component) => component.componentId),
+					components: neighborGroup,
+					sourceBounds,
+					unitKind: 'same-color-neighbor-group',
+				}),
+			);
 		}
 
-		for (const colorGroup of groupAnalogComponents(components, { expandedGap: 8, groupByColor: true })) {
+		for (const colorGroup of groupAnalogComponents(components, {expandedGap: 8, groupByColor: true})) {
 			if (colorGroup.components.length < 2 || !colorGroup.dominantColor) {
 				continue;
 			}
 
-			units.push(this.makeCandidateUnit({
-				componentIds: colorGroup.components.map((component) => component.componentId),
-				components: colorGroup.components,
-				sourceBounds,
-				unitKind: 'same-color-source-group',
-			}));
+			units.push(
+				this.makeCandidateUnit({
+					componentIds: colorGroup.components.map((component) => component.componentId),
+					components: colorGroup.components,
+					sourceBounds,
+					unitKind: 'same-color-source-group',
+				}),
+			);
 		}
 
 		return this.dedupeCandidateUnits(units);
@@ -927,7 +942,10 @@ export class OptionalPartAssignmentRunner {
 				const left = components[leftIndex];
 				const right = components[rightIndex];
 
-				if (!this.sameVisibleFill(left, right) || !this.boundsLookLikeGlyphNeighbors(left.bounds, right.bounds)) {
+				if (
+					!this.sameVisibleFill(left, right) ||
+					!this.boundsLookLikeGlyphNeighbors(left.bounds, right.bounds)
+				) {
 					continue;
 				}
 
@@ -947,20 +965,30 @@ export class OptionalPartAssignmentRunner {
 			return false;
 		}
 
-		const horizontalGap = Math.max(0, Math.max(leftBounds.left, rightBounds.left) - Math.min(leftBounds.right, rightBounds.right));
-		const verticalGap = Math.max(0, Math.max(leftBounds.top, rightBounds.top) - Math.min(leftBounds.bottom, rightBounds.bottom));
-		const verticalOverlap = Math.min(leftBounds.bottom, rightBounds.bottom) - Math.max(leftBounds.top, rightBounds.top);
+		const horizontalGap = Math.max(
+			0,
+			Math.max(leftBounds.left, rightBounds.left) - Math.min(leftBounds.right, rightBounds.right),
+		);
+		const verticalGap = Math.max(
+			0,
+			Math.max(leftBounds.top, rightBounds.top) - Math.min(leftBounds.bottom, rightBounds.bottom),
+		);
+		const verticalOverlap =
+			Math.min(leftBounds.bottom, rightBounds.bottom) - Math.max(leftBounds.top, rightBounds.top);
 		const minHeight = Math.max(1, Math.min(leftBounds.height, rightBounds.height));
-		const heightRatio = Math.min(leftBounds.height, rightBounds.height) / Math.max(leftBounds.height, rightBounds.height, 1);
+		const heightRatio =
+			Math.min(leftBounds.height, rightBounds.height) / Math.max(leftBounds.height, rightBounds.height, 1);
 		const yCenterDistance = Math.abs(
-			(leftBounds.top + (leftBounds.height / 2)) - (rightBounds.top + (rightBounds.height / 2)),
+			leftBounds.top + leftBounds.height / 2 - (rightBounds.top + rightBounds.height / 2),
 		);
 
-		return horizontalGap <= 4
-			&& verticalGap <= 2
-			&& verticalOverlap / minHeight >= 0.45
-			&& heightRatio >= 0.55
-			&& yCenterDistance <= Math.max(leftBounds.height, rightBounds.height) * 0.45;
+		return (
+			horizontalGap <= 4 &&
+			verticalGap <= 2 &&
+			verticalOverlap / minHeight >= 0.45 &&
+			heightRatio >= 0.55 &&
+			yCenterDistance <= Math.max(leftBounds.height, rightBounds.height) * 0.45
+		);
 	}
 
 	/**
@@ -969,11 +997,11 @@ export class OptionalPartAssignmentRunner {
 	 * @param {OptionalPartMakeCandidateUnitOptions} options - Candidate unit construction context.
 	 * @returns {OptionalPartCandidateUnit} Candidate unit with bounds and normalized position.
 	 */
-	makeCandidateUnit({ componentIds, components, sourceBounds, unitKind }) {
+	makeCandidateUnit({componentIds, components, sourceBounds, unitKind}) {
 		const bounds = getComponentUnionBounds(components);
 		const center = {
-			x: bounds.left + (bounds.width / 2),
-			y: bounds.top + (bounds.height / 2),
+			x: bounds.left + bounds.width / 2,
+			y: bounds.top + bounds.height / 2,
 		};
 		const normalizedCenter = this.normalizePoint(center, sourceBounds);
 		const sourceIndexes = components.map((component) => component.sourceIndex ?? component.sourceElementIndex ?? 0);
@@ -988,7 +1016,9 @@ export class OptionalPartAssignmentRunner {
 			sourceOrder: Math.min(...sourceIndexes),
 			componentCount: components.length,
 			componentLevel: components.length > 1 ? 'group' : components[0].componentLevel,
-			textComponent: components.some((component) => Boolean(component.fontFamily || component.fontPath || component.fontSize)),
+			textComponent: components.some((component) =>
+				Boolean(component.fontFamily || component.fontPath || component.fontSize),
+			),
 			textValues: [...new Set(components.map((component) => component.textValue).filter(Boolean))],
 			labelOcr,
 			classNames: [...new Set(components.map((component) => component.className).filter(Boolean))],
@@ -996,7 +1026,8 @@ export class OptionalPartAssignmentRunner {
 			areaRatio: bounds.area / Math.max(1, sourceBounds?.area || 1),
 			widthRatioToSourceWidth: bounds.width / Math.max(1, sourceBounds?.width || 1),
 			heightRatioToSourceWidth: bounds.height / Math.max(1, sourceBounds?.width || 1),
-			maxDimensionRatioToSourceWidth: Math.max(bounds.width, bounds.height) / Math.max(1, sourceBounds?.width || 1),
+			maxDimensionRatioToSourceWidth:
+				Math.max(bounds.width, bounds.height) / Math.max(1, sourceBounds?.width || 1),
 		};
 	}
 
@@ -1032,12 +1063,14 @@ export class OptionalPartAssignmentRunner {
 			return {};
 		}
 
-		return Object.fromEntries(Object.entries(faceAssignments)
-			.map(([partId, componentIds]) => [
-				partId,
-				[...new Set(Array.isArray(componentIds) ? componentIds : [])].filter(Boolean),
-			])
-			.filter(([, componentIds]) => componentIds.length > 0));
+		return Object.fromEntries(
+			Object.entries(faceAssignments)
+				.map(([partId, componentIds]) => [
+					partId,
+					[...new Set(Array.isArray(componentIds) ? componentIds : [])].filter(Boolean),
+				])
+				.filter(([, componentIds]) => componentIds.length > 0),
+		);
 	}
 
 	manualCandidateForSpec(componentIds, sourceComponents, sourceBounds) {
@@ -1083,9 +1116,12 @@ export class OptionalPartAssignmentRunner {
 
 		return units
 			.map((unit) => this.scoreCandidate(unit, spec, maxSourceOrder))
-			.sort((left, right) => right.score - left.score
-				|| left.sourceOrder - right.sourceOrder
-				|| left.bounds.area - right.bounds.area);
+			.sort(
+				(left, right) =>
+					right.score - left.score ||
+					left.sourceOrder - right.sourceOrder ||
+					left.bounds.area - right.bounds.area,
+			);
 	}
 
 	/**
@@ -1100,15 +1136,18 @@ export class OptionalPartAssignmentRunner {
 		const reasons = [];
 		const locationNeutral = spec.region === 'no-preference';
 		const distance = this.distanceToRegion(unit.normalizedCenter, spec.region, spec.targetPoint);
-		const regionScore = locationNeutral ? 1 : this.clamp01(1 - (distance / 0.72));
-		const topScore = locationNeutral ? 1 : this.clamp01(1 - (unit.normalizedCenter.y / 0.48));
+		const regionScore = locationNeutral ? 1 : this.clamp01(1 - distance / 0.72);
+		const topScore = locationNeutral ? 1 : this.clamp01(1 - unit.normalizedCenter.y / 0.48);
 		const areaScore = this.scoreSize(unit, spec);
-		const sourceOrderScore = this.clamp01(1 - (unit.sourceOrder / (maxSourceOrder + 1)));
-		const groupScore = unit.unitKind === 'source-element-group'
-			|| unit.unitKind === 'same-color-source-group'
-			|| unit.unitKind === 'same-color-neighbor-group'
-			? spec.contentKind === 'glyph' ? 0.18 : 0.08
-			: 0;
+		const sourceOrderScore = this.clamp01(1 - unit.sourceOrder / (maxSourceOrder + 1));
+		const groupScore =
+			unit.unitKind === 'source-element-group' ||
+			unit.unitKind === 'same-color-source-group' ||
+			unit.unitKind === 'same-color-neighbor-group'
+				? spec.contentKind === 'glyph'
+					? 0.18
+					: 0.08
+				: 0;
 		const textLabelMatch = this.unitTextMatchesExpectedLabel(unit, spec);
 		const textComponentScore = textLabelMatch ? 0.35 : 0;
 		const labelOcrMatch = this.unitLabelOcrMatchesExpectedLabel(unit, spec);
@@ -1123,16 +1162,15 @@ export class OptionalPartAssignmentRunner {
 		const compatibleCornerPosition = this.isCompatibleCornerRegion(spec.region, candidateRegion);
 		const positionPriority = candidateRegion === spec.region ? 2 : compatibleCornerPosition ? 1 : 0;
 		const positionScore = positionPriority === 2 ? 0.28 : positionPriority === 1 ? 0.24 : 0;
-		const rawScore = (
-			(regionScore * 0.42)
-			+ (topScore * 0.18)
-			+ (areaScore * 0.24)
-			+ (sourceOrderScore * 0.12)
-			+ groupScore
-			+ positionScore
-			+ textComponentScore
-			+ labelOcrScore
-		);
+		const rawScore =
+			regionScore * 0.42 +
+			topScore * 0.18 +
+			areaScore * 0.24 +
+			sourceOrderScore * 0.12 +
+			groupScore +
+			positionScore +
+			textComponentScore +
+			labelOcrScore;
 		const score = missingExpectedLabelEvidence
 			? Math.min(rawScore, this.expectedLabelEvidenceMissingScoreCap())
 			: rawScore;
@@ -1220,12 +1258,14 @@ export class OptionalPartAssignmentRunner {
 		};
 	}
 
-	isMissingExpectedLabelEvidence({ unit, spec, textLabelMatch, labelOcrMatch }) {
-		return spec.contentKind === 'label'
-			&& Boolean(spec.expectedLabel)
-			&& !textLabelMatch
-			&& !labelOcrMatch
-			&& (Boolean(unit.labelOcr) || unit.unitKind === 'same-color-source-group');
+	isMissingExpectedLabelEvidence({unit, spec, textLabelMatch, labelOcrMatch}) {
+		return (
+			spec.contentKind === 'label' &&
+			Boolean(spec.expectedLabel) &&
+			!textLabelMatch &&
+			!labelOcrMatch &&
+			(Boolean(unit.labelOcr) || unit.unitKind === 'same-color-source-group')
+		);
 	}
 
 	expectedLabelEvidenceMissingScoreCap() {
@@ -1239,18 +1279,19 @@ export class OptionalPartAssignmentRunner {
 
 		const expected = this.normalizeLabelText(spec.expectedLabel);
 
-		return (unit.textValues || [])
-			.some((value) => this.normalizeLabelText(value) === expected);
+		return (unit.textValues || []).some((value) => this.normalizeLabelText(value) === expected);
 	}
 
 	bestUnitLabelOcr(components, unitComponentIds) {
 		const unitKey = componentIdSetKey(unitComponentIds);
 
-		return components
-			.map((component) => component.labelOcr)
-			.filter(Boolean)
-			.filter((evidence) => componentIdSetKey(evidence.componentIds || [evidence.sourceId]) === unitKey)
-			.sort((left, right) => left.pixelMeanAbsoluteError - right.pixelMeanAbsoluteError)[0] || null;
+		return (
+			components
+				.map((component) => component.labelOcr)
+				.filter(Boolean)
+				.filter((evidence) => componentIdSetKey(evidence.componentIds || [evidence.sourceId]) === unitKey)
+				.sort((left, right) => left.pixelMeanAbsoluteError - right.pixelMeanAbsoluteError)[0] || null
+		);
 	}
 
 	unitLabelOcrMatchesExpectedLabel(unit, spec) {
@@ -1268,7 +1309,7 @@ export class OptionalPartAssignmentRunner {
 			return 0;
 		}
 
-		return 1 + (this.clamp01((0.3 - mae) / 0.1) * 0.45);
+		return 1 + this.clamp01((0.3 - mae) / 0.1) * 0.45;
 	}
 
 	normalizeLabelText(value) {
@@ -1301,16 +1342,15 @@ export class OptionalPartAssignmentRunner {
 		const tolerance = spec.contentKind === 'glyph' ? 0.12 : 0.08;
 		const distance = Math.abs(unit.areaRatio - ideal);
 
-		return this.clamp01(1 - (distance / tolerance));
+		return this.clamp01(1 - distance / tolerance);
 	}
 
 	scoreRatioBand(value, ideal, nearZeroBelow, nearZeroAbove) {
 		const distance = Math.abs(value - ideal);
-		const tolerance = value <= ideal
-			? Math.max(0.0001, ideal - nearZeroBelow)
-			: Math.max(0.0001, nearZeroAbove - ideal);
+		const tolerance =
+			value <= ideal ? Math.max(0.0001, ideal - nearZeroBelow) : Math.max(0.0001, nearZeroAbove - ideal);
 
-		return Math.exp(-4 * ((distance / tolerance) ** 2));
+		return Math.exp(-4 * (distance / tolerance) ** 2);
 	}
 
 	candidateMaxDimensionRatio(unit) {
@@ -1326,8 +1366,11 @@ export class OptionalPartAssignmentRunner {
 	}
 
 	distanceToRegion(point, region, fallbackTarget) {
-		return Math.min(...this.regionTargets(region, fallbackTarget)
-			.map((target) => Math.hypot(point.x - target.x, point.y - target.y)));
+		return Math.min(
+			...this.regionTargets(region, fallbackTarget).map((target) =>
+				Math.hypot(point.x - target.x, point.y - target.y),
+			),
+		);
 	}
 
 	/**
@@ -1351,21 +1394,24 @@ export class OptionalPartAssignmentRunner {
 	 * @returns {{ x: number, y: number }} Normalized target point.
 	 */
 	regionTarget(region) {
-		return this.regionTargets(region)[0] || { x: 0.5, y: 0.5 };
+		return this.regionTargets(region)[0] || {x: 0.5, y: 0.5};
 	}
 
 	regionTargets(region, fallbackTarget = null) {
 		const targets = {
-			'top-left': { x: 0, y: 0 },
-			'top-right': { x: 1, y: 0 },
-			'bottom-left': { x: 0, y: 1 },
-			'bottom-right': { x: 1, y: 1 },
-			'top-center': { x: 0.5, y: 0 },
-			center: { x: 0.5, y: 0.5 },
-			'middle-left': { x: 0, y: 0.5 },
-			'middle-right': { x: 1, y: 0.5 },
-			'either-corner': [{ x: 0, y: 0 }, { x: 1, y: 0 }],
-			'no-preference': [{ x: 0.5, y: 0.5 }],
+			'top-left': {x: 0, y: 0},
+			'top-right': {x: 1, y: 0},
+			'bottom-left': {x: 0, y: 1},
+			'bottom-right': {x: 1, y: 1},
+			'top-center': {x: 0.5, y: 0},
+			center: {x: 0.5, y: 0.5},
+			'middle-left': {x: 0, y: 0.5},
+			'middle-right': {x: 1, y: 0.5},
+			'either-corner': [
+				{x: 0, y: 0},
+				{x: 1, y: 0},
+			],
+			'no-preference': [{x: 0.5, y: 0.5}],
 		};
 		const target = targets[region];
 
@@ -1373,7 +1419,7 @@ export class OptionalPartAssignmentRunner {
 			return target;
 		}
 
-		return target ? [target] : [fallbackTarget || { x: 0.5, y: 0.5 }];
+		return target ? [target] : [fallbackTarget || {x: 0.5, y: 0.5}];
 	}
 
 	/**
@@ -1394,7 +1440,9 @@ export class OptionalPartAssignmentRunner {
 			'bottom-right',
 			'either-corner',
 			'no-preference',
-		]).has(region) ? region : null;
+		]).has(region)
+			? region
+			: null;
 	}
 
 	/**
@@ -1404,12 +1452,7 @@ export class OptionalPartAssignmentRunner {
 	 * @returns {boolean} True when the region is a corner.
 	 */
 	isCornerRegion(region) {
-		return new Set([
-			'top-left',
-			'top-right',
-			'bottom-left',
-			'bottom-right',
-		]).has(region);
+		return new Set(['top-left', 'top-right', 'bottom-left', 'bottom-right']).has(region);
 	}
 
 	/**
@@ -1472,14 +1515,14 @@ export class OptionalPartAssignmentRunner {
 	 */
 	nearestRegion(point) {
 		const entries = Object.entries({
-			'top-left': { x: 0, y: 0 },
-			'top-right': { x: 1, y: 0 },
-			'bottom-left': { x: 0, y: 1 },
-			'bottom-right': { x: 1, y: 1 },
-			'top-center': { x: 0.5, y: 0 },
-			'middle-left': { x: 0, y: 0.5 },
-			'middle-right': { x: 1, y: 0.5 },
-			'center': { x: 0.5, y: 0.5 },
+			'top-left': {x: 0, y: 0},
+			'top-right': {x: 1, y: 0},
+			'bottom-left': {x: 0, y: 1},
+			'bottom-right': {x: 1, y: 1},
+			'top-center': {x: 0.5, y: 0},
+			'middle-left': {x: 0, y: 0.5},
+			'middle-right': {x: 1, y: 0.5},
+			center: {x: 0.5, y: 0.5},
 		});
 
 		return entries
@@ -1509,17 +1552,14 @@ export class OptionalPartAssignmentRunner {
 	 * @returns {string | null} Absolute artifact path or null.
 	 */
 	resolveModelArtifact(pipelineModel, faceKey, artifactKey) {
-		const rawPath = artifactKey === 'normalizedComponents'
-			? pipelineModel.getNormalizedComponentsPath(faceKey)
-			: null;
+		const rawPath =
+			artifactKey === 'normalizedComponents' ? pipelineModel.getNormalizedComponentsPath(faceKey) : null;
 
 		if (!rawPath) {
 			return null;
 		}
 
-		return this.path.isAbsolute(rawPath)
-			? rawPath
-			: this.path.resolve(this.rootDir, rawPath);
+		return this.path.isAbsolute(rawPath) ? rawPath : this.path.resolve(this.rootDir, rawPath);
 	}
 
 	/**
@@ -1533,7 +1573,7 @@ export class OptionalPartAssignmentRunner {
 	}
 
 	async writeJson(outputPath, content) {
-		await this.fs.mkdir(this.path.dirname(outputPath), { recursive: true });
+		await this.fs.mkdir(this.path.dirname(outputPath), {recursive: true});
 		await this.fs.writeFile(outputPath, `${JSON.stringify(content, null, 2)}\n`, 'utf8');
 	}
 

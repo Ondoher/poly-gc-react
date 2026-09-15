@@ -71,9 +71,7 @@ export default class GameEngine {
 	getDerivedState(state = this.initialState) {
 		let gameState = state.gameState;
 		let openTileKeys = gameState ? this.rules.getOpenTiles(gameState) : [];
-		let placed = gameState?.placedTiles
-			? new NumberSet([]).union(gameState.placedTiles)
-			: new NumberSet([]);
+		let placed = gameState?.placedTiles ? new NumberSet([]).union(gameState.placedTiles) : new NumberSet([]);
 
 		return {
 			canUndo: this.canUndo(state),

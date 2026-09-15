@@ -1,8 +1,8 @@
-import React from "react";
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { Button, Pill } from "../../../components/index.js";
+import React from 'react';
+import * as THREE from 'three';
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {Button, Pill} from '../../../components/index.js';
 
 const MAX_ACTIVE_GLB_PREVIEWS = 4;
 const IVORY_REVIEW_TINT = new THREE.Color(0xfff8ef);
@@ -17,21 +17,21 @@ export default class AssetReviewPage extends React.Component {
 	}
 
 	componentDidMount() {
-		this.updateListener = this.props.pageView.listen("updated", (pageState) => {
+		this.updateListener = this.props.pageView.listen('updated', (pageState) => {
 			this.setState((state) => ({
 				...pageState,
 				viewerFace: refreshViewerFace(state.viewerFace, pageState.assetReview?.faces),
 			}));
 		});
-		this.props.pageView.load({ quiet: true });
+		this.props.pageView.load({quiet: true});
 	}
 
 	componentWillUnmount() {
-		this.props.pageView.unlisten("updated", this.updateListener);
+		this.props.pageView.unlisten('updated', this.updateListener);
 	}
 
 	render() {
-		const { assetReview, processing, messageDialog } = this.state;
+		const {assetReview, processing, messageDialog} = this.state;
 
 		return (
 			<section className="asset-review-page">
@@ -47,7 +47,7 @@ export default class AssetReviewPage extends React.Component {
 	}
 
 	renderHeader() {
-		const { generationRunning, processing, summary } = this.state;
+		const {generationRunning, processing, summary} = this.state;
 		const hasQueuedWork = Boolean(generationRunning || summary?.buildingCount || summary?.queuedCount);
 
 		return (
@@ -57,18 +57,42 @@ export default class AssetReviewPage extends React.Component {
 					<div className="structure-header-summary asset-review-summary">
 						<Pill>{summary?.faceCount || 0} faces</Pill>
 						<Pill>{summary?.readyCount || 0} ready</Pill>
-						<Pill reportLevel={summary?.buildingCount ? "warning" : "info"}>{summary?.buildingCount || 0} building</Pill>
-						<Pill reportLevel={summary?.queuedCount ? "warning" : "info"}>{summary?.queuedCount || 0} queued</Pill>
-						<Pill reportLevel={summary?.staleCount ? "warning" : "info"}>{summary?.staleCount || 0} stale</Pill>
-						<Pill reportLevel={summary?.failedCount ? "error" : "info"}>{summary?.failedCount || 0} failed</Pill>
-						<Pill reportLevel={summary?.unavailableCount ? "warning" : "info"}>{summary?.unavailableCount || 0} unavailable</Pill>
+						<Pill reportLevel={summary?.buildingCount ? 'warning' : 'info'}>
+							{summary?.buildingCount || 0} building
+						</Pill>
+						<Pill reportLevel={summary?.queuedCount ? 'warning' : 'info'}>
+							{summary?.queuedCount || 0} queued
+						</Pill>
+						<Pill reportLevel={summary?.staleCount ? 'warning' : 'info'}>
+							{summary?.staleCount || 0} stale
+						</Pill>
+						<Pill reportLevel={summary?.failedCount ? 'error' : 'info'}>
+							{summary?.failedCount || 0} failed
+						</Pill>
+						<Pill reportLevel={summary?.unavailableCount ? 'warning' : 'info'}>
+							{summary?.unavailableCount || 0} unavailable
+						</Pill>
 					</div>
 				</div>
 				<div className="asset-review-actions">
-					<Button onClick={() => this.props.pageView.startGeneration()} disabled={processing || generationRunning}>Generate</Button>
-					<Button onClick={() => this.props.pageView.cancelGeneration()} disabled={processing || !hasQueuedWork}>Cancel</Button>
-					<Button onClick={() => this.props.pageView.resetGeneration()} disabled={processing}>Reset</Button>
-					<Button onClick={() => this.props.pageView.load({ force: true })} disabled={processing}>Reload</Button>
+					<Button
+						onClick={() => this.props.pageView.startGeneration()}
+						disabled={processing || generationRunning}
+					>
+						Generate
+					</Button>
+					<Button
+						onClick={() => this.props.pageView.cancelGeneration()}
+						disabled={processing || !hasQueuedWork}
+					>
+						Cancel
+					</Button>
+					<Button onClick={() => this.props.pageView.resetGeneration()} disabled={processing}>
+						Reset
+					</Button>
+					<Button onClick={() => this.props.pageView.load({force: true})} disabled={processing}>
+						Reload
+					</Button>
 				</div>
 			</header>
 		);
@@ -102,7 +126,7 @@ export default class AssetReviewPage extends React.Component {
 			<div className="pipeline-busy-overlay" role="status" aria-live="polite">
 				<div className="pipeline-busy">
 					<div className="pipeline-spinner" />
-					<span>{this.state.processingLabel || "Working..."}</span>
+					<span>{this.state.processingLabel || 'Working...'}</span>
 				</div>
 			</div>
 		);
@@ -114,7 +138,12 @@ export default class AssetReviewPage extends React.Component {
 
 		return (
 			<div className="pipeline-dialog-overlay" role="presentation">
-				<section className="pipeline-dialog asset-review-viewer-dialog" role="dialog" aria-modal="true" aria-labelledby="asset-review-viewer-title">
+				<section
+					className="pipeline-dialog asset-review-viewer-dialog"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="asset-review-viewer-title"
+				>
 					<header>
 						<h2 id="asset-review-viewer-title">{face.faceKey}</h2>
 					</header>
@@ -126,7 +155,9 @@ export default class AssetReviewPage extends React.Component {
 					</div>
 					<footer>
 						<span />
-						<Button variant="primary" onClick={() => this.closeViewer()}>Close</Button>
+						<Button variant="primary" onClick={() => this.closeViewer()}>
+							Close
+						</Button>
 					</footer>
 				</section>
 			</div>
@@ -136,14 +167,21 @@ export default class AssetReviewPage extends React.Component {
 	renderMessageDialog(messageDialog) {
 		return (
 			<div className="pipeline-dialog-overlay" role="presentation">
-				<section className="pipeline-dialog" role="dialog" aria-modal="true" aria-labelledby="asset-review-dialog-title">
+				<section
+					className="pipeline-dialog"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="asset-review-dialog-title"
+				>
 					<header>
 						<h2 id="asset-review-dialog-title">{messageDialog.title}</h2>
 					</header>
 					<p>{messageDialog.message}</p>
 					<footer>
 						<span />
-						<Button variant="primary" onClick={() => this.props.pageView.dismissMessageDialog()}>OK</Button>
+						<Button variant="primary" onClick={() => this.props.pageView.dismissMessageDialog()}>
+							OK
+						</Button>
 					</footer>
 				</section>
 			</div>
@@ -155,17 +193,17 @@ export default class AssetReviewPage extends React.Component {
 			return;
 		}
 
-		this.setState({ viewerFace: face });
+		this.setState({viewerFace: face});
 	}
 
 	closeViewer() {
-		this.setState({ viewerFace: null });
+		this.setState({viewerFace: null});
 	}
 }
 
 class AssetReviewFaceCard extends React.Component {
 	render() {
-		const { face } = this.props;
+		const {face} = this.props;
 		const asset = face.asset || null;
 
 		return (
@@ -196,16 +234,16 @@ class AssetReviewFaceCard extends React.Component {
 	renderSubtitle(face) {
 		if (face.building) {
 			const progress = face.queue?.stageProgress || face.build?.stageProgress;
-			const currentStep = face.queue?.currentStep || face.build?.currentStep || "processing";
+			const currentStep = face.queue?.currentStep || face.build?.currentStep || 'processing';
 			return progress ? `${currentStep} ${progress.percent || 0}%` : currentStep;
 		}
 		if (face.queued) {
-			return "queued";
+			return 'queued';
 		}
 		if (face.unavailable) {
-			return "no generated asset";
+			return 'no generated asset';
 		}
-		return face.recordedFinalHash ? shortHash(face.recordedFinalHash) : "no final hash";
+		return face.recordedFinalHash ? shortHash(face.recordedFinalHash) : 'no final hash';
 	}
 
 	renderPreview(face, asset) {
@@ -218,14 +256,25 @@ class AssetReviewFaceCard extends React.Component {
 						onClick={() => this.props.onOpenViewer(face)}
 						aria-label={`Open ${face.faceKey} 3D asset viewer`}
 					>
-						<img src={this.assetUrl(asset.previewPng, asset.cacheKey)} alt={`${face.faceKey} generated tile preview`} />
+						<img
+							src={this.assetUrl(asset.previewPng, asset.cacheKey)}
+							alt={`${face.faceKey} generated tile preview`}
+						/>
 					</button>
 				</div>
 			);
 		}
 
 		if (asset?.glb) {
-			return <button type="button" className="asset-review-unavailable" onClick={() => this.props.onOpenViewer(face)}>Open 3D preview</button>;
+			return (
+				<button
+					type="button"
+					className="asset-review-unavailable"
+					onClick={() => this.props.onOpenViewer(face)}
+				>
+					Open 3D preview
+				</button>
+			);
 		}
 
 		if (face.building) {
@@ -251,7 +300,8 @@ class AssetReviewFaceCard extends React.Component {
 
 		const percent = Math.max(0, Math.min(100, Number(progress.percent) || 0));
 		const label = progressLabel(progress);
-		const heartbeatKey = progress.timestamp || `${progress.phase}-${progress.current}-${progress.total}-${progress.message}`;
+		const heartbeatKey =
+			progress.timestamp || `${progress.phase}-${progress.current}-${progress.total}-${progress.message}`;
 		return (
 			<div className="asset-review-stage-progress" aria-label={`${label}, ${percent}%`}>
 				<div className="asset-review-stage-progress-label">
@@ -259,7 +309,7 @@ class AssetReviewFaceCard extends React.Component {
 					<span>{percent}%</span>
 				</div>
 				<div className="asset-review-stage-progress-track">
-					<div className="asset-review-stage-progress-fill" style={{ width: `${percent}%` }} />
+					<div className="asset-review-stage-progress-fill" style={{width: `${percent}%`}} />
 				</div>
 				{progress.active ? (
 					<div className="asset-review-stage-activity-track" aria-hidden="true">
@@ -270,16 +320,16 @@ class AssetReviewFaceCard extends React.Component {
 		);
 	}
 
-	assetUrl(path, cacheKey = "") {
+	assetUrl(path, cacheKey = '') {
 		return this.props.assetUrl(path, cacheKey);
 	}
 }
 
-function AssetReviewStatusIcon({ faceKey, state, onRetryFace, retryDisabled = false }) {
+function AssetReviewStatusIcon({faceKey, state, onRetryFace, retryDisabled = false}) {
 	const iconName = iconNameForState(state);
 	const label = labelForState(state);
-	const retryable = state === "stale" || state === "failed";
-	const className = `asset-review-status-icon asset-review-status-icon-${state || "unavailable"}`;
+	const retryable = state === 'stale' || state === 'failed';
+	const className = `asset-review-status-icon asset-review-status-icon-${state || 'unavailable'}`;
 	const icon = <img src={`assets/images/${iconName}.svg`} alt="" aria-hidden="true" />;
 
 	if (retryable) {
@@ -290,7 +340,7 @@ function AssetReviewStatusIcon({ faceKey, state, onRetryFace, retryDisabled = fa
 				onClick={() => onRetryFace?.(faceKey)}
 				disabled={retryDisabled}
 				aria-label={`Queue ${faceKey} for asset generation`}
-				title={retryDisabled ? "Asset generation is already running" : `Queue ${faceKey} for asset generation`}
+				title={retryDisabled ? 'Asset generation is already running' : `Queue ${faceKey} for asset generation`}
 			>
 				{icon}
 			</button>
@@ -298,12 +348,7 @@ function AssetReviewStatusIcon({ faceKey, state, onRetryFace, retryDisabled = fa
 	}
 
 	return (
-		<span
-			className={className}
-			role="img"
-			aria-label={label}
-			title={label}
-		>
+		<span className={className} role="img" aria-label={label} title={label}>
 			{icon}
 		</span>
 	);
@@ -329,7 +374,7 @@ export class AssetGlbPreview extends React.Component {
 	componentDidUpdate(previousProps) {
 		if (previousProps.glbUrl !== this.props.glbUrl) {
 			this.stopScene();
-			this.setState({ loading: true, loadFailed: false }, () => this.startSceneWhenVisible());
+			this.setState({loading: true, loadFailed: false}, () => this.startSceneWhenVisible());
 		}
 	}
 
@@ -344,7 +389,11 @@ export class AssetGlbPreview extends React.Component {
 		const waitingForSlot = this.state.inView && !this.state.hasPreviewSlot && !this.state.loadFailed;
 
 		return (
-			<div className="asset-review-preview" ref={this.containerRef} aria-label={`${this.props.label} final tile asset`}>
+			<div
+				className="asset-review-preview"
+				ref={this.containerRef}
+				aria-label={`${this.props.label} final tile asset`}
+			>
 				{!this.state.inView ? <div className="asset-review-preview-pending">Preview pending</div> : null}
 				{waitingForSlot ? <div className="asset-review-preview-pending">Preview queued</div> : null}
 				{this.state.inView && this.state.hasPreviewSlot && this.state.loading && !this.state.loadFailed ? (
@@ -353,34 +402,39 @@ export class AssetGlbPreview extends React.Component {
 						<span>Loading preview</span>
 					</div>
 				) : null}
-				{this.state.loadFailed ? <div className="asset-review-preview-fallback">Preview unavailable</div> : null}
+				{this.state.loadFailed ? (
+					<div className="asset-review-preview-fallback">Preview unavailable</div>
+				) : null}
 			</div>
 		);
 	}
 
 	observeVisibility() {
-		if (!this.containerRef.current || typeof IntersectionObserver === "undefined") {
-			this.setState({ inView: true }, () => this.claimPreviewSlot());
+		if (!this.containerRef.current || typeof IntersectionObserver === 'undefined') {
+			this.setState({inView: true}, () => this.claimPreviewSlot());
 			return;
 		}
 
-		this.visibilityObserver = new IntersectionObserver((entries) => {
-			const isVisible = entries.some((entry) => entry.isIntersecting);
-			if (isVisible === this.state.inView) {
-				return;
-			}
+		this.visibilityObserver = new IntersectionObserver(
+			(entries) => {
+				const isVisible = entries.some((entry) => entry.isIntersecting);
+				if (isVisible === this.state.inView) {
+					return;
+				}
 
-			if (isVisible) {
-				this.setState({ inView: true }, () => this.claimPreviewSlot());
-			} else {
-				this.stopScene();
-				this.releasePreviewSlot();
-				this.setState({ inView: false, hasPreviewSlot: false, loading: true, loadFailed: false });
-			}
-		}, {
-			rootMargin: "40px 0px",
-			threshold: 0.01,
-		});
+				if (isVisible) {
+					this.setState({inView: true}, () => this.claimPreviewSlot());
+				} else {
+					this.stopScene();
+					this.releasePreviewSlot();
+					this.setState({inView: false, hasPreviewSlot: false, loading: true, loadFailed: false});
+				}
+			},
+			{
+				rootMargin: '40px 0px',
+				threshold: 0.01,
+			},
+		);
 		this.visibilityObserver.observe(this.containerRef.current);
 	}
 
@@ -400,7 +454,7 @@ export class AssetGlbPreview extends React.Component {
 			return;
 		}
 
-		this.setState({ hasPreviewSlot: true }, () => this.startSceneWhenVisible());
+		this.setState({hasPreviewSlot: true}, () => this.startSceneWhenVisible());
 	}
 
 	canUsePreviewSlot() {
@@ -429,9 +483,9 @@ export class AssetGlbPreview extends React.Component {
 		const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
 		camera.position.set(1.6, 1.25, 1.8);
 
-		const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+		const renderer = new THREE.WebGLRenderer({antialias: true, alpha: false});
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-		if ("outputColorSpace" in renderer && THREE.SRGBColorSpace) {
+		if ('outputColorSpace' in renderer && THREE.SRGBColorSpace) {
 			renderer.outputColorSpace = THREE.SRGBColorSpace;
 		}
 		const contextLostListener = (event) => {
@@ -440,11 +494,11 @@ export class AssetGlbPreview extends React.Component {
 				return;
 			}
 			this.stopScene();
-			this.setState({ loading: true, loadFailed: false }, () => {
+			this.setState({loading: true, loadFailed: false}, () => {
 				window.setTimeout(() => this.startSceneWhenVisible(), 250);
 			});
 		};
-		renderer.domElement.addEventListener("webglcontextlost", contextLostListener, false);
+		renderer.domElement.addEventListener('webglcontextlost', contextLostListener, false);
 		container.appendChild(renderer.domElement);
 
 		const controls = new OrbitControls(camera, renderer.domElement);
@@ -495,13 +549,13 @@ export class AssetGlbPreview extends React.Component {
 				applyIvoryReviewMaterial(gltf.scene);
 				scene.add(gltf.scene);
 				fitCameraToObject(camera, controls, gltf.scene);
-				this.setState({ loading: false, loadFailed: false });
+				this.setState({loading: false, loadFailed: false});
 				this.animate();
 			},
 			undefined,
 			() => {
 				if (this.mounted && this.sceneState && this.loadingUrl === loadingUrl) {
-					this.setState({ loading: false, loadFailed: true });
+					this.setState({loading: false, loadFailed: true});
 				}
 			},
 		);
@@ -545,11 +599,14 @@ export class AssetGlbPreview extends React.Component {
 		if (this.sceneState.model) {
 			disposeObject(this.sceneState.model);
 		}
-		this.sceneState.renderer.domElement.removeEventListener("webglcontextlost", this.sceneState.contextLostListener);
+		this.sceneState.renderer.domElement.removeEventListener(
+			'webglcontextlost',
+			this.sceneState.contextLostListener,
+		);
 		this.sceneState.renderer.dispose();
 		this.sceneState.renderer.domElement.remove();
 		this.sceneState = null;
-		this.loadingUrl = "";
+		this.loadingUrl = '';
 	}
 }
 
@@ -593,7 +650,7 @@ function fitCameraToObject(camera, controls, object) {
 	const size = box.getSize(new THREE.Vector3());
 	const center = box.getCenter(new THREE.Vector3());
 	const radius = Math.max(size.length() * 0.5, 0.4);
-	const distance = radius / Math.sin((camera.fov * Math.PI / 180) * 0.5);
+	const distance = radius / Math.sin(((camera.fov * Math.PI) / 180) * 0.5);
 
 	object.position.sub(center);
 	controls.target.set(0, 0, 0);
@@ -618,10 +675,10 @@ function applyIvoryReviewMaterial(object) {
 			}
 
 			material.color.multiply(IVORY_REVIEW_TINT);
-			if ("roughness" in material) {
+			if ('roughness' in material) {
 				material.roughness = Math.min(material.roughness ?? 1, IVORY_REVIEW_ROUGHNESS);
 			}
-			if ("metalness" in material) {
+			if ('metalness' in material) {
 				material.metalness = 0;
 			}
 			material.userData = {
@@ -634,10 +691,10 @@ function applyIvoryReviewMaterial(object) {
 }
 
 function shouldTintIvoryPreviewMesh(mesh) {
-	const meshName = String(mesh.name || "").toLowerCase();
+	const meshName = String(mesh.name || '').toLowerCase();
 	const materialNames = materialList(mesh.material)
-		.map((material) => String(material?.name || "").toLowerCase())
-		.join(" ");
+		.map((material) => String(material?.name || '').toLowerCase())
+		.join(' ');
 	const evidence = `${meshName} ${materialNames}`;
 
 	if (/inlay|bamboo|wood|support|insert/.test(evidence)) {
@@ -689,45 +746,45 @@ function disposeMaterial(material) {
 }
 
 function labelForState(state) {
-	if (state === "ready") {
-		return "Ready";
+	if (state === 'ready') {
+		return 'Ready';
 	}
-	if (state === "building") {
-		return "Processing";
+	if (state === 'building') {
+		return 'Processing';
 	}
-	if (state === "queued") {
-		return "Queued";
+	if (state === 'queued') {
+		return 'Queued';
 	}
-	if (state === "stale") {
-		return "Stale";
+	if (state === 'stale') {
+		return 'Stale';
 	}
-	if (state === "failed") {
-		return "Failed";
+	if (state === 'failed') {
+		return 'Failed';
 	}
-	return "Not available";
+	return 'Not available';
 }
 
 function iconNameForState(state) {
-	if (state === "ready") {
-		return "circle-check";
+	if (state === 'ready') {
+		return 'circle-check';
 	}
-	if (state === "building") {
-		return "loader-2";
+	if (state === 'building') {
+		return 'loader-2';
 	}
-	if (state === "queued") {
-		return "clock";
+	if (state === 'queued') {
+		return 'clock';
 	}
-	if (state === "stale") {
-		return "refresh-dot";
+	if (state === 'stale') {
+		return 'refresh-dot';
 	}
-	if (state === "failed") {
-		return "alert-circle";
+	if (state === 'failed') {
+		return 'alert-circle';
 	}
-	return "circle-off";
+	return 'circle-off';
 }
 
 function progressLabel(progress = {}) {
-	const phase = progress.phase ? cutterPhaseLabel(progress.phase) : "Working";
+	const phase = progress.phase ? cutterPhaseLabel(progress.phase) : 'Working';
 	if (progress.total > 0) {
 		return `${phase} ${progress.current || 0}/${progress.total}`;
 	}
@@ -743,24 +800,24 @@ function refreshViewerFace(viewerFace, faces) {
 }
 
 function cutterPhaseLabel(phase) {
-	if (phase === "parse") {
-		return "Parsing SVG";
+	if (phase === 'parse') {
+		return 'Parsing SVG';
 	}
-	if (phase === "extrude") {
-		return "Extruding paths";
+	if (phase === 'extrude') {
+		return 'Extruding paths';
 	}
-	if (phase === "normalize") {
-		return "Normalizing solids";
+	if (phase === 'normalize') {
+		return 'Normalizing solids';
 	}
-	if (phase === "union") {
-		return "Unioning solids";
+	if (phase === 'union') {
+		return 'Unioning solids';
 	}
-	if (phase === "export") {
-		return "Exporting GLB";
+	if (phase === 'export') {
+		return 'Exporting GLB';
 	}
-	return "Preparing cutter";
+	return 'Preparing cutter';
 }
 
 function shortHash(hash) {
-	return hash ? hash.slice(0, 10) : "";
+	return hash ? hash.slice(0, 10) : '';
 }

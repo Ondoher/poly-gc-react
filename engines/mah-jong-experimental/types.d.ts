@@ -80,12 +80,7 @@ interface MjDerivedState {
 /**
  * Supported generator difficulty preset ids.
  */
-type DifficultyLevel =
-	| 'easy'
-	| 'standard'
-	| 'challenging'
-	| 'expert'
-	| 'nightmare';
+type DifficultyLevel = 'easy' | 'standard' | 'challenging' | 'expert' | 'nightmare';
 
 /**
  * Inclusive numeric range used by rule settings.
@@ -348,8 +343,7 @@ interface RankedTileCandidate extends AnalyzerFactor {
 /**
  * Backward-compatible name for the older tile-score record.
  */
-interface TileScore extends RankedTileCandidate {
-}
+interface TileScore extends RankedTileCandidate {}
 
 /**
  * A difficulty-shaped slice of ranked candidate values.
@@ -452,9 +446,7 @@ type SoftLink = OpenTilesSoftLink | GroupedSoftLink;
 /**
  * Initializer for tile soft-link records before the registry assigns an id.
  */
-type SoftLinkInit =
-	| Omit<OpenTilesSoftLink, 'id'>
-	| Omit<GroupedSoftLink, 'id'>;
+type SoftLinkInit = Omit<OpenTilesSoftLink, 'id'> | Omit<GroupedSoftLink, 'id'>;
 
 /**
  * Constructor options for the cross-domain suspension orchestrator.

@@ -128,7 +128,7 @@ export default class Tiles {
 	selectGeneratedPair() {
 		let tile1 = this.selectTile();
 		let tile2 = this.selectTile([tile1]);
-		let pair = new GeneratedPair({ tile1, tile2 });
+		let pair = new GeneratedPair({tile1, tile2});
 
 		return this.recordSoftLinks(pair);
 	}
@@ -142,9 +142,8 @@ export default class Tiles {
 	getOpenSoftLinkTiles(options = {}) {
 		let removeTiles = options.removeTiles ?? [];
 		let ignoreTiles = new Set(options.ignoreTiles ?? []);
-		let analyzer = removeTiles.length > 0
-			? this.tilePicker.analyzer.withRemovedTiles(removeTiles)
-			: this.tilePicker.analyzer;
+		let analyzer =
+			removeTiles.length > 0 ? this.tilePicker.analyzer.withRemovedTiles(removeTiles) : this.tilePicker.analyzer;
 
 		return analyzer.getOpenTileKeys().filter((tileKey) => {
 			return !ignoreTiles.has(tileKey);

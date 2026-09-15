@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 const DEFAULT_BASE_PATH = '/pipeline';
 
@@ -41,11 +41,12 @@ export default class UrlService extends Service {
 		const pathname = window.location.pathname || '';
 		const normalizedBase = this.normalizePath(this.basePath);
 		const normalizedPath = this.normalizePath(pathname);
-		const relativePath = normalizedPath === normalizedBase
-			? ''
-			: normalizedPath.startsWith(`${normalizedBase}/`)
-				? normalizedPath.slice(normalizedBase.length + 1)
-				: normalizedPath.replace(/^\/+/, '');
+		const relativePath =
+			normalizedPath === normalizedBase
+				? ''
+				: normalizedPath.startsWith(`${normalizedBase}/`)
+					? normalizedPath.slice(normalizedBase.length + 1)
+					: normalizedPath.replace(/^\/+/, '');
 
 		return relativePath
 			.split('/')
@@ -60,9 +61,7 @@ export default class UrlService extends Service {
 	pathForSlug(slug = '') {
 		const safeSlug = this.cleanSlug(slug);
 
-		return safeSlug
-			? `${this.basePath}/${encodeURIComponent(safeSlug)}`
-			: `${this.basePath}/`;
+		return safeSlug ? `${this.basePath}/${encodeURIComponent(safeSlug)}` : `${this.basePath}/`;
 	}
 
 	pushPageSlug(slug) {

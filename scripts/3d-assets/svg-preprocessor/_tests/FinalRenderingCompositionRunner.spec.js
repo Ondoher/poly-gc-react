@@ -1,5 +1,5 @@
 import path from 'path';
-import { BASE_OUTPUT, BASE_REFERENCE } from '../PipelineModel.js';
+import {BASE_OUTPUT, BASE_REFERENCE} from '../PipelineModel.js';
 import {
 	FinalRenderingCompositionRunner,
 	buildAddOptionalSvg,
@@ -8,8 +8,8 @@ import {
 	buildLayoutStep,
 } from '../FinalRenderingCompositionRunner.js';
 
-describe('FinalRenderingCompositionRunner', function() {
-	it('composes optional source and omitted render decisions', function() {
+describe('FinalRenderingCompositionRunner', function () {
+	it('composes optional source and omitted render decisions', function () {
 		const artifact = buildFinalRenderingCompositionArtifact({
 			tilesetId: 'wiki',
 			faceKey: 'flower-1',
@@ -34,16 +34,14 @@ describe('FinalRenderingCompositionRunner', function() {
 				faceKey: 'flower-1',
 				family: 'flower',
 				optionalParts: {
-					label: optionalPart('label', { sourceState: 'candidate-found' }),
-					glyph: optionalPart('glyph', { contentKind: 'glyph', role: 'flower-character' }),
-					badge: optionalPart('badge', { sourceState: 'source-absent' }),
+					label: optionalPart('label', {sourceState: 'candidate-found'}),
+					glyph: optionalPart('glyph', {contentKind: 'glyph', role: 'flower-character'}),
+					badge: optionalPart('badge', {sourceState: 'source-absent'}),
 				},
 			}),
 			semanticMapPath: 'semantic-map/flower-1.json',
 			semanticMap: semanticMap({
-				assignments: [
-					assignment('label', { sourceComponentIds: ['src.flower-1.0001'] }),
-				],
+				assignments: [assignment('label', {sourceComponentIds: ['src.flower-1.0001']})],
 				bindings: {
 					'src.flower-1.0001': {
 						partId: 'label',
@@ -54,31 +52,39 @@ describe('FinalRenderingCompositionRunner', function() {
 		});
 
 		expect(artifact.status).toBe('ready');
-		expect(artifact.steps.addOptional.parts.label).toEqual(jasmine.objectContaining({
-			renderKind: 'source',
-			outputPresent: true,
-			sourceComponentIds: ['src.flower-1.0001'],
-		}));
-		expect(artifact.steps.addOptional.parts.glyph).toEqual(jasmine.objectContaining({
-			renderKind: 'omit',
-			outputPresent: false,
-			sourceComponentIds: [],
-		}));
-		expect(artifact.steps.addOptional.parts.badge).toEqual(jasmine.objectContaining({
-			renderKind: 'omit',
-			outputPresent: true,
-			sourceComponentIds: [],
-		}));
-		expect(artifact.summary).toEqual(jasmine.objectContaining({
-			optionalPartCount: 3,
-			sourceRenderCount: 1,
-			generatedRenderCount: 0,
-			omittedRenderCount: 2,
-			unresolvedRenderCount: 0,
-		}));
+		expect(artifact.steps.addOptional.parts.label).toEqual(
+			jasmine.objectContaining({
+				renderKind: 'source',
+				outputPresent: true,
+				sourceComponentIds: ['src.flower-1.0001'],
+			}),
+		);
+		expect(artifact.steps.addOptional.parts.glyph).toEqual(
+			jasmine.objectContaining({
+				renderKind: 'omit',
+				outputPresent: false,
+				sourceComponentIds: [],
+			}),
+		);
+		expect(artifact.steps.addOptional.parts.badge).toEqual(
+			jasmine.objectContaining({
+				renderKind: 'omit',
+				outputPresent: true,
+				sourceComponentIds: [],
+			}),
+		);
+		expect(artifact.summary).toEqual(
+			jasmine.objectContaining({
+				optionalPartCount: 3,
+				sourceRenderCount: 1,
+				generatedRenderCount: 0,
+				omittedRenderCount: 2,
+				unresolvedRenderCount: 0,
+			}),
+		);
 	});
 
-	it('applies tileset face render options after suit defaults', function() {
+	it('applies tileset face render options after suit defaults', function () {
 		const artifact = buildFinalRenderingCompositionArtifact({
 			tilesetId: 'wiki',
 			faceKey: 'flower-1',
@@ -124,9 +130,7 @@ describe('FinalRenderingCompositionRunner', function() {
 			}),
 			semanticMapPath: 'semantic-map/flower-1.json',
 			semanticMap: semanticMap({
-				assignments: [
-					assignment('glyph', { sourceComponentIds: ['src.flower-1.glyph'] }),
-				],
+				assignments: [assignment('glyph', {sourceComponentIds: ['src.flower-1.glyph']})],
 				bindings: {
 					'src.flower-1.glyph': {
 						partId: 'glyph',
@@ -137,14 +141,16 @@ describe('FinalRenderingCompositionRunner', function() {
 		});
 
 		expect(artifact.inputs.outputOptions.source).toBe('face');
-		expect(artifact.steps.addOptional.parts.glyph).toEqual(jasmine.objectContaining({
-			renderKind: 'omit',
-			outputPresent: false,
-			sourceComponentIds: ['src.flower-1.glyph'],
-		}));
+		expect(artifact.steps.addOptional.parts.glyph).toEqual(
+			jasmine.objectContaining({
+				renderKind: 'omit',
+				outputPresent: false,
+				sourceComponentIds: ['src.flower-1.glyph'],
+			}),
+		);
 	});
 
-	it('applies tileset suit render options after older optional assignment options', function() {
+	it('applies tileset suit render options after older optional assignment options', function () {
 		const artifact = buildFinalRenderingCompositionArtifact({
 			tilesetId: 'wiki',
 			faceKey: 'flower-2',
@@ -190,9 +196,7 @@ describe('FinalRenderingCompositionRunner', function() {
 			}),
 			semanticMapPath: 'semantic-map/flower-2.json',
 			semanticMap: semanticMap({
-				assignments: [
-					assignment('glyph', { sourceComponentIds: ['src.flower-2.glyph'] }),
-				],
+				assignments: [assignment('glyph', {sourceComponentIds: ['src.flower-2.glyph']})],
 				bindings: {
 					'src.flower-2.glyph': {
 						partId: 'glyph',
@@ -202,14 +206,16 @@ describe('FinalRenderingCompositionRunner', function() {
 			}),
 		});
 
-		expect(artifact.steps.addOptional.parts.glyph).toEqual(jasmine.objectContaining({
-			renderKind: 'omit',
-			outputPresent: false,
-			sourceComponentIds: ['src.flower-2.glyph'],
-		}));
+		expect(artifact.steps.addOptional.parts.glyph).toEqual(
+			jasmine.objectContaining({
+				renderKind: 'omit',
+				outputPresent: false,
+				sourceComponentIds: ['src.flower-2.glyph'],
+			}),
+		);
 	});
 
-	it('renders source optional reservations when no semantic part assignment exists', function() {
+	it('renders source optional reservations when no semantic part assignment exists', function () {
 		const map = semanticMap({
 			assignments: [
 				assignment('mainArtwork', {
@@ -323,24 +329,30 @@ describe('FinalRenderingCompositionRunner', function() {
 			}),
 		});
 
-		expect(artifact.steps.addOptional.parts.label).toEqual(jasmine.objectContaining({
-			renderKind: 'source',
-			sourceComponentIds: ['src.dragon-r.label'],
-		}));
-		expect(layout.step.parts.label).toEqual(jasmine.objectContaining({
-			renderKind: 'source',
-			sourceComponentIds: ['src.dragon-r.label'],
-			source: 'alignment-map',
-		}));
+		expect(artifact.steps.addOptional.parts.label).toEqual(
+			jasmine.objectContaining({
+				renderKind: 'source',
+				sourceComponentIds: ['src.dragon-r.label'],
+			}),
+		);
+		expect(layout.step.parts.label).toEqual(
+			jasmine.objectContaining({
+				renderKind: 'source',
+				sourceComponentIds: ['src.dragon-r.label'],
+				source: 'alignment-map',
+			}),
+		);
 		expect(layout.svg).toContain('src.dragon-r.label');
-		expect(color.step.parts.label).toEqual(jasmine.objectContaining({
-			renderKind: 'source',
-			sourceComponentIds: ['src.dragon-r.label'],
-		}));
+		expect(color.step.parts.label).toEqual(
+			jasmine.objectContaining({
+				renderKind: 'source',
+				sourceComponentIds: ['src.dragon-r.label'],
+			}),
+		);
 		expect(color.svg).toContain('src.dragon-r.label');
 	});
 
-	it('forces flower and season labels to house font while glyphs stay source-first', function() {
+	it('forces flower and season labels to house font while glyphs stay source-first', function () {
 		const map = semanticMap({
 			assignments: [
 				assignment('label', {
@@ -391,8 +403,12 @@ describe('FinalRenderingCompositionRunner', function() {
 				faceKey: 'flower-1',
 				family: 'flower',
 				optionalParts: {
-					label: optionalPart('label', { sourceState: 'candidate-found', role: 'flower-label' }),
-					glyph: optionalPart('glyph', { sourceState: 'candidate-found', contentKind: 'glyph', role: 'flower-character' }),
+					label: optionalPart('label', {sourceState: 'candidate-found', role: 'flower-label'}),
+					glyph: optionalPart('glyph', {
+						sourceState: 'candidate-found',
+						contentKind: 'glyph',
+						role: 'flower-character',
+					}),
 				},
 			}),
 			semanticMapPath: 'semantic-map/flower-1.json',
@@ -440,7 +456,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(layout.svg).toContain('src.flower-1.glyph');
 	});
 
-	it('renders ordinary suit labels as generated output even when a source label was assigned', function() {
+	it('renders ordinary suit labels as generated output even when a source label was assigned', function () {
 		const map = semanticMap({
 			assignments: [
 				assignment('label', {
@@ -479,7 +495,7 @@ describe('FinalRenderingCompositionRunner', function() {
 				family: 'bamboo',
 				value: 3,
 				optionalParts: {
-					label: optionalPart('label', { sourceState: 'candidate-found', role: 'suit-label' }),
+					label: optionalPart('label', {sourceState: 'candidate-found', role: 'suit-label'}),
 				},
 			}),
 			semanticMapPath: 'semantic-map/b-3.json',
@@ -488,9 +504,7 @@ describe('FinalRenderingCompositionRunner', function() {
 
 		const layout = buildLayoutStep({
 			artifact,
-			normalizedComponents: normalizedArtifact('b-3', [
-				normalizedComponent('src.b-3.label', 'M0 0h5v5z'),
-			]),
+			normalizedComponents: normalizedArtifact('b-3', [normalizedComponent('src.b-3.label', 'M0 0h5v5z')]),
 			alignmentMap: alignmentMap([
 				alignmentCandidate('align.label', {
 					matrix: [1, 0, 0, 1, 1, 1],
@@ -514,7 +528,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(layout.svg).not.toContain('src.b-3.label');
 	});
 
-	it('generates a source-preferred glyph from reference text when the source glyph is absent', function() {
+	it('generates a source-preferred glyph from reference text when the source glyph is absent', function () {
 		const map = semanticMap();
 		const artifact = buildFinalRenderingCompositionArtifact({
 			tilesetId: 'wiki',
@@ -573,7 +587,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(layout.svg).toContain('data-generated-text="春"');
 	});
 
-	it('marks enabled optional parts unresolved when no source or generated decision exists', function() {
+	it('marks enabled optional parts unresolved when no source or generated decision exists', function () {
 		const artifact = buildFinalRenderingCompositionArtifact({
 			tilesetId: 'wiki',
 			faceKey: 'b-1',
@@ -584,7 +598,7 @@ describe('FinalRenderingCompositionRunner', function() {
 				faceKey: 'b-1',
 				family: 'bamboo',
 				optionalParts: {
-					label: optionalPart('label', { sourceState: 'needs-review' }),
+					label: optionalPart('label', {sourceState: 'needs-review'}),
 				},
 			}),
 			semanticMapPath: 'semantic-map/b-1.json',
@@ -594,13 +608,15 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(artifact.status).toBe('needs-review');
 		expect(artifact.steps.addOptional.parts.label.outputPresent).toBe(true);
 		expect(artifact.steps.addOptional.parts.label.renderKind).toBe('unresolved');
-		expect(artifact.diagnostics).toEqual([jasmine.objectContaining({
-			code: 'unresolved-optional-render-part',
-			partId: 'label',
-		})]);
+		expect(artifact.diagnostics).toEqual([
+			jasmine.objectContaining({
+				code: 'unresolved-optional-render-part',
+				partId: 'label',
+			}),
+		]);
 	});
 
-	it('renders addOptional step SVG with source geometry and generated decision markers', function() {
+	it('renders addOptional step SVG with source geometry and generated decision markers', function () {
 		const artifact = buildFinalRenderingCompositionArtifact({
 			tilesetId: 'wiki',
 			faceKey: 'flower-1',
@@ -611,15 +627,17 @@ describe('FinalRenderingCompositionRunner', function() {
 				faceKey: 'flower-1',
 				family: 'flower',
 				optionalParts: {
-					label: optionalPart('label', { sourceState: 'candidate-found' }),
-					glyph: optionalPart('glyph', { contentKind: 'glyph', role: 'flower-character', sourceState: 'generated' }),
+					label: optionalPart('label', {sourceState: 'candidate-found'}),
+					glyph: optionalPart('glyph', {
+						contentKind: 'glyph',
+						role: 'flower-character',
+						sourceState: 'generated',
+					}),
 				},
 			}),
 			semanticMapPath: 'semantic-map/flower-1.json',
 			semanticMap: semanticMap({
-				assignments: [
-					assignment('label', { sourceComponentIds: ['src.flower-1.0001'] }),
-				],
+				assignments: [assignment('label', {sourceComponentIds: ['src.flower-1.0001']})],
 				bindings: {
 					'src.flower-1.0001': {
 						partId: 'label',
@@ -634,7 +652,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		const svg = buildAddOptionalSvg({
 			artifact,
 			normalizedComponents: normalizedArtifact('flower-1', [
-				normalizedComponent('src.flower-1.0001', 'M0 0L10 0L10 10Z', { fill: '#bf3718' }),
+				normalizedComponent('src.flower-1.0001', 'M0 0L10 0L10 10Z', {fill: '#bf3718'}),
 			]),
 		});
 
@@ -646,7 +664,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(svg).toContain('data-render-part-id="glyph" data-render-kind="generated"');
 	});
 
-	it('lays out accepted source assignments with alignment transforms', function() {
+	it('lays out accepted source assignments with alignment transforms', function () {
 		const dotAssignment = assignment('dot.1', {
 			assignmentId: 'assign.d-8.dot.1',
 			contentKind: 'artwork',
@@ -665,7 +683,7 @@ describe('FinalRenderingCompositionRunner', function() {
 				family: 'dot',
 				value: 8,
 				optionalParts: {
-					label: optionalPart('label', { sourceState: 'source-absent' }),
+					label: optionalPart('label', {sourceState: 'source-absent'}),
 				},
 			}),
 			semanticMapPath: 'semantic-map/d-8.json',
@@ -725,22 +743,26 @@ describe('FinalRenderingCompositionRunner', function() {
 
 		expect(result.step.status).toBe('ready');
 		expect(result.step.viewBox).toBe('0 0 94 136');
-		expect(result.step.parts['dot.1']).toEqual(jasmine.objectContaining({
-			status: 'ready',
-			renderKind: 'source',
-			alignmentCandidateId: 'align.d-8.01.0001',
-		}));
+		expect(result.step.parts['dot.1']).toEqual(
+			jasmine.objectContaining({
+				status: 'ready',
+				renderKind: 'source',
+				alignmentCandidateId: 'align.d-8.01.0001',
+			}),
+		);
 		expect(result.svg).toContain('viewBox="0 0 94 136"');
 		expect(result.svg).toContain('data-render-part-id="dot.1"');
 		expect(result.svg).toContain('transform="matrix(0.5 0 0 0.5 22.5 33.5)"');
 		expect(result.svg).toContain('data-render-part-id="label"');
 		expect(result.svg).toContain('data-generated-text="8"');
-		const labelTransform = result.svg.match(/data-render-part-id="label"[^>]+transform="matrix\(([^ ]+) 0 0 ([^ ]+) /);
+		const labelTransform = result.svg.match(
+			/data-render-part-id="label"[^>]+transform="matrix\(([^ ]+) 0 0 ([^ ]+) /,
+		);
 		expect(labelTransform).not.toBeNull();
 		expect(Number(labelTransform[1])).not.toBe(Number(labelTransform[2]));
 	});
 
-	it('bakes related negative-space components into laid-out source paths', function() {
+	it('bakes related negative-space components into laid-out source paths', function () {
 		const dotAssignment = assignment('dot.1', {
 			assignmentId: 'assign.d-8.dot.1',
 			contentKind: 'artwork',
@@ -773,13 +795,13 @@ describe('FinalRenderingCompositionRunner', function() {
 				normalizedComponent('src.d-8.0019', 'M0,0 H20 V20 H0 Z', {
 					fill: '#2a3b92',
 					bounds: box(0, 0, 20, 20),
-					center: { x: 10, y: 10 },
+					center: {x: 10, y: 10},
 					area: 400,
 				}),
 				normalizedComponent('src.d-8.cutout', 'M5,5 H15 V15 H5 Z', {
 					fill: '#ffffff',
 					bounds: box(5, 5, 15, 15),
-					center: { x: 10, y: 10 },
+					center: {x: 10, y: 10},
 					area: 100,
 					negativeSpaceCandidate: true,
 				}),
@@ -803,7 +825,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(result.svg).toContain('M15,15');
 	});
 
-	it('uses per-component alignment candidates for grouped source assignments', function() {
+	it('uses per-component alignment candidates for grouped source assignments', function () {
 		const glyphAssignment = assignment('glyph', {
 			assignmentId: 'assign.c-3.glyph',
 			contentKind: 'glyph',
@@ -835,8 +857,8 @@ describe('FinalRenderingCompositionRunner', function() {
 		const result = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('c-3', [
-				normalizedComponent('src.c-3.upper', 'M0 0L10 0L10 10Z', { fill: '#2a3b92' }),
-				normalizedComponent('src.c-3.lower', 'M0 20L10 20L10 30Z', { fill: '#2a3b92' }),
+				normalizedComponent('src.c-3.upper', 'M0 0L10 0L10 10Z', {fill: '#2a3b92'}),
+				normalizedComponent('src.c-3.lower', 'M0 20L10 20L10 30Z', {fill: '#2a3b92'}),
 			]),
 			alignmentMap: alignmentMap([
 				alignmentCandidate('align.c-3.02.0001', {
@@ -861,7 +883,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(result.svg).toContain('transform="matrix(1 0 0 1 40 0)"');
 	});
 
-	it('lays out accepted freeform artwork assignments with alignment transforms', function() {
+	it('lays out accepted freeform artwork assignments with alignment transforms', function () {
 		const artworkAssignment = assignment('mainArtwork', {
 			assignmentId: 'assign.b-1.mainArtwork',
 			contentKind: 'artwork',
@@ -882,7 +904,7 @@ describe('FinalRenderingCompositionRunner', function() {
 				family: 'bamboo',
 				value: 1,
 				optionalParts: {
-					label: optionalPart('label', { sourceState: 'source-absent' }),
+					label: optionalPart('label', {sourceState: 'source-absent'}),
 				},
 			}),
 			semanticMapPath: 'semantic-map/b-1.json',
@@ -908,8 +930,8 @@ describe('FinalRenderingCompositionRunner', function() {
 		const result = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('b-1', [
-				normalizedComponent('src.b-1.0009', 'M0 0L10 0L10 10Z', { fill: '#2fc906' }),
-				normalizedComponent('src.b-1.0010', 'M12 0L20 0L20 10Z', { fill: '#0505d1' }),
+				normalizedComponent('src.b-1.0009', 'M0 0L10 0L10 10Z', {fill: '#2fc906'}),
+				normalizedComponent('src.b-1.0010', 'M12 0L20 0L20 10Z', {fill: '#0505d1'}),
 			]),
 			alignmentMap: alignmentMap([
 				alignmentCandidate('align.b-1.01.0001', {
@@ -932,18 +954,20 @@ describe('FinalRenderingCompositionRunner', function() {
 		});
 
 		expect(result.step.status).toBe('ready');
-		expect(result.step.parts.mainArtwork).toEqual(jasmine.objectContaining({
-			status: 'ready',
-			renderKind: 'source',
-			sourceComponentIds: ['src.b-1.0009', 'src.b-1.0010'],
-			alignmentCandidateId: 'align.b-1.01.0001',
-		}));
+		expect(result.step.parts.mainArtwork).toEqual(
+			jasmine.objectContaining({
+				status: 'ready',
+				renderKind: 'source',
+				sourceComponentIds: ['src.b-1.0009', 'src.b-1.0010'],
+				alignmentCandidateId: 'align.b-1.01.0001',
+			}),
+		);
 		expect(result.svg).toContain('data-render-part-id="mainArtwork"');
 		expect(result.svg).toContain('data-component-id="src.b-1.0009"');
 		expect(result.svg).toContain('data-component-id="src.b-1.0010"');
 	});
 
-	it('mirrors only freeform artwork when the face render option is enabled', function() {
+	it('mirrors only freeform artwork when the face render option is enabled', function () {
 		const artworkAssignment = assignment('mainArtwork', {
 			assignmentId: 'assign.b-1.mainArtwork',
 			contentKind: 'artwork',
@@ -983,7 +1007,7 @@ describe('FinalRenderingCompositionRunner', function() {
 				family: 'bamboo',
 				value: 1,
 				optionalParts: {
-					label: optionalPart('label', { sourceState: 'candidate-found' }),
+					label: optionalPart('label', {sourceState: 'candidate-found'}),
 				},
 			}),
 			semanticMapPath: 'semantic-map/b-1.json',
@@ -1003,8 +1027,8 @@ describe('FinalRenderingCompositionRunner', function() {
 		const result = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('b-1', [
-				normalizedComponent('src.b-1.0009', 'M0 0L20 0L20 10Z', { fill: '#2fc906', bounds: box(0, 0, 20, 10) }),
-				normalizedComponent('src.b-1.label', 'M0 0L5 0L5 8Z', { fill: '#111111', bounds: box(0, 0, 5, 8) }),
+				normalizedComponent('src.b-1.0009', 'M0 0L20 0L20 10Z', {fill: '#2fc906', bounds: box(0, 0, 20, 10)}),
+				normalizedComponent('src.b-1.label', 'M0 0L5 0L5 8Z', {fill: '#111111', bounds: box(0, 0, 5, 8)}),
 			]),
 			alignmentMap: alignmentMap([
 				alignmentCandidate('align.b-1.01.0001', {
@@ -1020,10 +1044,12 @@ describe('FinalRenderingCompositionRunner', function() {
 			referenceStructure: referenceStructure('b-1', {}),
 		});
 
-		expect(result.step.parts.mainArtwork.transform).toEqual(jasmine.objectContaining({
-			matrix: [-0.6, 0, 0, 0.6, 45, 8],
-			reflectX: true,
-		}));
+		expect(result.step.parts.mainArtwork.transform).toEqual(
+			jasmine.objectContaining({
+				matrix: [-0.6, 0, 0, 0.6, 45, 8],
+				reflectX: true,
+			}),
+		);
 		expect(result.step.parts.label.transform.matrix).toEqual([1, 0, 0, 1, 4, 6]);
 		expect(result.svg).toContain('data-component-id="src.b-1.0009"');
 		expect(result.svg).toContain('data-artwork-mirror="x"');
@@ -1031,7 +1057,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(result.svg).toContain('transform="matrix(1 0 0 1 4 6)"');
 	});
 
-	it('applies largest-containing-box layout from suit scaleMode without a family-specific branch', function() {
+	it('applies largest-containing-box layout from suit scaleMode without a family-specific branch', function () {
 		const artworkAssignment = assignment('mainArtwork', {
 			assignmentId: 'assign.flower-1.mainArtwork',
 			contentKind: 'artwork',
@@ -1101,7 +1127,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(result.svg).not.toContain('transform="matrix(0.25 0 0 0.25 5.5 9)"');
 	});
 
-	it('applies rendering defaults before mutable output option overrides', function() {
+	it('applies rendering defaults before mutable output option overrides', function () {
 		const artworkAssignment = assignment('mainArtwork', {
 			assignmentId: 'assign.dragon-r.mainArtwork',
 			contentKind: 'artwork',
@@ -1198,7 +1224,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(result.step.parts.mainArtwork.source).toBe('largest-containing-box');
 	});
 
-	it('colors laid-out source assignments with reference palette decisions', function() {
+	it('colors laid-out source assignments with reference palette decisions', function () {
 		const dotAssignment = assignment('dot.1', {
 			assignmentId: 'assign.d-8.dot.1',
 			contentKind: 'artwork',
@@ -1230,7 +1256,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		const layout = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('d-8', [
-				normalizedComponent('src.d-8.0019', 'M0 0L10 0L10 10Z', { fill: '#2a3b92' }),
+				normalizedComponent('src.d-8.0019', 'M0 0L10 0L10 10Z', {fill: '#2a3b92'}),
 			]),
 			alignmentMap: alignmentMap([
 				alignmentCandidate('align.d-8.01.0001', {
@@ -1242,22 +1268,24 @@ describe('FinalRenderingCompositionRunner', function() {
 			semanticMap: semanticMap({
 				assignments: [dotAssignment],
 			}),
-			referenceStructure: referenceStructure('d-8', {
-				'dot.1': {
-					role: 'dot',
-					dominantColor: '#0505D1',
-					componentIds: ['ref.d-8.0001'],
+			referenceStructure: referenceStructure(
+				'd-8',
+				{
+					'dot.1': {
+						role: 'dot',
+						dominantColor: '#0505D1',
+						componentIds: ['ref.d-8.0001'],
+					},
 				},
-			}, [
-				referenceComponent('ref.d-8.0001', box(20, 30, 30, 40), { dominantColor: '#0505D1' }),
-			]),
+				[referenceComponent('ref.d-8.0001', box(20, 30, 30, 40), {dominantColor: '#0505D1'})],
+			),
 		});
 		artifact.steps.layout = layout.step;
 
 		const result = buildColorStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('d-8', [
-				normalizedComponent('src.d-8.0019', 'M0 0L10 0L10 10Z', { fill: '#2a3b92' }),
+				normalizedComponent('src.d-8.0019', 'M0 0L10 0L10 10Z', {fill: '#2a3b92'}),
 			]),
 			alignmentMap: alignmentMap([
 				alignmentCandidate('align.d-8.01.0001', {
@@ -1269,24 +1297,28 @@ describe('FinalRenderingCompositionRunner', function() {
 			semanticMap: semanticMap({
 				assignments: [dotAssignment],
 			}),
-			referenceStructure: referenceStructure('d-8', {
-				'dot.1': {
-					role: 'dot',
-					dominantColor: '#0505D1',
-					componentIds: ['ref.d-8.0001'],
+			referenceStructure: referenceStructure(
+				'd-8',
+				{
+					'dot.1': {
+						role: 'dot',
+						dominantColor: '#0505D1',
+						componentIds: ['ref.d-8.0001'],
+					},
 				},
-			}, [
-				referenceComponent('ref.d-8.0001', box(20, 30, 30, 40), { dominantColor: '#0505D1' }),
-			]),
+				[referenceComponent('ref.d-8.0001', box(20, 30, 30, 40), {dominantColor: '#0505D1'})],
+			),
 		});
 
 		expect(result.step.status).toBe('ready');
 		expect(result.step.policy).toBe('reference-color');
-		expect(result.step.parts['dot.1'].components['src.d-8.0019']).toEqual(jasmine.objectContaining({
-			sourcePaint: '#2a3b92',
-			targetPaint: '#0505D1',
-			outputPaint: '#0505D1',
-		}));
+		expect(result.step.parts['dot.1'].components['src.d-8.0019']).toEqual(
+			jasmine.objectContaining({
+				sourcePaint: '#2a3b92',
+				targetPaint: '#0505D1',
+				outputPaint: '#0505D1',
+			}),
+		);
 		expect(result.svg).toContain('id="color-source-parts"');
 		expect(result.svg).toContain('fill="#0505D1"');
 		expect(result.svg).toContain('data-color-policy="reference-color"');
@@ -1294,7 +1326,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(result.svg).toContain('data-target-paint="#0505D1"');
 	});
 
-	it('keeps separate one-color target parts from creating extra shades', function() {
+	it('keeps separate one-color target parts from creating extra shades', function () {
 		const bambooAssignments = [
 			assignment('bamboo.1', {
 				assignmentId: 'assign.b-5.bamboo.1',
@@ -1314,8 +1346,8 @@ describe('FinalRenderingCompositionRunner', function() {
 			}),
 		];
 		const sourceComponents = [
-			normalizedComponent('src.b-5.0010', 'M0 0L10 0L10 10Z', { fill: '#038249', sourceIndex: 10 }),
-			normalizedComponent('src.b-5.0011', 'M20 0L30 0L30 10Z', { fill: '#bf3718', sourceIndex: 11 }),
+			normalizedComponent('src.b-5.0010', 'M0 0L10 0L10 10Z', {fill: '#038249', sourceIndex: 10}),
+			normalizedComponent('src.b-5.0011', 'M20 0L30 0L30 10Z', {fill: '#bf3718', sourceIndex: 11}),
 		];
 		const artifact = buildFinalRenderingCompositionArtifact({
 			tilesetId: 'wiki',
@@ -1349,23 +1381,33 @@ describe('FinalRenderingCompositionRunner', function() {
 				referenceComponentIds: ['ref.b-5.0002'],
 			}),
 		]);
-		const references = referenceStructure('b-5', {
-			'bamboo.1': {
-				role: 'bamboo-stick',
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906'],
-				componentIds: ['ref.b-5.0001'],
+		const references = referenceStructure(
+			'b-5',
+			{
+				'bamboo.1': {
+					role: 'bamboo-stick',
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906'],
+					componentIds: ['ref.b-5.0001'],
+				},
+				'bamboo.2': {
+					role: 'bamboo-stick',
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906'],
+					componentIds: ['ref.b-5.0002'],
+				},
 			},
-			'bamboo.2': {
-				role: 'bamboo-stick',
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906'],
-				componentIds: ['ref.b-5.0002'],
-			},
-		}, [
-			referenceComponent('ref.b-5.0001', box(20, 30, 30, 40), { dominantColor: '#2FC906', paletteColors: ['#2FC906'] }),
-			referenceComponent('ref.b-5.0002', box(40, 30, 50, 40), { dominantColor: '#2FC906', paletteColors: ['#2FC906'] }),
-		]);
+			[
+				referenceComponent('ref.b-5.0001', box(20, 30, 30, 40), {
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906'],
+				}),
+				referenceComponent('ref.b-5.0002', box(40, 30, 50, 40), {
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906'],
+				}),
+			],
+		);
 		const layout = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('b-5', sourceComponents),
@@ -1394,17 +1436,12 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(result.svg).not.toContain('#64F44E');
 	});
 
-	it('uses representative gradient colors as palette evidence for source URL paints', function() {
+	it('uses representative gradient colors as palette evidence for source URL paints', function () {
 		const bambooAssignment = assignment('bamboo.1', {
 			assignmentId: 'assign.b-3.bamboo.1',
 			contentKind: 'artwork',
 			role: 'bamboo-stick',
-			sourceComponentIds: [
-				'src.b-3.body',
-				'src.b-3.cap',
-				'src.b-3.band',
-				'src.b-3.outline',
-			],
+			sourceComponentIds: ['src.b-3.body', 'src.b-3.cap', 'src.b-3.band', 'src.b-3.outline'],
 			referenceComponentIds: ['ref.b-3.0001'],
 			alignmentCandidateId: 'align.b-3.01.0001',
 		});
@@ -1471,16 +1508,23 @@ describe('FinalRenderingCompositionRunner', function() {
 				referenceComponentIds: ['ref.b-3.0001'],
 			}),
 		]);
-		const references = referenceStructure('b-3', {
-			'bamboo.1': {
-				role: 'bamboo-stick',
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906'],
-				componentIds: ['ref.b-3.0001'],
+		const references = referenceStructure(
+			'b-3',
+			{
+				'bamboo.1': {
+					role: 'bamboo-stick',
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906'],
+					componentIds: ['ref.b-3.0001'],
+				},
 			},
-		}, [
-			referenceComponent('ref.b-3.0001', box(20, 30, 30, 60), { dominantColor: '#2FC906', paletteColors: ['#2FC906'] }),
-		]);
+			[
+				referenceComponent('ref.b-3.0001', box(20, 30, 30, 60), {
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906'],
+				}),
+			],
+		);
 		const layout = buildLayoutStep({
 			artifact,
 			normalizedComponents,
@@ -1511,7 +1555,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(result.svg).toContain('data-palette-source-paint="#D8D8D8"');
 	});
 
-	it('renders layered source components in original source order for grouped artwork', function() {
+	it('renders layered source components in original source order for grouped artwork', function () {
 		const bambooAssignment = assignment('bambooGroup.1', {
 			assignmentId: 'assign.b-8.bambooGroup.1',
 			contentKind: 'artwork',
@@ -1575,19 +1619,23 @@ describe('FinalRenderingCompositionRunner', function() {
 				referenceComponentIds: ['ref.b-8.0001'],
 			}),
 		]);
-		const references = referenceStructure('b-8', {
-			'bambooGroup.1': {
-				role: 'bamboo-group',
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906'],
-				componentIds: ['ref.b-8.0001'],
+		const references = referenceStructure(
+			'b-8',
+			{
+				'bambooGroup.1': {
+					role: 'bamboo-group',
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906'],
+					componentIds: ['ref.b-8.0001'],
+				},
 			},
-		}, [
-			referenceComponent('ref.b-8.0001', box(10, 20, 80, 60), {
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906'],
-			}),
-		]);
+			[
+				referenceComponent('ref.b-8.0001', box(10, 20, 80, 60), {
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906'],
+				}),
+			],
+		);
 		const normalizedComponents = normalizedArtifact('b-8', sourceComponents);
 		const semantic = semanticMap({
 			faceKey: 'b-8',
@@ -1621,11 +1669,12 @@ describe('FinalRenderingCompositionRunner', function() {
 			'src.b-8.light-right-slanted',
 			'src.b-8.dark-right-slanted',
 		]);
-		expect(color.svg.indexOf('data-component-id="src.b-8.light-right-slanted"'))
-			.toBeLessThan(color.svg.indexOf('data-component-id="src.b-8.dark-right-slanted"'));
+		expect(color.svg.indexOf('data-component-id="src.b-8.light-right-slanted"')).toBeLessThan(
+			color.svg.indexOf('data-component-id="src.b-8.dark-right-slanted"'),
+		);
 	});
 
-	it('lays out multi-component glyph assignments as one whole part transform', function() {
+	it('lays out multi-component glyph assignments as one whole part transform', function () {
 		const glyphAssignment = assignment('glyph', {
 			assignmentId: 'assign.c-2.glyph',
 			contentKind: 'glyph',
@@ -1679,15 +1728,19 @@ describe('FinalRenderingCompositionRunner', function() {
 				targetBounds: box(20, 32, 70, 44),
 			}),
 		]);
-		const references = referenceStructure('c-2', {
-			glyph: {
-				role: 'character-number-glyph',
-				componentIds: ['ref.c-2.top-stroke', 'ref.c-2.bottom-stroke'],
+		const references = referenceStructure(
+			'c-2',
+			{
+				glyph: {
+					role: 'character-number-glyph',
+					componentIds: ['ref.c-2.top-stroke', 'ref.c-2.bottom-stroke'],
+				},
 			},
-		}, [
-			referenceComponent('ref.c-2.top-stroke', box(30, 10, 50, 18)),
-			referenceComponent('ref.c-2.bottom-stroke', box(20, 32, 70, 44)),
-		]);
+			[
+				referenceComponent('ref.c-2.top-stroke', box(30, 10, 50, 18)),
+				referenceComponent('ref.c-2.bottom-stroke', box(20, 32, 70, 44)),
+			],
+		);
 		const layout = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('c-2', sourceComponents),
@@ -1706,7 +1759,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(new Set(layout.svg.match(/transform="matrix\([^"]+\)"/g)).size).toBe(1);
 	});
 
-	it('shades the source-matched palette color for freeform artwork', function() {
+	it('shades the source-matched palette color for freeform artwork', function () {
 		const artworkAssignment = assignment('mainArtwork', {
 			assignmentId: 'assign.season-2.mainArtwork',
 			contentKind: 'artwork',
@@ -1738,8 +1791,8 @@ describe('FinalRenderingCompositionRunner', function() {
 			colorSvgPath: 'final-rendering-svgs/color/season-2.svg',
 		});
 		const sourceComponents = [
-			normalizedComponent('src.season-2.0011', 'M0 0L10 0L10 10Z', { fill: '#ff4a2a', sourceIndex: 11 }),
-			normalizedComponent('src.season-2.0012', 'M20 0L30 0L30 10Z', { fill: '#FC1D05', sourceIndex: 12 }),
+			normalizedComponent('src.season-2.0011', 'M0 0L10 0L10 10Z', {fill: '#ff4a2a', sourceIndex: 11}),
+			normalizedComponent('src.season-2.0012', 'M20 0L30 0L30 10Z', {fill: '#FC1D05', sourceIndex: 12}),
 		];
 		const candidates = alignmentMap([
 			alignmentCandidate('align.season-2.03.0001', {
@@ -1748,19 +1801,23 @@ describe('FinalRenderingCompositionRunner', function() {
 				referenceComponentIds: ['ref.season-2.0003'],
 			}),
 		]);
-		const references = referenceStructure('season-2', {
-			mainArtwork: {
-				role: 'main-artwork',
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906', '#0505D1', '#FC1D05', '#FF9900'],
-				componentIds: ['ref.season-2.0003'],
+		const references = referenceStructure(
+			'season-2',
+			{
+				mainArtwork: {
+					role: 'main-artwork',
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906', '#0505D1', '#FC1D05', '#FF9900'],
+					componentIds: ['ref.season-2.0003'],
+				},
 			},
-		}, [
-			referenceComponent('ref.season-2.0003', box(15, 48, 144, 221), {
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906', '#0505D1', '#FC1D05', '#FF9900'],
-			}),
-		]);
+			[
+				referenceComponent('ref.season-2.0003', box(15, 48, 144, 221), {
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906', '#0505D1', '#FC1D05', '#FF9900'],
+				}),
+			],
+		);
 		const layout = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('season-2', sourceComponents),
@@ -1782,17 +1839,19 @@ describe('FinalRenderingCompositionRunner', function() {
 			referenceStructure: references,
 		});
 
-		expect(result.step.parts.mainArtwork.components['src.season-2.0011']).toEqual(jasmine.objectContaining({
-			colorMode: 'freeform-palette',
-			sourcePaint: '#ff4a2a',
-			targetPaint: '#FC1D05',
-			outputPaint: '#FC1D05',
-		}));
+		expect(result.step.parts.mainArtwork.components['src.season-2.0011']).toEqual(
+			jasmine.objectContaining({
+				colorMode: 'freeform-palette',
+				sourcePaint: '#ff4a2a',
+				targetPaint: '#FC1D05',
+				outputPaint: '#FC1D05',
+			}),
+		);
 		expect(result.svg).toContain('fill="#FC1D05"');
 		expect(result.svg).not.toContain('fill="#2FC906"');
 	});
 
-	it('preserves flattened source colors for freeform artwork when requested', function() {
+	it('preserves flattened source colors for freeform artwork when requested', function () {
 		const artworkAssignment = assignment('mainArtwork', {
 			assignmentId: 'assign.season-2.mainArtwork',
 			contentKind: 'artwork',
@@ -1836,8 +1895,8 @@ describe('FinalRenderingCompositionRunner', function() {
 			colorSvgPath: 'final-rendering-svgs/color/season-2.svg',
 		});
 		const sourceComponents = [
-			normalizedComponent('src.season-2.trunk', 'M0 0L10 0L10 10Z', { fill: '#780027', sourceIndex: 11 }),
-			normalizedComponent('src.season-2.unassigned', 'M20 0L30 0L30 10Z', { fill: '#2FC906', sourceIndex: 12 }),
+			normalizedComponent('src.season-2.trunk', 'M0 0L10 0L10 10Z', {fill: '#780027', sourceIndex: 11}),
+			normalizedComponent('src.season-2.unassigned', 'M20 0L30 0L30 10Z', {fill: '#2FC906', sourceIndex: 12}),
 		];
 		const candidates = alignmentMap([
 			alignmentCandidate('align.season-2.tree', {
@@ -1846,19 +1905,23 @@ describe('FinalRenderingCompositionRunner', function() {
 				referenceComponentIds: ['ref.season-2.tree'],
 			}),
 		]);
-		const references = referenceStructure('season-2', {
-			mainArtwork: {
-				role: 'main-artwork',
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906', '#FC1D05'],
-				componentIds: ['ref.season-2.tree'],
+		const references = referenceStructure(
+			'season-2',
+			{
+				mainArtwork: {
+					role: 'main-artwork',
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906', '#FC1D05'],
+					componentIds: ['ref.season-2.tree'],
+				},
 			},
-		}, [
-			referenceComponent('ref.season-2.tree', box(15, 48, 144, 221), {
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906', '#FC1D05'],
-			}),
-		]);
+			[
+				referenceComponent('ref.season-2.tree', box(15, 48, 144, 221), {
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906', '#FC1D05'],
+				}),
+			],
+		);
 		const layout = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('season-2', sourceComponents),
@@ -1880,29 +1943,26 @@ describe('FinalRenderingCompositionRunner', function() {
 			referenceStructure: references,
 		});
 
-		expect(result.step.parts.mainArtwork.components['src.season-2.trunk']).toEqual(jasmine.objectContaining({
-			colorMode: 'freeform-preserve',
-			sourcePaint: '#780027',
-			targetPaint: '#780027',
-			outputPaint: '#780027',
-		}));
+		expect(result.step.parts.mainArtwork.components['src.season-2.trunk']).toEqual(
+			jasmine.objectContaining({
+				colorMode: 'freeform-preserve',
+				sourcePaint: '#780027',
+				targetPaint: '#780027',
+				outputPaint: '#780027',
+			}),
+		);
 		expect(result.svg).toContain('fill="#780027"');
 		expect(result.svg).not.toContain('fill="#2FC906"');
 	});
 
-	it('uses freeform overlap evidence before interpolation for layered shades', function() {
+	it('uses freeform overlap evidence before interpolation for layered shades', function () {
 		const artworkAssignment = assignment('mainArtwork', {
 			assignmentId: 'assign.d-1.mainArtwork',
 			contentKind: 'artwork',
 			role: 'main-artwork',
 			strategy: 'layered-overlap',
 			colorStrategy: 'freeform-palette',
-			sourceComponentIds: [
-				'src.d-1.pink',
-				'src.d-1.pink-detail',
-				'src.d-1.bright-green',
-				'src.d-1.dark-green',
-			],
+			sourceComponentIds: ['src.d-1.pink', 'src.d-1.pink-detail', 'src.d-1.bright-green', 'src.d-1.dark-green'],
 			referenceComponentIds: ['ref.d-1.0001'],
 			alignmentCandidateId: 'align.d-1.01.0001',
 		});
@@ -1965,19 +2025,23 @@ describe('FinalRenderingCompositionRunner', function() {
 				referenceComponentIds: ['ref.d-1.0001'],
 			}),
 		]);
-		const references = referenceStructure('d-1', {
-			mainArtwork: {
-				role: 'main-artwork',
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906'],
-				componentIds: ['ref.d-1.0001'],
+		const references = referenceStructure(
+			'd-1',
+			{
+				mainArtwork: {
+					role: 'main-artwork',
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906'],
+					componentIds: ['ref.d-1.0001'],
+				},
 			},
-		}, [
-			referenceComponent('ref.d-1.0001', box(15, 48, 144, 221), {
-				dominantColor: '#2FC906',
-				paletteColors: ['#2FC906'],
-			}),
-		]);
+			[
+				referenceComponent('ref.d-1.0001', box(15, 48, 144, 221), {
+					dominantColor: '#2FC906',
+					paletteColors: ['#2FC906'],
+				}),
+			],
+		);
 		const layout = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('d-1', sourceComponents),
@@ -1999,41 +2063,49 @@ describe('FinalRenderingCompositionRunner', function() {
 			referenceStructure: references,
 		});
 
-		expect(result.step.parts.mainArtwork.components['src.d-1.pink']).toEqual(jasmine.objectContaining({
-			colorMode: 'freeform-palette',
-			hueGrouping: 'source-hues',
-			sourcePaint: '#f5b1b1',
-			targetPaint: '#F5B1B1',
-			outputPaint: '#F5B1B1',
-		}));
-		expect(result.step.parts.mainArtwork.components['src.d-1.pink-detail']).toEqual(jasmine.objectContaining({
-			colorMode: 'freeform-palette',
-			hueGrouping: 'source-hues',
-			sourcePaint: '#f5b1b1',
-			targetPaint: '#F5B1B1',
-			outputPaint: '#F5B1B1',
-		}));
-		expect(result.step.parts.mainArtwork.components['src.d-1.bright-green']).toEqual(jasmine.objectContaining({
-			colorMode: 'freeform-palette',
-			hueGrouping: 'source-hues',
-			sourcePaint: '#37ff00',
-			targetPaint: '#2FC906',
-			outputPaint: '#2FC906',
-		}));
-		expect(result.step.parts.mainArtwork.components['src.d-1.dark-green']).toEqual(jasmine.objectContaining({
-			colorMode: 'freeform-palette',
-			hueGrouping: 'source-hues',
-			sourcePaint: '#069200',
-			targetPaint: '#2FC906',
-			outputPaint: '#004D00',
-		}));
+		expect(result.step.parts.mainArtwork.components['src.d-1.pink']).toEqual(
+			jasmine.objectContaining({
+				colorMode: 'freeform-palette',
+				hueGrouping: 'source-hues',
+				sourcePaint: '#f5b1b1',
+				targetPaint: '#F5B1B1',
+				outputPaint: '#F5B1B1',
+			}),
+		);
+		expect(result.step.parts.mainArtwork.components['src.d-1.pink-detail']).toEqual(
+			jasmine.objectContaining({
+				colorMode: 'freeform-palette',
+				hueGrouping: 'source-hues',
+				sourcePaint: '#f5b1b1',
+				targetPaint: '#F5B1B1',
+				outputPaint: '#F5B1B1',
+			}),
+		);
+		expect(result.step.parts.mainArtwork.components['src.d-1.bright-green']).toEqual(
+			jasmine.objectContaining({
+				colorMode: 'freeform-palette',
+				hueGrouping: 'source-hues',
+				sourcePaint: '#37ff00',
+				targetPaint: '#2FC906',
+				outputPaint: '#2FC906',
+			}),
+		);
+		expect(result.step.parts.mainArtwork.components['src.d-1.dark-green']).toEqual(
+			jasmine.objectContaining({
+				colorMode: 'freeform-palette',
+				hueGrouping: 'source-hues',
+				sourcePaint: '#069200',
+				targetPaint: '#2FC906',
+				outputPaint: '#004D00',
+			}),
+		);
 		expect(result.svg).toContain('fill="#F5B1B1"');
 		expect(result.svg).toContain('fill="#2FC906"');
 		expect(result.svg).toContain('fill="#004D00"');
 		expect(result.svg).not.toContain('fill="#E58B9A"');
 	});
 
-	it('keeps character glyphs monochrome with the dominant reference paint', function() {
+	it('keeps character glyphs monochrome with the dominant reference paint', function () {
 		const glyphAssignment = assignment('glyph', {
 			assignmentId: 'assign.wind-s.glyph',
 			contentKind: 'glyph',
@@ -2062,7 +2134,7 @@ describe('FinalRenderingCompositionRunner', function() {
 			colorSvgPath: 'final-rendering-svgs/color/wind-s.svg',
 		});
 		const sourceComponents = [
-			normalizedComponent('src.wind-s.0009', 'M0 0L10 0L10 10Z', { fill: '#2a3b92', sourceIndex: 9 }),
+			normalizedComponent('src.wind-s.0009', 'M0 0L10 0L10 10Z', {fill: '#2a3b92', sourceIndex: 9}),
 		];
 		const candidates = alignmentMap([
 			alignmentCandidate('align.wind-s.01.0001', {
@@ -2071,19 +2143,23 @@ describe('FinalRenderingCompositionRunner', function() {
 				referenceComponentIds: ['ref.wind-s.0002'],
 			}),
 		]);
-		const references = referenceStructure('wind-s', {
-			glyph: {
-				role: 'wind-character',
-				dominantColor: '#000000',
-				paletteColors: ['#000000', '#FC1D05'],
-				componentIds: ['ref.wind-s.0002'],
+		const references = referenceStructure(
+			'wind-s',
+			{
+				glyph: {
+					role: 'wind-character',
+					dominantColor: '#000000',
+					paletteColors: ['#000000', '#FC1D05'],
+					componentIds: ['ref.wind-s.0002'],
+				},
 			},
-		}, [
-			referenceComponent('ref.wind-s.0002', box(47, 72, 119, 178), {
-				dominantColor: '#000000',
-				paletteColors: ['#000000', '#FC1D05'],
-			}),
-		]);
+			[
+				referenceComponent('ref.wind-s.0002', box(47, 72, 119, 178), {
+					dominantColor: '#000000',
+					paletteColors: ['#000000', '#FC1D05'],
+				}),
+			],
+		);
 		const layout = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('wind-s', sourceComponents),
@@ -2105,17 +2181,19 @@ describe('FinalRenderingCompositionRunner', function() {
 			referenceStructure: references,
 		});
 
-		expect(result.step.parts.glyph.components['src.wind-s.0009']).toEqual(jasmine.objectContaining({
-			colorMode: 'monochrome-reference',
-			sourcePaint: '#2a3b92',
-			targetPaint: '#000000',
-			outputPaint: '#000000',
-		}));
+		expect(result.step.parts.glyph.components['src.wind-s.0009']).toEqual(
+			jasmine.objectContaining({
+				colorMode: 'monochrome-reference',
+				sourcePaint: '#2a3b92',
+				targetPaint: '#000000',
+				outputPaint: '#000000',
+			}),
+		);
 		expect(result.svg).toContain('fill="#000000"');
 		expect(result.svg).not.toContain('fill="#FC1D05"');
 	});
 
-	it('recombines same-source evenodd fragments before final SVG emission', function() {
+	it('recombines same-source evenodd fragments before final SVG emission', function () {
 		const bodyAssignment = assignment('body', {
 			assignmentId: 'assign.c-9.body',
 			contentKind: 'glyph',
@@ -2158,7 +2236,7 @@ describe('FinalRenderingCompositionRunner', function() {
 				sourceIndex: 6,
 				sourceElementId: 'path3478',
 				sourceUseInstanceId: 'source-use.0002.path3478',
-				transform: { a: 1, b: 0, c: 0, d: 1, e: 10, f: 0 },
+				transform: {a: 1, b: 0, c: 0, d: 1, e: 10, f: 0},
 			}),
 		];
 		const candidates = alignmentMap([
@@ -2168,17 +2246,21 @@ describe('FinalRenderingCompositionRunner', function() {
 				referenceComponentIds: ['ref.c-9.body'],
 			}),
 		]);
-		const references = referenceStructure('c-9', {
-			body: {
-				role: 'character-body',
-				dominantColor: '#FC1D05',
-				componentIds: ['ref.c-9.body'],
+		const references = referenceStructure(
+			'c-9',
+			{
+				body: {
+					role: 'character-body',
+					dominantColor: '#FC1D05',
+					componentIds: ['ref.c-9.body'],
+				},
 			},
-		}, [
-			referenceComponent('ref.c-9.body', box(10, 50, 80, 120), {
-				dominantColor: '#FC1D05',
-			}),
-		]);
+			[
+				referenceComponent('ref.c-9.body', box(10, 50, 80, 120), {
+					dominantColor: '#FC1D05',
+				}),
+			],
+		);
 		const layout = buildLayoutStep({
 			artifact,
 			normalizedComponents: normalizedArtifact('c-9', sourceComponents),
@@ -2208,7 +2290,7 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(result.svg).toContain('data-component-id="src.c-9.body.top src.c-9.body.main"');
 	});
 
-	it('colors generated layout parts through the color step', function() {
+	it('colors generated layout parts through the color step', function () {
 		const artifact = buildFinalRenderingCompositionArtifact({
 			tilesetId: 'wiki',
 			faceKey: 'b-1',
@@ -2220,7 +2302,7 @@ describe('FinalRenderingCompositionRunner', function() {
 				family: 'bamboo',
 				value: 1,
 				optionalParts: {
-					label: optionalPart('label', { sourceState: 'source-absent' }),
+					label: optionalPart('label', {sourceState: 'source-absent'}),
 				},
 			}),
 			semanticMapPath: 'semantic-map/b-1.json',
@@ -2273,17 +2355,19 @@ describe('FinalRenderingCompositionRunner', function() {
 		});
 
 		expect(result.step.status).toBe('ready');
-		expect(result.step.parts.label).toEqual(jasmine.objectContaining({
-			renderKind: 'generated',
-			colorPolicy: 'generated',
-			outputPaint: '#FC1D05',
-		}));
+		expect(result.step.parts.label).toEqual(
+			jasmine.objectContaining({
+				renderKind: 'generated',
+				colorPolicy: 'generated',
+				outputPaint: '#FC1D05',
+			}),
+		);
 		expect(result.svg).toContain('id="color-generated-parts"');
 		expect(result.svg).toContain('fill="#FC1D05"');
 		expect(result.svg).toContain('data-generated-text="1"');
 	});
 
-	it('writes final rendering artifacts, reports, and state updates', async function() {
+	it('writes final rendering artifacts, reports, and state updates', async function () {
 		const rootDir = path.resolve('test-root');
 		const output3dDir = path.resolve(rootDir, 'scripts', 'output', '3d-assets');
 		const tilesetStatePath = path.resolve(BASE_OUTPUT, 'wiki', 'pipeline.json');
@@ -2305,28 +2389,28 @@ describe('FinalRenderingCompositionRunner', function() {
 				svgPipeline: {
 					faces: {
 						'b-1': {
-						faceKey: 'b-1',
-						state: {
-							components: {},
-							shapes: {},
-							parts: {
-								label: {
-									partId: 'label',
-									contentKind: 'label',
-									role: 'suit-label',
-									optional: true,
-									accepted: true,
+							faceKey: 'b-1',
+							state: {
+								components: {},
+								shapes: {},
+								parts: {
+									label: {
+										partId: 'label',
+										contentKind: 'label',
+										role: 'suit-label',
+										optional: true,
+										accepted: true,
+									},
 								},
+								bindings: {},
 							},
-							bindings: {},
-						},
-						artifacts: {
-							optionalPartAssignment: normalizeForTest(rootDir, optionalPath),
-							semanticMap: normalizeForTest(rootDir, semanticPath),
-							normalizedComponents: normalizeForTest(rootDir, normalizedPath),
-							alignmentMap: normalizeForTest(rootDir, alignmentPath),
-						},
-						stages: {},
+							artifacts: {
+								optionalPartAssignment: normalizeForTest(rootDir, optionalPath),
+								semanticMap: normalizeForTest(rootDir, semanticPath),
+								normalizedComponents: normalizeForTest(rootDir, normalizedPath),
+								alignmentMap: normalizeForTest(rootDir, alignmentPath),
+							},
+							stages: {},
 						},
 					},
 				},
@@ -2353,33 +2437,39 @@ describe('FinalRenderingCompositionRunner', function() {
 					},
 				},
 			}),
-			[optionalPath]: JSON.stringify(optionalAssignment({
-				faceKey: 'b-1',
-				family: 'bamboo',
-				optionalParts: {
-					label: optionalPart('label', { sourceState: 'source-absent' }),
-				},
-			})),
-			[semanticPath]: JSON.stringify(semanticMap({
-				referenceSetId: 'default-large-faces',
-				inputs: {
-					referenceStructure: {
-						path: normalizeForTest(rootDir, referenceStructurePath),
+			[optionalPath]: JSON.stringify(
+				optionalAssignment({
+					faceKey: 'b-1',
+					family: 'bamboo',
+					optionalParts: {
+						label: optionalPart('label', {sourceState: 'source-absent'}),
 					},
-				},
-			})),
+				}),
+			),
+			[semanticPath]: JSON.stringify(
+				semanticMap({
+					referenceSetId: 'default-large-faces',
+					inputs: {
+						referenceStructure: {
+							path: normalizeForTest(rootDir, referenceStructurePath),
+						},
+					},
+				}),
+			),
 			[normalizedPath]: JSON.stringify(normalizedArtifact('b-1', [])),
 			[alignmentPath]: JSON.stringify(alignmentMap([])),
-			[referenceStructurePath]: JSON.stringify(referenceStructure('b-1', {
-				label: {
-					targetBounds: {
-						left: 4,
-						top: 6,
-						width: 10,
-						height: 18,
+			[referenceStructurePath]: JSON.stringify(
+				referenceStructure('b-1', {
+					label: {
+						targetBounds: {
+							left: 4,
+							top: 6,
+							width: 10,
+							height: 18,
+						},
 					},
-				},
-			})),
+				}),
+			),
 		});
 		const runner = new FinalRenderingCompositionRunner({
 			fileSystem: fs,
@@ -2395,12 +2485,14 @@ describe('FinalRenderingCompositionRunner', function() {
 		const artifact = JSON.parse(fs.files.get(outputPath));
 		const report = JSON.parse(fs.files.get(reportPath));
 
-		expect(summary).toEqual(jasmine.objectContaining({
-			tilesetId: 'wiki',
-			faceKey: 'b-1',
-			faceCount: 1,
-			generatedRenderCount: 0,
-		}));
+		expect(summary).toEqual(
+			jasmine.objectContaining({
+				tilesetId: 'wiki',
+				faceKey: 'b-1',
+				faceCount: 1,
+				generatedRenderCount: 0,
+			}),
+		);
 		expect(artifact.steps.addOptional.parts.label.renderKind).toBe('omit');
 		expect(artifact.steps.addOptional.svg).toBe(normalizeForTest(rootDir, svgPath));
 		expect(artifact.steps.layout.svg).toBe(normalizeForTest(rootDir, layoutSvgPath));
@@ -2414,26 +2506,32 @@ describe('FinalRenderingCompositionRunner', function() {
 		expect(fs.files.get(layoutSvgPath)).toContain('viewBox="0 0 94 136"');
 		expect(fs.files.get(colorSvgPath)).toContain('viewBox="0 0 94 136"');
 		expect(fs.files.get(colorSvgPath)).toContain('id="color-generated-parts"');
-		expect(report.faces['b-1']).toEqual(jasmine.objectContaining({
-			status: 'ready',
-			generatedRenderCount: 0,
-			svgs: {
-				addOptional: normalizeForTest(rootDir, svgPath),
-				layout: normalizeForTest(rootDir, layoutSvgPath),
-				color: normalizeForTest(rootDir, colorSvgPath),
-			},
-			pngs: {
-				referenceLayoutColor: null,
-			},
-		}));
+		expect(report.faces['b-1']).toEqual(
+			jasmine.objectContaining({
+				status: 'ready',
+				generatedRenderCount: 0,
+				svgs: {
+					addOptional: normalizeForTest(rootDir, svgPath),
+					layout: normalizeForTest(rootDir, layoutSvgPath),
+					color: normalizeForTest(rootDir, colorSvgPath),
+				},
+				pngs: {
+					referenceLayoutColor: null,
+				},
+			}),
+		);
 		expect(updates).toEqual([]);
 		const updatedTileset = JSON.parse(fs.files.get(tilesetStatePath));
-		expect(updatedTileset.svgPipeline.faces['b-1'].artifacts.finalRenderingMap).toBe(normalizeForTest(rootDir, outputPath));
-		expect(updatedTileset.svgPipeline.faces['b-1'].artifacts.finalRenderingColorSvg).toBe(normalizeForTest(rootDir, colorSvgPath));
+		expect(updatedTileset.svgPipeline.faces['b-1'].artifacts.finalRenderingMap).toBe(
+			normalizeForTest(rootDir, outputPath),
+		);
+		expect(updatedTileset.svgPipeline.faces['b-1'].artifacts.finalRenderingColorSvg).toBe(
+			normalizeForTest(rootDir, colorSvgPath),
+		);
 	});
 });
 
-function optionalAssignment({ faceKey, family, value = 1, optionalParts, outputOptions = null }) {
+function optionalAssignment({faceKey, family, value = 1, optionalParts, outputOptions = null}) {
 	return {
 		schemaVersion: 1,
 		tilesetId: 'wiki',
@@ -2446,11 +2544,11 @@ function optionalAssignment({ faceKey, family, value = 1, optionalParts, outputO
 			value,
 		},
 		optionalParts,
-		...(outputOptions ? { outputOptions } : {}),
+		...(outputOptions ? {outputOptions} : {}),
 	};
 }
 
-function renderingState({ defaults = {}, overrides = {} }) {
+function renderingState({defaults = {}, overrides = {}}) {
 	return {
 		rendering: {
 			defaults: {
@@ -2542,23 +2640,26 @@ function alignmentMap(candidates) {
 	};
 }
 
-function alignmentCandidate(alignmentId, {
-	matrix,
-	sourceComponentIds = [],
-	referenceComponentIds = [],
-	targetBounds = {
-		left: 20,
-		top: 30,
-		width: 10,
-		height: 10,
+function alignmentCandidate(
+	alignmentId,
+	{
+		matrix,
+		sourceComponentIds = [],
+		referenceComponentIds = [],
+		targetBounds = {
+			left: 20,
+			top: 30,
+			width: 10,
+			height: 10,
+		},
+		alignedBounds = {
+			left: 20,
+			top: 30,
+			width: 10,
+			height: 10,
+		},
 	},
-	alignedBounds = {
-		left: 20,
-		top: 30,
-		width: 10,
-		height: 10,
-	},
-}) {
+) {
 	return {
 		alignmentId,
 		sourceComponentIds,
@@ -2589,8 +2690,8 @@ function referenceComponent(componentId, bounds, overrides = {}) {
 		componentId,
 		bounds,
 		center: {
-			x: bounds.left + (bounds.width / 2),
-			y: bounds.top + (bounds.height / 2),
+			x: bounds.left + bounds.width / 2,
+			y: bounds.top + bounds.height / 2,
 		},
 		dominantColor: null,
 		...overrides,
@@ -2640,7 +2741,7 @@ function fakeFileSystem(initialFiles = {}) {
 			return files.get(filePath);
 		},
 		async writeFile(filePath, content, encoding) {
-			writes.push({ filePath, encoding });
+			writes.push({filePath, encoding});
 			files.set(filePath, content);
 		},
 		async mkdir(dirPath) {

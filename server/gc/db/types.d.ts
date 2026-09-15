@@ -29,7 +29,7 @@ interface MjStoredFeedbackContext {
 	elapsedTimeMs: number;
 
 	/** Records the terminal session result when one is known. */
-	result: "won" | "lost" | "abandoned" | "";
+	result: 'won' | 'lost' | 'abandoned' | '';
 
 	/** Carries the replayable tile-pair sequence for the session. */
 	tileSequence: [number, number][];

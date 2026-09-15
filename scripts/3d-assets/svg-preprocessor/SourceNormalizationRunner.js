@@ -1,11 +1,11 @@
-import { promises as fs } from 'fs';
+import {promises as fs} from 'fs';
 import path from 'path';
 import paper from 'paper';
 import sharp from 'sharp';
-import { OUTPUT_3D_DIR, ROOT_DIR } from '../shared/asset-paths.js';
-import { getComponentUnionBounds } from './normalized-face-components.js';
-import { tilesetImageDir, tilesetJsonDir, tilesetOutputRoot } from './pipeline-output-paths.js';
-import { extractSourceSvgComponents } from './source-svg-components.js';
+import {OUTPUT_3D_DIR, ROOT_DIR} from '../shared/asset-paths.js';
+import {getComponentUnionBounds} from './normalized-face-components.js';
+import {tilesetImageDir, tilesetJsonDir, tilesetOutputRoot} from './pipeline-output-paths.js';
+import {extractSourceSvgComponents} from './source-svg-components.js';
 
 export const DEFAULT_TILESET_ID = 'wiki';
 const LABEL_OCR_TEMPLATE_SIZE = 50;
@@ -21,25 +21,25 @@ const IDENTIFIED_SVG_NAMESPACE_ATTRIBUTES = [
 	'xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"',
 ].join(' ');
 const LABEL_OCR_TEMPLATE_GROUPS = {
-	'1': [
-		{ templateId: 'digit-1-serif', file: 'digit-1-serif.50.png' },
-		{ templateId: 'digit-1-sans-baseless', file: 'digit-1-sans-baseless.50.png' },
+	1: [
+		{templateId: 'digit-1-serif', file: 'digit-1-serif.50.png'},
+		{templateId: 'digit-1-sans-baseless', file: 'digit-1-sans-baseless.50.png'},
 	],
-	'2': [{ templateId: 'digit-2', file: 'digit-2.50.png' }],
-	'3': [{ templateId: 'digit-3', file: 'digit-3.50.png' }],
-	'4': [{ templateId: 'digit-4', file: 'digit-4.50.png' }],
-	'5': [{ templateId: 'digit-5', file: 'digit-5.50.png' }],
-	'6': [{ templateId: 'digit-6', file: 'digit-6.50.png' }],
-	'7': [{ templateId: 'digit-7', file: 'digit-7.50.png' }],
-	'8': [{ templateId: 'digit-8', file: 'digit-8.50.png' }],
-	'9': [{ templateId: 'digit-9', file: 'digit-9.50.png' }],
-	C: [{ templateId: 'dragon-c', file: 'dragon-c.50.png' }],
-	F: [{ templateId: 'dragon-f', file: 'dragon-f.50.png' }],
-	P: [{ templateId: 'dragon-p', file: 'dragon-p.50.png' }],
-	E: [{ templateId: 'wind-e', file: 'wind-e.50.png' }],
-	N: [{ templateId: 'wind-n', file: 'wind-n.50.png' }],
-	S: [{ templateId: 'wind-s', file: 'wind-s.50.png' }],
-	W: [{ templateId: 'wind-w', file: 'wind-w.50.png' }],
+	2: [{templateId: 'digit-2', file: 'digit-2.50.png'}],
+	3: [{templateId: 'digit-3', file: 'digit-3.50.png'}],
+	4: [{templateId: 'digit-4', file: 'digit-4.50.png'}],
+	5: [{templateId: 'digit-5', file: 'digit-5.50.png'}],
+	6: [{templateId: 'digit-6', file: 'digit-6.50.png'}],
+	7: [{templateId: 'digit-7', file: 'digit-7.50.png'}],
+	8: [{templateId: 'digit-8', file: 'digit-8.50.png'}],
+	9: [{templateId: 'digit-9', file: 'digit-9.50.png'}],
+	C: [{templateId: 'dragon-c', file: 'dragon-c.50.png'}],
+	F: [{templateId: 'dragon-f', file: 'dragon-f.50.png'}],
+	P: [{templateId: 'dragon-p', file: 'dragon-p.50.png'}],
+	E: [{templateId: 'wind-e', file: 'wind-e.50.png'}],
+	N: [{templateId: 'wind-n', file: 'wind-n.50.png'}],
+	S: [{templateId: 'wind-s', file: 'wind-s.50.png'}],
+	W: [{templateId: 'wind-w', file: 'wind-w.50.png'}],
 };
 const DEBUG_SHAPE_COLORS = [
 	'#e6194b',
@@ -103,7 +103,8 @@ export class SourceNormalizationRunner {
 		const identifiedSvgsDir = tilesetImageDir(activeTilesetId, 'identified-components-svg');
 		const identifiedShapesSvgsDir = tilesetImageDir(activeTilesetId, 'identified-shapes-svg');
 		const generatedOn = this.clock();
-		const faceEntries = pipelineModel.getFaceEntries()
+		const faceEntries = pipelineModel
+			.getFaceEntries()
 			.filter(([faceKey]) => !requestedFaceKey || faceKey === requestedFaceKey)
 			.sort(([left], [right]) => left.localeCompare(right));
 		const report = this.createReport({
@@ -114,9 +115,9 @@ export class SourceNormalizationRunner {
 			faceEntries,
 		});
 
-		await this.fs.mkdir(componentsDir, { recursive: true });
-		await this.fs.mkdir(identifiedSvgsDir, { recursive: true });
-		await this.fs.mkdir(identifiedShapesSvgsDir, { recursive: true });
+		await this.fs.mkdir(componentsDir, {recursive: true});
+		await this.fs.mkdir(identifiedSvgsDir, {recursive: true});
+		await this.fs.mkdir(identifiedShapesSvgsDir, {recursive: true});
 
 		for (const [faceKey, faceState] of faceEntries) {
 			await this.processFace({
@@ -160,7 +161,7 @@ export class SourceNormalizationRunner {
 	 * @param {SourceNormalizationCreateReportOptions} options - Values that identify the normalization run.
 	 * @returns {SourceNormalizationReport} Report object that accumulates per-face results.
 	 */
-	createReport({ tilesetId, generatedOn, pipelineStatePath, requestedFaceKey, faceEntries }) {
+	createReport({tilesetId, generatedOn, pipelineStatePath, requestedFaceKey, faceEntries}) {
 		return {
 			schemaVersion: 1,
 			tilesetId,
@@ -226,8 +227,8 @@ export class SourceNormalizationRunner {
 		artifact.identifiedComponentsSvg = this.normalizePath(identifiedSvgPath);
 		artifact.identifiedShapesSvg = this.normalizePath(identifiedShapesSvgPath);
 		await this.writeJson(artifactPath, artifact);
-		await this.fs.writeFile(identifiedSvgPath, this.buildIdentifiedComponentsSvg(artifact, { sourceDefs }), 'utf8');
-		await this.fs.writeFile(identifiedShapesSvgPath, this.buildIdentifiedShapesSvg(artifact, { sourceDefs }), 'utf8');
+		await this.fs.writeFile(identifiedSvgPath, this.buildIdentifiedComponentsSvg(artifact, {sourceDefs}), 'utf8');
+		await this.fs.writeFile(identifiedShapesSvgPath, this.buildIdentifiedShapesSvg(artifact, {sourceDefs}), 'utf8');
 		pipelineModel.recordNormalizationResult(faceKey, {
 			normalizedComponentsPath: artifactPath,
 		});
@@ -258,7 +259,7 @@ export class SourceNormalizationRunner {
 	 * @param {SourceNormalizationMissingSourceOptions} options - Missing source context.
 	 * @returns {void}
 	 */
-	recordMissingSource({ faceKey, sourceFile, report }) {
+	recordMissingSource({faceKey, sourceFile, report}) {
 		report.warnings.push({
 			code: 'missing-source-svg',
 			faceKey,
@@ -303,16 +304,24 @@ export class SourceNormalizationRunner {
 	 * @param {SourceNormalizationArtifactOptions} options - Extracted source face data.
 	 * @returns {SourceNormalizedFaceArtifact} Normalized face artifact.
 	 */
-	buildNormalizedFaceArtifact({ tilesetId, faceKey, sourceFile, generatedOn, extracted, faceState = null }) {
-		const formattedComponents = extracted.components.map((component, index) => this.formatSourceComponent(faceKey, component, index));
-		const initialSourceShapes = this.deriveSourceShapes(faceKey, formattedComponents.filter((component) => component.pathData && component.bounds));
+	buildNormalizedFaceArtifact({tilesetId, faceKey, sourceFile, generatedOn, extracted, faceState = null}) {
+		const formattedComponents = extracted.components.map((component, index) =>
+			this.formatSourceComponent(faceKey, component, index),
+		);
+		const initialSourceShapes = this.deriveSourceShapes(
+			faceKey,
+			formattedComponents.filter((component) => component.pathData && component.bounds),
+		);
 		const components = flattenVisiblePaintLayers(annotateSourceShapeIds(formattedComponents, initialSourceShapes));
 		const alignmentComponents = components
 			.filter((component) => component.pathData && component.bounds)
 			.filter((component) => !component.classification.tileLayerCandidate)
 			.filter((component) => !component.classification.negativeSpaceCandidate)
 			.filter((component) => hasVisiblePaint(component));
-		const sourceShapes = this.deriveSourceShapes(faceKey, components.filter((component) => component.pathData && component.bounds));
+		const sourceShapes = this.deriveSourceShapes(
+			faceKey,
+			components.filter((component) => component.pathData && component.bounds),
+		);
 		const alignmentComponentIds = new Set(alignmentComponents.map((component) => component.componentId));
 		const alignmentShapeIds = sourceShapes
 			.filter((shape) => shape.componentIds.some((componentId) => alignmentComponentIds.has(componentId)))
@@ -336,9 +345,7 @@ export class SourceNormalizationRunner {
 			sourceFile: this.normalizePath(sourceFile),
 			sourceMetadata: this.sourceMetadataForFaceState(faceState),
 			viewBox: extracted.viewBox,
-			status: diagnostics.some((diagnostic) => diagnostic.level === 'warning')
-				? 'needs-review'
-				: 'ready',
+			status: diagnostics.some((diagnostic) => diagnostic.level === 'warning') ? 'needs-review' : 'ready',
 			componentCount: components.length,
 			shapeCount: sourceShapes.length,
 			alignmentComponentIds: [...alignmentComponentIds],
@@ -384,9 +391,11 @@ export class SourceNormalizationRunner {
 			sourceUseGroups.set(sourceUseInstance.sourceUseInstanceId, group);
 		}
 
-		for (const group of [...sourceUseGroups.values()]
-			.sort((left, right) => Math.min(...left.components.map((component) => component.sourceIndex))
-				- Math.min(...right.components.map((component) => component.sourceIndex)))) {
+		for (const group of [...sourceUseGroups.values()].sort(
+			(left, right) =>
+				Math.min(...left.components.map((component) => component.sourceIndex)) -
+				Math.min(...right.components.map((component) => component.sourceIndex)),
+		)) {
 			if (group.components.length === 0 || !group.components.some(hasVisiblePaint)) {
 				continue;
 			}
@@ -414,8 +423,9 @@ export class SourceNormalizationRunner {
 				.filter((candidate) => this.isContainedLayerShapePair(component, candidate));
 
 			if (containedComponents.length) {
-				const group = [component, ...containedComponents]
-					.sort((left, right) => left.sourceIndex - right.sourceIndex);
+				const group = [component, ...containedComponents].sort(
+					(left, right) => left.sourceIndex - right.sourceIndex,
+				);
 
 				for (const groupComponent of group) {
 					consumedComponentIds.add(groupComponent.componentId);
@@ -435,16 +445,21 @@ export class SourceNormalizationRunner {
 		}
 
 		return shapeComponentGroups
-			.sort((left, right) => Math.min(...left.components.map((component) => component.sourceIndex))
-				- Math.min(...right.components.map((component) => component.sourceIndex)))
-			.map((shapeGroup, index) => this.makeSourceShape({
-				faceKey,
-				index,
-				components: shapeGroup.components.map((component) => componentsById.get(component.componentId)),
-				cohesionReason: shapeGroup.cohesionReason,
-				sourceUseId: shapeGroup.sourceUseId || null,
-				sourceUseInstanceId: shapeGroup.sourceUseInstanceId || null,
-			}));
+			.sort(
+				(left, right) =>
+					Math.min(...left.components.map((component) => component.sourceIndex)) -
+					Math.min(...right.components.map((component) => component.sourceIndex)),
+			)
+			.map((shapeGroup, index) =>
+				this.makeSourceShape({
+					faceKey,
+					index,
+					components: shapeGroup.components.map((component) => componentsById.get(component.componentId)),
+					cohesionReason: shapeGroup.cohesionReason,
+					sourceUseId: shapeGroup.sourceUseId || null,
+					sourceUseInstanceId: shapeGroup.sourceUseInstanceId || null,
+				}),
+			);
 	}
 
 	/**
@@ -471,16 +486,19 @@ export class SourceNormalizationRunner {
 			return false;
 		}
 
-		const outer = boundsContain(left.bounds, right.bounds, 0.75) ? left
-			: boundsContain(right.bounds, left.bounds, 0.75) ? right : null;
+		const outer = boundsContain(left.bounds, right.bounds, 0.75)
+			? left
+			: boundsContain(right.bounds, left.bounds, 0.75)
+				? right
+				: null;
 		const inner = outer === left ? right : left;
 
 		if (!outer) {
 			return false;
 		}
 
-		const outerArea = outer.area || (outer.bounds.width * outer.bounds.height);
-		const innerArea = inner.area || (inner.bounds.width * inner.bounds.height);
+		const outerArea = outer.area || outer.bounds.width * outer.bounds.height;
+		const innerArea = inner.area || inner.bounds.width * inner.bounds.height;
 		const areaRatio = outerArea ? innerArea / outerArea : 0;
 
 		if (areaRatio < 0.35 || areaRatio > 0.95) {
@@ -496,7 +514,14 @@ export class SourceNormalizationRunner {
 	 * @param {{ faceKey: string, index: number, components: SourceNormalizedComponent[] }} options - Shape construction inputs.
 	 * @returns {SourceShape} Normalized source shape.
 	 */
-	makeSourceShape({ faceKey, index, components, cohesionReason = null, sourceUseId = null, sourceUseInstanceId = null }) {
+	makeSourceShape({
+		faceKey,
+		index,
+		components,
+		cohesionReason = null,
+		sourceUseId = null,
+		sourceUseInstanceId = null,
+	}) {
 		const bounds = getComponentUnionBounds(components);
 		const sourceIndexes = components.map((component) => component.sourceIndex);
 		const sourceOrder = Math.min(...sourceIndexes);
@@ -504,13 +529,14 @@ export class SourceNormalizationRunner {
 		const parentGroupIds = uniqueValues(components.flatMap((component) => component.parentGroupIds || []));
 		const sourceLayerRoles = uniqueValues(components.flatMap((component) => component.sourceLayerRoles || []));
 		const sourceElementIds = uniqueValues(components.map((component) => component.sourceElementId).filter(Boolean));
-		const sourceElementComponentIds = uniqueValues(components.map((component) => component.sourceElementComponentId).filter(Boolean));
+		const sourceElementComponentIds = uniqueValues(
+			components.map((component) => component.sourceElementComponentId).filter(Boolean),
+		);
 		const sourceElementComponentId = sourceElementComponentIds[0] || components[0]?.componentId || null;
 		const dominantPaint = this.dominantShapePaint(components);
 		const shapeId = `shape.${faceKey}.${String(index + 1).padStart(4, '0')}`;
-		const resolvedCohesionReason = cohesionReason || (components.length > 1
-			? 'contained-layer'
-			: 'single-component');
+		const resolvedCohesionReason =
+			cohesionReason || (components.length > 1 ? 'contained-layer' : 'single-component');
 
 		return {
 			shapeId,
@@ -522,8 +548,8 @@ export class SourceNormalizationRunner {
 			sourceElementIds,
 			parentGroupIds,
 			sourceLayerRoles,
-			...(sourceUseId ? { sourceUseId } : {}),
-			...(sourceUseInstanceId ? { sourceUseInstanceId } : {}),
+			...(sourceUseId ? {sourceUseId} : {}),
+			...(sourceUseInstanceId ? {sourceUseInstanceId} : {}),
 			splitStrategies,
 			cohesionReason: resolvedCohesionReason,
 			splittable: false,
@@ -534,14 +560,16 @@ export class SourceNormalizationRunner {
 			bounds,
 			center: bounds
 				? {
-					x: this.round(bounds.left + (bounds.width / 2)),
-					y: this.round(bounds.top + (bounds.height / 2)),
-				}
+						x: this.round(bounds.left + bounds.width / 2),
+						y: this.round(bounds.top + bounds.height / 2),
+					}
 				: null,
 			area: this.round(components.reduce((total, component) => total + (component.area || 0), 0)),
 			classification: {
 				tileLayerCandidate: components.every((component) => component.classification?.tileLayerCandidate),
-				negativeSpaceCandidate: components.every((component) => component.classification?.negativeSpaceCandidate),
+				negativeSpaceCandidate: components.every(
+					(component) => component.classification?.negativeSpaceCandidate,
+				),
 			},
 		};
 	}
@@ -565,7 +593,9 @@ export class SourceNormalizationRunner {
 			return;
 		}
 
-		const componentsById = new Map((artifact.components || []).map((component) => [component.componentId, component]));
+		const componentsById = new Map(
+			(artifact.components || []).map((component) => [component.componentId, component]),
+		);
 
 		for (const component of artifact.components || []) {
 			const evidence = await this.labelOcrEvidenceForComponents({
@@ -605,7 +635,7 @@ export class SourceNormalizationRunner {
 	 * @param {SourceLabelOcrEvidenceOptions} options - Components and expected label data.
 	 * @returns {Promise<SourceLabelOcrEvidence | null>} OCR evidence, if the component can be rendered.
 	 */
-	async labelOcrEvidenceForComponents({ artifact, expectedLabel, templates, components, sourceId }) {
+	async labelOcrEvidenceForComponents({artifact, expectedLabel, templates, components, sourceId}) {
 		const renderableComponents = components
 			.filter((component) => component?.pathData && component.bounds)
 			.filter((component) => hasVisiblePaint(component))
@@ -622,7 +652,7 @@ export class SourceNormalizationRunner {
 			return null;
 		}
 
-		const mask = await this.renderLabelOcrMask({ bounds, components: renderableComponents });
+		const mask = await this.renderLabelOcrMask({bounds, components: renderableComponents});
 		const candidateDarkness = await this.darknessFromBuffer(mask);
 		const score = this.bestLabelOcrTemplateScore(candidateDarkness, templates);
 		const sourceWidth = artifact.viewBox?.width || artifact.alignmentBounds?.width || 1;
@@ -698,13 +728,12 @@ export class SourceNormalizationRunner {
 	 * @param {{ bounds: SourceBounds, components: SourceNormalizedComponent[] }} options - Renderable source components.
 	 * @returns {Promise<Buffer>} PNG mask buffer.
 	 */
-	async renderLabelOcrMask({ bounds, components }) {
+	async renderLabelOcrMask({bounds, components}) {
 		const pathElements = components
 			.map((component) => {
 				const fill = component.fill && component.fill !== 'none' ? 'black' : 'none';
-				const stroke = component.stroke && component.stroke !== 'none'
-					? 'black'
-					: fill === 'none' ? 'black' : 'none';
+				const stroke =
+					component.stroke && component.stroke !== 'none' ? 'black' : fill === 'none' ? 'black' : 'none';
 				const strokeWidth = component.strokeWidth || 1;
 				const transform = this.componentTransformAttribute(component);
 
@@ -732,7 +761,7 @@ ${pathElements}
 
 		return sharp(mask)
 			.extract(bounds)
-			.resize(LABEL_OCR_TEMPLATE_SIZE - 2, LABEL_OCR_TEMPLATE_SIZE - 2, { fit: 'fill' })
+			.resize(LABEL_OCR_TEMPLATE_SIZE - 2, LABEL_OCR_TEMPLATE_SIZE - 2, {fit: 'fill'})
 			.extend({
 				top: 1,
 				right: 1,
@@ -751,17 +780,13 @@ ${pathElements}
 	 * @returns {Promise<{ left: number, top: number, width: number, height: number }>} Crop rectangle.
 	 */
 	async labelOcrMassCropBounds(mask) {
-		const { data, info } = await sharp(mask)
-			.removeAlpha()
-			.greyscale()
-			.raw()
-			.toBuffer({ resolveWithObject: true });
+		const {data, info} = await sharp(mask).removeAlpha().greyscale().raw().toBuffer({resolveWithObject: true});
 		const columns = Array(info.width).fill(0);
 		const rows = Array(info.height).fill(0);
 
 		for (let y = 0; y < info.height; y += 1) {
 			for (let x = 0; x < info.width; x += 1) {
-				const darkness = 1 - (data[(y * info.width) + x] / 255);
+				const darkness = 1 - data[y * info.width + x] / 255;
 
 				if (darkness >= LABEL_OCR_MASS_CROP_DARKNESS_FLOOR) {
 					columns[x] += darkness;
@@ -791,7 +816,7 @@ ${pathElements}
 		const total = values.reduce((sum, value) => sum + value, 0);
 
 		if (total <= 0) {
-			return { start: 0, end: values.length - 1 };
+			return {start: 0, end: values.length - 1};
 		}
 
 		const target = total * LABEL_OCR_MASS_CROP_TAIL_RATIO;
@@ -811,7 +836,7 @@ ${pathElements}
 			end -= 1;
 		}
 
-		return start <= end ? { start, end } : { start: 0, end: values.length - 1 };
+		return start <= end ? {start, end} : {start: 0, end: values.length - 1};
 	}
 
 	/**
@@ -831,13 +856,9 @@ ${pathElements}
 	 * @returns {Promise<number[]>} Darkness values in 0..1.
 	 */
 	async darknessFromBuffer(buffer) {
-		const { data } = await sharp(buffer)
-			.removeAlpha()
-			.greyscale()
-			.raw()
-			.toBuffer({ resolveWithObject: true });
+		const {data} = await sharp(buffer).removeAlpha().greyscale().raw().toBuffer({resolveWithObject: true});
 
-		return [...data].map((value) => 1 - (value / 255));
+		return [...data].map((value) => 1 - value / 255);
 	}
 
 	/**
@@ -902,11 +923,13 @@ ${pathElements}
 		}
 
 		if (familyKey === 'dragon') {
-			return {
-				r: 'C',
-				g: 'F',
-				w: 'P',
-			}[value] || null;
+			return (
+				{
+					r: 'C',
+					g: 'F',
+					w: 'P',
+				}[value] || null
+			);
 		}
 
 		return null;
@@ -935,9 +958,12 @@ ${pathElements}
 		const areasByPaint = new Map();
 
 		for (const component of components) {
-			const paint = component.fill && component.fill !== 'none'
-				? component.fill
-				: component.stroke && component.stroke !== 'none' ? component.stroke : null;
+			const paint =
+				component.fill && component.fill !== 'none'
+					? component.fill
+					: component.stroke && component.stroke !== 'none'
+						? component.stroke
+						: null;
 
 			if (!paint) {
 				continue;
@@ -946,8 +972,7 @@ ${pathElements}
 			areasByPaint.set(paint, (areasByPaint.get(paint) || 0) + (component.area || 0));
 		}
 
-		return [...areasByPaint.entries()]
-			.sort((left, right) => right[1] - left[1])[0]?.[0] || null;
+		return [...areasByPaint.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] || null;
 	}
 
 	/**
@@ -957,17 +982,18 @@ ${pathElements}
 	 * @returns {string} Debug SVG source.
 	 */
 	buildIdentifiedComponentsSvg(artifact, options = {}) {
-		const viewBox = artifact.viewBox || artifact.alignmentBounds || { minX: 0, minY: 0, width: 1, height: 1 };
+		const viewBox = artifact.viewBox || artifact.alignmentBounds || {minX: 0, minY: 0, width: 1, height: 1};
 		const minX = viewBox.minX ?? viewBox.left ?? 0;
 		const minY = viewBox.minY ?? viewBox.top ?? 0;
 		const width = viewBox.width || 1;
 		const height = viewBox.height || 1;
 		const alignmentComponentIds = new Set(artifact.alignmentComponentIds || []);
 		const paths = (artifact.components || [])
-			.filter((component) => (
-				alignmentComponentIds.has(component.componentId)
-				|| this.isIdentifiedArtworkCutout(component, artifact.alignmentBounds)
-			))
+			.filter(
+				(component) =>
+					alignmentComponentIds.has(component.componentId) ||
+					this.isIdentifiedArtworkCutout(component, artifact.alignmentBounds),
+			)
 			.filter((component) => component.pathData)
 			.map((component) => this.componentToSvgPath(component))
 			.join('\n');
@@ -986,16 +1012,18 @@ ${paths}
 	 * @returns {string} Debug SVG source.
 	 */
 	buildIdentifiedShapesSvg(artifact, options = {}) {
-		const viewBox = artifact.viewBox || artifact.alignmentBounds || { minX: 0, minY: 0, width: 1, height: 1 };
+		const viewBox = artifact.viewBox || artifact.alignmentBounds || {minX: 0, minY: 0, width: 1, height: 1};
 		const minX = viewBox.minX ?? viewBox.left ?? 0;
 		const minY = viewBox.minY ?? viewBox.top ?? 0;
 		const width = viewBox.width || 1;
 		const height = viewBox.height || 1;
 		const alignmentShapeIds = new Set(artifact.alignmentShapeIds || []);
-		const componentsById = new Map((artifact.components || []).map((component) => [component.componentId, component]));
+		const componentsById = new Map(
+			(artifact.components || []).map((component) => [component.componentId, component]),
+		);
 		const shapeGroups = (artifact.sourceShapes || [])
 			.filter((shape) => alignmentShapeIds.has(shape.shapeId))
-			.map((shape, index) => this.shapeToDebugSvgGroup({ shape, index, componentsById }))
+			.map((shape, index) => this.shapeToDebugSvgGroup({shape, index, componentsById}))
 			.join('\n');
 
 		return `<svg ${IDENTIFIED_SVG_NAMESPACE_ATTRIBUTES} viewBox="${minX} ${minY} ${width} ${height}">
@@ -1011,7 +1039,7 @@ ${shapeGroups}
 	 * @param {SourceShapeDebugGroupOptions} options - Shape rendering inputs.
 	 * @returns {string} SVG group element source.
 	 */
-	shapeToDebugSvgGroup({ shape, index, componentsById }) {
+	shapeToDebugSvgGroup({shape, index, componentsById}) {
 		const color = DEBUG_SHAPE_COLORS[index % DEBUG_SHAPE_COLORS.length];
 		const bounds = shape.bounds;
 		const outline = bounds
@@ -1045,7 +1073,7 @@ ${outline}
 			return false;
 		}
 
-		const alignmentArea = alignmentBounds.area || ((alignmentBounds.width || 0) * (alignmentBounds.height || 0));
+		const alignmentArea = alignmentBounds.area || (alignmentBounds.width || 0) * (alignmentBounds.height || 0);
 
 		return component.area / Math.max(1, alignmentArea) <= 0.9;
 	}
@@ -1058,11 +1086,13 @@ ${outline}
 	 * @returns {boolean} True when the bounds overlap or touch.
 	 */
 	boundsOverlap(left, right) {
-		return Boolean(left && right)
-			&& left.right >= right.left
-			&& left.left <= right.right
-			&& left.bottom >= right.top
-			&& left.top <= right.bottom;
+		return (
+			Boolean(left && right) &&
+			left.right >= right.left &&
+			left.left <= right.right &&
+			left.bottom >= right.top &&
+			left.top <= right.bottom
+		);
 	}
 
 	/**
@@ -1082,15 +1112,21 @@ ${outline}
 			`fill="${isNegativeSpace ? 'none' : this.escapeAttribute(component.fill && component.fill !== 'none' ? component.fill : 'none')}"`,
 			isNegativeSpace
 				? 'stroke="#777777"'
-				: component.stroke && component.stroke !== 'none' ? `stroke="${this.escapeAttribute(component.stroke)}"` : null,
+				: component.stroke && component.stroke !== 'none'
+					? `stroke="${this.escapeAttribute(component.stroke)}"`
+					: null,
 			isNegativeSpace
 				? 'stroke-width="0.75"'
-				: component.strokeWidth ? `stroke-width="${this.escapeAttribute(component.strokeWidth)}"` : null,
+				: component.strokeWidth
+					? `stroke-width="${this.escapeAttribute(component.strokeWidth)}"`
+					: null,
 			isNegativeSpace ? 'stroke-dasharray="2 2"' : null,
 			component.fillRule ? `fill-rule="${this.escapeAttribute(component.fillRule)}"` : null,
 			component.clipRule ? `clip-rule="${this.escapeAttribute(component.clipRule)}"` : null,
 			component.opacity != null ? `opacity="${this.escapeAttribute(component.opacity)}"` : null,
-		].filter(Boolean).join(' ');
+		]
+			.filter(Boolean)
+			.join(' ');
 
 		return `<path ${attrs}/>`;
 	}
@@ -1108,14 +1144,16 @@ ${outline}
 			return null;
 		}
 
-		return `transform="${this.escapeAttribute(`matrix(${[
-			transform.a ?? 1,
-			transform.b ?? 0,
-			transform.c ?? 0,
-			transform.d ?? 1,
-			transform.e ?? 0,
-			transform.f ?? 0,
-		].join(' ')})`)}"`;
+		return `transform="${this.escapeAttribute(
+			`matrix(${[
+				transform.a ?? 1,
+				transform.b ?? 0,
+				transform.c ?? 0,
+				transform.d ?? 1,
+				transform.e ?? 0,
+				transform.f ?? 0,
+			].join(' ')})`,
+		)}"`;
 	}
 
 	/**
@@ -1125,12 +1163,14 @@ ${outline}
 	 * @returns {boolean} True when the matrix is identity.
 	 */
 	isIdentityTransform(transform) {
-		return this.nearlyEqual(transform.a ?? 1, 1)
-			&& this.nearlyEqual(transform.b ?? 0, 0)
-			&& this.nearlyEqual(transform.c ?? 0, 0)
-			&& this.nearlyEqual(transform.d ?? 1, 1)
-			&& this.nearlyEqual(transform.e ?? 0, 0)
-			&& this.nearlyEqual(transform.f ?? 0, 0);
+		return (
+			this.nearlyEqual(transform.a ?? 1, 1) &&
+			this.nearlyEqual(transform.b ?? 0, 0) &&
+			this.nearlyEqual(transform.c ?? 0, 0) &&
+			this.nearlyEqual(transform.d ?? 1, 1) &&
+			this.nearlyEqual(transform.e ?? 0, 0) &&
+			this.nearlyEqual(transform.f ?? 0, 0)
+		);
 	}
 
 	/**
@@ -1144,12 +1184,11 @@ ${outline}
 	formatSourceComponent(faceKey, component, index) {
 		const sourceIndex = component.sourceIndex ?? index;
 		const sourceElementComponentId = `src.${faceKey}.${String(sourceIndex + 1).padStart(4, '0')}`;
-		const subcomponentIndex = Number.isFinite(component.subcomponentIndex)
-			? component.subcomponentIndex
-			: null;
-		const componentId = subcomponentIndex == null
-			? sourceElementComponentId
-			: `${sourceElementComponentId}.${String(subcomponentIndex + 1).padStart(4, '0')}`;
+		const subcomponentIndex = Number.isFinite(component.subcomponentIndex) ? component.subcomponentIndex : null;
+		const componentId =
+			subcomponentIndex == null
+				? sourceElementComponentId
+				: `${sourceElementComponentId}.${String(subcomponentIndex + 1).padStart(4, '0')}`;
 
 		return {
 			componentId,
@@ -1239,9 +1278,7 @@ ${outline}
 			return null;
 		}
 
-		return this.path.isAbsolute(rawPath)
-			? rawPath
-			: this.path.resolve(this.rootDir, rawPath);
+		return this.path.isAbsolute(rawPath) ? rawPath : this.path.resolve(this.rootDir, rawPath);
 	}
 
 	/**
@@ -1252,7 +1289,7 @@ ${outline}
 	 * @returns {Promise<void>}
 	 */
 	async writeJson(outputPath, data) {
-		await this.fs.mkdir(this.path.dirname(outputPath), { recursive: true });
+		await this.fs.mkdir(this.path.dirname(outputPath), {recursive: true});
 		await this.fs.writeFile(outputPath, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
 	}
 
@@ -1336,7 +1373,7 @@ function hasVisiblePaint(component) {
 }
 
 function flattenVisiblePaintLayers(components) {
-	const flattenedComponents = components.map((component) => ({ ...component }));
+	const flattenedComponents = components.map((component) => ({...component}));
 
 	for (let index = 0; index < flattenedComponents.length; index += 1) {
 		const component = flattenedComponents[index];
@@ -1376,13 +1413,15 @@ function flattenVisiblePaintLayers(components) {
 }
 
 function shouldFlattenPaintLayer(component) {
-	return Boolean(component?.pathData)
-		&& isVisiblePaint(component.fill)
-		&& !isVisiblePaint(component.stroke)
-		&& !component.classification?.tileLayerCandidate
-		&& !component.classification?.negativeSpaceCandidate
-		&& (component.opacity == null || Number(component.opacity) >= 1)
-		&& (component.fillOpacity == null || Number(component.fillOpacity) >= 1);
+	return (
+		Boolean(component?.pathData) &&
+		isVisiblePaint(component.fill) &&
+		!isVisiblePaint(component.stroke) &&
+		!component.classification?.tileLayerCandidate &&
+		!component.classification?.negativeSpaceCandidate &&
+		(component.opacity == null || Number(component.opacity) >= 1) &&
+		(component.fillOpacity == null || Number(component.fillOpacity) >= 1)
+	);
 }
 
 function annotateSourceShapeIds(components, sourceShapes) {
@@ -1396,14 +1435,13 @@ function annotateSourceShapeIds(components, sourceShapes) {
 	return components.map((component) => ({
 		...component,
 		...(shapeIdByComponentId.has(component.componentId)
-			? { sourceShapeId: shapeIdByComponentId.get(component.componentId) }
+			? {sourceShapeId: shapeIdByComponentId.get(component.componentId)}
 			: {}),
 	}));
 }
 
 function sameSourceShape(left, right) {
-	return Boolean(left?.sourceShapeId && right?.sourceShapeId)
-		&& left.sourceShapeId === right.sourceShapeId;
+	return Boolean(left?.sourceShapeId && right?.sourceShapeId) && left.sourceShapeId === right.sourceShapeId;
 }
 
 function sameSourcePaintElement(left, right) {
@@ -1412,9 +1450,7 @@ function sameSourcePaintElement(left, right) {
 }
 
 function sourcePaintElementKey(component) {
-	return component?.sourceUseInstanceId
-		|| component?.sourceElementComponentId
-		|| null;
+	return component?.sourceUseInstanceId || component?.sourceElementComponentId || null;
 }
 
 function subtractPaintLayerOcclusions(component, occludingComponents) {
@@ -1426,7 +1462,7 @@ function subtractPaintLayerOcclusions(component, occludingComponents) {
 
 		for (const occludingComponent of occludingComponents) {
 			const occluder = makeTransformedCompoundPath(occludingComponent);
-			const next = result.subtract(occluder, { insert: false });
+			const next = result.subtract(occluder, {insert: false});
 
 			result.remove();
 			occluder.remove();
@@ -1485,21 +1521,23 @@ function subtractPaintLayerOcclusions(component, occludingComponents) {
 		};
 	} catch {
 		result?.remove?.();
-		return { changed: false, component };
+		return {changed: false, component};
 	}
 }
 
 function makeTransformedCompoundPath(component) {
 	const item = new paper.CompoundPath(component.pathData);
-	const transform = component.transform || { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
-	item.transform(new paper.Matrix(
-		transform.a ?? 1,
-		transform.b ?? 0,
-		transform.c ?? 0,
-		transform.d ?? 1,
-		transform.e ?? 0,
-		transform.f ?? 0,
-	));
+	const transform = component.transform || {a: 1, b: 0, c: 0, d: 1, e: 0, f: 0};
+	item.transform(
+		new paper.Matrix(
+			transform.a ?? 1,
+			transform.b ?? 0,
+			transform.c ?? 0,
+			transform.d ?? 1,
+			transform.e ?? 0,
+			transform.f ?? 0,
+		),
+	);
 	return item;
 }
 
@@ -1531,19 +1569,23 @@ function round(value) {
 }
 
 function boundsOverlap(left, right) {
-	return Boolean(left && right)
-		&& left.right >= right.left
-		&& left.left <= right.right
-		&& left.bottom >= right.top
-		&& left.top <= right.bottom;
+	return (
+		Boolean(left && right) &&
+		left.right >= right.left &&
+		left.left <= right.right &&
+		left.bottom >= right.top &&
+		left.top <= right.bottom
+	);
 }
 
 function boundsContainCenter(bounds, center) {
-	return Boolean(bounds && center)
-		&& center.x >= bounds.left
-		&& center.x <= bounds.right
-		&& center.y >= bounds.top
-		&& center.y <= bounds.bottom;
+	return (
+		Boolean(bounds && center) &&
+		center.x >= bounds.left &&
+		center.x <= bounds.right &&
+		center.y >= bounds.top &&
+		center.y <= bounds.bottom
+	);
 }
 
 function sourceUseShapeInstance(component) {
@@ -1553,16 +1595,20 @@ function sourceUseShapeInstance(component) {
 
 	const instances = component.sourceUseInstances || [];
 
-	return [...instances].reverse().find((instance) => (
-		instance?.sourceUseId
-		&& instance?.sourceUseInstanceId
-		&& !STRUCTURAL_SOURCE_USE_IDS.has(instance.sourceUseId)
-	)) || null;
+	return (
+		[...instances]
+			.reverse()
+			.find(
+				(instance) =>
+					instance?.sourceUseId &&
+					instance?.sourceUseInstanceId &&
+					!STRUCTURAL_SOURCE_USE_IDS.has(instance.sourceUseId),
+			) || null
+	);
 }
 
 function isSeparableSplitSubcomponent(component) {
-	return component?.componentLevel === 'subcomponent'
-		&& component?.splitStrategy === 'compound-path-band';
+	return component?.componentLevel === 'subcomponent' && component?.splitStrategy === 'compound-path-band';
 }
 
 function extractSvgDefs(svgSource) {
@@ -1570,11 +1616,11 @@ function extractSvgDefs(svgSource) {
 }
 
 function isVisiblePaint(value) {
-	const normalized = String(value || '').trim().toLowerCase();
+	const normalized = String(value || '')
+		.trim()
+		.toLowerCase();
 
-	return Boolean(normalized)
-		&& normalized !== 'none'
-		&& normalized !== 'transparent';
+	return Boolean(normalized) && normalized !== 'none' && normalized !== 'transparent';
 }
 
 function sameValues(leftValues, rightValues) {
@@ -1586,25 +1632,27 @@ function sameValues(leftValues, rightValues) {
 }
 
 function boundsContain(outer, inner, tolerance = 0) {
-	return inner.left >= outer.left - tolerance
-		&& inner.top >= outer.top - tolerance
-		&& inner.right <= outer.right + tolerance
-		&& inner.bottom <= outer.bottom + tolerance;
+	return (
+		inner.left >= outer.left - tolerance &&
+		inner.top >= outer.top - tolerance &&
+		inner.right <= outer.right + tolerance &&
+		inner.bottom <= outer.bottom + tolerance
+	);
 }
 
 function normalizedCenterDistance(leftBounds, rightBounds) {
 	const leftCenter = leftBounds.center || {
-		x: leftBounds.left + (leftBounds.width / 2),
-		y: leftBounds.top + (leftBounds.height / 2),
+		x: leftBounds.left + leftBounds.width / 2,
+		y: leftBounds.top + leftBounds.height / 2,
 	};
 	const rightCenter = rightBounds.center || {
-		x: rightBounds.left + (rightBounds.width / 2),
-		y: rightBounds.top + (rightBounds.height / 2),
+		x: rightBounds.left + rightBounds.width / 2,
+		y: rightBounds.top + rightBounds.height / 2,
 	};
 	const width = Math.max(leftBounds.width, rightBounds.width, 1);
 	const height = Math.max(leftBounds.height, rightBounds.height, 1);
 	const x = (leftCenter.x - rightCenter.x) / width;
 	const y = (leftCenter.y - rightCenter.y) / height;
 
-	return Math.sqrt((x * x) + (y * y));
+	return Math.sqrt(x * x + y * y);
 }

@@ -1,10 +1,8 @@
 import paper from 'paper';
-import { parseTransform } from './source-svg-components.js';
+import {parseTransform} from './source-svg-components.js';
 
 export function transformPathData(pathData, transform) {
-	const matrix = typeof transform === 'string'
-		? parseTransform(transform)
-		: transform;
+	const matrix = typeof transform === 'string' ? parseTransform(transform) : transform;
 	const item = new paper.CompoundPath(pathData);
 	item.transform(new paper.Matrix(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f));
 	const result = item.pathData;
@@ -18,4 +16,3 @@ export function makeCompoundPathData(pathDataList) {
 		.filter(Boolean)
 		.join(' ');
 }
-

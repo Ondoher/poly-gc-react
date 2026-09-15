@@ -24,7 +24,7 @@ interface ReferenceApprovalViewService {
 	 *
 	 * @param options - Control reload prompting and loading messages.
 	 */
-	load(options?: { force?: boolean; quiet?: boolean }): Promise<void>;
+	load(options?: {force?: boolean; quiet?: boolean}): Promise<void>;
 
 	/**
 	 * Persist the current reference structure draft.

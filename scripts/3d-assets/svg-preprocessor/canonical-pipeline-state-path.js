@@ -1,5 +1,5 @@
 import path from 'path';
-import { BASE_OUTPUT } from './PipelineModel.js';
+import {BASE_OUTPUT} from './PipelineModel.js';
 
 /**
  * Returns the canonical tileset state path for a source tileset.

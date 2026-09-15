@@ -155,17 +155,17 @@ range becomes brown, and the remaining chromatic colors are assigned by hue
 angle. See more in the
 [MDN `oklch()` reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/oklch).
 
-| Hue | Canonical center | Dark anchor | Light anchor | Classification summary |
-| --- | --- | --- | --- | --- |
-| White | `#F4F4F4` | `#B8B8B8` | `#FEFEFE` | Very low chroma and light, or very light low-chroma colors. |
-| Black | `#000000` | `#000000` | `#6A6A6A` | Very low chroma and dark, or very dark low-chroma colors. |
-| Red | `#FC1D05` | `#9C1204` | `#FF6B4A` | Chromatic red/orange-red hue range. |
-| Orange | `#FF9900` | `#9C5200` | `#FFC04A` | Chromatic orange hue range, excluding colors classified as brown. |
-| Brown | `#8A3A12` | `#4A1C00` | `#B8662A` | Low-lightness, moderate-chroma orange/yellow colors. |
-| Yellow | `#F6F610` | `#9B9700` | `#FFFF61` | Chromatic yellow hue range. |
-| Green | `#2FC906` | `#004D00` | `#73F246` | Chromatic green hue range. |
-| Blue | `#0505D1` | `#02046F` | `#555CFF` | Chromatic cyan/blue hue range. |
-| Purple | `#BC197A` | `#6F0D46` | `#F06DB8` | Chromatic purple/magenta hue ranges, plus very light red-pink. |
+| Hue    | Canonical center | Dark anchor | Light anchor | Classification summary                                            |
+| ------ | ---------------- | ----------- | ------------ | ----------------------------------------------------------------- |
+| White  | `#F4F4F4`        | `#B8B8B8`   | `#FEFEFE`    | Very low chroma and light, or very light low-chroma colors.       |
+| Black  | `#000000`        | `#000000`   | `#6A6A6A`    | Very low chroma and dark, or very dark low-chroma colors.         |
+| Red    | `#FC1D05`        | `#9C1204`   | `#FF6B4A`    | Chromatic red/orange-red hue range.                               |
+| Orange | `#FF9900`        | `#9C5200`   | `#FFC04A`    | Chromatic orange hue range, excluding colors classified as brown. |
+| Brown  | `#8A3A12`        | `#4A1C00`   | `#B8662A`    | Low-lightness, moderate-chroma orange/yellow colors.              |
+| Yellow | `#F6F610`        | `#9B9700`   | `#FFFF61`    | Chromatic yellow hue range.                                       |
+| Green  | `#2FC906`        | `#004D00`   | `#73F246`    | Chromatic green hue range.                                        |
+| Blue   | `#0505D1`        | `#02046F`   | `#555CFF`    | Chromatic cyan/blue hue range.                                    |
+| Purple | `#BC197A`        | `#6F0D46`   | `#F06DB8`    | Chromatic purple/magenta hue ranges, plus very light red-pink.    |
 
 Rendering can override a hue's output anchors for a specific target behavior.
 Those render anchors are not source-detection boundaries. For example, red
@@ -174,11 +174,11 @@ darker and lighter than the detection range to provide more contrast in output.
 The render center should still be the reference color for that hue unless an
 explicit rendering decision says otherwise.
 
-| Render hue | Center | Dark output anchor | Light output anchor | Purpose |
-| --- | --- | --- | --- | --- |
-| Blue | `#0505D1` | `#02046F` | `#7F85FF` | Wider art-directed blue range with extra light-side headroom. |
-| Red | `#FC1D05` | `#AA0000` | `#FFA2A2` | Wider art-directed red range for material contrast, with extra light-side headroom for two-shade red parts. |
-| Brown-to-red | `#FC1D05` | `#AA0000` | `#FFA2A2` | Render brown-targeted output through the red material range. |
+| Render hue   | Center    | Dark output anchor | Light output anchor | Purpose                                                                                                     |
+| ------------ | --------- | ------------------ | ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Blue         | `#0505D1` | `#02046F`          | `#7F85FF`           | Wider art-directed blue range with extra light-side headroom.                                               |
+| Red          | `#FC1D05` | `#AA0000`          | `#FFA2A2`           | Wider art-directed red range for material contrast, with extra light-side headroom for two-shade red parts. |
+| Brown-to-red | `#FC1D05` | `#AA0000`          | `#FFA2A2`           | Render brown-targeted output through the red material range.                                                |
 
 The brown-to-red case lets muddy brown source details contribute shade
 structure without forcing a brown output material. This supports the default
@@ -368,23 +368,23 @@ Future palette editing should live in rendering defaults and overrides:
 
 ```json
 {
-  "rendering": {
-    "defaults": {
-      "palette": {}
-    },
-    "overrides": {
-      "suits": {
-        "bamboo": {
-          "palette": {}
-        }
-      },
-      "faces": {
-        "b-9": {
-          "palette": {}
-        }
-      }
-    }
-  }
+	"rendering": {
+		"defaults": {
+			"palette": {}
+		},
+		"overrides": {
+			"suits": {
+				"bamboo": {
+					"palette": {}
+				}
+			},
+			"faces": {
+				"b-9": {
+					"palette": {}
+				}
+			}
+		}
+	}
 }
 ```
 

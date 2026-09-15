@@ -128,9 +128,9 @@ Each entry carries:
 
 ```json
 {
-  "componentId": "source-component-id",
-  "partId": "semantic-part-id-or-null",
-  "action": "bind | unbind | none"
+	"componentId": "source-component-id",
+	"partId": "semantic-part-id-or-null",
+	"action": "bind | unbind | none"
 }
 ```
 

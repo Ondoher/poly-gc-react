@@ -1,397 +1,397 @@
 .mj-settings-dialog-content {
-    --mj-settings-selector-width: clamp(120px, 18vw, 154px);
-    --mj-settings-selector-option-height: clamp(30px, 4.1vw, 36px);
-    --mj-settings-selector-rail-width: clamp(12px, 1.8vw, 16px);
+	--mj-settings-selector-width: clamp(120px, 18vw, 154px);
+	--mj-settings-selector-option-height: clamp(30px, 4.1vw, 36px);
+	--mj-settings-selector-rail-width: clamp(12px, 1.8vw, 16px);
 }
 
 .mj-settings-dialog-selector {
-    align-self: start;
-    height: 100%;
-    max-height: 100%;
-    min-height: 0;
-    box-sizing: border-box;
-    padding: 8px 10px 10px 10px;
-    overflow: hidden;
+	align-self: start;
+	height: 100%;
+	max-height: 100%;
+	min-height: 0;
+	box-sizing: border-box;
+	padding: 8px 10px 10px 10px;
+	overflow: hidden;
 }
 
 .mj-settings-dialog-list-scroll {
-    display: grid;
-    gap: 12px;
-    max-height: min(60vh, 100%);
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 4px 2px 4px 0;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+	display: grid;
+	gap: 12px;
+	max-height: min(60vh, 100%);
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 4px 2px 4px 0;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
 }
 
 .mj-settings-dialog-list-scroll::-webkit-scrollbar {
-    width: 0;
-    height: 0;
+	width: 0;
+	height: 0;
 }
 
 .mj-settings-dialog-list-option {
-    min-width: 0;
-    min-height: var(--mj-settings-selector-option-height);
-    width: 100%;
-    padding-inline: 2px;
+	min-width: 0;
+	min-height: var(--mj-settings-selector-option-height);
+	width: 100%;
+	padding-inline: 2px;
 }
 
 .mj-settings-dialog-list-separator {
-    height: 1px;
-    margin: -2px 4px 0 2px;
-    background: rgba(211, 160, 36, 0.6);
-    box-shadow: 0 1px 0 rgba(75, 33, 5, 0.28);
+	height: 1px;
+	margin: -2px 4px 0 2px;
+	background: rgba(211, 160, 36, 0.6);
+	box-shadow: 0 1px 0 rgba(75, 33, 5, 0.28);
 }
 
 .mj-settings-dialog-list-option .mj-raised-button-label {
-    display: block;
-    max-width: 100%;
-    overflow: hidden;
-    font-size: clamp(11px, 1.55vw, 12px);
-    line-height: 1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+	display: block;
+	max-width: 100%;
+	overflow: hidden;
+	font-size: clamp(11px, 1.55vw, 12px);
+	line-height: 1;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .mj-settings-dialog-list-option.is-long .mj-raised-button-label {
-    font-size: 11px;
-    line-height: 1.02;
-    padding-top: 1px;
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+	font-size: 11px;
+	line-height: 1.02;
+	padding-top: 1px;
+	white-space: normal;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 }
 
 .mj-settings-dialog-list-option.is-very-long .mj-raised-button-label {
-    font-size: 10px;
-    line-height: 1;
-    padding-top: 1px;
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+	font-size: 10px;
+	line-height: 1;
+	padding-top: 1px;
+	white-space: normal;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 }
 
 .mj-settings-dialog-list-body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 16px;
-    gap: 14px;
-    align-items: stretch;
-    height: 100%;
-    max-height: 100%;
-    min-height: 0;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 16px;
+	gap: 14px;
+	align-items: stretch;
+	height: 100%;
+	max-height: 100%;
+	min-height: 0;
 }
 
 .mj-settings-dialog-list-viewport {
-    min-width: 0;
-    min-height: 0;
-    padding: 10px 0 10px 10px;
-    overflow: hidden;
+	min-width: 0;
+	min-height: 0;
+	padding: 10px 0 10px 10px;
+	overflow: hidden;
 }
 
 .mj-settings-dialog-list-rail {
-    position: relative;
-    width: 16px;
-    align-self: stretch;
-    height: 100%;
-    min-height: 0;
+	position: relative;
+	width: 16px;
+	align-self: stretch;
+	height: 100%;
+	min-height: 0;
 }
 
 .mj-settings-dialog-list-track {
-    position: absolute;
-    top: -1px;
-    right: 4px;
-    bottom: -1px;
-    left: 4px;
-    background:
-        linear-gradient(180deg, rgba(112, 18, 16, 0.22), rgba(58, 10, 10, 0.68));
-    box-shadow:
-        inset 1px 0 0 rgba(231, 180, 60, 0.12),
-        inset -1px 0 0 rgba(38, 4, 4, 0.4);
+	position: absolute;
+	top: -1px;
+	right: 4px;
+	bottom: -1px;
+	left: 4px;
+	background: linear-gradient(180deg, rgba(112, 18, 16, 0.22), rgba(58, 10, 10, 0.68));
+	box-shadow:
+		inset 1px 0 0 rgba(231, 180, 60, 0.12),
+		inset -1px 0 0 rgba(38, 4, 4, 0.4);
 }
 
 .mj-settings-dialog-list-thumb {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    min-height: 24px;
-    background: rgba(245, 205, 78, 0.99);
-    box-shadow:
-        inset 1px 1px 0 rgba(255, 244, 184, 0.82),
-        inset -1px 0 0 rgba(204, 134, 28, 0.82),
-        inset 0 -1px 0 rgba(188, 114, 20, 0.86),
-        inset 2px 0 0 rgba(255, 220, 118, 0.36),
-        0 2px 0 rgba(140, 72, 18, 0.52),
-        2px 4px 0 rgba(78, 25, 14, 0.36),
-        0 5px 8px rgba(41, 8, 8, 0.14);
-    opacity: 0;
-    transition: transform 120ms linear, opacity 120ms linear;
-    cursor: grab;
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	min-height: 24px;
+	background: rgba(245, 205, 78, 0.99);
+	box-shadow:
+		inset 1px 1px 0 rgba(255, 244, 184, 0.82),
+		inset -1px 0 0 rgba(204, 134, 28, 0.82),
+		inset 0 -1px 0 rgba(188, 114, 20, 0.86),
+		inset 2px 0 0 rgba(255, 220, 118, 0.36),
+		0 2px 0 rgba(140, 72, 18, 0.52),
+		2px 4px 0 rgba(78, 25, 14, 0.36),
+		0 5px 8px rgba(41, 8, 8, 0.14);
+	opacity: 0;
+	transition:
+		transform 120ms linear,
+		opacity 120ms linear;
+	cursor: grab;
 }
 
 .mj-settings-dialog-list-body.is-horizontal {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) 16px;
-    height: clamp(64px, 13vh, 88px);
-    max-height: none;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: minmax(0, 1fr) 16px;
+	height: clamp(64px, 13vh, 88px);
+	max-height: none;
 }
 
 .mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-viewport {
-    padding: 10px 10px 0 10px;
+	padding: 10px 10px 0 10px;
 }
 
 .mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-scroll {
-    grid-auto-flow: column;
-    grid-auto-columns: max-content;
-    grid-template-rows: minmax(0, 1fr);
-    max-width: 100%;
-    max-height: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 4px 0 2px 0;
+	grid-auto-flow: column;
+	grid-auto-columns: max-content;
+	grid-template-rows: minmax(0, 1fr);
+	max-width: 100%;
+	max-height: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding: 4px 0 2px 0;
 }
 
 .mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-option {
-    width: var(--mj-settings-selector-width);
+	width: var(--mj-settings-selector-width);
 }
 
 .mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-separator {
-    width: 1px;
-    height: auto;
-    margin: 4px -2px 4px 0;
+	width: 1px;
+	height: auto;
+	margin: 4px -2px 4px 0;
 }
 
 .mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-rail {
-    width: 100%;
-    height: 16px;
+	width: 100%;
+	height: 16px;
 }
 
 .mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-track {
-    top: 4px;
-    right: -1px;
-    bottom: 4px;
-    left: -1px;
-    background:
-        linear-gradient(90deg, rgba(112, 18, 16, 0.22), rgba(58, 10, 10, 0.68));
-    box-shadow:
-        inset 0 1px 0 rgba(231, 180, 60, 0.12),
-        inset 0 -1px 0 rgba(38, 4, 4, 0.4);
+	top: 4px;
+	right: -1px;
+	bottom: 4px;
+	left: -1px;
+	background: linear-gradient(90deg, rgba(112, 18, 16, 0.22), rgba(58, 10, 10, 0.68));
+	box-shadow:
+		inset 0 1px 0 rgba(231, 180, 60, 0.12),
+		inset 0 -1px 0 rgba(38, 4, 4, 0.4);
 }
 
 .mj-settings-dialog-list-body.is-horizontal .mj-settings-dialog-list-thumb {
-    top: 0;
-    bottom: 0;
-    right: auto;
-    min-width: 24px;
-    min-height: 0;
+	top: 0;
+	bottom: 0;
+	right: auto;
+	min-width: 24px;
+	min-height: 0;
 }
 
 .mj-settings-dialog-selector.is-horizontal {
-    align-self: stretch;
-    height: auto;
-    max-height: none;
+	align-self: stretch;
+	height: auto;
+	max-height: none;
 }
 
 .mj-settings-dialog-list-thumb.is-visible {
-    opacity: 1;
+	opacity: 1;
 }
 
 .mj-settings-dialog-list-thumb.is-dragging {
-    cursor: grabbing;
+	cursor: grabbing;
 }
 
 .mj-settings-selector {
-    display: inline-grid;
-    align-self: start;
-    width: 100%;
-    height: fit-content;
-    padding: 10px 8px 10px 12px;
-    min-height: 0;
-    box-sizing: border-box;
-    border: 2px solid var(--mj-ui-primary-color);
-    background: rgba(116, 14, 14, 0.2);
+	display: inline-grid;
+	align-self: start;
+	width: 100%;
+	height: fit-content;
+	padding: 10px 8px 10px 12px;
+	min-height: 0;
+	box-sizing: border-box;
+	border: 2px solid var(--mj-ui-primary-color);
+	background: rgba(116, 14, 14, 0.2);
 }
 
 .mj-settings-selector-body {
-    display: grid;
-    grid-template-columns: 1fr calc(var(--mj-settings-selector-rail-width) - 2px);
-    gap: 8px;
-    align-items: start;
-    height: fit-content;
-    min-height: 0;
-    overflow: visible;
-    box-sizing: border-box;
+	display: grid;
+	grid-template-columns: 1fr calc(var(--mj-settings-selector-rail-width) - 2px);
+	gap: 8px;
+	align-items: start;
+	height: fit-content;
+	min-height: 0;
+	overflow: visible;
+	box-sizing: border-box;
 }
 
 .mj-settings-selector-list {
-    min-height: 0;
-    height: fit-content;
-    box-sizing: border-box;
-    padding: 0;
-    border: 0;
-    background: transparent;
+	min-height: 0;
+	height: fit-content;
+	box-sizing: border-box;
+	padding: 0;
+	border: 0;
+	background: transparent;
 }
 
 .mj-settings-selector-scroll {
-    display: grid;
-    align-content: start;
-    gap: 10px;
-    height: fit-content;
-    max-height: min(60vh, 100%);
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 2px;
-    scrollbar-width: none;
+	display: grid;
+	align-content: start;
+	gap: 10px;
+	height: fit-content;
+	max-height: min(60vh, 100%);
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding-right: 2px;
+	scrollbar-width: none;
 }
 
 .mj-settings-selector-scroll::-webkit-scrollbar {
-    width: 0;
-    height: 0;
+	width: 0;
+	height: 0;
 }
 
 .mj-settings-selector-option {
-    min-width: 0;
-    min-height: var(--mj-settings-selector-option-height);
-    width: 100%;
+	min-width: 0;
+	min-height: var(--mj-settings-selector-option-height);
+	width: 100%;
 }
 
 .mj-settings-selector-option.mj-raised-button {
-    min-width: 0;
-    width: 100%;
+	min-width: 0;
+	width: 100%;
 }
 
 .mj-settings-selector-option .mj-raised-button-label {
-    display: block;
-    max-width: 100%;
-    overflow: hidden;
-    font-size: clamp(11px, 1.55vw, 12px);
-    line-height: 1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+	display: block;
+	max-width: 100%;
+	overflow: hidden;
+	font-size: clamp(11px, 1.55vw, 12px);
+	line-height: 1;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .mj-settings-selector-option.is-long .mj-raised-button-label {
-    font-size: 11px;
-    line-height: 1.02;
-    padding-top: 1px;
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+	font-size: 11px;
+	line-height: 1.02;
+	padding-top: 1px;
+	white-space: normal;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 }
 
 .mj-settings-selector-option.is-very-long .mj-raised-button-label {
-    font-size: 10px;
-    line-height: 1;
-    padding-top: 1px;
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+	font-size: 10px;
+	line-height: 1;
+	padding-top: 1px;
+	white-space: normal;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 }
 
 .mj-settings-selector-empty {
-    display: grid;
-    place-items: center;
-    min-height: 100%;
-    padding: 12px 8px;
-    color: var(--mj-ui-primary-color);
-    font-family: var(--mj-ui-font-family);
-    font-size: 12px;
-    font-style: italic;
-    font-weight: bold;
-    line-height: 1.1;
-    text-align: center;
-    text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
+	display: grid;
+	place-items: center;
+	min-height: 100%;
+	padding: 12px 8px;
+	color: var(--mj-ui-primary-color);
+	font-family: var(--mj-ui-font-family);
+	font-size: 12px;
+	font-style: italic;
+	font-weight: bold;
+	line-height: 1.1;
+	text-align: center;
+	text-shadow: 0 1px 0 rgba(75, 33, 5, 0.7);
 }
 
 .mj-settings-selector-rail {
-    position: relative;
-    align-self: stretch;
-    width: calc(var(--mj-settings-selector-rail-width) - 2px);
-    min-height: 0;
-    height: auto;
-    box-sizing: border-box;
-    overflow: hidden;
-    border: 2px solid rgba(185, 141, 23, 0.9);
-    background: rgba(116, 14, 14, 0.28);
+	position: relative;
+	align-self: stretch;
+	width: calc(var(--mj-settings-selector-rail-width) - 2px);
+	min-height: 0;
+	height: auto;
+	box-sizing: border-box;
+	overflow: hidden;
+	border: 2px solid rgba(185, 141, 23, 0.9);
+	background: rgba(116, 14, 14, 0.28);
 }
 
 .mj-settings-selector-track {
-    position: absolute;
-    top: 2px;
-    right: 1px;
-    bottom: 2px;
-    left: 1px;
-    overflow: hidden;
+	position: absolute;
+	top: 2px;
+	right: 1px;
+	bottom: 2px;
+	left: 1px;
+	overflow: hidden;
 }
 
 .mj-settings-selector-thumb {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    height: var(--mj-settings-selector-option-height);
-    background:
-        linear-gradient(180deg, rgba(194, 72, 34, 0.9), rgba(129, 33, 21, 0.96));
-    box-shadow:
-        inset 0 0 0 1px var(--mj-ui-primary-color),
-        1px 1px 0 rgba(107, 48, 16, 0.55);
-    opacity: 0;
-    transition: transform 120ms linear, opacity 120ms linear;
-    cursor: grab;
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	height: var(--mj-settings-selector-option-height);
+	background: linear-gradient(180deg, rgba(194, 72, 34, 0.9), rgba(129, 33, 21, 0.96));
+	box-shadow:
+		inset 0 0 0 1px var(--mj-ui-primary-color),
+		1px 1px 0 rgba(107, 48, 16, 0.55);
+	opacity: 0;
+	transition:
+		transform 120ms linear,
+		opacity 120ms linear;
+	cursor: grab;
 }
 
 .mj-settings-selector-thumb.is-visible {
-    opacity: 1;
+	opacity: 1;
 }
 
 .mj-settings-selector-thumb.is-dragging {
-    cursor: grabbing;
+	cursor: grabbing;
 }
 
 .mj-settings-selector.is-dragging-thumb {
-    user-select: none;
+	user-select: none;
 }
 
 .mj-settings-selector.is-psd-scrollbar .mj-settings-selector-body {
-    grid-template-columns: 1fr var(--mj-settings-selector-rail-width);
-    gap: 6px;
+	grid-template-columns: 1fr var(--mj-settings-selector-rail-width);
+	gap: 6px;
 }
 
 .mj-settings-selector.is-psd-scrollbar .mj-settings-selector-rail {
-    width: var(--mj-settings-selector-rail-width);
-    border: 0;
-    background: transparent;
+	width: var(--mj-settings-selector-rail-width);
+	border: 0;
+	background: transparent;
 }
 
 .mj-settings-selector.is-psd-scrollbar .mj-settings-selector-track {
-    top: -1px;
-    right: 4px;
-    bottom: -1px;
-    left: 4px;
-    background:
-        linear-gradient(180deg, rgba(112, 18, 16, 0.22), rgba(58, 10, 10, 0.68));
-    box-shadow:
-        inset 1px 0 0 rgba(231, 180, 60, 0.12),
-        inset -1px 0 0 rgba(38, 4, 4, 0.4);
+	top: -1px;
+	right: 4px;
+	bottom: -1px;
+	left: 4px;
+	background: linear-gradient(180deg, rgba(112, 18, 16, 0.22), rgba(58, 10, 10, 0.68));
+	box-shadow:
+		inset 1px 0 0 rgba(231, 180, 60, 0.12),
+		inset -1px 0 0 rgba(38, 4, 4, 0.4);
 }
 
 .mj-settings-selector.is-psd-scrollbar .mj-settings-selector-thumb {
-    left: 0;
-    right: 0;
-    background: rgba(245, 205, 78, 0.99);
-    box-shadow:
-        inset 1px 1px 0 rgba(255, 244, 184, 0.82),
-        inset -1px 0 0 rgba(204, 134, 28, 0.82),
-        inset 0 -1px 0 rgba(188, 114, 20, 0.86),
-        inset 2px 0 0 rgba(255, 220, 118, 0.36),
-        0 2px 0 rgba(140, 72, 18, 0.52),
-        2px 4px 0 rgba(78, 25, 14, 0.36),
-        0 5px 8px rgba(41, 8, 8, 0.14);
+	left: 0;
+	right: 0;
+	background: rgba(245, 205, 78, 0.99);
+	box-shadow:
+		inset 1px 1px 0 rgba(255, 244, 184, 0.82),
+		inset -1px 0 0 rgba(204, 134, 28, 0.82),
+		inset 0 -1px 0 rgba(188, 114, 20, 0.86),
+		inset 2px 0 0 rgba(255, 220, 118, 0.36),
+		0 2px 0 rgba(140, 72, 18, 0.52),
+		2px 4px 0 rgba(78, 25, 14, 0.36),
+		0 5px 8px rgba(41, 8, 8, 0.14);
 }

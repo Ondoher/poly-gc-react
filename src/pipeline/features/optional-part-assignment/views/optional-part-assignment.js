@@ -1,5 +1,5 @@
 import React from 'react';
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 import OptionalPartAssignmentPage from '../components/OptionalPartAssignmentPage.jsx';
 
 export default class OptionalPartAssignmentView extends Service {

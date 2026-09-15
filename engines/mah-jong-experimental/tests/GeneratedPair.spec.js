@@ -19,13 +19,15 @@ describe('GeneratedPair', () => {
 	});
 
 	it('stores assigned face-pair metadata fluently', () => {
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 
-		expect(pair.assignFaces({
-			faceGroup: 6,
-			face1: 24,
-			face2: 25,
-		})).toBe(pair);
+		expect(
+			pair.assignFaces({
+				faceGroup: 6,
+				face1: 24,
+				face2: 25,
+			}),
+		).toBe(pair);
 
 		expect(pair.faceGroup).toBe(6);
 		expect(pair.faces).toEqual([24, 25]);

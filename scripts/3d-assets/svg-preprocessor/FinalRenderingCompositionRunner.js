@@ -1,20 +1,20 @@
-import { promises as fs } from 'fs';
+import {promises as fs} from 'fs';
 import path from 'path';
 import opentype from 'opentype.js';
 import paper from 'paper';
 import sharp from 'sharp';
-import { ASSET_FONTS_DIR, OUTPUT_3D_DIR, ROOT_DIR } from '../shared/asset-paths.js';
-import { ColorPicker } from './ColorPicker.js';
-import { Colors } from './ColorPalette.js';
-import { PaletteBuilder } from './PaletteBuilder.js';
+import {ASSET_FONTS_DIR, OUTPUT_3D_DIR, ROOT_DIR} from '../shared/asset-paths.js';
+import {ColorPicker} from './ColorPicker.js';
+import {Colors} from './ColorPalette.js';
+import {PaletteBuilder} from './PaletteBuilder.js';
 import {
 	getComponentUnionBounds,
 	isRelatedKnockout,
 	makePaintPathWithKnockouts,
 	transformComponentPath,
 } from './normalized-face-components.js';
-import { BASE_REFERENCE } from './PipelineModel.js';
-import { tilesetImageDir, tilesetJsonDir, tilesetOutputRoot } from './pipeline-output-paths.js';
+import {BASE_REFERENCE} from './PipelineModel.js';
+import {tilesetImageDir, tilesetJsonDir, tilesetOutputRoot} from './pipeline-output-paths.js';
 
 export const DEFAULT_FINAL_RENDERING_TILESET_ID = 'wiki';
 export const DEFAULT_HOUSE_LABEL_FONT_PATH = path.resolve(ASSET_FONTS_DIR, 'gluten-800.ttf');
@@ -87,7 +87,7 @@ export class FinalRenderingCompositionRunner {
 		});
 
 		for (const imageDir of Object.values(finalRenderingImageDirs)) {
-			await this.fs.mkdir(imageDir, { recursive: true });
+			await this.fs.mkdir(imageDir, {recursive: true});
 		}
 
 		for (const faceKey of faceKeys) {
@@ -125,7 +125,7 @@ export class FinalRenderingCompositionRunner {
 		};
 	}
 
-	createReport({ tilesetId, generatedOn, requestedFaceKey, faceKeys, tilesetStatePath }) {
+	createReport({tilesetId, generatedOn, requestedFaceKey, faceKeys, tilesetStatePath}) {
 		return {
 			schemaVersion: 1,
 			tilesetId,
@@ -149,7 +149,7 @@ export class FinalRenderingCompositionRunner {
 		};
 	}
 
-	async faceKeys({ requestedFaceKey, tilesetState }) {
+	async faceKeys({requestedFaceKey, tilesetState}) {
 		if (requestedFaceKey) {
 			return [requestedFaceKey];
 		}
@@ -171,14 +171,21 @@ export class FinalRenderingCompositionRunner {
 		const addOptionalSvgPath = this.path.resolve(finalRenderingImageDirs.addOptionalSvg, `${faceKey}.svg`);
 		const layoutSvgPath = this.path.resolve(finalRenderingImageDirs.layoutSvg, `${faceKey}.svg`);
 		const colorSvgPath = this.path.resolve(finalRenderingImageDirs.colorSvg, `${faceKey}.svg`);
-		const colorReviewPngPath = this.path.resolve(finalRenderingImageDirs.colorReviewPng, `${faceKey}-reference-layout-color.png`);
+		const colorReviewPngPath = this.path.resolve(
+			finalRenderingImageDirs.colorReviewPng,
+			`${faceKey}-reference-layout-color.png`,
+		);
 
 		if (!faceState?.state || typeof faceState.state !== 'object' || Array.isArray(faceState.state)) {
-			throw new Error(`Final Rendering requires canonical inline face state for ${faceKey}. Regenerate ${this.normalizePath(pipelineStatePath)} through the JSON-refactor intake path.`);
+			throw new Error(
+				`Final Rendering requires canonical inline face state for ${faceKey}. Regenerate ${this.normalizePath(pipelineStatePath)} through the JSON-refactor intake path.`,
+			);
 		}
 
 		if (!normalizedComponentsPath || !(await this.exists(normalizedComponentsPath))) {
-			report.warnings.push(this.missingInputWarning(faceKey, 'missing-normalized-components', normalizedComponentsPath));
+			report.warnings.push(
+				this.missingInputWarning(faceKey, 'missing-normalized-components', normalizedComponentsPath),
+			);
 			return;
 		}
 
@@ -266,9 +273,11 @@ export class FinalRenderingCompositionRunner {
 			...(faceState.artifacts || {}),
 			finalRenderingMap: this.normalizePath(artifactPath),
 			finalRenderingColorSvg: this.normalizePath(colorSvgPath),
-			...(colorReviewPng ? {
-				finalRenderingColorReviewPng: this.normalizePath(colorReviewPngPath),
-			} : {}),
+			...(colorReviewPng
+				? {
+						finalRenderingColorReviewPng: this.normalizePath(colorReviewPngPath),
+					}
+				: {}),
 		};
 		if (!colorReviewPng) {
 			delete faceState.artifacts.finalRenderingColorReviewPng;
@@ -298,14 +307,11 @@ export class FinalRenderingCompositionRunner {
 				referenceLayoutColor: colorReviewPng ? this.normalizePath(colorReviewPngPath) : null,
 			},
 		};
-
 	}
 
-	async readReferenceStructure({ tilesetState }) {
+	async readReferenceStructure({tilesetState}) {
 		const inputPath = referenceStructurePathForSet(tilesetState.referenceSetId, this.output3dDir);
-		const absolutePath = this.path.isAbsolute(inputPath)
-			? inputPath
-			: this.path.resolve(this.rootDir, inputPath);
+		const absolutePath = this.path.isAbsolute(inputPath) ? inputPath : this.path.resolve(this.rootDir, inputPath);
 
 		return {
 			path: this.normalizePath(absolutePath),
@@ -330,9 +336,7 @@ export class FinalRenderingCompositionRunner {
 			return '';
 		}
 
-		const sourcePath = this.path.isAbsolute(sourceFile)
-			? sourceFile
-			: this.path.resolve(this.rootDir, sourceFile);
+		const sourcePath = this.path.isAbsolute(sourceFile) ? sourceFile : this.path.resolve(this.rootDir, sourceFile);
 
 		if (!(await this.exists(sourcePath))) {
 			return '';
@@ -342,23 +346,16 @@ export class FinalRenderingCompositionRunner {
 	}
 
 	async writeText(outputPath, content) {
-		await this.fs.mkdir(this.path.dirname(outputPath), { recursive: true });
+		await this.fs.mkdir(this.path.dirname(outputPath), {recursive: true});
 		await this.fs.writeFile(outputPath, content, 'utf8');
 	}
 
 	async writeJson(outputPath, content) {
-		await this.fs.mkdir(this.path.dirname(outputPath), { recursive: true });
+		await this.fs.mkdir(this.path.dirname(outputPath), {recursive: true});
 		await this.fs.writeFile(outputPath, `${JSON.stringify(content, null, 2)}\n`, 'utf8');
 	}
 
-	async writeColorReviewPng({
-		outputPath,
-		referenceStructure,
-		faceKey,
-		normalizedComponents,
-		layoutSvg,
-		colorSvg,
-	}) {
+	async writeColorReviewPng({outputPath, referenceStructure, faceKey, normalizedComponents, layoutSvg, colorSvg}) {
 		const referenceFace = referenceStructure?.faces?.[faceKey] || null;
 		const referencePath = referenceFace?.sourceFile
 			? this.path.resolve(this.rootDir, referenceFace.sourceFile)
@@ -375,33 +372,35 @@ export class FinalRenderingCompositionRunner {
 		const height = referenceFace.image?.height || 238;
 		const sourcePanel = await renderSourceSvgPanel(sourcePath, normalizedComponents.viewBox, height);
 		const referencePanel = await sharp(referencePath)
-			.resize(width, height, { fit: 'fill' })
+			.resize(width, height, {fit: 'fill'})
 			.ensureAlpha()
 			.png()
 			.toBuffer();
 		const layoutPanel = await renderSvgPanel(layoutSvg, width, height);
 		const colorPanel = await renderSvgPanel(colorSvg, width, height);
-		const tileBoundsOverlay = Buffer.from(tileBoundsOverlaySvg({
-			sourcePanelWidth: sourcePanel.width,
-			panelWidth: width,
-			panelHeight: height,
-		}));
+		const tileBoundsOverlay = Buffer.from(
+			tileBoundsOverlaySvg({
+				sourcePanelWidth: sourcePanel.width,
+				panelWidth: width,
+				panelHeight: height,
+			}),
+		);
 
-		await this.fs.mkdir(this.path.dirname(outputPath), { recursive: true });
+		await this.fs.mkdir(this.path.dirname(outputPath), {recursive: true});
 		await sharp({
 			create: {
-				width: sourcePanel.width + (width * 3),
+				width: sourcePanel.width + width * 3,
 				height,
 				channels: 4,
-				background: { r: 255, g: 255, b: 255, alpha: 0 },
+				background: {r: 255, g: 255, b: 255, alpha: 0},
 			},
 		})
 			.composite([
-				{ input: sourcePanel.buffer, left: 0, top: 0 },
-				{ input: referencePanel, left: sourcePanel.width, top: 0 },
-				{ input: layoutPanel, left: sourcePanel.width + width, top: 0 },
-				{ input: colorPanel, left: sourcePanel.width + (width * 2), top: 0 },
-				{ input: tileBoundsOverlay, left: 0, top: 0 },
+				{input: sourcePanel.buffer, left: 0, top: 0},
+				{input: referencePanel, left: sourcePanel.width, top: 0},
+				{input: layoutPanel, left: sourcePanel.width + width, top: 0},
+				{input: colorPanel, left: sourcePanel.width + width * 2, top: 0},
+				{input: tileBoundsOverlay, left: 0, top: 0},
 			])
 			.png()
 			.toFile(outputPath);
@@ -427,18 +426,11 @@ export class FinalRenderingCompositionRunner {
 			return null;
 		}
 
-		return this.path.isAbsolute(artifactPath)
-			? artifactPath
-			: this.path.resolve(this.rootDir, artifactPath);
+		return this.path.isAbsolute(artifactPath) ? artifactPath : this.path.resolve(this.rootDir, artifactPath);
 	}
 }
 
-function semanticMapFromCanonicalState({
-	tilesetId,
-	faceKey,
-	faceState,
-	generatedOn,
-}) {
+function semanticMapFromCanonicalState({tilesetId, faceKey, faceState, generatedOn}) {
 	const canonicalBindings = canonicalSourceBindings(faceState);
 	const assignments = Object.entries(faceState.state?.parts || {})
 		.map(([partId, part]) => {
@@ -474,14 +466,7 @@ function semanticMapFromCanonicalState({
 	};
 }
 
-function canonicalSourceAssignment({
-	faceKey,
-	partId,
-	part,
-	sourceComponentIds,
-	strength,
-	generatedOn,
-}) {
+function canonicalSourceAssignment({faceKey, partId, part, sourceComponentIds, strength, generatedOn}) {
 	return {
 		assignmentId: `assign.${faceKey}.${partId}`,
 		sourcePartId: partId,
@@ -510,29 +495,45 @@ function canonicalSourceAssignment({
 }
 
 function canonicalSourceBindings(faceState) {
-	return Object.fromEntries(Object.entries(faceState.state?.bindings || {})
-		.map(([componentId, binding]) => [componentId, {
-			...(binding.partId ? { partId: binding.partId } : {}),
-			source: binding.source || '',
-			strength: canonicalSourceStrength(binding.strength),
-			reviewStatus: binding.reviewStatus || (binding.strength === 'accepted' || binding.strength === 'strong' ? 'reviewed' : binding.strength === 'none' ? 'needs-review' : 'inferred'),
-			...(binding.updatedOn ? { updatedOn: binding.updatedOn } : {}),
-			...(binding.acceptedOn ? { acceptedOn: binding.acceptedOn } : {}),
-		}])
-		.sort((left, right) => left[0].localeCompare(right[0])));
+	return Object.fromEntries(
+		Object.entries(faceState.state?.bindings || {})
+			.map(([componentId, binding]) => [
+				componentId,
+				{
+					...(binding.partId ? {partId: binding.partId} : {}),
+					source: binding.source || '',
+					strength: canonicalSourceStrength(binding.strength),
+					reviewStatus:
+						binding.reviewStatus ||
+						(binding.strength === 'accepted' || binding.strength === 'strong'
+							? 'reviewed'
+							: binding.strength === 'none'
+								? 'needs-review'
+								: 'inferred'),
+					...(binding.updatedOn ? {updatedOn: binding.updatedOn} : {}),
+					...(binding.acceptedOn ? {acceptedOn: binding.acceptedOn} : {}),
+				},
+			])
+			.sort((left, right) => left[0].localeCompare(right[0])),
+	);
 }
 
 function canonicalSourcePartStates(faceState) {
-	return Object.fromEntries(Object.entries(faceState.state?.parts || {})
-		.filter(([, part]) => isReviewedPart(part))
-		.map(([partId, part]) => [partId, {
-			state: 'unbound',
-			strength: 'none',
-			source: 'part-review',
-			reviewStatus: 'accepted',
-			...(part.updatedOn ? { updatedOn: part.updatedOn } : {}),
-		}])
-		.sort((left, right) => left[0].localeCompare(right[0])));
+	return Object.fromEntries(
+		Object.entries(faceState.state?.parts || {})
+			.filter(([, part]) => isReviewedPart(part))
+			.map(([partId, part]) => [
+				partId,
+				{
+					state: 'unbound',
+					strength: 'none',
+					source: 'part-review',
+					reviewStatus: 'accepted',
+					...(part.updatedOn ? {updatedOn: part.updatedOn} : {}),
+				},
+			])
+			.sort((left, right) => left[0].localeCompare(right[0])),
+	);
 }
 
 function isReviewedPart(part) {
@@ -560,26 +561,32 @@ function strongestSourceBindingStrengthForPart(bindings, partId) {
 	return strengths.includes('tentative') ? 'tentative' : 'none';
 }
 
-function optionalAssignmentFromCanonicalState({ tilesetId, faceKey, faceState, generatedOn }) {
-	const optionalParts = Object.fromEntries(Object.entries(faceState.state?.parts || {})
-		.filter(([, part]) => part?.optional === true)
-		.map(([partId, part]) => [partId, {
-			partId,
-			contentKind: part.contentKind || null,
-			role: part.role || null,
-			text: part.text || null,
-			sourceState: canonicalSourceComponentIdsForPart(faceState.state?.bindings || {}, partId).length > 0
-				? 'candidate-found'
-				: isReviewedPart(part)
-					? 'source-absent'
-					: 'needs-review',
-			hint: part.hint || null,
-			suggestedComponentIds: [],
-			suggestedBounds: null,
-			strength: strongestSourceBindingStrengthForPart(canonicalSourceBindings(faceState), partId),
-			reviewStatus: part.accepted ? 'accepted' : 'inferred',
-			candidates: [],
-		}]));
+function optionalAssignmentFromCanonicalState({tilesetId, faceKey, faceState, generatedOn}) {
+	const optionalParts = Object.fromEntries(
+		Object.entries(faceState.state?.parts || {})
+			.filter(([, part]) => part?.optional === true)
+			.map(([partId, part]) => [
+				partId,
+				{
+					partId,
+					contentKind: part.contentKind || null,
+					role: part.role || null,
+					text: part.text || null,
+					sourceState:
+						canonicalSourceComponentIdsForPart(faceState.state?.bindings || {}, partId).length > 0
+							? 'candidate-found'
+							: isReviewedPart(part)
+								? 'source-absent'
+								: 'needs-review',
+					hint: part.hint || null,
+					suggestedComponentIds: [],
+					suggestedBounds: null,
+					strength: strongestSourceBindingStrengthForPart(canonicalSourceBindings(faceState), partId),
+					reviewStatus: part.accepted ? 'accepted' : 'inferred',
+					candidates: [],
+				},
+			]),
+	);
 
 	return {
 		schemaVersion: 1,
@@ -593,7 +600,7 @@ function optionalAssignmentFromCanonicalState({ tilesetId, faceKey, faceState, g
 	};
 }
 
-function alignmentMapFromCanonicalPartState({ tilesetId, faceKey, faceState, generatedOn }) {
+function alignmentMapFromCanonicalPartState({tilesetId, faceKey, faceState, generatedOn}) {
 	const candidates = Object.entries(faceState.state?.parts || {})
 		.filter(([, part]) => part?.alignmentTransform?.matrix)
 		.map(([partId, part]) => ({
@@ -665,8 +672,8 @@ export function buildFinalRenderingCompositionArtifact({
 		faceKey,
 		suitId: face.family,
 	});
-	const optionalParts = Object.fromEntries(Object.entries(optionalAssignment.optionalParts || {})
-		.map(([partId, optionalPart]) => [
+	const optionalParts = Object.fromEntries(
+		Object.entries(optionalAssignment.optionalParts || {}).map(([partId, optionalPart]) => [
 			partId,
 			composeOptionalPart({
 				partId,
@@ -675,7 +682,8 @@ export function buildFinalRenderingCompositionArtifact({
 				semanticMap,
 				face,
 			}),
-		]));
+		]),
+	);
 	const diagnostics = Object.values(optionalParts)
 		.filter((part) => part.renderKind === 'unresolved')
 		.map((part) => ({
@@ -684,9 +692,7 @@ export function buildFinalRenderingCompositionArtifact({
 			partId: part.partId,
 			message: `Optional part ${part.partId} is enabled for output but has no source binding or generated-part decision.`,
 		}));
-	const status = diagnostics.some((diagnostic) => diagnostic.level === 'warning')
-		? 'needs-review'
-		: 'ready';
+	const status = diagnostics.some((diagnostic) => diagnostic.level === 'warning') ? 'needs-review' : 'ready';
 
 	return {
 		schemaVersion: 1,
@@ -751,21 +757,17 @@ export function buildFinalRenderingCompositionArtifact({
  * @param {FinalRenderingLayoutStepOptions} options - Inputs needed to render source and generated parts in prepared space.
  * @returns {FinalRenderingLayoutStepResult} Layout step data, SVG, and diagnostics.
  */
-export function buildLayoutStep({
-	artifact,
-	normalizedComponents,
-	alignmentMap,
-	semanticMap,
-	referenceStructure,
-}) {
+export function buildLayoutStep({artifact, normalizedComponents, alignmentMap, semanticMap, referenceStructure}) {
 	const faceReference = referenceStructure?.faces?.[artifact.faceKey] || null;
-	const componentsById = new Map((normalizedComponents.components || [])
-		.map((component) => [component.componentId, component]));
+	const componentsById = new Map(
+		(normalizedComponents.components || []).map((component) => [component.componentId, component]),
+	);
 	const negativeSpaceComponents = (normalizedComponents.components || [])
 		.map(normalizeNegativeSpaceComponent)
 		.filter((component) => component.negativeSpaceCandidate && component.pathData);
-	const candidatesById = new Map((alignmentMap.candidates || [])
-		.map((candidate) => [candidate.alignmentId || candidate.candidateId, candidate]));
+	const candidatesById = new Map(
+		(alignmentMap.candidates || []).map((candidate) => [candidate.alignmentId || candidate.candidateId, candidate]),
+	);
 	const layoutOptions = artifact.inputs?.outputOptions?.layout || {};
 	const parts = {};
 	const diagnostics = [];
@@ -779,18 +781,17 @@ export function buildLayoutStep({
 			continue;
 		}
 
-		const idMatchedCandidates = uniqueValues([
-			assignment.alignmentCandidateId,
-			...(assignment.alignmentIds || []),
-		])
+		const idMatchedCandidates = uniqueValues([assignment.alignmentCandidateId, ...(assignment.alignmentIds || [])])
 			.map((alignmentId) => candidatesById.get(alignmentId))
 			.filter(Boolean);
-		const assignmentCandidates = idMatchedCandidates.length > 0
-			? idMatchedCandidates
-			: candidatesForSourceAssignment(assignment, alignmentMap.candidates || []);
-		const candidate = candidatesById.get(assignment.alignmentCandidateId)
-			|| candidatesById.get((assignment.alignmentIds || [])[0])
-			|| assignmentCandidates[0];
+		const assignmentCandidates =
+			idMatchedCandidates.length > 0
+				? idMatchedCandidates
+				: candidatesForSourceAssignment(assignment, alignmentMap.candidates || []);
+		const candidate =
+			candidatesById.get(assignment.alignmentCandidateId) ||
+			candidatesById.get((assignment.alignmentIds || [])[0]) ||
+			assignmentCandidates[0];
 		const partId = assignment.referencePartId || assignment.sourcePartId;
 
 		const layoutTransform = layoutTransformForSourceAssignment({
@@ -856,7 +857,7 @@ export function buildLayoutStep({
 				transform: renderedTransform,
 				layoutSource: componentLayoutTransform.source,
 				negativeSpaceComponents,
-				extraAttributes: artworkMirror ? { 'data-artwork-mirror': 'x' } : {},
+				extraAttributes: artworkMirror ? {'data-artwork-mirror': 'x'} : {},
 			});
 		}
 		sourcePaths.push(...renderSourceComponentEntries(sourceRenderEntries));
@@ -874,10 +875,13 @@ export function buildLayoutStep({
 				matrix: applyArtworkMirrorToTransform(layoutTransform.matrix, artworkMirror),
 				source: layoutTransform.source,
 				scaleMode: layoutTransform.scaleMode || null,
-				...(artworkMirror ? { reflectX: true } : {}),
+				...(artworkMirror ? {reflectX: true} : {}),
 			},
 			targetBounds: layoutTransform.targetBounds || candidate.targetBounds || null,
-			alignedBounds: mirrorBoundsIfNeeded(layoutTransform.alignedBounds || candidate.alignedBounds || null, artworkMirror),
+			alignedBounds: mirrorBoundsIfNeeded(
+				layoutTransform.alignedBounds || candidate.alignedBounds || null,
+				artworkMirror,
+			),
 		});
 	}
 
@@ -904,7 +908,10 @@ export function buildLayoutStep({
 			continue;
 		}
 
-		for (const componentId of renderOrderedComponentIds(optionalSourceAssignment.sourceComponentIds, componentsById)) {
+		for (const componentId of renderOrderedComponentIds(
+			optionalSourceAssignment.sourceComponentIds,
+			componentsById,
+		)) {
 			const component = componentsById.get(componentId);
 
 			if (!component?.pathData) {
@@ -919,13 +926,15 @@ export function buildLayoutStep({
 			}
 
 			renderedComponentIds.push(componentId);
-			sourcePaths.push(layoutSourceComponentPath({
-				component,
-				partId,
-				transform: layoutTransform.matrix,
-				layoutSource: layoutTransform.source,
-				negativeSpaceComponents,
-			}));
+			sourcePaths.push(
+				layoutSourceComponentPath({
+					component,
+					partId,
+					transform: layoutTransform.matrix,
+					layoutSource: layoutTransform.source,
+					negativeSpaceComponents,
+				}),
+			);
 		}
 
 		parts[partId] = layoutPartRecord({
@@ -953,12 +962,14 @@ export function buildLayoutStep({
 		])
 			.map((alignmentId) => candidatesById.get(alignmentId))
 			.filter(Boolean);
-		const assignmentCandidates = idMatchedCandidates.length > 0
-			? idMatchedCandidates
-			: candidatesForSourceAssignment(optionalSourceAssignment, alignmentMap.candidates || []);
-		const candidate = candidatesById.get(optionalSourceAssignment.alignmentCandidateId)
-			|| candidatesById.get((optionalSourceAssignment.alignmentIds || [])[0])
-			|| assignmentCandidates[0];
+		const assignmentCandidates =
+			idMatchedCandidates.length > 0
+				? idMatchedCandidates
+				: candidatesForSourceAssignment(optionalSourceAssignment, alignmentMap.candidates || []);
+		const candidate =
+			candidatesById.get(optionalSourceAssignment.alignmentCandidateId) ||
+			candidatesById.get((optionalSourceAssignment.alignmentIds || [])[0]) ||
+			assignmentCandidates[0];
 		const layoutTransform = layoutTransformForSourceAssignment({
 			assignment: optionalSourceAssignment,
 			artifact,
@@ -986,21 +997,26 @@ export function buildLayoutStep({
 			continue;
 		}
 
-		for (const componentId of renderOrderedComponentIds(optionalSourceAssignment.sourceComponentIds, componentsById)) {
+		for (const componentId of renderOrderedComponentIds(
+			optionalSourceAssignment.sourceComponentIds,
+			componentsById,
+		)) {
 			const component = componentsById.get(componentId);
 			if (!component?.pathData) {
 				continue;
 			}
 
 			renderedComponentIds.push(componentId);
-			alternateSourcePaths.push(layoutSourceComponentPath({
-				component,
-				partId,
-				transform: layoutTransform.matrix,
-				layoutSource: layoutTransform.source,
-				negativeSpaceComponents,
-				extraAttributes: { 'data-render-alternate': 'source' },
-			}));
+			alternateSourcePaths.push(
+				layoutSourceComponentPath({
+					component,
+					partId,
+					transform: layoutTransform.matrix,
+					layoutSource: layoutTransform.source,
+					negativeSpaceComponents,
+					extraAttributes: {'data-render-alternate': 'source'},
+				}),
+			);
 		}
 
 		parts[partId] = {
@@ -1018,7 +1034,11 @@ export function buildLayoutStep({
 						scaleMode: layoutTransform.scaleMode || null,
 					},
 					targetBounds: layoutTransform.targetBounds || null,
-					alignedBounds: transformBoundsForComponentIds(renderedComponentIds, componentsById, layoutTransform.matrix),
+					alignedBounds: transformBoundsForComponentIds(
+						renderedComponentIds,
+						componentsById,
+						layoutTransform.matrix,
+					),
 				},
 			},
 		};
@@ -1041,12 +1061,12 @@ export function buildLayoutStep({
 			parts[part.partId] = {
 				partId: part.partId,
 				status: 'blocked',
-			reviewStatus: part.accepted ? 'accepted' : 'inferred',
-			renderKind: 'generated',
-			source: 'reference-structure',
-			targetBounds: null,
-			...(parts[part.partId]?.alternates ? { alternates: parts[part.partId].alternates } : {}),
-		};
+				reviewStatus: part.accepted ? 'accepted' : 'inferred',
+				renderKind: 'generated',
+				source: 'reference-structure',
+				targetBounds: null,
+				...(parts[part.partId]?.alternates ? {alternates: parts[part.partId].alternates} : {}),
+			};
 			continue;
 		}
 
@@ -1066,7 +1086,7 @@ export function buildLayoutStep({
 			renderKind: 'generated',
 			source: 'reference-structure',
 			targetBounds,
-			...(parts[part.partId]?.alternates ? { alternates: parts[part.partId].alternates } : {}),
+			...(parts[part.partId]?.alternates ? {alternates: parts[part.partId].alternates} : {}),
 		};
 	}
 
@@ -1077,16 +1097,19 @@ export function buildLayoutStep({
 
 		const referencePart = faceReference?.parts?.[part.partId] || null;
 		const targetBounds = referencePart?.targetBounds || null;
-		const generatedPart = generatedPartFromReferencePart({
-			...part,
-			renderKind: 'alternate-generated',
-		}, referencePart);
+		const generatedPart = generatedPartFromReferencePart(
+			{
+				...part,
+				renderKind: 'alternate-generated',
+			},
+			referencePart,
+		);
 		const generatedPath = targetBounds
 			? generatedPartToSvgPath({
-				part: generatedPart,
-				face: artifact.face,
-				targetBounds,
-			})
+					part: generatedPart,
+					face: artifact.face,
+					targetBounds,
+				})
 			: null;
 
 		if (generatedPath) {
@@ -1107,9 +1130,7 @@ export function buildLayoutStep({
 		};
 	}
 
-	const status = diagnostics.some((diagnostic) => diagnostic.level === 'warning')
-		? 'needs-review'
-		: 'ready';
+	const status = diagnostics.some((diagnostic) => diagnostic.level === 'warning') ? 'needs-review' : 'ready';
 	const step = {
 		status,
 		svg: artifact.steps.layout.svg,
@@ -1141,13 +1162,7 @@ ${indent(generatedPaths.join('\n'), 2)}
  * @param {FinalRenderingColorStepOptions} options - Inputs needed to color laid-out source and generated parts.
  * @returns {FinalRenderingColorStepResult} Color step data, SVG, and diagnostics.
  */
-export function buildColorStep({
-	artifact,
-	normalizedComponents,
-	alignmentMap,
-	semanticMap,
-	referenceStructure,
-}) {
+export function buildColorStep({artifact, normalizedComponents, alignmentMap, semanticMap, referenceStructure}) {
 	const colorContext = makeColorContext({
 		artifact,
 		normalizedComponents,
@@ -1155,13 +1170,15 @@ export function buildColorStep({
 		referenceStructure,
 	});
 	const faceReference = referenceStructure?.faces?.[artifact.faceKey] || null;
-	const componentsById = new Map((normalizedComponents.components || [])
-		.map((component) => [component.componentId, component]));
+	const componentsById = new Map(
+		(normalizedComponents.components || []).map((component) => [component.componentId, component]),
+	);
 	const negativeSpaceComponents = (normalizedComponents.components || [])
 		.map(normalizeNegativeSpaceComponent)
 		.filter((component) => component.negativeSpaceCandidate && component.pathData);
-	const candidatesById = new Map((alignmentMap.candidates || [])
-		.map((candidate) => [candidate.alignmentId || candidate.candidateId, candidate]));
+	const candidatesById = new Map(
+		(alignmentMap.candidates || []).map((candidate) => [candidate.alignmentId || candidate.candidateId, candidate]),
+	);
 	const layoutOptions = artifact.inputs?.outputOptions?.layout || {};
 	const parts = {};
 	const diagnostics = [];
@@ -1175,18 +1192,17 @@ export function buildColorStep({
 			continue;
 		}
 
-		const idMatchedCandidates = uniqueValues([
-			assignment.alignmentCandidateId,
-			...(assignment.alignmentIds || []),
-		])
+		const idMatchedCandidates = uniqueValues([assignment.alignmentCandidateId, ...(assignment.alignmentIds || [])])
 			.map((alignmentId) => candidatesById.get(alignmentId))
 			.filter(Boolean);
-		const assignmentCandidates = idMatchedCandidates.length > 0
-			? idMatchedCandidates
-			: candidatesForSourceAssignment(assignment, alignmentMap.candidates || []);
-		const candidate = candidatesById.get(assignment.alignmentCandidateId)
-			|| candidatesById.get((assignment.alignmentIds || [])[0])
-			|| assignmentCandidates[0];
+		const assignmentCandidates =
+			idMatchedCandidates.length > 0
+				? idMatchedCandidates
+				: candidatesForSourceAssignment(assignment, alignmentMap.candidates || []);
+		const candidate =
+			candidatesById.get(assignment.alignmentCandidateId) ||
+			candidatesById.get((assignment.alignmentIds || [])[0]) ||
+			assignmentCandidates[0];
 		const partId = assignment.referencePartId || assignment.sourcePartId;
 		const layoutTransform = layoutTransformForSourceAssignment({
 			assignment,
@@ -1260,9 +1276,11 @@ export function buildColorStep({
 					'data-color-mode': colorDecision.colorMode,
 					'data-hue-grouping': colorDecision.hueGrouping,
 					'data-source-paint': colorDecision.sourcePaint,
-					...(colorDecision.paletteSourcePaint !== colorDecision.sourcePaint ? { 'data-palette-source-paint': colorDecision.paletteSourcePaint } : {}),
+					...(colorDecision.paletteSourcePaint !== colorDecision.sourcePaint
+						? {'data-palette-source-paint': colorDecision.paletteSourcePaint}
+						: {}),
 					'data-target-paint': colorDecision.targetPaint,
-					...(artworkMirror ? { 'data-artwork-mirror': 'x' } : {}),
+					...(artworkMirror ? {'data-artwork-mirror': 'x'} : {}),
 				},
 			});
 		}
@@ -1337,22 +1355,26 @@ export function buildColorStep({
 			});
 			renderedComponentIds.push(componentId);
 			componentRecords[componentId] = colorDecision;
-			sourcePaths.push(layoutSourceComponentPath({
-				component,
-				partId,
-				transform: layoutPart.transform.matrix,
-				layoutSource: layoutPart.source,
-				negativeSpaceComponents,
-				color: colorDecision.outputPaint,
-				extraAttributes: {
-					'data-color-policy': colorDecision.colorPolicy,
-					'data-color-mode': colorDecision.colorMode,
-					'data-hue-grouping': colorDecision.hueGrouping,
-					'data-source-paint': colorDecision.sourcePaint,
-					...(colorDecision.paletteSourcePaint !== colorDecision.sourcePaint ? { 'data-palette-source-paint': colorDecision.paletteSourcePaint } : {}),
-					'data-target-paint': colorDecision.targetPaint,
-				},
-			}));
+			sourcePaths.push(
+				layoutSourceComponentPath({
+					component,
+					partId,
+					transform: layoutPart.transform.matrix,
+					layoutSource: layoutPart.source,
+					negativeSpaceComponents,
+					color: colorDecision.outputPaint,
+					extraAttributes: {
+						'data-color-policy': colorDecision.colorPolicy,
+						'data-color-mode': colorDecision.colorMode,
+						'data-hue-grouping': colorDecision.hueGrouping,
+						'data-source-paint': colorDecision.sourcePaint,
+						...(colorDecision.paletteSourcePaint !== colorDecision.sourcePaint
+							? {'data-palette-source-paint': colorDecision.paletteSourcePaint}
+							: {}),
+						'data-target-paint': colorDecision.targetPaint,
+					},
+				}),
+			);
 		}
 
 		parts[partId] = colorPartRecord({
@@ -1394,18 +1416,20 @@ export function buildColorStep({
 
 			renderedComponentIds.push(componentId);
 			componentRecords[componentId] = colorDecision;
-			alternateSourcePaths.push(layoutSourceComponentPath({
-				component,
-				partId,
-				transform: alternate.transform.matrix,
-				layoutSource: alternate.source,
-				negativeSpaceComponents,
-				color: colorDecision.outputPaint,
-				extraAttributes: {
-					'data-color-policy': colorDecision.colorPolicy,
-					'data-render-alternate': 'source',
-				},
-			}));
+			alternateSourcePaths.push(
+				layoutSourceComponentPath({
+					component,
+					partId,
+					transform: alternate.transform.matrix,
+					layoutSource: alternate.source,
+					negativeSpaceComponents,
+					color: colorDecision.outputPaint,
+					extraAttributes: {
+						'data-color-policy': colorDecision.colorPolicy,
+						'data-render-alternate': 'source',
+					},
+				}),
+			);
 		}
 
 		parts[partId] = {
@@ -1430,10 +1454,13 @@ export function buildColorStep({
 
 		const addOptionalPart = artifact.steps.addOptional.parts?.[layoutPart.partId] || {};
 		const referencePart = faceReference?.parts?.[layoutPart.partId] || null;
-		const generatedPart = generatedPartFromReferencePart({
-			...addOptionalPart,
-			partId: layoutPart.partId,
-		}, referencePart);
+		const generatedPart = generatedPartFromReferencePart(
+			{
+				...addOptionalPart,
+				partId: layoutPart.partId,
+			},
+			referencePart,
+		);
 		const generatedColor = generatedColorForPart(generatedPart, referencePart);
 		const generatedPath = generatedPartToSvgPath({
 			part: {
@@ -1454,7 +1481,7 @@ export function buildColorStep({
 			colorPolicy: 'generated',
 			outputPaint: generatedColor,
 			targetBounds: layoutPart.targetBounds || null,
-			...(parts[layoutPart.partId]?.alternates ? { alternates: parts[layoutPart.partId].alternates } : {}),
+			...(parts[layoutPart.partId]?.alternates ? {alternates: parts[layoutPart.partId].alternates} : {}),
 			provenance: {
 				stage: 'final-rendering-composition',
 				step: 'color',
@@ -1470,20 +1497,23 @@ export function buildColorStep({
 		const addOptionalPart = artifact.steps.addOptional.parts?.[layoutPart.partId] || {};
 		const referencePart = faceReference?.parts?.[layoutPart.partId] || null;
 		const targetBounds = layoutPart.alternates.generated.targetBounds || referencePart?.targetBounds || null;
-		const generatedPart = generatedPartFromReferencePart({
-			...addOptionalPart,
-			renderKind: 'alternate-generated',
-		}, referencePart);
+		const generatedPart = generatedPartFromReferencePart(
+			{
+				...addOptionalPart,
+				renderKind: 'alternate-generated',
+			},
+			referencePart,
+		);
 		const generatedColor = generatedColorForPart(generatedPart, referencePart);
 		const generatedPath = targetBounds
 			? generatedPartToSvgPath({
-				part: {
-					...generatedPart,
-					fill: generatedColor,
-				},
-				face: artifact.face,
-				targetBounds,
-			})
+					part: {
+						...generatedPart,
+						fill: generatedColor,
+					},
+					face: artifact.face,
+					targetBounds,
+				})
 			: null;
 
 		if (generatedPath) {
@@ -1505,9 +1535,7 @@ export function buildColorStep({
 		};
 	}
 
-	const status = diagnostics.some((diagnostic) => diagnostic.level === 'warning')
-		? 'needs-review'
-		: 'ready';
+	const status = diagnostics.some((diagnostic) => diagnostic.level === 'warning') ? 'needs-review' : 'ready';
 	const step = {
 		status,
 		svg: artifact.steps.color.svg,
@@ -1538,7 +1566,7 @@ async function renderSvgPanel(svg, width, height) {
 	return sharp(Buffer.from(svg))
 		.resize(width, height, {
 			fit: 'fill',
-			background: { r: 255, g: 255, b: 255, alpha: 0 },
+			background: {r: 255, g: 255, b: 255, alpha: 0},
 		})
 		.ensureAlpha()
 		.png()
@@ -1550,22 +1578,20 @@ async function renderSourceSvgPanel(sourcePath, viewBox, targetHeight) {
 	const sourceWidth = metadata.width || viewBox?.width || 1;
 	const sourceHeight = metadata.height || viewBox?.height || 1;
 	const width = Math.max(1, Math.round(targetHeight * (sourceWidth / sourceHeight)));
-	const buffer = await sharp(sourcePath)
-		.resize(width, targetHeight, { fit: 'fill' })
-		.ensureAlpha()
-		.png()
-		.toBuffer();
+	const buffer = await sharp(sourcePath).resize(width, targetHeight, {fit: 'fill'}).ensureAlpha().png().toBuffer();
 
-	return { buffer, width };
+	return {buffer, width};
 }
 
-function tileBoundsOverlaySvg({ sourcePanelWidth, panelWidth, panelHeight }) {
-	const totalWidth = sourcePanelWidth + (panelWidth * 3);
-	const boxes = [0, 1, 2].map((index) => {
-		const left = sourcePanelWidth + (panelWidth * index) + 0.5;
+function tileBoundsOverlaySvg({sourcePanelWidth, panelWidth, panelHeight}) {
+	const totalWidth = sourcePanelWidth + panelWidth * 3;
+	const boxes = [0, 1, 2]
+		.map((index) => {
+			const left = sourcePanelWidth + panelWidth * index + 0.5;
 
-		return `<rect x="${left}" y="0.5" width="${panelWidth - 1}" height="${panelHeight - 1}" fill="none" stroke="#111111" stroke-width="1"/>`;
-	}).join('\n');
+			return `<rect x="${left}" y="0.5" width="${panelWidth - 1}" height="${panelHeight - 1}" fill="none" stroke="#111111" stroke-width="1"/>`;
+		})
+		.join('\n');
 
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${panelHeight}" viewBox="0 0 ${totalWidth} ${panelHeight}">
 ${boxes}
@@ -1578,37 +1604,48 @@ ${boxes}
  * @param {FinalRenderingAddOptionalSvgOptions} options - Inputs needed to render the step SVG.
  * @returns {string} SVG source for the addOptional step.
  */
-export function buildAddOptionalSvg({ artifact, normalizedComponents }) {
-	const viewBox = normalizedComponents.viewBox || normalizedComponents.alignmentBounds || { minX: 0, minY: 0, width: 1, height: 1 };
+export function buildAddOptionalSvg({artifact, normalizedComponents}) {
+	const viewBox = normalizedComponents.viewBox ||
+		normalizedComponents.alignmentBounds || {minX: 0, minY: 0, width: 1, height: 1};
 	const minX = viewBox.minX ?? viewBox.left ?? 0;
 	const minY = viewBox.minY ?? viewBox.top ?? 0;
 	const width = viewBox.width || 1;
 	const height = viewBox.height || 1;
-	const componentsById = new Map((normalizedComponents.components || [])
-		.map((component) => [component.componentId, component]));
+	const componentsById = new Map(
+		(normalizedComponents.components || []).map((component) => [component.componentId, component]),
+	);
 	const parts = Object.values(artifact.steps.addOptional.parts || {});
 	const sourcePaths = parts
 		.filter((part) => part.renderKind === 'source')
-		.flatMap((part) => part.sourceComponentIds.map((componentId) => ({
-			part,
-			component: componentsById.get(componentId),
-		})))
+		.flatMap((part) =>
+			part.sourceComponentIds.map((componentId) => ({
+				part,
+				component: componentsById.get(componentId),
+			})),
+		)
 		.filter((item) => item.component?.pathData)
-		.map(({ part, component }) => componentToSvgPath(component, {
-			'data-render-part-id': part.partId,
-			'data-render-kind': part.renderKind,
-		}));
+		.map(({part, component}) =>
+			componentToSvgPath(component, {
+				'data-render-part-id': part.partId,
+				'data-render-kind': part.renderKind,
+			}),
+		);
 	const generatedText = parts
 		.filter((part) => part.renderKind === 'generated')
-		.map((part) => generatedPartToSvgPath({
-			part,
-			face: artifact.face,
-			viewBox: { minX, minY, width, height },
-		}))
+		.map((part) =>
+			generatedPartToSvgPath({
+				part,
+				face: artifact.face,
+				viewBox: {minX, minY, width, height},
+			}),
+		)
 		.filter(Boolean);
 	const decisionGroups = parts
 		.filter((part) => part.renderKind !== 'source')
-		.map((part) => `\t<g data-render-part-id="${escapeAttribute(part.partId)}" data-render-kind="${escapeAttribute(part.renderKind)}" data-output-present="${part.outputPresent ? 'true' : 'false'}"/>`);
+		.map(
+			(part) =>
+				`\t<g data-render-part-id="${escapeAttribute(part.partId)}" data-render-kind="${escapeAttribute(part.renderKind)}" data-output-present="${part.outputPresent ? 'true' : 'false'}"/>`,
+		);
 
 	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${formatNumber(minX)} ${formatNumber(minY)} ${formatNumber(width)} ${formatNumber(height)}">
 	<title>${escapeText(artifact.faceKey)} add optional render step</title>
@@ -1626,13 +1663,13 @@ ${decisionGroups.join('\n')}
 `;
 }
 
-function generatedPartToSvgPath({ part, face, viewBox = null, targetBounds = null }) {
+function generatedPartToSvgPath({part, face, viewBox = null, targetBounds = null}) {
 	const text = generatedTextForPart(part, face);
 	if (!text) {
 		return null;
 	}
 
-	const target = targetBounds || targetBoundsForGeneratedPart({ part, viewBox });
+	const target = targetBounds || targetBoundsForGeneratedPart({part, viewBox});
 	const fontSelection = fontSelectionForGeneratedPart(part, text);
 	if (!fontSelection) {
 		return null;
@@ -1644,8 +1681,8 @@ function generatedPartToSvgPath({ part, face, viewBox = null, targetBounds = nul
 	const pathData = glyphPath.toPathData(3);
 	const scaleX = target.width / Math.max(1, glyphBounds.x2 - glyphBounds.x1);
 	const scaleY = target.height / Math.max(1, glyphBounds.y2 - glyphBounds.y1);
-	const translateX = target.left - (glyphBounds.x1 * scaleX);
-	const translateY = target.top - (glyphBounds.y1 * scaleY);
+	const translateX = target.left - glyphBounds.x1 * scaleX;
+	const translateY = target.top - glyphBounds.y1 * scaleY;
 	const transform = `matrix(${formatNumber(scaleX)} 0 0 ${formatNumber(scaleY)} ${formatNumber(translateX)} ${formatNumber(translateY)})`;
 	const attrs = [
 		`data-render-part-id="${escapeAttribute(part.partId)}"`,
@@ -1661,9 +1698,10 @@ function generatedPartToSvgPath({ part, face, viewBox = null, targetBounds = nul
 }
 
 function fontSelectionForGeneratedPart(part, text) {
-	const preferredPaths = part.contentKind === 'glyph'
-		? [DEFAULT_HOUSE_LABEL_FONT_PATH, ...CJK_FONT_CANDIDATES]
-		: [DEFAULT_HOUSE_LABEL_FONT_PATH];
+	const preferredPaths =
+		part.contentKind === 'glyph'
+			? [DEFAULT_HOUSE_LABEL_FONT_PATH, ...CJK_FONT_CANDIDATES]
+			: [DEFAULT_HOUSE_LABEL_FONT_PATH];
 	const fontPath = preferredPaths.find((candidate) => fontContainsText(candidate, text));
 
 	if (!fontPath) {
@@ -1672,9 +1710,7 @@ function fontSelectionForGeneratedPart(part, text) {
 
 	return {
 		path: fontPath,
-		name: fontPath === DEFAULT_HOUSE_LABEL_FONT_PATH
-			? 'Gluten 800'
-			: path.basename(fontPath),
+		name: fontPath === DEFAULT_HOUSE_LABEL_FONT_PATH ? 'Gluten 800' : path.basename(fontPath),
 	};
 }
 
@@ -1687,19 +1723,17 @@ function fontContainsText(fontPath, text) {
 	}
 }
 
-function targetBoundsForGeneratedPart({ part, viewBox }) {
+function targetBoundsForGeneratedPart({part, viewBox}) {
 	if (part.targetBounds) {
 		return part.targetBounds;
 	}
 
-	const box = viewBox || { minX: 0, minY: 0, width: 94, height: 136 };
+	const box = viewBox || {minX: 0, minY: 0, width: 94, height: 136};
 	const region = part.hint?.region || 'top-left';
 	const rightAligned = region.includes('right');
 
 	return {
-		left: rightAligned
-			? box.minX + box.width * 0.78
-			: box.minX + box.width * 0.08,
+		left: rightAligned ? box.minX + box.width * 0.78 : box.minX + box.width * 0.08,
 		top: box.minY + box.height * 0.08,
 		width: box.width * 0.14,
 		height: box.height * 0.2,
@@ -1758,7 +1792,7 @@ function componentToSvgPath(component, extraAttributes = {}) {
 	const transformAttribute = extraAttributes.transform
 		? `transform="${escapeAttribute(extraAttributes.transform)}"`
 		: componentTransformAttribute(component);
-	const attributes = { ...extraAttributes };
+	const attributes = {...extraAttributes};
 	delete attributes.transform;
 	const attrs = [
 		`data-component-id="${escapeAttribute(component.componentId)}"`,
@@ -1770,7 +1804,9 @@ function componentToSvgPath(component, extraAttributes = {}) {
 		component.stroke && component.stroke !== 'none' ? `stroke="${escapeAttribute(component.stroke)}"` : null,
 		component.strokeWidth ? `stroke-width="${escapeAttribute(component.strokeWidth)}"` : null,
 		component.opacity != null ? `opacity="${escapeAttribute(component.opacity)}"` : null,
-	].filter(Boolean).join(' ');
+	]
+		.filter(Boolean)
+		.join(' ');
 
 	return `<path ${attrs}/>`;
 }
@@ -1785,8 +1821,7 @@ function layoutSourceComponentPath({
 	extraAttributes = {},
 }) {
 	const normalizedComponent = normalizeNegativeSpaceComponent(component);
-	const knockouts = negativeSpaceComponents
-		.filter((knockout) => isRelatedKnockout(normalizedComponent, knockout));
+	const knockouts = negativeSpaceComponents.filter((knockout) => isRelatedKnockout(normalizedComponent, knockout));
 
 	return makePaintPathWithKnockouts({
 		component: normalizedComponent,
@@ -1804,8 +1839,7 @@ function layoutSourceComponentPath({
 }
 
 function renderSourceComponentEntries(entries) {
-	return sourceComponentRenderGroups(entries)
-		.map((entry) => layoutSourceComponentPath(entry));
+	return sourceComponentRenderGroups(entries).map((entry) => layoutSourceComponentPath(entry));
 }
 
 function sourceComponentRenderGroups(entries) {
@@ -1820,29 +1854,27 @@ function sourceComponentRenderGroups(entries) {
 		}
 	}
 
-	return groups.map((group) => group.length === 1
-		? group[0]
-		: mergeSourceComponentEntries(group));
+	return groups.map((group) => (group.length === 1 ? group[0] : mergeSourceComponentEntries(group)));
 }
 
 function canMergeSourceComponentEntry(left, right) {
-	return originalSourceElementKey(left.component)
-		&& originalSourceElementKey(left.component) === originalSourceElementKey(right.component)
-		&& left.partId === right.partId
-		&& left.layoutSource === right.layoutSource
-		&& left.color === right.color
-		&& paintKey(left.component) === paintKey(right.component)
-		&& matrixKey(left.transform) === matrixKey(right.transform)
-		&& attributesKey(left.extraAttributes) === attributesKey(right.extraAttributes);
+	return (
+		originalSourceElementKey(left.component) &&
+		originalSourceElementKey(left.component) === originalSourceElementKey(right.component) &&
+		left.partId === right.partId &&
+		left.layoutSource === right.layoutSource &&
+		left.color === right.color &&
+		paintKey(left.component) === paintKey(right.component) &&
+		matrixKey(left.transform) === matrixKey(right.transform) &&
+		attributesKey(left.extraAttributes) === attributesKey(right.extraAttributes)
+	);
 }
 
 function mergeSourceComponentEntries(entries) {
 	const first = entries[0];
 	const components = entries.map((entry) => normalizeNegativeSpaceComponent(entry.component));
 	const componentIds = components.map((component) => component.componentId || component.id).filter(Boolean);
-	const bakedPathData = components
-		.map((component) => transformComponentPath(component))
-		.join(' ');
+	const bakedPathData = components.map((component) => transformComponentPath(component)).join(' ');
 
 	return {
 		...first,
@@ -1864,18 +1896,13 @@ function mergeSourceComponentEntries(entries) {
 }
 
 function originalSourceElementKey(component) {
-	return component.sourceElementId
-		? `${component.sourceIndex ?? ''}:${component.sourceElementId}`
-		: null;
+	return component.sourceElementId ? `${component.sourceIndex ?? ''}:${component.sourceElementId}` : null;
 }
 
 function paintKey(component) {
-	return [
-		component.fill || '',
-		component.stroke || '',
-		component.strokeWidth || '',
-		component.fillRule || '',
-	].join('|');
+	return [component.fill || '', component.stroke || '', component.strokeWidth || '', component.fillRule || ''].join(
+		'|',
+	);
 }
 
 function matrixKey(matrix) {
@@ -1930,27 +1957,32 @@ function sourceIndexForComponentId(componentId, componentsById) {
 	return Number.isFinite(sourceIndex) ? sourceIndex : null;
 }
 
-function makeColorContext({ artifact, normalizedComponents, semanticMap, referenceStructure }) {
+function makeColorContext({artifact, normalizedComponents, semanticMap, referenceStructure}) {
 	const paintResolver = makeSourcePaintResolver(normalizedComponents);
 	const sourcePaintComponents = (normalizedComponents.components || [])
 		.filter((component) => !normalizeNegativeSpaceComponent(component).negativeSpaceCandidate)
 		.filter((component) => isPaint(componentPalettePaint(component, paintResolver)));
 	const sourceComponentsById = new Map(sourcePaintComponents.map((component) => [component.componentId, component]));
 	const faceReference = referenceStructure?.faces?.[artifact.faceKey] || {};
-	const referenceComponentsById = new Map((faceReference.components || [])
-		.map((component) => [component.componentId, component]));
+	const referenceComponentsById = new Map(
+		(faceReference.components || []).map((component) => [component.componentId, component]),
+	);
 	const colorPolicy = artifact.inputs?.outputOptions?.color?.policy || 'reference-color';
-	const paletteEvidenceComponents = sourcePaintComponents
-		.filter((component) => {
-			const assignment = assignmentForSourceComponent(artifact, component.componentId, semanticMap);
+	const paletteEvidenceComponents = sourcePaintComponents.filter((component) => {
+		const assignment = assignmentForSourceComponent(artifact, component.componentId, semanticMap);
 
-			return !isFreeformPreserveColorAssignment(artifact, assignment);
-		});
-	const assignedPaletteEvidenceComponents = paletteEvidenceComponents
-		.filter((component) => assignmentForSourceComponent(artifact, component.componentId, semanticMap));
-	const sourcePaints = paletteEvidenceComponents.map((component) => componentPalettePaint(component, paintResolver)).filter(isPaint);
+		return !isFreeformPreserveColorAssignment(artifact, assignment);
+	});
+	const assignedPaletteEvidenceComponents = paletteEvidenceComponents.filter((component) =>
+		assignmentForSourceComponent(artifact, component.componentId, semanticMap),
+	);
+	const sourcePaints = paletteEvidenceComponents
+		.map((component) => componentPalettePaint(component, paintResolver))
+		.filter(isPaint);
 	const sourceHueAverages = Colors.perceivedHueAverages(
-		assignedPaletteEvidenceComponents.map((component) => componentPalettePaint(component, paintResolver)).filter(isPaint),
+		assignedPaletteEvidenceComponents
+			.map((component) => componentPalettePaint(component, paintResolver))
+			.filter(isPaint),
 	);
 	const colorMappings = paletteEvidenceComponents
 		.map((component) => {
@@ -1960,34 +1992,33 @@ function makeColorContext({ artifact, normalizedComponents, semanticMap, referen
 			const partId = assignment ? assignmentPartId(assignment) : null;
 			const target = assignment
 				? targetPaintForSourceComponent({
-					component,
-					assignment,
-					colorMode,
-					hueGrouping,
-					referenceComponentsById,
-					faceReference,
-					sourceHueAverages,
-					paintResolver,
-				})
+						component,
+						assignment,
+						colorMode,
+						hueGrouping,
+						referenceComponentsById,
+						faceReference,
+						sourceHueAverages,
+						paintResolver,
+					})
 				: null;
 			const paletteSourcePaint = componentPalettePaint(component, paintResolver);
 
-			return partId && target && paletteSourcePaint ? {
-				partId,
-				key: partComponentColorKey(partId, component),
-				source: paletteSourcePaint,
-				target,
-				weight: component.area || 1,
-				sourceIndex: component.sourceIndex,
-			} : null;
+			return partId && target && paletteSourcePaint
+				? {
+						partId,
+						key: partComponentColorKey(partId, component),
+						source: paletteSourcePaint,
+						target,
+						weight: component.area || 1,
+						sourceIndex: component.sourceIndex,
+					}
+				: null;
 		})
 		.filter(Boolean);
 	const palette = new PaletteBuilder({
 		mappings: colorMappings,
-		colors: [
-			...sourcePaints,
-			...referencePaintsForFace(faceReference),
-		],
+		colors: [...sourcePaints, ...referencePaintsForFace(faceReference)],
 		overlaps: colorMappingOverlapsByPart(colorMappings),
 	}).build();
 	const colorPicker = new ColorPicker(palette);
@@ -2014,7 +2045,7 @@ function colorMappingOverlapsByPart(colorMappings) {
 		mappingsByPart.set(mapping.partId, partMappings);
 	}
 
-	return [...mappingsByPart.values()].map((items) => ({ items }));
+	return [...mappingsByPart.values()].map((items) => ({items}));
 }
 
 function sourceComponentsForAssignment(assignment, sourceComponentsById) {
@@ -2024,18 +2055,18 @@ function sourceComponentsForAssignment(assignment, sourceComponentsById) {
 }
 
 function assignmentForSourceComponent(artifact, componentId, semanticMap = null) {
-	return (semanticMap?.assignments || [])
-		.find((assignment) => (assignment.sourceComponentIds || []).includes(componentId))
-		|| Object.values(artifact.steps.layout?.parts || {})
-		.find((part) => (part.sourceComponentIds || []).includes(componentId)) || null;
+	return (
+		(semanticMap?.assignments || []).find((assignment) =>
+			(assignment.sourceComponentIds || []).includes(componentId),
+		) ||
+		Object.values(artifact.steps.layout?.parts || {}).find((part) =>
+			(part.sourceComponentIds || []).includes(componentId),
+		) ||
+		null
+	);
 }
 
-function colorDecisionForSourceComponent({
-	component,
-	assignment,
-	candidate,
-	colorContext,
-}) {
+function colorDecisionForSourceComponent({component, assignment, candidate, colorContext}) {
 	const sourcePaint = componentPaint(component);
 	const colorPolicy = colorPolicyForPart(assignment, colorContext.policy);
 	const colorMode = effectiveColorModeForAssignment(assignment, colorContext.artifact);
@@ -2055,18 +2086,19 @@ function colorDecisionForSourceComponent({
 		paintResolver: colorContext.paintResolver,
 	});
 	const paletteSourcePaint = componentPalettePaint(component, colorContext.paintResolver) || sourcePaint;
-	const outputPaint = colorMode === 'freeform-preserve'
-		? paletteSourcePaint
-		: colorPolicy === 'source-color'
-		? sourcePaint
-		: outputPaintColor({
-			component,
-			partId,
-			sourcePaint: paletteSourcePaint,
-			targetPaint,
-			colorMode,
-			colorContext,
-		});
+	const outputPaint =
+		colorMode === 'freeform-preserve'
+			? paletteSourcePaint
+			: colorPolicy === 'source-color'
+				? sourcePaint
+				: outputPaintColor({
+						component,
+						partId,
+						sourcePaint: paletteSourcePaint,
+						targetPaint,
+						colorMode,
+						colorContext,
+					});
 
 	return {
 		componentId: component.componentId,
@@ -2081,7 +2113,7 @@ function colorDecisionForSourceComponent({
 	};
 }
 
-function outputPaintColor({ component, partId, sourcePaint, targetPaint, colorMode, colorContext }) {
+function outputPaintColor({component, partId, sourcePaint, targetPaint, colorMode, colorContext}) {
 	if (colorMode === 'freeform-preserve') {
 		return sourcePaint;
 	}
@@ -2119,7 +2151,8 @@ function targetPaintForSourceComponent({
 	sourceHueAverages,
 	paintResolver,
 }) {
-	const referencePart = faceReference.parts?.[assignment.partId] || faceReference.parts?.[assignment.referencePartId] || null;
+	const referencePart =
+		faceReference.parts?.[assignment.partId] || faceReference.parts?.[assignment.referencePartId] || null;
 	const referenceComponents = referenceComponentsForAssignment({
 		assignment,
 		referencePart,
@@ -2136,27 +2169,33 @@ function targetPaintForSourceComponent({
 	}
 
 	if (hueGrouping === 'source-hues') {
-		return nearestSameHuePaletteColor(sourcePaint, paletteColors, sourceHue)
-			|| renderOverrideHueReferencePaint(sourceHue)
-			|| sourceHueAverages.get(sourceHue)
-			|| Colors.perceivedHue(sourcePaint)
-			|| sourcePaint;
+		return (
+			nearestSameHuePaletteColor(sourcePaint, paletteColors, sourceHue) ||
+			renderOverrideHueReferencePaint(sourceHue) ||
+			sourceHueAverages.get(sourceHue) ||
+			Colors.perceivedHue(sourcePaint) ||
+			sourcePaint
+		);
 	}
 
 	if (colorMode === 'monochrome-reference') {
-		return dominantColor
-			|| referencePart?.dominantColor
-		|| nearestSourceMatchedPaletteColor(sourcePaint, paletteColors)
-		|| sourceHueAverages.get(sourceHue)
-		|| sourcePaint;
+		return (
+			dominantColor ||
+			referencePart?.dominantColor ||
+			nearestSourceMatchedPaletteColor(sourcePaint, paletteColors) ||
+			sourceHueAverages.get(sourceHue) ||
+			sourcePaint
+		);
 	}
 
-	return dominantColor
-		|| nearestSourceMatchedPaletteColor(sourcePaint, paletteColors, {
+	return (
+		dominantColor ||
+		nearestSourceMatchedPaletteColor(sourcePaint, paletteColors, {
 			dominantColor,
-		})
-		|| sourceHueAverages.get(sourceHue)
-		|| sourcePaint;
+		}) ||
+		sourceHueAverages.get(sourceHue) ||
+		sourcePaint
+	);
 }
 
 function colorModeForAssignment(assignment) {
@@ -2164,9 +2203,11 @@ function colorModeForAssignment(assignment) {
 		return assignment.colorStrategy;
 	}
 
-	if (assignment.contentKind === 'label'
-		|| assignment.contentKind === 'glyph'
-		|| /(?:label|character)$/i.test(assignment.role || '')) {
+	if (
+		assignment.contentKind === 'label' ||
+		assignment.contentKind === 'glyph' ||
+		/(?:label|character)$/i.test(assignment.role || '')
+	) {
 		return 'monochrome-reference';
 	}
 
@@ -2192,13 +2233,14 @@ function effectiveColorModeForAssignment(assignment, artifact) {
 }
 
 function nearestSourceMatchedPaletteColor(sourcePaint, paletteColors, options = {}) {
-	const nearest = (paletteColors || [])
-		.map((paint) => ({
-			paint,
-			distance: Colors.perceivedDistance(sourcePaint, paint),
-		}))
-		.filter((entry) => entry.distance != null)
-		.sort((left, right) => left.distance - right.distance)[0] || null;
+	const nearest =
+		(paletteColors || [])
+			.map((paint) => ({
+				paint,
+				distance: Colors.perceivedDistance(sourcePaint, paint),
+			}))
+			.filter((entry) => entry.distance != null)
+			.sort((left, right) => left.distance - right.distance)[0] || null;
 	const dominantDistance = Colors.perceivedDistance(sourcePaint, options.dominantColor);
 	const meaningfulImprovement = options.meaningfulImprovement ?? 0.08;
 
@@ -2218,25 +2260,24 @@ function nearestSameHuePaletteColor(sourcePaint, paletteColors, sourceHue) {
 		return null;
 	}
 
-	return (paletteColors || [])
-		.filter((paint) => Colors.perceivedHue(paint) === sourceHue)
-		.map((paint) => ({
-			paint,
-			distance: Colors.perceivedDistance(sourcePaint, paint),
-		}))
-		.filter((entry) => entry.distance != null)
-		.sort((left, right) => left.distance - right.distance)[0]?.paint || null;
+	return (
+		(paletteColors || [])
+			.filter((paint) => Colors.perceivedHue(paint) === sourceHue)
+			.map((paint) => ({
+				paint,
+				distance: Colors.perceivedDistance(sourcePaint, paint),
+			}))
+			.filter((entry) => entry.distance != null)
+			.sort((left, right) => left.distance - right.distance)[0]?.paint || null
+	);
 }
 
 function renderOverrideHueReferencePaint(sourceHue) {
 	return sourceHue === '#8A3A12' ? sourceHue : null;
 }
 
-function referenceComponentsForAssignment({ assignment, referencePart, referenceComponentsById }) {
-	const ids = uniqueValues([
-		...(assignment.referenceComponentIds || []),
-		...(referencePart?.componentIds || []),
-	]);
+function referenceComponentsForAssignment({assignment, referencePart, referenceComponentsById}) {
+	const ids = uniqueValues([...(assignment.referenceComponentIds || []), ...(referencePart?.componentIds || [])]);
 
 	return ids.map((componentId) => referenceComponentsById.get(componentId)).filter(Boolean);
 }
@@ -2283,12 +2324,14 @@ function analogousReferenceComponent(component, referenceComponents) {
 		return referenceComponents[0];
 	}
 
-	return referenceComponents
-		.map((referenceComponent) => ({
-			component: referenceComponent,
-			score: analogousReferenceScore(component, referenceComponent, sourceBounds, referenceBounds),
-		}))
-		.sort((left, right) => left.score - right.score)[0]?.component || referenceComponents[0];
+	return (
+		referenceComponents
+			.map((referenceComponent) => ({
+				component: referenceComponent,
+				score: analogousReferenceScore(component, referenceComponent, sourceBounds, referenceBounds),
+			}))
+			.sort((left, right) => left.score - right.score)[0]?.component || referenceComponents[0]
+	);
 }
 
 function analogousReferenceScore(component, referenceComponent, sourceBounds, referenceBounds) {
@@ -2299,14 +2342,14 @@ function analogousReferenceScore(component, referenceComponent, sourceBounds, re
 	const referenceAreaRatio = normalizedArea(referenceComponent, referenceBounds);
 	const areaScore = Math.abs(Math.log((sourceAreaRatio + 0.0001) / (referenceAreaRatio + 0.0001)));
 
-	return centerScore + (areaScore * 0.04);
+	return centerScore + areaScore * 0.04;
 }
 
 function normalizedCenter(item, outerBounds) {
 	const bounds = normalizeBounds(item.bounds || item);
 	const center = item.center || {
-		x: bounds.left + (bounds.width / 2),
-		y: bounds.top + (bounds.height / 2),
+		x: bounds.left + bounds.width / 2,
+		y: bounds.top + bounds.height / 2,
 	};
 
 	return {
@@ -2360,10 +2403,7 @@ function assignmentPartId(assignment) {
 }
 
 function partComponentColorKey(partId, component) {
-	return [
-		partId || '',
-		componentPaletteKey(component),
-	].join('|');
+	return [partId || '', componentPaletteKey(component)].join('|');
 }
 
 function componentPaletteKey(component) {
@@ -2422,9 +2462,11 @@ function layoutTransformForSourceAssignment({
 		};
 	}
 
-	const sourceBounds = unionBounds((assignment.sourceComponentIds || [])
-		.map((componentId) => componentsById.get(componentId)?.bounds)
-		.filter(Boolean));
+	const sourceBounds = unionBounds(
+		(assignment.sourceComponentIds || [])
+			.map((componentId) => componentsById.get(componentId)?.bounds)
+			.filter(Boolean),
+	);
 	const sourceContainer = viewBoxBounds(normalizedComponents.viewBox || normalizedComponents.alignmentBounds);
 	const targetBounds = largestContainingReferenceBox({
 		referenceStructure,
@@ -2469,21 +2511,20 @@ function layoutTransformForSourceAssignment({
 	};
 }
 
-function wholePartAlignmentTransform({
-	assignment,
-	artifact,
-	componentsById,
-	referenceStructure,
-}) {
+function wholePartAlignmentTransform({assignment, artifact, componentsById, referenceStructure}) {
 	if ((assignment.sourceComponentIds || []).length < 2 || (assignment.referenceComponentIds || []).length < 2) {
 		return null;
 	}
 
 	const sourceBounds = sourceBoundsForAssignment(assignment, componentsById);
 	const referenceComponents = referenceStructure?.faces?.[artifact.faceKey]?.components || [];
-	const targetBounds = unionBounds((assignment.referenceComponentIds || [])
-		.map((componentId) => referenceComponents.find((component) => component.componentId === componentId)?.bounds)
-		.filter(Boolean));
+	const targetBounds = unionBounds(
+		(assignment.referenceComponentIds || [])
+			.map(
+				(componentId) => referenceComponents.find((component) => component.componentId === componentId)?.bounds,
+			)
+			.filter(Boolean),
+	);
 
 	if (!sourceBounds || !targetBounds) {
 		return null;
@@ -2498,21 +2539,17 @@ function wholePartAlignmentTransform({
 	};
 }
 
-function layoutTransformForSourceComponent({
-	componentId,
-	assignment,
-	assignmentCandidates,
-	fallbackTransform,
-}) {
+function layoutTransformForSourceComponent({componentId, assignment, assignmentCandidates, fallbackTransform}) {
 	if ((assignment.referenceComponentIds || []).length > 0) {
 		return fallbackTransform;
 	}
 
-	const componentCandidate = (assignmentCandidates || []).find((candidate) => (
-		(candidate.sourceComponentIds || []).length === 1
-		&& candidate.sourceComponentIds[0] === componentId
-		&& candidate.transform?.matrix
-	));
+	const componentCandidate = (assignmentCandidates || []).find(
+		(candidate) =>
+			(candidate.sourceComponentIds || []).length === 1 &&
+			candidate.sourceComponentIds[0] === componentId &&
+			candidate.transform?.matrix,
+	);
 
 	if (!componentCandidate) {
 		return fallbackTransform;
@@ -2526,23 +2563,19 @@ function layoutTransformForSourceComponent({
 	};
 }
 
-function artworkMirrorForAssignment({
-	artifact,
-	assignment,
-	componentsById,
-	layoutTransform,
-}) {
+function artworkMirrorForAssignment({artifact, assignment, componentsById, layoutTransform}) {
 	if (!artifact.inputs?.outputOptions?.transform?.reflectX || !isFreeformArtworkAssignment(assignment)) {
 		return null;
 	}
 
 	const sourceBounds = sourceBoundsForAssignment(assignment, componentsById);
-	const alignedBounds = layoutTransform.alignedBounds
-		|| (sourceBounds && layoutTransform.matrix
+	const alignedBounds =
+		layoutTransform.alignedBounds ||
+		(sourceBounds && layoutTransform.matrix
 			? transformBounds(sourceBounds, matrixObject(layoutTransform.matrix))
-			: null)
-		|| layoutTransform.targetBounds
-		|| PREPARED_VIEWBOX_BOUNDS;
+			: null) ||
+		layoutTransform.targetBounds ||
+		PREPARED_VIEWBOX_BOUNDS;
 
 	return {
 		axis: 'x',
@@ -2557,20 +2590,23 @@ function isFreeformArtworkAssignment(assignment) {
 
 	const partId = assignment.referencePartId || assignment.sourcePartId;
 
-	return partId === 'mainArtwork'
-		&& assignment.contentKind === 'artwork'
-		&& assignment.colorStrategy === 'freeform-palette';
+	return (
+		partId === 'mainArtwork' &&
+		assignment.contentKind === 'artwork' &&
+		assignment.colorStrategy === 'freeform-palette'
+	);
 }
 
 function isFreeformPreserveColorAssignment(artifact, assignment) {
-	return Boolean(artifact?.inputs?.outputOptions?.artwork?.preserveColors)
-		&& isFreeformArtworkAssignment(assignment);
+	return Boolean(artifact?.inputs?.outputOptions?.artwork?.preserveColors) && isFreeformArtworkAssignment(assignment);
 }
 
 function sourceBoundsForAssignment(assignment, componentsById) {
-	return unionBounds((assignment.sourceComponentIds || [])
-		.map((componentId) => componentsById.get(componentId)?.bounds)
-		.filter(Boolean));
+	return unionBounds(
+		(assignment.sourceComponentIds || [])
+			.map((componentId) => componentsById.get(componentId)?.bounds)
+			.filter(Boolean),
+	);
 }
 
 function applyArtworkMirrorToTransform(transform, artworkMirror) {
@@ -2605,9 +2641,12 @@ const PREPARED_VIEWBOX_BOUNDS = Object.freeze({
 	height: 136,
 });
 
-function largestContainingReferenceBox({ referenceStructure, family, role, partId }) {
+function largestContainingReferenceBox({referenceStructure, family, role, partId}) {
 	const boxes = Object.values(referenceStructure?.faces || {})
-		.filter((face) => sameReferenceFamily(face.family, family) || sameReferenceFamily(face.faceKey?.split('-')[0], family))
+		.filter(
+			(face) =>
+				sameReferenceFamily(face.family, family) || sameReferenceFamily(face.faceKey?.split('-')[0], family),
+		)
 		.flatMap((face) => Object.values(face.parts || {}))
 		.filter((part) => (role && part.role === role) || (partId && part.partId === partId))
 		.map((part) => part.targetBounds)
@@ -2619,9 +2658,7 @@ function largestContainingReferenceBox({ referenceStructure, family, role, partI
 		}
 
 		const normalized = normalizeBounds(bounds);
-		return (normalized.width * normalized.height) > (largest.width * largest.height)
-			? normalized
-			: largest;
+		return normalized.width * normalized.height > largest.width * largest.height ? normalized : largest;
 	}, null);
 }
 
@@ -2640,8 +2677,8 @@ function viewBoxBounds(viewBox) {
 
 	const left = viewBox.left ?? viewBox.minX ?? 0;
 	const top = viewBox.top ?? viewBox.minY ?? 0;
-	const width = viewBox.width ?? ((viewBox.right ?? 0) - left);
-	const height = viewBox.height ?? ((viewBox.bottom ?? 0) - top);
+	const width = viewBox.width ?? (viewBox.right ?? 0) - left;
+	const height = viewBox.height ?? (viewBox.bottom ?? 0) - top;
 
 	return normalizeBounds({
 		left,
@@ -2660,8 +2697,8 @@ function normalizeBounds(bounds) {
 
 	const left = bounds.left ?? bounds.minX ?? 0;
 	const top = bounds.top ?? bounds.minY ?? 0;
-	const right = bounds.right ?? (left + (bounds.width ?? 0));
-	const bottom = bounds.bottom ?? (top + (bounds.height ?? 0));
+	const right = bounds.right ?? left + (bounds.width ?? 0);
+	const bottom = bounds.bottom ?? top + (bounds.height ?? 0);
 
 	return {
 		left,
@@ -2704,10 +2741,10 @@ function paddingRatios(innerBox, outerBox) {
 }
 
 function boxFromPaddingRatios(outerBox, ratios) {
-	const left = outerBox.left + (outerBox.width * ratios.left);
-	const top = outerBox.top + (outerBox.height * ratios.top);
-	const right = outerBox.right - (outerBox.width * ratios.right);
-	const bottom = outerBox.bottom - (outerBox.height * ratios.bottom);
+	const left = outerBox.left + outerBox.width * ratios.left;
+	const top = outerBox.top + outerBox.height * ratios.top;
+	const right = outerBox.right - outerBox.width * ratios.right;
+	const bottom = outerBox.bottom - outerBox.height * ratios.bottom;
 
 	return {
 		left,
@@ -2720,22 +2757,25 @@ function boxFromPaddingRatios(outerBox, ratios) {
 }
 
 function centeredFitBox(sourceBounds, targetBox) {
-	if ([sourceBounds.width, sourceBounds.height, targetBox.width, targetBox.height]
-		.some((value) => !Number.isFinite(value) || value <= 0)) {
+	if (
+		[sourceBounds.width, sourceBounds.height, targetBox.width, targetBox.height].some(
+			(value) => !Number.isFinite(value) || value <= 0,
+		)
+	) {
 		return sourceBounds;
 	}
 
 	const scale = Math.min(targetBox.width / sourceBounds.width, targetBox.height / sourceBounds.height);
 	const width = sourceBounds.width * scale;
 	const height = sourceBounds.height * scale;
-	const centerX = targetBox.left + (targetBox.width / 2);
-	const centerY = targetBox.top + (targetBox.height / 2);
+	const centerX = targetBox.left + targetBox.width / 2;
+	const centerY = targetBox.top + targetBox.height / 2;
 
 	return {
-		left: centerX - (width / 2),
-		top: centerY - (height / 2),
-		right: centerX + (width / 2),
-		bottom: centerY + (height / 2),
+		left: centerX - width / 2,
+		top: centerY - height / 2,
+		right: centerX + width / 2,
+		bottom: centerY + height / 2,
 		width,
 		height,
 	};
@@ -2743,30 +2783,30 @@ function centeredFitBox(sourceBounds, targetBox) {
 
 function uniformFitMatrix(sourceBounds, targetBounds) {
 	const scale = Math.min(targetBounds.width / sourceBounds.width, targetBounds.height / sourceBounds.height);
-	const sourceCenterX = sourceBounds.left + (sourceBounds.width / 2);
-	const sourceCenterY = sourceBounds.top + (sourceBounds.height / 2);
-	const targetCenterX = targetBounds.left + (targetBounds.width / 2);
-	const targetCenterY = targetBounds.top + (targetBounds.height / 2);
+	const sourceCenterX = sourceBounds.left + sourceBounds.width / 2;
+	const sourceCenterY = sourceBounds.top + sourceBounds.height / 2;
+	const targetCenterX = targetBounds.left + targetBounds.width / 2;
+	const targetCenterY = targetBounds.top + targetBounds.height / 2;
 
 	return {
 		a: scale,
 		b: 0,
 		c: 0,
 		d: scale,
-		e: targetCenterX - (sourceCenterX * scale),
-		f: targetCenterY - (sourceCenterY * scale),
+		e: targetCenterX - sourceCenterX * scale,
+		f: targetCenterY - sourceCenterY * scale,
 	};
 }
 
 function transformBounds(bounds, matrix) {
 	const points = [
-		{ x: bounds.left, y: bounds.top },
-		{ x: bounds.right, y: bounds.top },
-		{ x: bounds.right, y: bounds.bottom },
-		{ x: bounds.left, y: bounds.bottom },
+		{x: bounds.left, y: bounds.top},
+		{x: bounds.right, y: bounds.top},
+		{x: bounds.right, y: bounds.bottom},
+		{x: bounds.left, y: bounds.bottom},
 	].map((point) => ({
-		x: (matrix.a * point.x) + (matrix.c * point.y) + matrix.e,
-		y: (matrix.b * point.x) + (matrix.d * point.y) + matrix.f,
+		x: matrix.a * point.x + matrix.c * point.y + matrix.e,
+		y: matrix.b * point.x + matrix.d * point.y + matrix.f,
 	}));
 	const left = Math.min(...points.map((point) => point.x));
 	const top = Math.min(...points.map((point) => point.y));
@@ -2792,8 +2832,8 @@ function matrixFromBounds(sourceBounds, targetBounds) {
 		0,
 		0,
 		scaleY,
-		targetBounds.left - (sourceBounds.left * scaleX),
-		targetBounds.top - (sourceBounds.top * scaleY),
+		targetBounds.left - sourceBounds.left * scaleX,
+		targetBounds.top - sourceBounds.top * scaleY,
 	];
 }
 
@@ -2802,7 +2842,9 @@ function normalizeNegativeSpaceComponent(component) {
 		...component,
 		id: component.id || component.componentId,
 		parentGroupIds: component.parentGroupIds || [],
-		negativeSpaceCandidate: Boolean(component.negativeSpaceCandidate || component.classification?.negativeSpaceCandidate),
+		negativeSpaceCandidate: Boolean(
+			component.negativeSpaceCandidate || component.classification?.negativeSpaceCandidate,
+		),
 	};
 }
 
@@ -2874,9 +2916,7 @@ function representativeGradientPaint(id, gradientsById, seenIds) {
 		return null;
 	}
 
-	const stopPaints = gradient.stops
-		.map((stop) => stop.color)
-		.filter(isPaint);
+	const stopPaints = gradient.stops.map((stop) => stop.color).filter(isPaint);
 
 	if (stopPaints.length > 0) {
 		return averagePaints(stopPaints);
@@ -2886,19 +2926,13 @@ function representativeGradientPaint(id, gradientsById, seenIds) {
 }
 
 function averagePaints(paints) {
-	const colors = paints
-		.map((paint) => Colors.parseColor(paint))
-		.filter(Boolean);
+	const colors = paints.map((paint) => Colors.parseColor(paint)).filter(Boolean);
 
 	if (colors.length === 0) {
 		return null;
 	}
 
-	const total = colors.reduce((sum, color) => [
-		sum[0] + color[0],
-		sum[1] + color[1],
-		sum[2] + color[2],
-	], [0, 0, 0]);
+	const total = colors.reduce((sum, color) => [sum[0] + color[0], sum[1] + color[1], sum[2] + color[2]], [0, 0, 0]);
 
 	return Colors.formatColor(total.map((channel) => Math.round(channel / colors.length)));
 }
@@ -2906,7 +2940,9 @@ function averagePaints(paints) {
 function gradientDefinitionsById(sourceDefs) {
 	const gradients = new Map();
 
-	for (const match of String(sourceDefs || '').matchAll(/<(linearGradient|radialGradient)\b([^>]*)>([\s\S]*?)<\/\1>/gi)) {
+	for (const match of String(sourceDefs || '').matchAll(
+		/<(linearGradient|radialGradient)\b([^>]*)>([\s\S]*?)<\/\1>/gi,
+	)) {
 		const attributes = parseSvgAttributes(match[2]);
 		const id = attributes.id;
 
@@ -2938,15 +2974,14 @@ function gradientDefinitionsById(sourceDefs) {
 }
 
 function gradientStops(content) {
-	return [...String(content || '').matchAll(/<stop\b([^>]*)\/?>/gi)]
-		.map((match) => {
-			const attributes = parseSvgAttributes(match[1]);
-			const style = parseStyleAttributes(attributes.style);
+	return [...String(content || '').matchAll(/<stop\b([^>]*)\/?>/gi)].map((match) => {
+		const attributes = parseSvgAttributes(match[1]);
+		const style = parseStyleAttributes(attributes.style);
 
-			return {
-				color: attributes['stop-color'] || style['stop-color'] || null,
-			};
-		});
+		return {
+			color: attributes['stop-color'] || style['stop-color'] || null,
+		};
+	});
 }
 
 function parseSvgAttributes(source) {
@@ -2960,17 +2995,19 @@ function parseSvgAttributes(source) {
 }
 
 function parseStyleAttributes(style) {
-	return Object.fromEntries(String(style || '')
-		.split(';')
-		.map((entry) => entry.trim())
-		.filter(Boolean)
-		.map((entry) => {
-			const separator = entry.indexOf(':');
+	return Object.fromEntries(
+		String(style || '')
+			.split(';')
+			.map((entry) => entry.trim())
+			.filter(Boolean)
+			.map((entry) => {
+				const separator = entry.indexOf(':');
 
-			return separator >= 0
-				? [entry.slice(0, separator).trim(), entry.slice(separator + 1).trim()]
-				: [entry, ''];
-		}));
+				return separator >= 0
+					? [entry.slice(0, separator).trim(), entry.slice(separator + 1).trim()]
+					: [entry, ''];
+			}),
+	);
 }
 
 function urlPaintId(paint) {
@@ -2986,10 +3023,7 @@ function urlReferenceId(value) {
 }
 
 function isPaint(value) {
-	return Boolean(value)
-		&& value !== 'none'
-		&& value !== 'transparent'
-		&& !String(value).startsWith('url(');
+	return Boolean(value) && value !== 'none' && value !== 'transparent' && !String(value).startsWith('url(');
 }
 
 function extractSvgDefs(svgSource) {
@@ -2997,9 +3031,11 @@ function extractSvgDefs(svgSource) {
 }
 
 function shouldLayoutSourceAssignment(assignment) {
-	return assignment.assignmentType === 'source'
-		&& assignment.reviewStatus !== 'rejected'
-		&& (assignment.sourceComponentIds || []).length > 0;
+	return (
+		assignment.assignmentType === 'source' &&
+		assignment.reviewStatus !== 'rejected' &&
+		(assignment.sourceComponentIds || []).length > 0
+	);
 }
 
 function shouldRenderSourceAssignment(artifact, assignment) {
@@ -3031,26 +3067,30 @@ function optionalSourceAssignmentsForLayout(artifact, semanticMap) {
 function alternateOptionalSourceAssignmentsForLayout(artifact, semanticMap) {
 	return Object.values(artifact.steps.addOptional.parts || {})
 		.filter((part) => part.alternates?.source)
-		.map((part) => assignmentForPart(semanticMap, part.partId) || {
-			assignmentId: null,
-			sourcePartId: part.partId,
-			referencePartId: part.partId,
-			contentKind: part.contentKind || null,
-			role: part.role || null,
-			assignmentType: 'source',
-			strategy: 'alternate-source-render',
-			sourceComponentIds: part.alternates.source.sourceComponentIds || part.sourceComponentIds || [],
-			referenceComponentIds: [],
-			reviewStatus: part.reviewStatus || 'inferred',
-		})
+		.map(
+			(part) =>
+				assignmentForPart(semanticMap, part.partId) || {
+					assignmentId: null,
+					sourcePartId: part.partId,
+					referencePartId: part.partId,
+					contentKind: part.contentKind || null,
+					role: part.role || null,
+					assignmentType: 'source',
+					strategy: 'alternate-source-render',
+					sourceComponentIds: part.alternates.source.sourceComponentIds || part.sourceComponentIds || [],
+					referenceComponentIds: [],
+					reviewStatus: part.reviewStatus || 'inferred',
+				},
+		)
 		.filter((assignment) => (assignment.sourceComponentIds || []).length > 0);
 }
 
 function fallbackLayoutTransformForOptionalSource(parts) {
 	const mainArtwork = parts.mainArtwork;
-	const sourcePart = mainArtwork?.renderKind === 'source'
-		? mainArtwork
-		: Object.values(parts).find((part) => part.renderKind === 'source' && part.transform?.matrix);
+	const sourcePart =
+		mainArtwork?.renderKind === 'source'
+			? mainArtwork
+			: Object.values(parts).find((part) => part.renderKind === 'source' && part.transform?.matrix);
 
 	if (!sourcePart?.transform?.matrix) {
 		return null;
@@ -3065,9 +3105,9 @@ function fallbackLayoutTransformForOptionalSource(parts) {
 }
 
 function transformBoundsForComponentIds(componentIds, componentsById, matrix) {
-	const sourceBounds = unionBounds((componentIds || [])
-		.map((componentId) => componentsById.get(componentId)?.bounds)
-		.filter(Boolean));
+	const sourceBounds = unionBounds(
+		(componentIds || []).map((componentId) => componentsById.get(componentId)?.bounds).filter(Boolean),
+	);
 
 	return sourceBounds ? transformBounds(sourceBounds, matrixObject(matrix)) : null;
 }
@@ -3120,20 +3160,13 @@ function layoutPartRecord({
 function componentMatrix(component) {
 	const transform = component.transform || {};
 
-	return [
-		transform.a ?? 1,
-		transform.b ?? 0,
-		transform.c ?? 0,
-		transform.d ?? 1,
-		transform.e ?? 0,
-		transform.f ?? 0,
-	];
+	return [transform.a ?? 1, transform.b ?? 0, transform.c ?? 0, transform.d ?? 1, transform.e ?? 0, transform.f ?? 0];
 }
 
 function matrixObject(matrix) {
 	const [a = 1, b = 0, c = 0, d = 1, e = 0, f = 0] = matrix || [];
 
-	return { a, b, c, d, e, f };
+	return {a, b, c, d, e, f};
 }
 
 function multiplyMatrices(left, right) {
@@ -3141,12 +3174,12 @@ function multiplyMatrices(left, right) {
 	const [a2, b2, c2, d2, e2, f2] = right;
 
 	return [
-		(a1 * a2) + (c1 * b2),
-		(b1 * a2) + (d1 * b2),
-		(a1 * c2) + (c1 * d2),
-		(b1 * c2) + (d1 * d2),
-		(a1 * e2) + (c1 * f2) + e1,
-		(b1 * e2) + (d1 * f2) + f1,
+		a1 * a2 + c1 * b2,
+		b1 * a2 + d1 * b2,
+		a1 * c2 + c1 * d2,
+		b1 * c2 + d1 * d2,
+		a1 * e2 + c1 * f2 + e1,
+		b1 * e2 + d1 * f2 + f1,
 	];
 }
 
@@ -3160,43 +3193,40 @@ function componentTransformAttribute(component) {
 		return null;
 	}
 
-	return `transform="${escapeAttribute(`matrix(${[
-		transform.a ?? 1,
-		transform.b ?? 0,
-		transform.c ?? 0,
-		transform.d ?? 1,
-		transform.e ?? 0,
-		transform.f ?? 0,
-	].join(' ')})`)}"`;
+	return `transform="${escapeAttribute(
+		`matrix(${[
+			transform.a ?? 1,
+			transform.b ?? 0,
+			transform.c ?? 0,
+			transform.d ?? 1,
+			transform.e ?? 0,
+			transform.f ?? 0,
+		].join(' ')})`,
+	)}"`;
 }
 
 function isIdentityTransform(transform) {
-	return nearlyEqual(transform.a ?? 1, 1)
-		&& nearlyEqual(transform.b ?? 0, 0)
-		&& nearlyEqual(transform.c ?? 0, 0)
-		&& nearlyEqual(transform.d ?? 1, 1)
-		&& nearlyEqual(transform.e ?? 0, 0)
-		&& nearlyEqual(transform.f ?? 0, 0);
+	return (
+		nearlyEqual(transform.a ?? 1, 1) &&
+		nearlyEqual(transform.b ?? 0, 0) &&
+		nearlyEqual(transform.c ?? 0, 0) &&
+		nearlyEqual(transform.d ?? 1, 1) &&
+		nearlyEqual(transform.e ?? 0, 0) &&
+		nearlyEqual(transform.f ?? 0, 0)
+	);
 }
 
-function composeOptionalPart({
-	partId,
-	optionalPart,
-	outputOptions,
-	semanticMap,
-	face,
-}) {
+function composeOptionalPart({partId, optionalPart, outputOptions, semanticMap, face}) {
 	const partOutputOptions = outputOptions.parts[partId] || {};
-	const outputPresent = partOutputOptions.outputPresent
-		?? outputOptions.defaultOutputPresent;
+	const outputPresent = partOutputOptions.outputPresent ?? outputOptions.defaultOutputPresent;
 	const assignment = assignmentForPart(semanticMap, partId);
 	const sourceComponentIds = sourceComponentIdsForPart(semanticMap, partId, assignment);
 	const semanticPartState = semanticMap.parts?.[partId] || null;
-	const sourceAbsent = optionalPart.sourceState === 'source-absent'
-		|| (semanticPartState?.state === 'unbound'
-			&& semanticPartState.reviewStatus === 'accepted');
-	const forceGeneratedOutput = partOutputOptions.renderMode === 'generated'
-		|| partOutputOptions.source === 'generated';
+	const sourceAbsent =
+		optionalPart.sourceState === 'source-absent' ||
+		(semanticPartState?.state === 'unbound' && semanticPartState.reviewStatus === 'accepted');
+	const forceGeneratedOutput =
+		partOutputOptions.renderMode === 'generated' || partOutputOptions.source === 'generated';
 	const generatedAvailable = canGeneratePreferredOutput({
 		partId,
 		optionalPart,
@@ -3204,24 +3234,24 @@ function composeOptionalPart({
 		partOutputOptions,
 		face,
 	});
-	const sourcePreferredGenerated = partOutputOptions.source === 'source-preferred'
-		&& generatedAvailable;
-	const generatedRequested = forceGeneratedOutput
-		|| sourcePreferredGenerated
-		|| assignment?.assignmentType === 'generated'
-		|| semanticPartState?.state === 'generated'
-		|| ['generated', 'output-generated'].includes(optionalPart.sourceState);
+	const sourcePreferredGenerated = partOutputOptions.source === 'source-preferred' && generatedAvailable;
+	const generatedRequested =
+		forceGeneratedOutput ||
+		sourcePreferredGenerated ||
+		assignment?.assignmentType === 'generated' ||
+		semanticPartState?.state === 'generated' ||
+		['generated', 'output-generated'].includes(optionalPart.sourceState);
 	const renderKind = !outputPresent
 		? 'omit'
 		: forceGeneratedOutput
 			? 'generated'
 			: sourceComponentIds.length > 0
-			? 'source'
-			: sourceAbsent && !generatedRequested
-				? 'omit'
-			: generatedRequested
-				? 'generated'
-				: 'unresolved';
+				? 'source'
+				: sourceAbsent && !generatedRequested
+					? 'omit'
+					: generatedRequested
+						? 'generated'
+						: 'unresolved';
 
 	return {
 		partId,
@@ -3234,22 +3264,37 @@ function composeOptionalPart({
 		sourceComponentIds,
 		sourceState: optionalPart.sourceState || null,
 		assignmentType: assignment?.assignmentType || null,
-		...(outputPresent && ((renderKind === 'source' && generatedAvailable) || (renderKind !== 'source' && sourceComponentIds.length > 0)) ? {
-			alternates: {
-				...(renderKind === 'source' && generatedAvailable ? { generated: {
-					renderKind: 'generated',
-					source: 'generated',
-				} } : {}),
-				...(renderKind !== 'source' && sourceComponentIds.length > 0 ? { source: {
-					renderKind: 'source',
-					source: 'source-assignment',
-					sourceComponentIds,
-				} } : {}),
-			},
-		} : {}),
-		reviewStatus: renderKind === 'unresolved'
-			? 'needs-review'
-			: assignment?.reviewStatus || semanticPartState?.reviewStatus || partOutputOptions.reviewStatus || 'inferred',
+		...(outputPresent &&
+		((renderKind === 'source' && generatedAvailable) || (renderKind !== 'source' && sourceComponentIds.length > 0))
+			? {
+					alternates: {
+						...(renderKind === 'source' && generatedAvailable
+							? {
+									generated: {
+										renderKind: 'generated',
+										source: 'generated',
+									},
+								}
+							: {}),
+						...(renderKind !== 'source' && sourceComponentIds.length > 0
+							? {
+									source: {
+										renderKind: 'source',
+										source: 'source-assignment',
+										sourceComponentIds,
+									},
+								}
+							: {}),
+					},
+				}
+			: {}),
+		reviewStatus:
+			renderKind === 'unresolved'
+				? 'needs-review'
+				: assignment?.reviewStatus ||
+					semanticPartState?.reviewStatus ||
+					partOutputOptions.reviewStatus ||
+					'inferred',
 		provenance: {
 			stage: 'final-rendering-composition',
 			step: 'addOptional',
@@ -3259,18 +3304,14 @@ function composeOptionalPart({
 	};
 }
 
-function canGeneratePreferredOutput({
-	partId,
-	optionalPart,
-	assignment,
-	partOutputOptions,
-	face,
-}) {
-	return Boolean(optionalPart.text || assignment?.text || partOutputOptions.text)
-		|| (partId === 'label' && canGenerateLabelFromFaceValue(face))
-		|| optionalPart.contentKind === 'glyph'
-		|| assignment?.contentKind === 'glyph'
-		|| partOutputOptions.contentKind === 'glyph';
+function canGeneratePreferredOutput({partId, optionalPart, assignment, partOutputOptions, face}) {
+	return (
+		Boolean(optionalPart.text || assignment?.text || partOutputOptions.text) ||
+		(partId === 'label' && canGenerateLabelFromFaceValue(face)) ||
+		optionalPart.contentKind === 'glyph' ||
+		assignment?.contentKind === 'glyph' ||
+		partOutputOptions.contentKind === 'glyph'
+	);
 }
 
 function canGenerateLabelFromFaceValue(face) {
@@ -3278,13 +3319,10 @@ function canGenerateLabelFromFaceValue(face) {
 }
 
 function effectiveTilesetOutputOptions(tilesetState) {
-	return mergeOutputOptionGroups(
-		tilesetState?.rendering?.defaults || {},
-		tilesetState?.rendering?.overrides || {},
-	);
+	return mergeOutputOptionGroups(tilesetState?.rendering?.defaults || {}, tilesetState?.rendering?.overrides || {});
 }
 
-function outputOptionsForFace({ tilesetOutputOptions, faceOutputOptions, faceKey, suitId }) {
+function outputOptionsForFace({tilesetOutputOptions, faceOutputOptions, faceKey, suitId}) {
 	const suitOptions = outputSuitOptions(tilesetOutputOptions, suitId);
 	const tilesetFaceOptions = tilesetOutputOptions?.faces?.[faceKey] || {};
 	const faceOptions = faceOutputOptions?.suitId === suitId ? faceOutputOptions : {};
@@ -3386,34 +3424,27 @@ function mergeOutputOptionGroups(base, override) {
 }
 
 function mergeOutputOptionScopes(baseScopes, overrideScopes) {
-	const keys = uniqueValues([
-		...Object.keys(baseScopes || {}),
-		...Object.keys(overrideScopes || {}),
-	]);
+	const keys = uniqueValues([...Object.keys(baseScopes || {}), ...Object.keys(overrideScopes || {})]);
 
-	return Object.fromEntries(keys.map((key) => [
-		key,
-		mergeOutputOptionGroups(baseScopes?.[key] || {}, overrideScopes?.[key] || {}),
-	]));
-}
-
-function statusForSteps(steps) {
-	return Object.values(steps || {}).some((step) => step.status === 'needs-review')
-		? 'needs-review'
-		: 'ready';
-}
-
-function referenceStructurePathForSet(referenceSetId) {
-	return path.resolve(
-		BASE_REFERENCE,
-		referenceSetId || 'default-large-faces',
-		'reference.json',
+	return Object.fromEntries(
+		keys.map((key) => [key, mergeOutputOptionGroups(baseScopes?.[key] || {}, overrideScopes?.[key] || {})]),
 	);
 }
 
+function statusForSteps(steps) {
+	return Object.values(steps || {}).some((step) => step.status === 'needs-review') ? 'needs-review' : 'ready';
+}
+
+function referenceStructurePathForSet(referenceSetId) {
+	return path.resolve(BASE_REFERENCE, referenceSetId || 'default-large-faces', 'reference.json');
+}
+
 function assignmentForPart(semanticMap, partId) {
-	return (semanticMap.assignments || [])
-		.find((assignment) => assignment.referencePartId === partId || assignment.sourcePartId === partId) || null;
+	return (
+		(semanticMap.assignments || []).find(
+			(assignment) => assignment.referencePartId === partId || assignment.sourcePartId === partId,
+		) || null
+	);
 }
 
 function sourceComponentIdsForPart(semanticMap, partId, assignment) {
@@ -3482,7 +3513,7 @@ function indent(value, depth) {
 	const prefix = '\t'.repeat(depth);
 	return value
 		.split('\n')
-		.map((line) => line.trim() ? `${prefix}${line}` : line)
+		.map((line) => (line.trim() ? `${prefix}${line}` : line))
 		.join('\n');
 }
 
@@ -3495,8 +3526,5 @@ function escapeAttribute(value) {
 }
 
 function escapeText(value) {
-	return String(value)
-		.replaceAll('&', '&amp;')
-		.replaceAll('<', '&lt;')
-		.replaceAll('>', '&gt;');
+	return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }

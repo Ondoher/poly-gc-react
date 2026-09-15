@@ -9,8 +9,8 @@ type ReferenceApprovalSummary = {
 	unknownPaletteColorCount: number;
 	unknownPaletteColors: string[];
 	incompleteFaces: string[];
-	unboundParts: { faceKey: string; partId: string }[];
-	unboundComponents: { faceKey: string; componentId: string }[];
+	unboundParts: {faceKey: string; partId: string}[];
+	unboundComponents: {faceKey: string; componentId: string}[];
 };
 
 /**

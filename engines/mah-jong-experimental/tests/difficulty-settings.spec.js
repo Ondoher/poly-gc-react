@@ -1,8 +1,4 @@
-import {
-	DIFFICULTY_LEVELS,
-	DIFFICULTY_SETTINGS,
-	resolveDifficultySettings,
-} from '../difficulty-settings.js';
+import {DIFFICULTY_LEVELS, DIFFICULTY_SETTINGS, resolveDifficultySettings} from '../difficulty-settings.js';
 
 describe('difficulty settings', () => {
 	it('resolves standard settings by default', () => {

@@ -112,16 +112,16 @@ Suggested tasks:
 
 - completed: confirm `Grid` responsibilities and invariants
 - completed: confirm `GameState` ownership of:
-  - `board`
-  - `layout`
-  - `solution`
-  - `placedTiles`
-  - tile position and face access
-  - occupancy-backed adjacency checks
+    - `board`
+    - `layout`
+    - `solution`
+    - `placedTiles`
+    - tile position and face access
+    - occupancy-backed adjacency checks
 - completed: decide `GeneratorState` should store resolved settings and copy
   selected settings fields into generator-specific properties:
-  - store resolved settings directly
-  - copy selected settings fields into generator-specific properties
+    - store resolved settings directly
+    - copy selected settings fields into generator-specific properties
 - completed: replace `GeneratorState.collapseOptions()` with explicit
   ranking-setting accessors on `GeneratorState`
 - completed: remove one-call difficulty/behavior overrides from core generator
@@ -263,9 +263,9 @@ Suggested tasks:
   accessors
 - completed: update `FaceRanking` to use `GeneratorState` consistently
 - completed: decide `GameGenerator` should own:
-  - one `GeneratorState`
-  - plus helper collaborators
-  - instead of a plain `GameState + settings` split
+    - one `GeneratorState`
+    - plus helper collaborators
+    - instead of a plain `GameState + settings` split
 
 Suggested tests:
 
@@ -304,9 +304,9 @@ Suggested tasks:
 
 - completed: keep `TileSuspension` as the suspension record
 - completed: keep `GeneratedPair` as the normal tile-pair record carrying:
-  - tile keys
-  - preferred face group
-  - resolved faces or face group when applicable
+    - tile keys
+    - preferred face group
+    - resolved faces or face group when applicable
 
 Suggested tests:
 
@@ -355,11 +355,11 @@ Suggested tasks:
   stage seam, with `assignFacesToPairSet()`, `assignDeferredFaces()`, and
   `fillInRemainingFaces()` only as temporary compatibility aliases
 - completed: make sure orchestration owns:
-  - initialize state
-  - prepare the full board
-  - place the next generated step
-  - assign face pairs to prepared tile pairs
-  - restore board for play
+    - initialize state
+    - prepare the full board
+    - place the next generated step
+    - assign face pairs to prepared tile pairs
+    - restore board for play
 - keep concrete policy decision logic behind replaceable seams so the shell
   can stay stable while `Tiles`, `Faces`, and later suspension policy evolve
 
@@ -463,14 +463,14 @@ Soft-link concept:
 - soft links are tile-specific generation metadata, not inherently
   face-specific
 - the current soft-link rule is intentionally simple:
-  - when a pair is selected, record the non-source tiles that are open after
-    that pair is hypothetically played/removed
+    - when a pair is selected, record the non-source tiles that are open after
+      that pair is hypothetically played/removed
 - those recorded tiles are available by timing/context, not by geometric
   closeness
 - the current face-domain use of those links is face avoidance:
-  - after the source pair receives a face group, `FaceAvoidance` adds soft
-    ranking pressure against assigning that same face group to the linked
-    available tiles
+    - after the source pair receives a face group, `FaceAvoidance` adds soft
+      ranking pressure against assigning that same face group to the linked
+      available tiles
 - this separates reusable structural/context metadata from the face-specific
   pressure that consumes it
 
@@ -511,44 +511,44 @@ Before implementing additional face-avoidance pressure behavior, complete these
 steps first:
 
 1. Completed: add `SoftLinks`.
-   - `SoftLinks` is a small tile-link registry owned by `GeneratorState`.
-   - It stores links as records with an id, type, role, and linked tile list.
-   - The link `type` is a constrained construction method such as `open-tiles`
-     or `grouped`.
-   - The link `role` is freeform context such as `after-removal` or a future
-     `reservation`.
-   - Consumers decide how to interpret zero, one, or many matching links.
+    - `SoftLinks` is a small tile-link registry owned by `GeneratorState`.
+    - It stores links as records with an id, type, role, and linked tile list.
+    - The link `type` is a constrained construction method such as `open-tiles`
+      or `grouped`.
+    - The link `role` is freeform context such as `after-removal` or a future
+      `reservation`.
+    - Consumers decide how to interpret zero, one, or many matching links.
 2. Completed: add `Tiles.getOpenSoftLinkTiles(options)`.
-   - Current option shape:
-     - optional `removeTiles`
-     - optional `ignoreTiles`
-   - `removeTiles` and `ignoreTiles` are actions to perform while deriving
-     links, not descriptions of work already done.
+    - Current option shape:
+        - optional `removeTiles`
+        - optional `ignoreTiles`
+    - `removeTiles` and `ignoreTiles` are actions to perform while deriving
+      links, not descriptions of work already done.
 3. Completed: add `Tiles.recordSoftLinks(pair)`.
-   - Responsibility: evaluate the current open-tile soft-link rule and store
-     an `open-tiles` / `after-removal` record in `GeneratorState.softLinks`.
-   - Timing: called automatically by `Tiles.selectGeneratedPair()` before the
-     selected pair is committed/removed from the working board.
+    - Responsibility: evaluate the current open-tile soft-link rule and store
+      an `open-tiles` / `after-removal` record in `GeneratorState.softLinks`.
+    - Timing: called automatically by `Tiles.selectGeneratedPair()` before the
+      selected pair is committed/removed from the working board.
 4. Completed: add the face-domain consumption step separately.
-   - Method name: `applyFaceAvoidance(pair)`
-   - Responsibility: after face assignment, query `GeneratorState.softLinks`
-     for `open-tiles` / `after-removal` records matching the pair's source
-     tiles and apply `FaceAvoidance` pressure for `pair.faceGroup`
-   - This keeps `FaceAvoidance` as the face-specific pressure store rather than
-     the owner of soft-link discovery.
+    - Method name: `applyFaceAvoidance(pair)`
+    - Responsibility: after face assignment, query `GeneratorState.softLinks`
+      for `open-tiles` / `after-removal` records matching the pair's source
+      tiles and apply `FaceAvoidance` pressure for `pair.faceGroup`
+    - This keeps `FaceAvoidance` as the face-specific pressure store rather than
+      the owner of soft-link discovery.
 5. Stage 1 tests are in place.
-   - Soft-link tests should assert open-tile recording after hypothetical pair
-     removal.
+    - Soft-link tests should assert open-tile recording after hypothetical pair
+      removal.
 6. Stage 2 tests are in place.
-   - Face-avoidance tests should assert that assigned face groups create
-     penalties against the recorded soft-linked open tiles.
+    - Face-avoidance tests should assert that assigned face groups create
+      penalties against the recorded soft-linked open tiles.
 7. Update the glossary/readme after each migration stage.
-   - Define `soft link` as non-binding generation metadata from a source pair to
-     contextually available tiles.
-   - Define the current soft-link rule as recording open tiles after pair
-     removal.
-   - Define `FaceAvoidance` as the face-domain consumer that discourages
-     accidental same-face-group pairing on those soft-linked open tiles.
+    - Define `soft link` as non-binding generation metadata from a source pair to
+      contextually available tiles.
+    - Define the current soft-link rule as recording open tiles after pair
+      removal.
+    - Define `FaceAvoidance` as the face-domain consumer that discourages
+      accidental same-face-group pairing on those soft-linked open tiles.
 
 Suggested tests:
 
@@ -608,8 +608,8 @@ Target outcomes:
 Suggested tasks:
 
 - completed: settle the `Suspensions` boundary above `TileSuspension`
-  - constructor uses one options object: `{ state, tiles, faces }`
-  - active methods are policy shells only
+    - constructor uses one options object: `{ state, tiles, faces }`
+    - active methods are policy shells only
 - implement suspension eligibility rules
 - implement suspension creation
 - implement release checks
@@ -711,4 +711,3 @@ face-avoidance pressure consumption, full-face-set selection, and the
 place. The most useful next work is adding the first small suspension
 eligibility question without implementing the whole suspension algorithm at
 once.
-

@@ -1,10 +1,10 @@
 import paper from 'paper';
-import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
-import { parse as parseSvgAst } from 'svg-parser';
-import { composeMatrices, parseTransform } from './source-svg-components.js';
-import { transformPathData } from './svg-path-geometry.js';
+import {SVGLoader} from 'three/examples/jsm/loaders/SVGLoader.js';
+import {parse as parseSvgAst} from 'svg-parser';
+import {composeMatrices, parseTransform} from './source-svg-components.js';
+import {transformPathData} from './svg-path-geometry.js';
 
-const IDENTITY = Object.freeze({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
+const IDENTITY = Object.freeze({a: 1, b: 0, c: 0, d: 1, e: 0, f: 0});
 const STROKE_OUTLINE_CURVE_SEGMENTS = 10;
 
 installSvgDomParser();
@@ -14,13 +14,7 @@ export function getPaintComponents(components, classNames) {
 	return components.filter((component) => classSet.has(component.className));
 }
 
-export function makePaintPathWithKnockouts({
-	component,
-	color,
-	knockouts = [],
-	transform = IDENTITY,
-	attributes = {},
-}) {
+export function makePaintPathWithKnockouts({component, color, knockouts = [], transform = IDENTITY, attributes = {}}) {
 	const outputTransform = composeMatrices(normalizeMatrix(transform), component.transform || IDENTITY);
 
 	if (isStrokeOnly(component)) {
@@ -30,41 +24,42 @@ export function makePaintPathWithKnockouts({
 		}
 
 		const strokePathDataList = strokeOnlyComponentToFilledPathDataList(component, outputTransform, strokeWidth);
-		const pathAttributes = mergedPaintPathAttributes({
-			...attributes,
-			'data-geometry-normalized': [
-				attributes?.['data-geometry-normalized'],
-				'stroke-to-fill',
-			].filter(Boolean).join(' '),
-		}, false);
+		const pathAttributes = mergedPaintPathAttributes(
+			{
+				...attributes,
+				'data-geometry-normalized': [attributes?.['data-geometry-normalized'], 'stroke-to-fill']
+					.filter(Boolean)
+					.join(' '),
+			},
+			false,
+		);
 		const customAttributes = Object.entries(pathAttributes)
-			.map(([name, value]) => value == null ? '' : ` ${name}="${escapeAttribute(String(value))}"`)
+			.map(([name, value]) => (value == null ? '' : ` ${name}="${escapeAttribute(String(value))}"`))
 			.join('');
 
 		return strokePathDataList
-			.map((strokePathData) => `<path fill="${escapeAttribute(color)}" fill-rule="evenodd"${customAttributes} data-source-id="${escapeAttribute(component.id || '')}" data-source-class="${escapeAttribute(component.className || '')}" d="${escapeAttribute(strokePathData)}"/>`)
+			.map(
+				(strokePathData) =>
+					`<path fill="${escapeAttribute(color)}" fill-rule="evenodd"${customAttributes} data-source-id="${escapeAttribute(component.id || '')}" data-source-class="${escapeAttribute(component.className || '')}" d="${escapeAttribute(strokePathData)}"/>`,
+			)
 			.join('\n');
 	}
 
-	const knockoutPathData = pruneNestedKnockouts(knockouts)
-		.map((knockout) => transformComponentPath(knockout, transform));
+	const knockoutPathData = pruneNestedKnockouts(knockouts).map((knockout) =>
+		transformComponentPath(knockout, transform),
+	);
 	const hasKnockouts = knockoutPathData.length > 0;
-	const pathData = hasKnockouts
-		? transformComponentPath(component, transform)
-		: component.pathData;
-	const bakedPathData = hasKnockouts
-		? subtractKnockouts(pathData, knockoutPathData)
-		: pathData;
-	const transformAttribute = hasKnockouts
-		? ''
-		: makeTransformAttribute(outputTransform);
-	const knockoutAttributes = knockoutPathData.length > 0
-		? ` data-negative-space="paper-subtract" data-knockout-count="${knockoutPathData.length}"`
-		: '';
+	const pathData = hasKnockouts ? transformComponentPath(component, transform) : component.pathData;
+	const bakedPathData = hasKnockouts ? subtractKnockouts(pathData, knockoutPathData) : pathData;
+	const transformAttribute = hasKnockouts ? '' : makeTransformAttribute(outputTransform);
+	const knockoutAttributes =
+		knockoutPathData.length > 0
+			? ` data-negative-space="paper-subtract" data-knockout-count="${knockoutPathData.length}"`
+			: '';
 	const safePathData = safeFilledPathData(component, bakedPathData);
 	const pathAttributes = mergedPaintPathAttributes(attributes, safePathData !== bakedPathData);
 	const customAttributes = Object.entries(pathAttributes)
-		.map(([name, value]) => value == null ? '' : ` ${name}="${escapeAttribute(String(value))}"`)
+		.map(([name, value]) => (value == null ? '' : ` ${name}="${escapeAttribute(String(value))}"`))
 		.join('');
 	const paintAttributes = makePaintAttributes(component, color);
 
@@ -72,7 +67,7 @@ export function makePaintPathWithKnockouts({
 }
 
 function mergedPaintPathAttributes(attributes, degenerateSubpathPruned) {
-	const nextAttributes = { ...(attributes || {}) };
+	const nextAttributes = {...(attributes || {})};
 	const geometryNormalizations = [
 		nextAttributes['data-geometry-normalized'],
 		degenerateSubpathPruned ? 'degenerate-subpath-pruned' : null,
@@ -89,11 +84,7 @@ function mergedPaintPathAttributes(attributes, degenerateSubpathPruned) {
 }
 
 export function selectKnockoutComponents(components, paintComponents, options = {}) {
-	const {
-		maxArea = Infinity,
-		paintUnionAreaRatio = 0.95,
-		sourceArtGroupId = null,
-	} = options;
+	const {maxArea = Infinity, paintUnionAreaRatio = 0.95, sourceArtGroupId = null} = options;
 	const paintUnion = getComponentUnionBounds(paintComponents);
 
 	return components.filter((component) => {
@@ -105,27 +96,26 @@ export function selectKnockoutComponents(components, paintComponents, options = 
 			return false;
 		}
 
-		return component.area <= maxArea
-			&& component.area < paintUnion.area * paintUnionAreaRatio
-			&& boundsOverlap(component.bounds, paintUnion)
-			&& !boundsContainBounds(component.bounds, paintUnion);
+		return (
+			component.area <= maxArea &&
+			component.area < paintUnion.area * paintUnionAreaRatio &&
+			boundsOverlap(component.bounds, paintUnion) &&
+			!boundsContainBounds(component.bounds, paintUnion)
+		);
 	});
 }
 
 export function isRelatedKnockout(paintComponent, knockoutComponent) {
-	return knockoutComponent.area < paintComponent.area
-		&& (
-			sharesNestedGroup(paintComponent, knockoutComponent)
-			|| boundsContainCenter(paintComponent.bounds, knockoutComponent.center)
-			|| boundsOverlap(paintComponent.bounds, knockoutComponent.bounds)
-		);
+	return (
+		knockoutComponent.area < paintComponent.area &&
+		(sharesNestedGroup(paintComponent, knockoutComponent) ||
+			boundsContainCenter(paintComponent.bounds, knockoutComponent.center) ||
+			boundsOverlap(paintComponent.bounds, knockoutComponent.bounds))
+	);
 }
 
 export function transformComponentPath(component, transform = IDENTITY) {
-	return transformPathData(
-		transformPathData(component.pathData, component.transform || IDENTITY),
-		transform,
-	);
+	return transformPathData(transformPathData(component.pathData, component.transform || IDENTITY), transform);
 }
 
 export function subtractKnockouts(pathData, knockoutPathDataList) {
@@ -137,7 +127,7 @@ export function subtractKnockouts(pathData, knockoutPathDataList) {
 
 	for (const knockoutPathData of knockoutPathDataList) {
 		const knockout = new paper.CompoundPath(knockoutPathData);
-		const next = result.subtract(knockout, { insert: false });
+		const next = result.subtract(knockout, {insert: false});
 
 		result.remove();
 		knockout.remove();
@@ -150,13 +140,16 @@ export function subtractKnockouts(pathData, knockoutPathDataList) {
 }
 
 export function pruneNestedKnockouts(knockouts) {
-	return knockouts.filter((candidate) => !knockouts.some((other) => {
-		if (candidate === other || candidate.area >= other.area) {
-			return false;
-		}
+	return knockouts.filter(
+		(candidate) =>
+			!knockouts.some((other) => {
+				if (candidate === other || candidate.area >= other.area) {
+					return false;
+				}
 
-		return boundsContainBounds(other.bounds, candidate.bounds);
-	}));
+				return boundsContainBounds(other.bounds, candidate.bounds);
+			}),
+	);
 }
 
 export function getComponentUnionBounds(components) {
@@ -188,24 +181,20 @@ export function findSmallIsolatedCandidates(items, outerBounds = null, options =
 		return [];
 	}
 
-	const {
-		topBandRatio = 0.4,
-		maxAreaRatio = 0.22,
-		minWidth = 1,
-		minHeight = 1,
-		isolationGapRatio = 0.025,
-	} = options;
+	const {topBandRatio = 0.4, maxAreaRatio = 0.22, minWidth = 1, minHeight = 1, isolationGapRatio = 0.025} = options;
 	const outerArea = bounds.width * bounds.height;
 	const isolationGap = Math.max(bounds.width, bounds.height) * isolationGapRatio;
 
 	return items
-		.map((item) => makeSemanticCandidate({
-			item,
-			outerBounds: bounds,
-			outerArea,
-			isolationGap,
-			items,
-		}))
+		.map((item) =>
+			makeSemanticCandidate({
+				item,
+				outerBounds: bounds,
+				outerArea,
+				isolationGap,
+				items,
+			}),
+		)
 		.filter((candidate) => candidate.areaRatio <= maxAreaRatio)
 		.filter((candidate) => candidate.bounds.width >= minWidth && candidate.bounds.height >= minHeight)
 		.map((candidate) => ({
@@ -218,31 +207,26 @@ export function findSmallIsolatedCandidates(items, outerBounds = null, options =
 				return left.topBand ? -1 : 1;
 			}
 
-			return right.isolationScore - left.isolationScore
-				|| left.normalizedCenter.y - right.normalizedCenter.y
-				|| left.normalizedCenter.x - right.normalizedCenter.x;
+			return (
+				right.isolationScore - left.isolationScore ||
+				left.normalizedCenter.y - right.normalizedCenter.y ||
+				left.normalizedCenter.x - right.normalizedCenter.x
+			);
 		});
 }
 
 export function boundsContainCenter(bounds, center) {
-	return center.x >= bounds.left
-		&& center.x <= bounds.right
-		&& center.y >= bounds.top
-		&& center.y <= bounds.bottom;
+	return center.x >= bounds.left && center.x <= bounds.right && center.y >= bounds.top && center.y <= bounds.bottom;
 }
 
 export function boundsContainBounds(outer, inner) {
-	return inner.left >= outer.left
-		&& inner.top >= outer.top
-		&& inner.right <= outer.right
-		&& inner.bottom <= outer.bottom;
+	return (
+		inner.left >= outer.left && inner.top >= outer.top && inner.right <= outer.right && inner.bottom <= outer.bottom
+	);
 }
 
 export function boundsOverlap(left, right) {
-	return left.left < right.right
-		&& left.right > right.left
-		&& left.top < right.bottom
-		&& left.bottom > right.top;
+	return left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
 }
 
 function sharesNestedGroup(left, right) {
@@ -250,11 +234,11 @@ function sharesNestedGroup(left, right) {
 	return Boolean(nearestGroup) && right.parentGroupIds.includes(nearestGroup);
 }
 
-function makeSemanticCandidate({ item, outerBounds, outerArea, isolationGap, items }) {
+function makeSemanticCandidate({item, outerBounds, outerArea, isolationGap, items}) {
 	const bounds = item.bounds || item;
 	const center = item.center || {
-		x: bounds.left + (bounds.width / 2),
-		y: bounds.top + (bounds.height / 2),
+		x: bounds.left + bounds.width / 2,
+		y: bounds.top + bounds.height / 2,
 	};
 	const area = bounds.width * bounds.height;
 	const nearbyLargerItems = items.filter((other) => {
@@ -287,8 +271,7 @@ function makeSemanticCandidate({ item, outerBounds, outerArea, isolationGap, ite
 		normalizedCenter,
 		normalizedBottom: (bounds.bottom - outerBounds.top) / Math.max(1, outerBounds.height),
 		cornerDistances,
-		nearestCorner: Object.entries(cornerDistances)
-			.sort((left, right) => left[1] - right[1])[0][0],
+		nearestCorner: Object.entries(cornerDistances).sort((left, right) => left[1] - right[1])[0][0],
 		relativePosition: [
 			normalizedCenter.y < 0.4 ? 'top' : normalizedCenter.y > 0.72 ? 'bottom' : 'middle',
 			normalizedCenter.x < 0.4 ? 'left' : normalizedCenter.x > 0.6 ? 'right' : 'center',
@@ -304,23 +287,17 @@ function expandBounds(bounds, amount) {
 		top: bounds.top - amount,
 		right: bounds.right + amount,
 		bottom: bounds.bottom + amount,
-		width: bounds.width + (amount * 2),
-		height: bounds.height + (amount * 2),
+		width: bounds.width + amount * 2,
+		height: bounds.height + amount * 2,
 	};
 }
 
 function escapeAttribute(value) {
-	return value
-		.replace(/&/g, '&amp;')
-		.replace(/"/g, '&quot;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;');
+	return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function makePaintAttributes(component, color) {
-	const fillRule = component.fillRule
-		? ` fill-rule="${escapeAttribute(component.fillRule)}"`
-		: '';
+	const fillRule = component.fillRule ? ` fill-rule="${escapeAttribute(component.fillRule)}"` : '';
 	return ` fill="${escapeAttribute(color)}"${fillRule}`;
 }
 
@@ -335,9 +312,10 @@ function strokeOnlyComponentToFilledPathDataList(component, transform, strokeWid
 
 		for (const subPath of svgPath.subPaths || []) {
 			const points = subPath.getPoints(STROKE_OUTLINE_CURVE_SEGMENTS);
-			const geometry = points.length >= 2
-				? SVGLoader.pointsToStroke(points, style, STROKE_OUTLINE_CURVE_SEGMENTS, 0.001)
-				: null;
+			const geometry =
+				points.length >= 2
+					? SVGLoader.pointsToStroke(points, style, STROKE_OUTLINE_CURVE_SEGMENTS, 0.001)
+					: null;
 
 			if (!geometry) {
 				continue;
@@ -352,7 +330,9 @@ function strokeOnlyComponentToFilledPathDataList(component, transform, strokeWid
 	}
 
 	if (pathDataList.length === 0) {
-		throw new Error(`Stroke-only component ${component.id || component.componentId || '(unknown)'} did not produce filled stroke geometry.`);
+		throw new Error(
+			`Stroke-only component ${component.id || component.componentId || '(unknown)'} did not produce filled stroke geometry.`,
+		);
 	}
 
 	return pathDataList;
@@ -365,9 +345,9 @@ function geometryToBoundaryPathCommands(geometry) {
 
 	for (let index = 0; index + 2 < positions.count; index += 3) {
 		const points = [
-			{ x: positions.getX(index), y: positions.getY(index) },
-			{ x: positions.getX(index + 1), y: positions.getY(index + 1) },
-			{ x: positions.getX(index + 2), y: positions.getY(index + 2) },
+			{x: positions.getX(index), y: positions.getY(index)},
+			{x: positions.getX(index + 1), y: positions.getY(index + 1)},
+			{x: positions.getX(index + 2), y: positions.getY(index + 2)},
 		];
 
 		if (triangleArea(points) <= 0.000001) {
@@ -389,9 +369,7 @@ function geometryToBoundaryPathCommands(geometry) {
 function addBoundaryEdge(edges, start, end) {
 	const startKey = pointKey(start);
 	const endKey = pointKey(end);
-	const edgeKey = startKey < endKey
-		? `${startKey}|${endKey}`
-		: `${endKey}|${startKey}`;
+	const edgeKey = startKey < endKey ? `${startKey}|${endKey}` : `${endKey}|${startKey}`;
 
 	if (edges.has(edgeKey)) {
 		edges.delete(edgeKey);
@@ -399,8 +377,8 @@ function addBoundaryEdge(edges, start, end) {
 	}
 
 	edges.set(edgeKey, {
-		start: { ...start, key: startKey },
-		end: { ...end, key: endKey },
+		start: {...start, key: startKey},
+		end: {...end, key: endKey},
 	});
 }
 
@@ -410,8 +388,8 @@ function boundaryEdgesToPathCommands(edges) {
 
 	for (const index of unused) {
 		const edge = edges[index];
-		appendAdjacency(adjacency, edge.start.key, { index, point: edge.end });
-		appendAdjacency(adjacency, edge.end.key, { index, point: edge.start });
+		appendAdjacency(adjacency, edge.start.key, {index, point: edge.end});
+		appendAdjacency(adjacency, edge.end.key, {index, point: edge.start});
 	}
 
 	const commands = [];
@@ -426,10 +404,10 @@ function boundaryEdgesToPathCommands(edges) {
 		let currentKey = firstEdge.end.key;
 
 		while (currentKey !== loop[0].key) {
-			const next = (adjacency.get(currentKey) || [])
-				.find((candidate) => unused.has(candidate.index) && candidate.point.key !== previousKey)
-				|| (adjacency.get(currentKey) || [])
-					.find((candidate) => unused.has(candidate.index));
+			const next =
+				(adjacency.get(currentKey) || []).find(
+					(candidate) => unused.has(candidate.index) && candidate.point.key !== previousKey,
+				) || (adjacency.get(currentKey) || []).find((candidate) => unused.has(candidate.index));
 
 			if (!next) {
 				break;
@@ -470,10 +448,12 @@ function pointKey(point) {
 }
 
 function triangleArea(points) {
-	return Math.abs(
-		((points[1].x - points[0].x) * (points[2].y - points[0].y))
-		- ((points[2].x - points[0].x) * (points[1].y - points[0].y)),
-	) / 2;
+	return (
+		Math.abs(
+			(points[1].x - points[0].x) * (points[2].y - points[0].y) -
+				(points[2].x - points[0].x) * (points[1].y - points[0].y),
+		) / 2
+	);
 }
 
 function installSvgDomParser() {
@@ -514,7 +494,9 @@ function wrapSvgAstNode(node, document, idMap) {
 		},
 		getAttributeNS(namespace, name) {
 			if (namespace === 'http://www.w3.org/1999/xlink') {
-				const xlinkValue = readSvgProperty(properties, `xlink:${name}`) ?? readSvgProperty(properties, `xlink${capitalize(name)}`);
+				const xlinkValue =
+					readSvgProperty(properties, `xlink:${name}`) ??
+					readSvgProperty(properties, `xlink${capitalize(name)}`);
 				return xlinkValue == null ? null : String(xlinkValue);
 			}
 
@@ -548,19 +530,19 @@ function parseInlineStyle(styleText) {
 	const styleValues = !styleText
 		? {}
 		: String(styleText)
-			.split(';')
-			.map((entry) => entry.trim())
-			.filter(Boolean)
-			.reduce((result, entry) => {
-				const separator = entry.indexOf(':');
+				.split(';')
+				.map((entry) => entry.trim())
+				.filter(Boolean)
+				.reduce((result, entry) => {
+					const separator = entry.indexOf(':');
 
-				if (separator < 0) {
+					if (separator < 0) {
+						return result;
+					}
+
+					result[entry.slice(0, separator).trim()] = entry.slice(separator + 1).trim();
 					return result;
-				}
-
-				result[entry.slice(0, separator).trim()] = entry.slice(separator + 1).trim();
-				return result;
-			}, {});
+				}, {});
 
 	return new Proxy(styleValues, {
 		get(target, property) {
@@ -609,9 +591,7 @@ function safeFilledPathData(component, pathData) {
 
 	compoundPath.remove();
 
-	return keptPathData.length > 0 && keptPathData.length !== children.length
-		? keptPathData.join(' ')
-		: pathData;
+	return keptPathData.length > 0 && keptPathData.length !== children.length ? keptPathData.join(' ') : pathData;
 }
 
 function isEvenOddFill(component) {
@@ -646,18 +626,18 @@ function makeTransformAttribute(matrix) {
 }
 
 function normalizeMatrix(transform) {
-	return typeof transform === 'string'
-		? parseTransform(transform)
-		: transform || IDENTITY;
+	return typeof transform === 'string' ? parseTransform(transform) : transform || IDENTITY;
 }
 
 function isIdentity(matrix) {
-	return nearlyEqual(matrix.a, 1)
-		&& nearlyEqual(matrix.b, 0)
-		&& nearlyEqual(matrix.c, 0)
-		&& nearlyEqual(matrix.d, 1)
-		&& nearlyEqual(matrix.e, 0)
-		&& nearlyEqual(matrix.f, 0);
+	return (
+		nearlyEqual(matrix.a, 1) &&
+		nearlyEqual(matrix.b, 0) &&
+		nearlyEqual(matrix.c, 0) &&
+		nearlyEqual(matrix.d, 1) &&
+		nearlyEqual(matrix.e, 0) &&
+		nearlyEqual(matrix.f, 0)
+	);
 }
 
 function nearlyEqual(left, right) {
@@ -667,4 +647,3 @@ function nearlyEqual(left, right) {
 function format(value) {
 	return Number(value.toFixed(6)).toString();
 }
-

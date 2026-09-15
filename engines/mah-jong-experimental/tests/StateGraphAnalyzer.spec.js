@@ -212,9 +212,7 @@ describe('StateGraphAnalyzer', () => {
 		gameState.placeTile(2);
 		gameState.placeTile(3);
 
-		expect(analyzer.getPlayablePairsAfterRemoving([0, 1])).toEqual([
-			{tile1: 2, tile2: 3},
-		]);
+		expect(analyzer.getPlayablePairsAfterRemoving([0, 1])).toEqual([{tile1: 2, tile2: 3}]);
 	});
 
 	it('checks whether playable pairs remain after hypothetical removals', () => {
@@ -288,10 +286,12 @@ describe('StateGraphAnalyzer', () => {
 		gameState.placeTile(1);
 		gameState.placeTile(2);
 
-		expect(analyzer.runShortHorizonProbe([0], {
-			shortHorizonProbeMoves: 3,
-			shortHorizonPressureMultiplier: 1,
-		})).toEqual({
+		expect(
+			analyzer.runShortHorizonProbe([0], {
+				shortHorizonProbeMoves: 3,
+				shortHorizonPressureMultiplier: 1,
+			}),
+		).toEqual({
 			enabled: false,
 			collapsed: false,
 			moves: 0,
@@ -316,10 +316,12 @@ describe('StateGraphAnalyzer', () => {
 		gameState.placeTile(1);
 		gameState.placeTile(2);
 
-		expect(analyzer.runShortHorizonProbe([0, 1], {
-			shortHorizonProbeMoves: 3,
-			shortHorizonPressureMultiplier: 1,
-		})).toEqual({
+		expect(
+			analyzer.runShortHorizonProbe([0, 1], {
+				shortHorizonProbeMoves: 3,
+				shortHorizonPressureMultiplier: 1,
+			}),
+		).toEqual({
 			enabled: true,
 			collapsed: true,
 			moves: 0,
@@ -342,10 +344,12 @@ describe('StateGraphAnalyzer', () => {
 		gameState.placeTile(0);
 		gameState.placeTile(1);
 
-		expect(analyzer.runShortHorizonProbe([0, 1], {
-			shortHorizonProbeMoves: 3,
-			shortHorizonPressureMultiplier: 1,
-		})).toEqual({
+		expect(
+			analyzer.runShortHorizonProbe([0, 1], {
+				shortHorizonProbeMoves: 3,
+				shortHorizonPressureMultiplier: 1,
+			}),
+		).toEqual({
 			enabled: true,
 			collapsed: false,
 			moves: 0,
@@ -372,10 +376,12 @@ describe('StateGraphAnalyzer', () => {
 		gameState.placeTile(2);
 		gameState.placeTile(3);
 
-		expect(analyzer.runShortHorizonProbe([0, 1], {
-			shortHorizonProbeMoves: 1,
-			shortHorizonPressureMultiplier: 1,
-		})).toEqual({
+		expect(
+			analyzer.runShortHorizonProbe([0, 1], {
+				shortHorizonProbeMoves: 1,
+				shortHorizonPressureMultiplier: 1,
+			}),
+		).toEqual({
 			enabled: true,
 			collapsed: false,
 			moves: 1,

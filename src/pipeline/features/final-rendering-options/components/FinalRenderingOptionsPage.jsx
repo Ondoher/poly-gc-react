@@ -1,24 +1,24 @@
-import React from "react";
-import { Button, Pill, ViewSelector } from "../../../components/index.js";
-import RenderingOptionsModel from "../models/RenderingOptionsModel.js";
+import React from 'react';
+import {Button, Pill, ViewSelector} from '../../../components/index.js';
+import RenderingOptionsModel from '../models/RenderingOptionsModel.js';
 
 const SUIT_LABELS = {
-	bamboo: "Bamboos",
-	character: "Characters",
-	dot: "Dots",
-	wind: "Winds",
-	flower: "Flowers",
-	season: "Seasons",
-	dragon: "Dragons",
-	other: "Other",
+	bamboo: 'Bamboos',
+	character: 'Characters',
+	dot: 'Dots',
+	wind: 'Winds',
+	flower: 'Flowers',
+	season: 'Seasons',
+	dragon: 'Dragons',
+	other: 'Other',
 };
 const RENDER_MODE_LABELS = {
-	"source-preferred": "Source Preferred",
-	generated: "Generated",
-	omit: "Omit",
+	'source-preferred': 'Source Preferred',
+	generated: 'Generated',
+	omit: 'Omit',
 };
 
-export function FinalRenderingOptionsHeaderSummary({ finalRenderingOptions }) {
+export function FinalRenderingOptionsHeaderSummary({finalRenderingOptions}) {
 	const summary = finalRenderingOptions?.summary;
 
 	if (!summary) {
@@ -33,7 +33,7 @@ export function FinalRenderingOptionsHeaderSummary({ finalRenderingOptions }) {
 		<div className="structure-header-summary final-rendering-header-summary">
 			<Pill>{summary.faceCount || 0} faces</Pill>
 			<Pill>{summary.readyCount || 0} ready</Pill>
-			<Pill reportLevel={(summary.unresolvedRenderCount || 0) > 0 ? "warning" : "info"}>
+			<Pill reportLevel={(summary.unresolvedRenderCount || 0) > 0 ? 'warning' : 'info'}>
 				{summary.unresolvedRenderCount || 0} unresolved
 			</Pill>
 		</div>
@@ -48,23 +48,23 @@ export default class FinalRenderingOptionsPage extends React.Component {
 		this.state = {
 			...pageState,
 			options: new RenderingOptionsModel(pageState.finalRenderingOptions).initialOptions(),
-			viewMode: "preview",
+			viewMode: 'preview',
 		};
 	}
 
 	componentDidMount() {
-		this.updateListener = this.props.pageView.listen("updated", (pageState) => {
+		this.updateListener = this.props.pageView.listen('updated', (pageState) => {
 			this.setState({
 				...pageState,
 				options: new RenderingOptionsModel(pageState.finalRenderingOptions).initialOptions(),
-				viewMode: this.state.viewMode || "preview",
+				viewMode: this.state.viewMode || 'preview',
 			});
 		});
-		this.props.pageView.load({ quiet: true });
+		this.props.pageView.load({quiet: true});
 	}
 
 	componentWillUnmount() {
-		this.props.pageView.unlisten("updated", this.updateListener);
+		this.props.pageView.unlisten('updated', this.updateListener);
 	}
 
 	updateSuitPart = (suitId, partId, renderMode) => {
@@ -73,7 +73,12 @@ export default class FinalRenderingOptionsPage extends React.Component {
 				...state.options,
 				suits: {
 					...(state.options.suits || {}),
-					[suitId]: RenderingOptionsModel.updateOptionGroupPart(state.options.suits?.[suitId], { suitId }, partId, renderMode),
+					[suitId]: RenderingOptionsModel.updateOptionGroupPart(
+						state.options.suits?.[suitId],
+						{suitId},
+						partId,
+						renderMode,
+					),
 				},
 			},
 		}));
@@ -81,9 +86,9 @@ export default class FinalRenderingOptionsPage extends React.Component {
 
 	updateFacePart = (face, partId, renderMode) => {
 		this.setState((state) => {
-			const facesOptions = { ...(state.options.faces || {}) };
+			const facesOptions = {...(state.options.faces || {})};
 
-			if (renderMode === "inherit") {
+			if (renderMode === 'inherit') {
 				const nextGroup = RenderingOptionsModel.removeOptionGroupPart(facesOptions[face.faceKey], partId);
 				if (RenderingOptionsModel.hasFaceOverrides(nextGroup)) {
 					facesOptions[face.faceKey] = nextGroup;
@@ -93,7 +98,7 @@ export default class FinalRenderingOptionsPage extends React.Component {
 			} else {
 				facesOptions[face.faceKey] = RenderingOptionsModel.updateOptionGroupPart(
 					facesOptions[face.faceKey],
-					{ faceKey: face.faceKey, suitId: face.family },
+					{faceKey: face.faceKey, suitId: face.family},
 					partId,
 					renderMode,
 				);
@@ -110,10 +115,10 @@ export default class FinalRenderingOptionsPage extends React.Component {
 
 	updateFaceArtworkReflectX = (face, reflectX) => {
 		this.setState((state) => {
-			const facesOptions = { ...(state.options.faces || {}) };
+			const facesOptions = {...(state.options.faces || {})};
 			const nextGroup = RenderingOptionsModel.updateFaceArtworkReflectX(
 				facesOptions[face.faceKey],
-				{ faceKey: face.faceKey, suitId: face.family },
+				{faceKey: face.faceKey, suitId: face.family},
 				reflectX,
 			);
 
@@ -134,10 +139,10 @@ export default class FinalRenderingOptionsPage extends React.Component {
 
 	updateFaceArtworkPreserveColors = (face, preserveColors) => {
 		this.setState((state) => {
-			const facesOptions = { ...(state.options.faces || {}) };
+			const facesOptions = {...(state.options.faces || {})};
 			const nextGroup = RenderingOptionsModel.updateFaceArtworkPreserveColors(
 				facesOptions[face.faceKey],
-				{ faceKey: face.faceKey, suitId: face.family },
+				{faceKey: face.faceKey, suitId: face.family},
 				preserveColors,
 			);
 
@@ -157,12 +162,12 @@ export default class FinalRenderingOptionsPage extends React.Component {
 	};
 
 	setViewMode(viewMode) {
-		this.setState({ viewMode });
+		this.setState({viewMode});
 	}
 
 	renderSuitOptions(faces) {
 		const groupedFaces = new RenderingOptionsModel().groupFacesByFamily(faces);
-		const { options } = this.state;
+		const {options} = this.state;
 
 		return (
 			<section className="final-rendering-suit-options" aria-label="Suit rendering options">
@@ -180,7 +185,7 @@ export default class FinalRenderingOptionsPage extends React.Component {
 	}
 
 	renderFaceGrid(faces) {
-		const { options } = this.state;
+		const {options} = this.state;
 
 		return (
 			<section className="final-rendering-face-grid">
@@ -192,7 +197,9 @@ export default class FinalRenderingOptionsPage extends React.Component {
 						faceOptions={options.faces?.[face.faceKey]}
 						onPartChange={(partId, renderMode) => this.updateFacePart(face, partId, renderMode)}
 						onArtworkReflectXChange={(reflectX) => this.updateFaceArtworkReflectX(face, reflectX)}
-						onArtworkPreserveColorsChange={(preserveColors) => this.updateFaceArtworkPreserveColors(face, preserveColors)}
+						onArtworkPreserveColorsChange={(preserveColors) =>
+							this.updateFaceArtworkPreserveColors(face, preserveColors)
+						}
 						viewMode={this.state.viewMode}
 						assetUrl={(path) => this.props.pageView.assetUrl(path)}
 						referenceImageUrl={(faceKey) => this.props.pageView.referenceImageUrl(faceKey)}
@@ -203,7 +210,7 @@ export default class FinalRenderingOptionsPage extends React.Component {
 	}
 
 	render() {
-		const { finalRenderingOptions, processing, messageDialog } = this.state;
+		const {finalRenderingOptions, processing, messageDialog} = this.state;
 
 		return (
 			<section className="final-rendering-options-page">
@@ -218,12 +225,14 @@ export default class FinalRenderingOptionsPage extends React.Component {
 	}
 
 	renderHeaderActions() {
-		const { finalRenderingOptions, options, processing } = this.state;
+		const {finalRenderingOptions, options, processing} = this.state;
 		const hasRenderData = Boolean(finalRenderingOptions?.faces);
 
 		return (
 			<div className="final-rendering-options-actions">
-				<Button onClick={() => this.props.pageView.load({ force: true })} disabled={processing}>Reload</Button>
+				<Button onClick={() => this.props.pageView.load({force: true})} disabled={processing}>
+					Reload
+				</Button>
 				<Button
 					variant="primary"
 					onClick={() => this.props.pageView.rerender(options)}
@@ -251,11 +260,11 @@ export default class FinalRenderingOptionsPage extends React.Component {
 						ariaLabel="Render review view"
 						value={this.state.viewMode}
 						options={[
-							{ value: "preview", label: "Preview" },
-							{ value: "source", label: "Source" },
-							{ value: "reference", label: "Reference" },
-							{ value: "overlay", label: "Overlay" },
-							{ value: "invert", label: "Invert" },
+							{value: 'preview', label: 'Preview'},
+							{value: 'source', label: 'Source'},
+							{value: 'reference', label: 'Reference'},
+							{value: 'overlay', label: 'Overlay'},
+							{value: 'invert', label: 'Invert'},
 						]}
 						onChange={(viewMode) => this.setViewMode(viewMode)}
 					/>
@@ -267,7 +276,7 @@ export default class FinalRenderingOptionsPage extends React.Component {
 	}
 
 	renderContent() {
-		const { finalRenderingOptions } = this.state;
+		const {finalRenderingOptions} = this.state;
 
 		const faces = new RenderingOptionsModel(finalRenderingOptions).faces();
 
@@ -280,7 +289,11 @@ export default class FinalRenderingOptionsPage extends React.Component {
 	}
 
 	renderEmptyState() {
-		return <div className="empty-state">No final rendering data is available. Accept source assignment before reviewing the first render.</div>;
+		return (
+			<div className="empty-state">
+				No final rendering data is available. Accept source assignment before reviewing the first render.
+			</div>
+		);
 	}
 
 	renderBusy() {
@@ -288,7 +301,7 @@ export default class FinalRenderingOptionsPage extends React.Component {
 			<div className="pipeline-busy-overlay" role="status" aria-live="polite">
 				<div className="pipeline-busy">
 					<div className="pipeline-spinner" />
-					<span>{this.state.processingLabel || "Working..."}</span>
+					<span>{this.state.processingLabel || 'Working...'}</span>
 				</div>
 			</div>
 		);
@@ -297,14 +310,21 @@ export default class FinalRenderingOptionsPage extends React.Component {
 	renderMessageDialog(messageDialog) {
 		return (
 			<div className="pipeline-dialog-overlay" role="presentation">
-				<section className="pipeline-dialog" role="dialog" aria-modal="true" aria-labelledby="final-rendering-dialog-title">
+				<section
+					className="pipeline-dialog"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="final-rendering-dialog-title"
+				>
 					<header>
 						<h2 id="final-rendering-dialog-title">{messageDialog.title}</h2>
 					</header>
 					<p>{messageDialog.message}</p>
 					<footer>
 						<span />
-						<Button variant="primary" onClick={() => this.props.pageView.dismissMessageDialog()}>OK</Button>
+						<Button variant="primary" onClick={() => this.props.pageView.dismissMessageDialog()}>
+							OK
+						</Button>
 					</footer>
 				</section>
 			</div>
@@ -314,7 +334,7 @@ export default class FinalRenderingOptionsPage extends React.Component {
 
 class SuitOptionsCard extends React.Component {
 	render() {
-		const { family, faceCount, options, onPartChange } = this.props;
+		const {family, faceCount, options, onPartChange} = this.props;
 
 		return (
 			<article className="final-rendering-suit-card">
@@ -339,34 +359,61 @@ class SuitOptionsCard extends React.Component {
 
 class FinalRenderingFaceCard extends React.Component {
 	renderPreview() {
-		const { face, viewMode } = this.props;
-		const renderUrl = face.colorSvg ? `${this.assetUrl(face.colorSvg)}&t=${Date.now()}` : "";
-		const sourceUrl = face.sourceFile ? this.assetUrl(face.sourceFile) : "";
-		const referenceUrl = this.props.referenceImageUrl?.(face.faceKey) || "";
+		const {face, viewMode} = this.props;
+		const renderUrl = face.colorSvg ? `${this.assetUrl(face.colorSvg)}&t=${Date.now()}` : '';
+		const sourceUrl = face.sourceFile ? this.assetUrl(face.sourceFile) : '';
+		const referenceUrl = this.props.referenceImageUrl?.(face.faceKey) || '';
 
 		return (
-			<div className={[
-				"final-rendering-preview",
-				`final-rendering-preview-${viewMode || "preview"}`,
-			].filter(Boolean).join(" ")}>
-				{viewMode === "source" ? (
-					sourceUrl
-						? <img className="final-rendering-source-image" src={sourceUrl} alt={`${face.faceKey} source`} />
-						: <div className="final-rendering-missing-preview">No source</div>
-				) : viewMode === "reference" && referenceUrl ? (
-					<img className="final-rendering-reference-image" src={referenceUrl} alt={`${face.faceKey} reference`} />
-				) : viewMode === "overlay" && renderUrl && referenceUrl ? (
+			<div
+				className={['final-rendering-preview', `final-rendering-preview-${viewMode || 'preview'}`]
+					.filter(Boolean)
+					.join(' ')}
+			>
+				{viewMode === 'source' ? (
+					sourceUrl ? (
+						<img className="final-rendering-source-image" src={sourceUrl} alt={`${face.faceKey} source`} />
+					) : (
+						<div className="final-rendering-missing-preview">No source</div>
+					)
+				) : viewMode === 'reference' && referenceUrl ? (
+					<img
+						className="final-rendering-reference-image"
+						src={referenceUrl}
+						alt={`${face.faceKey} reference`}
+					/>
+				) : viewMode === 'overlay' && renderUrl && referenceUrl ? (
 					<React.Fragment>
-						<img className="final-rendering-reference-image" src={referenceUrl} alt={`${face.faceKey} reference`} />
-						<img className="final-rendering-render-image final-rendering-transparent-layer" src={renderUrl} alt={`${face.faceKey} final rendered`} />
+						<img
+							className="final-rendering-reference-image"
+							src={referenceUrl}
+							alt={`${face.faceKey} reference`}
+						/>
+						<img
+							className="final-rendering-render-image final-rendering-transparent-layer"
+							src={renderUrl}
+							alt={`${face.faceKey} final rendered`}
+						/>
 					</React.Fragment>
-				) : viewMode === "invert" && renderUrl && referenceUrl ? (
+				) : viewMode === 'invert' && renderUrl && referenceUrl ? (
 					<React.Fragment>
-						<img className="final-rendering-render-image" src={renderUrl} alt={`${face.faceKey} final rendered`} />
-						<img className="final-rendering-reference-image final-rendering-transparent-layer" src={referenceUrl} alt={`${face.faceKey} reference`} />
+						<img
+							className="final-rendering-render-image"
+							src={renderUrl}
+							alt={`${face.faceKey} final rendered`}
+						/>
+						<img
+							className="final-rendering-reference-image final-rendering-transparent-layer"
+							src={referenceUrl}
+							alt={`${face.faceKey} reference`}
+						/>
 					</React.Fragment>
 				) : renderUrl ? (
-					<img className="final-rendering-render-image" src={renderUrl} alt={`${face.faceKey} final rendered`} />
+					<img
+						className="final-rendering-render-image"
+						src={renderUrl}
+						alt={`${face.faceKey} final rendered`}
+					/>
 				) : (
 					<div className="final-rendering-missing-preview">No render</div>
 				)}
@@ -375,7 +422,8 @@ class FinalRenderingFaceCard extends React.Component {
 	}
 
 	renderBody() {
-		const { face, suitOptions, faceOptions, onPartChange, onArtworkReflectXChange, onArtworkPreserveColorsChange } = this.props;
+		const {face, suitOptions, faceOptions, onPartChange, onArtworkReflectXChange, onArtworkPreserveColorsChange} =
+			this.props;
 
 		return (
 			<div className="final-rendering-face-body">
@@ -392,7 +440,7 @@ class FinalRenderingFaceCard extends React.Component {
 							<RenderModeSelect
 								key={partId}
 								label={RenderingOptionsModel.partLabel(partId)}
-								value={facePart ? RenderingOptionsModel.renderModeForPart(facePart) : "inherit"}
+								value={facePart ? RenderingOptionsModel.renderModeForPart(facePart) : 'inherit'}
 								inheritedMode={inheritedMode}
 								allowInherit
 								onChange={(renderMode) => onPartChange?.(partId, renderMode)}
@@ -425,13 +473,17 @@ class FinalRenderingFaceCard extends React.Component {
 	}
 
 	render() {
-		const { face } = this.props;
+		const {face} = this.props;
 
 		return (
-			<article className={[
-				"final-rendering-face-card",
-				face.status !== "ready" ? "needs-review-final-rendering-face" : "",
-			].filter(Boolean).join(" ")}>
+			<article
+				className={[
+					'final-rendering-face-card',
+					face.status !== 'ready' ? 'needs-review-final-rendering-face' : '',
+				]
+					.filter(Boolean)
+					.join(' ')}
+			>
 				{this.renderPreview()}
 				{this.renderBody()}
 			</article>
@@ -445,13 +497,15 @@ class FinalRenderingFaceCard extends React.Component {
 
 class RenderModeSelect extends React.Component {
 	render() {
-		const { label, value, inheritedMode = "", allowInherit = false, onChange } = this.props;
+		const {label, value, inheritedMode = '', allowInherit = false, onChange} = this.props;
 
 		return (
 			<label className="final-rendering-option-row">
 				<span>{label}</span>
 				<select value={value} onChange={(event) => onChange?.(event.target.value)}>
-					{allowInherit ? <option value="inherit">Suit: {RENDER_MODE_LABELS[inheritedMode] || inheritedMode}</option> : null}
+					{allowInherit ? (
+						<option value="inherit">Suit: {RENDER_MODE_LABELS[inheritedMode] || inheritedMode}</option>
+					) : null}
 					<option value="source-preferred">Source Preferred</option>
 					<option value="generated">Generated</option>
 					<option value="omit">Omit</option>

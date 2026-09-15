@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 const EXPERIMENTS_PAGE_ENABLED = false;
 
@@ -55,7 +55,7 @@ export default class ExperimentsController extends Service {
 	}
 
 	getState() {
-		return { ...this.state };
+		return {...this.state};
 	}
 
 	setTilesetId(tilesetId) {
@@ -82,7 +82,7 @@ export default class ExperimentsController extends Service {
 		callback?.();
 	}
 
-	async load({ force = false, quiet = false } = {}) {
+	async load({force = false, quiet = false} = {}) {
 		if (!force && (this.state.processing || this.state.experiment)) {
 			return;
 		}
@@ -90,7 +90,7 @@ export default class ExperimentsController extends Service {
 		this.setState({
 			processing: true,
 			processingLabel: quiet ? '' : 'Loading experiments',
-			...(quiet ? {} : { status: 'Loading experiments...' }),
+			...(quiet ? {} : {status: 'Loading experiments...'}),
 		});
 
 		try {
@@ -110,13 +110,13 @@ export default class ExperimentsController extends Service {
 				},
 			});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
 	async generate() {
 		if (!this.state.tilesetId) {
-			this.setState({ status: 'No tileset selected for experiments.' });
+			this.setState({status: 'No tileset selected for experiments.'});
 			return null;
 		}
 		const faceKey = this.state.experiment?.faceKey || 'experiment';
@@ -145,7 +145,7 @@ export default class ExperimentsController extends Service {
 			});
 			return null;
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -154,7 +154,7 @@ export default class ExperimentsController extends Service {
 	}
 
 	dismissMessageDialog() {
-		this.setState({ messageDialog: null });
+		this.setState({messageDialog: null});
 	}
 }
 

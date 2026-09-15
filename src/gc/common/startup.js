@@ -28,9 +28,7 @@ export function getStartupTarget() {
 		return 'directory';
 	}
 
-	let explicitTarget = normalizeGameTarget(
-		params.get('game') || params.get('feature')
-	);
+	let explicitTarget = normalizeGameTarget(params.get('game') || params.get('feature'));
 
 	if (explicitTarget) {
 		return explicitTarget;

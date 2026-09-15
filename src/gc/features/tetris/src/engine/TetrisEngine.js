@@ -1,7 +1,7 @@
-import { makeEventable } from "@polylith/core";
-import Random from "utils/random.js";
-import { make2DArray } from "utils/arrays.js";
-import Tetronimo from "./Tetronimo.js";
+import {makeEventable} from '@polylith/core';
+import Random from 'utils/random.js';
+import {make2DArray} from 'utils/arrays.js';
+import Tetronimo from './Tetronimo.js';
 import * as consts from '../consts/consts.js';
 import * as actions from '../consts/actions.js';
 import * as tetronomos from '../consts/tetronimos.js';
@@ -80,14 +80,27 @@ export default class TetrisEngine {
 		var result;
 		// if necessary, reset the bag
 		if (this.bag.length === 0) {
-			this.bag = [tetronomos.IPIECE, tetronomos.JPIECE, tetronomos.LPIECE, tetronomos.OPIECE, tetronomos.SPIECE, tetronomos.TPIECE, tetronomos.ZPIECE];
+			this.bag = [
+				tetronomos.IPIECE,
+				tetronomos.JPIECE,
+				tetronomos.LPIECE,
+				tetronomos.OPIECE,
+				tetronomos.SPIECE,
+				tetronomos.TPIECE,
+				tetronomos.ZPIECE,
+			];
 		}
 
 		// pick a tetronimo from the current bag
 		idx = Random.random(this.bag.length);
 
 		// the first tetronimo cannot be an S, O or Z
-		while (first && (this.bag[idx] == tetronomos.SPIECE || this.bag[idx] == tetronomos.OPIECE || this.bag[idx] == tetronomos.ZPIECE))
+		while (
+			first &&
+			(this.bag[idx] == tetronomos.SPIECE ||
+				this.bag[idx] == tetronomos.OPIECE ||
+				this.bag[idx] == tetronomos.ZPIECE)
+		)
 			idx = Random.random(this.bag.length);
 
 		result = this.bag[idx];
@@ -104,8 +117,7 @@ export default class TetrisEngine {
 			if (remove) this.onDeck.splice(0, 1);
 		}
 
-		while (this.onDeck.length < 3)
-			this.onDeck.push(new Tetronimo(this.randomTetronimo(false)));
+		while (this.onDeck.length < 3) this.onDeck.push(new Tetronimo(this.randomTetronimo(false)));
 
 		if (respond) return result;
 	}
@@ -124,24 +136,19 @@ export default class TetrisEngine {
 			else comment = 'T-SPIN BONUS';
 
 			score = consts.TSPIN_VALUES[this.rowCount] * (this.level + 1);
-		}
-		else if (this.rowCount == 4) {
-			comment = "QUATRAIN BONUS";
+		} else if (this.rowCount == 4) {
+			comment = 'QUATRAIN BONUS';
 			score = consts.ROW_CLEAR_VALUES[this.rowCount - 1] * (this.level + 1);
-		}
-		else if (this.rowCount != 0) {
+		} else if (this.rowCount != 0) {
 			comment = `${this.rowCount} ROWS CLEARED`;
 			score = consts.ROW_CLEAR_VALUES[this.rowCount - 1] * (this.level + 1);
 		}
 
-		if (score != 0)
-			this.addScore(score, comment);
+		if (score != 0) this.addScore(score, comment);
 
 		// look for a level up
-		if (this.goal <= 0)
-			this.levelUp()
-		else
-			this.fire('update', actions.DRAWLEVEL, [this.goal, this.level + 1, '']);
+		if (this.goal <= 0) this.levelUp();
+		else this.fire('update', actions.DRAWLEVEL, [this.goal, this.level + 1, '']);
 	}
 
 	levelUp() {
@@ -170,7 +177,7 @@ export default class TetrisEngine {
 		this.fire('update', actions.DRAWONDECK, [
 			[this.onDeck[0].y, this.onDeck[0].x, this.onDeck[0].matrix()],
 			[this.onDeck[1].y, this.onDeck[1].x, this.onDeck[1].matrix()],
-			[this.onDeck[2].y, this.onDeck[2].x, this.onDeck[2].matrix()]
+			[this.onDeck[2].y, this.onDeck[2].x, this.onDeck[2].matrix()],
 		]);
 	}
 
@@ -179,10 +186,8 @@ export default class TetrisEngine {
 	}
 
 	drawHold() {
-		if (this.holdPiece === undefined)
-			this.fire('update', actions.DRAWHOLD, [0, 0, consts.CLEAR_MATRIX]);
-		else
-			this.fire('update', actions.DRAWHOLD, [this.holdPiece.y, this.holdPiece.x, this.holdPiece.matrix()]);
+		if (this.holdPiece === undefined) this.fire('update', actions.DRAWHOLD, [0, 0, consts.CLEAR_MATRIX]);
+		else this.fire('update', actions.DRAWHOLD, [this.holdPiece.y, this.holdPiece.x, this.holdPiece.matrix()]);
 	}
 
 	drawGameOver() {
@@ -191,8 +196,7 @@ export default class TetrisEngine {
 
 	calcBottom() {
 		var yPos = this.piece.y;
-		while (!this.bottomedOut())
-			this.piece.drop()
+		while (!this.bottomedOut()) this.piece.drop();
 
 		var result = this.piece.y;
 		this.piece.y = yPos;
@@ -210,12 +214,11 @@ export default class TetrisEngine {
 		while (!done && drop > 0) {
 			if (this.piece.y < this.bottomY) {
 				this.hardDownCount++;
-				this.piece.drop()
-			}
-			else {
+				this.piece.drop();
+			} else {
 				this.lockClock = Date.now();
 				done = true;
-				this.addScore(this.hardDownCount * 2, '')
+				this.addScore(this.hardDownCount * 2, '');
 			}
 			drop--;
 		}
@@ -310,13 +313,11 @@ export default class TetrisEngine {
 		softDown = this.getDown() === consts.SOFTDOWN_BUTTON;
 
 		dirty |= this.rotation != 0;
-		if (this.rotation !== 0 && this.canRotate(this.rotation))
-			this.piece.rotate(this.rotation);
+		if (this.rotation !== 0 && this.canRotate(this.rotation)) this.piece.rotate(this.rotation);
 		this.rotation = 0;
 
 		dirty |= this.motion !== 0;
-		if (this.motion !== 0 && this.canMove(this.motion))
-			this.piece.move(this.motion);
+		if (this.motion !== 0 && this.canMove(this.motion)) this.piece.move(this.motion);
 		this.motion = 0;
 
 		newShadow = dirty;
@@ -336,8 +337,7 @@ export default class TetrisEngine {
 
 		// is it time to move yet?
 		if (!lockedDown && (now - this.lastMove > this.speed || (softDown && !lockedDown))) {
-			if (!this.bottomedOut())
-				this.piece.drop()
+			if (!this.bottomedOut()) this.piece.drop();
 			if (this.bottomedOut() && this.lockClock == 0) {
 				this.lockClock = now;
 			}
@@ -345,8 +345,7 @@ export default class TetrisEngine {
 			dirty = true;
 			this.lastMove = now;
 
-			if (softDown)
-				this.addScore(1, '');
+			if (softDown) this.addScore(1, '');
 		}
 		this.downward = 0;
 
@@ -356,11 +355,9 @@ export default class TetrisEngine {
 			this.fire('update', actions.DRAWBOARD, [[0, 0, this.board]]);
 			if (!this.gameOver)
 				this.fire('update', actions.DRAWTETRONIMO, [[this.piece.y, this.piece.x, this.piece.matrix()]]);
-			else
-				this.fire('update', actions.HIDETETRONIMO, []);
+			else this.fire('update', actions.HIDETETRONIMO, []);
 			newShadow = true;
-		}
-		else if (dirty) {
+		} else if (dirty) {
 			this.fire('update', actions.DRAWTETRONIMO, [[this.piece.y, this.piece.x, this.piece.matrix()]]);
 		}
 
@@ -376,8 +373,7 @@ export default class TetrisEngine {
 			for (var colIdx = 0; colIdx < consts.COLS; colIdx++)
 				this.board[rowIdx][colIdx] = this.board[rowIdx - 1][colIdx];
 
-		for (colIdx = 0; colIdx < consts.COLS; colIdx++)
-			this.board[0][colIdx] = consts.EMPTY;
+		for (colIdx = 0; colIdx < consts.COLS; colIdx++) this.board[0][colIdx] = consts.EMPTY;
 
 		this.rowCount++;
 	}
@@ -397,9 +393,8 @@ export default class TetrisEngine {
 				else col++;
 			}
 
-			if (full) this.removeRow(row)
+			if (full) this.removeRow(row);
 			else row--;
-
 		}
 
 		if (this.rowCount != 0) {
@@ -422,7 +417,7 @@ export default class TetrisEngine {
 			var xPos = this.piece.x + collision[idx][1];
 
 			// at the bottom, or there is a piece underneath, then we've hit bottom
-			if ((yPos >= consts.ROWS) || (yPos >= 0 && this.board[yPos][xPos] != 0)) {
+			if (yPos >= consts.ROWS || (yPos >= 0 && this.board[yPos][xPos] != 0)) {
 				collide = true;
 				break;
 			}
@@ -482,7 +477,7 @@ export default class TetrisEngine {
 			var xPos = this.piece.x + collision[idx][1];
 
 			// at the bottom, or there is a piece underneath, then collide
-			if ((yPos == consts.ROWS) || (this.board[yPos][xPos] != 0)) {
+			if (yPos == consts.ROWS || this.board[yPos][xPos] != 0) {
 				collide = true;
 				break;
 			}
@@ -495,8 +490,7 @@ export default class TetrisEngine {
 			var matrix = this.piece.matrix();
 			for (var row = 0; row < matrix.length; row++)
 				for (var col = 0; col < matrix[vRow].length; col++)
-					if (matrix[row][col] != 0)
-						this.board[this.piece.y + row][this.piece.x + col] = matrix[row][col];
+					if (matrix[row][col] != 0) this.board[this.piece.y + row][this.piece.x + col] = matrix[row][col];
 
 			// look for full rows
 			this.checkRows();
@@ -527,7 +521,8 @@ export default class TetrisEngine {
 			if (collideX < 0 && direction == consts.RIGHT) collideX = 0;
 			if (collideX >= consts.COLS && direction == consts.LEFT) collideX = consts.COLS - 1;
 
-			if ((collideX < 0 && direction == consts.LEFT) || (collideX >= consts.COLS && direction == consts.RIGHT)) return false;
+			if ((collideX < 0 && direction == consts.LEFT) || (collideX >= consts.COLS && direction == consts.RIGHT))
+				return false;
 			if (collideY >= 0 && this.board[collideY][collideX] != 0) return false;
 		}
 
@@ -570,7 +565,7 @@ export default class TetrisEngine {
 
 	canRotate(direction) {
 		this.piece.testRotate(direction);
-		var result = this.testRotate()
+		var result = this.testRotate();
 		this.piece.untestRotate(direction);
 		return result;
 	}
@@ -597,10 +592,8 @@ export default class TetrisEngine {
 			if (now - this.rotateStart >= this.rotateDelay) {
 				this.rotateStart = Date.now();
 				this.rotateDelay = consts.REPEAT_DELAY;
-				if (this.rotateButton == consts.ROTATELEFT_BUTTON)
-					return consts.LEFT;
-				else
-					return consts.RIGHT;
+				if (this.rotateButton == consts.ROTATELEFT_BUTTON) return consts.LEFT;
+				else return consts.RIGHT;
 			}
 			return this.rotation;
 		}
@@ -615,10 +608,8 @@ export default class TetrisEngine {
 			if (now - this.moveStart >= this.moveDelay) {
 				this.moveStart = Date.now();
 				this.moveDelay = consts.REPEAT_DELAY;
-				if (this.moveButton == consts.LEFT_BUTTON)
-					return consts.LEFT;
-				else
-					return consts.RIGHT;
+				if (this.moveButton == consts.LEFT_BUTTON) return consts.LEFT;
+				else return consts.RIGHT;
 			}
 			return this.motion;
 		}
@@ -635,13 +626,13 @@ export default class TetrisEngine {
 				this.downDelay = consts.BOUCE_DELAY;
 				break;
 			case consts.MOVE_BTN:
-				this.motion = (button == consts.LEFT_BUTTON ? consts.LEFT : consts.RIGHT);
+				this.motion = button == consts.LEFT_BUTTON ? consts.LEFT : consts.RIGHT;
 				this.moveStart = Date.now();
 				this.moveDelay = consts.BOUCE_DELAY;
 				this.moveButton = button;
 				break;
 			case ROTATE_BTN:
-				this.rotation = (button == consts.ROTATELEFT_BUTTON ? consts.LEFT : consts.RIGHT);
+				this.rotation = button == consts.ROTATELEFT_BUTTON ? consts.LEFT : consts.RIGHT;
 				this.rotateStart = Date.now();
 				this.rotateDelay = consts.BOUCE_DELAY;
 				this.rotateButton = button;
@@ -723,14 +714,14 @@ export default class TetrisEngine {
 	pause() {
 		this.paused = true;
 		this.pauseDelay = Date.now() - this.lastMove;
-		var delta = Date.now()  - this.lastMove;
+		var delta = Date.now() - this.lastMove;
 
 		this.fire('update', actions.DRAWPAUSED, [true]);
 	}
 
 	resume() {
 		this.paused = false;
-		var delta = Date.now() - this.lastMove ;
+		var delta = Date.now() - this.lastMove;
 		this.lastMove = Date.now() - this.pauseDelay;
 
 		this.fire('update', actions.DRAWPAUSED, [false]);

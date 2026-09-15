@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 function getHideAnimationMs(highlightType, timings) {
 	if (highlightType === 'final-played-left' || highlightType === 'final-played-right') return timings.finalPlayed;
@@ -20,19 +20,19 @@ function normalizeHighlightType(value, defaultType = 'highlight') {
 function getHighlightClasses(highlightType) {
 	if (highlightType === false) return [];
 
-	return ['highlight', highlightType].filter(function(name, idx, names) {
+	return ['highlight', highlightType].filter(function (name, idx, names) {
 		return names.indexOf(name) === idx;
 	});
 }
 
 export default class Tile extends React.Component {
-	constructor (props) {
+	constructor(props) {
 		super(props);
 
 		this.state = {
 			show: props.visible !== false,
-			highlight: false
-		}
+			highlight: false,
+		};
 
 		this.hideTimer = null;
 		this.clearHighlightTimer = null;
@@ -41,9 +41,7 @@ export default class Tile extends React.Component {
 
 	componentDidMount() {
 		if (this.props.delegator) {
-			this.props.delegator.delegateInbound(this, [
-				'showTile', 'hintTile', 'highlightTile'
-			]);
+			this.props.delegator.delegateInbound(this, ['showTile', 'hintTile', 'highlightTile']);
 		}
 	}
 
@@ -54,10 +52,10 @@ export default class Tile extends React.Component {
 
 		if (this.props.visible === true) {
 			this.clearHideTimer();
-			this.setState(function(prevState) {
+			this.setState(function (prevState) {
 				return {
 					show: true,
-					highlight: prevState.highlight
+					highlight: prevState.highlight,
 				};
 			});
 			return;
@@ -67,7 +65,7 @@ export default class Tile extends React.Component {
 			this.clearHighlightTimerHandle();
 			this.setState({
 				show: false,
-				highlight: false
+				highlight: false,
 			});
 		}
 	}
@@ -89,7 +87,7 @@ export default class Tile extends React.Component {
 			this.clearHideTimer();
 			this.setState({
 				show: true,
-				highlight: false
+				highlight: false,
 			});
 			return;
 		}
@@ -102,15 +100,18 @@ export default class Tile extends React.Component {
 			this.clearHighlightTimerHandle();
 			this.setState({
 				show: true,
-				highlight: highlightType
+				highlight: highlightType,
 			});
-			this.hideTimer = setTimeout(function() {
-				this.hideTimer = null;
-				this.setState({
-					show: false,
-					highlight: false
-				});
-			}.bind(this), getHideAnimationMs(highlightType, timings));
+			this.hideTimer = setTimeout(
+				function () {
+					this.hideTimer = null;
+					this.setState({
+						show: false,
+						highlight: false,
+					});
+				}.bind(this),
+				getHideAnimationMs(highlightType, timings),
+			);
 			return;
 		}
 
@@ -118,7 +119,7 @@ export default class Tile extends React.Component {
 		this.clearHighlightTimerHandle();
 		this.setState({
 			show: false,
-			highlight: false
+			highlight: false,
 		});
 	}
 
@@ -130,21 +131,24 @@ export default class Tile extends React.Component {
 		if (highlight === 'hint' && this.state.highlight === 'hint') {
 			this.clearRestartHintTimer();
 			this.setState({
-				highlight: false
+				highlight: false,
 			});
-			this.restartHintTimer = setTimeout(function() {
-				this.restartHintTimer = null;
-				this.setState({
-					highlight: 'hint'
-				});
-			}.bind(this), 0);
+			this.restartHintTimer = setTimeout(
+				function () {
+					this.restartHintTimer = null;
+					this.setState({
+						highlight: 'hint',
+					});
+				}.bind(this),
+				0,
+			);
 			return;
 		}
 
 		this.clearRestartHintTimer();
 		this.setState({
-			highlight: highlight
-		})
+			highlight: highlight,
+		});
 	}
 
 	highlightTile(id, on) {
@@ -156,48 +160,51 @@ export default class Tile extends React.Component {
 		if (highlight === 'blocked') {
 			this.clearHighlightTimerHandle();
 			this.setState({
-				highlight: 'blocked'
+				highlight: 'blocked',
 			});
-			this.clearHighlightTimer = setTimeout(function() {
-				this.clearHighlightTimer = null;
-				this.setState(function(prevState) {
-					return prevState.highlight === 'blocked'
-						? {highlight: false}
-						: null;
-				});
-			}.bind(this), timings.blocked);
+			this.clearHighlightTimer = setTimeout(
+				function () {
+					this.clearHighlightTimer = null;
+					this.setState(function (prevState) {
+						return prevState.highlight === 'blocked' ? {highlight: false} : null;
+					});
+				}.bind(this),
+				timings.blocked,
+			);
 			return;
 		}
 
 		if (highlight === 'undo') {
 			this.clearHighlightTimerHandle();
 			this.setState({
-				highlight: 'undo'
+				highlight: 'undo',
 			});
-			this.clearHighlightTimer = setTimeout(function() {
-				this.clearHighlightTimer = null;
-				this.setState(function(prevState) {
-					return prevState.highlight === 'undo'
-						? {highlight: false}
-						: null;
-				});
-			}.bind(this), timings.undo);
+			this.clearHighlightTimer = setTimeout(
+				function () {
+					this.clearHighlightTimer = null;
+					this.setState(function (prevState) {
+						return prevState.highlight === 'undo' ? {highlight: false} : null;
+					});
+				}.bind(this),
+				timings.undo,
+			);
 			return;
 		}
 
 		if (highlight === 'restart') {
 			this.clearHighlightTimerHandle();
 			this.setState({
-				highlight: 'restart'
+				highlight: 'restart',
 			});
-			this.clearHighlightTimer = setTimeout(function() {
-				this.clearHighlightTimer = null;
-				this.setState(function(prevState) {
-					return prevState.highlight === 'restart'
-						? {highlight: false}
-						: null;
-				});
-			}.bind(this), timings.restart);
+			this.clearHighlightTimer = setTimeout(
+				function () {
+					this.clearHighlightTimer = null;
+					this.setState(function (prevState) {
+						return prevState.highlight === 'restart' ? {highlight: false} : null;
+					});
+				}.bind(this),
+				timings.restart,
+			);
 			return;
 		}
 
@@ -206,21 +213,24 @@ export default class Tile extends React.Component {
 			// the separate "played" state through showTile(), so they skip this.
 			this.clearHighlightTimerHandle();
 			this.setState({
-				highlight: 'unselected'
+				highlight: 'unselected',
 			});
-			this.clearHighlightTimer = setTimeout(function() {
-				this.clearHighlightTimer = null;
-				this.setState({
-					highlight: false
-				});
-			}.bind(this), timings.unselected);
+			this.clearHighlightTimer = setTimeout(
+				function () {
+					this.clearHighlightTimer = null;
+					this.setState({
+						highlight: false,
+					});
+				}.bind(this),
+				timings.unselected,
+			);
 			return;
 		}
 
 		this.clearHighlightTimerHandle();
 		this.setState({
-			highlight: highlight
-		})
+			highlight: highlight,
+		});
 	}
 
 	clearHideTimer() {
@@ -259,9 +269,11 @@ export default class Tile extends React.Component {
 
 		if (!show) return '';
 
-		return(
+		return (
 			<React.Fragment>
-				<div className={bodyClass}><div className={faceClass} onClick={onClick}></div></div>
+				<div className={bodyClass}>
+					<div className={faceClass} onClick={onClick}></div>
+				</div>
 			</React.Fragment>
 		);
 	}

@@ -194,7 +194,7 @@ Completed notes:
 - Mahjongg layout, scaling, animation, solver-analysis, telemetry, difficulty,
   and engine-refactor docs now live under `products/game-collection`.
 - Progressive Web App notes now live under `gc-app`.
-- MVP is historical and represented only by [MVP Summary](../../archive/mvp-summary.md).
+- MVP is historical and represented only by [MVP Summary](../archive/mvp-summary.md).
 - The difficulty solver PDF remains in `topics.bak` until the references phase.
 
 ## Phase 4: Deployable Apps

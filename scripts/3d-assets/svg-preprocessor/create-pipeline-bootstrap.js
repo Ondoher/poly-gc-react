@@ -1,18 +1,14 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { ASSETS_3D_JSON_DIR, ROOT_DIR } from '../shared/asset-paths.js';
-import { normalizePath } from './preprocessed-face-validation-utils.js';
+import {ASSETS_3D_JSON_DIR, ROOT_DIR} from '../shared/asset-paths.js';
+import {normalizePath} from './preprocessed-face-validation-utils.js';
 
 const REFERENCE_SEMANTICS_PATH = path.resolve(
 	ASSETS_3D_JSON_DIR,
 	'reference-semantics',
 	'mahjong-face-reference-semantics.json',
 );
-const OUTPUT_PATH = path.resolve(
-	ASSETS_3D_JSON_DIR,
-	'pipeline-bootstrap',
-	'mahjong-source-pipeline-bootstrap.json',
-);
+const OUTPUT_PATH = path.resolve(ASSETS_3D_JSON_DIR, 'pipeline-bootstrap', 'mahjong-source-pipeline-bootstrap.json');
 
 const SUIT_ID_BY_FAMILY = {
 	bamboo: 'bamboo',
@@ -28,7 +24,7 @@ async function main() {
 	const referenceSemantics = JSON.parse(await fs.readFile(REFERENCE_SEMANTICS_PATH, 'utf8'));
 	const bootstrap = buildPipelineBootstrap(referenceSemantics);
 
-	await fs.mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
+	await fs.mkdir(path.dirname(OUTPUT_PATH), {recursive: true});
 	await fs.writeFile(OUTPUT_PATH, `${JSON.stringify(bootstrap, null, 2)}\n`, 'utf8');
 
 	console.log(`Wrote ${normalizePath(path.relative(ROOT_DIR, OUTPUT_PATH))}`);
@@ -235,14 +231,13 @@ function renderPart(partId, contentKind, role, source, renderMode) {
 }
 
 function buildFaces(referenceFaces) {
-	return Object.fromEntries(Object.entries(referenceFaces)
-		.map(([faceKey, face]) => [faceKey, buildFace(face)]));
+	return Object.fromEntries(Object.entries(referenceFaces).map(([faceKey, face]) => [faceKey, buildFace(face)]));
 }
 
 function buildFace(face) {
 	return {
 		suitId: SUIT_ID_BY_FAMILY[face.family] || face.family,
-		...(face.value !== undefined ? { value: face.value } : {}),
+		...(face.value !== undefined ? {value: face.value} : {}),
 		state: {
 			components: {},
 			shapes: {},
@@ -254,8 +249,9 @@ function buildFace(face) {
 }
 
 function buildParts(face) {
-	const parts = Object.fromEntries(Object.entries(face.parts || {})
-		.map(([partId, part]) => [partId, buildPart(part)]));
+	const parts = Object.fromEntries(
+		Object.entries(face.parts || {}).map(([partId, part]) => [partId, buildPart(part)]),
+	);
 
 	if (face.family === 'dragons' && !parts.label) {
 		parts.label = {
@@ -275,22 +271,19 @@ function buildPart(part) {
 		partId: part.partId,
 		globalPartId: part.globalPartId,
 		role: part.role,
-		...(part.contentKind ? { contentKind: part.contentKind } : {}),
+		...(part.contentKind ? {contentKind: part.contentKind} : {}),
 		colorStrategy: colorStrategyForPart(part),
-		...(part.text ? { text: part.text } : {}),
-		...(part.paletteIndex ? { paletteIndex: part.paletteIndex } : {}),
+		...(part.text ? {text: part.text} : {}),
+		...(part.paletteIndex ? {paletteIndex: part.paletteIndex} : {}),
 	};
 }
 
 function colorStrategyForPart(part) {
-	if (part.contentKind === 'label'
-		|| part.contentKind === 'glyph'
-		|| /(?:label|character)$/i.test(part.role || '')) {
+	if (part.contentKind === 'label' || part.contentKind === 'glyph' || /(?:label|character)$/i.test(part.role || '')) {
 		return 'monochrome-reference';
 	}
 
-	if (part.contentKind === 'artwork'
-		&& ['dragon-artwork', 'main-artwork'].includes(part.role)) {
+	if (part.contentKind === 'artwork' && ['dragon-artwork', 'main-artwork'].includes(part.role)) {
 		return 'freeform-palette';
 	}
 

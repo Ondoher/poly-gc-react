@@ -376,16 +376,16 @@ Why:
 The public advice landscape points to a few recurring human difficulty drivers:
 
 1. `Low unlock value`
-   - moves that reveal little progress feel dangerous and frustrating
+    - moves that reveal little progress feel dangerous and frustrating
 2. `Ambiguous same-face choices`
-   - players repeatedly fear pairing the wrong copies
+    - players repeatedly fear pairing the wrong copies
 3. `Tall or congested structure`
-   - top layers, long rows, and choke points dominate human strategy advice
+    - top layers, long rows, and choke points dominate human strategy advice
 4. `Delayed punishment`
-   - many guides explicitly warn that a move can look fine now and fail later
+    - many guides explicitly warn that a move can look fine now and fail later
 5. `Local opacity`
-   - hints, undo, and restart advice suggest players often struggle to read
-     future consequence directly
+    - hints, undo, and restart advice suggest players often struggle to read
+      future consequence directly
 
 These are strong qualitative matches for the current analyzer story:
 
@@ -441,16 +441,16 @@ That means this note is useful in two directions:
 
 ## Effectiveness Summary
 
-| Theme | Ref count | Engine/analyzer match | Effectiveness |
-| --- | ---: | --- | --- |
-| Unblock or reveal the most tiles | 9 | Freed-tile scoring, open pressure, difficulty window | High |
-| Top, edges, stacks, choke points | 8 | Z weighting, intersections, stack pressure | Medium-High |
-| Think ahead; do not click first match | 8 | Pair-choice analysis, suspension, short-horizon probe | High |
-| Preserve options in duplicate-choice states | 7 | Same-face analysis, face spacing, face avoidance | Medium-High |
-| Use hint/undo/shuffle strategically | 6 | Gameplay tools plus planned telemetry | Medium |
-| Watch stacked identicals and critical blockers | 5 | Stack safety, short-horizon pressure, suspension safety | Medium |
-| Keep board balanced; avoid low-value tidy moves | 3 | Balance pressure, dominant-stack risk, open pressure | Medium |
-| Save flowers/seasons for key unlocks | 2 | Matching semantics only; little explicit policy | Low |
+| Theme                                           | Ref count | Engine/analyzer match                                   | Effectiveness |
+| ----------------------------------------------- | --------: | ------------------------------------------------------- | ------------- |
+| Unblock or reveal the most tiles                |         9 | Freed-tile scoring, open pressure, difficulty window    | High          |
+| Top, edges, stacks, choke points                |         8 | Z weighting, intersections, stack pressure              | Medium-High   |
+| Think ahead; do not click first match           |         8 | Pair-choice analysis, suspension, short-horizon probe   | High          |
+| Preserve options in duplicate-choice states     |         7 | Same-face analysis, face spacing, face avoidance        | Medium-High   |
+| Use hint/undo/shuffle strategically             |         6 | Gameplay tools plus planned telemetry                   | Medium        |
+| Watch stacked identicals and critical blockers  |         5 | Stack safety, short-horizon pressure, suspension safety | Medium        |
+| Keep board balanced; avoid low-value tidy moves |         3 | Balance pressure, dominant-stack risk, open pressure    | Medium        |
+| Save flowers/seasons for key unlocks            |         2 | Matching semantics only; little explicit policy         | Low           |
 
 ## Practical Implications For This Project
 
@@ -538,20 +538,20 @@ right away.
 
 ## End Notes
 
-<a id="ref-1"></a>[1] Truc, Miljan. "Best Strategies, Tips, and Tricks to Win at Mahjong Solitaire." *FRVR*, 29 July 2025, https://frvr.com/tutorials/mahjong-solitaire-tips-and-tricks/. Accessed 12 Apr. 2026.
+<a id="ref-1"></a>[1] Truc, Miljan. "Best Strategies, Tips, and Tricks to Win at Mahjong Solitaire." _FRVR_, 29 July 2025, https://frvr.com/tutorials/mahjong-solitaire-tips-and-tricks/. Accessed 12 Apr. 2026.
 
-<a id="ref-2"></a>[2] "How to Play Mahjong Solitaire (Beginner Guide + Tips)." *Vita Mahjong*, https://vita-mahjong.org/how-to-play-mahjong-solitaire. Accessed 12 Apr. 2026.
+<a id="ref-2"></a>[2] "How to Play Mahjong Solitaire (Beginner Guide + Tips)." _Vita Mahjong_, https://vita-mahjong.org/how-to-play-mahjong-solitaire. Accessed 12 Apr. 2026.
 
-<a id="ref-3"></a>[3] "9 Mahjong Tips to Master the Game." *Mahjong Online 365*, https://www.mahjongonline365.com/tips/mahjong-tips. Accessed 12 Apr. 2026.
+<a id="ref-3"></a>[3] "9 Mahjong Tips to Master the Game." _Mahjong Online 365_, https://www.mahjongonline365.com/tips/mahjong-tips. Accessed 12 Apr. 2026.
 
-<a id="ref-4"></a>[4] Bharti, Vijaya. "Mahjong Solitaire - Free Online Card Game." *MPL Games*, 25 July 2025, https://www.mplgames.com/solitaire/mahjong-solitaire. Accessed 12 Apr. 2026.
+<a id="ref-4"></a>[4] Bharti, Vijaya. "Mahjong Solitaire - Free Online Card Game." _MPL Games_, 25 July 2025, https://www.mplgames.com/solitaire/mahjong-solitaire. Accessed 12 Apr. 2026.
 
-<a id="ref-5"></a>[5] "Mahjongg Strategy - How to Win at Mahjongg." *MahjongFun*, https://www.mahjongfun.com/strategy/. Accessed 12 Apr. 2026.
+<a id="ref-5"></a>[5] "Mahjongg Strategy - How to Win at Mahjongg." _MahjongFun_, https://www.mahjongfun.com/strategy/. Accessed 12 Apr. 2026.
 
-<a id="ref-6"></a>[6] "Mahjong Solitaire: Complete Tile Matching Guide." *Classic Games Online*, https://freegamehub.org/guides/mahjong-solitaire-guide. Accessed 12 Apr. 2026.
+<a id="ref-6"></a>[6] "Mahjong Solitaire: Complete Tile Matching Guide." _Classic Games Online_, https://freegamehub.org/guides/mahjong-solitaire-guide. Accessed 12 Apr. 2026.
 
-<a id="ref-7"></a>[7] "3 Common Mahjong Mistakes Even Advanced Players Make - And How to Fix Them." *TheMahjong.io*, https://themahjong.io/blog/mahjong-mistakes-and-fixes. Accessed 12 Apr. 2026.
+<a id="ref-7"></a>[7] "3 Common Mahjong Mistakes Even Advanced Players Make - And How to Fix Them." _TheMahjong.io_, https://themahjong.io/blog/mahjong-mistakes-and-fixes. Accessed 12 Apr. 2026.
 
-<a id="ref-8"></a>[8] "How to Play Mahjong Solitaire: Complete Beginner's Guide (2026)." *Mahjong Boss*, 7 Feb. 2026, https://mahjongboss.com/blog/how-to-play-mahjong-solitaire.html. Accessed 12 Apr. 2026.
+<a id="ref-8"></a>[8] "How to Play Mahjong Solitaire: Complete Beginner's Guide (2026)." _Mahjong Boss_, 7 Feb. 2026, https://mahjongboss.com/blog/how-to-play-mahjong-solitaire.html. Accessed 12 Apr. 2026.
 
-<a id="ref-9"></a>[9] Narkiewicz, Adam. "Mahjong Solitaire Strategy Guide." *Mahjong Pro*, 6 Sept. 2025, https://mahjong-pro.com/mahjong-solitaire-strategy-guide/. Accessed 12 Apr. 2026.
+<a id="ref-9"></a>[9] Narkiewicz, Adam. "Mahjong Solitaire Strategy Guide." _Mahjong Pro_, 6 Sept. 2025, https://mahjong-pro.com/mahjong-solitaire-strategy-guide/. Accessed 12 Apr. 2026.

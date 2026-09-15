@@ -1,7 +1,7 @@
-import { boundsToTransformMatrix } from '../visual-component-alignment.js';
+import {boundsToTransformMatrix} from '../visual-component-alignment.js';
 
-describe('visual component alignment', function() {
-	it('maintains aspect ratio without exceeding target bounds', function() {
+describe('visual component alignment', function () {
+	it('maintains aspect ratio without exceeding target bounds', function () {
 		const sourceBounds = box(353.622, 214.082, 369.792, 235.243);
 		const targetBounds = box(22.927, 16, 42.415, 68.571);
 		const transform = boundsToTransformMatrix(sourceBounds, targetBounds);

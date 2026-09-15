@@ -1,2 +1,2 @@
-import "./health.js";
-import "./feedback.js";
+import './health.js';
+import './feedback.js';

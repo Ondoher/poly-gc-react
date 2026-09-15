@@ -1,5 +1,5 @@
-import { Service } from '@polylith/core';
-import { debounce } from './utils.js';
+import {Service} from '@polylith/core';
+import {debounce} from './utils.js';
 
 const PORTRAIT_HEIGHT_RATIO = 1.05;
 
@@ -34,9 +34,13 @@ export default class SizeWatcher extends Service {
 		this.mode = this.calculateMode(this.size);
 
 		this.onWindowResize = this.onWindowResize.bind(this);
-		this.fireChangedDebounced = debounce(() => {
-			this.check();
-		}, 100, 300);
+		this.fireChangedDebounced = debounce(
+			() => {
+				this.check();
+			},
+			100,
+			300,
+		);
 	}
 
 	ready() {
@@ -100,15 +104,15 @@ export default class SizeWatcher extends Service {
 	matchesMode(query) {
 		var mode = this.getMode();
 
-		if (typeof query === "string") {
+		if (typeof query === 'string') {
 			return mode[query] === true;
 		}
 
-		if (!query || typeof query !== "object") {
+		if (!query || typeof query !== 'object') {
 			return false;
 		}
 
-		return Object.keys(query).every(function(key) {
+		return Object.keys(query).every(function (key) {
 			return mode[key] === query[key];
 		});
 	}
@@ -140,7 +144,7 @@ export default class SizeWatcher extends Service {
 		var isPortrait = height > width * PORTRAIT_HEIGHT_RATIO;
 
 		return {
-			orientation: isPortrait ? "portrait" : "landscape",
+			orientation: isPortrait ? 'portrait' : 'landscape',
 			isPortrait,
 			isLandscape: !isPortrait,
 			isNarrowPortrait: isPortrait && width <= 900,
@@ -156,14 +160,14 @@ export default class SizeWatcher extends Service {
 	 */
 	getSizeClass(width) {
 		if (width <= 640) {
-			return "compact";
+			return 'compact';
 		}
 
 		if (width <= 1024) {
-			return "regular";
+			return 'regular';
 		}
 
-		return "wide";
+		return 'wide';
 	}
 
 	/**

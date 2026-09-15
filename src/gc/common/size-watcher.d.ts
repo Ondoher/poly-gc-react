@@ -11,19 +11,19 @@ type SizeWatcherViewportSize = {
 	 * Store the current viewport height in pixels.
 	 */
 	height: number;
-}
+};
 
 /**
  * Describe the coarse viewport orientation.
  *
  * Square and near-square viewports are treated as landscape.
  */
-type SizeWatcherOrientation = "portrait" | "landscape";
+type SizeWatcherOrientation = 'portrait' | 'landscape';
 
 /**
  * Describe the coarse viewport width band.
  */
-type SizeWatcherSizeClass = "compact" | "regular" | "wide";
+type SizeWatcherSizeClass = 'compact' | 'regular' | 'wide';
 
 /**
  * Describe the semantic viewport mode derived from the current size.
@@ -57,15 +57,12 @@ type SizeWatcherMode = {
 	 * Store the coarse viewport width class.
 	 */
 	sizeClass: SizeWatcherSizeClass;
-}
+};
 
 /**
  * Describe a boolean mode flag that can be queried by name.
  */
-type SizeWatcherModeFlag =
-	"isPortrait" |
-	"isLandscape" |
-	"isNarrowPortrait";
+type SizeWatcherModeFlag = 'isPortrait' | 'isLandscape' | 'isNarrowPortrait';
 
 /**
  * Describe a query against the current semantic viewport mode.

@@ -1,8 +1,7 @@
-import { makeEventable } from '@polylith/core';
-import Random from 'utils/random.js'
+import {makeEventable} from '@polylith/core';
+import Random from 'utils/random.js';
 import NumberSet from 'utils/NumberSet.js';
 import GameGenerator from './GameGenerator.js';
-
 
 /** @type {SuitSpec} */
 const SUITS = {
@@ -12,8 +11,8 @@ const SUITS = {
 	dragon: [108, 119],
 	wind: [120, 135],
 	flower: [136, 139],
-	season: [140, 143]
-}
+	season: [140, 143],
+};
 
 /**
  * This is the engine for the Mah Jongg solitaire game. It keeps the game state
@@ -22,8 +21,8 @@ const SUITS = {
 export default class Engine {
 	constructor() {
 		makeEventable(this);
-		this.seasonFaceSetArray = [34,35,36,37];
-		this.flowerFaceSetArray = [38,39,40,41];
+		this.seasonFaceSetArray = [34, 35, 36, 37];
+		this.flowerFaceSetArray = [38, 39, 40, 41];
 
 		/** @type {Board} */
 		this.board = {};
@@ -33,8 +32,8 @@ export default class Engine {
 
 		/** @type {SuspensionRules} */
 		this.suspensionRules = {
-			frequency: 0
-		}
+			frequency: 0,
+		};
 
 		/** @type {number} */
 		this.difficulty = 0.5;
@@ -119,10 +118,10 @@ export default class Engine {
 		 * Track the remaining face groups available to draw from while the board
 		 * is being generated.
 		 *
-	 * @type {DrawPile}
+		 * @type {DrawPile}
 		 */
 		this.drawPile = {
-			faceSets: []
+			faceSets: [],
 		};
 
 		this.setLayout();
@@ -150,7 +149,6 @@ export default class Engine {
 
 		this.actionCollector.recordAction(action);
 	}
-
 
 	makeSuits() {
 		let entries = Object.entries(SUITS);
@@ -181,7 +179,6 @@ export default class Engine {
 		let face = faceGroup * 4;
 		return this.suits[face];
 	}
-
 
 	setupSuspensionRules(rules) {
 		this.suspensionRules = rules;
@@ -290,8 +287,8 @@ export default class Engine {
 	 * @returns {number[]}
 	 */
 	makeSequentialArray(start, count) {
-		return Array.from({length: count}, function(val, index) {
-			return index + start
+		return Array.from({length: count}, function (val, index) {
+			return index + start;
 		});
 	}
 
@@ -309,7 +306,7 @@ export default class Engine {
 	 * @param {TilePosition} position the position on the board to be occupied
 	 * @param {TileKey} tile the tile that will occupy that position
 	 */
-	addPos(position, tile)	{
+	addPos(position, tile) {
 		var {x, y, z} = position;
 
 		if (x === -1) return;
@@ -356,7 +353,7 @@ export default class Engine {
 	 *
 	 * @returns {Boolean} true if the space is occupied, false if it is not
 	 */
-	isUsed (x, y, z) {
+	isUsed(x, y, z) {
 		if (this.usedSpaces[z] === undefined) return false;
 		else if (this.usedSpaces[z][y] === undefined) return false;
 		else return this.usedSpaces[z][y].has(x);
@@ -373,10 +370,18 @@ export default class Engine {
 
 		if (x == 1) goodAcross = true;
 		else if (x == 29) goodAcross = true;
-		else goodAcross = (!this.isUsed(x + 2, y, z) && !this.isUsed(x + 2, y + 1, z)) || (!this.isUsed(x -1, y, z) && !this.isUsed(x - 1, y + 1, z));
+		else
+			goodAcross =
+				(!this.isUsed(x + 2, y, z) && !this.isUsed(x + 2, y + 1, z)) ||
+				(!this.isUsed(x - 1, y, z) && !this.isUsed(x - 1, y + 1, z));
 
 		if (z == 7) goodUp = true;
-		else goodUp = !this.isUsed(x, y, z + 1) && !this.isUsed(x + 1, y, z + 1) && !this.isUsed(x, y + 1, z + 1) && !this.isUsed(x + 1, y + 1, z + 1);
+		else
+			goodUp =
+				!this.isUsed(x, y, z + 1) &&
+				!this.isUsed(x + 1, y, z + 1) &&
+				!this.isUsed(x, y + 1, z + 1) &&
+				!this.isUsed(x + 1, y + 1, z + 1);
 
 		return goodAcross && goodUp;
 	}
@@ -405,8 +410,6 @@ export default class Engine {
 		return this.openTiles.length;
 	}
 
-
-
 	/**
 	 * Call this method to setup the board for initial play
 	 *
@@ -420,7 +423,7 @@ export default class Engine {
 			this.board.pieces[idx] = {
 				pos: this.layout.positions[idx],
 				face: -1,
-			}
+			};
 		}
 		this.tileCount = this.board.count;
 		this.suspended = [];
@@ -504,10 +507,7 @@ export default class Engine {
 		}
 
 		let current = tileAvoidance.get(faceSet) || 0;
-		let next = Math.min(
-			this.faceAvoidanceRules.maxWeight ?? 8,
-			current + weight
-		);
+		let next = Math.min(this.faceAvoidanceRules.maxWeight ?? 8, current + weight);
 
 		tileAvoidance.set(faceSet, next);
 		this.faceAvoidanceStats.marksAdded++;
@@ -525,10 +525,7 @@ export default class Engine {
 	 * @returns {TileKey[]}
 	 */
 	getFaceAvoidanceTargetsAfterRemoval(referenceTiles, removedTiles = referenceTiles) {
-		return new GameGenerator(this).getFaceAvoidanceTargetsAfterRemoval(
-			referenceTiles,
-			removedTiles
-		);
+		return new GameGenerator(this).getFaceAvoidanceTargetsAfterRemoval(referenceTiles, removedTiles);
 	}
 
 	/**
@@ -566,16 +563,13 @@ export default class Engine {
 		let candidates = [];
 
 		for (let [idx, faceSet] of this.drawPile.faceSets) {
-
 			if (faceSet.faces.length < requiredFaces) {
 				continue;
 			}
 
 			candidates.push({
 				index: idx,
-				penalty: this.faceAvoidanceRules.enabled
-					? this.getFaceGroupPenalty(idx, tiles)
-					: 0,
+				penalty: this.faceAvoidanceRules.enabled ? this.getFaceGroupPenalty(idx, tiles) : 0,
 			});
 		}
 
@@ -642,11 +636,7 @@ export default class Engine {
 	 * @param {FaceGroup} faceGroup
 	 */
 	recordAssignedFacePair(tile1, tile2, faceGroup) {
-		return new GameGenerator(this).recordAssignedFacePair(
-			tile1,
-			tile2,
-			faceGroup
-		);
+		return new GameGenerator(this).recordAssignedFacePair(tile1, tile2, faceGroup);
 	}
 
 	/**
@@ -666,7 +656,6 @@ export default class Engine {
 		return indexes;
 	}
 
-
 	getFaceGroupDuplicateCount(reusedIndex, reusedCount, options = {}) {
 		let difficulty = Math.max(0, Math.min(1, options.difficulty ?? this.difficulty));
 		let easeStrength = Math.max(0, (0.5 - difficulty) * 2);
@@ -676,9 +665,7 @@ export default class Engine {
 			return 1;
 		}
 
-		let closenessRatio = reusedCount <= 1
-			? 1
-			: 1 - (reusedIndex / (reusedCount - 1));
+		let closenessRatio = reusedCount <= 1 ? 1 : 1 - reusedIndex / (reusedCount - 1);
 		let extra = Math.floor(easeStrength * closenessRatio * duplicateScale);
 
 		return 1 + extra;
@@ -715,7 +702,7 @@ export default class Engine {
 		let candidates = [];
 
 		for (let [faceGroup, faceSet] of this.drawPile.faceSets) {
-			let { faces } = faceSet;
+			let {faces} = faceSet;
 
 			if (faces.length < requiredFaces) {
 				continue;
@@ -725,7 +712,7 @@ export default class Engine {
 			let pairCountFactor = faces.length === 4 ? 2 : 1;
 
 			let weightFactor = this.getFaceGroupPenalty(faceGroup, pending.tiles);
-			if (weightFactor !== 0)  {
+			if (weightFactor !== 0) {
 				weightFactor = 1 / weightFactor;
 			}
 
@@ -738,14 +725,10 @@ export default class Engine {
 
 			let dups = this.getFaceGroupDuplicateCount(distance, searchPairs.length, {}) - 1;
 
-			let preferredFactor =  preferredFaceGroup === faceGroup ?
-				this.faceAssignmentRules.preferredMultiplier ?? 0.5 :
-				1;
+			let preferredFactor =
+				preferredFaceGroup === faceGroup ? (this.faceAssignmentRules.preferredMultiplier ?? 0.5) : 1;
 
-			let finalFactor = baseFactor *
-				pairCountFactor *
-				distanceFactor *
-				preferredFactor;
+			let finalFactor = baseFactor * pairCountFactor * distanceFactor * preferredFactor;
 
 			if (weightFactor !== 0 && distance === -1) {
 				finalFactor = weightFactor;
@@ -760,7 +743,7 @@ export default class Engine {
 			candidates.push(candidate);
 		}
 
-		let compare = function(left, right) {
+		let compare = function (left, right) {
 			return left.sortValue - right.sortValue || left.faceGroup - right.faceGroup;
 		};
 
@@ -772,7 +755,7 @@ export default class Engine {
 			for (let idx = 0; idx < candidate.dups; idx++) {
 				expanded.push(candidate);
 			}
-		})
+		});
 
 		return expanded.map((candidate) => candidate.faceGroup);
 	}
@@ -844,9 +827,7 @@ export default class Engine {
 		}
 
 		if (this.faceAvoidanceRules.enabled && recordDraw) {
-			this.recordFaceAvoidanceDraw(
-				this.getFaceGroupPenalty(faceGroup, tiles)
-			);
+			this.recordFaceAvoidanceDraw(this.getFaceGroupPenalty(faceGroup, tiles));
 		}
 
 		return {
@@ -862,17 +843,17 @@ export default class Engine {
 			return faceSet.faces.length === 4;
 		});
 		let picked = Random.random(fullFaceSets.length);
-		let count = 0
+		let count = 0;
 
 		for (let [idx, faceSet] of faceSets) {
 			let faces = faceSet.faces;
 			let hasFour = faces.length === 4;
 			if (count === picked && hasFour) {
 				return idx;
-			};
+			}
 
 			if (hasFour) {
-				count++
+				count++;
 			}
 		}
 
@@ -1059,9 +1040,8 @@ export default class Engine {
 	}
 
 	buildUsedSpacesForTilePicker(skipTile = false) {
-		let skipTiles = skipTile === false
-			? new NumberSet([], this.board.count)
-			: new NumberSet([skipTile], this.board.count);
+		let skipTiles =
+			skipTile === false ? new NumberSet([], this.board.count) : new NumberSet([skipTile], this.board.count);
 
 		return this.buildUsedSpacesForPlacedTiles(this.placedTiles, skipTiles);
 	}
@@ -1128,19 +1108,18 @@ export default class Engine {
 
 		if (x == 1) goodAcross = true;
 		else if (x == 29) goodAcross = true;
-		else goodAcross = (
-			!this.isUsedInSpaces(usedSpaces, x + 2, y, z)
-			&& !this.isUsedInSpaces(usedSpaces, x + 2, y + 1, z)
-		) || (
-			!this.isUsedInSpaces(usedSpaces, x - 1, y, z)
-			&& !this.isUsedInSpaces(usedSpaces, x - 1, y + 1, z)
-		);
+		else
+			goodAcross =
+				(!this.isUsedInSpaces(usedSpaces, x + 2, y, z) && !this.isUsedInSpaces(usedSpaces, x + 2, y + 1, z)) ||
+				(!this.isUsedInSpaces(usedSpaces, x - 1, y, z) && !this.isUsedInSpaces(usedSpaces, x - 1, y + 1, z));
 
 		if (z == grid.depth - 1) goodUp = true;
-		else goodUp = !this.isUsedInSpaces(usedSpaces, x, y, z + 1)
-			&& !this.isUsedInSpaces(usedSpaces, x + 1, y, z + 1)
-			&& !this.isUsedInSpaces(usedSpaces, x, y + 1, z + 1)
-			&& !this.isUsedInSpaces(usedSpaces, x + 1, y + 1, z + 1);
+		else
+			goodUp =
+				!this.isUsedInSpaces(usedSpaces, x, y, z + 1) &&
+				!this.isUsedInSpaces(usedSpaces, x + 1, y, z + 1) &&
+				!this.isUsedInSpaces(usedSpaces, x, y + 1, z + 1) &&
+				!this.isUsedInSpaces(usedSpaces, x + 1, y + 1, z + 1);
 
 		return goodAcross && goodUp;
 	}
@@ -1164,9 +1143,9 @@ export default class Engine {
 
 		for (let candidate = 0; candidate < this.board.count; candidate++) {
 			if (
-				candidate !== tile
-				&& !openBefore.has(candidate)
-				&& this.isTileOpenInSpaces(candidate, placedAfter, usedAfter, grid)
+				candidate !== tile &&
+				!openBefore.has(candidate) &&
+				this.isTileOpenInSpaces(candidate, placedAfter, usedAfter, grid)
 			) {
 				freed++;
 			}
@@ -1241,12 +1220,15 @@ export default class Engine {
 	 * @returns {TileKey[]}
 	 */
 	pickShortHorizonProbePair(openTiles) {
-		return openTiles.slice().sort((left, right) => {
-			let leftZ = this.board.pieces[left].pos.z;
-			let rightZ = this.board.pieces[right].pos.z;
+		return openTiles
+			.slice()
+			.sort((left, right) => {
+				let leftZ = this.board.pieces[left].pos.z;
+				let rightZ = this.board.pieces[right].pos.z;
 
-			return leftZ - rightZ || left - right;
-		}).slice(0, 2);
+				return leftZ - rightZ || left - right;
+			})
+			.slice(0, 2);
 	}
 
 	/**
@@ -1295,11 +1277,7 @@ export default class Engine {
 
 			let pair = this.pickShortHorizonProbePair(openTiles);
 
-			pair.forEach((tile) => this.removeTileFromProbeState(
-				tile,
-				placedTiles,
-				usedSpaces
-			));
+			pair.forEach((tile) => this.removeTileFromProbeState(tile, placedTiles, usedSpaces));
 		}
 
 		return {
@@ -1412,10 +1390,7 @@ export default class Engine {
 			let originalCount = candidates.length;
 
 			candidates = candidates.filter((tile) => {
-				let balance = this.getStackBalanceAfterRemoval([
-					...pendingRemovedTiles,
-					tile,
-				]);
+				let balance = this.getStackBalanceAfterRemoval([...pendingRemovedTiles, tile]);
 
 				balanceByTile.set(tile, balance);
 
@@ -1432,72 +1407,61 @@ export default class Engine {
 		let freedRankByCount = new Map(
 			uniqueFreedCounts.map((count, index) => {
 				return [count, uniqueFreedCounts.length - index];
-			})
+			}),
 		);
 
-		return candidates.map((tile, index) => {
-			let {z} = this.board.pieces[tile].pos;
-			let freedCount = freedCounts[index];
-			let freedRank = freedRankByCount.get(freedCount);
-			let openPressure = this.getOpenPressure(freedCount, options);
-			let horizontalIntersections = this.countHorizontalIntersections(
-				tile,
-				horizontalMasks,
-				grid
-			);
-			let verticalIntersections = this.countVerticalIntersections(
-				tile,
-				verticalMasks,
-				grid
-			);
-			let balance = balanceByTile.get(tile) || this.getStackBalanceAfterRemoval([
-				...pendingRemovedTiles,
-				tile,
-			]);
-			let balancePressure = this.getBalancePressure(balance, options);
-			let shortHorizon = this.runShortHorizonProbe([
-				...pendingRemovedTiles,
-				tile,
-			], options);
-			let zWeight = (z + 0.5) / zDenominator;
-			let centeredZWeight = (zWeight - 0.5) * 2;
-			let zPressure = Math.max(0.25, 1 + (centeredZWeight * zBias));
-			let weight = freedRank
-				* openPressure
-				* zPressure
-				* Math.pow(horizontalMultiplier, horizontalIntersections)
-				* Math.pow(verticalMultiplier, verticalIntersections)
-				* balancePressure
-				* shortHorizon.pressure;
+		return candidates
+			.map((tile, index) => {
+				let {z} = this.board.pieces[tile].pos;
+				let freedCount = freedCounts[index];
+				let freedRank = freedRankByCount.get(freedCount);
+				let openPressure = this.getOpenPressure(freedCount, options);
+				let horizontalIntersections = this.countHorizontalIntersections(tile, horizontalMasks, grid);
+				let verticalIntersections = this.countVerticalIntersections(tile, verticalMasks, grid);
+				let balance =
+					balanceByTile.get(tile) || this.getStackBalanceAfterRemoval([...pendingRemovedTiles, tile]);
+				let balancePressure = this.getBalancePressure(balance, options);
+				let shortHorizon = this.runShortHorizonProbe([...pendingRemovedTiles, tile], options);
+				let zWeight = (z + 0.5) / zDenominator;
+				let centeredZWeight = (zWeight - 0.5) * 2;
+				let zPressure = Math.max(0.25, 1 + centeredZWeight * zBias);
+				let weight =
+					freedRank *
+					openPressure *
+					zPressure *
+					Math.pow(horizontalMultiplier, horizontalIntersections) *
+					Math.pow(verticalMultiplier, verticalIntersections) *
+					balancePressure *
+					shortHorizon.pressure;
 
-			return {
-				tile,
-				weight,
-				freedCount,
-				freedRank,
-				openPressure,
-				z,
-				zWeight,
-				zPressure,
-				horizontalIntersections,
-				verticalIntersections,
-				balanceMargin: balance.balanceMargin,
-				balancePressure,
-				shortHorizonMoves: shortHorizon.moves,
-				shortHorizonRemainingTiles: shortHorizon.remainingTiles,
-				shortHorizonPressure: shortHorizon.pressure,
-				shortHorizonEnabled: shortHorizon.enabled,
-				shortHorizonCollapsed: shortHorizon.collapsed,
-			};
-		}).sort((left, right) => {
-			return left.weight - right.weight || left.tile - right.tile;
-		});
+				return {
+					tile,
+					weight,
+					freedCount,
+					freedRank,
+					openPressure,
+					z,
+					zWeight,
+					zPressure,
+					horizontalIntersections,
+					verticalIntersections,
+					balanceMargin: balance.balanceMargin,
+					balancePressure,
+					shortHorizonMoves: shortHorizon.moves,
+					shortHorizonRemainingTiles: shortHorizon.remainingTiles,
+					shortHorizonPressure: shortHorizon.pressure,
+					shortHorizonEnabled: shortHorizon.enabled,
+					shortHorizonCollapsed: shortHorizon.collapsed,
+				};
+			})
+			.sort((left, right) => {
+				return left.weight - right.weight || left.tile - right.tile;
+			});
 	}
 
 	getBalancePressure(balance, options = {}) {
 		let difficulty = Math.max(0, Math.min(1, options.difficulty ?? this.difficulty));
-		let hardMultiplier = options.balancePressureMultiplier ??
-			Math.max(0, (difficulty - 0.5) * 2);
+		let hardMultiplier = options.balancePressureMultiplier ?? Math.max(0, (difficulty - 0.5) * 2);
 
 		if (hardMultiplier === 0) {
 			return 1;
@@ -1548,8 +1512,7 @@ export default class Engine {
 	 */
 	getOpenPressure(freedCount, options = {}) {
 		let difficulty = Math.max(0, Math.min(1, options.difficulty ?? this.difficulty));
-		let hardMultiplier = options.openPressureMultiplier ??
-			Math.max(0, (difficulty - 0.5) * 2);
+		let hardMultiplier = options.openPressureMultiplier ?? Math.max(0, (difficulty - 0.5) * 2);
 
 		if (hardMultiplier === 0) {
 			return 1;
@@ -1696,8 +1659,12 @@ export default class Engine {
 	 * @return {Boolean} true if the two tiles match and can be played
 	 */
 	isPlayablePair(tile1, tile2) {
-		return this.selectableTiles.has(tile1) && this.selectableTiles.has(tile2) && (tile1 != tile2) &&
+		return (
+			this.selectableTiles.has(tile1) &&
+			this.selectableTiles.has(tile2) &&
+			tile1 != tile2 &&
 			this.doFacesMatch(this.board.pieces[tile1].face, this.board.pieces[tile2].face)
+		);
 	}
 
 	/**
@@ -1711,12 +1678,12 @@ export default class Engine {
 	 *
 	 * @fires addTile
 	 */
-	 addPair(tile1, tile2) {
+	addPair(tile1, tile2) {
 		this.addPos(this.board.pieces[tile1].pos, tile1);
 		this.addPos(this.board.pieces[tile2].pos, tile2);
 
-		this.fire('addTile', tile1)
-		this.fire('addTile', tile2)
+		this.fire('addTile', tile1);
+		this.fire('addTile', tile2);
 	}
 
 	/**
@@ -1732,8 +1699,8 @@ export default class Engine {
 		this.subtractPos(this.board.pieces[tile1].pos, tile1);
 		this.subtractPos(this.board.pieces[tile2].pos, tile2);
 
-		this.fire('removeTile', tile1)
-		this.fire('removeTile', tile2)
+		this.fire('removeTile', tile1);
+		this.fire('removeTile', tile2);
 	}
 
 	/**
@@ -1744,15 +1711,15 @@ export default class Engine {
 	 */
 	sendState() {
 		var remaining = this.tileCount;
-		var won = remaining === 0
+		var won = remaining === 0;
 		var lost = !this.arePlayablePairs();
 		var canUndo = this.canUndo() && !won;
 		var canRedo = this.canRedo() && !won;
-		var open = new NumberSet([], 144).union(this.selectableTiles)
+		var open = new NumberSet([], 144).union(this.selectableTiles);
 		var placed = new NumberSet([], 144).union(this.placedTiles);
 		var multiUndoHistory = this.getUndoHistory();
 
-		var update = {canUndo , canRedo, remaining, won, lost, open, placed, multiUndoHistory};
+		var update = {canUndo, canRedo, remaining, won, lost, open, placed, multiUndoHistory};
 
 		this.fire('updateState', update);
 	}
@@ -1786,27 +1753,22 @@ export default class Engine {
 
 		var pairs = [];
 
-		if (selectedTile == -1)
-		{
+		if (selectedTile == -1) {
 			// loop throough all the tiles on the board
-			for (let outer = 0; outer < this.board.count; outer++)
-			{
+			for (let outer = 0; outer < this.board.count; outer++) {
 				// if this tile is currently playable, find other matching tiles
 				if (this.selectableTiles.has(outer)) {
 					// We only need to check tiles higher than we are, earlier
 					// tiles would have already matched us.
-					for (let inner = outer + 1; inner < this.board.count; inner++)
-					{
-						if (this.isPlayablePair(outer, inner))
-							pairs.push({tile1: outer, tile2: inner})
+					for (let inner = outer + 1; inner < this.board.count; inner++) {
+						if (this.isPlayablePair(outer, inner)) pairs.push({tile1: outer, tile2: inner});
 					}
 				}
 			}
 		} else {
 			// loop through all tiles matching against the selected tile
 			for (let idx = 0; idx < this.board.count; idx++) {
-				if (this.isPlayablePair(selectedTile, idx))
-					pairs.push({tile1: selectedTile, tile2: idx})
+				if (this.isPlayablePair(selectedTile, idx)) pairs.push({tile1: selectedTile, tile2: idx});
 			}
 		}
 
@@ -1860,7 +1822,6 @@ export default class Engine {
 		return history;
 	}
 
-
 	/**
 	 * Call this method to determine of the given faces are in the same FaceSet
 	 *
@@ -1893,7 +1854,7 @@ export default class Engine {
 		this.undoStack.push(tile1);
 		this.undoStack.push(tile2);
 		this.redoStack = [];
-		this.recordAction({type: "play-pair", tile1, tile2});
+		this.recordAction({type: 'play-pair', tile1, tile2});
 
 		this.tileCount -= 2;
 	}
@@ -1908,7 +1869,7 @@ export default class Engine {
 	 *
 	 * @param {Layout} layout
 	 */
-	 setLayout(layout) {
+	setLayout(layout) {
 		this.layout = layout;
 		this.board = {};
 
@@ -1926,7 +1887,7 @@ export default class Engine {
 	 * 		will seed the random number generator so that the same game number
 	 * 		produces the same board
 	 */
-	 generateGame(boardNbr) {
+	generateGame(boardNbr) {
 		var badLayout;
 		var tries = 0;
 
@@ -1940,11 +1901,12 @@ export default class Engine {
 				this.generateLayout();
 			} catch (err) {
 				console.log(err);
-				if (err == "BadLayoutException") {
+				if (err == 'BadLayoutException') {
 					badLayout = true;
 					tries++;
 					if (tries > 3) {
-						var msg = 'Unable to generate a solvable puzzle from the given game. There may be no way to place the last tiles for a valid game.';
+						var msg =
+							'Unable to generate a solvable puzzle from the given game. There may be no way to place the last tiles for a valid game.';
 						break;
 					}
 				} else {
@@ -1996,7 +1958,7 @@ export default class Engine {
 	 * @fires updateState
 	 * @returns {TilePair} the two tiles that were added back to the board
 	 */
-	 undo() {
+	undo() {
 		if (!this.canUndo()) return;
 
 		var tile1 = this.undoStack.pop();
@@ -2006,7 +1968,7 @@ export default class Engine {
 		this.redoStack.push(tile2);
 
 		this.addPair(tile1, tile2);
-		this.recordAction({type: "undo-pair", tile1, tile2});
+		this.recordAction({type: 'undo-pair', tile1, tile2});
 
 		this.tileCount += 2;
 		this.sendState();
@@ -2032,7 +1994,7 @@ export default class Engine {
 		this.undoStack.push(tile2);
 
 		this.removePair(tile1, tile2);
-		this.recordAction({type: "redo-pair", tile1, tile2});
+		this.recordAction({type: 'redo-pair', tile1, tile2});
 
 		this.tileCount -= 2;
 		this.sendState();
@@ -2050,50 +2012,26 @@ export default class Engine {
 
 	getSuspensionStats() {
 		let stats = this.suspensionStats;
-		let average = function(total, count) {
+		let average = function (total, count) {
 			return count === 0 ? 0 : total / count;
 		};
 
 		return {
 			...stats,
-			forceReleaseAverageOpenTiles: average(
-				stats.forceReleaseOpenTilesTotal,
-				stats.forceReleased
-			),
-			forceReleaseAverageSuspended: average(
-				stats.forceReleaseSuspendedTotal,
-				stats.forceReleased
-			),
-			forceReleaseAverageOpenSuspended: average(
-				stats.forceReleaseOpenSuspendedTotal,
-				stats.forceReleased
-			),
-			forceReleaseAverageEffectiveOpen: average(
-				stats.forceReleaseEffectiveOpenTotal,
-				stats.forceReleased
-			),
-			skipOpenTilesAverageOpenTiles: average(
-				stats.skipOpenTilesOpenTilesTotal,
-				stats.skippedByOpenTiles
-			),
-			skipOpenTilesAverageSuspended: average(
-				stats.skipOpenTilesSuspendedTotal,
-				stats.skippedByOpenTiles
-			),
-			skipOpenTilesAverageOpenSuspended: average(
-				stats.skipOpenTilesOpenSuspendedTotal,
-				stats.skippedByOpenTiles
-			),
-			skipOpenTilesAverageEffectiveOpen: average(
-				stats.skipOpenTilesEffectiveOpenTotal,
-				stats.skippedByOpenTiles
-			),
+			forceReleaseAverageOpenTiles: average(stats.forceReleaseOpenTilesTotal, stats.forceReleased),
+			forceReleaseAverageSuspended: average(stats.forceReleaseSuspendedTotal, stats.forceReleased),
+			forceReleaseAverageOpenSuspended: average(stats.forceReleaseOpenSuspendedTotal, stats.forceReleased),
+			forceReleaseAverageEffectiveOpen: average(stats.forceReleaseEffectiveOpenTotal, stats.forceReleased),
+			skipOpenTilesAverageOpenTiles: average(stats.skipOpenTilesOpenTilesTotal, stats.skippedByOpenTiles),
+			skipOpenTilesAverageSuspended: average(stats.skipOpenTilesSuspendedTotal, stats.skippedByOpenTiles),
+			skipOpenTilesAverageOpenSuspended: average(stats.skipOpenTilesOpenSuspendedTotal, stats.skippedByOpenTiles),
+			skipOpenTilesAverageEffectiveOpen: average(stats.skipOpenTilesEffectiveOpenTotal, stats.skippedByOpenTiles),
 		};
 	}
 
 	getTilePickerStats() {
 		let stats = this.tilePickerStats;
-		let average = function(total, count) {
+		let average = function (total, count) {
 			return count === 0 ? 0 : total / count;
 		};
 
@@ -2107,30 +2045,15 @@ export default class Engine {
 			averageZWeight: average(stats.zWeightTotal, stats.picks),
 			averageBalanceMargin: average(stats.balanceMarginTotal, stats.picks),
 			averageBalancePressure: average(stats.balancePressureTotal, stats.picks),
-			averageShortHorizonMoves: average(
-				stats.shortHorizonMovesTotal,
-				stats.shortHorizonProbeCount
-			),
+			averageShortHorizonMoves: average(stats.shortHorizonMovesTotal, stats.shortHorizonProbeCount),
 			averageShortHorizonRemainingTiles: average(
 				stats.shortHorizonRemainingTilesTotal,
-				stats.shortHorizonProbeCount
+				stats.shortHorizonProbeCount,
 			),
-			averageShortHorizonPressure: average(
-				stats.shortHorizonPressureTotal,
-				stats.shortHorizonProbeCount
-			),
-			shortHorizonCollapseRate: average(
-				stats.shortHorizonCollapseCount,
-				stats.shortHorizonProbeCount
-			),
-			averageHorizontalIntersections: average(
-				stats.horizontalIntersectionsTotal,
-				stats.picks
-			),
-			averageVerticalIntersections: average(
-				stats.verticalIntersectionsTotal,
-				stats.picks
-			),
+			averageShortHorizonPressure: average(stats.shortHorizonPressureTotal, stats.shortHorizonProbeCount),
+			shortHorizonCollapseRate: average(stats.shortHorizonCollapseCount, stats.shortHorizonProbeCount),
+			averageHorizontalIntersections: average(stats.horizontalIntersectionsTotal, stats.picks),
+			averageVerticalIntersections: average(stats.verticalIntersectionsTotal, stats.picks),
 			averageCandidateCount: average(stats.candidateCountTotal, stats.picks),
 			averageWindowSize: average(stats.windowSizeTotal, stats.picks),
 			averageWindowStart: average(stats.windowStartTotal, stats.picks),
@@ -2140,20 +2063,14 @@ export default class Engine {
 
 	getFaceAvoidanceStats() {
 		let stats = this.faceAvoidanceStats;
-		let average = function(total, count) {
+		let average = function (total, count) {
 			return count === 0 ? 0 : total / count;
 		};
 
 		return {
 			...stats,
-			averageSelectedPenalty: average(
-				stats.selectedPenaltyTotal,
-				stats.drawCount
-			),
-			nonZeroPenaltyDrawRate: average(
-				stats.nonZeroPenaltyDraws,
-				stats.drawCount
-			),
+			averageSelectedPenalty: average(stats.selectedPenaltyTotal, stats.drawCount),
+			nonZeroPenaltyDrawRate: average(stats.nonZeroPenaltyDraws, stats.drawCount),
 		};
 	}
 
@@ -2167,13 +2084,13 @@ export default class Engine {
 	 * 		there are none.
 	 */
 	getHints(tile) {
-		return this.calcPlayablePairs(tile)
+		return this.calcPlayablePairs(tile);
 	}
 
 	/**
 	 * Call this method to restart the same game.
 	 */
-	 startOver() {
+	startOver() {
 		while (this.canUndo()) {
 			this.undo();
 		}

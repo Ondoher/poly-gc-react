@@ -1,6 +1,6 @@
-import GameState from "./GameState.js";
-import Grid from "./Grid.js";
-import SoftLinks from "./SoftLinks.js";
+import GameState from './GameState.js';
+import Grid from './Grid.js';
+import SoftLinks from './SoftLinks.js';
 
 export class GeneratorState extends GameState {
 	/**
@@ -252,17 +252,14 @@ export class GeneratorState extends GameState {
 	 * @returns {number}
 	 */
 	getDepthMultiplier() {
-		return this.tilePickerRules.depthMultiplier
-			?? this.tilePickerRules.verticalMultiplier
-			?? 4;
+		return this.tilePickerRules.depthMultiplier ?? this.tilePickerRules.verticalMultiplier ?? 4;
 	}
 
 	/**
 	 * @returns {number}
 	 */
 	getOpenPressureMultiplier() {
-		return this.tilePickerRules.openPressureMultiplier
-			?? Math.max(0, (this.difficulty() - 0.5) * 2);
+		return this.tilePickerRules.openPressureMultiplier ?? Math.max(0, (this.difficulty() - 0.5) * 2);
 	}
 
 	/**
@@ -276,8 +273,7 @@ export class GeneratorState extends GameState {
 	 * @returns {number}
 	 */
 	getBalancePressureMultiplier() {
-		return this.tilePickerRules.balancePressureMultiplier
-			?? Math.max(0, (this.difficulty() - 0.5) * 2);
+		return this.tilePickerRules.balancePressureMultiplier ?? Math.max(0, (this.difficulty() - 0.5) * 2);
 	}
 
 	/**
@@ -300,5 +296,4 @@ export class GeneratorState extends GameState {
 	getShortHorizonPressureMultiplier() {
 		return this.tilePickerRules.shortHorizonPressureMultiplier ?? 0;
 	}
-
 }

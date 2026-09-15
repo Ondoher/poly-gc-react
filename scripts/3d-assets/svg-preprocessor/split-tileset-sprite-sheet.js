@@ -1,17 +1,17 @@
 import fs from 'fs';
 import path from 'path';
-import { requireArgument } from './cli-arguments.js';
-import { normalizePath, writeJson } from './preprocessed-face-validation-utils.js';
-import { PipelineModel } from './PipelineModel.js';
-import { extractSourceSvgComponents } from './source-svg-components.js';
-import { updateTilesetManifestSync } from './tileset-manifest.js';
+import {requireArgument} from './cli-arguments.js';
+import {normalizePath, writeJson} from './preprocessed-face-validation-utils.js';
+import {PipelineModel} from './PipelineModel.js';
+import {extractSourceSvgComponents} from './source-svg-components.js';
+import {updateTilesetManifestSync} from './tileset-manifest.js';
 
 const DEFAULT_REFERENCE_NAME = 'default-large-faces';
 const sourcePath = path.resolve(process.cwd(), requireArgument('--source'));
 const sheetId = requireArgument('--sheet-id');
 const outputDir = path.resolve(process.cwd(), requireArgument('--output'));
 const manifestPath = path.resolve(outputDir, 'manifest.json');
-const model = new PipelineModel({ referenceName: DEFAULT_REFERENCE_NAME, tileSetName: sheetId });
+const model = new PipelineModel({referenceName: DEFAULT_REFERENCE_NAME, tileSetName: sheetId});
 await model.start();
 
 const source = fs.readFileSync(sourcePath, 'utf8');
@@ -28,7 +28,7 @@ const manifest = {
 	faces: {},
 };
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 
 for (const faceGroup of faceGroups) {
 	const expanded = expandUses(faceGroup.element, elementsById);
@@ -51,7 +51,7 @@ for (const faceGroup of faceGroups) {
 
 	fs.writeFileSync(outputPath, output);
 	const modelSourcePath = model.sourceSvgPath(faceGroup.faceKey);
-	fs.mkdirSync(path.dirname(modelSourcePath), { recursive: true });
+	fs.mkdirSync(path.dirname(modelSourcePath), {recursive: true});
 	if (path.resolve(outputPath) !== path.resolve(modelSourcePath)) {
 		fs.copyFileSync(outputPath, modelSourcePath);
 	}
@@ -63,8 +63,8 @@ for (const faceGroup of faceGroups) {
 }
 
 writeJson(manifestPath, manifest);
-model.pipelineState = await model.buildPipelineStateFromBootstrap({ manifest });
-await model.save({ preserveCurrencyDate: true });
+model.pipelineState = await model.buildPipelineStateFromBootstrap({manifest});
+await model.save({preserveCurrencyDate: true});
 updateTilesetManifestSync({
 	tilesetId: sheetId,
 	generatedOn: model.getCurrencyDate(),
@@ -80,8 +80,7 @@ function readSvgInfo(svgSource) {
 	const height = readLength(attrs.height) || 561;
 	const viewBox = attrs.viewBox || `0 0 ${width} ${height}`;
 	const namespaces = Object.fromEntries(
-		Object.entries(attrs)
-			.filter(([name]) => name === 'xmlns' || name.startsWith('xmlns:')),
+		Object.entries(attrs).filter(([name]) => name === 'xmlns' || name.startsWith('xmlns:')),
 	);
 
 	return {
@@ -139,20 +138,24 @@ function faceKeyFromGroupId(groupId) {
 	}
 
 	if (normalizedKind === 'WIND') {
-		return {
-			1: 'wind-n',
-			2: 'wind-s',
-			3: 'wind-e',
-			4: 'wind-w',
-		}[index] || null;
+		return (
+			{
+				1: 'wind-n',
+				2: 'wind-s',
+				3: 'wind-e',
+				4: 'wind-w',
+			}[index] || null
+		);
 	}
 
 	if (normalizedKind === 'DRAGON') {
-		return {
-			1: 'dragon-w',
-			2: 'dragon-g',
-			3: 'dragon-r',
-		}[index] || null;
+		return (
+			{
+				1: 'dragon-w',
+				2: 'dragon-g',
+				3: 'dragon-r',
+			}[index] || null
+		);
 	}
 
 	return null;
@@ -231,7 +234,7 @@ function combineUseTransform(attrs) {
 	return transforms.join(' ');
 }
 
-function findFaceCropBounds({ svgInfo, defs, sourceGroupId, faceKey, body }) {
+function findFaceCropBounds({svgInfo, defs, sourceGroupId, faceKey, body}) {
 	const svg = renderFaceSvg({
 		svgInfo,
 		defs,
@@ -283,7 +286,7 @@ function unionBounds(boundsList) {
 	};
 }
 
-function renderFaceSvg({ svgInfo, defs, sourceGroupId, faceKey, body, cropBounds }) {
+function renderFaceSvg({svgInfo, defs, sourceGroupId, faceKey, body, cropBounds}) {
 	const namespaceAttributes = Object.entries({
 		xmlns: 'http://www.w3.org/2000/svg',
 		'xmlns:dc': 'http://purl.org/dc/elements/1.1/',
@@ -397,4 +400,3 @@ function escapeXml(value) {
 		.replaceAll('<', '&lt;')
 		.replaceAll('>', '&gt;');
 }
-

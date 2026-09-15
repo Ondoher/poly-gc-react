@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import { ROOT_DIR } from '../shared/asset-paths.js';
-import { requireArgument } from './cli-arguments.js';
+import {ROOT_DIR} from '../shared/asset-paths.js';
+import {requireArgument} from './cli-arguments.js';
 
 const STANDARD_FACE_KEYS = Object.freeze([
-	...Array.from({ length: 9 }, (_, index) => `b-${index + 1}`),
-	...Array.from({ length: 9 }, (_, index) => `c-${index + 1}`),
-	...Array.from({ length: 9 }, (_, index) => `d-${index + 1}`),
+	...Array.from({length: 9}, (_, index) => `b-${index + 1}`),
+	...Array.from({length: 9}, (_, index) => `c-${index + 1}`),
+	...Array.from({length: 9}, (_, index) => `d-${index + 1}`),
 	'wind-e',
 	'wind-s',
 	'wind-w',
@@ -15,13 +15,32 @@ const STANDARD_FACE_KEYS = Object.freeze([
 	'dragon-r',
 	'dragon-g',
 	'dragon-w',
-	...Array.from({ length: 4 }, (_, index) => `flower-${index + 1}`),
-	...Array.from({ length: 4 }, (_, index) => `season-${index + 1}`),
+	...Array.from({length: 4}, (_, index) => `flower-${index + 1}`),
+	...Array.from({length: 4}, (_, index) => `season-${index + 1}`),
 ]);
 const LABEL_ROLES = new Set(['suit-label', 'wind-label', 'flower-label', 'season-label']);
-const GLYPH_ROLES = new Set(['character-body', 'character-number-glyph', 'wind-character', 'flower-character', 'season-character']);
-const ARTWORK_ROLES = new Set(['dot', 'bamboo-stick', 'bamboo-group', 'dragon-artwork', 'main-artwork', 'decoration', 'negative-space']);
-const STANDARD_GLYPH_PART_ID_ROLES = new Set(['character-number-glyph', 'wind-character', 'flower-character', 'season-character']);
+const GLYPH_ROLES = new Set([
+	'character-body',
+	'character-number-glyph',
+	'wind-character',
+	'flower-character',
+	'season-character',
+]);
+const ARTWORK_ROLES = new Set([
+	'dot',
+	'bamboo-stick',
+	'bamboo-group',
+	'dragon-artwork',
+	'main-artwork',
+	'decoration',
+	'negative-space',
+]);
+const STANDARD_GLYPH_PART_ID_ROLES = new Set([
+	'character-number-glyph',
+	'wind-character',
+	'flower-character',
+	'season-character',
+]);
 
 async function main() {
 	const descriptorPath = path.resolve(process.cwd(), requireArgument('--descriptor'));
@@ -51,15 +70,24 @@ async function main() {
 		errors.push(`Reference source directory not found: ${formatPath(sourceDir)}`);
 	}
 
-	const expectedFaceKeys = bootstrap ? Object.keys(bootstrap.svgPipeline?.faces || {}).sort(compareText) : STANDARD_FACE_KEYS;
+	const expectedFaceKeys = bootstrap
+		? Object.keys(bootstrap.svgPipeline?.faces || {}).sort(compareText)
+		: STANDARD_FACE_KEYS;
 	const expectedFiles = expectedFaceKeys.map((faceKey) => filenameForFace(descriptor, faceKey));
 	const actualFiles = fs.existsSync(sourceDir)
-		? fs.readdirSync(sourceDir).filter((filename) => filename.toLowerCase().endsWith('.png')).sort(compareText)
+		? fs
+				.readdirSync(sourceDir)
+				.filter((filename) => filename.toLowerCase().endsWith('.png'))
+				.sort(compareText)
 		: [];
 	const missingFiles = expectedFiles.filter((filename) => !actualFiles.includes(filename));
 	const extraFiles = actualFiles.filter((filename) => !expectedFiles.includes(filename));
 	const imageDetails = fs.existsSync(sourceDir)
-		? await inspectImages(sourceDir, expectedFiles.filter((filename) => actualFiles.includes(filename)), errors)
+		? await inspectImages(
+				sourceDir,
+				expectedFiles.filter((filename) => actualFiles.includes(filename)),
+				errors,
+			)
 		: [];
 
 	if (missingFiles.length) {
@@ -78,7 +106,9 @@ async function main() {
 			.map((image) => `${image.filename}=${image.width}x${image.height}`);
 
 		if (dimensionMismatches.length) {
-			errors.push(`Reference PNG dimensions do not match coordinateSpace.imageSize ${expectedWidth}x${expectedHeight}: ${dimensionMismatches.join(', ')}`);
+			errors.push(
+				`Reference PNG dimensions do not match coordinateSpace.imageSize ${expectedWidth}x${expectedHeight}: ${dimensionMismatches.join(', ')}`,
+			);
 		}
 	}
 
@@ -160,7 +190,10 @@ function validateDescriptorShape(descriptor, errors) {
 		errors.push('reference-set coordinateSpace.imageSize must be a two-item array.');
 	}
 
-	if (!Array.isArray(descriptor.coordinateSpace?.preparedViewBox) || descriptor.coordinateSpace.preparedViewBox.length !== 4) {
+	if (
+		!Array.isArray(descriptor.coordinateSpace?.preparedViewBox) ||
+		descriptor.coordinateSpace.preparedViewBox.length !== 4
+	) {
 		errors.push('reference-set coordinateSpace.preparedViewBox must be a four-item array.');
 	}
 
@@ -187,7 +220,11 @@ function validatePalette(palette, errors) {
 			errors.push(`reference-set palette.colors[${index}].color must be a #RRGGBB color.`);
 		}
 
-		if (!Array.isArray(color.rgb) || color.rgb.length !== 3 || color.rgb.some((channel) => !Number.isInteger(channel) || channel < 0 || channel > 255)) {
+		if (
+			!Array.isArray(color.rgb) ||
+			color.rgb.length !== 3 ||
+			color.rgb.some((channel) => !Number.isInteger(channel) || channel < 0 || channel > 255)
+		) {
 			errors.push(`reference-set palette.colors[${index}].rgb must be three integer channels from 0 to 255.`);
 		}
 	}
@@ -199,11 +236,15 @@ function validatePalette(palette, errors) {
 
 function validateBootstrapLink(descriptor, bootstrap, errors) {
 	if (bootstrap.bootstrapId !== descriptor.semanticBootstrap?.bootstrapId) {
-		errors.push(`Semantic bootstrap id mismatch: descriptor=${descriptor.semanticBootstrap?.bootstrapId || ''}, bootstrap=${bootstrap.bootstrapId || ''}`);
+		errors.push(
+			`Semantic bootstrap id mismatch: descriptor=${descriptor.semanticBootstrap?.bootstrapId || ''}, bootstrap=${bootstrap.bootstrapId || ''}`,
+		);
 	}
 
 	if (bootstrap.semanticCatalogVersion !== descriptor.semanticBootstrap?.semanticCatalogVersion) {
-		errors.push(`Semantic catalog version mismatch: descriptor=${descriptor.semanticBootstrap?.semanticCatalogVersion ?? ''}, bootstrap=${bootstrap.semanticCatalogVersion ?? ''}`);
+		errors.push(
+			`Semantic catalog version mismatch: descriptor=${descriptor.semanticBootstrap?.semanticCatalogVersion ?? ''}, bootstrap=${bootstrap.semanticCatalogVersion ?? ''}`,
+		);
 	}
 }
 
@@ -319,7 +360,10 @@ function validateAssignmentHint(pathLabel, hint, errors) {
 		return;
 	}
 
-	if (hint.position && !['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top', 'bottom', 'center'].includes(hint.position)) {
+	if (
+		hint.position &&
+		!['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top', 'bottom', 'center'].includes(hint.position)
+	) {
 		errors.push(`${pathLabel}.position has unknown value "${hint.position}".`);
 	}
 
@@ -327,7 +371,10 @@ function validateAssignmentHint(pathLabel, hint, errors) {
 		errors.push(`${pathLabel}.region has unknown value "${hint.region}".`);
 	}
 
-	if (hint.patternType && !['repeated-artwork', 'grouped-repeated-artwork', 'free-form-artwork'].includes(hint.patternType)) {
+	if (
+		hint.patternType &&
+		!['repeated-artwork', 'grouped-repeated-artwork', 'free-form-artwork'].includes(hint.patternType)
+	) {
 		errors.push(`${pathLabel}.patternType has unknown value "${hint.patternType}".`);
 	}
 
@@ -386,4 +433,3 @@ function formatPath(filename) {
 }
 
 await main();
-

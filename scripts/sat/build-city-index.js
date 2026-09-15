@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import {mkdir, readFile, writeFile} from 'node:fs/promises';
 import path from 'node:path';
 
 const sourcePath = path.join('node_modules', 'cities.json', 'cities.json');
@@ -31,7 +31,7 @@ const records = source
 	})
 	.filter(Boolean);
 
-await mkdir(path.dirname(destinationPath), { recursive: true });
+await mkdir(path.dirname(destinationPath), {recursive: true});
 await writeFile(destinationPath, `${JSON.stringify(records)}\n`, 'utf8');
 
 console.log(`Wrote ${records.length.toLocaleString()} city records to ${destinationPath}`);

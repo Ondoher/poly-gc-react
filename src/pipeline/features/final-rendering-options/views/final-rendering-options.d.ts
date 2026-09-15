@@ -31,7 +31,7 @@ interface FinalRenderingOptionsViewService {
 	 *
 	 * @param options - Optional load behavior flags.
 	 */
-	load(options?: { force?: boolean; quiet?: boolean }): Promise<void>;
+	load(options?: {force?: boolean; quiet?: boolean}): Promise<void>;
 
 	/**
 	 * Save current options and rerender final output.

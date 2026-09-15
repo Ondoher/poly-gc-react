@@ -1,6 +1,6 @@
 import Faces from '../Faces.js';
 import FaceInventory from '../FaceInventory.js';
-import { GeneratorState } from '../GeneratorState.js';
+import {GeneratorState} from '../GeneratorState.js';
 import Grid from '../Grid.js';
 import GameRules from '../GameRules.js';
 import GeneratedPair from '../GeneratedPair.js';
@@ -48,15 +48,17 @@ describe('Suspensions', () => {
 
 	it('returns a released pair before creating a new suspension', () => {
 		let suspensions = createSuspensions();
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 
 		spyOn(suspensions, 'canReleaseSuspension').and.returnValue(true);
 		spyOn(suspensions, 'releaseSuspension').and.returnValue(pair);
 		spyOn(suspensions, 'canCreateSuspension').and.returnValue(true);
-		spyOn(suspensions, 'createSuspension').and.returnValue(new GeneratedPair({
-			tile1: 2,
-			tile2: 3,
-		}));
+		spyOn(suspensions, 'createSuspension').and.returnValue(
+			new GeneratedPair({
+				tile1: 2,
+				tile2: 3,
+			}),
+		);
 
 		expect(suspensions.step()).toBe(pair);
 		expect(suspensions.releaseSuspension).toHaveBeenCalled();
@@ -65,7 +67,7 @@ describe('Suspensions', () => {
 
 	it('returns a newly suspended pair when nothing can be released', () => {
 		let suspensions = createSuspensions();
-		let pair = new GeneratedPair({ tile1: 0, tile2: 1 });
+		let pair = new GeneratedPair({tile1: 0, tile2: 1});
 
 		spyOn(suspensions, 'canReleaseSuspension').and.returnValue(false);
 		spyOn(suspensions, 'canCreateSuspension').and.returnValue(true);
@@ -78,9 +80,9 @@ describe('Suspensions', () => {
 	it('keeps unimplemented policy methods explicit', () => {
 		let suspensions = createSuspensions();
 
-		expect(() => suspensions.createSuspension())
-			.toThrowError('Suspension creation is not implemented yet');
-		expect(() => suspensions.releaseSuspension({tile: 1}))
-			.toThrowError('Suspension release is not implemented yet');
+		expect(() => suspensions.createSuspension()).toThrowError('Suspension creation is not implemented yet');
+		expect(() => suspensions.releaseSuspension({tile: 1})).toThrowError(
+			'Suspension release is not implemented yet',
+		);
 	});
 });

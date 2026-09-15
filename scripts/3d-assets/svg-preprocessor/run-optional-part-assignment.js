@@ -1,8 +1,6 @@
-import {
-	OptionalPartAssignmentRunner,
-} from './OptionalPartAssignmentRunner.js';
-import { readArgument, requireArgument } from './cli-arguments.js';
-import { PipelineModel } from './PipelineModel.js';
+import {OptionalPartAssignmentRunner} from './OptionalPartAssignmentRunner.js';
+import {readArgument, requireArgument} from './cli-arguments.js';
+import {PipelineModel} from './PipelineModel.js';
 
 const DEFAULT_REFERENCE_NAME = 'default-large-faces';
 
@@ -14,10 +12,12 @@ async function main() {
 	const legacyPipelineState = readArgument('--pipeline-state');
 
 	if (legacyPipelineState) {
-		throw new Error('--pipeline-state is no longer accepted. Optional Part Assignment writes through PipelineModel.');
+		throw new Error(
+			'--pipeline-state is no longer accepted. Optional Part Assignment writes through PipelineModel.',
+		);
 	}
 
-	const model = new PipelineModel({ referenceName, tileSetName: tilesetId });
+	const model = new PipelineModel({referenceName, tileSetName: tilesetId});
 	const runner = new OptionalPartAssignmentRunner();
 
 	await model.start();

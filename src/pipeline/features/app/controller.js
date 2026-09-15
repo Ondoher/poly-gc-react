@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 export default class AppController extends Service {
 	constructor(registry) {
@@ -49,13 +49,13 @@ export default class AppController extends Service {
 		const page = this.pageForCurrentUrl() || this.getPages()[0] || null;
 
 		if (page) {
-			this.requestPage(page.id, { history: 'none' });
+			this.requestPage(page.id, {history: 'none'});
 		}
 	}
 
 	onPageAvailable(page) {
 		if (this.pageForCurrentUrl()?.id === page.id && this.activePageId !== page.id) {
-			this.requestPage(page.id, { history: 'none' });
+			this.requestPage(page.id, {history: 'none'});
 			return;
 		}
 
@@ -89,9 +89,7 @@ export default class AppController extends Service {
 			return null;
 		}
 
-		const preferredPage = preferredPageId
-			? pages.find((page) => page.id === preferredPageId)
-			: null;
+		const preferredPage = preferredPageId ? pages.find((page) => page.id === preferredPageId) : null;
 		const urlSlug = this.url.getPageSlug();
 		const urlPage = this.pageForCurrentUrl();
 
@@ -114,7 +112,7 @@ export default class AppController extends Service {
 
 			tried.add(page.id);
 
-			if (this.requestPage(page.id, { history: 'replace' })) {
+			if (this.requestPage(page.id, {history: 'replace'})) {
 				return page;
 			}
 		}
@@ -129,9 +127,7 @@ export default class AppController extends Service {
 	pageForCurrentUrl() {
 		const slug = this.url.getPageSlug();
 
-		return slug
-			? this.pages.getBySlug(slug)
-			: null;
+		return slug ? this.pages.getBySlug(slug) : null;
 	}
 
 	pageSlug(page) {
@@ -150,7 +146,7 @@ export default class AppController extends Service {
 
 		if (this.activeTilesetId && previousTilesetId !== this.activeTilesetId && this.activePageId) {
 			this.activePageComponent = null;
-			this.requestPage(this.activePageId, { history: 'none' });
+			this.requestPage(this.activePageId, {history: 'none'});
 		}
 	}
 

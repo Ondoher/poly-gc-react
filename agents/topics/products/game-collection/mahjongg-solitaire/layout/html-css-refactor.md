@@ -158,17 +158,17 @@ should become more explicit.
 Preferred conceptual mapping:
 
 - `mj-frame-shell`
-  - page shell plus optional chrome shell
+    - page shell plus optional chrome shell
 - `mj-layout-shell`
-  - main layout grid for board and HUDs
+    - main layout grid for board and HUDs
 - `mj-playfield-viewport`
-  - available space for the board
+    - available space for the board
 - `mj-playfield-transform-surface`
-  - scale and transition target
+    - scale and transition target
 - `board-canvas`
-  - intrinsic board content
+    - intrinsic board content
 - `mj-overlay-layer`
-  - toasts, dialogs, celebration/failure overlays
+    - toasts, dialogs, celebration/failure overlays
 
 The exact class names can differ, but the roles should stay distinct.
 

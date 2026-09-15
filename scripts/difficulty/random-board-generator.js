@@ -5,7 +5,7 @@ const FACES_PER_SET = 4;
 const BAD_LAYOUT = 'BadLayoutException';
 
 function makeSequentialArray(start, count) {
-	return Array.from({length: count}, function(_value, index) {
+	return Array.from({length: count}, function (_value, index) {
 		return index + start;
 	});
 }
@@ -70,7 +70,7 @@ export class MahjonggRandomBoardGenerator {
 	configureBoard() {
 		this.board = {
 			count: this.layout.tiles,
-			pieces: this.layout.positions.map(function(position) {
+			pieces: this.layout.positions.map(function (position) {
 				return {
 					pos: clonePosition(position),
 					face: -1,
@@ -182,15 +182,23 @@ export class MahjonggRandomBoardGenerator {
 	}
 
 	addPosition(position) {
-		this.forEachOccupiedSpace(position, function(x, y, z) {
-			this.usedSpaces.add(keyForSpace(x, y, z));
-		}, this);
+		this.forEachOccupiedSpace(
+			position,
+			function (x, y, z) {
+				this.usedSpaces.add(keyForSpace(x, y, z));
+			},
+			this,
+		);
 	}
 
 	removePosition(position) {
-		this.forEachOccupiedSpace(position, function(x, y, z) {
-			this.usedSpaces.delete(keyForSpace(x, y, z));
-		}, this);
+		this.forEachOccupiedSpace(
+			position,
+			function (x, y, z) {
+				this.usedSpaces.delete(keyForSpace(x, y, z));
+			},
+			this,
+		);
 	}
 
 	forEachOccupiedSpace(position, callback, thisArg) {
@@ -233,20 +241,22 @@ export class MahjonggRandomBoardGenerator {
 	}
 
 	hasOpenSide(x, y, z) {
-		return x === 1 ||
+		return (
+			x === 1 ||
 			x === 29 ||
 			(!this.isUsed(x + 2, y, z) && !this.isUsed(x + 2, y + 1, z)) ||
-			(!this.isUsed(x - 1, y, z) && !this.isUsed(x - 1, y + 1, z));
+			(!this.isUsed(x - 1, y, z) && !this.isUsed(x - 1, y + 1, z))
+		);
 	}
 
 	hasOpenTop(x, y, z) {
-		return z === 7 ||
-			(
-				!this.isUsed(x, y, z + 1) &&
+		return (
+			z === 7 ||
+			(!this.isUsed(x, y, z + 1) &&
 				!this.isUsed(x + 1, y, z + 1) &&
 				!this.isUsed(x, y + 1, z + 1) &&
-				!this.isUsed(x + 1, y + 1, z + 1)
-			);
+				!this.isUsed(x + 1, y + 1, z + 1))
+		);
 	}
 
 	isUsed(x, y, z) {
@@ -264,7 +274,7 @@ export function generateRandomFaceBoard(layout, seed = 1) {
 	var faces = makeSequentialArray(0, FULL_TILE_FACE_COUNT);
 	var board = {
 		count: layout.tiles,
-		pieces: layout.positions.map(function(position) {
+		pieces: layout.positions.map(function (position) {
 			return {
 				pos: clonePosition(position),
 				face: Random.pickOne(faces),

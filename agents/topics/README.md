@@ -11,8 +11,7 @@ agents/topics.bak/
 
 - [Context](context/README.md): bootstrap, routing, active topic, and reload
   continuity.
-- [Standards](standards/README.md): repo-wide engineering conventions that
-  apply across products and apps.
+- [Standards](standards/README.md): folder applicability, local overlay, and project implementation references.
 - [Products](products/README.md): durable product and domain knowledge.
 - [Apps](apps/README.md): deployable app surfaces in this monorepo.
 - [References](references/README.md): supporting assets, research, images,
@@ -23,15 +22,7 @@ agents/topics.bak/
 
 ## Bootstrap Rule
 
-On session bootstrap, load [Active Topic](active-topic.md) first. Then load the
-topic README named by that file and only the files listed under its
-`Minimal Reload Sources` section. If no minimal section exists, fall back to
-the file's `Reload Sources` section.
-
-Do not load this index, routing docs, architecture docs, archives, migration
-docs, historical notes, or unrelated app docs during bootstrap unless the
-active task clearly needs them. Use this index as an opt-in routing table, not
-as default context.
+See [Bootstrap](context/bootstrap.md) for the canonical procedure and local work-context pointer. Topics do not select engineering standards.
 
 ## Migration Note
 

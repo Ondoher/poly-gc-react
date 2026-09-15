@@ -5,8 +5,8 @@ import {
 	sanitizeSvgSource,
 } from '../source-svg-components.js';
 
-describe('source SVG components', function() {
-	it('sanitizes Adobe namespace entities before parsing', function() {
+describe('source SVG components', function () {
+	it('sanitizes Adobe namespace entities before parsing', function () {
 		const source = `<!DOCTYPE svg [
 <!ENTITY ns_ai "http://ns.adobe.com/AdobeIllustrator/10.0/">
 ]>
@@ -19,7 +19,7 @@ describe('source SVG components', function() {
 		expect(sanitized).toContain('requiredExtensions="http://ns.adobe.com/AdobeIllustrator/10.0/"');
 	});
 
-	it('parses common SVG transform commands', function() {
+	it('parses common SVG transform commands', function () {
 		expectMatrix(parseTransform('translate(10, 20)'), {
 			a: 1,
 			b: 0,
@@ -54,11 +54,8 @@ describe('source SVG components', function() {
 		});
 	});
 
-	it('composes parent and child matrices in SVG order', function() {
-		const composed = composeMatrices(
-			parseTransform('translate(10, 20)'),
-			parseTransform('scale(2, 3)'),
-		);
+	it('composes parent and child matrices in SVG order', function () {
+		const composed = composeMatrices(parseTransform('translate(10, 20)'), parseTransform('scale(2, 3)'));
 
 		expectMatrix(composed, {
 			a: 2,
@@ -70,7 +67,7 @@ describe('source SVG components', function() {
 		});
 	});
 
-	it('extracts geometry with inherited group paint, class, transform, and ancestry', function() {
+	it('extracts geometry with inherited group paint, class, transform, and ancestry', function () {
 		const source = `<svg viewBox="0 0 100 100">
 	<style>.glyph { fill: #F00; stroke: #00F; stroke-width: 2; opacity: 0.5; }</style>
 	<g id="art" class="glyph" transform="translate(5, 10)">
@@ -81,7 +78,7 @@ describe('source SVG components', function() {
 		const result = extractSourceSvgComponents(source);
 		const component = result.components[0];
 
-		expect(result.viewBox).toEqual({ minX: 0, minY: 0, width: 100, height: 100 });
+		expect(result.viewBox).toEqual({minX: 0, minY: 0, width: 100, height: 100});
 		expect(result.groups).toEqual(['art']);
 		expect(component.id).toBe('mark');
 		expect(component.tagName).toBe('rect');
@@ -97,7 +94,7 @@ describe('source SVG components', function() {
 		expect(component.bounds.height).toBe(4);
 	});
 
-	it('preserves expanded use provenance on child geometry', function() {
+	it('preserves expanded use provenance on child geometry', function () {
 		const source = `<svg viewBox="0 0 100 100">
 	<g data-source-use="symbol-a" transform="translate(10, 0)">
 		<g id="symbol-a">
@@ -111,13 +108,15 @@ describe('source SVG components', function() {
 		expect(component.parentGroupIds).toEqual(['symbol-a']);
 		expect(component.sourceUseId).toBe('symbol-a');
 		expect(component.sourceUseInstanceId).toBe('source-use.0001.symbol-a');
-		expect(component.sourceUseInstances).toEqual([{
-			sourceUseId: 'symbol-a',
-			sourceUseInstanceId: 'source-use.0001.symbol-a',
-		}]);
+		expect(component.sourceUseInstances).toEqual([
+			{
+				sourceUseId: 'symbol-a',
+				sourceUseInstanceId: 'source-use.0001.symbol-a',
+			},
+		]);
 	});
 
-	it('extracts all supported geometry tags as path-backed components', function() {
+	it('extracts all supported geometry tags as path-backed components', function () {
 		const source = `<svg viewBox="0 0 100 100">
 	<circle id="circle" cx="10" cy="10" r="4" fill="#111"/>
 	<ellipse id="ellipse" cx="25" cy="10" rx="6" ry="3" fill="#222"/>
@@ -140,7 +139,7 @@ describe('source SVG components', function() {
 		expect(components.every((component) => component.bounds.height > 0)).toBe(true);
 	});
 
-	it('applies paint precedence from parent, class, inline style, then direct attributes', function() {
+	it('applies paint precedence from parent, class, inline style, then direct attributes', function () {
 		const source = `<svg viewBox="0 0 50 50">
 	<style>.mark { fill: #222; stroke: #333; stroke-width: 2; }</style>
 	<g fill="#111" stroke="#000" opacity="0.4">
@@ -167,7 +166,7 @@ describe('source SVG components', function() {
 		expect(attributePaint.strokeWidth).toBe('8');
 	});
 
-	it('preserves paint server URL fragment case', function() {
+	it('preserves paint server URL fragment case', function () {
 		const source = `<svg viewBox="0 0 20 20">
 	<defs><linearGradient id="linearGradient8797"/></defs>
 	<rect id="gradient-mark" x="1" y="1" width="10" height="10" fill="url(#linearGradient8797)"/>
@@ -178,7 +177,7 @@ describe('source SVG components', function() {
 		expect(component.fill).toBe('url(#linearGradient8797)');
 	});
 
-	it('does not mark gradient-filled artwork as a tile layer', function() {
+	it('does not mark gradient-filled artwork as a tile layer', function () {
 		const source = `<svg viewBox="0 0 100 140">
 	<defs><linearGradient id="linearGradient8797"/></defs>
 	<rect id="bamboo-body" x="20" y="20" width="40" height="20" fill="url(#linearGradient8797)"/>
@@ -189,7 +188,7 @@ describe('source SVG components', function() {
 		expect(component.tileLayerCandidate).toBe(false);
 	});
 
-	it('marks near-white neutral paint as negative space', function() {
+	it('marks near-white neutral paint as negative space', function () {
 		const source = `<svg viewBox="0 0 100 100">
 	<path id="ivory-body" fill="#f6f6f6" d="M10,10 H40 V40 H10 Z"/>
 	<path id="pale-red-mark" fill="#f5b1b1" d="M50,10 H80 V40 H50 Z"/>
@@ -201,7 +200,7 @@ describe('source SVG components', function() {
 		expect(findComponent(components, 'pale-red-mark').negativeSpaceCandidate).toBe(false);
 	});
 
-	it('marks components under an intake tile-background hint as tile layer candidates', function() {
+	it('marks components under an intake tile-background hint as tile layer candidates', function () {
 		const source = `<svg viewBox="0 0 100 140">
 	<defs>
 		<linearGradient id="SVGID_1_">
@@ -225,7 +224,7 @@ describe('source SVG components', function() {
 		expect(findComponent(components, 'glyph').tileLayerCandidate).toBe(false);
 	});
 
-	it('marks geometry with an intake tile-background hint as tile layer candidates', function() {
+	it('marks geometry with an intake tile-background hint as tile layer candidates', function () {
 		const source = `<svg viewBox="0 0 100 140">
 	<g id="mixed-source-group">
 		<path id="tile-highlight" data-source-layer="tile-background" fill="url(#SVGID_1_)" d="M70,10 H95 V35 H70 Z"/>
@@ -241,7 +240,7 @@ describe('source SVG components', function() {
 		expect(findComponent(components, 'dot').sourceLayerRoles).toEqual([]);
 	});
 
-	it('composes nested group transforms and records id ancestry in order', function() {
+	it('composes nested group transforms and records id ancestry in order', function () {
 		const source = `<svg viewBox="0 0 100 100">
 	<g id="outer" class="outer-class" transform="translate(10, 0)">
 		<g transform="translate(0, 5)">
@@ -262,7 +261,7 @@ describe('source SVG components', function() {
 		expect(component.bounds.height).toBe(8);
 	});
 
-	it('extracts SVG text nodes as path-backed components', function() {
+	it('extracts SVG text nodes as path-backed components', function () {
 		const source = `<svg viewBox="0 0 100 100">
 	<text id="season-label" x="20" y="40" style="font-size:18px;fill:#123456;stroke:none">WIN</text>
 </svg>`;
@@ -282,7 +281,7 @@ describe('source SVG components', function() {
 		expect(component.bounds.height).toBeGreaterThan(8);
 	});
 
-	it('extracts SVG text position from tspans when needed', function() {
+	it('extracts SVG text position from tspans when needed', function () {
 		const source = `<svg viewBox="207 383 69 89">
 	<g id="SEASON_4">
 		<text id="text18614" style="font-size:22.436203px;fill:#000000">
@@ -303,7 +302,7 @@ describe('source SVG components', function() {
 		expect(text.bounds.bottom).toBeLessThan(470);
 	});
 
-	it('skips unsupported tags and unusable geometry', function() {
+	it('skips unsupported tags and unusable geometry', function () {
 		const source = `<svg viewBox="0 0 100 100">
 	<title>ignored</title>
 	<rect id="zero-width" x="1" y="1" width="0" height="10"/>
@@ -318,7 +317,7 @@ describe('source SVG components', function() {
 		expect(components.map((component) => component.id)).toEqual(['valid']);
 	});
 
-	it('skips tiny low-alpha path dust before normalization', function() {
+	it('skips tiny low-alpha path dust before normalization', function () {
 		const source = `<svg viewBox="0 0 100 100">
 	<path id="dust" style="fill:black;fill-opacity:0.07;stroke:none" d="M10,10 H10.05 V10.05 Z"/>
 	<path id="painted-dust" style="fill:black;fill-opacity:1;stroke:none" d="M20,20 H20.05 V20.05 Z"/>
@@ -333,7 +332,7 @@ describe('source SVG components', function() {
 		expect(components[1].fillOpacity).toBe('0.07');
 	});
 
-	it('marks white geometry as negative-space candidates', function() {
+	it('marks white geometry as negative-space candidates', function () {
 		const source = `<svg viewBox="0 0 50 50">
 	<path id="cutout" fill="#fff" d="M5,5 H15 V15 H5 Z"/>
 </svg>`;
@@ -344,7 +343,7 @@ describe('source SVG components', function() {
 		expect(component.fill).toBe('#ffffff');
 	});
 
-	it('marks full viewBox outlines as tile layer candidates', function() {
+	it('marks full viewBox outlines as tile layer candidates', function () {
 		const source = `<svg viewBox="0 0 100 140">
 	<rect id="outline" x="0" y="0" width="100" height="140" fill="none" stroke="#000"/>
 	<circle id="dot" cx="50" cy="70" r="5" fill="#111"/>
@@ -358,7 +357,7 @@ describe('source SVG components', function() {
 		expect(dot.tileLayerCandidate).toBe(false);
 	});
 
-	it('marks obvious tile and background layers as tile layer candidates', function() {
+	it('marks obvious tile and background layers as tile layer candidates', function () {
 		const source = `<svg viewBox="0 0 100 140">
 	<rect id="pattern" x="10" y="10" width="12" height="12" fill="url(#tile)"/>
 	<rect id="class-layer" class="st3" x="25" y="10" width="12" height="12" fill="#111"/>
@@ -376,7 +375,7 @@ describe('source SVG components', function() {
 		expect(findComponent(components, 'paint').tileLayerCandidate).toBe(false);
 	});
 
-	it('does not mark a large layer as background without later overlapping face paint', function() {
+	it('does not mark a large layer as background without later overlapping face paint', function () {
 		const source = `<svg viewBox="0 0 100 140">
 	<path id="background" fill="#eee" d="M0,0 H90 V120 H0 Z"/>
 </svg>`;
@@ -386,7 +385,7 @@ describe('source SVG components', function() {
 		expect(background.tileLayerCandidate).toBe(false);
 	});
 
-	it('does not mark large colored artwork as a background layer', function() {
+	it('does not mark large colored artwork as a background layer', function () {
 		const source = `<svg viewBox="0 0 100 140">
 	<path id="dragon-body" fill="#c20000" stroke="none" d="M10,10 H80 V125 H10 Z"/>
 	<circle id="dragon-label" cx="75" cy="20" r="8" fill="#c20000"/>
@@ -398,7 +397,7 @@ describe('source SVG components', function() {
 		expect(findComponent(components, 'dragon-label').tileLayerCandidate).toBe(false);
 	});
 
-	it('marks large shell layers before known tile layers as tile candidates', function() {
+	it('marks large shell layers before known tile layers as tile candidates', function () {
 		const source = `<svg viewBox="0 0 100 140">
 	<path id="outer-shadow" d="M0,0 H100 V140 H0 Z"/>
 	<path id="colored-shell" fill="#005f00" d="M10,10 H90 V130 H10 Z"/>
@@ -407,7 +406,7 @@ describe('source SVG components', function() {
 	<path id="face-artwork" fill="#038249" d="M35,40 H55 V100 H35 Z"/>
 </svg>`;
 
-		const { components } = extractSourceSvgComponents(source);
+		const {components} = extractSourceSvgComponents(source);
 
 		expect(findComponent(components, 'outer-shadow').tileLayerCandidate).toBe(true);
 		expect(findComponent(components, 'colored-shell').tileLayerCandidate).toBe(true);
@@ -416,26 +415,26 @@ describe('source SVG components', function() {
 		expect(findComponent(components, 'face-artwork').tileLayerCandidate).toBe(false);
 	});
 
-	it('does not mark large colored artwork as shell just because a later tile outline exists', function() {
+	it('does not mark large colored artwork as shell just because a later tile outline exists', function () {
 		const source = `<svg viewBox="0 0 100 140">
 	<path id="dragon-body" fill="#069200" stroke="none" d="M15,15 H85 V110 H15 Z"/>
 	<path id="dragon-detail" fill="#069200" stroke="none" d="M65,100 H80 V120 H65 Z"/>
 	<rect id="tile-outline" x="0" y="0" width="100" height="140" fill="none" stroke="#000"/>
 </svg>`;
 
-		const { components } = extractSourceSvgComponents(source);
+		const {components} = extractSourceSvgComponents(source);
 
 		expect(findComponent(components, 'dragon-body').tileLayerCandidate).toBe(false);
 		expect(findComponent(components, 'dragon-detail').tileLayerCandidate).toBe(false);
 		expect(findComponent(components, 'tile-outline').tileLayerCandidate).toBe(true);
 	});
 
-	it('splits compound paths into subcomponents with source provenance', function() {
+	it('splits compound paths into subcomponents with source provenance', function () {
 		const source = `<svg viewBox="0 0 40 20">
 	<path id="pair" fill="#111" d="M0,0 H10 V10 H0 Z M20,0 H30 V10 H20 Z"/>
 </svg>`;
 
-		const components = extractSourceSvgComponents(source, { splitCompoundPaths: true }).components;
+		const components = extractSourceSvgComponents(source, {splitCompoundPaths: true}).components;
 
 		expect(components.length).toBe(2);
 		expect(components.every((component) => component.id === 'pair')).toBe(true);
@@ -445,7 +444,7 @@ describe('source SVG components', function() {
 		expect(components.map((component) => component.bounds.left)).toEqual([0, 20]);
 	});
 
-	it('keeps compound paths whole when splitting is disabled', function() {
+	it('keeps compound paths whole when splitting is disabled', function () {
 		const source = `<svg viewBox="0 0 40 20">
 	<path id="pair" fill="#111" d="M0,0 H10 V10 H0 Z M20,0 H30 V10 H20 Z"/>
 </svg>`;
@@ -457,24 +456,24 @@ describe('source SVG components', function() {
 		expect(components[0].subcomponentIndex).toBeNull();
 	});
 
-	it('keeps nested compound subpaths clustered together when splitting', function() {
+	it('keeps nested compound subpaths clustered together when splitting', function () {
 		const source = `<svg viewBox="0 0 50 20">
 	<path id="nested" fill="#111" d="M0,0 H20 V20 H0 Z M5,5 H10 V10 H5 Z M30,0 H40 V10 H30 Z"/>
 </svg>`;
 
-		const components = extractSourceSvgComponents(source, { splitCompoundPaths: true }).components;
+		const components = extractSourceSvgComponents(source, {splitCompoundPaths: true}).components;
 
 		expect(components.length).toBe(2);
 		expect(components.map((component) => component.bounds.left)).toEqual([0, 30]);
 		expect(components[0].pathData).toContain('M5,5');
 	});
 
-	it('splits a compound path into bands when separated lobes share one outer contour', function() {
+	it('splits a compound path into bands when separated lobes share one outer contour', function () {
 		const source = `<svg viewBox="0 0 40 60">
 	<path id="stacked" fill="#111" d="M5,0 H35 V50 H5 Z M8,3 H32 V22 H8 Z M12,7 H28 V18 H12 Z M8,28 H32 V47 H8 Z M12,32 H28 V43 H12 Z"/>
 </svg>`;
 
-		const components = extractSourceSvgComponents(source, { splitCompoundPaths: true }).components;
+		const components = extractSourceSvgComponents(source, {splitCompoundPaths: true}).components;
 
 		expect(components.length).toBe(2);
 		expect(components.every((component) => component.id === 'stacked')).toBe(true);
@@ -483,12 +482,12 @@ describe('source SVG components', function() {
 		expect(components.map((component) => component.bounds.top)).toEqual([0, 25]);
 	});
 
-	it('keeps one outer shape whole when contained bands are internal details', function() {
+	it('keeps one outer shape whole when contained bands are internal details', function () {
 		const source = `<svg viewBox="0 0 20 40">
 	<path id="stick" fill="#111" d="M4,1 H16 V39 H4 Z M7,4 H13 V15 H7 Z M7,19 H13 V20 H7 Z M7,24 H13 V35 H7 Z"/>
 </svg>`;
 
-		const components = extractSourceSvgComponents(source, { splitCompoundPaths: true }).components;
+		const components = extractSourceSvgComponents(source, {splitCompoundPaths: true}).components;
 
 		expect(components.length).toBe(1);
 		expect(components[0].id).toBe('stick');
@@ -496,12 +495,12 @@ describe('source SVG components', function() {
 		expect(components[0].splitStrategy).toBe('geometry-element');
 	});
 
-	it('keeps an outer contour with direct child counters as one shape', function() {
+	it('keeps an outer contour with direct child counters as one shape', function () {
 		const source = `<svg viewBox="0 0 30 50">
 	<path id="eight" fill="#111" d="M15,1 C5,1 5,20 15,20 C5,20 5,49 15,49 C25,49 25,20 15,20 C25,20 25,1 15,1 Z M10,6 H20 V16 H10 Z M10,27 H20 V39 H10 Z"/>
 </svg>`;
 
-		const components = extractSourceSvgComponents(source, { splitCompoundPaths: true }).components;
+		const components = extractSourceSvgComponents(source, {splitCompoundPaths: true}).components;
 
 		expect(components.length).toBe(1);
 		expect(components[0].id).toBe('eight');
@@ -509,12 +508,12 @@ describe('source SVG components', function() {
 		expect(components[0].splitStrategy).toBe('geometry-element');
 	});
 
-	it('does not create subcomponents for a single path island', function() {
+	it('does not create subcomponents for a single path island', function () {
 		const source = `<svg viewBox="0 0 20 20">
 	<path id="single" fill="#111" d="M0,0 H10 V10 H0 Z"/>
 </svg>`;
 
-		const components = extractSourceSvgComponents(source, { splitCompoundPaths: true }).components;
+		const components = extractSourceSvgComponents(source, {splitCompoundPaths: true}).components;
 
 		expect(components.length).toBe(1);
 		expect(components[0].componentLevel).toBe('element');

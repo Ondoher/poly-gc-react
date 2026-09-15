@@ -68,10 +68,7 @@ function formatScore(score) {
 function printWindow(label, scores, options) {
 	const window = getDifficultyWindow(scores, options);
 
-	console.log(
-		`${label}:`,
-		window.map((score) => `${score.tile}:${score.weight.toFixed(2)}`).join(' ')
-	);
+	console.log(`${label}:`, window.map((score) => `${score.tile}:${score.weight.toFixed(2)}`).join(' '));
 }
 
 function printDifficultyCase(label, board, openTiles, referenceTiles, options) {
@@ -85,10 +82,7 @@ function printDifficultyCase(label, board, openTiles, referenceTiles, options) {
 	console.log(`\n${label}`);
 	console.log('weighted array:');
 	console.table(scores.map(formatScore));
-	console.log(
-		'window:',
-		window.map((score) => `${score.tile}:${score.weight.toFixed(2)}`).join(' ')
-	);
+	console.log('window:', window.map((score) => `${score.tile}:${score.weight.toFixed(2)}`).join(' '));
 	console.log('selected:', formatScore(selected));
 }
 
@@ -109,7 +103,7 @@ function samplePicks(label, scores, options) {
 		[...counts.entries()]
 			.sort((a, b) => a[0] - b[0])
 			.map(([tile, count]) => `${tile}:${count}`)
-			.join(' ')
+			.join(' '),
 	);
 }
 
@@ -123,18 +117,14 @@ function main() {
 	assertEqual(
 		'horizontal counts both occupied rows for same-z row neighbor',
 		countHorizontalIntersections(board, 2, horizontalMasks),
-		2
+		2,
 	);
 	assertEqual(
 		'vertical quarter overlap counts once for the reference tile',
 		countVerticalIntersections(board, 4, verticalMasks),
-		1
+		1,
 	);
-	assertEqual(
-		'vertical non-overlap does not count',
-		countVerticalIntersections(board, 5, verticalMasks),
-		0
-	);
+	assertEqual('vertical non-overlap does not count', countVerticalIntersections(board, 5, verticalMasks), 0);
 
 	printDifficultyCase('easy difficulty', board, openTiles, referenceTiles, {
 		difficulty: 0,
@@ -176,7 +166,7 @@ function main() {
 			difficulty: 1,
 			minWindowRatio: 0.25,
 			random: makeDeterministicRandom(33),
-		})
+		}),
 	);
 	console.log(
 		'suspension triple',
@@ -184,7 +174,7 @@ function main() {
 			difficulty: 1,
 			minWindowRatio: 0.25,
 			random: makeDeterministicRandom(33),
-		})
+		}),
 	);
 }
 

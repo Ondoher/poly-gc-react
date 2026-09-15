@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export default class Toast extends React.Component {
 	constructor(props) {
@@ -58,13 +58,16 @@ export default class Toast extends React.Component {
 
 		if (modal || nextProps.visible !== undefined) return;
 
-		this.dismissHandle = setTimeout(function () {
-			this.dismissHandle = null;
-			this.setState({
-				visible: false,
-				displayedMessage: '',
-			});
-		}.bind(this), duration);
+		this.dismissHandle = setTimeout(
+			function () {
+				this.dismissHandle = null;
+				this.setState({
+					visible: false,
+					displayedMessage: '',
+				});
+			}.bind(this),
+			duration,
+		);
 	}
 
 	onClose() {
@@ -115,11 +118,7 @@ export default class Toast extends React.Component {
 					<div className="mj-toast-body">
 						<div className="mj-toast-message">{message}</div>
 						{modal && (
-							<button
-								type="button"
-								className="mj-toast-close"
-								onClick={this.onClose.bind(this)}
-							>
+							<button type="button" className="mj-toast-close" onClick={this.onClose.bind(this)}>
 								Close
 							</button>
 						)}

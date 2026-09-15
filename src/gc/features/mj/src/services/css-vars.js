@@ -1,7 +1,7 @@
-import { Service, Registry } from "@polylith/core";
+import {Service, Registry} from '@polylith/core';
 
-const CSS_READY_VAR = "--mj-css-ready";
-const CSS_READY_VALUE = "1";
+const CSS_READY_VAR = '--mj-css-ready';
+const CSS_READY_VALUE = '1';
 const CSS_READY_POLL_MS = 20;
 const CSS_READY_TIMEOUT_MS = 3000;
 
@@ -13,16 +13,8 @@ export default class CssVarsService extends Service {
 	 * @param {Registry} [registry] - Manage service lookup and registration.
 	 */
 	constructor(registry) {
-		super("mj:css-vars", registry);
-		this.implement([
-			"start",
-			"ready",
-			"precache",
-			"precacheFromElement",
-			"get",
-			"getFromElement",
-			"buildObject",
-		]);
+		super('mj:css-vars', registry);
+		this.implement(['start', 'ready', 'precache', 'precacheFromElement', 'get', 'getFromElement', 'buildObject']);
 
 		/**
 		 * Store the cached CSS custom-property values.
@@ -46,8 +38,7 @@ export default class CssVarsService extends Service {
 	/**
 	 * Call this method when Polylith marks the service as ready for use.
 	 */
-	ready() {
-	}
+	ready() {}
 
 	/**
 	 * Call this method to cache one or more CSS custom-property values.
@@ -75,7 +66,7 @@ export default class CssVarsService extends Service {
 		let values = {};
 		let requestedNames = Array.isArray(names) ? names : [];
 
-		requestedNames.forEach(function(name) {
+		requestedNames.forEach(function (name) {
 			let normalizedName = this.normalizeCssVarName(name);
 
 			if (!normalizedName) {
@@ -84,7 +75,7 @@ export default class CssVarsService extends Service {
 
 			let value = this.readCssVarFromElement(element, normalizedName);
 
-			if (value === "") {
+			if (value === '') {
 				return;
 			}
 
@@ -122,7 +113,7 @@ export default class CssVarsService extends Service {
 		let normalizedName = this.normalizeCssVarName(name);
 
 		if (!normalizedName) {
-			return "";
+			return '';
 		}
 
 		if (!element && Object.prototype.hasOwnProperty.call(this.vars, normalizedName)) {
@@ -131,7 +122,7 @@ export default class CssVarsService extends Service {
 
 		let value = this.readCssVarFromElement(element, normalizedName);
 
-		if (!element && value !== "") {
+		if (!element && value !== '') {
 			this.vars[normalizedName] = value;
 		}
 
@@ -154,17 +145,11 @@ export default class CssVarsService extends Service {
 	 * @returns {Record<string, any>} Return the constructed object.
 	 */
 	buildObject(descriptor = {}, options = {}) {
-		let prefix = typeof descriptor.prefix === "string"
-			? this.normalizeCssVarPrefix(descriptor.prefix)
-			: "";
-		let names = Array.isArray(descriptor.names)
-			? descriptor.names
-			: [];
+		let prefix = typeof descriptor.prefix === 'string' ? this.normalizeCssVarPrefix(descriptor.prefix) : '';
+		let names = Array.isArray(descriptor.names) ? descriptor.names : [];
 		let element = options.element || null;
 		let coerceNumbers = options.coerceNumbers !== false;
-		let defaults = options.defaults && typeof options.defaults === "object"
-			? options.defaults
-			: {};
+		let defaults = options.defaults && typeof options.defaults === 'object' ? options.defaults : {};
 
 		return this.buildObjectFromNames(names, {
 			prefix,
@@ -192,40 +177,43 @@ export default class CssVarsService extends Service {
 	 * @returns {Record<string, any>}
 	 */
 	buildObjectFromNames(names, context) {
-		return names.reduce(function(result, name) {
-			let normalizedPath = this.normalizeCssVarObjectPath(name);
+		return names.reduce(
+			function (result, name) {
+				let normalizedPath = this.normalizeCssVarObjectPath(name);
 
-			if (!normalizedPath) {
+				if (!normalizedPath) {
+					return result;
+				}
+
+				let segments = normalizedPath.split('-');
+				let typeSpecifier = this.extractCssVarTypeSpecifier(segments[0]);
+				let objectPath = typeSpecifier ? segments.slice(1) : segments.slice(0);
+
+				if (objectPath.length === 0) {
+					return result;
+				}
+
+				let variableName = `${context.prefix}${normalizedPath}`;
+				let rawValue = context.element
+					? this.getFromElement(context.element, variableName)
+					: this.get(variableName);
+				let defaultValue = this.getNestedValue(context.defaults, objectPath);
+
+				if (rawValue === '' || typeof rawValue === 'undefined') {
+					this.setNestedValue(result, objectPath, defaultValue);
+					return result;
+				}
+
+				let value = this.coerceCssVarValueByType(rawValue, {
+					typeSpecifier,
+					coerceNumbers: context.coerceNumbers,
+				});
+
+				this.setNestedValue(result, objectPath, value);
 				return result;
-			}
-
-			let segments = normalizedPath.split("-");
-			let typeSpecifier = this.extractCssVarTypeSpecifier(segments[0]);
-			let objectPath = typeSpecifier ? segments.slice(1) : segments.slice(0);
-
-			if (objectPath.length === 0) {
-				return result;
-			}
-
-			let variableName = `${context.prefix}${normalizedPath}`;
-			let rawValue = context.element
-				? this.getFromElement(context.element, variableName)
-				: this.get(variableName);
-			let defaultValue = this.getNestedValue(context.defaults, objectPath);
-
-			if (rawValue === "" || typeof rawValue === "undefined") {
-				this.setNestedValue(result, objectPath, defaultValue);
-				return result;
-			}
-
-			let value = this.coerceCssVarValueByType(rawValue, {
-				typeSpecifier,
-				coerceNumbers: context.coerceNumbers,
-			});
-
-			this.setNestedValue(result, objectPath, value);
-			return result;
-		}.bind(this), {});
+			}.bind(this),
+			{},
+		);
 	}
 
 	/**
@@ -246,9 +234,7 @@ export default class CssVarsService extends Service {
 			await this.wait(CSS_READY_POLL_MS);
 		}
 
-		console.warn(
-			`mj:css-vars timed out waiting for ${CSS_READY_VAR}=${CSS_READY_VALUE}`
-		);
+		console.warn(`mj:css-vars timed out waiting for ${CSS_READY_VAR}=${CSS_READY_VALUE}`);
 	}
 
 	/**
@@ -270,14 +256,14 @@ export default class CssVarsService extends Service {
 	 * @returns {string} Return the computed CSS custom-property value or an empty string when unavailable.
 	 */
 	readCssVarFromElement(element, name) {
-		if (typeof window === "undefined" || typeof document === "undefined") {
-			return "";
+		if (typeof window === 'undefined' || typeof document === 'undefined') {
+			return '';
 		}
 
 		let root = element || document.documentElement;
 
 		if (!root) {
-			return "";
+			return '';
 		}
 
 		return window.getComputedStyle(root).getPropertyValue(name).trim();
@@ -290,17 +276,17 @@ export default class CssVarsService extends Service {
 	 * @returns {string} Return the normalized CSS custom-property name or an empty string when invalid.
 	 */
 	normalizeCssVarName(name) {
-		if (typeof name !== "string") {
-			return "";
+		if (typeof name !== 'string') {
+			return '';
 		}
 
 		let trimmed = name.trim();
 
 		if (!trimmed) {
-			return "";
+			return '';
 		}
 
-		return trimmed.startsWith("--") ? trimmed : `--${trimmed}`;
+		return trimmed.startsWith('--') ? trimmed : `--${trimmed}`;
 	}
 
 	/**
@@ -320,12 +306,10 @@ export default class CssVarsService extends Service {
 		let normalizedName = this.normalizeCssVarName(prefix);
 
 		if (!normalizedName) {
-			return "";
+			return '';
 		}
 
-		return normalizedName.endsWith("-")
-			? normalizedName
-			: `${normalizedName}-`;
+		return normalizedName.endsWith('-') ? normalizedName : `${normalizedName}-`;
 	}
 
 	/**
@@ -335,11 +319,11 @@ export default class CssVarsService extends Service {
 	 * @returns {string}
 	 */
 	normalizeCssVarObjectPath(name) {
-		if (typeof name !== "string") {
-			return "";
+		if (typeof name !== 'string') {
+			return '';
 		}
 
-		return name.trim().replace(/^-+/, "").replace(/-+$/, "");
+		return name.trim().replace(/^-+/, '').replace(/-+$/, '');
 	}
 
 	/**
@@ -349,7 +333,7 @@ export default class CssVarsService extends Service {
 	 * @returns {"number" | "string" | "boolean" | null}
 	 */
 	extractCssVarTypeSpecifier(segment) {
-		if (segment === "number" || segment === "string" || segment === "boolean") {
+		if (segment === 'number' || segment === 'string' || segment === 'boolean') {
 			return segment;
 		}
 
@@ -365,23 +349,21 @@ export default class CssVarsService extends Service {
 	 * @returns {string | number | boolean}
 	 */
 	coerceCssVarValueByType(rawValue, options) {
-		let trimmed = typeof rawValue === "string" ? rawValue.trim() : rawValue;
+		let trimmed = typeof rawValue === 'string' ? rawValue.trim() : rawValue;
 
-		if (options.typeSpecifier === "string") {
-			return typeof trimmed === "string" ? trimmed : String(trimmed);
+		if (options.typeSpecifier === 'string') {
+			return typeof trimmed === 'string' ? trimmed : String(trimmed);
 		}
 
-		if (options.typeSpecifier === "number") {
+		if (options.typeSpecifier === 'number') {
 			return Number.parseFloat(trimmed);
 		}
 
-		if (options.typeSpecifier === "boolean") {
-			return trimmed === "true" || trimmed === "1";
+		if (options.typeSpecifier === 'boolean') {
+			return trimmed === 'true' || trimmed === '1';
 		}
 
-		return options.coerceNumbers
-			? this.coerceCssVarValue(rawValue)
-			: rawValue;
+		return options.coerceNumbers ? this.coerceCssVarValue(rawValue) : rawValue;
 	}
 
 	/**
@@ -392,14 +374,12 @@ export default class CssVarsService extends Service {
 	 * @returns {any}
 	 */
 	getNestedValue(target, path) {
-		return path.reduce(function(current, segment) {
-			if (!current || typeof current !== "object") {
+		return path.reduce(function (current, segment) {
+			if (!current || typeof current !== 'object') {
 				return undefined;
 			}
 
-			return Object.prototype.hasOwnProperty.call(current, segment)
-				? current[segment]
-				: undefined;
+			return Object.prototype.hasOwnProperty.call(current, segment) ? current[segment] : undefined;
 		}, target);
 	}
 
@@ -418,7 +398,7 @@ export default class CssVarsService extends Service {
 
 		let current = target;
 
-		path.forEach(function(segment, index) {
+		path.forEach(function (segment, index) {
 			let isLeaf = index === path.length - 1;
 
 			if (isLeaf) {
@@ -426,7 +406,7 @@ export default class CssVarsService extends Service {
 				return;
 			}
 
-			if (!current[segment] || typeof current[segment] !== "object") {
+			if (!current[segment] || typeof current[segment] !== 'object') {
 				current[segment] = {};
 			}
 
@@ -444,14 +424,14 @@ export default class CssVarsService extends Service {
 	 * @returns {string | number}
 	 */
 	coerceCssVarValue(rawValue) {
-		if (typeof rawValue !== "string") {
+		if (typeof rawValue !== 'string') {
 			return rawValue;
 		}
 
 		let trimmed = rawValue.trim();
 
-		if (trimmed === "") {
-			return "";
+		if (trimmed === '') {
+			return '';
 		}
 
 		if (/^-?\d+(?:\.\d+)?$/.test(trimmed)) {
@@ -468,7 +448,7 @@ export default class CssVarsService extends Service {
 	 * @returns {Promise<void>} Return when the delay has elapsed.
 	 */
 	wait(durationMs) {
-		return new Promise(function(resolve) {
+		return new Promise(function (resolve) {
 			setTimeout(resolve, durationMs);
 		});
 	}

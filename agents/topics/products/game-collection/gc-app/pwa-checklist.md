@@ -64,24 +64,24 @@ Repo-specific direction:
 ## Installability Baseline
 
 - [x] Choose the production app name and short name
-  The browser uses these in install prompts, app launch surfaces, and home-screen labels.
+      The browser uses these in install prompts, app launch surfaces, and home-screen labels.
 - [x] Decide the start URL and scope
-  These define which URL opens when the installed app launches and which pages count as part of the app.
+      These define which URL opens when the installed app launches and which pages count as part of the app.
 - [x] Choose theme color and background color
-  These colors affect browser UI treatment, splash screens, and install surfaces.
+      These colors affect browser UI treatment, splash screens, and install surfaces.
 - [x] Define the display mode
-  `standalone` is usually the most natural choice for an installed app.
+      `standalone` is usually the most natural choice for an installed app.
 - [ ] Decide whether the first release is installable only or also offline-capable
-  Installability is easier and safer than shipping offline caching immediately.
+      Installability is easier and safer than shipping offline caching immediately.
 - [x] Prepare app icons in the required sizes
-  At minimum, plan for a 192x192 icon and a 512x512 icon.
+      At minimum, plan for a 192x192 icon and a 512x512 icon.
 - [x] Prepare a maskable icon variant
-  This helps installed app icons render well on Android launch surfaces.
+      This helps installed app icons render well on Android launch surfaces.
 
 ## Web App Manifest
 
 - [x] Create the web app manifest file
-  This is the core metadata file that lets the browser recognize the site as installable.
+      This is the core metadata file that lets the browser recognize the site as installable.
 - [x] Add the app name and short name
 - [x] Add `start_url`
 - [x] Add `scope`
@@ -90,40 +90,40 @@ Repo-specific direction:
 - [x] Add `theme_color`
 - [x] Add `background_color`
 - [x] Add a description
-  This is optional but useful for clarity and future store-like surfaces.
+      This is optional but useful for clarity and future store-like surfaces.
 - [x] Add standard icons
 - [x] Add maskable icons
 - [x] Link the manifest from the HTML template
 - [x] Make sure the manifest asset path matches the repo build/output model
-  The file needs to land at a stable public URL in the deployed app.
+      The file needs to land at a stable public URL in the deployed app.
 
 ## Browser Integration
 
 - [x] Add `theme-color` metadata to the HTML template
-  This helps browsers style top bars and install UI consistently with the app.
+      This helps browsers style top bars and install UI consistently with the app.
 - [ ] Add a favicon if one is not already present
 - [ ] Add Apple touch icons if we want iOS home-screen support
-  iOS uses different metadata and does not fully follow the standard install flow.
+      iOS uses different metadata and does not fully follow the standard install flow.
 - [ ] Add Apple mobile-web-app metadata if we want iOS install polish
 - [ ] Check that the app can be launched directly at the configured start URL without errors
-  This is important because installed launches do not necessarily enter through the same URL path as normal browsing.
+      This is important because installed launches do not necessarily enter through the same URL path as normal browsing.
 - [ ] Decide what the app should do if a device still opens in portrait
-  A simple message, rotate-device prompt, or restricted fallback layout is enough for the first release.
+      A simple message, rotate-device prompt, or restricted fallback layout is enough for the first release.
 
 ## Service Worker Strategy
 
 - [ ] Decide whether the initial deploy should include a service worker
-  A service worker is required for some PWA features, but it is also the easiest way to create stale deploy bugs.
+      A service worker is required for some PWA features, but it is also the easiest way to create stale deploy bugs.
 - [ ] If yes, keep the first version conservative
 - [ ] Decide which requests should never be cached
-  HTML documents and rapidly changing runtime data are common candidates to exclude from first-pass caching.
+      HTML documents and rapidly changing runtime data are common candidates to exclude from first-pass caching.
 - [ ] Cache only a safe app shell or static asset subset
 - [ ] Avoid aggressive HTML caching on the first deploy
 - [ ] Decide whether the worker should use cache-first, network-first, or stale-while-revalidate for each asset class
 - [ ] Define an update strategy that does not hide new releases
-  New deployments should become visible without confusing users or trapping them on old files.
+      New deployments should become visible without confusing users or trapping them on old files.
 - [ ] Decide how to handle an updated service worker
-  For example: prompt for refresh, auto-activate on close, or activate immediately.
+      For example: prompt for refresh, auto-activate on close, or activate immediately.
 - [ ] Add service worker registration code
 - [ ] Make sure the service worker file is served from a path that gives it the intended scope
 - [ ] Make sure deployment can safely replace versioned static assets the worker may cache
@@ -132,13 +132,13 @@ Repo-specific direction:
 
 - [ ] Decide whether the first deploy needs offline support or installability only
 - [ ] If offline support is included, define the offline fallback behavior
-  For example: cached shell only, a friendly offline page, or partial gameplay with no server-backed features.
+      For example: cached shell only, a friendly offline page, or partial gameplay with no server-backed features.
 - [ ] Decide whether portrait mode should show a rotate-device prompt
 - [ ] Decide which app routes should work offline
 - [ ] Decide which assets are critical for an offline launch
 - [ ] Decide how runtime fetch failures should be surfaced to the user
 - [ ] Decide whether queued writes or deferred sync are needed
-  This is only necessary if the app will create user actions that must survive offline time.
+      This is only necessary if the app will create user actions that must survive offline time.
 
 ## Deployment And Validation
 
@@ -155,7 +155,7 @@ Repo-specific direction:
 - [ ] Test what happens when the app opens in portrait anyway
 - [ ] Run a Lighthouse PWA check
 - [ ] Test a second deployment after the initial PWA release
-  This is one of the most important checks because it proves the caching strategy will not break normal updates.
+      This is one of the most important checks because it proves the caching strategy will not break normal updates.
 - [ ] Confirm a new deploy updates correctly without stale cached HTML
 - [ ] Confirm the app still works with a hard refresh and with previously cached assets present
 

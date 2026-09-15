@@ -60,15 +60,7 @@ state remains in each tileset's `pipeline.json`.
 
 ## Current Rules
 
-- Feature activation is Polylith/build-file driven through
-  `@polylith/features`; do not directly import individual stage features from
-  `src/pipeline/index.js`.
-- Stage pages should register themselves with `app-pages` and register their
-  view service with `views`.
-- Pages should not assume shell dimensions. The shell owns the outer viewport;
-  each page owns its own page header and internal scroll region.
-- Reusable app-only presentation primitives live flat under
-  `src/pipeline/components`.
+Engineering authority is selected by the [manifest](../../../standards/manifest.md), with local refinements in the [overlay](../../../standards/overlay.md). Use the [new-page runbook](new-page-runbook.md) for Pipeline registration/API examples and the [topic status](README.md#standards-adoption-status) for adoption work.
 
 ## Deep Links
 

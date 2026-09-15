@@ -1,1 +1,1 @@
-export { checkBoolean, getOption, getOptions } from '../shared/options.js';
+export {checkBoolean, getOption, getOptions} from '../shared/options.js';

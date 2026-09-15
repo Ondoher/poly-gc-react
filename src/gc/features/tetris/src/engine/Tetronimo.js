@@ -23,13 +23,12 @@ export default class Tetronimo {
 	canMoveX(direction) {
 		var extra = this.shape[this.rotation].space[direction + 1];
 		if (direction == consts.LEFT) return extra + this.x;
-		else return (consts.COLS - (this.x + this.shape[this.rotation].shape[0].length)) + extra;
+		else return consts.COLS - (this.x + this.shape[this.rotation].shape[0].length) + extra;
 	}
 
 	move(direction) {
 		var space = this.canMoveX(direction);
-		if (space != 0)
-			this.x += direction;
+		if (space != 0) this.x += direction;
 	}
 
 	drop() {
@@ -58,17 +57,17 @@ export default class Tetronimo {
 			case tetronimos.IPIECE:
 				this.shape = tetronimos.IPIECE_ROTATION;
 				this.x = 3;
-				this.y = -1
+				this.y = -1;
 				break;
 			case tetronimos.JPIECE:
 				this.shape = tetronimos.JPIECE_ROTATION;
 				this.x = 3;
-				this.y = -1
+				this.y = -1;
 				break;
 			case tetronimos.LPIECE:
 				this.shape = tetronimos.LPIECE_ROTATION;
 				this.x = 3;
-				this.y = -1
+				this.y = -1;
 				break;
 			case tetronimos.OPIECE:
 				this.shape = tetronimos.OPIECE_ROTATION;
@@ -77,17 +76,17 @@ export default class Tetronimo {
 			case tetronimos.SPIECE:
 				this.shape = tetronimos.SPIECE_ROTATION;
 				this.x = 3;
-				this.y = -1
+				this.y = -1;
 				break;
 			case tetronimos.TPIECE:
 				this.shape = tetronimos.TPIECE_ROTATION;
 				this.x = 3;
-				this.y = -1
+				this.y = -1;
 				break;
 			case tetronimos.ZPIECE:
 				this.shape = tetronimos.ZPIECE_ROTATION;
 				this.x = 3;
-				this.y = -1
+				this.y = -1;
 				break;
 		}
 	}

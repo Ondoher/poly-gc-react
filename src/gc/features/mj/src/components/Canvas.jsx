@@ -1,9 +1,9 @@
-import React, { Component } from "react";
+import React, {Component} from 'react';
 import Tile from './Tile.jsx';
 
 export default class Canvas extends Component {
 	constructor(props) {
-		super(props)
+		super(props);
 	}
 
 	onClickTile(tile) {
@@ -19,10 +19,8 @@ export default class Canvas extends Component {
 	}
 
 	createTiles() {
-		return this.props.tiles.map(function(tile) {
-			var onClick = this.props.onClick
-				? this.onClickTileEvent.bind(this, tile.id)
-				: undefined;
+		return this.props.tiles.map(function (tile) {
+			var onClick = this.props.onClick ? this.onClickTileEvent.bind(this, tile.id) : undefined;
 			var visible = !this.props.placed || this.props.placed.has(tile.id);
 
 			return (
@@ -40,10 +38,8 @@ export default class Canvas extends Component {
 					onClick={onClick}
 				/>
 			);
-
 		}, this);
 	}
-
 
 	renderTiles() {
 		return this.createTiles();
@@ -56,23 +52,14 @@ export default class Canvas extends Component {
 			className += ' ' + this.props.className;
 		}
 
-		return(
-			<div
-				className={className}
-				style={this.props.style}
-				onClick={this.props.onCanvasClick}
-			>
+		return (
+			<div className={className} style={this.props.style} onClick={this.props.onCanvasClick}>
 				{this.renderTiles()}
 			</div>
-		)
+		);
 	}
 
 	render() {
-		return (
-			<React.Fragment>
-				{this.renderCanvas()}
-			</React.Fragment>
-		)
+		return <React.Fragment>{this.renderCanvas()}</React.Fragment>;
 	}
-
 }

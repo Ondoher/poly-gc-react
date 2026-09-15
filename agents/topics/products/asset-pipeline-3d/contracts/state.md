@@ -14,22 +14,22 @@ Top-level state is normalized by `PipelineModel`:
 
 ```json
 {
-  "schemaVersion": 3,
-  "tilesetId": "traditional",
-  "referenceSetId": "default-large-faces",
-  "currencyDate": "2026-05-16T00:00:00.000Z",
-  "configuration": {},
-  "rendering": {},
-  "svgPipeline": {
-    "faces": {}
-  },
-  "assetPipeline": {
-    "schemaVersion": 1,
-    "baseTileSelection": {
-      "variantId": "..."
-    },
-    "faces": {}
-  }
+	"schemaVersion": 3,
+	"tilesetId": "traditional",
+	"referenceSetId": "default-large-faces",
+	"currencyDate": "2026-05-16T00:00:00.000Z",
+	"configuration": {},
+	"rendering": {},
+	"svgPipeline": {
+		"faces": {}
+	},
+	"assetPipeline": {
+		"schemaVersion": 1,
+		"baseTileSelection": {
+			"variantId": "..."
+		},
+		"faces": {}
+	}
 }
 ```
 
@@ -72,11 +72,11 @@ record for portability:
 
 ```json
 {
-  "src.b-1.0004": {
-    "componentId": "src.b-1.0004",
-    "partId": "mainArtwork",
-    "strength": "accepted"
-  }
+	"src.b-1.0004": {
+		"componentId": "src.b-1.0004",
+		"partId": "mainArtwork",
+		"strength": "accepted"
+	}
 }
 ```
 

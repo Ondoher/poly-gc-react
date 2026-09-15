@@ -28,13 +28,11 @@ if (staticReport.static.errors.length > 0) {
 	process.exit(1);
 }
 
-fs.mkdirSync(path.dirname(paths.report), { recursive: true });
+fs.mkdirSync(path.dirname(paths.report), {recursive: true});
 
 const referenceImage = await readRgba(paths.referencePng);
 const svgSource = fs.readFileSync(paths.preprocessedSvg, 'utf8');
-const rawSourceSvg = fs.existsSync(paths.sourceSvg)
-	? fs.readFileSync(paths.sourceSvg, 'utf8')
-	: null;
+const rawSourceSvg = fs.existsSync(paths.sourceSvg) ? fs.readFileSync(paths.sourceSvg, 'utf8') : null;
 const sourceImage = rawSourceSvg
 	? await renderSourceSvg(rawSourceSvg, referenceImage.height, referenceImage.width)
 	: null;
@@ -48,9 +46,10 @@ const svgComponents = getAlphaComponents(svgImage.data, svgImage.width, svgImage
 const mainGroupId = findMainGroupId(groupBounds);
 const labelBounds = findLabelBounds(groupBounds);
 const mainArtworkBounds = mainGroupId ? groupBounds[mainGroupId] : svgBounds;
-const topLabelId = Object.keys(labelBounds).find((id) => id === 'label' || id === 'number' || id === 'wind-label')
-	|| Object.keys(labelBounds)[0]
-	|| null;
+const topLabelId =
+	Object.keys(labelBounds).find((id) => id === 'label' || id === 'number' || id === 'wind-label') ||
+	Object.keys(labelBounds)[0] ||
+	null;
 const topLabelBounds = topLabelId ? groupBounds[topLabelId] : null;
 const referenceTopLabelBounds = findReferenceTopLabelBounds(referenceComponents, topLabelBounds);
 const referenceMainArtworkBounds = findReferenceMainArtworkBounds({
@@ -68,13 +67,16 @@ await writeRgbaPng(paths.sideBySide, makeSideBySide(referenceImage, svgImage));
 if (sourceImage) {
 	await writeRgbaPng(paths.sourceReferenceResult, makeSourceReferenceResult(sourceImage, referenceImage, svgImage));
 }
-await writeRgbaPng(paths.overlay, makeOverlay(referenceImage, svgImage, {
-	referenceBounds,
-	mainArtworkBounds,
-	labelBounds,
-	referenceComponents,
-	svgComponents,
-}));
+await writeRgbaPng(
+	paths.overlay,
+	makeOverlay(referenceImage, svgImage, {
+		referenceBounds,
+		mainArtworkBounds,
+		labelBounds,
+		referenceComponents,
+		svgComponents,
+	}),
+);
 await writeRgbaPng(paths.diff, makeDiff(referenceImage, svgImage));
 
 const notes = [];
@@ -151,10 +153,7 @@ if (report.status.startsWith('blocked') || report.status === 'failed-static-vali
 
 async function readRgba(filePath) {
 	const metadata = await sharp(filePath).metadata();
-	const data = await sharp(filePath)
-		.ensureAlpha()
-		.raw()
-		.toBuffer();
+	const data = await sharp(filePath).ensureAlpha().raw().toBuffer();
 
 	return {
 		width: metadata.width,
@@ -165,37 +164,38 @@ async function readRgba(filePath) {
 
 async function renderSvg(svgSourceToRender, width, height) {
 	const data = await sharp(Buffer.from(svgSourceToRender))
-		.resize(width, height, { fit: 'fill' })
+		.resize(width, height, {fit: 'fill'})
 		.ensureAlpha()
 		.raw()
 		.toBuffer();
 
-	return { width, height, data };
+	return {width, height, data};
 }
 
 async function renderSourceSvg(svgSourceToRender, height, fallbackWidth) {
 	const aspectRatio = readSvgAspectRatio(svgSourceToRender);
-	const width = aspectRatio
-		? Math.max(1, Math.round(height * aspectRatio))
-		: fallbackWidth;
+	const width = aspectRatio ? Math.max(1, Math.round(height * aspectRatio)) : fallbackWidth;
 
 	const data = await sharp(Buffer.from(sanitizeRawSourceSvg(svgSourceToRender)))
 		.resize(width, height, {
 			fit: 'contain',
-			background: { r: 0, g: 0, b: 0, alpha: 0 },
+			background: {r: 0, g: 0, b: 0, alpha: 0},
 		})
 		.ensureAlpha()
 		.raw()
 		.toBuffer();
 
-	return { width, height, data };
+	return {width, height, data};
 }
 
 function readSvgAspectRatio(svgSourceToRender) {
 	const viewBoxMatch = svgSourceToRender.match(/\bviewBox\s*=\s*"([^"]+)"/i);
 
 	if (viewBoxMatch) {
-		const values = viewBoxMatch[1].trim().split(/[\s,]+/).map((value) => Number.parseFloat(value));
+		const values = viewBoxMatch[1]
+			.trim()
+			.split(/[\s,]+/)
+			.map((value) => Number.parseFloat(value));
 
 		if (values.length === 4 && values[2] > 0 && values[3] > 0) {
 			return values[2] / values[3];
@@ -223,14 +223,16 @@ function sanitizeRawSourceSvg(svgSourceToRender) {
 }
 
 async function writeRgbaPng(outputPath, image) {
-	await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
+	await fs.promises.mkdir(path.dirname(outputPath), {recursive: true});
 	await sharp(image.data, {
 		raw: {
 			width: image.width,
 			height: image.height,
 			channels: 4,
 		},
-	}).png().toFile(outputPath);
+	})
+		.png()
+		.toFile(outputPath);
 }
 
 async function renderGroups(svgSourceToRender, width, height) {
@@ -318,7 +320,7 @@ function getAlphaBounds(data, width, height) {
 
 	for (let y = 0; y < height; y += 1) {
 		for (let x = 0; x < width; x += 1) {
-			const alpha = data[((y * width + x) * 4) + 3];
+			const alpha = data[(y * width + x) * 4 + 3];
 			if (alpha <= 8) {
 				continue;
 			}
@@ -350,7 +352,7 @@ function getAlphaComponents(data, width, height) {
 	const components = [];
 
 	for (let index = 0; index < width * height; index += 1) {
-		if (data[(index * 4) + 3] > 8) {
+		if (data[index * 4 + 3] > 8) {
 			visible[index] = 1;
 		}
 	}
@@ -379,7 +381,12 @@ function getAlphaComponents(data, width, height) {
 				right = Math.max(right, currentX);
 				bottom = Math.max(bottom, currentY);
 
-				for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+				for (const [dx, dy] of [
+					[1, 0],
+					[-1, 0],
+					[0, 1],
+					[0, -1],
+				]) {
 					const nextX = currentX + dx;
 					const nextY = currentY + dy;
 
@@ -428,10 +435,12 @@ function findMainGroupId(groupBounds) {
 		'artwork',
 	];
 
-	return names.find((name) => groupBounds[name])
-		|| Object.keys(groupBounds).find((name) => /^dots-\d+-face-art$/.test(name) && groupBounds[name])
-		|| Object.keys(groupBounds).find((name) => /^characters-\d+-face-art$/.test(name) && groupBounds[name])
-		|| null;
+	return (
+		names.find((name) => groupBounds[name]) ||
+		Object.keys(groupBounds).find((name) => /^dots-\d+-face-art$/.test(name) && groupBounds[name]) ||
+		Object.keys(groupBounds).find((name) => /^characters-\d+-face-art$/.test(name) && groupBounds[name]) ||
+		null
+	);
 }
 
 function findReferenceTopLabelBounds(referenceComponents, topLabelBounds) {
@@ -441,27 +450,22 @@ function findReferenceTopLabelBounds(referenceComponents, topLabelBounds) {
 
 	const topLabelCenterX = (topLabelBounds.left + topLabelBounds.right) / 2;
 	const topLabelCenterY = (topLabelBounds.top + topLabelBounds.bottom) / 2;
-	const candidates = topLabelBounds.top > 70
-		? referenceComponents
-		: referenceComponents.filter((component) => component.top <= topLabelBounds.top + 8);
-	const topCandidates = candidates
-		.sort((left, right) => {
-			const leftDistance = Math.abs(((left.left + left.right) / 2) - topLabelCenterX);
-			const rightDistance = Math.abs(((right.left + right.right) / 2) - topLabelCenterX);
-			const leftYDistance = Math.abs(((left.top + left.bottom) / 2) - topLabelCenterY);
-			const rightYDistance = Math.abs(((right.top + right.bottom) / 2) - topLabelCenterY);
-			return (leftDistance + leftYDistance) - (rightDistance + rightYDistance) || left.pixels - right.pixels;
-		});
+	const candidates =
+		topLabelBounds.top > 70
+			? referenceComponents
+			: referenceComponents.filter((component) => component.top <= topLabelBounds.top + 8);
+	const topCandidates = candidates.sort((left, right) => {
+		const leftDistance = Math.abs((left.left + left.right) / 2 - topLabelCenterX);
+		const rightDistance = Math.abs((right.left + right.right) / 2 - topLabelCenterX);
+		const leftYDistance = Math.abs((left.top + left.bottom) / 2 - topLabelCenterY);
+		const rightYDistance = Math.abs((right.top + right.bottom) / 2 - topLabelCenterY);
+		return leftDistance + leftYDistance - (rightDistance + rightYDistance) || left.pixels - right.pixels;
+	});
 
 	return topCandidates[0] || null;
 }
 
-function findReferenceMainArtworkBounds({
-	mainGroupId,
-	referenceBounds,
-	referenceComponents,
-	referenceTopLabelBounds,
-}) {
+function findReferenceMainArtworkBounds({mainGroupId, referenceBounds, referenceComponents, referenceTopLabelBounds}) {
 	if (!mainGroupId || !isStandardSuitMainGroup(mainGroupId) || !referenceTopLabelBounds) {
 		return null;
 	}
@@ -471,10 +475,12 @@ function findReferenceMainArtworkBounds({
 }
 
 function isStandardSuitMainGroup(groupId) {
-	return groupId === 'suit-art'
-		|| groupId === 'face-art'
-		|| /^dots-\d+-face-art$/.test(groupId)
-		|| /^characters-\d+-face-art$/.test(groupId);
+	return (
+		groupId === 'suit-art' ||
+		groupId === 'face-art' ||
+		/^dots-\d+-face-art$/.test(groupId) ||
+		/^characters-\d+-face-art$/.test(groupId)
+	);
 }
 
 function isAllowedLabelOverlapFace(key) {
@@ -492,9 +498,7 @@ function findPixelLabelOverlaps(svgImageToCheck, renderedGroups, labels) {
 
 			const pixels = countNonLabelPixelsUnderLabel(svgImageToCheck.data, labelImage.data);
 
-			return pixels > 0
-				? { id, pixels }
-				: null;
+			return pixels > 0 ? {id, pixels} : null;
 		})
 		.filter(Boolean);
 }
@@ -537,7 +541,7 @@ function makeSideBySide(referenceImage, svgImage) {
 		writePixel(data, width, referenceImage.width, y, 51, 51, 51, 255);
 	}
 
-	return { width, height, data };
+	return {width, height, data};
 }
 
 function makeSourceReferenceResult(sourceImage, referenceImage, svgImage) {
@@ -557,16 +561,14 @@ function makeSourceReferenceResult(sourceImage, referenceImage, svgImage) {
 		}
 	}
 
-	return { width, height, data };
+	return {width, height, data};
 }
 
-function makeOverlay(referenceImage, svgImage, {
-	referenceBounds,
-	mainArtworkBounds,
-	labelBounds,
-	referenceComponents,
-	svgComponents,
-}) {
+function makeOverlay(
+	referenceImage,
+	svgImage,
+	{referenceBounds, mainArtworkBounds, labelBounds, referenceComponents, svgComponents},
+) {
 	const data = makeChecker(referenceImage.width, referenceImage.height);
 	blit(data, referenceImage.width, referenceImage.data, referenceImage.width, referenceImage.height, 0, 0, 0.45);
 	blit(data, referenceImage.width, svgImage.data, svgImage.width, svgImage.height, 0, 0, 0.75);
@@ -601,9 +603,13 @@ function makeDiff(referenceImage, svgImage) {
 	for (let index = 0; index < data.length; index += 4) {
 		const referenceAlpha = referenceImage.data[index + 3] / 255;
 		const svgAlpha = svgImage.data[index + 3] / 255;
-		data[index] = Math.abs((referenceImage.data[index] * referenceAlpha) - (svgImage.data[index] * svgAlpha));
-		data[index + 1] = Math.abs((referenceImage.data[index + 1] * referenceAlpha) - (svgImage.data[index + 1] * svgAlpha));
-		data[index + 2] = Math.abs((referenceImage.data[index + 2] * referenceAlpha) - (svgImage.data[index + 2] * svgAlpha));
+		data[index] = Math.abs(referenceImage.data[index] * referenceAlpha - svgImage.data[index] * svgAlpha);
+		data[index + 1] = Math.abs(
+			referenceImage.data[index + 1] * referenceAlpha - svgImage.data[index + 1] * svgAlpha,
+		);
+		data[index + 2] = Math.abs(
+			referenceImage.data[index + 2] * referenceAlpha - svgImage.data[index + 2] * svgAlpha,
+		);
 		data[index + 3] = Math.max(referenceImage.data[index + 3], svgImage.data[index + 3]);
 	}
 
@@ -639,11 +645,15 @@ function blit(target, targetWidth, source, sourceWidth, sourceHeight, offsetX, o
 				continue;
 			}
 
-			const targetIndex = (((y + offsetY) * targetWidth) + x + offsetX) * 4;
+			const targetIndex = ((y + offsetY) * targetWidth + x + offsetX) * 4;
 			const inverseAlpha = 1 - alpha;
 			target[targetIndex] = Math.round(source[sourceIndex] * alpha + target[targetIndex] * inverseAlpha);
-			target[targetIndex + 1] = Math.round(source[sourceIndex + 1] * alpha + target[targetIndex + 1] * inverseAlpha);
-			target[targetIndex + 2] = Math.round(source[sourceIndex + 2] * alpha + target[targetIndex + 2] * inverseAlpha);
+			target[targetIndex + 1] = Math.round(
+				source[sourceIndex + 1] * alpha + target[targetIndex + 1] * inverseAlpha,
+			);
+			target[targetIndex + 2] = Math.round(
+				source[sourceIndex + 2] * alpha + target[targetIndex + 2] * inverseAlpha,
+			);
 			target[targetIndex + 3] = 255;
 		}
 	}
@@ -687,7 +697,7 @@ function mergeGroupReports(staticGroups, renderedGroups) {
 
 	for (const name of names) {
 		merged[name] = {
-			...(staticGroups[name] || { present: false }),
+			...(staticGroups[name] || {present: false}),
 			bounds: renderedGroups[name] || null,
 		};
 	}
@@ -731,4 +741,3 @@ function unionBounds(boundsList) {
 		height: bottom - top + 1,
 	};
 }
-

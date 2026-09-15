@@ -15,12 +15,8 @@ export function componentSelection(selection, component) {
 	const selectedPartId = selection?.partId || '';
 	const selectedComponentIds = selection?.componentIds || [];
 	const componentPartId = (component.partIds || [])[0] || '';
-	const nextPartId = componentPartId && componentPartId !== selectedPartId
-		? componentPartId
-		: selectedPartId;
-	const componentIds = componentPartId && componentPartId !== selectedPartId
-		? []
-		: selectedComponentIds;
+	const nextPartId = componentPartId && componentPartId !== selectedPartId ? componentPartId : selectedPartId;
+	const componentIds = componentPartId && componentPartId !== selectedPartId ? [] : selectedComponentIds;
 	const nextComponentIds = componentIds.includes(component.id)
 		? componentIds.filter((componentId) => componentId !== component.id)
 		: [...componentIds, component.id];
@@ -43,19 +39,19 @@ export default class PartsComponentSelector extends React.Component {
 
 	componentDidMount() {
 		if (this.props.isFocused && !this.state.detailsOpen) {
-			this.setState({ detailsOpen: true });
+			this.setState({detailsOpen: true});
 		}
 	}
 
 	componentDidUpdate(previousProps) {
 		const focusChanged = !previousProps.isFocused && this.props.isFocused;
-		const focusedSelectionChanged = this.props.isFocused && (
-			previousProps.selectedPartLabel !== this.props.selectedPartLabel
-			|| previousProps.selectedComponentCount !== this.props.selectedComponentCount
-		);
+		const focusedSelectionChanged =
+			this.props.isFocused &&
+			(previousProps.selectedPartLabel !== this.props.selectedPartLabel ||
+				previousProps.selectedComponentCount !== this.props.selectedComponentCount);
 
 		if ((focusChanged || focusedSelectionChanged) && !this.state.detailsOpen) {
-			this.setState({ detailsOpen: true });
+			this.setState({detailsOpen: true});
 		}
 	}
 
@@ -74,10 +70,13 @@ export default class PartsComponentSelector extends React.Component {
 	}
 
 	componentSelection(component) {
-		return componentSelection({
-			partId: this.props.selectedPartId || '',
-			componentIds: this.selectedComponentIds(),
-		}, component);
+		return componentSelection(
+			{
+				partId: this.props.selectedPartId || '',
+				componentIds: this.selectedComponentIds(),
+			},
+			component,
+		);
 	}
 
 	selectPart(part) {
@@ -97,11 +96,7 @@ export default class PartsComponentSelector extends React.Component {
 	}
 
 	renderTitle() {
-		const {
-			faceTitle,
-			faceSubtitle,
-			statusLabel,
-		} = this.props;
+		const {faceTitle, faceSubtitle, statusLabel} = this.props;
 
 		return (
 			<div className="face-title">
@@ -121,7 +116,9 @@ export default class PartsComponentSelector extends React.Component {
 					part.bound ? 'bound-structure-part' : '',
 					part.highlight ? 'highlight-unbound-structure-part' : '',
 					part.className || '',
-				].filter(Boolean).join(' ')}
+				]
+					.filter(Boolean)
+					.join(' ')}
 				key={part.id}
 				data-review-part={part.reviewKey}
 				style={part.style || null}
@@ -160,7 +157,9 @@ export default class PartsComponentSelector extends React.Component {
 					component.bound ? 'bound-structure-component' : '',
 					component.highlight ? 'highlight-unbound-structure-component' : '',
 					component.className || '',
-				].filter(Boolean).join(' ')}
+				]
+					.filter(Boolean)
+					.join(' ')}
 				key={component.id}
 				data-review-component={component.reviewKey}
 				style={component.style || null}
@@ -192,7 +191,9 @@ export default class PartsComponentSelector extends React.Component {
 			<section className={partListClassName}>
 				<div className="structure-section-label">{partsTitle}</div>
 				<div className="structure-parts">
-					{parts.length ? parts.map((part) => this.renderPartRow(part)) : (
+					{parts.length ? (
+						parts.map((part) => this.renderPartRow(part))
+					) : (
 						<div className="optional-muted-row">{emptyPartsMessage}</div>
 					)}
 				</div>
@@ -212,7 +213,9 @@ export default class PartsComponentSelector extends React.Component {
 			<section className={componentListClassName}>
 				<div className="structure-section-label">{componentsTitle}</div>
 				<div className="structure-components">
-					{components.length ? components.map((component) => this.renderComponentRow(component)) : (
+					{components.length ? (
+						components.map((component) => this.renderComponentRow(component))
+					) : (
 						<div className="optional-muted-row">{emptyComponentsMessage}</div>
 					)}
 				</div>
@@ -245,21 +248,24 @@ export default class PartsComponentSelector extends React.Component {
 			<section className="structure-selector-actions">
 				<div className="structure-section-label">{actionsLabel}</div>
 				<div className="structure-bind-actions">
-					<Button onClick={onBind} disabled={!canBind}>Bind</Button>
+					<Button onClick={onBind} disabled={!canBind}>
+						Bind
+					</Button>
 					{selectedPartHasBinding ? (
-						<Button onClick={onUnbind} disabled={!canUnbind}>Unbind</Button>
+						<Button onClick={onUnbind} disabled={!canUnbind}>
+							Unbind
+						</Button>
 					) : null}
-					<span>{selectedPartLabel} / {selectedComponentCount} selected</span>
+					<span>
+						{selectedPartLabel} / {selectedComponentCount} selected
+					</span>
 				</div>
 			</section>
 		);
 	}
 
 	renderBody() {
-		const {
-			showActions = true,
-			bodyExtra = null,
-		} = this.props;
+		const {showActions = true, bodyExtra = null} = this.props;
 
 		return (
 			<div className="structure-card-body">
@@ -271,10 +277,8 @@ export default class PartsComponentSelector extends React.Component {
 	}
 
 	renderDetails() {
-		const {
-			detailClassName = 'structure-lists',
-		} = this.props;
-		const { detailsOpen } = this.state;
+		const {detailClassName = 'structure-lists'} = this.props;
+		const {detailsOpen} = this.state;
 
 		return (
 			<div className={detailClassName}>
@@ -282,7 +286,7 @@ export default class PartsComponentSelector extends React.Component {
 					<Button
 						className="structure-list-toggle"
 						aria-expanded={detailsOpen}
-						onClick={() => this.setState({ detailsOpen: !detailsOpen })}
+						onClick={() => this.setState({detailsOpen: !detailsOpen})}
 					>
 						{detailsOpen ? 'Close' : 'Open'}
 					</Button>

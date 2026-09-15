@@ -1,6 +1,6 @@
 import FaceAvoidance from './FaceAvoidance.js';
 import FaceInventory from './FaceInventory.js';
-import { FaceRanking } from './FaceRanking.js';
+import {FaceRanking} from './FaceRanking.js';
 import Random from '../../src/gc/utils/random.js';
 
 /**
@@ -170,11 +170,7 @@ export default class Faces {
 	 * @returns {Faces}
 	 */
 	recordAssignedFacePair(pair) {
-		this.faceInventory.recordAssignedPair(
-			pair.tile1,
-			pair.tile2,
-			pair.faceGroup
-		);
+		this.faceInventory.recordAssignedPair(pair.tile1, pair.tile2, pair.faceGroup);
 
 		return this;
 	}
@@ -203,11 +199,7 @@ export default class Faces {
 
 		openSoftLinks.forEach((link) => {
 			link.tiles.forEach((tileKey) => {
-				this.faceAvoidance.addFaceAvoidance(
-					tileKey,
-					pair.faceGroup,
-					weight
-				);
+				this.faceAvoidance.addFaceAvoidance(tileKey, pair.faceGroup, weight);
 			});
 		});
 

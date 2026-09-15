@@ -41,8 +41,5 @@ export interface CssVarsService {
 	 * @param descriptor - Describe the prefix and variable names to read.
 	 * @param options - Control element scoping, default values, and number coercion.
 	 */
-	buildObject(
-		descriptor: LayoutCssVarGroupDescriptor,
-		options?: LayoutCssVarBuildOptions
-	): Record<string, any>;
+	buildObject(descriptor: LayoutCssVarGroupDescriptor, options?: LayoutCssVarBuildOptions): Record<string, any>;
 }

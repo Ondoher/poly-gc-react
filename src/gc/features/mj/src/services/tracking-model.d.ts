@@ -12,10 +12,10 @@ type MjGameplaySession = {
 	difficulty: string;
 	layout: string;
 	elapsedTimeMs: number;
-	result: "won" | "abandoned" | "";
+	result: 'won' | 'abandoned' | '';
 	completed?: boolean;
 	tileSequence: [TileKey, TileKey][];
-}
+};
 
 /**
  * Describe the service that accumulates MJ gameplay tracking state.

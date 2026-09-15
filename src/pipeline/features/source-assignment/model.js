@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 import SemanticReviewModel from './models/SemanticReviewModel.js';
 
 export default class SourceAssignmentModel extends Service {
@@ -13,7 +13,7 @@ export default class SourceAssignmentModel extends Service {
 		]);
 	}
 
-	sourceAssignmentFaces({ sourceAcceptance, referenceStructure, sourceSemanticBindings, sourceSemanticPartStates }) {
+	sourceAssignmentFaces({sourceAcceptance, referenceStructure, sourceSemanticBindings, sourceSemanticPartStates}) {
 		return SemanticReviewModel.sourceAssignmentFaces({
 			sourceAcceptance,
 			referenceStructure,
@@ -22,7 +22,7 @@ export default class SourceAssignmentModel extends Service {
 		});
 	}
 
-	sourceAssignmentSummary({ sourceAcceptance, referenceStructure, sourceSemanticBindings, sourceSemanticPartStates }) {
+	sourceAssignmentSummary({sourceAcceptance, referenceStructure, sourceSemanticBindings, sourceSemanticPartStates}) {
 		return SemanticReviewModel.sourceAssignmentReviewSummary(
 			sourceAcceptance,
 			referenceStructure,
@@ -31,12 +31,12 @@ export default class SourceAssignmentModel extends Service {
 		);
 	}
 
-	bindSourceSemanticPart({ sourceSemanticBindings, sourceSemanticPartStates, faceKey, partId, componentIds }) {
+	bindSourceSemanticPart({sourceSemanticBindings, sourceSemanticPartStates, faceKey, partId, componentIds}) {
 		const nextBindings = structuredClone(sourceSemanticBindings || {});
 		const nextPartStates = structuredClone(sourceSemanticPartStates || {});
 		const selectedComponentIds = new Set(componentIds);
-		const faceBindings = { ...(nextBindings[faceKey] || {}) };
-		const facePartStates = { ...(nextPartStates[faceKey] || {}) };
+		const faceBindings = {...(nextBindings[faceKey] || {})};
+		const facePartStates = {...(nextPartStates[faceKey] || {})};
 		const previousPartIds = new Set();
 
 		for (const componentId of selectedComponentIds) {
@@ -67,11 +67,17 @@ export default class SourceAssignmentModel extends Service {
 		};
 	}
 
-	unbindSourceSemanticPart({ sourceSemanticBindings, sourceSemanticPartStates, faceKey, partId: _partId, componentIds = [] }) {
+	unbindSourceSemanticPart({
+		sourceSemanticBindings,
+		sourceSemanticPartStates,
+		faceKey,
+		partId: _partId,
+		componentIds = [],
+	}) {
 		const nextBindings = structuredClone(sourceSemanticBindings || {});
 		const nextPartStates = structuredClone(sourceSemanticPartStates || {});
-		const faceBindings = { ...(nextBindings[faceKey] || {}) };
-		const facePartStates = { ...(nextPartStates[faceKey] || {}) };
+		const faceBindings = {...(nextBindings[faceKey] || {})};
+		const facePartStates = {...(nextPartStates[faceKey] || {})};
 		const selectedComponentIds = new Set(componentIds || []);
 		const affectedPartIds = new Set();
 
@@ -100,15 +106,15 @@ export default class SourceAssignmentModel extends Service {
 		};
 	}
 
-	sourceBindingActions({ previousBindings, nextBindings }) {
+	sourceBindingActions({previousBindings, nextBindings}) {
 		const actionsByFace = {};
-		const faceKeys = new Set([
-			...Object.keys(previousBindings || {}),
-			...Object.keys(nextBindings || {}),
-		]);
+		const faceKeys = new Set([...Object.keys(previousBindings || {}), ...Object.keys(nextBindings || {})]);
 
 		for (const faceKey of faceKeys) {
-			const faceActions = sourceBindingActionsForFace(previousBindings?.[faceKey] || {}, nextBindings?.[faceKey] || {});
+			const faceActions = sourceBindingActionsForFace(
+				previousBindings?.[faceKey] || {},
+				nextBindings?.[faceKey] || {},
+			);
 			if (Object.keys(faceActions).length > 0) {
 				actionsByFace[faceKey] = faceActions;
 			}
@@ -133,10 +139,7 @@ function noSourceBindingRecord() {
 
 function sourceBindingActionsForFace(previousBindings, nextBindings) {
 	const actions = {};
-	const componentIds = new Set([
-		...Object.keys(previousBindings || {}),
-		...Object.keys(nextBindings || {}),
-	]);
+	const componentIds = new Set([...Object.keys(previousBindings || {}), ...Object.keys(nextBindings || {})]);
 
 	for (const componentId of componentIds) {
 		const previous = bindingActionIdentity(previousBindings?.[componentId]);
@@ -148,14 +151,14 @@ function sourceBindingActionsForFace(previousBindings, nextBindings) {
 
 		actions[componentId] = next.bound
 			? {
-				componentId,
-				action: 'bind',
-				partId: next.partId,
-			}
+					componentId,
+					action: 'bind',
+					partId: next.partId,
+				}
 			: {
-				componentId,
-				action: 'unbind',
-			};
+					componentId,
+					action: 'unbind',
+				};
 	}
 
 	return actions;

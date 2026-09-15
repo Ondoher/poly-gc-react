@@ -24,9 +24,7 @@ export default class OptionalComponentAssignments {
 	}
 
 	prune(parts) {
-		return new OptionalComponentAssignments(
-			OptionalComponentAssignments.prune(this.assignments, parts),
-		);
+		return new OptionalComponentAssignments(OptionalComponentAssignments.prune(this.assignments, parts));
 	}
 
 	sortComponentsForReview(components, parts) {
@@ -53,17 +51,13 @@ export default class OptionalComponentAssignments {
 	}
 
 	static initial(parts) {
-		return Object.fromEntries(parts.map((part) => [
-			part.partId,
-			[...(part.suggestedComponentIds || [])],
-		]));
+		return Object.fromEntries(parts.map((part) => [part.partId, [...(part.suggestedComponentIds || [])]]));
 	}
 
 	static prune(assignments, parts) {
 		const partIds = new Set(parts.map((part) => part.partId));
 
-		return Object.fromEntries(Object.entries(assignments || {})
-			.filter(([partId]) => partIds.has(partId)));
+		return Object.fromEntries(Object.entries(assignments || {}).filter(([partId]) => partIds.has(partId)));
 	}
 
 	static assign(assignments, partId, componentIds) {
@@ -71,9 +65,10 @@ export default class OptionalComponentAssignments {
 		const nextAssignments = {};
 
 		for (const [candidatePartId, candidateComponentIds] of Object.entries(assignments || {})) {
-			nextAssignments[candidatePartId] = candidatePartId === partId
-				? [...componentIds]
-				: (candidateComponentIds || []).filter((componentId) => !selectedComponentIds.has(componentId));
+			nextAssignments[candidatePartId] =
+				candidatePartId === partId
+					? [...componentIds]
+					: (candidateComponentIds || []).filter((componentId) => !selectedComponentIds.has(componentId));
 		}
 
 		if (!nextAssignments[partId]) {
@@ -96,9 +91,11 @@ export default class OptionalComponentAssignments {
 	}
 
 	static assignedPartFor(assignments, componentId) {
-		return Object.entries(assignments || {}).find(([, componentIds]) => (
-			(componentIds || []).includes(componentId)
-		))?.[0] || '';
+		return (
+			Object.entries(assignments || {}).find(([, componentIds]) =>
+				(componentIds || []).includes(componentId),
+			)?.[0] || ''
+		);
 	}
 
 	static partLabel(partId) {

@@ -1,15 +1,10 @@
 import React from 'react';
-import { PartsComponentSelector } from '../../../components/index.js';
+import {PartsComponentSelector} from '../../../components/index.js';
 import OptionalComponentAssignments from '../models/OptionalComponentAssignments.js';
 
 export default class OptionalPartsComponentsSelector extends React.Component {
 	optionalPartRow(part) {
-		const {
-			face,
-			selectedPartId,
-			componentAssignments,
-			onClearAssignment,
-		} = this.props;
+		const {face, selectedPartId, componentAssignments, onClearAssignment} = this.props;
 		const topCandidate = part.candidates?.[0] || null;
 		const activeComponentIds = componentAssignments[part.partId] || [];
 		const componentCount = activeComponentIds.length;
@@ -29,27 +24,30 @@ export default class OptionalPartsComponentsSelector extends React.Component {
 				`optional-part-row-${part.partId}`,
 				componentCount ? 'bound-optional-part-row' : '',
 				selectedPartId === part.partId ? 'selected-optional-part-row' : '',
-			].filter(Boolean).join(' '),
+			]
+				.filter(Boolean)
+				.join(' '),
 			title: [
 				OptionalComponentAssignments.partLabel(part.partId),
 				part.role || part.contentKind,
 				part.hint?.region,
 				activeComponentIds.length ? activeComponentIds.join(', ') : '',
-				topCandidate ? `${Math.round((topCandidate.score || 0) * 100)}% ${(topCandidate.reasons || []).join(', ')}` : '',
-			].filter(Boolean).join(' / '),
+				topCandidate
+					? `${Math.round((topCandidate.score || 0) * 100)}% ${(topCandidate.reasons || []).join(', ')}`
+					: '',
+			]
+				.filter(Boolean)
+				.join(' / '),
 			clearLabel: activeComponentIds.length ? 'clear' : '',
 			onClear: () => onClearAssignment?.(part.partId),
 		};
 	}
 
 	optionalComponentRow(component) {
-		const {
-			face,
-			componentAssignments,
-			selectedComponentIds,
-			highlightedComponentIds,
-		} = this.props;
-		const assignedPartId = new OptionalComponentAssignments(componentAssignments).assignedPartFor(component.componentId);
+		const {face, componentAssignments, selectedComponentIds, highlightedComponentIds} = this.props;
+		const assignedPartId = new OptionalComponentAssignments(componentAssignments).assignedPartFor(
+			component.componentId,
+		);
 		const isSelected = selectedComponentIds.includes(component.componentId);
 		const isSuggested = highlightedComponentIds.has(component.componentId);
 		const componentIndex = (face.components || []).indexOf(component);
@@ -57,7 +55,9 @@ export default class OptionalPartsComponentsSelector extends React.Component {
 		return {
 			id: component.componentId,
 			partIds: assignedPartId ? [assignedPartId] : [],
-			label: assignedPartId ? OptionalComponentAssignments.partLabel(assignedPartId) : `Component ${componentIndex + 1}`,
+			label: assignedPartId
+				? OptionalComponentAssignments.partLabel(assignedPartId)
+				: `Component ${componentIndex + 1}`,
 			status: assignedPartId ? 'bound' : 'unbound',
 			meta: component.componentId,
 			metaClassName: 'optional-component-id',
@@ -71,13 +71,17 @@ export default class OptionalPartsComponentsSelector extends React.Component {
 				assignedPartId ? 'bound-optional-component-row' : '',
 				isSelected ? 'selected-optional-component-row' : '',
 				isSuggested ? 'suggested-optional-component-row' : '',
-			].filter(Boolean).join(' '),
+			]
+				.filter(Boolean)
+				.join(' '),
 			title: [
 				component.componentId,
 				component.sourceElementId,
 				assignedPartId ? OptionalComponentAssignments.partLabel(assignedPartId) : '',
 				component.className || component.fill || component.stroke || 'paint',
-			].filter(Boolean).join(' / '),
+			]
+				.filter(Boolean)
+				.join(' / '),
 		};
 	}
 
@@ -97,9 +101,13 @@ export default class OptionalPartsComponentsSelector extends React.Component {
 		const foundCount = parts.filter((part) => part.sourceState === 'candidate-found').length;
 		const hasEnabledParts = parts.length > 0;
 		const selectedPartBinding = componentAssignments[selectedPartId] || [];
-		const selectedBoundComponentIds = selectedComponentIds.filter((componentId) => selectedPartBinding.includes(componentId));
-		const sortedComponents = new OptionalComponentAssignments(componentAssignments)
-			.sortComponentsForReview(face.components || [], parts);
+		const selectedBoundComponentIds = selectedComponentIds.filter((componentId) =>
+			selectedPartBinding.includes(componentId),
+		);
+		const sortedComponents = new OptionalComponentAssignments(componentAssignments).sortComponentsForReview(
+			face.components || [],
+			parts,
+		);
 
 		return (
 			<PartsComponentSelector
@@ -111,16 +119,20 @@ export default class OptionalPartsComponentsSelector extends React.Component {
 				showComponents
 				selectedPartId={selectedPartId}
 				selectedComponentIds={selectedComponentIds}
-				selectedPartLabel={selectedPartId ? OptionalComponentAssignments.partLabel(selectedPartId) : 'Select part'}
+				selectedPartLabel={
+					selectedPartId ? OptionalComponentAssignments.partLabel(selectedPartId) : 'Select part'
+				}
 				selectedComponentCount={selectedComponentIds.length}
 				canBind={hasEnabledParts && canAssign}
 				canUnbind={Boolean(selectedPartBinding.length)}
 				selectedPartHasBinding={Boolean(selectedPartBinding.length)}
 				onBind={onAssignSelection}
-				onUnbind={() => onClearAssignment?.(
-					selectedPartId,
-					selectedBoundComponentIds.length ? selectedBoundComponentIds : null,
-				)}
+				onUnbind={() =>
+					onClearAssignment?.(
+						selectedPartId,
+						selectedBoundComponentIds.length ? selectedBoundComponentIds : null,
+					)
+				}
 				onSelectionChange={(selection, details) => onSelectionChange?.(selection, details)}
 				partsTitle="Optional Parts"
 				componentsTitle="Normalized Components"

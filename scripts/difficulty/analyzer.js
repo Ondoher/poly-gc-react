@@ -2,18 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import Engine from '../../src/gc/features/mj/src/engine/Engine.js';
-import {
-	generateRandomBoard,
-	generateRandomFaceBoard,
-} from './random-board-generator.js';
+import {generateRandomBoard, generateRandomFaceBoard} from './random-board-generator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '../..');
-const LAYOUTS_PATH = path.join(
-	REPO_ROOT,
-	'src/gc/features/mj/src/data/layouts.json'
-);
+const LAYOUTS_PATH = path.join(REPO_ROOT, 'src/gc/features/mj/src/data/layouts.json');
 const DEFAULT_ANALYSIS_OPTIONS = {
 	maxDepth: 18,
 	maxStates: 10000,
@@ -92,9 +86,11 @@ function average(values) {
 		return 0;
 	}
 
-	return values.reduce(function(total, value) {
-		return total + value;
-	}, 0) / values.length;
+	return (
+		values.reduce(function (total, value) {
+			return total + value;
+		}, 0) / values.length
+	);
 }
 
 function percentile(values, percent) {
@@ -102,7 +98,7 @@ function percentile(values, percent) {
 		return 0;
 	}
 
-	var sorted = values.slice().sort(function(left, right) {
+	var sorted = values.slice().sort(function (left, right) {
 		return left - right;
 	});
 	var index = Math.ceil((percent / 100) * sorted.length) - 1;
@@ -114,7 +110,7 @@ function longestRun(values, predicate) {
 	var longest = 0;
 	var current = 0;
 
-	values.forEach(function(value) {
+	values.forEach(function (value) {
 		if (predicate(value)) {
 			current++;
 			longest = Math.max(longest, current);
@@ -127,9 +123,11 @@ function longestRun(values, predicate) {
 }
 
 function hashString(value) {
-	return String(value).split('').reduce(function(hash, char) {
-		return ((hash << 5) - hash + char.charCodeAt(0)) >>> 0;
-	}, 2166136261);
+	return String(value)
+		.split('')
+		.reduce(function (hash, char) {
+			return ((hash << 5) - hash + char.charCodeAt(0)) >>> 0;
+		}, 2166136261);
 }
 
 class DeterministicRandom {
@@ -361,13 +359,12 @@ class GeneratedBoardAdapter {
 	}
 
 	isPlayablePair(tile1, tile2) {
-		return this.selectableTiles.has(tile1) &&
+		return (
+			this.selectableTiles.has(tile1) &&
 			this.selectableTiles.has(tile2) &&
 			tile1 !== tile2 &&
-			this.doFacesMatch(
-				this.board.pieces[tile1].face,
-				this.board.pieces[tile2].face
-			);
+			this.doFacesMatch(this.board.pieces[tile1].face, this.board.pieces[tile2].face)
+		);
 	}
 
 	doFacesMatch(face1, face2) {
@@ -375,20 +372,22 @@ class GeneratedBoardAdapter {
 	}
 
 	hasOpenSide(x, y, z) {
-		return x === 1 ||
+		return (
+			x === 1 ||
 			x === 29 ||
 			(!this.isUsed(x + 2, y, z) && !this.isUsed(x + 2, y + 1, z)) ||
-			(!this.isUsed(x - 1, y, z) && !this.isUsed(x - 1, y + 1, z));
+			(!this.isUsed(x - 1, y, z) && !this.isUsed(x - 1, y + 1, z))
+		);
 	}
 
 	hasOpenTop(x, y, z) {
-		return z === 7 ||
-			(
-				!this.isUsed(x, y, z + 1) &&
+		return (
+			z === 7 ||
+			(!this.isUsed(x, y, z + 1) &&
 				!this.isUsed(x + 1, y, z + 1) &&
 				!this.isUsed(x, y + 1, z + 1) &&
-				!this.isUsed(x + 1, y + 1, z + 1)
-			);
+				!this.isUsed(x + 1, y + 1, z + 1))
+		);
 	}
 
 	addTile(tile) {
@@ -402,15 +401,23 @@ class GeneratedBoardAdapter {
 	}
 
 	addPosition(position) {
-		this.forEachOccupiedSpace(position, function(x, y, z) {
-			this.usedSpaces.add(keyForSpace(x, y, z));
-		}, this);
+		this.forEachOccupiedSpace(
+			position,
+			function (x, y, z) {
+				this.usedSpaces.add(keyForSpace(x, y, z));
+			},
+			this,
+		);
 	}
 
 	removePosition(position) {
-		this.forEachOccupiedSpace(position, function(x, y, z) {
-			this.usedSpaces.delete(keyForSpace(x, y, z));
-		}, this);
+		this.forEachOccupiedSpace(
+			position,
+			function (x, y, z) {
+				this.usedSpaces.delete(keyForSpace(x, y, z));
+			},
+			this,
+		);
 	}
 
 	forEachOccupiedSpace(position, callback, thisArg) {
@@ -432,9 +439,11 @@ class GeneratedBoardAdapter {
 
 	updatePlacedSignature() {
 		this.placedTiles.chunks = [
-			Array.from(this.placedTileSet).sort(function(left, right) {
-				return left - right;
-			}).join(':'),
+			Array.from(this.placedTileSet)
+				.sort(function (left, right) {
+					return left - right;
+				})
+				.join(':'),
 		];
 	}
 }
@@ -487,7 +496,7 @@ export class MahjonggDifficultyAnalyzer {
 	}
 
 	getPlayablePairs() {
-		return this.engine.getHints(-1).map(function(pair) {
+		return this.engine.getHints(-1).map(function (pair) {
 			return {
 				tile1: pair.tile1,
 				tile2: pair.tile2,
@@ -501,7 +510,7 @@ export class MahjonggDifficultyAnalyzer {
 	}
 
 	groupPairsByFaceSet(pairs) {
-		return pairs.reduce(function(groups, pair) {
+		return pairs.reduce(function (groups, pair) {
 			groups[pair.faceSet] = groups[pair.faceSet] || [];
 			groups[pair.faceSet].push(pair);
 			return groups;
@@ -510,11 +519,11 @@ export class MahjonggDifficultyAnalyzer {
 
 	summarizeFaceSets(pairs) {
 		var groups = this.groupPairsByFaceSet(pairs);
-		var summaries = Object.keys(groups).map(function(faceSet) {
+		var summaries = Object.keys(groups).map(function (faceSet) {
 			var groupPairs = groups[faceSet];
 			var tiles = new Set();
 
-			groupPairs.forEach(function(pair) {
+			groupPairs.forEach(function (pair) {
 				tiles.add(pair.tile1);
 				tiles.add(pair.tile2);
 			});
@@ -528,7 +537,7 @@ export class MahjonggDifficultyAnalyzer {
 
 		return {
 			faceSetCount: summaries.length,
-			ambiguousFaceSetCount: summaries.filter(function(summary) {
+			ambiguousFaceSetCount: summaries.filter(function (summary) {
 				return summary.pairCount > 1;
 			}).length,
 			groups: summaries,
@@ -539,14 +548,14 @@ export class MahjonggDifficultyAnalyzer {
 		var groups = this.groupPairsByFaceSet(pairs);
 		var ambiguousGroups = [];
 
-		Object.keys(groups).forEach(function(faceSet) {
+		Object.keys(groups).forEach(function (faceSet) {
 			var groupPairs = groups[faceSet];
 
 			if (groupPairs.length <= 1) {
 				return;
 			}
 
-			var outcomes = groupPairs.map(function(pair) {
+			var outcomes = groupPairs.map(function (pair) {
 				this.engine.playTiles(pair.tile1, pair.tile2);
 				var nextPairs = this.getPlayablePairs();
 				var outcome = {
@@ -565,16 +574,14 @@ export class MahjonggDifficultyAnalyzer {
 				return outcome;
 			}, this);
 
-			var nextCounts = outcomes.map(function(outcome) {
+			var nextCounts = outcomes.map(function (outcome) {
 				return outcome.nextPlayablePairCount;
 			});
-			var deadEndCount = outcomes.filter(function(outcome) {
+			var deadEndCount = outcomes.filter(function (outcome) {
 				return outcome.deadEnd;
 			}).length;
 			var spread = Math.max(...nextCounts) - Math.min(...nextCounts);
-			var downstream = options.includeDownstream
-				? this.summarizeDownstreamPairChoice(outcomes)
-				: null;
+			var downstream = options.includeDownstream ? this.summarizeDownstreamPairChoice(outcomes) : null;
 
 			ambiguousGroups.push({
 				faceSet: Number(faceSet),
@@ -588,41 +595,57 @@ export class MahjonggDifficultyAnalyzer {
 		}, this);
 
 		var downstreamGroups = ambiguousGroups
-			.map(function(group) { return group.downstream; })
+			.map(function (group) {
+				return group.downstream;
+			})
 			.filter(Boolean);
 
 		return {
 			ambiguousGroupCount: ambiguousGroups.length,
-			consequentialGroupCount: ambiguousGroups.filter(function(group) {
+			consequentialGroupCount: ambiguousGroups.filter(function (group) {
 				return group.isConsequential;
 			}).length,
 			maxSpread: ambiguousGroups.length
-				? Math.max(...ambiguousGroups.map(function(group) { return group.spread; }))
+				? Math.max(
+						...ambiguousGroups.map(function (group) {
+							return group.spread;
+						}),
+					)
 				: 0,
-			averageSpread: average(ambiguousGroups.map(function(group) {
-				return group.spread;
-			})),
+			averageSpread: average(
+				ambiguousGroups.map(function (group) {
+					return group.spread;
+				}),
+			),
 			downstream: {
 				sampleGroupCount: downstreamGroups.length,
-				consequentialGroupCount: downstreamGroups.filter(function(group) {
+				consequentialGroupCount: downstreamGroups.filter(function (group) {
 					return group.isConsequential;
 				}).length,
 				maxDeadEndRateSpread: downstreamGroups.length
-					? Math.max(...downstreamGroups.map(function(group) {
+					? Math.max(
+							...downstreamGroups.map(function (group) {
+								return group.deadEndRateSpread;
+							}),
+						)
+					: 0,
+				averageDeadEndRateSpread: average(
+					downstreamGroups.map(function (group) {
 						return group.deadEndRateSpread;
-					}))
-					: 0,
-				averageDeadEndRateSpread: average(downstreamGroups.map(function(group) {
-					return group.deadEndRateSpread;
-				})),
+					}),
+				),
 				maxRemainingTilesSpread: downstreamGroups.length
-					? Math.max(...downstreamGroups.map(function(group) {
-						return group.averageRemainingTilesSpread;
-					}))
+					? Math.max(
+							...downstreamGroups.map(function (group) {
+								return group.averageRemainingTilesSpread;
+							}),
+						)
 					: 0,
-				averageRemainingTilesSpread: average(downstreamGroups.map(function(group) {
-					return group.averageRemainingTilesSpread;
-				})),
+				averageRemainingTilesSpread: average(
+					downstreamGroups.map(function (group) {
+						return group.averageRemainingTilesSpread;
+					}),
+				),
 			},
 			groups: ambiguousGroups,
 		};
@@ -646,12 +669,9 @@ export class MahjonggDifficultyAnalyzer {
 			return stats;
 		}
 
-		var seed = hashString([
-			this.getBoardFaceSignature(),
-			this.getStateSignature(),
-			pair.tile1,
-			pair.tile2,
-		].join('|'));
+		var seed = hashString(
+			[this.getBoardFaceSignature(), this.getStateSignature(), pair.tile1, pair.tile2].join('|'),
+		);
 
 		for (let idx = 0; idx < count; idx++) {
 			var playout = this.runReversiblePlayout(new DeterministicRandom(seed + idx));
@@ -677,13 +697,13 @@ export class MahjonggDifficultyAnalyzer {
 	}
 
 	summarizeDownstreamPairChoice(outcomes) {
-		var deadEndRates = outcomes.map(function(outcome) {
+		var deadEndRates = outcomes.map(function (outcome) {
 			return outcome.downstream.deadEndRate;
 		});
-		var solveRates = outcomes.map(function(outcome) {
+		var solveRates = outcomes.map(function (outcome) {
 			return outcome.downstream.solveRate;
 		});
-		var remainingTiles = outcomes.map(function(outcome) {
+		var remainingTiles = outcomes.map(function (outcome) {
 			return outcome.downstream.averageRemainingTiles;
 		});
 		var deadEndRateSpread = Math.max(...deadEndRates) - Math.min(...deadEndRates);
@@ -763,7 +783,7 @@ export class MahjonggDifficultyAnalyzer {
 			averageBranching: average(branchCounts),
 			minBranching: branchCounts.length ? Math.min(...branchCounts) : 0,
 			maxBranching: branchCounts.length ? Math.max(...branchCounts) : 0,
-			lowBranchMoveCount: branchCounts.filter(function(count) {
+			lowBranchMoveCount: branchCounts.filter(function (count) {
 				return count <= 2;
 			}).length,
 			averagePairChoiceSpread: average(pairChoiceSpread),
@@ -807,25 +827,15 @@ export class MahjonggDifficultyAnalyzer {
 
 		return {
 			...stats,
-			averageBranching: stats.branchStateCount
-				? stats.branchCountTotal / stats.branchStateCount
-				: 0,
+			averageBranching: stats.branchStateCount ? stats.branchCountTotal / stats.branchStateCount : 0,
 			minBranching: stats.minBranching ?? 0,
-			deadEndRate: stats.statesExplored
-				? stats.deadEnds / stats.statesExplored
-				: 0,
-			solutionRate: stats.statesExplored
-				? stats.solvedBranches / stats.statesExplored
-				: 0,
+			deadEndRate: stats.statesExplored ? stats.deadEnds / stats.statesExplored : 0,
+			solutionRate: stats.statesExplored ? stats.solvedBranches / stats.statesExplored : 0,
 			averagePairChoiceSpread: stats.pairChoiceSensitivitySampleCount
 				? stats.pairChoiceSpreadTotal / stats.pairChoiceSensitivitySampleCount
 				: 0,
-			dominantStackRiskRate: stats.statesExplored
-				? stats.dominantStackRiskStateCount / stats.statesExplored
-				: 0,
-			dominantStackRate: stats.statesExplored
-				? stats.dominantStackStateCount / stats.statesExplored
-				: 0,
+			dominantStackRiskRate: stats.statesExplored ? stats.dominantStackRiskStateCount / stats.statesExplored : 0,
+			dominantStackRate: stats.statesExplored ? stats.dominantStackStateCount / stats.statesExplored : 0,
 			minDominantStackBalanceMargin: stats.minDominantStackBalanceMargin ?? 0,
 		};
 	}
@@ -886,9 +896,10 @@ export class MahjonggDifficultyAnalyzer {
 				if (playout.dominantStack.dominant) {
 					stats.deadEndDominantStackCount++;
 				}
-				stats.shallowestDeadEndMoveCount = stats.shallowestDeadEndMoveCount === null
-					? playout.moves
-					: Math.min(stats.shallowestDeadEndMoveCount, playout.moves);
+				stats.shallowestDeadEndMoveCount =
+					stats.shallowestDeadEndMoveCount === null
+						? playout.moves
+						: Math.min(stats.shallowestDeadEndMoveCount, playout.moves);
 			}
 		}
 
@@ -998,13 +1009,11 @@ export class MahjonggDifficultyAnalyzer {
 		if (dominantStack.dominant) {
 			stats.dominantStackStateCount++;
 		}
-		stats.maxDominantStackHeight = Math.max(
-			stats.maxDominantStackHeight,
-			dominantStack.maxStackHeight
-		);
-		stats.minDominantStackBalanceMargin = stats.minDominantStackBalanceMargin === null
-			? dominantStack.balanceMargin
-			: Math.min(stats.minDominantStackBalanceMargin, dominantStack.balanceMargin);
+		stats.maxDominantStackHeight = Math.max(stats.maxDominantStackHeight, dominantStack.maxStackHeight);
+		stats.minDominantStackBalanceMargin =
+			stats.minDominantStackBalanceMargin === null
+				? dominantStack.balanceMargin
+				: Math.min(stats.minDominantStackBalanceMargin, dominantStack.balanceMargin);
 
 		if (this.engine.tileCount === 0) {
 			stats.solvedBranches++;
@@ -1014,9 +1023,7 @@ export class MahjonggDifficultyAnalyzer {
 		var pairs = this.getPlayablePairs();
 		stats.branchStateCount++;
 		stats.branchCountTotal += pairs.length;
-		stats.minBranching = stats.minBranching === null
-			? pairs.length
-			: Math.min(stats.minBranching, pairs.length);
+		stats.minBranching = stats.minBranching === null ? pairs.length : Math.min(stats.minBranching, pairs.length);
 		stats.maxBranching = Math.max(stats.maxBranching, pairs.length);
 		if (pairs.length <= 2) {
 			stats.lowBranchStateCount++;
@@ -1039,11 +1046,8 @@ export class MahjonggDifficultyAnalyzer {
 			return;
 		}
 
-		this.sortPairsForSearch(pairs).forEach(function(pair) {
-			if (
-				stats.statesExplored >= this.options.maxStates ||
-				stats.solvedBranches >= this.options.maxSolutions
-			) {
+		this.sortPairsForSearch(pairs).forEach(function (pair) {
+			if (stats.statesExplored >= this.options.maxStates || stats.solvedBranches >= this.options.maxSolutions) {
 				return;
 			}
 
@@ -1054,7 +1058,7 @@ export class MahjonggDifficultyAnalyzer {
 	}
 
 	sortPairsForSearch(pairs) {
-		return pairs.slice().sort(function(left, right) {
+		return pairs.slice().sort(function (left, right) {
 			if (left.faceSet !== right.faceSet) {
 				return left.faceSet - right.faceSet;
 			}
@@ -1072,9 +1076,11 @@ export class MahjonggDifficultyAnalyzer {
 	}
 
 	getBoardFaceSignature() {
-		return this.engine.board.pieces.map(function(piece) {
-			return piece.face;
-		}).join(',');
+		return this.engine.board.pieces
+			.map(function (piece) {
+				return piece.face;
+			})
+			.join(',');
 	}
 
 	getPlacedTileIndexes() {
@@ -1098,7 +1104,7 @@ export class MahjonggDifficultyAnalyzer {
 	getDominantStackProfile() {
 		var stacks = {};
 
-		this.getPlacedTileIndexes().forEach(function(tile) {
+		this.getPlacedTileIndexes().forEach(function (tile) {
 			var {x, y} = this.engine.board.pieces[tile].pos;
 
 			if (x === -1) {
@@ -1137,16 +1143,16 @@ export class MahjonggDifficultyAnalyzer {
 			earlyAverage: average(early),
 			middleAverage: average(middle),
 			lateAverage: average(late),
-			earlyLowBranchMoveCount: early.filter(function(count) {
+			earlyLowBranchMoveCount: early.filter(function (count) {
 				return count <= 2;
 			}).length,
-			middleLowBranchMoveCount: middle.filter(function(count) {
+			middleLowBranchMoveCount: middle.filter(function (count) {
 				return count <= 2;
 			}).length,
-			lateLowBranchMoveCount: late.filter(function(count) {
+			lateLowBranchMoveCount: late.filter(function (count) {
 				return count <= 2;
 			}).length,
-			longestLowBranchRun: longestRun(branchCounts, function(count) {
+			longestLowBranchRun: longestRun(branchCounts, function (count) {
 				return count <= 2;
 			}),
 		};
@@ -1154,21 +1160,25 @@ export class MahjonggDifficultyAnalyzer {
 
 	summarizeDominantStackTimeline(profiles) {
 		return {
-			riskMoveCount: profiles.filter(function(profile) {
+			riskMoveCount: profiles.filter(function (profile) {
 				return profile.atRisk;
 			}).length,
-			dominantMoveCount: profiles.filter(function(profile) {
+			dominantMoveCount: profiles.filter(function (profile) {
 				return profile.dominant;
 			}).length,
-			averageMaxStackHeight: average(profiles.map(function(profile) {
-				return profile.maxStackHeight;
-			})),
+			averageMaxStackHeight: average(
+				profiles.map(function (profile) {
+					return profile.maxStackHeight;
+				}),
+			),
 			minBalanceMargin: profiles.length
-				? Math.min(...profiles.map(function(profile) {
-					return profile.balanceMargin;
-				}))
+				? Math.min(
+						...profiles.map(function (profile) {
+							return profile.balanceMargin;
+						}),
+					)
 				: 0,
-			longestRiskRun: longestRun(profiles, function(profile) {
+			longestRiskRun: longestRun(profiles, function (profile) {
 				return profile.atRisk;
 			}),
 		};
@@ -1176,12 +1186,9 @@ export class MahjonggDifficultyAnalyzer {
 
 	scoreDifficulty({initialPairChoice, search, knownSolutionPath, playouts}) {
 		var averageBranching = search.averageBranching || knownSolutionPath.averageBranching || 0;
-		var lowBranchRatio = search.branchStateCount
-			? search.lowBranchStateCount / search.branchStateCount
-			: 0;
-		var tilePickerStats = typeof this.engine.getTilePickerStats === 'function'
-			? this.engine.getTilePickerStats()
-			: null;
+		var lowBranchRatio = search.branchStateCount ? search.lowBranchStateCount / search.branchStateCount : 0;
+		var tilePickerStats =
+			typeof this.engine.getTilePickerStats === 'function' ? this.engine.getTilePickerStats() : null;
 		var consequentialSearchRatio = search.statesExplored
 			? search.consequentialPairChoiceStateCount / search.statesExplored
 			: 0;
@@ -1190,63 +1197,38 @@ export class MahjonggDifficultyAnalyzer {
 		var lowBranchScore = clamp(lowBranchRatio * 25, 0, 25);
 		var branchingScore = clamp((10 - averageBranching) * 3, 0, 25);
 		var playoutDeadEndScore = clamp(playouts.deadEndRate * 20, 0, 20);
-		var playoutRemainingScore = clamp(
-			(playouts.averageRemainingTiles / this.engine.board.count) * 20,
-			0,
-			20
-		);
-		var pickerFreedTileScore = tilePickerStats
-			? clamp((5 - tilePickerStats.averageFreedCount) * 5, 0, 10)
-			: 0;
+		var playoutRemainingScore = clamp((playouts.averageRemainingTiles / this.engine.board.count) * 20, 0, 20);
+		var pickerFreedTileScore = tilePickerStats ? clamp((5 - tilePickerStats.averageFreedCount) * 5, 0, 10) : 0;
 		var pickerIntersectionScore = tilePickerStats
 			? clamp(
-				(
-					tilePickerStats.averageHorizontalIntersections +
-					tilePickerStats.averageVerticalIntersections * 2
-				) * 20,
-				0,
-				10
-			)
+					(tilePickerStats.averageHorizontalIntersections +
+						tilePickerStats.averageVerticalIntersections * 2) *
+						20,
+					0,
+					10,
+				)
 			: 0;
-		var immediatePairChoiceScore = clamp(
-			(initialPairChoice.maxSpread + search.averagePairChoiceSpread) * 4,
-			0,
-			25
-		);
-		var downstreamGroupScore = clamp(
-			(downstream.consequentialGroupCount || 0) * 5,
-			0,
-			25
-		);
-		var downstreamDeadEndScore = clamp(
-			(downstream.averageDeadEndRateSpread || 0) * 20,
-			0,
-			20
-		);
+		var immediatePairChoiceScore = clamp((initialPairChoice.maxSpread + search.averagePairChoiceSpread) * 4, 0, 25);
+		var downstreamGroupScore = clamp((downstream.consequentialGroupCount || 0) * 5, 0, 25);
+		var downstreamDeadEndScore = clamp((downstream.averageDeadEndRateSpread || 0) * 20, 0, 20);
 		var downstreamRemainingScore = clamp(
 			((downstream.averageRemainingTilesSpread || 0) / this.engine.board.count) * 20,
 			0,
-			20
+			20,
 		);
 		var searchPairChoiceScore = clamp(consequentialSearchRatio * 10, 0, 10);
 		var brutalityDeadEndScore = clamp(playouts.deadEndRate * 35, 0, 35);
-		var brutalityRemainingScore = clamp(
-			(playouts.deadEndRemainingP75 / this.engine.board.count) * 35,
-			0,
-			35
-		);
+		var brutalityRemainingScore = clamp((playouts.deadEndRemainingP75 / this.engine.board.count) * 35, 0, 35);
 		var brutalityShallowScore = clamp(
-			((knownSolutionPath.moveCount - playouts.averageDeadEndMoves) /
-				Math.max(1, knownSolutionPath.moveCount)) * 20,
+			((knownSolutionPath.moveCount - playouts.averageDeadEndMoves) / Math.max(1, knownSolutionPath.moveCount)) *
+				20,
 			0,
-			20
+			20,
 		);
 		var brutalityStackRiskScore = clamp(
-			(playouts.deadEnded
-				? playouts.deadEndDominantStackRiskCount / playouts.deadEnded
-				: 0) * 10,
+			(playouts.deadEnded ? playouts.deadEndDominantStackRiskCount / playouts.deadEnded : 0) * 10,
 			0,
-			10
+			10,
 		);
 		var unknownSolutionScore = knownSolutionPath.available === false ? 10 : 0;
 		var invalidSolutionScore = knownSolutionPath.valid === false ? 25 : 0;
@@ -1259,7 +1241,7 @@ export class MahjonggDifficultyAnalyzer {
 				pickerFreedTileScore +
 				pickerIntersectionScore,
 			0,
-			100
+			100,
 		);
 		var choicePressureScore = clamp(
 			immediatePairChoiceScore +
@@ -1268,23 +1250,17 @@ export class MahjonggDifficultyAnalyzer {
 				downstreamRemainingScore +
 				searchPairChoiceScore,
 			0,
-			100
+			100,
 		);
 		var brutalityScore = clamp(
-			brutalityDeadEndScore +
-				brutalityRemainingScore +
-				brutalityShallowScore +
-				brutalityStackRiskScore,
+			brutalityDeadEndScore + brutalityRemainingScore + brutalityShallowScore + brutalityStackRiskScore,
 			0,
-			100
+			100,
 		);
 		var score = clamp(
-			tightnessScore * 0.55 +
-				choicePressureScore * 0.45 +
-				unknownSolutionScore +
-				invalidSolutionScore,
+			tightnessScore * 0.55 + choicePressureScore * 0.45 + unknownSolutionScore + invalidSolutionScore,
 			0,
-			100
+			100,
 		);
 
 		return {
@@ -1344,15 +1320,14 @@ export function analyzeGeneratedBoard(options = {}) {
 		suspension: generated.suspension,
 		faceAvoidanceRules: generated.faceAvoidanceRules,
 		faceAssignmentRules: generated.faceAssignmentRules,
-		suspensionStats: typeof generated.engine.getSuspensionStats === 'function'
-			? generated.engine.getSuspensionStats()
-			: null,
-		tilePickerStats: typeof generated.engine.getTilePickerStats === 'function'
-			? generated.engine.getTilePickerStats()
-			: null,
-		faceAvoidanceStats: typeof generated.engine.getFaceAvoidanceStats === 'function'
-			? generated.engine.getFaceAvoidanceStats()
-			: null,
+		suspensionStats:
+			typeof generated.engine.getSuspensionStats === 'function' ? generated.engine.getSuspensionStats() : null,
+		tilePickerStats:
+			typeof generated.engine.getTilePickerStats === 'function' ? generated.engine.getTilePickerStats() : null,
+		faceAvoidanceStats:
+			typeof generated.engine.getFaceAvoidanceStats === 'function'
+				? generated.engine.getFaceAvoidanceStats()
+				: null,
 		tileCount: generated.engine.board.count,
 		...analysis,
 	};

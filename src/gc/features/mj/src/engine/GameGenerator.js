@@ -1,7 +1,5 @@
-import Random from 'utils/random.js'
+import Random from 'utils/random.js';
 import Engine from './Engine.js';
-
-
 
 /**
  * Coordinates construction of a generated Mahjongg game.
@@ -20,7 +18,6 @@ export default class GameGenerator {
 		this.engine = engine;
 	}
 
-
 	shuffleTiles() {
 		let engine = this.engine;
 
@@ -37,7 +34,7 @@ export default class GameGenerator {
 			engine.drawPile.faceSets.set(id, {
 				id,
 				suit,
-				faces
+				faces,
 			});
 		}
 
@@ -48,7 +45,7 @@ export default class GameGenerator {
 			engine.drawPile.faceSets.set(id, {
 				id,
 				suit,
-				faces
+				faces,
 			});
 		}
 	}
@@ -141,13 +138,18 @@ export default class GameGenerator {
 			},
 		});
 
-		return engine.getOpenTilesInState({
-			has(tile) {
-				return placedTiles.has(tile);
-			},
-		}, usedSpaces).filter((tile) => {
-			return !references.has(tile);
-		});
+		return engine
+			.getOpenTilesInState(
+				{
+					has(tile) {
+						return placedTiles.has(tile);
+					},
+				},
+				usedSpaces,
+			)
+			.filter((tile) => {
+				return !references.has(tile);
+			});
 	}
 
 	recordAssignedFacePair(tile1, tile2, faceGroup) {
@@ -193,11 +195,11 @@ export default class GameGenerator {
 		let tiles = pending?.tiles || pending;
 
 		if (
-			pending
-			&& pending.faceGroup !== false
-			&& pending.faceGroup !== undefined
-			&& pending.face1 !== undefined
-			&& pending.face2 !== undefined
+			pending &&
+			pending.faceGroup !== false &&
+			pending.faceGroup !== undefined &&
+			pending.face1 !== undefined &&
+			pending.face2 !== undefined
 		) {
 			return {
 				faceGroup: pending.faceGroup,
@@ -205,7 +207,6 @@ export default class GameGenerator {
 				face2: pending.face2,
 			};
 		}
-
 
 		let faceGroup = engine.pickRankedFaceGroup(2, pending || tiles);
 		let pair = engine.drawFacePairFromGroup(faceGroup, tiles);
@@ -239,12 +240,7 @@ export default class GameGenerator {
 			});
 
 			if (second) {
-				engine.recordTilePickerStats(
-					first,
-					firstScores,
-					firstWindowDetails,
-					'normalFirstPicks'
-				);
+				engine.recordTilePickerStats(first, firstScores, firstWindowDetails, 'normalFirstPicks');
 
 				return {
 					tile1: first.tile,
@@ -254,7 +250,7 @@ export default class GameGenerator {
 			}
 		}
 
-		throw "BadLayoutException";
+		throw 'BadLayoutException';
 	}
 
 	pickWeightedSuspensionTriple(options = {}) {
@@ -264,37 +260,35 @@ export default class GameGenerator {
 			context: 'suspensionFirstPicks',
 		});
 		if (!first) {
-			throw "BadLayoutException";
+			throw 'BadLayoutException';
 		}
 		let second = engine.pickWeightedTile([first.tile], {
 			...options,
 			context: 'suspensionSecondPicks',
 		});
 		if (!second) {
-			throw "BadLayoutException";
+			throw 'BadLayoutException';
 		}
 		let third = engine.pickWeightedTile([first.tile, second.tile], {
 			...options,
 			context: 'suspensionThirdPicks',
 		});
 		if (!third) {
-			throw "BadLayoutException";
+			throw 'BadLayoutException';
 		}
 		let picks = [first, second, third];
 		let ranked = picks.slice().sort((left, right) => {
 			return right.weight - left.weight || right.tile - left.tile;
 		});
 		let selected = ranked.find((candidate) => {
-			let placed = picks
-				.filter((pick) => pick.tile !== candidate.tile)
-				.map((pick) => pick.tile);
+			let placed = picks.filter((pick) => pick.tile !== candidate.tile).map((pick) => pick.tile);
 
 			return !engine.wouldCreateDominantStack(placed);
 		});
 
 		if (!selected) {
 			engine.tilePickerStats.stackSafetyRejected++;
-			throw "BadLayoutException";
+			throw 'BadLayoutException';
 		}
 
 		let placed = picks
@@ -312,10 +306,7 @@ export default class GameGenerator {
 
 	pickWeightedReleasedPartner(suspended, options = {}) {
 		let engine = this.engine;
-		let referenceTiles = [
-			...(suspended.originalPair || []),
-			suspended.tile,
-		];
+		let referenceTiles = [...(suspended.originalPair || []), suspended.tile];
 
 		return engine.pickWeightedTile(referenceTiles, {
 			...options,
@@ -391,7 +382,7 @@ export default class GameGenerator {
 		let engine = this.engine;
 
 		if (engine.openTiles.length <= 2) {
-			return true
+			return true;
 		}
 
 		const placed = Math.floor(engine.solution.length / 2);
@@ -401,8 +392,8 @@ export default class GameGenerator {
 		const hitPlacedTarget = delta >= suspended.placementCount;
 		const hitOpenTarget = open <= suspended.openCount;
 
-		if (engine.suspensionRules.matchType === "both") {
-			return hitPlacedTarget && hitOpenTarget
+		if (engine.suspensionRules.matchType === 'both') {
+			return hitPlacedTarget && hitOpenTarget;
 		}
 
 		return hitPlacedTarget || hitOpenTarget;
@@ -436,7 +427,7 @@ export default class GameGenerator {
 	countOpenSuspensions() {
 		let engine = this.engine;
 
-		return engine.suspended.filter(function(suspended) {
+		return engine.suspended.filter(function (suspended) {
 			return engine.isTileOpen(suspended.tile);
 		}).length;
 	}
@@ -562,10 +553,7 @@ export default class GameGenerator {
 	 * @param {TileKey[]} avoidanceTargets
 	 * @returns {GeneratedPairRecord}
 	 */
-	createGeneratedPairRecord(tile1, tile2, avoidanceTargets = this.getFaceAvoidanceNeighborhood([
-		tile1,
-		tile2,
-	])) {
+	createGeneratedPairRecord(tile1, tile2, avoidanceTargets = this.getFaceAvoidanceNeighborhood([tile1, tile2])) {
 		let engine = this.engine;
 
 		return {
@@ -588,7 +576,7 @@ export default class GameGenerator {
 		let pendingPair = this.createGeneratedPairRecord(
 			pair.tile1,
 			pair.tile2,
-			this.getFaceAvoidanceTargetsAfterRemoval([pair.tile1, pair.tile2])
+			this.getFaceAvoidanceTargetsAfterRemoval([pair.tile1, pair.tile2]),
 		);
 
 		this.removeGeneratedPair(pair.tile1, pair.tile2);
@@ -608,7 +596,7 @@ export default class GameGenerator {
 		try {
 			triple = this.pickWeightedSuspensionTriple(this.getTilePickerOptions());
 		} catch (err) {
-			if (err !== "BadLayoutException") {
+			if (err !== 'BadLayoutException') {
 				throw err;
 			}
 
@@ -619,10 +607,7 @@ export default class GameGenerator {
 		let tile1 = triple.placed[0];
 		let tile2 = triple.placed[1];
 		let tile3 = triple.suspended;
-		let avoidanceTargets = this.getFaceAvoidanceTargetsAfterRemoval(
-			[tile1, tile2, tile3],
-			[tile1, tile2]
-		);
+		let avoidanceTargets = this.getFaceAvoidanceTargetsAfterRemoval([tile1, tile2, tile3], [tile1, tile2]);
 		let faces = this.drawWeightedFaceSetForTiles([tile1, tile2, tile3]);
 		let faceGroup = this.getFaceSetForFace(faces[0]);
 
@@ -630,25 +615,11 @@ export default class GameGenerator {
 
 		engine.board.pieces[tile1].face = faces[0];
 		engine.board.pieces[tile2].face = faces[1];
-		this.recordAssignedFacePair(
-			tile1,
-			tile2,
-			faceGroup
-		);
-		this.markFaceAvoidanceForTargets(
-			avoidanceTargets,
-			faceGroup,
-			engine.faceAvoidanceRules.suspensionWeight ?? 3
-		);
+		this.recordAssignedFacePair(tile1, tile2, faceGroup);
+		this.markFaceAvoidanceForTargets(avoidanceTargets, faceGroup, engine.faceAvoidanceRules.suspensionWeight ?? 3);
 
-		let placementCount = Random.randomCurveRange(
-			rules.placementCount.min,
-			rules.placementCount.max
-		);
-		let openCount = Random.randomCurveRange(
-			rules.maxOpenCount.min,
-			rules.maxOpenCount.max
-		);
+		let placementCount = Random.randomCurveRange(rules.placementCount.min, rules.placementCount.max);
+		let openCount = Random.randomCurveRange(rules.maxOpenCount.min, rules.maxOpenCount.max);
 
 		/** @type {Suspended} */
 		let suspended = {
@@ -659,15 +630,12 @@ export default class GameGenerator {
 			openCount,
 			originalPair: [tile1, tile2],
 			faceGroup,
-		}
+		};
 
 		engine.suspended.push(suspended);
 		engine.suspendedCount++;
 		engine.suspensionStats.created++;
-		engine.suspensionStats.maxNestedSeen = Math.max(
-			engine.suspensionStats.maxNestedSeen,
-			engine.suspended.length
-		);
+		engine.suspensionStats.maxNestedSeen = Math.max(engine.suspensionStats.maxNestedSeen, engine.suspended.length);
 	}
 
 	/**
@@ -680,27 +648,20 @@ export default class GameGenerator {
 		let engine = this.engine;
 		let suspended = engine.suspended[index];
 		let faces = suspended.faces;
-		let partner = this.pickWeightedReleasedPartner(
-			suspended,
-			this.getTilePickerOptions()
-		);
+		let partner = this.pickWeightedReleasedPartner(suspended, this.getTilePickerOptions());
 
 		if (!partner) {
-			throw "BadLayoutException";
+			throw 'BadLayoutException';
 		}
 
 		this.removeGeneratedPair(suspended.tile, partner.tile);
-		engine.board.pieces[suspended.tile].face = faces[0]
-		engine.board.pieces[partner.tile].face = faces[1]
-		this.recordAssignedFacePair(
-			suspended.tile,
-			partner.tile,
-			suspended.faceGroup
-		);
+		engine.board.pieces[suspended.tile].face = faces[0];
+		engine.board.pieces[partner.tile].face = faces[1];
+		this.recordAssignedFacePair(suspended.tile, partner.tile, suspended.faceGroup);
 		this.markFaceAvoidanceAroundTiles(
 			[suspended.tile, partner.tile],
 			suspended.faceGroup,
-			engine.faceAvoidanceRules.suspensionWeight ?? 3
+			engine.faceAvoidanceRules.suspensionWeight ?? 3,
 		);
 
 		engine.suspended.splice(index, 1);
@@ -721,15 +682,11 @@ export default class GameGenerator {
 
 			engine.board.pieces[tiles[0]].face = pair.face1;
 			engine.board.pieces[tiles[1]].face = pair.face2;
-			this.recordAssignedFacePair(
-				tiles[0],
-				tiles[1],
-				this.getFaceSetForFace(pair.face1)
-			);
+			this.recordAssignedFacePair(tiles[0], tiles[1], this.getFaceSetForFace(pair.face1));
 			this.markFaceAvoidanceForTargets(
 				pending.avoidanceTargets || [],
 				this.getFaceSetForFace(pair.face1),
-				pending.avoidanceWeight ?? engine.faceAvoidanceRules.weight ?? 1
+				pending.avoidanceWeight ?? engine.faceAvoidanceRules.weight ?? 1,
 			);
 		}
 	}

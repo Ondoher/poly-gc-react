@@ -1,36 +1,35 @@
 import {Service} from '@polylith/core';
 import React from 'react';
-import Directory from './Directory.jsx'
+import Directory from './Directory.jsx';
 import {shouldLaunchDirectory} from 'common/startup.js';
 
 class DirectoryService extends Service {
-	constructor (registry) {
+	constructor(registry) {
 		super('directory', registry);
 		this.implement(['ready', 'get', 'add', 'render', 'show', 'hide', 'crumbClick', 'sendVisibility']);
 		this.directory = [];
 	}
 
-	ready () {
-		this.listen('clicked', this.onCardClicked.bind(this))
+	ready() {
+		this.listen('clicked', this.onCardClicked.bind(this));
 		this.crumbs = this.registry.subscribe('bread-crumbs');
 		this.pagesProvider = this.registry.subscribe('pages-provider');
 		this.pagesProvider.listen('newView', this.onNewView.bind(this));
 	}
 
-	sendVisibility () {
+	sendVisibility() {
 		this.fire(this.visible ? 'show' : 'hide');
 	}
 
-	show () {
+	show() {
 		this.visible = true;
 	}
 
-	hide () {
+	hide() {
 		this.visible = false;
 	}
 
-	get() {
-	}
+	get() {}
 
 	onNewView(name) {
 		if (name === 'main-pages') {
@@ -45,7 +44,7 @@ class DirectoryService extends Service {
 	add(card) {
 		card.service = this.registry.subscribe(card.serviceName);
 		this.directory.push(card);
-		if (this.rendered) this.fire('added', card)
+		if (this.rendered) this.fire('added', card);
 	}
 
 	crumbClick(id) {
@@ -53,14 +52,14 @@ class DirectoryService extends Service {
 	}
 
 	onCardClicked(card) {
-		card.service.invoke('clicked')
+		card.service.invoke('clicked');
 		this.crumbs.clear();
 		this.crumbs.add('Directory', 'directory', 'directory');
 	}
 
 	async render() {
 		this.rendered = true;
-		return <Directory serviceName="directory" directory={this.directory} key="directory"/>
+		return <Directory serviceName="directory" directory={this.directory} key="directory" />;
 	}
 }
 

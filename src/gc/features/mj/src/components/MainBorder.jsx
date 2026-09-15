@@ -1,8 +1,8 @@
-import React from "react";
+import React from 'react';
 
 export default class MainBorder extends React.Component {
 	render() {
-		var shellClassName = "mj-main-border-shell";
+		var shellClassName = 'mj-main-border-shell';
 
 		if (this.props.className) {
 			shellClassName += ` ${this.props.className}`;

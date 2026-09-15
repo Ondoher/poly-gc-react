@@ -1,6 +1,6 @@
-import { getPipelineStream } from "./stream.js";
+import {getPipelineStream} from './stream.js';
 
-const ASSET_PIPELINE_NAMESPACE = "/asset-pipeline";
+const ASSET_PIPELINE_NAMESPACE = '/asset-pipeline';
 
 /**
  * Owns live progress events for long-running generated asset work.
@@ -13,9 +13,9 @@ export class AssetPipelineStream {
 		this.latestProgressByTileset = {};
 		this.queueStateByTileset = {};
 
-		this.stream.on("ioInit", this.streamReady.bind(this));
-		this.stream.on("namespaceConnect", this.namespaceConnect.bind(this));
-		this.stream.on("namespaceDisconnect", this.namespaceDisconnect.bind(this));
+		this.stream.on('ioInit', this.streamReady.bind(this));
+		this.stream.on('namespaceConnect', this.namespaceConnect.bind(this));
+		this.stream.on('namespaceDisconnect', this.namespaceDisconnect.bind(this));
 	}
 
 	/**
@@ -37,8 +37,8 @@ export class AssetPipelineStream {
 			return;
 		}
 
-		this.connections[clientId] = { socket };
-		socket.on("watchAssetPipeline", this.watchAssetPipeline.bind(this, clientId));
+		this.connections[clientId] = {socket};
+		socket.on('watchAssetPipeline', this.watchAssetPipeline.bind(this, clientId));
 	}
 
 	/**
@@ -68,7 +68,7 @@ export class AssetPipelineStream {
 
 		if (!connection || !tilesetId) {
 			if (callback) {
-				callback({ ok: false, message: "A tilesetId is required." });
+				callback({ok: false, message: 'A tilesetId is required.'});
 			}
 			return;
 		}
@@ -77,11 +77,11 @@ export class AssetPipelineStream {
 		const snapshot = this.latestProgressByTileset[tilesetId] || null;
 
 		if (callback) {
-			callback({ ok: true, tilesetId, snapshot });
+			callback({ok: true, tilesetId, snapshot});
 		}
 
 		if (snapshot) {
-			connection.socket.emit("assetGenerationSnapshot", snapshot);
+			connection.socket.emit('assetGenerationSnapshot', snapshot);
 		}
 	}
 
@@ -121,10 +121,10 @@ export class AssetPipelineStream {
 		const safeTilesetId = sanitizeTilesetId(tilesetId);
 		const state = this.queueStateByTileset[safeTilesetId] || {};
 		return {
-			activeFaceKey: state.activeFaceKey || "",
+			activeFaceKey: state.activeFaceKey || '',
 			queuedFaceKeys: Array.from(state.queuedFaceKeys || []),
-			currentStep: state.currentStep || "",
-			stageLabel: state.stageLabel || "",
+			currentStep: state.currentStep || '',
+			stageLabel: state.stageLabel || '',
 			stageProgress: cleanStageProgress(state.stageProgress),
 		};
 	}
@@ -142,10 +142,10 @@ export class AssetPipelineStream {
 		}
 
 		this.queueStateByTileset[safeTilesetId] = {
-			activeFaceKey: "",
+			activeFaceKey: '',
 			queuedFaceKeys: new Set(),
-			currentStep: "",
-			stageLabel: "",
+			currentStep: '',
+			stageLabel: '',
 			stageProgress: null,
 		};
 	}
@@ -158,70 +158,70 @@ export class AssetPipelineStream {
 	 * @returns {void}
 	 */
 	updateQueueState(tilesetId, event) {
-		if (event.eventName === "assetGenerationComplete" || event.eventName === "assetGenerationFailed") {
+		if (event.eventName === 'assetGenerationComplete' || event.eventName === 'assetGenerationFailed') {
 			this.queueStateByTileset[tilesetId] = {
-				activeFaceKey: "",
+				activeFaceKey: '',
 				queuedFaceKeys: new Set(),
-				currentStep: "",
-				stageLabel: "",
+				currentStep: '',
+				stageLabel: '',
 				stageProgress: null,
 			};
 			return;
 		}
 
-		if (event.eventName === "assetGenerationStarted") {
+		if (event.eventName === 'assetGenerationStarted') {
 			this.queueStateByTileset[tilesetId] = {
-				activeFaceKey: "",
+				activeFaceKey: '',
 				queuedFaceKeys: new Set(event.plannedFaceKeys || []),
-				currentStep: "",
-				stageLabel: "",
+				currentStep: '',
+				stageLabel: '',
 				stageProgress: null,
 			};
 			return;
 		}
 
 		const state = this.queueStateByTileset[tilesetId] || {
-			activeFaceKey: "",
+			activeFaceKey: '',
 			queuedFaceKeys: new Set(),
-			currentStep: "",
-			stageLabel: "",
+			currentStep: '',
+			stageLabel: '',
 			stageProgress: null,
 		};
-		const faceKey = event.faceKey || "";
+		const faceKey = event.faceKey || '';
 
 		if (!faceKey) {
 			this.queueStateByTileset[tilesetId] = state;
 			return;
 		}
 
-		if (event.eventName === "assetGenerationFaceReady" || event.status === "ready" || event.status === "skipped") {
+		if (event.eventName === 'assetGenerationFaceReady' || event.status === 'ready' || event.status === 'skipped') {
 			state.queuedFaceKeys.delete(faceKey);
 			if (state.activeFaceKey === faceKey) {
-				state.activeFaceKey = "";
-				state.currentStep = "";
-				state.stageLabel = "";
+				state.activeFaceKey = '';
+				state.currentStep = '';
+				state.stageLabel = '';
 				state.stageProgress = null;
 			}
-		} else if (event.status === "building") {
+		} else if (event.status === 'building') {
 			state.queuedFaceKeys.delete(faceKey);
 			state.activeFaceKey = faceKey;
-			state.currentStep = event.stage || "";
-			state.stageLabel = event.stageLabel || event.stage || "";
+			state.currentStep = event.stage || '';
+			state.stageLabel = event.stageLabel || event.stage || '';
 			state.stageProgress = cleanStageProgress(event.stageProgress);
-		} else if (event.status === "queued") {
+		} else if (event.status === 'queued') {
 			if (state.activeFaceKey === faceKey) {
-				state.activeFaceKey = "";
-				state.currentStep = "";
-				state.stageLabel = "";
+				state.activeFaceKey = '';
+				state.currentStep = '';
+				state.stageLabel = '';
 				state.stageProgress = null;
 			}
 			state.queuedFaceKeys.add(faceKey);
-		} else if (event.status === "failed") {
+		} else if (event.status === 'failed') {
 			state.queuedFaceKeys.delete(faceKey);
 			if (state.activeFaceKey === faceKey) {
-				state.activeFaceKey = "";
-				state.currentStep = "";
-				state.stageLabel = "";
+				state.activeFaceKey = '';
+				state.currentStep = '';
+				state.stageLabel = '';
 				state.stageProgress = null;
 			}
 		}
@@ -235,13 +235,11 @@ function roomForTileset(tilesetId) {
 }
 
 function sanitizeTilesetId(tilesetId) {
-	return typeof tilesetId === "string" && /^[a-zA-Z0-9_-]+$/.test(tilesetId)
-		? tilesetId
-		: "";
+	return typeof tilesetId === 'string' && /^[a-zA-Z0-9_-]+$/.test(tilesetId) ? tilesetId : '';
 }
 
 function cleanStageProgress(progress) {
-	if (!progress || typeof progress !== "object") {
+	if (!progress || typeof progress !== 'object') {
 		return null;
 	}
 
@@ -249,8 +247,8 @@ function cleanStageProgress(progress) {
 	const total = Number(progress.total);
 	const percent = Number(progress.percent);
 	return {
-		stage: String(progress.stage || ""),
-		phase: String(progress.phase || ""),
+		stage: String(progress.stage || ''),
+		phase: String(progress.phase || ''),
 		current: Number.isFinite(current) ? current : 0,
 		total: Number.isFinite(total) ? total : 0,
 		percent: Number.isFinite(percent)
@@ -258,11 +256,11 @@ function cleanStageProgress(progress) {
 			: Number.isFinite(current) && Number.isFinite(total) && total > 0
 				? Math.round((current / total) * 100)
 				: 0,
-		message: String(progress.message || ""),
-		activity: String(progress.activity || ""),
+		message: String(progress.message || ''),
+		activity: String(progress.activity || ''),
 		active: Boolean(progress.active),
 		ping: Boolean(progress.ping),
-		timestamp: String(progress.timestamp || ""),
+		timestamp: String(progress.timestamp || ''),
 	};
 }
 

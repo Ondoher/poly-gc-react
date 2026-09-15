@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import * as THREE from 'three';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { createCanvas, loadImage } from '../psd-maps/node_modules/canvas/index.js';
-import { GENERATED_TOP_MAPS_DIR, OUTPUT_MODELS_DIR } from '../shared/asset-paths.js';
+import {createCanvas, loadImage} from '../psd-maps/node_modules/canvas/index.js';
+import {GENERATED_TOP_MAPS_DIR, OUTPUT_MODELS_DIR} from '../shared/asset-paths.js';
 
 class NodeFileReader {
 	constructor() {
@@ -157,7 +157,7 @@ const BOOLEAN_EXPERIMENT_VARIANTS = [
 	},
 ];
 
-fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+fs.mkdirSync(OUTPUT_DIR, {recursive: true});
 
 for (const variant of TILE_VARIANTS) {
 	const tileGroup = buildTileAsset(variant);
@@ -183,10 +183,7 @@ function buildTileAsset(variant) {
 	const bodyGeometry = createCaplessShellGeometry(variant);
 	const topSurfaceScale = variant.faceFloorScale ?? variant.topSurfaceScale ?? TOP_SURFACE_SCALE;
 	const topSurfaceInsetDepth = variant.topSurfaceInsetDepth ?? 0;
-	const topGeometry = new THREE.PlaneGeometry(
-		variant.width * topSurfaceScale,
-		variant.depth * topSurfaceScale
-	);
+	const topGeometry = new THREE.PlaneGeometry(variant.width * topSurfaceScale, variant.depth * topSurfaceScale);
 
 	const group = new THREE.Group();
 	group.name = variant.name;
@@ -202,7 +199,7 @@ function buildTileAsset(variant) {
 
 	if (shoulderMesh) {
 		shoulderMesh.name = 'tileTopShoulder';
-		shoulderMesh.position.set(0, variant.height - ((variant.shoulderDepth ?? 0) / 2), 0);
+		shoulderMesh.position.set(0, variant.height - (variant.shoulderDepth ?? 0) / 2, 0);
 	}
 
 	const topMesh = new THREE.Mesh(topGeometry, createSlotMaterial('tile-top-surface'));
@@ -233,25 +230,19 @@ async function buildReliefPocAsset(variant) {
 		loadImageData(path.resolve(topMapDir, 'top-relief.png')),
 	]);
 
-	if (
-		maskImageData.width !== reliefImageData.width
-		|| maskImageData.height !== reliefImageData.height
-	) {
+	if (maskImageData.width !== reliefImageData.width || maskImageData.height !== reliefImageData.height) {
 		throw new Error(`Top-map dimensions do not match for ${variant.faceKey}.`);
 	}
 
 	const reliefBodyVariant = {
 		...bodyVariant,
-		topOpeningScale: variant.topOpeningScaleOverride
-			?? bodyVariant.topOpeningScale
-			?? bodyVariant.topSurfaceScale
-			?? TOP_SURFACE_SCALE,
-		topSurfaceScale: variant.topSurfaceScaleOverride
-			?? bodyVariant.topSurfaceScale
-			?? TOP_SURFACE_SCALE,
-		topSurfaceInsetDepth: variant.topInsetDepthOverride
-			?? bodyVariant.topSurfaceInsetDepth
-			?? 0,
+		topOpeningScale:
+			variant.topOpeningScaleOverride ??
+			bodyVariant.topOpeningScale ??
+			bodyVariant.topSurfaceScale ??
+			TOP_SURFACE_SCALE,
+		topSurfaceScale: variant.topSurfaceScaleOverride ?? bodyVariant.topSurfaceScale ?? TOP_SURFACE_SCALE,
+		topSurfaceInsetDepth: variant.topInsetDepthOverride ?? bodyVariant.topSurfaceInsetDepth ?? 0,
 	};
 
 	const topScale = reliefBodyVariant.topSurfaceScale ?? TOP_SURFACE_SCALE;
@@ -404,16 +395,15 @@ function createReliefTopGeometry({
 			floorInsetPx,
 			maxSearchRadiusPx,
 		});
-		const displacement = (smoothProfile.floor * floorDepth)
-			+ (smoothProfile.wall * wallDepth)
-			+ (smoothProfile.shoulder * shoulderDepth);
+		const displacement =
+			smoothProfile.floor * floorDepth + smoothProfile.wall * wallDepth + smoothProfile.shoulder * shoulderDepth;
 		const safeDisplacement = Number.isFinite(displacement) ? displacement : 0;
 		const projectedPosition = projectPointToRoundedRect(
 			positions.getX(vertexIndex),
 			positions.getZ(vertexIndex),
 			width,
 			depth,
-			cornerRadius
+			cornerRadius,
 		);
 
 		positions.setX(vertexIndex, projectedPosition.x);
@@ -462,7 +452,7 @@ function createPerimeterWallGeometryFromTop(topGeometry, bottomY) {
 			bottomY,
 			current.z,
 			normalX,
-			normalZ
+			normalZ,
 		);
 		pushWallTriangle(
 			positions,
@@ -478,7 +468,7 @@ function createPerimeterWallGeometryFromTop(topGeometry, bottomY) {
 			bottomY,
 			next.z,
 			normalX,
-			normalZ
+			normalZ,
 		);
 	}
 
@@ -502,10 +492,10 @@ function extractTopBoundaryLoop(topGeometry) {
 		boundaryIndices.push(ix);
 	}
 	for (let iy = 1; iy <= segmentsY; iy += 1) {
-		boundaryIndices.push((iy * rowWidth) + segmentsX);
+		boundaryIndices.push(iy * rowWidth + segmentsX);
 	}
 	for (let ix = segmentsX - 1; ix >= 0; ix -= 1) {
-		boundaryIndices.push((segmentsY * rowWidth) + ix);
+		boundaryIndices.push(segmentsY * rowWidth + ix);
 	}
 	for (let iy = segmentsY - 1; iy >= 1; iy -= 1) {
 		boundaryIndices.push(iy * rowWidth);
@@ -518,28 +508,9 @@ function extractTopBoundaryLoop(topGeometry) {
 	}));
 }
 
-function pushWallTriangle(
-	positions,
-	normals,
-	uvs,
-	ax,
-	ay,
-	az,
-	bx,
-	by,
-	bz,
-	cx,
-	cy,
-	cz,
-	normalX,
-	normalZ
-) {
+function pushWallTriangle(positions, normals, uvs, ax, ay, az, bx, by, bz, cx, cy, cz, normalX, normalZ) {
 	positions.push(ax, ay, az, bx, by, bz, cx, cy, cz);
-	normals.push(
-		normalX, 0, normalZ,
-		normalX, 0, normalZ,
-		normalX, 0, normalZ
-	);
+	normals.push(normalX, 0, normalZ, normalX, 0, normalZ, normalX, 0, normalZ);
 	uvs.push(0, 0, 0, 0, 0, 0);
 }
 
@@ -557,8 +528,8 @@ function assignConstantUv(geometry, u = 0, v = 0) {
 	const positions = geometry.attributes.position;
 	const uvValues = new Float32Array(positions.count * 2);
 	for (let index = 0; index < positions.count; index += 1) {
-		uvValues[(index * 2)] = u;
-		uvValues[(index * 2) + 1] = v;
+		uvValues[index * 2] = u;
+		uvValues[index * 2 + 1] = v;
 	}
 	geometry.setAttribute('uv', new THREE.BufferAttribute(uvValues, 2));
 }
@@ -586,13 +557,13 @@ function projectPointToRoundedRect(x, z, width, depth, radius) {
 	const offsetLength = Math.hypot(offsetX, offsetZ);
 
 	if (offsetLength <= safeRadius || offsetLength === 0) {
-		return { x, z };
+		return {x, z};
 	}
 
 	const scale = safeRadius / offsetLength;
 	return {
-		x: centerX + (offsetX * scale),
-		z: centerZ + (offsetZ * scale),
+		x: centerX + offsetX * scale,
+		z: centerZ + offsetZ * scale,
 	};
 }
 
@@ -602,7 +573,7 @@ function buildAlphaGrid(imageData) {
 	for (let y = 0; y < imageData.height; y += 1) {
 		const row = [];
 		for (let x = 0; x < imageData.width; x += 1) {
-			const index = ((y * imageData.width) + x) * 4;
+			const index = (y * imageData.width + x) * 4;
 			row.push(imageData.data[index] / 255);
 		}
 		alphaGrid.push(row);
@@ -624,15 +595,16 @@ function buildSmoothInsetProfile({
 	maxSearchRadiusPx,
 }) {
 	if (mask <= minMask) {
-		return { floor: 0, wall: 0, shoulder: 0 };
+		return {floor: 0, wall: 0, shoulder: 0};
 	}
 
 	const distanceToEdge = distanceToTransparentAlpha(alphaGrid, x, y, maxSearchRadiusPx);
 	const edgeBlend = smoothstep(minMask, Math.min(1, minMask + 0.2), mask);
 	const wall = (1 - smoothstep(wallWidthPx - 0.55, wallWidthPx + 1.1, distanceToEdge)) * edgeBlend;
-	const shoulder = smoothstep(wallWidthPx - 0.35, wallWidthPx + 0.9, distanceToEdge)
-		* (1 - smoothstep(shoulderWidthPx - 0.9, shoulderWidthPx + 1.1, distanceToEdge))
-		* edgeBlend;
+	const shoulder =
+		smoothstep(wallWidthPx - 0.35, wallWidthPx + 0.9, distanceToEdge) *
+		(1 - smoothstep(shoulderWidthPx - 0.9, shoulderWidthPx + 1.1, distanceToEdge)) *
+		edgeBlend;
 	const floor = smoothstep(floorInsetPx - 1.2, floorInsetPx + 1.2, distanceToEdge) * edgeBlend;
 	const reliefBias = THREE.MathUtils.lerp(0.82, 1.0, relief);
 
@@ -664,7 +636,7 @@ function sampleImageChannelBilinear(imageData, uvX, uvY) {
 }
 
 function readImageChannel(imageData, x, y) {
-	const index = ((y * imageData.width) + x) * 4;
+	const index = (y * imageData.width + x) * 4;
 	return imageData.data[index] / 255;
 }
 
@@ -730,7 +702,7 @@ function smoothstep(edge0, edge1, value) {
 	}
 
 	const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
-	return t * t * (3 - (2 * t));
+	return t * t * (3 - 2 * t);
 }
 
 function clamp(value, min, max) {
@@ -750,7 +722,7 @@ async function exportSceneAsGlb(group, sceneName, filename) {
 	scene.name = sceneName;
 	scene.add(group);
 
-	const glb = await exporter.parseAsync(scene, { binary: true });
+	const glb = await exporter.parseAsync(scene, {binary: true});
 	const outputPath = path.resolve(OUTPUT_DIR, filename);
 	fs.writeFileSync(outputPath, Buffer.from(glb));
 	console.log(`Exported ${filename}`);
@@ -803,7 +775,7 @@ function createCaplessShellGeometry(variant) {
 
 	const mergedGeometry = BufferGeometryUtils.mergeGeometries(
 		[normalizedRingGeometry, normalizedBottomGeometry],
-		true
+		true,
 	);
 	mergedGeometry.computeVertexNormals();
 
@@ -845,12 +817,12 @@ function createShoulderGeometry(variant) {
 	const outerShape = createRoundedRectShape(
 		variant.width * topOpeningScale,
 		variant.depth * topOpeningScale,
-		Math.max(0.001, variant.radius - SHELL_WALL_THICKNESS)
+		Math.max(0.001, variant.radius - SHELL_WALL_THICKNESS),
 	);
 	const innerShape = createRoundedRectShape(
 		variant.width * faceFloorScale,
 		variant.depth * faceFloorScale,
-		Math.max(0.001, variant.radius - (SHELL_WALL_THICKNESS * 1.35))
+		Math.max(0.001, variant.radius - SHELL_WALL_THICKNESS * 1.35),
 	);
 	outerShape.holes.push(innerShape);
 
@@ -898,4 +870,3 @@ function disposeTileAsset(group) {
 		materials.forEach((material) => material.dispose());
 	});
 }
-

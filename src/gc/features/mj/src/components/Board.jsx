@@ -1,59 +1,74 @@
-import { registry } from "@polylith/core";
-import { Fireworks } from "@fireworks-js/react";
-import React from "react";
-import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
-import Canvas from "./Canvas.jsx";
-import CssRect from "./CssRect.jsx";
-import FeedbackButton from "./FeedbackButton.jsx";
-import FeedbackDialog from "./FeedbackDialog.jsx";
-import HelpDialog from "./HelpDialog.jsx";
-import LeftHud from "./LeftHud.jsx";
-import MainBorder from "./MainBorder.jsx";
-import MultiUndoDialog from "./MultiUndoDialog.jsx";
-import Page from 'components/Page.jsx'
-import RightHud from "./RightHud.jsx";
-import SettingsDialog from "./SettingsDialog.jsx";
-import SolveDialog from "./SolveDialog.jsx";
-import StartupConsentDialog from "./StartupConsentDialog.jsx";
-import Toast from "./Toast.jsx";
-import { debounce } from "../../../../common/utils.js";
-import {
-	readMjPreferencesCookie,
-	writeMjPreferencesCookie,
-} from "../utils/preferencesCookies.js";
+import {registry} from '@polylith/core';
+import {Fireworks} from '@fireworks-js/react';
+import React from 'react';
+import {TransformComponent, TransformWrapper} from 'react-zoom-pan-pinch';
+import Canvas from './Canvas.jsx';
+import CssRect from './CssRect.jsx';
+import FeedbackButton from './FeedbackButton.jsx';
+import FeedbackDialog from './FeedbackDialog.jsx';
+import HelpDialog from './HelpDialog.jsx';
+import LeftHud from './LeftHud.jsx';
+import MainBorder from './MainBorder.jsx';
+import MultiUndoDialog from './MultiUndoDialog.jsx';
+import Page from 'components/Page.jsx';
+import RightHud from './RightHud.jsx';
+import SettingsDialog from './SettingsDialog.jsx';
+import SolveDialog from './SolveDialog.jsx';
+import StartupConsentDialog from './StartupConsentDialog.jsx';
+import Toast from './Toast.jsx';
+import {debounce} from '../../../../common/utils.js';
+import {readMjPreferencesCookie, writeMjPreferencesCookie} from '../utils/preferencesCookies.js';
 
 const DEFAULT_TILESET = {
-	name : 'Bone Tiles',
-	image : 'images/mj/tilesets/ivory/dragon-r.png',
-	description : '',
-	tiles : 144,
+	name: 'Bone Tiles',
+	image: 'images/mj/tilesets/ivory/dragon-r.png',
+	description: '',
+	tiles: 144,
 	css: '',
-	class: 'ivory normal-size'
+	class: 'ivory normal-size',
 };
 
 function shouldAlwaysShowStartupConsent() {
-	if (typeof window === "undefined" || !window.location) {
+	if (typeof window === 'undefined' || !window.location) {
 		return false;
 	}
 
-	return window.location.hostname === "localhost";
+	return window.location.hostname === 'localhost';
 }
 
 export default class Board extends React.Component {
-	constructor (props) {
+	constructor(props) {
 		super(props);
 		var persistedPreferences = this.getPersistedPreferences(props);
 
 		if (props.delegator) {
 			props.delegator.delegateInbound(this, [
-				'setWon', 'setLost', 'setGameState', 'setMessage',
-				'setShortMessage', 'setTiles', 'clearBoard',
-				'setTileset']
-			);
+				'setWon',
+				'setLost',
+				'setGameState',
+				'setMessage',
+				'setShortMessage',
+				'setTiles',
+				'clearBoard',
+				'setTileset',
+			]);
 
 			props.delegator.delegateOutbound(this, [
-				'select', 'deselect', 'initialized', 'play', 'restart', 'solve', 'playHalfSolution', 'undo', 'redo', 'hint', 'pause', 'peek',
-				'selectLayout', 'selectTileset', 'selectDifficulty'
+				'select',
+				'deselect',
+				'initialized',
+				'play',
+				'restart',
+				'solve',
+				'playHalfSolution',
+				'undo',
+				'redo',
+				'hint',
+				'pause',
+				'peek',
+				'selectLayout',
+				'selectTileset',
+				'selectDifficulty',
 			]);
 		}
 
@@ -92,7 +107,7 @@ export default class Board extends React.Component {
 			shellToastOpen: false,
 			isShellPortrait: this.getIsShellPortrait(),
 			boardNbr: this.props.boardNbr,
-			autoMetricSetId: "tiny",
+			autoMetricSetId: 'tiny',
 			autoCanvasWidth: null,
 			autoCanvasHeight: null,
 			autoCanvasScale: null,
@@ -100,7 +115,7 @@ export default class Board extends React.Component {
 			autoBoardCanvasHeight: null,
 			autoBoardCanvasOffsetX: null,
 			autoBoardCanvasOffsetY: null,
-		}
+		};
 		this.persistedPreferences = persistedPreferences;
 		this.trackingModel = null;
 		this.feedbackModel = null;
@@ -110,13 +125,17 @@ export default class Board extends React.Component {
 		this.playfieldViewportRef = React.createRef();
 		this.playfieldRef = React.createRef();
 		this.isUnmounted = false;
-		this.runAutoRescaleDebounced = debounce(function(reason) {
-			if (this.isUnmounted) {
-				return;
-			}
+		this.runAutoRescaleDebounced = debounce(
+			function (reason) {
+				if (this.isUnmounted) {
+					return;
+				}
 
-			this.runAutoRescale(reason);
-		}.bind(this), 80, 300);
+				this.runAutoRescale(reason);
+			}.bind(this),
+			80,
+			300,
+		);
 		this.autoRescaleSettledTimer = null;
 		this.onWindowKeyDown = this.onWindowKeyDown.bind(this);
 		this.onShellViewportChange = this.onShellViewportChange.bind(this);
@@ -127,11 +146,11 @@ export default class Board extends React.Component {
 	}
 
 	getIsShellPortrait() {
-		if (typeof window === "undefined" || !window.matchMedia) {
+		if (typeof window === 'undefined' || !window.matchMedia) {
 			return false;
 		}
 
-		return window.matchMedia("(orientation: portrait) and (max-width: 900px)").matches;
+		return window.matchMedia('(orientation: portrait) and (max-width: 900px)').matches;
 	}
 
 	getPersistedPreferences(props) {
@@ -162,27 +181,17 @@ export default class Board extends React.Component {
 	}
 
 	applyPersistedSelections() {
-		if (
-			this.persistedPreferences.layout !== this.props.layout &&
-			this.selectLayout
-		) {
+		if (this.persistedPreferences.layout !== this.props.layout && this.selectLayout) {
 			this.selectLayout(this.persistedPreferences.layout);
 		}
 
-		if (
-			this.persistedPreferences.difficulty !== this.props.difficulty &&
-			this.selectDifficulty
-		) {
+		if (this.persistedPreferences.difficulty !== this.props.difficulty && this.selectDifficulty) {
 			this.selectDifficulty(this.persistedPreferences.difficulty);
 		}
 
-		if (
-			this.persistedPreferences.tilesetKey !== this.props.tileset &&
-			this.selectTileset
-		) {
+		if (this.persistedPreferences.tilesetKey !== this.props.tileset && this.selectTileset) {
 			this.selectTileset(this.persistedPreferences.tilesetKey);
 		}
-
 	}
 
 	writePersistedPreferences() {
@@ -195,7 +204,7 @@ export default class Board extends React.Component {
 		});
 	}
 
-	onClickTile (tile) {
+	onClickTile(tile) {
 		this.select(tile);
 	}
 
@@ -263,13 +272,16 @@ export default class Board extends React.Component {
 	onToggleExpanded() {
 		var nextIsExpanded = !this.state.isExpanded;
 
-		this.setState(function(prevState) {
-			return {
-				isExpanded: !prevState.isExpanded,
-			};
-		}, function() {
-			this.scheduleSettledAutoRescale(nextIsExpanded ? "toggle-expanded" : "toggle-contracted");
-		}.bind(this));
+		this.setState(
+			function (prevState) {
+				return {
+					isExpanded: !prevState.isExpanded,
+				};
+			},
+			function () {
+				this.scheduleSettledAutoRescale(nextIsExpanded ? 'toggle-expanded' : 'toggle-contracted');
+			}.bind(this),
+		);
 	}
 
 	onShellPlayfieldClick(evt) {
@@ -278,16 +290,19 @@ export default class Board extends React.Component {
 		}
 
 		if (this.state.isExpanded) {
-			this.setState({
-				isExpanded: false,
-			}, function() {
-				this.scheduleSettledAutoRescale("toggle-contracted");
-			}.bind(this));
+			this.setState(
+				{
+					isExpanded: false,
+				},
+				function () {
+					this.scheduleSettledAutoRescale('toggle-contracted');
+				}.bind(this),
+			);
 		}
 	}
 
 	onToggleShellToast() {
-		this.setState(function(prevState) {
+		this.setState(function (prevState) {
 			return {
 				shellToastOpen: !prevState.shellToastOpen,
 			};
@@ -419,20 +434,23 @@ export default class Board extends React.Component {
 			this.onSelectDifficulty(selection.difficulty);
 		}
 
-		this.setState({
-			startupConsentOpen: false,
-			telemetryConsent: selection.telemetryConsent === true,
-		}, function() {
-			if (!this.hasStartedGame) {
-				this.hasStartedGame = true;
-				this.initialized();
-				return;
-			}
+		this.setState(
+			{
+				startupConsentOpen: false,
+				telemetryConsent: selection.telemetryConsent === true,
+			},
+			function () {
+				if (!this.hasStartedGame) {
+					this.hasStartedGame = true;
+					this.initialized();
+					return;
+				}
 
-			if (difficultyChanged) {
-				this.onPlay(-1);
-			}
-		}.bind(this));
+				if (difficultyChanged) {
+					this.onPlay(-1);
+				}
+			}.bind(this),
+		);
 	}
 
 	onSetTelemetryConsent(telemetryConsent) {
@@ -464,22 +482,28 @@ export default class Board extends React.Component {
 
 	onShellViewportChange() {
 		var isShellPortrait = this.getIsShellPortrait();
-		var reason = this.state.isShellPortrait === isShellPortrait
-			? "resize"
-			: (isShellPortrait ? "switch-portrait-mode" : "switch-landscape-mode");
+		var reason =
+			this.state.isShellPortrait === isShellPortrait
+				? 'resize'
+				: isShellPortrait
+					? 'switch-portrait-mode'
+					: 'switch-landscape-mode';
 
-		this.setState(function(prevState) {
-			if (prevState.isShellPortrait === isShellPortrait) {
-				return null;
-			}
+		this.setState(
+			function (prevState) {
+				if (prevState.isShellPortrait === isShellPortrait) {
+					return null;
+				}
 
-			return {
-				isShellPortrait: isShellPortrait,
-				isExpanded: isShellPortrait ? false : prevState.isExpanded,
-			};
-		}, function() {
-			this.scheduleSettledAutoRescale(reason);
-		}.bind(this));
+				return {
+					isShellPortrait: isShellPortrait,
+					isExpanded: isShellPortrait ? false : prevState.isExpanded,
+				};
+			},
+			function () {
+				this.scheduleSettledAutoRescale(reason);
+			}.bind(this),
+		);
 	}
 
 	getAvailableCanvasSpace() {
@@ -501,7 +525,7 @@ export default class Board extends React.Component {
 	getCanvasScalePadding() {
 		let playfield = this.playfieldRef?.current;
 
-		if (!playfield || typeof window === "undefined" || typeof window.getComputedStyle !== "function") {
+		if (!playfield || typeof window === 'undefined' || typeof window.getComputedStyle !== 'function') {
 			return {
 				left: 0,
 				right: 0,
@@ -511,9 +535,9 @@ export default class Board extends React.Component {
 		}
 
 		let styles = window.getComputedStyle(playfield);
-		let sidePadding = parseFloat(styles.getPropertyValue("--mj-shell-canvas-min-side-padding")) || 0;
-		let topPadding = parseFloat(styles.getPropertyValue("--mj-shell-canvas-min-top-padding")) || 0;
-		let bottomPadding = parseFloat(styles.getPropertyValue("--mj-shell-canvas-min-bottom-padding")) || 0;
+		let sidePadding = parseFloat(styles.getPropertyValue('--mj-shell-canvas-min-side-padding')) || 0;
+		let topPadding = parseFloat(styles.getPropertyValue('--mj-shell-canvas-min-top-padding')) || 0;
+		let bottomPadding = parseFloat(styles.getPropertyValue('--mj-shell-canvas-min-bottom-padding')) || 0;
 
 		return {
 			left: sidePadding,
@@ -526,13 +550,13 @@ export default class Board extends React.Component {
 	getCanvasScaleConfig() {
 		return {
 			positions: Array.isArray(this.state.tiles)
-				? this.state.tiles.map(function(tile) {
-					return {
-						x: tile.x,
-						y: tile.y,
-						z: tile.z,
-					};
-				})
+				? this.state.tiles.map(function (tile) {
+						return {
+							x: tile.x,
+							y: tile.y,
+							z: tile.z,
+						};
+					})
 				: [],
 			availableSpace: this.getAvailableCanvasSpace(),
 			padding: this.getCanvasScalePadding(),
@@ -540,13 +564,13 @@ export default class Board extends React.Component {
 	}
 
 	runAutoRescale(reason) {
-		if (!this.tileMetricsModel || typeof this.tileMetricsModel.getDebugState !== "function") {
+		if (!this.tileMetricsModel || typeof this.tileMetricsModel.getDebugState !== 'function') {
 			return;
 		}
 
 		let config = this.getCanvasScaleConfig();
 		let result = this.tileMetricsModel.getDebugState(config);
-		let nextMetricSetId = result?.selectedFit?.metricSetId || this.state.autoMetricSetId || "tiny";
+		let nextMetricSetId = result?.selectedFit?.metricSetId || this.state.autoMetricSetId || 'tiny';
 		let nextLayoutPixelSize = result?.layoutPixelSize || null;
 		let nextTileMetrics = result?.selectedFit?.tileMetrics || null;
 		let nextBoardPixelCenter = result?.selectedFit?.boardPixelCenter || null;
@@ -558,9 +582,7 @@ export default class Board extends React.Component {
 			: this.state.autoCanvasHeight;
 		let nextCanvasWidth = nextLayoutWidth;
 		let nextCanvasHeight = nextLayoutHeight;
-		let nextCanvasScale = Number.isFinite(result?.scale)
-			? result.scale
-			: this.state.autoCanvasScale;
+		let nextCanvasScale = Number.isFinite(result?.scale) ? result.scale : this.state.autoCanvasScale;
 		let nextBoardCanvasWidth = Number.isFinite(nextTileMetrics?.canvasWidth)
 			? nextTileMetrics.canvasWidth
 			: nextCanvasWidth;
@@ -577,11 +599,11 @@ export default class Board extends React.Component {
 				: this.state.autoBoardCanvasOffsetY;
 		let nextBoardCanvasOffsetX =
 			Number.isFinite(nextCanvasWidth) && Number.isFinite(nextBoardPixelCenter?.x)
-				? (nextCanvasWidth / 2) - nextBoardPixelCenter.x
+				? nextCanvasWidth / 2 - nextBoardPixelCenter.x
 				: fallbackBoardCanvasOffsetX;
 		let nextBoardCanvasOffsetY =
 			Number.isFinite(nextCanvasHeight) && Number.isFinite(nextBoardPixelCenter?.y)
-				? (nextCanvasHeight / 2) - nextBoardPixelCenter.y
+				? nextCanvasHeight / 2 - nextBoardPixelCenter.y
 				: fallbackBoardCanvasOffsetY;
 
 		if (
@@ -606,7 +628,7 @@ export default class Board extends React.Component {
 			});
 		}
 
-		console.info("mj:auto-rescale", {
+		console.info('mj:auto-rescale', {
 			reason,
 			config,
 			result,
@@ -625,46 +647,49 @@ export default class Board extends React.Component {
 			this.autoRescaleSettledTimer = null;
 		}
 
-		this.autoRescaleSettledTimer = setTimeout(function() {
-			this.autoRescaleSettledTimer = null;
+		this.autoRescaleSettledTimer = setTimeout(
+			function () {
+				this.autoRescaleSettledTimer = null;
 
-			if (this.isUnmounted) {
-				return;
-			}
+				if (this.isUnmounted) {
+					return;
+				}
 
-			this.runAutoRescale(`${reason}:settled`);
-		}.bind(this), 220);
+				this.runAutoRescale(`${reason}:settled`);
+			}.bind(this),
+			220,
+		);
 	}
 
 	getShellCanvasStyle() {
 		let style = {};
 
 		if (Number.isFinite(this.state.autoCanvasWidth) && this.state.autoCanvasWidth > 0) {
-			style["--mj-shell-canvas-width"] = `${this.state.autoCanvasWidth}px`;
+			style['--mj-shell-canvas-width'] = `${this.state.autoCanvasWidth}px`;
 		}
 
 		if (Number.isFinite(this.state.autoCanvasHeight) && this.state.autoCanvasHeight > 0) {
-			style["--mj-shell-canvas-height"] = `${this.state.autoCanvasHeight}px`;
+			style['--mj-shell-canvas-height'] = `${this.state.autoCanvasHeight}px`;
 		}
 
 		if (Number.isFinite(this.state.autoCanvasScale) && this.state.autoCanvasScale > 0) {
-			style["--mj-shell-canvas-scale"] = `${this.state.autoCanvasScale}`;
+			style['--mj-shell-canvas-scale'] = `${this.state.autoCanvasScale}`;
 		}
 
 		if (Number.isFinite(this.state.autoBoardCanvasWidth) && this.state.autoBoardCanvasWidth > 0) {
-			style["--mj-shell-board-canvas-width"] = `${this.state.autoBoardCanvasWidth}px`;
+			style['--mj-shell-board-canvas-width'] = `${this.state.autoBoardCanvasWidth}px`;
 		}
 
 		if (Number.isFinite(this.state.autoBoardCanvasHeight) && this.state.autoBoardCanvasHeight > 0) {
-			style["--mj-shell-board-canvas-height"] = `${this.state.autoBoardCanvasHeight}px`;
+			style['--mj-shell-board-canvas-height'] = `${this.state.autoBoardCanvasHeight}px`;
 		}
 
 		if (Number.isFinite(this.state.autoBoardCanvasOffsetX)) {
-			style["--mj-shell-board-canvas-offset-x"] = `${this.state.autoBoardCanvasOffsetX}px`;
+			style['--mj-shell-board-canvas-offset-x'] = `${this.state.autoBoardCanvasOffsetX}px`;
 		}
 
 		if (Number.isFinite(this.state.autoBoardCanvasOffsetY)) {
-			style["--mj-shell-board-canvas-offset-y"] = `${this.state.autoBoardCanvasOffsetY}px`;
+			style['--mj-shell-board-canvas-offset-y'] = `${this.state.autoBoardCanvasOffsetY}px`;
 		}
 
 		return style;
@@ -739,29 +764,21 @@ export default class Board extends React.Component {
 		var difficulty = this.props.difficulties[this.state.difficulty];
 		var layout = this.props.layouts[this.state.layout];
 		var canIncludeContext = Boolean(
-			this.trackingModel &&
-			this.trackingModel.hasFeedbackContext &&
-			this.trackingModel.hasFeedbackContext()
+			this.trackingModel && this.trackingModel.hasFeedbackContext && this.trackingModel.hasFeedbackContext(),
 		);
 		var feedbackContext = null;
 		var payload = {
-			boardNbr: Number.isFinite(Number(this.state.boardNbr))
-				? Number(this.state.boardNbr)
-				: null,
+			boardNbr: Number.isFinite(Number(this.state.boardNbr)) ? Number(this.state.boardNbr) : null,
 			difficultyLabel: difficulty ? difficulty.label : this.state.difficulty,
 			layoutTitle: layout ? layout.title : this.state.layout,
 			includeContext: canIncludeContext && feedback.includeContext === true,
-			skillLevel: feedback.skillLevel || "",
-			difficultyFeeling: feedback.difficultyFeeling || "",
-			fairnessFeeling: feedback.fairnessFeeling || "",
-			comment: feedback.comment || "",
+			skillLevel: feedback.skillLevel || '',
+			difficultyFeeling: feedback.difficultyFeeling || '',
+			fairnessFeeling: feedback.fairnessFeeling || '',
+			comment: feedback.comment || '',
 		};
 
-		if (
-			payload.includeContext &&
-			this.trackingModel &&
-			this.trackingModel.getFeedbackContextSnapshot
-		) {
+		if (payload.includeContext && this.trackingModel && this.trackingModel.getFeedbackContextSnapshot) {
 			feedbackContext = this.trackingModel.getFeedbackContextSnapshot();
 			payload.context = feedbackContext;
 		}
@@ -776,19 +793,19 @@ export default class Board extends React.Component {
 		}
 
 		if (!this.feedbackModel || !this.feedbackModel.submit) {
-			this.setShortMessage("Feedback is unavailable right now.");
+			this.setShortMessage('Feedback is unavailable right now.');
 			return;
 		}
 
 		let result = await this.feedbackModel.submit(payload);
 
 		if (result && result.success) {
-			this.setShortMessage("Thanks for the feedback.");
+			this.setShortMessage('Thanks for the feedback.');
 			this.onCloseFeedbackDialog();
 			return;
 		}
 
-		this.setShortMessage("Unable to send feedback right now.");
+		this.setShortMessage('Unable to send feedback right now.');
 	}
 
 	setWon(on) {
@@ -798,31 +815,30 @@ export default class Board extends React.Component {
 				showFireworks: on ? prevState.showFireworks : false,
 				celebrationDismissed: on ? false : prevState.celebrationDismissed,
 			};
-		})
+		});
 	}
 
 	setLost(on) {
-		this.setState({lost: on})
+		this.setState({lost: on});
 	}
 
-	setButtonState () {
-	}
+	setButtonState() {}
 
-	setMessage (message) {
+	setMessage(message) {
 		this.setState({
-			message: message
-		})
+			message: message,
+		});
 	}
-	setShortMessage (message) {
+	setShortMessage(message) {
 		this.setState(function (prevState) {
 			return {
 				shortMessage: message,
 				shortMessageKey: message ? prevState.shortMessageKey + 1 : prevState.shortMessageKey,
 			};
-		})
+		});
 	}
 	setGameState(state) {
-		this.setState(function(prevState) {
+		this.setState(function (prevState) {
 			return {
 				...state,
 				multiUndoHistory: state.multiUndoHistory || prevState.multiUndoHistory,
@@ -835,12 +851,15 @@ export default class Board extends React.Component {
 		this.setState({
 			isFailureAnimating: true,
 		});
-		this.failureAnimationTimer = setTimeout(function() {
-			this.failureAnimationTimer = null;
-			this.setState({
-				isFailureAnimating: false,
-			});
-		}.bind(this), this.props.timings.failureAnimation);
+		this.failureAnimationTimer = setTimeout(
+			function () {
+				this.failureAnimationTimer = null;
+				this.setState({
+					isFailureAnimating: false,
+				});
+			}.bind(this),
+			this.props.timings.failureAnimation,
+		);
 	}
 
 	clearFailureAnimationTimer() {
@@ -855,12 +874,15 @@ export default class Board extends React.Component {
 		this.setState({
 			isGenerating: true,
 		});
-		this.generateAnimationTimer = setTimeout(function() {
-			this.generateAnimationTimer = null;
-			this.setState({
-				isGenerating: false,
-			});
-		}.bind(this), this.props.timings.tile.restart);
+		this.generateAnimationTimer = setTimeout(
+			function () {
+				this.generateAnimationTimer = null;
+				this.setState({
+					isGenerating: false,
+				});
+			}.bind(this),
+			this.props.timings.tile.restart,
+		);
 	}
 
 	clearGenerateAnimationTimer() {
@@ -870,11 +892,11 @@ export default class Board extends React.Component {
 		this.generateAnimationTimer = null;
 	}
 
-	setTiles (instance, tiles) {
+	setTiles(instance, tiles) {
 		this.setState({
 			instance: instance,
 			tiles: tiles,
-			placed: null
+			placed: null,
 		});
 	}
 
@@ -887,34 +909,31 @@ export default class Board extends React.Component {
 
 	clearBoard() {
 		this.setState({
-			tiles: {}
-		})
+			tiles: {},
+		});
 	}
 
-	renderTime() {
-	}
+	renderTime() {}
 
-	renderWon() {
-	}
+	renderWon() {}
 
-	renderMessage() {
-	}
+	renderMessage() {}
 
 	componentDidMount() {
 		this.isUnmounted = false;
-		this.trackingModel = registry.subscribe("mj:tracking-model");
-		this.feedbackModel = registry.subscribe("mj:feedback-model");
-		this.tileMetricsModel = registry.subscribe("mj:tile-metrics-model");
+		this.trackingModel = registry.subscribe('mj:tracking-model');
+		this.feedbackModel = registry.subscribe('mj:feedback-model');
+		this.tileMetricsModel = registry.subscribe('mj:tile-metrics-model');
 
 		window.addEventListener('keydown', this.onWindowKeyDown);
 		window.addEventListener('resize', this.onShellViewportChange);
 		this.shellPortraitMediaQuery = window.matchMedia
-			? window.matchMedia("(orientation: portrait) and (max-width: 900px)")
+			? window.matchMedia('(orientation: portrait) and (max-width: 900px)')
 			: null;
 
 		if (this.shellPortraitMediaQuery) {
 			if (this.shellPortraitMediaQuery.addEventListener) {
-				this.shellPortraitMediaQuery.addEventListener("change", this.onShellViewportChange);
+				this.shellPortraitMediaQuery.addEventListener('change', this.onShellViewportChange);
 			} else if (this.shellPortraitMediaQuery.addListener) {
 				this.shellPortraitMediaQuery.addListener(this.onShellViewportChange);
 			}
@@ -928,7 +947,7 @@ export default class Board extends React.Component {
 			this.initialized();
 		}
 
-		this.scheduleAutoRescale("start");
+		this.scheduleAutoRescale('start');
 	}
 
 	componentWillUnmount() {
@@ -953,7 +972,7 @@ export default class Board extends React.Component {
 
 		if (this.shellPortraitMediaQuery) {
 			if (this.shellPortraitMediaQuery.removeEventListener) {
-				this.shellPortraitMediaQuery.removeEventListener("change", this.onShellViewportChange);
+				this.shellPortraitMediaQuery.removeEventListener('change', this.onShellViewportChange);
 			} else if (this.shellPortraitMediaQuery.removeListener) {
 				this.shellPortraitMediaQuery.removeListener(this.onShellViewportChange);
 			}
@@ -964,7 +983,7 @@ export default class Board extends React.Component {
 	componentDidUpdate(prevProps, prevState) {
 		if (prevState.instance !== this.state.instance && this.state.instance !== -1) {
 			this.startGenerateAnimation();
-			this.scheduleAutoRescale("generate-game");
+			this.scheduleAutoRescale('generate-game');
 		}
 
 		if (!prevState.lost && this.state.lost) {
@@ -979,12 +998,15 @@ export default class Board extends React.Component {
 
 			if (this.state.won && !this.state.celebrationDismissed) {
 				if (!this.state.showFireworks) {
-					this.fireworksTimer = setTimeout(function() {
-						this.fireworksTimer = null;
-						this.setState({
-							showFireworks: true,
-						});
-					}.bind(this), this.props.timings.fireworksDelay);
+					this.fireworksTimer = setTimeout(
+						function () {
+							this.fireworksTimer = null;
+							this.setState({
+								showFireworks: true,
+							});
+						}.bind(this),
+						this.props.timings.fireworksDelay,
+					);
 				}
 			} else if (this.state.showFireworks) {
 				this.setState({
@@ -1018,43 +1040,34 @@ export default class Board extends React.Component {
 	renderFireworks() {
 		if (!this.state.showFireworks || this.state.celebrationDismissed) return;
 
-		return (
-			<Fireworks
-				className="mj-gameover"
-				autostart={true}
-			/>
-		);
+		return <Fireworks className="mj-gameover" autostart={true} />;
 	}
 
 	renderWinAction() {
 		if (!this.state.won || this.state.celebrationDismissed) return;
 
 		return (
-			<button
-				type="button"
-				className="mj-win-action"
-				onClick={this.onDismissCelebration.bind(this)}
-			>
+			<button type="button" className="mj-win-action" onClick={this.onDismissCelebration.bind(this)}>
 				Continue
 			</button>
 		);
 	}
 
 	renderMain(canvasClassName) {
-		var playfieldWrapClassName = "mj-playfield-wrap";
-		var playfieldClassName = "mj-shell-box mj-shell-playfield";
-		var expandButtonClassName = "mj-playfield-expand-button mj-shell-expand-box";
-		var expandIconClassName = "mj-playfield-expand-button-icon";
+		var playfieldWrapClassName = 'mj-playfield-wrap';
+		var playfieldClassName = 'mj-shell-box mj-shell-playfield';
+		var expandButtonClassName = 'mj-playfield-expand-button mj-shell-expand-box';
+		var expandIconClassName = 'mj-playfield-expand-button-icon';
 		var shellCanvasStyle = this.getShellCanvasStyle();
 
 		if (this.state.isExpanded) {
-			playfieldWrapClassName += " is-expanded";
-			playfieldClassName += " is-expanded";
-			expandButtonClassName += " is-expanded";
+			playfieldWrapClassName += ' is-expanded';
+			playfieldClassName += ' is-expanded';
+			expandButtonClassName += ' is-expanded';
 		}
 
 		if (this.state.isFailureAnimating) {
-			playfieldClassName += " is-failure-animating";
+			playfieldClassName += ' is-failure-animating';
 		}
 
 		return (
@@ -1079,8 +1092,8 @@ export default class Board extends React.Component {
 								type="button"
 								className={expandButtonClassName}
 								onClick={this.onToggleExpanded.bind(this)}
-								aria-label={this.state.isExpanded ? "Contract board" : "Expand board"}
-								title={this.state.isExpanded ? "Contract" : "Expand"}
+								aria-label={this.state.isExpanded ? 'Contract board' : 'Expand board'}
+								title={this.state.isExpanded ? 'Contract' : 'Expand'}
 							>
 								<span className={expandIconClassName}></span>
 							</button>
@@ -1088,24 +1101,24 @@ export default class Board extends React.Component {
 					</div>
 				</div>
 			</div>
-		)
+		);
 	}
 
 	renderShellCanvasContent() {
-		var tilesetClassName = this.state.tileset?.class || "ivory";
-		var metricSetId = this.state.autoMetricSetId || "tiny";
+		var tilesetClassName = this.state.tileset?.class || 'ivory';
+		var metricSetId = this.state.autoMetricSetId || 'tiny';
 		var boardClassName = `${tilesetClassName}-${metricSetId} ${metricSetId}-face ${metricSetId}-size mj-shell-canvas-box`;
 
 		if (this.state.isGenerating) {
-			boardClassName += " is-generating";
+			boardClassName += ' is-generating';
 		}
 
 		if (this.state.isPaused) {
-			boardClassName += " is-paused";
+			boardClassName += ' is-paused';
 		}
 
 		if (this.state.lost) {
-			boardClassName += " is-lost";
+			boardClassName += ' is-lost';
 		}
 
 		return (
@@ -1128,30 +1141,26 @@ export default class Board extends React.Component {
 	}
 
 	isShellPortrait() {
-		if (typeof window === "undefined" || !window.matchMedia) {
+		if (typeof window === 'undefined' || !window.matchMedia) {
 			return false;
 		}
 
-		return window.matchMedia("(orientation: portrait) and (max-width: 900px)").matches;
+		return window.matchMedia('(orientation: portrait) and (max-width: 900px)').matches;
 	}
 
 	renderShellCanvas() {
 		var enableGestureCanvas = this.state.isExpanded || this.state.isShellPortrait;
 		var transformResetKey = [
-			this.state.isExpanded ? "expanded" : "normal",
-			this.state.isShellPortrait ? "portrait" : "landscape",
-			this.state.autoMetricSetId || "unknown",
-			Number.isFinite(this.state.autoCanvasWidth) ? this.state.autoCanvasWidth.toFixed(3) : "auto-width",
-			Number.isFinite(this.state.autoCanvasHeight) ? this.state.autoCanvasHeight.toFixed(3) : "auto-height",
-			Number.isFinite(this.state.autoCanvasScale) ? this.state.autoCanvasScale.toFixed(6) : "auto-scale",
-		].join(":");
+			this.state.isExpanded ? 'expanded' : 'normal',
+			this.state.isShellPortrait ? 'portrait' : 'landscape',
+			this.state.autoMetricSetId || 'unknown',
+			Number.isFinite(this.state.autoCanvasWidth) ? this.state.autoCanvasWidth.toFixed(3) : 'auto-width',
+			Number.isFinite(this.state.autoCanvasHeight) ? this.state.autoCanvasHeight.toFixed(3) : 'auto-height',
+			Number.isFinite(this.state.autoCanvasScale) ? this.state.autoCanvasScale.toFixed(6) : 'auto-scale',
+		].join(':');
 
 		if (!enableGestureCanvas) {
-			return (
-				<div className="mj-shell-canvas-fit-box">
-					{this.renderShellCanvasContent()}
-				</div>
-			);
+			return <div className="mj-shell-canvas-fit-box">{this.renderShellCanvasContent()}</div>;
 		}
 
 		return (
@@ -1185,12 +1194,12 @@ export default class Board extends React.Component {
 	}
 
 	renderGameArea(canvasClassName) {
-		var gameAreaClassName = "mj-game-area";
-		var leftHudClassName = "";
+		var gameAreaClassName = 'mj-game-area';
+		var leftHudClassName = '';
 
 		if (this.state.isExpanded) {
-			gameAreaClassName += " is-expanded";
-			leftHudClassName = "is-collapsed";
+			gameAreaClassName += ' is-expanded';
+			leftHudClassName = 'is-collapsed';
 		}
 
 		return (
@@ -1233,31 +1242,21 @@ export default class Board extends React.Component {
 					</div>
 				) : null}
 			</div>
-		)
+		);
 	}
 
 	renderShellOverlay() {
 		if (!this.state.shellToastOpen) return null;
 
 		return (
-			<div
-				className="mj-overlay-layer"
-				onClick={this.onDismissShellToast.bind(this)}
-			>
-				<div className="mj-shell-box mj-shell-toast">
-					Toast
-				</div>
+			<div className="mj-overlay-layer" onClick={this.onDismissShellToast.bind(this)}>
+				<div className="mj-shell-box mj-shell-toast">Toast</div>
 			</div>
 		);
 	}
 
 	renderTransientToast() {
-		return (
-			<Toast
-				message={this.state.shortMessage}
-				messageKey={this.state.shortMessageKey}
-			/>
-		);
+		return <Toast message={this.state.shortMessage} messageKey={this.state.shortMessageKey} />;
 	}
 
 	renderStartupConsentDialog() {
@@ -1298,9 +1297,7 @@ export default class Board extends React.Component {
 		var difficulty = this.props.difficulties[this.state.difficulty];
 		var layout = this.props.layouts[this.state.layout];
 		var canIncludeContext = Boolean(
-			this.trackingModel &&
-			this.trackingModel.hasFeedbackContext &&
-			this.trackingModel.hasFeedbackContext()
+			this.trackingModel && this.trackingModel.hasFeedbackContext && this.trackingModel.hasFeedbackContext(),
 		);
 
 		return (
@@ -1317,12 +1314,7 @@ export default class Board extends React.Component {
 	}
 
 	renderHelpDialog() {
-		return (
-			<HelpDialog
-				open={this.state.helpOpen}
-				onClose={this.onCloseHelpDialog.bind(this)}
-			/>
-		);
+		return <HelpDialog open={this.state.helpOpen} onClose={this.onCloseHelpDialog.bind(this)} />;
 	}
 
 	renderSolveDialog() {
@@ -1337,7 +1329,7 @@ export default class Board extends React.Component {
 				layoutTitle={layout ? layout.title : this.state.layout}
 				difficulty={this.state.difficulty}
 				difficultyLabel={difficulty ? difficulty.label : this.state.difficulty}
-				tilesetClassName={this.state.tileset?.class || "ivory"}
+				tilesetClassName={this.state.tileset?.class || 'ivory'}
 				timings={this.props.timings}
 				onClose={this.onCloseSolveDialog.bind(this)}
 			/>
@@ -1357,12 +1349,10 @@ export default class Board extends React.Component {
 	}
 
 	render() {
-		var className = "mj-shell-canvas";
+		var className = 'mj-shell-canvas';
 
 		if (!this.props.delegator) {
-			return (
-				<h1>Error</h1>
-			)
+			return <h1>Error</h1>;
 		}
 		var won = this.state.won;
 		var pageClassName = 'page mj-board-page mj-shell-mode ';
@@ -1403,6 +1393,6 @@ export default class Board extends React.Component {
 					{this.renderMultiUndoDialog()}
 				</div>
 			</Page>
-		)
+		);
 	}
 }

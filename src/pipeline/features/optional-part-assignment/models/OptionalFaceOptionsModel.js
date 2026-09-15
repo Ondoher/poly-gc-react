@@ -32,11 +32,10 @@ export default class OptionalFaceOptionsModel {
 	}
 
 	optionKeys() {
-		return Object.values(this.face.optionalParts || {})
-			.map((part) => ({
-				partKey: part.partId === 'glyph' ? 'character' : 'label',
-				label: part.partId === 'glyph' ? 'Character Glyph' : OptionalComponentAssignments.partLabel(part.partId),
-			}));
+		return Object.values(this.face.optionalParts || {}).map((part) => ({
+			partKey: part.partId === 'glyph' ? 'character' : 'label',
+			label: part.partId === 'glyph' ? 'Character Glyph' : OptionalComponentAssignments.partLabel(part.partId),
+		}));
 	}
 
 	visibleParts() {
@@ -54,10 +53,11 @@ export default class OptionalFaceOptionsModel {
 
 		return {
 			searchSource: sourcePresent,
-			region: part?.hint?.region
-				|| seedOption?.sourceRegion
-				|| OptionalFaceOptionsModel.sourceCornerToRegion(seedOption?.sourceCorner)
-				|| 'center',
+			region:
+				part?.hint?.region ||
+				seedOption?.sourceRegion ||
+				OptionalFaceOptionsModel.sourceCornerToRegion(seedOption?.sourceCorner) ||
+				'center',
 		};
 	}
 
@@ -70,8 +70,9 @@ export default class OptionalFaceOptionsModel {
 	}
 
 	static assignmentFaces(optionalPartAssignment) {
-		return Object.values(optionalPartAssignment?.faces || {})
-			.sort((left, right) => left.faceKey.localeCompare(right.faceKey));
+		return Object.values(optionalPartAssignment?.faces || {}).sort((left, right) =>
+			left.faceKey.localeCompare(right.faceKey),
+		);
 	}
 
 	static summarizeFaces(faces) {
@@ -93,8 +94,12 @@ export default class OptionalFaceOptionsModel {
 		const family = faces.length > 0 ? OptionalFaceOptionsModel.faceFamily(faces[0].faceKey) : '';
 
 		return {
-			label: OptionalFaceOptionsModel.defaultedCommonOptions(faces.map((face) => new OptionalFaceOptionsModel(face).faceOptions().label)),
-			character: OptionalFaceOptionsModel.defaultedCommonOptions(faces.map((face) => new OptionalFaceOptionsModel(face).faceOptions().character)),
+			label: OptionalFaceOptionsModel.defaultedCommonOptions(
+				faces.map((face) => new OptionalFaceOptionsModel(face).faceOptions().label),
+			),
+			character: OptionalFaceOptionsModel.defaultedCommonOptions(
+				faces.map((face) => new OptionalFaceOptionsModel(face).faceOptions().character),
+			),
 			layout: OptionalFaceOptionsModel.defaultPairLayoutForFamily(family),
 		};
 	}
@@ -107,7 +112,9 @@ export default class OptionalFaceOptionsModel {
 				continue;
 			}
 
-			const familyFaces = faces.filter((face) => OptionalFaceOptionsModel.faceFamily(face.faceKey) === preset.family);
+			const familyFaces = faces.filter(
+				(face) => OptionalFaceOptionsModel.faceFamily(face.faceKey) === preset.family,
+			);
 			families[preset.family] = OptionalFaceOptionsModel.bulkOptions(familyFaces);
 		}
 
@@ -141,27 +148,34 @@ export default class OptionalFaceOptionsModel {
 	}
 
 	static defaultedOptionGroups(groups) {
-		return Object.fromEntries(Object.entries(groups || {}).map(([groupKey, options]) => [
-			groupKey,
-			OptionalFaceOptionsModel.defaultedOptionGroup(options),
-		]));
+		return Object.fromEntries(
+			Object.entries(groups || {}).map(([groupKey, options]) => [
+				groupKey,
+				OptionalFaceOptionsModel.defaultedOptionGroup(options),
+			]),
+		);
 	}
 
 	static defaultedOptionGroup(options) {
-		return Object.fromEntries(Object.entries(options || {}).map(([key, option]) => {
-			if (key === 'layout' || !option || typeof option !== 'object' || Array.isArray(option)) {
-				return [key, option];
-			}
+		return Object.fromEntries(
+			Object.entries(options || {}).map(([key, option]) => {
+				if (key === 'layout' || !option || typeof option !== 'object' || Array.isArray(option)) {
+					return [key, option];
+				}
 
-			if (option.region || option.regionMixed || option.regionDefault) {
-				return [key, option];
-			}
+				if (option.region || option.regionMixed || option.regionDefault) {
+					return [key, option];
+				}
 
-			return [key, {
-				...option,
-				regionDefault: true,
-			}];
-		}));
+				return [
+					key,
+					{
+						...option,
+						regionDefault: true,
+					},
+				];
+			}),
+		);
 	}
 
 	static commonOptionBoolean(options, fieldName) {
@@ -202,19 +216,23 @@ export default class OptionalFaceOptionsModel {
 		}
 
 		return {
-			...(option.searchSourceMixed || !Object.hasOwn(option, 'searchSource') ? {} : { searchSource: Boolean(option.searchSource) }),
-			...(option.regionDefault ? { regionDefault: true } : {}),
-			...(option.regionMixed ? {} : option.region ? { region: option.region } : {}),
+			...(option.searchSourceMixed || !Object.hasOwn(option, 'searchSource')
+				? {}
+				: {searchSource: Boolean(option.searchSource)}),
+			...(option.regionDefault ? {regionDefault: true} : {}),
+			...(option.regionMixed ? {} : option.region ? {region: option.region} : {}),
 		};
 	}
 
 	static sourceCornerToRegion(sourceCorner) {
-		return {
-			topLeft: 'top-left',
-			topRight: 'top-right',
-			bottomLeft: 'bottom-left',
-			bottomRight: 'bottom-right',
-		}[sourceCorner] || null;
+		return (
+			{
+				topLeft: 'top-left',
+				topRight: 'top-right',
+				bottomLeft: 'bottom-left',
+				bottomRight: 'bottom-right',
+			}[sourceCorner] || null
+		);
 	}
 
 	static firstBoolean(...values) {
@@ -229,8 +247,6 @@ export default class OptionalFaceOptionsModel {
 	}
 
 	static defaultPairLayoutForFamily(family) {
-		return family === 'season'
-			? 'label-left-character-right'
-			: 'label-right-character-left';
+		return family === 'season' ? 'label-left-character-right' : 'label-right-character-left';
 	}
 }

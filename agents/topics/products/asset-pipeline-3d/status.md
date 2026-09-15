@@ -34,9 +34,9 @@ Binding records use the compact tuple:
 
 ```json
 {
-  "componentId": "src.b-1.0001",
-  "partId": "label",
-  "strength": "tentative"
+	"componentId": "src.b-1.0001",
+	"partId": "label",
+	"strength": "tentative"
 }
 ```
 
@@ -284,7 +284,7 @@ As of 2026-06-09:
 - A focused Paper.js SVG-side union experiment is available for generated
   asset validation. The `default/season-1` face has been pointed at
   `paper-united-all` experiment artifacts generated with `svg-cutter
-  --skip-union`, with stamped body, colored inlay, and preview outputs written
+--skip-union`, with stamped body, colored inlay, and preview outputs written
   under `scripts/output/asset-pipeline/default/experiments/paper-flatten/`.
 - Known residual risk: generated asset preview PNG rendering still depends on
   Puppeteer/Chromium availability, but the Mark III queue hang caused by a

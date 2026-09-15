@@ -49,24 +49,24 @@ state model still reflects the original Pascal set-based approach.
 The current exploration is trending toward three pieces:
 
 - `BoardGenerator`
-  - create a solvable board from a layout and game number
+    - create a solvable board from a layout and game number
 - `GameEngine`
-  - own runtime mutation of an already generated board
+    - own runtime mutation of an already generated board
 - `BoardRules`
-  - hold the logic shared by both generator and engine
+    - hold the logic shared by both generator and engine
 
 Another useful way to read that split is as a deeper layered model:
 
 - occupancy layer
-  - generic present/absent and used-space tracking
+    - generic present/absent and used-space tracking
 - Mahjongg state layer
-  - Mahjongg-specific tile and board state built on top of occupancy
+    - Mahjongg-specific tile and board state built on top of occupancy
 - `BoardRules`
-  - Mahjongg business logic interpreted over Mahjongg state
+    - Mahjongg business logic interpreted over Mahjongg state
 - `BoardGenerator`
-  - solvable board construction
+    - solvable board construction
 - `GameEngine`
-  - runtime mutation and controller-facing orchestration
+    - runtime mutation and controller-facing orchestration
 
 That layering makes room for a more reusable lowest layer without forcing Mahjongg-specific tile knowledge into generic occupancy tracking.
 
@@ -123,15 +123,15 @@ This is also a useful boundary for future reuse. If the lowest layer is generic 
 So the intended layering is closer to:
 
 - occupancy layer
-  - primitive presence and structural query methods
+    - primitive presence and structural query methods
 - Mahjongg state layer
-  - Mahjongg tile and board access built on top of occupancy
+    - Mahjongg tile and board access built on top of occupancy
 - shared rules layer
-  - Mahjongg business logic shared by generator and engine
+    - Mahjongg business logic shared by generator and engine
 - generator
-  - solvable board construction
+    - solvable board construction
 - runtime engine
-  - game-state mutation and move orchestration
+    - game-state mutation and move orchestration
 
 This matters because both generator and engine currently share low-level board and occupancy mechanics, and the occupancy-plus-Mahjongg-state split is one way to keep those mechanics in one place without forcing generator logic and runtime gameplay logic into the same object.
 
@@ -157,9 +157,9 @@ That points toward a two-step interface:
 The current discussion also identified a small set of primitive mutation candidates:
 
 - `addPos`
-  - record occupancy and tile presence on the board surface
+    - record occupancy and tile presence on the board surface
 - `subtractPos`
-  - release occupancy and tile presence from the board surface
+    - release occupancy and tile presence from the board surface
 
 If the split becomes occupancy plus Mahjongg state, then methods such as:
 
@@ -185,11 +185,11 @@ With the Mahjongg-specific state layer sitting above occupancy, the lowest-level
 The proposed occupancy data shape is:
 
 - `usedSpaces`
-  - occupied logical board-surface coordinates grouped by depth and row
+    - occupied logical board-surface coordinates grouped by depth and row
 - `usedTiles`
-  - the set of tile ids currently present on the occupied surface
+    - the set of tile ids currently present on the occupied surface
 - `tileCount`
-  - the number of tiles currently present
+    - the number of tiles currently present
 
 That means occupancy should not directly store:
 
@@ -206,23 +206,23 @@ Those belong either to Mahjongg state or to higher orchestration layers.
 The proposed occupancy interface is intentionally narrow:
 
 - `reset()`
-  - clear all occupancy state and restore the empty-surface invariants
+    - clear all occupancy state and restore the empty-surface invariants
 - `occupyTile(tile, position)`
-  - mark a tile present and occupy its logical position in one step
+    - mark a tile present and occupy its logical position in one step
 - `releaseTile(tile, position)`
-  - mark a tile absent and release its logical position in one step
+    - mark a tile absent and release its logical position in one step
 - `occupyPosition(position)`
-  - lower-level used-space mutation primitive
+    - lower-level used-space mutation primitive
 - `releasePosition(position)`
-  - lower-level used-space release primitive
+    - lower-level used-space release primitive
 - `isUsed(x, y, z)`
-  - structural used-space query
+    - structural used-space query
 - `hasTile(tile)`
-  - test tile presence
+    - test tile presence
 - `forEachTile(callback)`
-  - iterate through currently present tile ids
+    - iterate through currently present tile ids
 - `getTileCount()`
-  - return the current count of present tiles
+    - return the current count of present tiles
 
 The design intent is that Mahjongg-facing callers should usually work through:
 
@@ -349,13 +349,13 @@ These are important because they are needed both:
 ## Current Understanding Of Data Shapes
 
 - `PositionSet`
-  - the list of logical tile positions that define the shape of a layout
+    - the list of logical tile positions that define the shape of a layout
 - `Layout`
-  - the named blueprint for a board shape, including `positions`
+    - the named blueprint for a board shape, including `positions`
 - `Board`
-  - the generated board for one game
+    - the generated board for one game
 - `Board.pieces`
-  - the placed tile list, where each piece combines a `pos` and a `face`
+    - the placed tile list, where each piece combines a `pos` and a `face`
 
 This means:
 

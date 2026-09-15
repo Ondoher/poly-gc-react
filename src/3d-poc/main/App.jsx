@@ -1,8 +1,8 @@
 import React from 'react';
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
+import {Canvas, useFrame, useLoader, useThree} from '@react-three/fiber';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {OrbitControls as OrbitControlsImpl} from 'three/examples/jsm/controls/OrbitControls.js';
 import Engine from '../../gc/features/mj/src/engine/Engine.js';
 import layouts from '../../gc/features/mj/src/data/layouts.js';
 
@@ -16,17 +16,52 @@ const GRID_Z_STEP = TILE_DEPTH / 2;
 const LAYER_STEP = TILE_HEIGHT;
 const BODY_URL = 'models/mj-tile-boolean-experiment-basic.glb';
 const GENERATED_TRADITIONAL_FACE_KEYS = new Set([
-	'b-1', 'b-2', 'b-3', 'b-4', 'b-5', 'b-6', 'b-7', 'b-8', 'b-9',
-	'c-1', 'c-2', 'c-3', 'c-4', 'c-5', 'c-6', 'c-7', 'c-8', 'c-9',
-	'd-1', 'd-2', 'd-3', 'd-4', 'd-5', 'd-6', 'd-7', 'd-8', 'd-9',
-	'dragon-g', 'dragon-r', 'dragon-w',
-	'wind-n', 'wind-s', 'wind-e', 'wind-w',
-	'flower-1', 'flower-2', 'flower-3', 'flower-4',
-	'season-1', 'season-2', 'season-3', 'season-4',
+	'b-1',
+	'b-2',
+	'b-3',
+	'b-4',
+	'b-5',
+	'b-6',
+	'b-7',
+	'b-8',
+	'b-9',
+	'c-1',
+	'c-2',
+	'c-3',
+	'c-4',
+	'c-5',
+	'c-6',
+	'c-7',
+	'c-8',
+	'c-9',
+	'd-1',
+	'd-2',
+	'd-3',
+	'd-4',
+	'd-5',
+	'd-6',
+	'd-7',
+	'd-8',
+	'd-9',
+	'dragon-g',
+	'dragon-r',
+	'dragon-w',
+	'wind-n',
+	'wind-s',
+	'wind-e',
+	'wind-w',
+	'flower-1',
+	'flower-2',
+	'flower-3',
+	'flower-4',
+	'season-1',
+	'season-2',
+	'season-3',
+	'season-4',
 ]);
 
 function OrbitControls(props) {
-	const { camera, gl } = useThree();
+	const {camera, gl} = useThree();
 	const controlsRef = React.useRef(null);
 
 	React.useEffect(() => {
@@ -71,10 +106,10 @@ function cloneModel(scene) {
 	return clone;
 }
 
-function TileModel({ url, position = [0, 0, 0], rotation = [0, 0, 0], missingFace = false }) {
+function TileModel({url, position = [0, 0, 0], rotation = [0, 0, 0], missingFace = false}) {
 	const gltf = useLoader(GLTFLoader, url);
 
-	const { model, bottomOffset } = React.useMemo(() => {
+	const {model, bottomOffset} = React.useMemo(() => {
 		const clone = cloneModel(gltf.scene);
 
 		if (missingFace) {
@@ -114,13 +149,13 @@ function TileModel({ url, position = [0, 0, 0], rotation = [0, 0, 0], missingFac
 
 	const adjustedPosition = React.useMemo(
 		() => [position[0], position[1] + bottomOffset, position[2]],
-		[position, bottomOffset]
+		[position, bottomOffset],
 	);
 
 	return <primitive object={model} position={adjustedPosition} rotation={rotation} />;
 }
 
-function TestFloor({ size }) {
+function TestFloor({size}) {
 	const canvasTexture = React.useMemo(() => {
 		const canvas = document.createElement('canvas');
 		canvas.width = 512;
@@ -211,20 +246,23 @@ function makeBoardTiles() {
 			pos: piece.pos,
 		};
 	});
-	const bounds = pieces.reduce((result, piece) => {
-		result.minX = Math.min(result.minX, piece.pos.x);
-		result.maxX = Math.max(result.maxX, piece.pos.x);
-		result.minY = Math.min(result.minY, piece.pos.y);
-		result.maxY = Math.max(result.maxY, piece.pos.y);
-		result.maxZ = Math.max(result.maxZ, piece.pos.z);
-		return result;
-	}, {
-		minX: Infinity,
-		maxX: -Infinity,
-		minY: Infinity,
-		maxY: -Infinity,
-		maxZ: -Infinity,
-	});
+	const bounds = pieces.reduce(
+		(result, piece) => {
+			result.minX = Math.min(result.minX, piece.pos.x);
+			result.maxX = Math.max(result.maxX, piece.pos.x);
+			result.minY = Math.min(result.minY, piece.pos.y);
+			result.maxY = Math.max(result.maxY, piece.pos.y);
+			result.maxZ = Math.max(result.maxZ, piece.pos.z);
+			return result;
+		},
+		{
+			minX: Infinity,
+			maxX: -Infinity,
+			minY: Infinity,
+			maxY: -Infinity,
+			maxZ: -Infinity,
+		},
+	);
 	const centerX = (bounds.minX + bounds.maxX) / 2;
 	const centerY = (bounds.minY + bounds.maxY) / 2;
 
@@ -240,23 +278,18 @@ function makeBoardTiles() {
 			return {
 				...piece,
 				position,
-				url: piece.hasGeneratedTraditionalFace
-					? `models/colored-inlay/${piece.faceKey}.glb`
-					: BODY_URL,
+				url: piece.hasGeneratedTraditionalFace ? `models/colored-inlay/${piece.faceKey}.glb` : BODY_URL,
 			};
 		}),
 		stats: {
 			generatedTraditionalCount: pieces.filter((piece) => piece.hasGeneratedTraditionalFace).length,
 			placeholderCount: pieces.filter((piece) => !piece.hasGeneratedTraditionalFace).length,
 		},
-		floorSize: [
-			(bounds.maxX - bounds.minX + 5) * GRID_X_STEP,
-			(bounds.maxY - bounds.minY + 5) * GRID_Z_STEP,
-		],
+		floorSize: [(bounds.maxX - bounds.minX + 5) * GRID_X_STEP, (bounds.maxY - bounds.minY + 5) * GRID_Z_STEP],
 	};
 }
 
-function Scene({ board }) {
+function Scene({board}) {
 	return (
 		<>
 			<color attach="background" args={['#2a241c']} />
@@ -278,11 +311,7 @@ function Scene({ board }) {
 				shadow-camera-top={8}
 				shadow-camera-bottom={-8}
 			/>
-			<directionalLight
-				position={[3.2, 2.2, 3.8]}
-				intensity={0.1}
-				color={'#d9e6ff'}
-			/>
+			<directionalLight position={[3.2, 2.2, 3.8]} intensity={0.1} color={'#d9e6ff'} />
 			<group rotation={[-0.03, 0, 0]}>
 				{board.tiles.map((tile) => (
 					<TileModel
@@ -312,7 +341,7 @@ export default function App() {
 	const board = React.useMemo(() => makeBoardTiles(), []);
 
 	return (
-		<div style={{ width: '100vw', height: '100vh', margin: 0, background: '#1f2937', position: 'relative' }}>
+		<div style={{width: '100vw', height: '100vh', margin: 0, background: '#1f2937', position: 'relative'}}>
 			<div
 				style={{
 					position: 'absolute',
@@ -329,10 +358,10 @@ export default function App() {
 					maxWidth: 500,
 				}}
 			>
-				3D board POC: {board.layoutTitle}, game {BOARD_NUMBER}. Generated traditional GLBs:
-				{' '}{board.stats.generatedTraditionalCount}; neutral placeholders: {board.stats.placeholderCount}.
+				3D board POC: {board.layoutTitle}, game {BOARD_NUMBER}. Generated traditional GLBs:{' '}
+				{board.stats.generatedTraditionalCount}; neutral placeholders: {board.stats.placeholderCount}.
 			</div>
-			<Canvas shadows camera={{ position: [0, 6.2, 9.8], fov: 34, far: 90 }}>
+			<Canvas shadows camera={{position: [0, 6.2, 9.8], fov: 34, far: 90}}>
 				<React.Suspense fallback={null}>
 					<Scene board={board} />
 				</React.Suspense>

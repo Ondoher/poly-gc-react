@@ -100,7 +100,9 @@
 	z-index: 4;
 	border-width: 4px;
 	background: transparent;
-	box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--structure-part-color);
+	box-shadow:
+		0 0 0 2px #ffffff,
+		0 0 0 4px var(--structure-part-color);
 }
 
 .bounds-box.source-part-bounds.dimmed-source-part-bounds {

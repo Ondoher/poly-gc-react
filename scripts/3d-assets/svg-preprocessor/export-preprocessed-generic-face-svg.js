@@ -3,27 +3,19 @@ import path from 'path';
 import opentype from 'opentype.js';
 import paper from 'paper';
 import sharp from 'sharp';
-import {
-	ASSET_FONTS_DIR,
-	LARGE_FACES_DIR,
-	preparedSvgPath,
-	sourceSvgPath,
-} from '../shared/asset-paths.js';
-import { loadFacePreprocessingMetadataEntry } from './face-preprocessing-metadata.js';
-import { selectAnalogComponentGrouping } from './analog-component-matcher.js';
-import { Colors } from './ColorPalette.js';
+import {ASSET_FONTS_DIR, LARGE_FACES_DIR, preparedSvgPath, sourceSvgPath} from '../shared/asset-paths.js';
+import {loadFacePreprocessingMetadataEntry} from './face-preprocessing-metadata.js';
+import {selectAnalogComponentGrouping} from './analog-component-matcher.js';
+import {Colors} from './ColorPalette.js';
 import {
 	makePaintPathWithKnockouts,
 	selectKnockoutComponents,
 	transformComponentPath,
 } from './normalized-face-components.js';
-import {
-	extractReferenceImageComponents,
-	nearestPaletteColor,
-} from './reference-image-components.js';
-import { loadStructureBackedReferenceComponents } from './reference-structure-components.js';
-import { extractSourceSvgComponents } from './source-svg-components.js';
-import { composeMatrices } from './source-svg-components.js';
+import {extractReferenceImageComponents, nearestPaletteColor} from './reference-image-components.js';
+import {loadStructureBackedReferenceComponents} from './reference-structure-components.js';
+import {extractSourceSvgComponents} from './source-svg-components.js';
+import {composeMatrices} from './source-svg-components.js';
 import {
 	boundsToTransformMatrix,
 	matrixToString,
@@ -33,7 +25,7 @@ import {
 
 const FACE_KEY = process.argv[2];
 const FACE_VIEWBOX = '0 0 94 136';
-const LARGE_FACE_CANVAS = Object.freeze({ width: 164, height: 238 });
+const LARGE_FACE_CANVAS = Object.freeze({width: 164, height: 238});
 const GLUTEN_FONT = path.resolve(ASSET_FONTS_DIR, 'gluten-800.ttf');
 
 if (!FACE_KEY) {
@@ -73,23 +65,7 @@ const structureReferenceArtworkComponents = loadStructureBackedReferenceComponen
 const referenceArtworkComponents = structureReferenceArtworkComponents?.length
 	? structureReferenceArtworkComponents
 	: removeReferenceLabelComponents(reference.artworkComponents, metadata);
-let hueShadesByHue = Colors.hueShadesByHue([
-	...sourcePaintComponents.map(rawSourcePaintColor),
-	...referenceArtworkComponents.map((component) => component.dominantColor),
-	reference.labelComponent?.dominantColor,
-	metadata.labelColor,
-].filter(Boolean));
-const grouping = selectAnalogComponentGrouping(paintComponents, referenceArtworkComponents, {
-	gapCandidates: metadata.gapCandidates,
-	groupByColor: metadata.groupByColor !== false,
-});
-const matchResult = grouping.matchResult;
-const matches = expandMultiReferenceMatches(matchResult.matches);
-hueShadesByHue = Colors.mappedHueShadesByHue(
-	matches.flatMap((match) => match.sourceGroup.components.map((component) => ({
-		source: rawSourcePaintColor(component),
-		target: referencePaintColorForComponent(component, match),
-	}))),
+let hueShadesByHue = Colors.hueShadesByHue(
 	[
 		...sourcePaintComponents.map(rawSourcePaintColor),
 		...referenceArtworkComponents.map((component) => component.dominantColor),
@@ -97,22 +73,48 @@ hueShadesByHue = Colors.mappedHueShadesByHue(
 		metadata.labelColor,
 	].filter(Boolean),
 );
-const overlapPaletteColors = Colors.overlapPaletteColorMap(matches.map((match) => ({
-	items: match.sourceGroup.components.map((component) => ({
-		key: componentPaletteKey(component),
-		source: rawSourcePaintColor(component),
-		target: referencePaintColorForComponent(component, match),
-		weight: component.pixels || component.area || 1,
-		sourceIndex: component.sourceIndex,
+const grouping = selectAnalogComponentGrouping(paintComponents, referenceArtworkComponents, {
+	gapCandidates: metadata.gapCandidates,
+	groupByColor: metadata.groupByColor !== false,
+});
+const matchResult = grouping.matchResult;
+const matches = expandMultiReferenceMatches(matchResult.matches);
+hueShadesByHue = Colors.mappedHueShadesByHue(
+	matches.flatMap((match) =>
+		match.sourceGroup.components.map((component) => ({
+			source: rawSourcePaintColor(component),
+			target: referencePaintColorForComponent(component, match),
+		})),
+	),
+	[
+		...sourcePaintComponents.map(rawSourcePaintColor),
+		...referenceArtworkComponents.map((component) => component.dominantColor),
+		reference.labelComponent?.dominantColor,
+		metadata.labelColor,
+	].filter(Boolean),
+);
+const overlapPaletteColors = Colors.overlapPaletteColorMap(
+	matches.map((match) => ({
+		items: match.sourceGroup.components.map((component) => ({
+			key: componentPaletteKey(component),
+			source: rawSourcePaintColor(component),
+			target: referencePaintColorForComponent(component, match),
+			weight: component.pixels || component.area || 1,
+			sourceIndex: component.sourceIndex,
+		})),
 	})),
-})));
-const labelPath = metadata.labelText && glyphOutputPresent('number', true)
-	? makeLabelPath(glutenFont, metadata, reference.labelComponent)
-	: '';
+);
+const labelPath =
+	metadata.labelText && glyphOutputPresent('number', true)
+		? makeLabelPath(glutenFont, metadata, reference.labelComponent)
+		: '';
 const labelMask = labelPath ? await renderSvgFragmentMask(labelPath) : null;
 const matchTransforms = await selectMatchTransforms(matches, labelMask);
-const art = (await Promise.all(matches
-	.map((match, index) => buildMatchedGroup(match, index, cutoutComponents, matchTransforms[index]))))
+const art = (
+	await Promise.all(
+		matches.map((match, index) => buildMatchedGroup(match, index, cutoutComponents, matchTransforms[index])),
+	)
+)
 	.flat()
 	.map((sourceFragment) => indent(sourceFragment, 2))
 	.join('\n');
@@ -133,7 +135,7 @@ ${labelPath ? `	<g id="number">\n${indent(labelPath, 2)}\n	</g>\n` : ''}
 </svg>
 `;
 
-fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+fs.mkdirSync(path.dirname(outputPath), {recursive: true});
 fs.writeFileSync(outputPath, output);
 console.log(`Wrote ${path.relative(process.cwd(), outputPath)}`);
 if (matchResult.message) {
@@ -141,16 +143,18 @@ if (matchResult.message) {
 }
 
 async function buildMatchedGroup(match, index, cutoutComponents, transform) {
-	return renderOrderedComponents(match.sourceGroup.components).map((component, componentIndex) => makePaintPathWithKnockouts({
-		component,
-		color: outputPaintColor(component, referencePaintColorForComponent(component, match)),
-		knockouts: cutoutComponents.filter((cutout) => isRelatedToGroup(match.sourceGroup, cutout)),
-		transform,
-		attributes: {
-			id: `face-art-part-${index + 1}-${componentIndex + 1}`,
-			'data-reference-color': referencePaintColorForComponent(component, match),
-		},
-	}));
+	return renderOrderedComponents(match.sourceGroup.components).map((component, componentIndex) =>
+		makePaintPathWithKnockouts({
+			component,
+			color: outputPaintColor(component, referencePaintColorForComponent(component, match)),
+			knockouts: cutoutComponents.filter((cutout) => isRelatedToGroup(match.sourceGroup, cutout)),
+			transform,
+			attributes: {
+				id: `face-art-part-${index + 1}-${componentIndex + 1}`,
+				'data-reference-color': referencePaintColorForComponent(component, match),
+			},
+		}),
+	);
 }
 
 function renderOrderedComponents(components) {
@@ -190,9 +194,7 @@ function referencePaletteColorForSource(component, referenceComponent, reference
 	const sourceHue = Colors.perceivedHue(rawSourcePaintColor(component));
 	const colors = referencePaletteColors(referenceComponent, referenceGroup);
 	const referenceColor = referenceComponent?.dominantColor || referenceGroup?.dominantColor;
-	const sameHueColor = sourceHue
-		? colors.find((color) => Colors.perceivedHue(color) === sourceHue)
-		: null;
+	const sameHueColor = sourceHue ? colors.find((color) => Colors.perceivedHue(color) === sourceHue) : null;
 
 	if (referenceColor) {
 		return referenceColor;
@@ -206,12 +208,16 @@ function referencePaletteColorForSource(component, referenceComponent, reference
 }
 
 function referencePaletteColors(referenceComponent, referenceGroup) {
-	return [...new Set([
-		...(referenceComponent?.colors || []),
-		referenceComponent?.dominantColor,
-		...referenceGroupPaletteColors(referenceGroup),
-		referenceGroup?.dominantColor,
-	].filter(Boolean))];
+	return [
+		...new Set(
+			[
+				...(referenceComponent?.colors || []),
+				referenceComponent?.dominantColor,
+				...referenceGroupPaletteColors(referenceGroup),
+				referenceGroup?.dominantColor,
+			].filter(Boolean),
+		),
+	];
 }
 
 function referenceGroupPaletteColors(referenceGroup) {
@@ -246,12 +252,14 @@ function analogousReferenceComponent(component, sourceComponents, referenceCompo
 	const referenceBounds = unionBounds(referenceComponents.map(matchBounds));
 	const candidateComponents = perceivedReferenceCandidates(component, referenceComponents);
 
-	return candidateComponents
-		.map((referenceComponent) => ({
-			component: referenceComponent,
-			distance: analogousReferenceScore(component, referenceComponent, sourceBounds, referenceBounds),
-		}))
-		.sort((left, right) => left.distance - right.distance)[0]?.component || null;
+	return (
+		candidateComponents
+			.map((referenceComponent) => ({
+				component: referenceComponent,
+				distance: analogousReferenceScore(component, referenceComponent, sourceBounds, referenceBounds),
+			}))
+			.sort((left, right) => left.distance - right.distance)[0]?.component || null
+	);
 }
 
 function perceivedReferenceCandidates(component, referenceComponents) {
@@ -265,12 +273,10 @@ function analogousReferenceScore(component, referenceComponent, sourceBounds, re
 	const centerScore = hasBounds ? distance(sourcePoint, referencePoint) : 0;
 	const sourceAreaRatio = hasBounds ? normalizedArea(component, sourceBounds) : 0;
 	const referenceAreaRatio = hasBounds ? normalizedArea(referenceComponent, referenceBounds) : 0;
-	const areaScore = hasBounds
-		? Math.abs(Math.log((sourceAreaRatio + 0.0001) / (referenceAreaRatio + 0.0001)))
-		: 0;
+	const areaScore = hasBounds ? Math.abs(Math.log((sourceAreaRatio + 0.0001) / (referenceAreaRatio + 0.0001))) : 0;
 	const colorScore = perceivedReferenceComponentColorDistance(rawSourcePaintColor(component), referenceComponent);
 
-	return centerScore + (areaScore * 0.04) + ((colorScore ?? 0) * 0.08);
+	return centerScore + areaScore * 0.04 + (colorScore ?? 0) * 0.08;
 }
 
 function perceivedReferenceComponentColorDistance(sourceColor, referenceComponent) {
@@ -322,13 +328,15 @@ function splitSourceGroupByReferenceComponents(sourceGroup, referenceGroup) {
 	}
 
 	return assigned
-		.map((components, index) => components.length > 0
-			? {
-				sourceGroup: makeLocalGroup(components),
-				referenceGroup: referenceGroups[index],
-				distribution: makeDistribution(referenceGroups, referenceGroups[index]),
-			}
-			: null)
+		.map((components, index) =>
+			components.length > 0
+				? {
+						sourceGroup: makeLocalGroup(components),
+						referenceGroup: referenceGroups[index],
+						distribution: makeDistribution(referenceGroups, referenceGroups[index]),
+					}
+				: null,
+		)
 		.filter(Boolean);
 }
 
@@ -365,48 +373,54 @@ async function makeScaleCandidatesForMatch(match) {
 	const targetBounds = targetPixelsToViewBoxBounds(matchBounds(match.referenceGroup), LARGE_FACE_CANVAS);
 	const distribution = match.distribution
 		? {
-			...match.distribution,
-			bounds: targetPixelsToViewBoxBounds(match.distribution.bounds, LARGE_FACE_CANVAS),
-		}
+				...match.distribution,
+				bounds: targetPixelsToViewBoxBounds(match.distribution.bounds, LARGE_FACE_CANVAS),
+			}
 		: null;
 	const referenceMask = renderReferenceGroupMask(reference.image, match.referenceGroup);
 	const referenceArea = maskArea(referenceMask);
 
-	return Promise.all(scaleCandidates(sourceBounds, targetBounds).map(async (scale) => {
-		const matrix = boundsToTransformMatrix(
-			sourceBounds,
-			distributedTargetBounds(sourceBounds, targetBounds, scale, distribution),
-			{ scale },
-		);
-		const sourceMask = await renderSourceGroupMask(match.sourceGroup, matrix);
+	return Promise.all(
+		scaleCandidates(sourceBounds, targetBounds).map(async (scale) => {
+			const matrix = boundsToTransformMatrix(
+				sourceBounds,
+				distributedTargetBounds(sourceBounds, targetBounds, scale, distribution),
+				{scale},
+			);
+			const sourceMask = await renderSourceGroupMask(match.sourceGroup, matrix);
 
-		return {
-			matrix,
-			sourceMask,
-			sourceArea: maskArea(sourceMask),
-			referenceMask,
-			referenceArea,
-			overlapScore: scorePixelOverlap(sourceMask, referenceMask),
-		};
-	}));
+			return {
+				matrix,
+				sourceMask,
+				sourceArea: maskArea(sourceMask),
+				referenceMask,
+				referenceArea,
+				overlapScore: scorePixelOverlap(sourceMask, referenceMask),
+			};
+		}),
+	);
 }
 
 function bestPixelCandidateIndex(candidates) {
-	return candidates
-		.map((candidate, index) => ({ index, score: candidate.overlapScore }))
-		.sort((left, right) => right.score - left.score)[0]?.index || 0;
+	return (
+		candidates
+			.map((candidate, index) => ({index, score: candidate.overlapScore}))
+			.sort((left, right) => right.score - left.score)[0]?.index || 0
+	);
 }
 
 function bestCoordinatedCandidateIndex(candidatesByMatch, selectedIndexes, matchIndex, forbiddenMask) {
 	const candidates = candidatesByMatch[matchIndex];
 	const viableCandidates = candidateSetWithoutForbiddenOverlap(candidates, forbiddenMask);
 
-	return viableCandidates
-		.map((candidate, candidateIndex) => ({
-			index: candidates.indexOf(candidate),
-			score: coordinatedScaleScore(candidate, candidatesByMatch, selectedIndexes, matchIndex, forbiddenMask),
-		}))
-		.sort((left, right) => right.score - left.score)[0]?.index || 0;
+	return (
+		viableCandidates
+			.map((candidate, candidateIndex) => ({
+				index: candidates.indexOf(candidate),
+				score: coordinatedScaleScore(candidate, candidatesByMatch, selectedIndexes, matchIndex, forbiddenMask),
+			}))
+			.sort((left, right) => right.score - left.score)[0]?.index || 0
+	);
 }
 
 function candidateSetWithoutForbiddenOverlap(candidates, forbiddenMask) {
@@ -414,9 +428,9 @@ function candidateSetWithoutForbiddenOverlap(candidates, forbiddenMask) {
 		return candidates;
 	}
 
-	const labelClearCandidates = candidates.filter((candidate) => (
-		maskOverlap(candidate.sourceMask, forbiddenMask) === 0
-	));
+	const labelClearCandidates = candidates.filter(
+		(candidate) => maskOverlap(candidate.sourceMask, forbiddenMask) === 0,
+	);
 
 	return labelClearCandidates.length ? labelClearCandidates : candidates;
 }
@@ -439,7 +453,7 @@ function coordinatedScaleScore(candidate, candidatesByMatch, selectedIndexes, ma
 		? maskOverlap(candidate.sourceMask, forbiddenMask) / Math.max(1, candidate.sourceArea)
 		: 0;
 
-	return candidate.overlapScore - (overlapPenalty * 1.25) - (forbiddenPenalty * 3);
+	return candidate.overlapScore - overlapPenalty * 1.25 - forbiddenPenalty * 3;
 }
 
 function scaleCandidates(sourceBounds, targetBounds) {
@@ -451,19 +465,15 @@ function scaleCandidates(sourceBounds, targetBounds) {
 	const steps = 10;
 	const shrinkSteps = 6;
 	const minShrinkRatio = 0.72;
-	const candidates = new Set([
-		roundScale(minScale),
-		roundScale(centerScale),
-		roundScale(maxScale),
-	]);
+	const candidates = new Set([roundScale(minScale), roundScale(centerScale), roundScale(maxScale)]);
 
 	for (let index = 1; index < steps; index += 1) {
 		const ratio = index / steps;
-		candidates.add(roundScale(minScale + ((maxScale - minScale) * ratio)));
+		candidates.add(roundScale(minScale + (maxScale - minScale) * ratio));
 	}
 
 	for (let index = 0; index < shrinkSteps; index += 1) {
-		const ratio = minShrinkRatio + (((1 - minShrinkRatio) * index) / shrinkSteps);
+		const ratio = minShrinkRatio + ((1 - minShrinkRatio) * index) / shrinkSteps;
 		candidates.add(roundScale(minScale * ratio));
 	}
 
@@ -488,20 +498,20 @@ function distributedTargetBounds(sourceBounds, targetBounds, scale, distribution
 }
 
 function distributedCenterX(targetBounds, scaledWidth, distribution) {
-	const { horizontalIndex, horizontalCount, bounds } = distribution;
+	const {horizontalIndex, horizontalCount, bounds} = distribution;
 
 	if (horizontalIndex <= 0) {
-		return bounds.left + (scaledWidth / 2);
+		return bounds.left + scaledWidth / 2;
 	}
 
 	if (horizontalIndex >= horizontalCount - 1) {
-		return bounds.right - (scaledWidth / 2);
+		return bounds.right - scaledWidth / 2;
 	}
 
 	const span = bounds.right - bounds.left;
 	const ratio = horizontalIndex / (horizontalCount - 1);
 
-	return bounds.left + (span * ratio);
+	return bounds.left + span * ratio;
 }
 
 function scorePixelOverlap(sourceMask, referenceMask) {
@@ -548,21 +558,20 @@ function maskOverlap(left, right) {
 }
 
 async function renderSourceGroupMask(sourceGroup, matrix) {
-	const paths = sourceGroup.components.map((component) => {
-		const transform = composeMatrices(matrix, component.transform || { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
-		return `<path fill="#000" transform="${matrixToString(transform)}" d="${escapeAttribute(component.pathData)}"/>`;
-	}).join('\n');
+	const paths = sourceGroup.components
+		.map((component) => {
+			const transform = composeMatrices(matrix, component.transform || {a: 1, b: 0, c: 0, d: 1, e: 0, f: 0});
+			return `<path fill="#000" transform="${matrixToString(transform)}" d="${escapeAttribute(component.pathData)}"/>`;
+		})
+		.join('\n');
 	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${LARGE_FACE_CANVAS.width}" height="${LARGE_FACE_CANVAS.height}" viewBox="${FACE_VIEWBOX}">
 ${paths}
 </svg>`;
-	const raw = await sharp(Buffer.from(svg))
-		.ensureAlpha()
-		.raw()
-		.toBuffer({ resolveWithObject: true });
+	const raw = await sharp(Buffer.from(svg)).ensureAlpha().raw().toBuffer({resolveWithObject: true});
 	const mask = new Uint8Array(raw.info.width * raw.info.height);
 
 	for (let index = 0; index < mask.length; index += 1) {
-		mask[index] = raw.data[(index * 4) + 3];
+		mask[index] = raw.data[index * 4 + 3];
 	}
 
 	return mask;
@@ -572,14 +581,11 @@ async function renderSvgFragmentMask(fragment) {
 	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${LARGE_FACE_CANVAS.width}" height="${LARGE_FACE_CANVAS.height}" viewBox="${FACE_VIEWBOX}">
 ${fragment}
 </svg>`;
-	const raw = await sharp(Buffer.from(svg))
-		.ensureAlpha()
-		.raw()
-		.toBuffer({ resolveWithObject: true });
+	const raw = await sharp(Buffer.from(svg)).ensureAlpha().raw().toBuffer({resolveWithObject: true});
 	const mask = new Uint8Array(raw.info.width * raw.info.height);
 
 	for (let index = 0; index < mask.length; index += 1) {
-		mask[index] = raw.data[(index * 4) + 3];
+		mask[index] = raw.data[index * 4 + 3];
 	}
 
 	return mask;
@@ -592,8 +598,8 @@ function renderReferenceGroupMask(image, referenceGroup) {
 	for (const bounds of boundsList) {
 		for (let y = Math.max(0, bounds.top); y <= Math.min(image.height - 1, bounds.bottom); y += 1) {
 			for (let x = Math.max(0, bounds.left); x <= Math.min(image.width - 1, bounds.right); x += 1) {
-				const index = (y * image.width) + x;
-				mask[index] = image.data[(index * 4) + 3] > 20 ? 255 : mask[index];
+				const index = y * image.width + x;
+				mask[index] = image.data[index * 4 + 3] > 20 ? 255 : mask[index];
 			}
 		}
 	}
@@ -622,8 +628,8 @@ function makeLocalGroup(components) {
 		components,
 		bounds,
 		center: {
-			x: bounds.left + (bounds.width / 2),
-			y: bounds.top + (bounds.height / 2),
+			x: bounds.left + bounds.width / 2,
+			y: bounds.top + bounds.height / 2,
 		},
 		dominantColor: dominantLocalColor(components),
 	};
@@ -640,8 +646,7 @@ function dominantLocalColor(components) {
 		colorWeights.set(color, (colorWeights.get(color) || 0) + (component.pixels || component.area || 1));
 	}
 
-	return [...colorWeights.entries()]
-		.sort((left, right) => right[1] - left[1])[0]?.[0] || null;
+	return [...colorWeights.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] || null;
 }
 
 function compareGroupPosition(left, right) {
@@ -651,10 +656,10 @@ function compareGroupPosition(left, right) {
 function compareComponentPosition(left, right) {
 	const leftBounds = matchBounds(left);
 	const rightBounds = matchBounds(right);
-	const leftCenterY = left.center?.y ?? (leftBounds.top + (leftBounds.height / 2));
-	const rightCenterY = right.center?.y ?? (rightBounds.top + (rightBounds.height / 2));
-	const leftCenterX = left.center?.x ?? (leftBounds.left + (leftBounds.width / 2));
-	const rightCenterX = right.center?.x ?? (rightBounds.left + (rightBounds.width / 2));
+	const leftCenterY = left.center?.y ?? leftBounds.top + leftBounds.height / 2;
+	const rightCenterY = right.center?.y ?? rightBounds.top + rightBounds.height / 2;
+	const leftCenterX = left.center?.x ?? leftBounds.left + leftBounds.width / 2;
+	const rightCenterX = right.center?.x ?? rightBounds.left + rightBounds.width / 2;
 
 	return leftCenterY - rightCenterY || leftCenterX - rightCenterX;
 }
@@ -783,9 +788,7 @@ function metadataBackgroundColors() {
 		...(metadata.tileBackgroundColors || []),
 	];
 
-	return values
-		.map((value) => typeof value === 'string' ? value.trim().toLowerCase() : null)
-		.filter(Boolean);
+	return values.map((value) => (typeof value === 'string' ? value.trim().toLowerCase() : null)).filter(Boolean);
 }
 
 function componentPaint(component) {
@@ -806,14 +809,15 @@ function makeLabelPath(font, metadata, labelComponent) {
 	const target = referencePixelsToViewBox(targetBounds);
 	const scaleX = target.width / bounds.width;
 	const scaleY = target.height / bounds.height;
-	const translateX = target.left - (bounds.left * scaleX);
-	const translateY = target.top - (bounds.top * scaleY);
+	const translateX = target.left - bounds.left * scaleX;
+	const translateY = target.top - bounds.top * scaleY;
 	const transform = `matrix(${format(scaleX)} 0 0 ${format(scaleY)} ${format(translateX)} ${format(translateY)})`;
 
-	const fill = glyphOutputColor('number')
-		|| labelComponent?.dominantColor
-		|| metadata.referenceGlyphs?.number?.color
-		|| metadata.labelColor;
+	const fill =
+		glyphOutputColor('number') ||
+		labelComponent?.dominantColor ||
+		metadata.referenceGlyphs?.number?.color ||
+		metadata.labelColor;
 
 	return `<path fill="${fill}" data-generated-font="Gluten 800" transform="${transform}" d="${pathData}"/>`;
 }
@@ -858,21 +862,23 @@ function parsePaintRgb(paint) {
 
 	return hex
 		? [
-			Number.parseInt(hex.slice(0, 2), 16),
-			Number.parseInt(hex.slice(2, 4), 16),
-			Number.parseInt(hex.slice(4, 6), 16),
-		]
+				Number.parseInt(hex.slice(0, 2), 16),
+				Number.parseInt(hex.slice(2, 4), 16),
+				Number.parseInt(hex.slice(4, 6), 16),
+			]
 		: null;
 }
 
 function isRelatedToGroup(group, cutout) {
 	return group.components.some((component) => {
 		const bounds = component.bounds;
-		return cutout.area < component.area
-			&& cutout.center.x >= bounds.left
-			&& cutout.center.x <= bounds.right
-			&& cutout.center.y >= bounds.top
-			&& cutout.center.y <= bounds.bottom;
+		return (
+			cutout.area < component.area &&
+			cutout.center.x >= bounds.left &&
+			cutout.center.x <= bounds.right &&
+			cutout.center.y >= bounds.top &&
+			cutout.center.y <= bounds.bottom
+		);
 	});
 }
 
@@ -915,7 +921,10 @@ function boundsMatchReviewedGlyph(component, glyphBounds) {
 	}
 
 	const intersectionArea = intersection.width * intersection.height;
-	const componentArea = Math.max(1, component.bounds ? component.bounds.width * component.bounds.height : component.area || 1);
+	const componentArea = Math.max(
+		1,
+		component.bounds ? component.bounds.width * component.bounds.height : component.area || 1,
+	);
 	const glyphArea = Math.max(1, glyphBounds.width * glyphBounds.height);
 
 	return intersectionArea / Math.min(componentArea, glyphArea) > 0.72;
@@ -950,16 +959,20 @@ async function removeSourceLabelComponents(components, metadata, font) {
 		return components.filter((component) => component !== metadataLabel);
 	}
 
-	const scored = await Promise.all(components.map(async (component) => ({
-		component,
-		score: await scoreGlyphLikeComponent(component, components, metadata.labelText, font),
-	})));
+	const scored = await Promise.all(
+		components.map(async (component) => ({
+			component,
+			score: await scoreGlyphLikeComponent(component, components, metadata.labelText, font),
+		})),
+	);
 	const best = scored
 		.filter((entry) => Number.isFinite(entry.score))
 		.sort((left, right) => right.score - left.score)[0];
 
 	if (!best || best.score < 0.24) {
-		console.warn(`sourceContainsLabel is true for ${FACE_KEY}, but no source label component matched "${metadata.labelText}". Keeping all source artwork.`);
+		console.warn(
+			`sourceContainsLabel is true for ${FACE_KEY}, but no source label component matched "${metadata.labelText}". Keeping all source artwork.`,
+		);
 		return components;
 	}
 
@@ -973,20 +986,24 @@ function findSourceLabelComponentByBounds(components, metadata) {
 		return null;
 	}
 
-	return components
-		.map((component) => ({
-			component,
-			score: boundsDistance(component.bounds, sourceBounds),
-		}))
-		.filter((candidate) => candidate.score < 2)
-		.sort((left, right) => left.score - right.score)[0]?.component || null;
+	return (
+		components
+			.map((component) => ({
+				component,
+				score: boundsDistance(component.bounds, sourceBounds),
+			}))
+			.filter((candidate) => candidate.score < 2)
+			.sort((left, right) => left.score - right.score)[0]?.component || null
+	);
 }
 
 function boundsDistance(left, right) {
-	return Math.abs(left.left - right.left)
-		+ Math.abs(left.top - right.top)
-		+ Math.abs(left.right - right.right)
-		+ Math.abs(left.bottom - right.bottom);
+	return (
+		Math.abs(left.left - right.left) +
+		Math.abs(left.top - right.top) +
+		Math.abs(left.right - right.right) +
+		Math.abs(left.bottom - right.bottom)
+	);
 }
 
 async function scoreGlyphLikeComponent(component, allComponents, labelText, font) {
@@ -996,9 +1013,7 @@ async function scoreGlyphLikeComponent(component, allComponents, labelText, font
 	const aspectScore = scoreAspectSimilarity(component.bounds, getGlyphBounds(labelText, font));
 	const uniquenessScore = scoreComponentUniqueness(component, allComponents);
 
-	return (overlapScore * 0.62)
-		+ (aspectScore * 0.23)
-		+ (uniquenessScore * 0.15);
+	return overlapScore * 0.62 + aspectScore * 0.23 + uniquenessScore * 0.15;
 }
 
 async function renderComponentMask(component) {
@@ -1018,15 +1033,12 @@ async function renderGlyphMask(labelText, font) {
 }
 
 async function renderAlphaMask(svg) {
-	const raw = await sharp(Buffer.from(svg))
-		.ensureAlpha()
-		.raw()
-		.toBuffer({ resolveWithObject: true });
+	const raw = await sharp(Buffer.from(svg)).ensureAlpha().raw().toBuffer({resolveWithObject: true});
 	const pixels = raw.data;
 	const mask = new Uint8Array(raw.info.width * raw.info.height);
 
 	for (let index = 0; index < mask.length; index += 1) {
-		mask[index] = pixels[(index * 4) + 3] > 24 ? 1 : 0;
+		mask[index] = pixels[index * 4 + 3] > 24 ? 1 : 0;
 	}
 
 	return mask;
@@ -1062,10 +1074,11 @@ function scoreComponentUniqueness(component, allComponents) {
 			return false;
 		}
 
-		const widthRatio = Math.min(component.bounds.width, other.bounds.width)
-			/ Math.max(component.bounds.width, other.bounds.width);
-		const heightRatio = Math.min(component.bounds.height, other.bounds.height)
-			/ Math.max(component.bounds.height, other.bounds.height);
+		const widthRatio =
+			Math.min(component.bounds.width, other.bounds.width) / Math.max(component.bounds.width, other.bounds.width);
+		const heightRatio =
+			Math.min(component.bounds.height, other.bounds.height) /
+			Math.max(component.bounds.height, other.bounds.height);
 
 		return widthRatio > 0.82 && heightRatio > 0.82;
 	});
@@ -1093,7 +1106,7 @@ function indent(value, depth) {
 	const prefix = '\t'.repeat(depth);
 	return value
 		.split('\n')
-		.map((line) => line.trim() ? `${prefix}${line}` : line)
+		.map((line) => (line.trim() ? `${prefix}${line}` : line))
 		.join('\n');
 }
 
@@ -1102,10 +1115,5 @@ function format(value) {
 }
 
 function escapeAttribute(value) {
-	return value
-		.replace(/&/g, '&amp;')
-		.replace(/"/g, '&quot;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;');
+	return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-

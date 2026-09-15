@@ -257,7 +257,7 @@ Expected metrics:
 
 - Can increase same-face choice consequences and downstream spread.
 - Watch `Face avoidance preferred groups`, `preferred draws`, and `preferred
-  fallbacks`.
+fallbacks`.
 - A high fallback rate is a signal that a formal two-pass reservation model may
   become useful.
 
@@ -344,27 +344,27 @@ The current five-level ladder should use these settings as the starting point.
 These were checked on turtle boards `1..20` with analysis depth `3`, state cap
 `500`, `16` playouts, and `2` pair-choice playouts.
 
-| Level | Generation Difficulty | Suspension | Tile Picker Rules | Face Assignment | Face Avoidance |
-| --- | ---: | --- | --- | --- | --- |
-| Easy | `0` | off | default | `preferredMultiplier: 0.5` | off |
-| Standard | `0.35` | off | default | `preferredMultiplier: 0.5` | off |
-| Challenging | `0.55` | aggressive | default | `preferredMultiplier: 0.5` | off |
-| Expert | `0.75` | aggressive | `openPressureMultiplier: 1`, `maxFreedPressure: 6`, `balancePressureMultiplier: 1`, `maxBalanceMargin: 48` | `preferredMultiplier: 0.33` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
-| Nightmare | `1` | aggressive with `forceReleaseAtEffectiveOpen: 3`, `suspendAtEffectiveOpen: 5` | Expert rules plus `shortHorizonProbeMoves: 8`, `shortHorizonPressureMultiplier: 1` | `preferredMultiplier: 0.33` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
+| Level       | Generation Difficulty | Suspension                                                                    | Tile Picker Rules                                                                                          | Face Assignment             | Face Avoidance                                     |
+| ----------- | --------------------: | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------- | -------------------------------------------------- |
+| Easy        |                   `0` | off                                                                           | default                                                                                                    | `preferredMultiplier: 0.5`  | off                                                |
+| Standard    |                `0.35` | off                                                                           | default                                                                                                    | `preferredMultiplier: 0.5`  | off                                                |
+| Challenging |                `0.55` | aggressive                                                                    | default                                                                                                    | `preferredMultiplier: 0.5`  | off                                                |
+| Expert      |                `0.75` | aggressive                                                                    | `openPressureMultiplier: 1`, `maxFreedPressure: 6`, `balancePressureMultiplier: 1`, `maxBalanceMargin: 48` | `preferredMultiplier: 0.33` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
+| Nightmare   |                   `1` | aggressive with `forceReleaseAtEffectiveOpen: 3`, `suspendAtEffectiveOpen: 5` | Expert rules plus `shortHorizonProbeMoves: 8`, `shortHorizonPressureMultiplier: 1`                         | `preferredMultiplier: 0.33` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
 
 The sampled metric shape was:
 
-| Metric | Random | Easy | Standard | Challenging | Expert | Nightmare |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Playout solve rate | `3.8%` | `47.5%` | `37.8%` | `18.1%` | `17.5%` | `7.2%` |
-| Playout dead-end rate | `96.3%` | `52.5%` | `62.2%` | `81.9%` | `82.5%` | `92.8%` |
-| Playout average remaining tiles | `59.07` | `15.06` | `18.15` | `40.63` | `41.77` | `49.49` |
-| P75 dead-end remaining tiles | `73.40` | `34.40` | `40.40` | `64.30` | `66.50` | `69.60` |
-| Initial downstream dead-end spread | `6.9%` | `57.2%` | `53.6%` | `40.2%` | `30.9%` | `19.5%` |
-| Initial downstream remaining spread | `21.99` | `24.16` | `21.68` | `35.04` | `34.20` | `36.50` |
-| Search consequential pair-choice states | `129.20` | `496.10` | `420.80` | `455.40` | `364.55` | `321.35` |
-| Score avg | `37.00` | `44.75` | `39.50` | `43.75` | `40.90` | `39.85` |
-| Brutality avg | `51.75` | `31.54` | `37.05` | `51.41` | `52.13` | `57.25` |
+| Metric                                  |   Random |     Easy | Standard | Challenging |   Expert | Nightmare |
+| --------------------------------------- | -------: | -------: | -------: | ----------: | -------: | --------: |
+| Playout solve rate                      |   `3.8%` |  `47.5%` |  `37.8%` |     `18.1%` |  `17.5%` |    `7.2%` |
+| Playout dead-end rate                   |  `96.3%` |  `52.5%` |  `62.2%` |     `81.9%` |  `82.5%` |   `92.8%` |
+| Playout average remaining tiles         |  `59.07` |  `15.06` |  `18.15` |     `40.63` |  `41.77` |   `49.49` |
+| P75 dead-end remaining tiles            |  `73.40` |  `34.40` |  `40.40` |     `64.30` |  `66.50` |   `69.60` |
+| Initial downstream dead-end spread      |   `6.9%` |  `57.2%` |  `53.6%` |     `40.2%` |  `30.9%` |   `19.5%` |
+| Initial downstream remaining spread     |  `21.99` |  `24.16` |  `21.68` |     `35.04` |  `34.20` |   `36.50` |
+| Search consequential pair-choice states | `129.20` | `496.10` | `420.80` |    `455.40` | `364.55` |  `321.35` |
+| Score avg                               |  `37.00` |  `44.75` |  `39.50` |     `43.75` |  `40.90` |   `39.85` |
+| Brutality avg                           |  `51.75` |  `31.54` |  `37.05` |     `51.41` |  `52.13` |   `57.25` |
 
 The score column does not fully express the desired human-facing progression.
 The better signal is the combination of solvability, solve rate, remaining

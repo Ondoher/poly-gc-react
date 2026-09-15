@@ -98,8 +98,8 @@ measured difficulty:
 - force-release effective-open threshold
 - suspension-start effective-open threshold
 - match type
-  - either condition met
-  - both conditions met
+    - either condition met
+    - both conditions met
 - how a suspended tile selects its eventual partner
 
 Each parameter should be changed independently during early tuning so its effect

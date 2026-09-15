@@ -1,9 +1,9 @@
-import React from "react";
+import React from 'react';
 import {Service} from '@polylith/core';
 import BreadCrumbs from './BreadCrumbs.jsx';
 
 export default class BreadCrumbsService extends Service {
-	constructor () {
+	constructor() {
 		super('bread-crumbs');
 		this.implement(['ready', 'add', 'clear', 'get', 'getComponent']);
 
@@ -11,7 +11,7 @@ export default class BreadCrumbsService extends Service {
 		this.crumbs = [];
 	}
 
-	add (name, id, service) {
+	add(name, id, service) {
 		var crumb = {
 			pos: this.crumbs.length,
 			name: name,
@@ -23,17 +23,17 @@ export default class BreadCrumbsService extends Service {
 		this.fire('added', this.crumbs);
 	}
 
-	clear () {
+	clear() {
 		this.crumbs = [];
 		this.fire('cleared', this.crumbs);
 	}
 
-	get () {
+	get() {
 		return this.crumbs;
 	}
 
 	getComponent() {
-		return <BreadCrumbs serviceName={this.serviceName} />
+		return <BreadCrumbs serviceName={this.serviceName} />;
 	}
 }
 

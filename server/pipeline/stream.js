@@ -15,8 +15,8 @@ export class PipelineStream {
 	 */
 	setup(io) {
 		this.io = io;
-		this.io.on("connection", this.socketConnect.bind(this));
-		this.emit("ioInit", io);
+		this.io.on('connection', this.socketConnect.bind(this));
+		this.emit('ioInit', io);
 	}
 
 	/**
@@ -27,7 +27,7 @@ export class PipelineStream {
 	 */
 	namespace(name) {
 		if (!this.io) {
-			throw new Error("Pipeline stream has not been initialized.");
+			throw new Error('Pipeline stream has not been initialized.');
 		}
 
 		this.namespaces[name] = this.namespaces[name] || this.makeNamespace(name);
@@ -59,7 +59,7 @@ export class PipelineStream {
 
 	makeNamespace(name) {
 		const namespace = this.io.of(name);
-		namespace.on("connection", this.namespaceConnect.bind(this, name));
+		namespace.on('connection', this.namespaceConnect.bind(this, name));
 		return namespace;
 	}
 
@@ -75,13 +75,13 @@ export class PipelineStream {
 		}
 
 		this.clients[clientId] = client;
-		socket.on("disconnect", this.namespaceDisconnect.bind(this, name, clientId, socket));
-		this.emit("namespaceConnect", name, clientId, socket);
+		socket.on('disconnect', this.namespaceDisconnect.bind(this, name, clientId, socket));
+		this.emit('namespaceConnect', name, clientId, socket);
 	}
 
 	namespaceDisconnect(name, clientId, socket) {
 		this.removeSocketFromClient(clientId, socket.id);
-		this.emit("namespaceDisconnect", name, clientId);
+		this.emit('namespaceDisconnect', name, clientId);
 	}
 
 	socketConnect(socket) {
@@ -91,13 +91,13 @@ export class PipelineStream {
 			sockets: [socket.id],
 		};
 
-		socket.on("disconnect", this.socketDisconnect.bind(this, clientId, socket.id));
-		this.emit("connect", clientId, socket.id);
+		socket.on('disconnect', this.socketDisconnect.bind(this, clientId, socket.id));
+		this.emit('connect', clientId, socket.id);
 	}
 
 	socketDisconnect(clientId, socketId, reason) {
 		this.removeSocketFromClient(clientId, socketId);
-		this.emit("disconnect", clientId, reason);
+		this.emit('disconnect', clientId, reason);
 	}
 
 	getClientId(socket) {
@@ -145,7 +145,7 @@ export function getPipelineStream() {
  * @returns {Promise<PipelineStream>}
  */
 export async function initializePipelineStream(app) {
-	if (!app || typeof app.getSocketIo !== "function") {
+	if (!app || typeof app.getSocketIo !== 'function') {
 		return pipelineStream;
 	}
 

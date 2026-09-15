@@ -1,14 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import * as THREE from 'three';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
+import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {SVGLoader} from 'three/examples/jsm/loaders/SVGLoader.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { parse as parseSvgAst } from 'svg-parser';
-import { ROOT_DIR } from '../shared/asset-paths.js';
-import { PipelineModel } from '../svg-preprocessor/PipelineModel.js';
-import { installNodeGltfExportShim } from './node-gltf-export-shim.js';
+import {parse as parseSvgAst} from 'svg-parser';
+import {ROOT_DIR} from '../shared/asset-paths.js';
+import {PipelineModel} from '../svg-preprocessor/PipelineModel.js';
+import {installNodeGltfExportShim} from './node-gltf-export-shim.js';
 
 class NodeFileReader {
 	constructor() {
@@ -85,11 +85,11 @@ async function main() {
 	});
 	await model.start();
 
-	const variant = buildInlayVariant({ model, options });
+	const variant = buildInlayVariant({model, options});
 	const faceHash = model.hashAssetPipelineFaceInput(options.faceKey);
 	const stageHash = model.hashAssetGenerationStageInput(options.faceKey, 'colored-inlay');
-	fs.mkdirSync(path.dirname(variant.outputGlb), { recursive: true });
-	fs.mkdirSync(path.dirname(variant.outputMetadata), { recursive: true });
+	fs.mkdirSync(path.dirname(variant.outputGlb), {recursive: true});
+	fs.mkdirSync(path.dirname(variant.outputMetadata), {recursive: true});
 
 	const inlayAsset = await buildInlayAsset(variant);
 	await exportSceneAsGlb(inlayAsset.group, variant.name, variant.outputGlb);
@@ -115,16 +115,22 @@ async function main() {
 	}
 }
 
-function buildInlayVariant({ model, options }) {
+function buildInlayVariant({model, options}) {
 	const assetPipeline = model.getAssetPipeline();
 	const faceState = assetPipeline.faces?.[options.faceKey];
-	const renderedSvg = resolveRepoPath(options.renderedSvg || model.getFinalRenderingColorSvgPath(options.faceKey) || '');
+	const renderedSvg = resolveRepoPath(
+		options.renderedSvg || model.getFinalRenderingColorSvgPath(options.faceKey) || '',
+	);
 	const stampedModel = resolveRepoPath(options.stampedModel || faceState?.artifacts?.stampedModel || '');
 	const stampedMetadata = resolveRepoPath(options.stampedMetadata || faceState?.artifacts?.stampedMetadata || '');
 	const cutterMetadata = resolveRepoPath(options.cutterMetadata || faceState?.artifacts?.cutterMetadata || '');
 	const modelFaceKey = `${options.tilesetId}-${options.faceKey}`;
-	const outputGlb = resolveRepoPath(options.outputGlb || path.join(model.pipelineDir, 'models', 'colored-inlay', `${options.faceKey}.glb`));
-	const outputMetadata = resolveRepoPath(options.outputMetadata || path.join(model.pipelineDir, 'json', 'colored-inlay', `${options.faceKey}.json`));
+	const outputGlb = resolveRepoPath(
+		options.outputGlb || path.join(model.pipelineDir, 'models', 'colored-inlay', `${options.faceKey}.glb`),
+	);
+	const outputMetadata = resolveRepoPath(
+		options.outputMetadata || path.join(model.pipelineDir, 'json', 'colored-inlay', `${options.faceKey}.json`),
+	);
 
 	if (!renderedSvg) {
 		throw new Error(`Missing rendered SVG artifact for ${options.tilesetId}/${options.faceKey}.`);
@@ -225,13 +231,14 @@ async function buildInlayAsset(variant) {
 	};
 }
 
-function buildSvgInlayMeshes({ svgSource, cutterMetadata, stampedMetadata }) {
+function buildSvgInlayMeshes({svgSource, cutterMetadata, stampedMetadata}) {
 	const svgData = svgLoader.parse(svgSource);
 	const rawPathGeometries = [];
 	const colorCounts = {};
-	const targetRect = stampedMetadata.appliedPlacement?.targetRect
-		?? cutterMetadata.targetRect
-		?? createFullTileTargetRect(stampedMetadata);
+	const targetRect =
+		stampedMetadata.appliedPlacement?.targetRect ??
+		cutterMetadata.targetRect ??
+		createFullTileTargetRect(stampedMetadata);
 	const recessFloorY = getRecessFloorY(stampedMetadata, cutterMetadata);
 	const inlayBaseY = getInlayBaseY(stampedMetadata, recessFloorY);
 
@@ -269,26 +276,23 @@ function buildSvgInlayMeshes({ svgSource, cutterMetadata, stampedMetadata }) {
 	}
 
 	const boundsGeometry = BufferGeometryUtils.mergeGeometries(
-		rawPathGeometries.map(({ geometry }) => geometry.clone()),
-		false
+		rawPathGeometries.map(({geometry}) => geometry.clone()),
+		false,
 	);
-	const sourceGlyphBounds = cutterMetadata.sourcePlacementMode === 'viewBox'
-		? createGlyphBoundsFromViewBox(parseViewBox(svgSource))
-		: measureGlyphBounds(boundsGeometry);
+	const sourceGlyphBounds =
+		cutterMetadata.sourcePlacementMode === 'viewBox'
+			? createGlyphBoundsFromViewBox(parseViewBox(svgSource))
+			: measureGlyphBounds(boundsGeometry);
 	boundsGeometry.dispose();
 
 	const scaleX = targetRect.width / Math.max(sourceGlyphBounds.width, 0.000001);
 	const scaleZ = targetRect.depth / Math.max(sourceGlyphBounds.depth, 0.000001);
 	const meshes = [];
 
-	for (const { color, sourceIndex, colorIndex, geometry } of rawPathGeometries) {
+	for (const {color, sourceIndex, colorIndex, geometry} of rawPathGeometries) {
 		geometry.translate(-sourceGlyphBounds.centerX, 0, -sourceGlyphBounds.centerZ);
 		geometry.scale(scaleX, 1, scaleZ);
-		geometry.translate(
-			targetRect.centerX,
-			inlayBaseY + (sourceIndex * INLAY.layerStep),
-			targetRect.centerZ
-		);
+		geometry.translate(targetRect.centerX, inlayBaseY + sourceIndex * INLAY.layerStep, targetRect.centerZ);
 		assignFlatTopNormals(geometry);
 		geometry.computeBoundingBox();
 		geometry.computeBoundingSphere();
@@ -319,7 +323,7 @@ function buildSvgInlayMeshes({ svgSource, cutterMetadata, stampedMetadata }) {
 }
 
 function getInlayBaseY(stampedMetadata, recessFloorY) {
-	const topSurfaceY = stampedMetadata.topSurfaceY ?? (stampedMetadata.height / 2);
+	const topSurfaceY = stampedMetadata.topSurfaceY ?? stampedMetadata.height / 2;
 	const nearSurfaceBaseY = topSurfaceY - INLAY.thickness - INLAY.surfaceInset;
 	const floorBaseY = recessFloorY + INLAY.floorLift;
 	return Math.max(floorBaseY, nearSurfaceBaseY);
@@ -338,21 +342,18 @@ function getInlayColorForSvgPath(svgPath) {
 }
 
 function isBodyLikeColor(color) {
-	return color === '#ffffff'
-		|| color === '#fff'
-		|| color === '#f2ece2'
-		|| color === '#f6f6f6';
+	return color === '#ffffff' || color === '#fff' || color === '#f2ece2' || color === '#f6f6f6';
 }
 
 function getRecessFloorY(stampedMetadata, cutterMetadata) {
 	if (cutterMetadata.empty || stampedMetadata.mode === 'blank-body') {
-		return stampedMetadata.topSurfaceY ?? (stampedMetadata.height / 2);
+		return stampedMetadata.topSurfaceY ?? stampedMetadata.height / 2;
 	}
 
-	const topY = stampedMetadata.topSurfaceY ?? (stampedMetadata.height / 2);
+	const topY = stampedMetadata.topSurfaceY ?? stampedMetadata.height / 2;
 	const depthScale = stampedMetadata.appliedPlacement?.depthScale ?? 1;
 	const cutterDepth = cutterMetadata.cutterDepth ?? stampedMetadata.cutter?.cutterDepth ?? 0;
-	return topY - (cutterDepth * depthScale);
+	return topY - cutterDepth * depthScale;
 }
 
 function createFullTileTargetRect(stampedMetadata) {
@@ -369,9 +370,9 @@ function assignFlatTopNormals(geometry) {
 	const normalValues = new Float32Array(positions.count * 3);
 
 	for (let index = 0; index < positions.count; index += 1) {
-		normalValues[(index * 3)] = 0;
-		normalValues[(index * 3) + 1] = 1;
-		normalValues[(index * 3) + 2] = 0;
+		normalValues[index * 3] = 0;
+		normalValues[index * 3 + 1] = 1;
+		normalValues[index * 3 + 2] = 0;
 	}
 
 	geometry.setAttribute('normal', new THREE.BufferAttribute(normalValues, 3));
@@ -419,8 +420,8 @@ function createGlyphBoundsFromViewBox(viewBox) {
 	return {
 		width: viewBox.width,
 		depth: viewBox.height,
-		centerX: viewBox.minX + (viewBox.width / 2),
-		centerZ: viewBox.minY + (viewBox.height / 2),
+		centerX: viewBox.minX + viewBox.width / 2,
+		centerZ: viewBox.minY + viewBox.height / 2,
 	};
 }
 
@@ -451,10 +452,7 @@ async function loadGlbScene(glbPath) {
 	}
 
 	const glbBuffer = fs.readFileSync(glbPath);
-	const arrayBuffer = glbBuffer.buffer.slice(
-		glbBuffer.byteOffset,
-		glbBuffer.byteOffset + glbBuffer.byteLength,
-	);
+	const arrayBuffer = glbBuffer.buffer.slice(glbBuffer.byteOffset, glbBuffer.byteOffset + glbBuffer.byteLength);
 	const gltf = await gltfLoader.parseAsync(arrayBuffer, `${path.dirname(glbPath)}${path.sep}`);
 	return gltf.scene;
 }
@@ -502,11 +500,14 @@ function cloneMaterial(material) {
 	if (Array.isArray(material)) {
 		return material.map((entry) => entry.clone());
 	}
-	return material?.clone?.() || new THREE.MeshStandardMaterial({
-		color: '#f2ece2',
-		roughness: 0.7,
-		metalness: 0.02,
-	});
+	return (
+		material?.clone?.() ||
+		new THREE.MeshStandardMaterial({
+			color: '#f2ece2',
+			roughness: 0.7,
+			metalness: 0.02,
+		})
+	);
 }
 
 async function exportSceneAsGlb(group, sceneName, outputPath) {
@@ -514,7 +515,7 @@ async function exportSceneAsGlb(group, sceneName, outputPath) {
 	scene.name = sceneName;
 	scene.add(group);
 
-	const glb = await exporter.parseAsync(scene, { binary: true });
+	const glb = await exporter.parseAsync(scene, {binary: true});
 	fs.writeFileSync(outputPath, Buffer.from(glb));
 	console.log(`Exported ${relativePath(outputPath)}`);
 }
@@ -626,7 +627,9 @@ function wrapSvgAstNode(node, document, idMap) {
 		},
 		getAttributeNS(namespace, name) {
 			if (namespace === 'http://www.w3.org/1999/xlink') {
-				const xlinkValue = readSvgProperty(properties, `xlink:${name}`) ?? readSvgProperty(properties, `xlink${capitalize(name)}`);
+				const xlinkValue =
+					readSvgProperty(properties, `xlink:${name}`) ??
+					readSvgProperty(properties, `xlink${capitalize(name)}`);
 				return xlinkValue == null ? null : String(xlinkValue);
 			}
 
@@ -658,10 +661,12 @@ function shouldSkipSvgLoaderNode(node) {
 	const renderAlternate = readSvgProperty(properties, 'data-render-alternate');
 	const style = parseInlineStyle(readSvgProperty(properties, 'style'));
 
-	return String(display ?? '').toLowerCase() === 'none'
-		|| String(style.display ?? '').toLowerCase() === 'none'
-		|| String(renderLayer ?? '').startsWith('alternate')
-		|| renderAlternate != null;
+	return (
+		String(display ?? '').toLowerCase() === 'none' ||
+		String(style.display ?? '').toLowerCase() === 'none' ||
+		String(renderLayer ?? '').startsWith('alternate') ||
+		renderAlternate != null
+	);
 }
 
 function assignViewportElement(node, document) {
@@ -675,18 +680,18 @@ function parseInlineStyle(styleText) {
 	const styleValues = !styleText
 		? {}
 		: String(styleText)
-			.split(';')
-			.map((entry) => entry.trim())
-			.filter(Boolean)
-			.reduce((result, entry) => {
-				const [rawKey, rawValue] = entry.split(':');
-				if (!rawKey || !rawValue) {
-					return result;
-				}
+				.split(';')
+				.map((entry) => entry.trim())
+				.filter(Boolean)
+				.reduce((result, entry) => {
+					const [rawKey, rawValue] = entry.split(':');
+					if (!rawKey || !rawValue) {
+						return result;
+					}
 
-				result[rawKey.trim()] = rawValue.trim();
-				return result;
-			}, {});
+					result[rawKey.trim()] = rawValue.trim();
+					return result;
+				}, {});
 
 	return new Proxy(styleValues, {
 		get(target, property) {

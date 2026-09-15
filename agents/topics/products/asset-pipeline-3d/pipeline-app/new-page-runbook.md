@@ -7,33 +7,9 @@ The settled shape is the one used by current feature pages such as
 
 ## Page Boundary
 
-Before implementing, decide the page's ownership boundary:
+Apply [canonical feature activation and privacy](C:/Users/gande/.codex/documentation/standards/remvc.md#feature-activation-and-privacy), [REMVC responsibilities](C:/Users/gande/.codex/documentation/standards/remvc.md#preferred-flow), and [shell ownership](C:/Users/gande/.codex/documentation/standards/app-shells.md#shell-ownership). The [Pipeline shared model overlay](../../../standards/overlay.md#add-pipeline-shared-model-registration) owns the local registration refinement.
 
-- The page owns its controller, view service, React presentation, feature-local
-  CSS, page state, and workflow.
-- The server owns canonical state mutation and synthesizes page view models.
-- The page sends domain actions through `server-model`; it does not mirror
-  canonical JSON as editable UI state.
-- The app shell owns tabs, routing, tileset selection, and page mounting.
-
-Do not make a page depend on another feature's private components, styles, or
-helpers. Promote genuinely shared pieces into `src/pipeline/components` first.
-
-If two pipeline pages share client-side model logic, move that logic into the
-top-level `src/pipeline/models` folder as a registry-backed model service and
-subscribe to it from page controllers. Feature-local `models/` folders are for
-models owned by exactly one page feature. Shared examples include stream
-payload interpretation, derived summaries, and page-independent status
-transitions.
-
-Polylith feature/service/model activation should flow through `index.js`
-side-effect imports. Do not import another feature, service, or shared model
-implementation directly from a page controller. Instead:
-
-- register shared services/models from their owning `index.js`
-- subscribe to them through the registry in `ready()`
-- keep direct imports mostly for React components and feature-private helper
-  classes used by those components
+Pipeline's concrete server boundary is `server-model`; the server synthesizes review data and processes domain actions. Shared model examples include stream payload interpretation, derived summaries, and page-independent status transitions. Existing page examples are `asset-review`, `asset-base-tile-selection`, and `final-rendering-options`.
 
 ## File Shape
 
@@ -61,14 +37,7 @@ assets/
     <page-id>.css
 ```
 
-Naming conventions:
-
-- `page-id` is kebab-case and matches the route slug when practical.
-- React page component files use PascalCase.
-- Controller and view service filenames use kebab-case.
-- CSS files use kebab-case.
-- The controller service name should be `<page-id>-controller`.
-- The view service name should be `<page-id>-view`.
+Naming follows [canonical code conventions](C:/Users/gande/.codex/documentation/standards/code-conventions.md#javascript-and-module-shape). Paired page service names come from the [Pipeline identity overlay](../../../standards/overlay.md#add-pipeline-page-service-identities). The tree above is a concrete Pipeline layout example.
 
 ## Build Registration
 
@@ -77,15 +46,15 @@ entrypoint:
 
 ```json
 {
-  "css": [
-    {
-      "dest": "<page-id>/css",
-      "cwd": "assets/css",
-      "glob": "**/*.css",
-      "keepNest": true
-    }
-  ],
-  "index": "index.js"
+	"css": [
+		{
+			"dest": "<page-id>/css",
+			"cwd": "assets/css",
+			"glob": "**/*.css",
+			"keepNest": true
+		}
+	],
+	"index": "index.js"
 }
 ```
 
@@ -109,27 +78,17 @@ import './controller.js';
 
 ## Controller Shape
 
-The controller owns page lifecycle and workflow. It should:
-
-- extend `Service`
-- call `this.implement(...)` for public methods
-- subscribe to `app-pages`, `views`, and any required services in `ready()`
-- register the page with `app-pages`
-- expose `mount(options)`, `getState()`, and `setTilesetId(tilesetId)`
-- reset cached page data when the active tileset changes
-- keep state updates centralized through `setState(...)`
-- call `this.fire('updated', this.getState())` after state changes
+The [canonical controller boundary](C:/Users/gande/.codex/documentation/standards/remvc.md#controllers) owns loading and workflow. Pipeline controllers integrate with `app-pages` and `views`, expose `mount(options)`, `getState()`, and `setTilesetId(tilesetId)`, reset cached data on tileset change, and publish `updated` state through the existing `setState(...)` path.
 
 The page registry entry should look like:
 
 ```js
 this.pages.add({
-  id: '<page-id>',
-  label: '<Page Label>',
-  urlSlug: '<page-id>',
-  route: '/pipeline/<page-id>',
-  order: 60,
-  controller: '<page-id>-controller',
+	id: '<page-id>',
+	label: '<Page Label>',
+	urlSlug: '<page-id>',
+	order: 60,
+	controller: '<page-id>-controller',
 });
 ```
 
@@ -137,31 +96,11 @@ Use the existing page order to place the new tab in workflow order.
 
 ## View Service Shape
 
-The view service is the boundary between controller and React. It should:
-
-- extend `Service`
-- subscribe to `views` and the page controller in `ready()`
-- forward controller `updated` events with `this.fire('updated', state)`
-- register itself with `views.add('<page-id>', this.serviceName)`
-- return the page React component from `getComponent()`
-- expose only the callbacks the React page needs
-
-React components should call page-view methods, not controller or model
-services directly.
+Use the [canonical view/presentation boundary](C:/Users/gande/.codex/documentation/standards/remvc.md#views-and-react-presentation). Pipeline view services register with `views.add('<page-id>', this.serviceName)`, return their component from `getComponent()`, and relay controller `updated` state and presentation callbacks.
 
 ## React Page Shape
 
-The React page component should:
-
-- initialize local state from `props.pageView.getState()`
-- listen for page-view `updated` events in `componentDidMount()`
-- unlisten in `componentWillUnmount()`
-- call `props.pageView.load({ quiet: true })` on mount when it owns loadable
-  server data
-- render a contained page layout with a page header and page-owned content
-- use shared controls from `src/pipeline/components` when available
-- put feature-specific components inside the page feature until they are proven
-  shared
+Use [canonical lifecycle and cleanup](C:/Users/gande/.codex/documentation/standards/react.md#effects-and-lifecycle) and [presentation events](C:/Users/gande/.codex/documentation/standards/react.md#props-state-and-events). Existing Pipeline pages read `props.pageView.getState()` and subscribe to page-view `updated` events. Controller activation owns loading; where presentation readiness is required, relay that readiness through the view under the canonical controller/view contract.
 
 Typical header contents:
 
@@ -178,9 +117,7 @@ Add server calls to `src/pipeline/models/server-model.js` and mirror them in
 `server-model.d.ts`.
 
 Use `/api/pipeline/<page-id>` routes in `server/pipeline/index.js` for page
-view models and canonical actions. The server response may synthesize a
-UI-facing view model from multiple canonical sources, but that response must
-not become another source of truth.
+view models and canonical actions. The [review data boundary](review-data-boundary.md) owns the Pipeline action/view-model contract.
 
 For canonical pipeline JSON, use `PipelineModel` on the server side. Do not
 read or write `pipeline.json` directly from the app.
@@ -194,22 +131,16 @@ When a page action advances the workflow:
 - force-load or invalidate the next page so stale cached data does not survive
   a server-side stage transition
 
-Do not import another page feature directly. If cross-page communication is
-needed, subscribe to the next page's controller through the registry.
+[Canonical privacy and activation](C:/Users/gande/.codex/documentation/standards/remvc.md#feature-activation-and-privacy) govern cross-page dependencies.
 
 ## CSS Shape
 
 Feature CSS should live under `assets/css/<page-id>.css`.
 
-Use contained page layout:
+Use [canonical layout ownership](C:/Users/gande/.codex/documentation/standards/react.md#css-and-layout-ownership) and the [Pipeline shell overlay](../../../standards/overlay.md#replace-pipeline-top-tabs). Pipeline's review-card product requirements are:
 
-- the app shell owns the viewport and tabs
-- the page owns its header and internal content region
-- avoid assuming shell chrome dimensions
-- use CSS Grid for major page regions when it fits naturally
 - keep repeated items as cards; avoid cards inside cards
-- define stable preview/canvas dimensions with `aspect-ratio` or fixed grid
-  constraints
+- define stable preview/canvas dimensions with `aspect-ratio` or fixed grid constraints
 
 ## Verification
 
@@ -230,12 +161,4 @@ npm run build
 
 ## Documentation
 
-After adding a page:
-
-- update this topic README if the page is part of current app state
-- update focused page docs or summaries when the page has a cross-topic
-  contract
-- update owning domain-topic status docs when the page represents a new stage
-  or changes a workflow boundary
-- remove stale "future/planned" wording from docs that now describe current
-  behavior
+Follow the [topic continuity overlay](../../../standards/overlay.md#add-topic-continuity). Page catalog and current app state belong in this topic; stage-domain changes belong in the owning product topic.

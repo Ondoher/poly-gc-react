@@ -25,9 +25,7 @@ export const DISCUSSION_REQUIRED_FACE_KEYS = new Set([
 ]);
 
 export function getFacePaths(faceKey, options = {}) {
-	const outputScope = options.outputScope === undefined
-		? preprocessingOutputScope()
-		: options.outputScope;
+	const outputScope = options.outputScope === undefined ? preprocessingOutputScope() : options.outputScope;
 	const sourceSvg = sourceSvgPath(faceKey);
 
 	return {
@@ -39,7 +37,11 @@ export function getFacePaths(faceKey, options = {}) {
 		report: validationArtifactPath('reports', `${faceKey}-validation-report.json`, outputScope),
 		sourceComponents: validationArtifactPath('source-components', `${faceKey}-source-components.json`, outputScope),
 		sideBySide: validationArtifactPath('side-by-side', `${faceKey}-side-by-side.png`, outputScope),
-		sourceReferenceResult: validationArtifactPath('source-reference-result', `${faceKey}-source-reference-result.png`, outputScope),
+		sourceReferenceResult: validationArtifactPath(
+			'source-reference-result',
+			`${faceKey}-source-reference-result.png`,
+			outputScope,
+		),
 		overlay: validationArtifactPath('overlays', `${faceKey}-overlay.png`, outputScope),
 		diff: validationArtifactPath('diffs', `${faceKey}-diff.png`, outputScope),
 	};
@@ -49,9 +51,7 @@ export function validatePreprocessedFace(faceKey) {
 	const paths = getFacePaths(faceKey);
 	const errors = [];
 	const warnings = [];
-	const svgSource = fs.existsSync(paths.preprocessedSvg)
-		? fs.readFileSync(paths.preprocessedSvg, 'utf8')
-		: null;
+	const svgSource = fs.existsSync(paths.preprocessedSvg) ? fs.readFileSync(paths.preprocessedSvg, 'utf8') : null;
 	const hasRequiredReference = fs.existsSync(paths.referencePng);
 	const hasRequiredSvg = Boolean(svgSource);
 
@@ -71,11 +71,11 @@ export function validatePreprocessedFace(faceKey) {
 
 	const viewBox = svgSource ? readViewBox(svgSource) : null;
 	const hasCanonicalViewBox = Boolean(
-		viewBox
-		&& nearlyEqual(viewBox.minX, 0)
-		&& nearlyEqual(viewBox.minY, 0)
-		&& nearlyEqual(viewBox.width, 94)
-		&& nearlyEqual(viewBox.height, 136)
+		viewBox &&
+		nearlyEqual(viewBox.minX, 0) &&
+		nearlyEqual(viewBox.minY, 0) &&
+		nearlyEqual(viewBox.width, 94) &&
+		nearlyEqual(viewBox.height, 136),
 	);
 
 	if (svgSource && !hasCanonicalViewBox) {
@@ -89,7 +89,7 @@ export function validatePreprocessedFace(faceKey) {
 	const hasText = svgSource ? /<text\b/i.test(svgSource) : false;
 	const hasImages = svgSource ? /<image\b/i.test(svgSource) : false;
 	const unsupportedEffects = svgSource ? findUnsupportedEffects(svgSource) : [];
-	const colorReport = svgSource ? collectColors(svgSource) : { colors: [], unsupportedColors: [] };
+	const colorReport = svgSource ? collectColors(svgSource) : {colors: [], unsupportedColors: []};
 	const groups = svgSource ? collectGroups(svgSource) : {};
 	const suspiciousLayers = svgSource ? findSuspiciousLayers(svgSource) : [];
 
@@ -171,7 +171,7 @@ export function validatePreprocessedFace(faceKey) {
 }
 
 export function writeJson(outputPath, data) {
-	fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+	fs.mkdirSync(path.dirname(outputPath), {recursive: true});
 	fs.writeFileSync(outputPath, `${JSON.stringify(data, null, 2)}\n`);
 }
 
@@ -186,7 +186,10 @@ export function readViewBox(svgSource) {
 		return null;
 	}
 
-	const values = match[1].trim().split(/[\s,]+/).map((value) => Number.parseFloat(value));
+	const values = match[1]
+		.trim()
+		.split(/[\s,]+/)
+		.map((value) => Number.parseFloat(value));
 
 	if (values.length !== 4 || values.some((value) => !Number.isFinite(value))) {
 		return null;
@@ -274,8 +277,8 @@ function findSuspiciousLayers(svgSource) {
 		const lower = value.toLowerCase();
 
 		if (
-			/(?:^|[-_\s])(tile|background|frame|border|body)(?:$|[-_\s])/.test(lower)
-			&& !/(negative|tile-body)/.test(lower)
+			/(?:^|[-_\s])(tile|background|frame|border|body)(?:$|[-_\s])/.test(lower) &&
+			!/(negative|tile-body)/.test(lower)
 		) {
 			suspicious.add(value);
 		}
@@ -283,4 +286,3 @@ function findSuspiciousLayers(svgSource) {
 
 	return [...suspicious].sort();
 }
-

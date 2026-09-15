@@ -6,8 +6,7 @@ const CHUNK_MASK = 0xffffff;
  * integers from 0 to an upper bound. You can perform a number of set operators
  * with this class such as union, intersection and difference
  */
-export default class NumberSet
-{
+export default class NumberSet {
 	/**
 	 *
 	 * @param {Array.<Number>} bits the initial value of the set, each number in
@@ -23,13 +22,12 @@ export default class NumberSet
 		this.assign(bits);
 	}
 
-
 	/**
 	 * Call this method to remove all numbers from the set
 	 */
 	clear() {
 		this.chunks = [];
-		this.chunks = this.arrayPad(this.chunks, this.chunkCount, 0)
+		this.chunks = this.arrayPad(this.chunks, this.chunkCount, 0);
 	}
 
 	/**
@@ -44,8 +42,7 @@ export default class NumberSet
 	 * @returns {Array} the expanded array
 	 */
 	arrayPad(array, count, value) {
-		for (var idx = array.length; idx < count; idx++)
-			array.push(value)
+		for (var idx = array.length; idx < count; idx++) array.push(value);
 		return array;
 	}
 
@@ -55,8 +52,7 @@ export default class NumberSet
 	 * @returns true if the set is empty
 	 */
 	isEmpty() {
-		for (var idx = 0; idx < this.chunks.length; idx++)
-			if (this.chunks[idx] != 0) return false;
+		for (var idx = 0; idx < this.chunks.length; idx++) if (this.chunks[idx] != 0) return false;
 
 		return true;
 	}
@@ -68,8 +64,7 @@ export default class NumberSet
 	 * @param {Array.<Number} bits an array of bits to turn on
 	 */
 	assign(bits) {
-		for (var idx = 0; idx < bits.length; idx++)
-			this.include(bits[idx]);
+		for (var idx = 0; idx < bits.length; idx++) this.include(bits[idx]);
 	}
 
 	/**
@@ -78,7 +73,7 @@ export default class NumberSet
 	 * @param {Number} value the number to add to the set
 	 */
 	include(value) {
-		this.chunks[Math.floor(value / CHUNK_SIZE)] |= (1 << (value % CHUNK_SIZE));
+		this.chunks[Math.floor(value / CHUNK_SIZE)] |= 1 << (value % CHUNK_SIZE);
 		return this;
 	}
 
@@ -87,8 +82,8 @@ export default class NumberSet
 	 *
 	 * @param {Number} value the number to remove from the set
 	 */
-	 exclude(value) {
-		this.chunks[Math.floor(value / CHUNK_SIZE)] &= (~(1 << (value % CHUNK_SIZE))) & CHUNK_MASK;
+	exclude(value) {
+		this.chunks[Math.floor(value / CHUNK_SIZE)] &= ~(1 << (value % CHUNK_SIZE)) & CHUNK_MASK;
 		return this;
 	}
 
@@ -99,7 +94,7 @@ export default class NumberSet
 	 * @returns {Boolean} true if the number is in the set
 	 */
 	has(value) {
-		var result = ((this.chunks[Math.floor(value / CHUNK_SIZE)]) & (1 << (value % CHUNK_SIZE)))
+		var result = this.chunks[Math.floor(value / CHUNK_SIZE)] & (1 << (value % CHUNK_SIZE));
 		return result != 0;
 	}
 
@@ -111,8 +106,7 @@ export default class NumberSet
 	 * @param {NumberSet} set the set to perform a union with.
 	 */
 	union(set) {
-		for (var idx = 0; idx < this.chunks.length; idx++)
-			this.chunks[idx] |= set.chunks[idx];
+		for (var idx = 0; idx < this.chunks.length; idx++) this.chunks[idx] |= set.chunks[idx];
 		return this;
 	}
 
@@ -123,8 +117,7 @@ export default class NumberSet
 	 * @param {NumberSet} set the set to perform the intersection on
 	 */
 	intersection(set) {
-		for (var idx = 0; idx < this.chunks.length; idx++)
-			this.chunks[idx] &= set.chunks[idx];
+		for (var idx = 0; idx < this.chunks.length; idx++) this.chunks[idx] &= set.chunks[idx];
 		return this;
 	}
 
@@ -136,8 +129,7 @@ export default class NumberSet
 	 * @param {NumberSet} set
 	 */
 	difference(set) {
-		for (var idx = 0; idx < this.chunks.length; idx++)
-			this.chunks[idx] &= (~set.chunks[idx]) & CHUNK_MASK;
+		for (var idx = 0; idx < this.chunks.length; idx++) this.chunks[idx] &= ~set.chunks[idx] & CHUNK_MASK;
 		return this;
 	}
-};
+}

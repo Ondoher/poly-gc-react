@@ -27,19 +27,21 @@ export function boundsToTransformMatrix(sourceBounds, targetBounds, options = {}
 	const targetWidth = targetBounds.right - targetBounds.left;
 	const targetHeight = targetBounds.bottom - targetBounds.top;
 
-	if ([sourceWidth, sourceHeight, targetWidth, targetHeight].some((value) => !Number.isFinite(value) || value === 0)) {
+	if (
+		[sourceWidth, sourceHeight, targetWidth, targetHeight].some((value) => !Number.isFinite(value) || value === 0)
+	) {
 		throw new Error('Cannot align component with invalid source or target bounds.');
 	}
 
 	const containedScale = Math.min(targetWidth / sourceWidth, targetHeight / sourceHeight);
 	const requestedScale = options.scale ?? containedScale;
 	const scale = Math.min(requestedScale, containedScale);
-	const sourceCenterX = sourceBounds.left + (sourceWidth / 2);
-	const sourceCenterY = sourceBounds.top + (sourceHeight / 2);
-	const targetCenterX = targetBounds.left + (targetWidth / 2);
-	const targetCenterY = targetBounds.top + (targetHeight / 2);
-	const translateX = targetCenterX - (sourceCenterX * scale);
-	const translateY = targetCenterY - (sourceCenterY * scale);
+	const sourceCenterX = sourceBounds.left + sourceWidth / 2;
+	const sourceCenterY = sourceBounds.top + sourceHeight / 2;
+	const targetCenterX = targetBounds.left + targetWidth / 2;
+	const targetCenterY = targetBounds.top + targetHeight / 2;
+	const translateX = targetCenterX - sourceCenterX * scale;
+	const translateY = targetCenterY - sourceCenterY * scale;
 
 	return {
 		a: scale,
@@ -51,11 +53,13 @@ export function boundsToTransformMatrix(sourceBounds, targetBounds, options = {}
 	};
 }
 
-export function sourceToReferenceTransform(sourceBounds, targetPixelBounds, referenceCanvas, viewBox = PREPARED_FACE_VIEWBOX) {
-	return boundsToTransform(
-		sourceBounds,
-		targetPixelsToViewBoxBounds(targetPixelBounds, referenceCanvas, viewBox),
-	);
+export function sourceToReferenceTransform(
+	sourceBounds,
+	targetPixelBounds,
+	referenceCanvas,
+	viewBox = PREPARED_FACE_VIEWBOX,
+) {
+	return boundsToTransform(sourceBounds, targetPixelsToViewBoxBounds(targetPixelBounds, referenceCanvas, viewBox));
 }
 
 export function unionBounds(boundsList) {
@@ -87,4 +91,3 @@ export function matrixToString(matrix) {
 function formatNumber(value) {
 	return Number(value.toFixed(6)).toString();
 }
-

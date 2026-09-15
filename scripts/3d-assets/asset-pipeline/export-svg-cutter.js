@@ -1,17 +1,14 @@
 import fs from 'fs';
 import path from 'path';
-import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
+import {Worker, isMainThread, parentPort, workerData} from 'worker_threads';
 import * as THREE from 'three';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
+import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
+import {SVGLoader} from 'three/examples/jsm/loaders/SVGLoader.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { Brush, Evaluator, ADDITION } from 'three-bvh-csg/src/index.js';
-import { parse as parseSvgAst } from 'svg-parser';
-import {
-	BASE_TILE_MODELS_DIR,
-	ROOT_DIR,
-} from '../shared/asset-paths.js';
-import { PipelineModel } from '../svg-preprocessor/PipelineModel.js';
+import {Brush, Evaluator, ADDITION} from 'three-bvh-csg/src/index.js';
+import {parse as parseSvgAst} from 'svg-parser';
+import {BASE_TILE_MODELS_DIR, ROOT_DIR} from '../shared/asset-paths.js';
+import {PipelineModel} from '../svg-preprocessor/PipelineModel.js';
 
 class NodeFileReader {
 	constructor() {
@@ -84,11 +81,11 @@ async function main() {
 	});
 	await model.start();
 
-	const variant = buildCutterVariant({ model, options });
+	const variant = buildCutterVariant({model, options});
 	const faceHash = model.hashAssetPipelineFaceInput(options.faceKey);
 	const stageHash = model.hashAssetGenerationStageInput(options.faceKey, 'svg-cutter');
-	fs.mkdirSync(path.dirname(variant.outputGlb), { recursive: true });
-	fs.mkdirSync(path.dirname(variant.outputMetadata), { recursive: true });
+	fs.mkdirSync(path.dirname(variant.outputGlb), {recursive: true});
+	fs.mkdirSync(path.dirname(variant.outputMetadata), {recursive: true});
 
 	const cutterAsset = await buildSvgCutterAsset(variant);
 	if (cutterAsset.group) {
@@ -107,7 +104,7 @@ async function main() {
 				'svg-cutter': stageHash,
 			},
 			artifacts: {
-				...(cutterAsset.group ? { cutterModel: relativePath(variant.outputGlb) } : {}),
+				...(cutterAsset.group ? {cutterModel: relativePath(variant.outputGlb)} : {}),
 				cutterMetadata: relativePath(variant.outputMetadata),
 			},
 			queue: null,
@@ -118,16 +115,25 @@ async function main() {
 	}
 }
 
-function buildCutterVariant({ model, options }) {
+function buildCutterVariant({model, options}) {
 	const faceState = model.getAssetPipeline().faces?.[options.faceKey];
-	const renderedSvg = resolveRepoPath(options.svgPath || faceState?.artifacts?.cutterSvg || model.getFinalRenderingColorSvgPath(options.faceKey) || '');
+	const renderedSvg = resolveRepoPath(
+		options.svgPath ||
+			faceState?.artifacts?.cutterSvg ||
+			model.getFinalRenderingColorSvgPath(options.faceKey) ||
+			'',
+	);
 	const baseTileVariantId = model.getSelectedBaseTileVariantId();
 	const selectedBaseTileVariantId = baseTileVariantId || options.baseTileVariantId;
 	const baseTileVariant = readBaseTileVariant(selectedBaseTileVariantId);
 	const body = baseTileVariant.body || {};
 	const modelFaceKey = `${options.tilesetId}-${options.faceKey}`;
-	const outputGlb = resolveRepoPath(options.outputGlb || path.join(model.pipelineDir, 'models', 'svg-cutter', `${options.faceKey}.glb`));
-	const outputMetadata = resolveRepoPath(options.outputMetadata || path.join(model.pipelineDir, 'json', 'svg-cutter', `${options.faceKey}.json`));
+	const outputGlb = resolveRepoPath(
+		options.outputGlb || path.join(model.pipelineDir, 'models', 'svg-cutter', `${options.faceKey}.glb`),
+	);
+	const outputMetadata = resolveRepoPath(
+		options.outputMetadata || path.join(model.pipelineDir, 'json', 'svg-cutter', `${options.faceKey}.json`),
+	);
 
 	if (!renderedSvg) {
 		throw new Error(`Missing rendered SVG artifact for ${options.tilesetId}/${options.faceKey}.`);
@@ -188,23 +194,26 @@ async function buildSvgCutterAsset(variant) {
 		}
 
 		const shapes = SVGLoader.createShapes(svgPath);
-		withCutterActivityPing({
-			phase: 'extrude',
-			current: pathIndex + 1,
-			total: svgData.paths.length,
-			message: `Extruding SVG path ${pathIndex + 1} of ${svgData.paths.length}`,
-			activity: 'processing-solid',
-		}, () => {
-			for (const shape of shapes) {
-				const geometry = new THREE.ExtrudeGeometry(shape, {
-					depth: 1,
-					bevelEnabled: false,
-					curveSegments: variant.curveSegments,
-					steps: 1,
-				});
-				geometries.push(geometry.index ? geometry.toNonIndexed() : geometry);
-			}
-		});
+		withCutterActivityPing(
+			{
+				phase: 'extrude',
+				current: pathIndex + 1,
+				total: svgData.paths.length,
+				message: `Extruding SVG path ${pathIndex + 1} of ${svgData.paths.length}`,
+				activity: 'processing-solid',
+			},
+			() => {
+				for (const shape of shapes) {
+					const geometry = new THREE.ExtrudeGeometry(shape, {
+						depth: 1,
+						bevelEnabled: false,
+						curveSegments: variant.curveSegments,
+						steps: 1,
+					});
+					geometries.push(geometry.index ? geometry.toNonIndexed() : geometry);
+				}
+			},
+		);
 		emitCutterProgress({
 			phase: 'extrude',
 			current: pathIndex + 1,
@@ -231,34 +240,39 @@ async function buildSvgCutterAsset(variant) {
 			clone.rotateX(Math.PI / 2);
 			return clone;
 		}),
-		false
+		false,
 	);
-	const glyphBounds = variant.sourcePlacementMode === 'viewBox'
-		? createGlyphBoundsFromViewBox(viewBox)
-		: measureGlyphBounds(boundsGeometry);
+	const glyphBounds =
+		variant.sourcePlacementMode === 'viewBox'
+			? createGlyphBoundsFromViewBox(viewBox)
+			: measureGlyphBounds(boundsGeometry);
 	boundsGeometry.dispose();
-	const targetRect = variant.sourcePlacementMode === 'viewBox'
-		? createFullFaceTargetRect(variant.targetWidth, variant.targetDepth)
-		: createFullFaceTargetRect(variant.targetWidth, variant.targetDepth);
+	const targetRect =
+		variant.sourcePlacementMode === 'viewBox'
+			? createFullFaceTargetRect(variant.targetWidth, variant.targetDepth)
+			: createFullFaceTargetRect(variant.targetWidth, variant.targetDepth);
 	const scaleX = targetRect.width / Math.max(glyphBounds.width, 0.000001);
 	const scaleZ = targetRect.depth / Math.max(glyphBounds.depth, 0.000001);
 
 	const normalizedGeometries = geometries.map((geometry, geometryIndex) => {
-		const normalizedGeometry = withCutterActivityPing({
-			phase: 'normalize',
-			current: geometryIndex + 1,
-			total: geometries.length,
-			message: `Normalizing cutter solid ${geometryIndex + 1} of ${geometries.length}`,
-			activity: 'processing-solid',
-		}, () => {
-			const nextGeometry = geometry.clone();
-			nextGeometry.rotateX(Math.PI / 2);
-			nextGeometry.translate(-glyphBounds.centerX, 0, -glyphBounds.centerZ);
-			nextGeometry.scale(scaleX, variant.cutterDepth, scaleZ);
-			nextGeometry.translate(targetRect.centerX, 0, targetRect.centerZ);
-			nextGeometry.computeVertexNormals();
-			return nextGeometry;
-		});
+		const normalizedGeometry = withCutterActivityPing(
+			{
+				phase: 'normalize',
+				current: geometryIndex + 1,
+				total: geometries.length,
+				message: `Normalizing cutter solid ${geometryIndex + 1} of ${geometries.length}`,
+				activity: 'processing-solid',
+			},
+			() => {
+				const nextGeometry = geometry.clone();
+				nextGeometry.rotateX(Math.PI / 2);
+				nextGeometry.translate(-glyphBounds.centerX, 0, -glyphBounds.centerZ);
+				nextGeometry.scale(scaleX, variant.cutterDepth, scaleZ);
+				nextGeometry.translate(targetRect.centerX, 0, targetRect.centerZ);
+				nextGeometry.computeVertexNormals();
+				return nextGeometry;
+			},
+		);
 		emitCutterProgress({
 			phase: 'normalize',
 			current: geometryIndex + 1,
@@ -334,7 +348,7 @@ async function buildSvgCutterAsset(variant) {
 	};
 }
 
-function emptyCutterMetadata({ variant, viewBox, reason }) {
+function emptyCutterMetadata({variant, viewBox, reason}) {
 	return {
 		faceKey: variant.faceKey,
 		tilesetId: variant.tilesetId,
@@ -381,8 +395,8 @@ function buildMergedCutterGeometry(geometries) {
 	});
 
 	const mergedGeometry = BufferGeometryUtils.mergeGeometries(
-		geometries.map((geometry) => geometry.index ? geometry.toNonIndexed() : geometry.clone()),
-		false
+		geometries.map((geometry) => (geometry.index ? geometry.toNonIndexed() : geometry.clone())),
+		false,
 	);
 	mergedGeometry.computeBoundingBox();
 	mergedGeometry.computeBoundingSphere();
@@ -574,11 +588,13 @@ function serializeGeometry(geometry) {
 	}
 
 	return {
-		index: geometry.index ? {
-			array: geometry.index.array,
-			itemSize: geometry.index.itemSize,
-			normalized: Boolean(geometry.index.normalized),
-		} : null,
+		index: geometry.index
+			? {
+					array: geometry.index.array,
+					itemSize: geometry.index.itemSize,
+					normalized: Boolean(geometry.index.normalized),
+				}
+			: null,
 		attributes,
 	};
 }
@@ -586,11 +602,9 @@ function serializeGeometry(geometry) {
 function deserializeGeometry(data) {
 	const geometry = new THREE.BufferGeometry();
 	if (data?.index?.array) {
-		geometry.setIndex(new THREE.BufferAttribute(
-			data.index.array,
-			data.index.itemSize || 1,
-			Boolean(data.index.normalized),
-		));
+		geometry.setIndex(
+			new THREE.BufferAttribute(data.index.array, data.index.itemSize || 1, Boolean(data.index.normalized)),
+		);
 	}
 
 	for (const [name, attribute] of Object.entries(data?.attributes || {})) {
@@ -598,11 +612,10 @@ function deserializeGeometry(data) {
 			continue;
 		}
 
-		geometry.setAttribute(name, new THREE.BufferAttribute(
-			attribute.array,
-			attribute.itemSize,
-			Boolean(attribute.normalized),
-		));
+		geometry.setAttribute(
+			name,
+			new THREE.BufferAttribute(attribute.array, attribute.itemSize, Boolean(attribute.normalized)),
+		);
 	}
 
 	return geometry;
@@ -634,7 +647,9 @@ function wrapSvgAstNode(node, document, idMap) {
 		},
 		getAttributeNS(namespace, name) {
 			if (namespace === 'http://www.w3.org/1999/xlink') {
-				const xlinkValue = readSvgProperty(properties, `xlink:${name}`) ?? readSvgProperty(properties, `xlink${capitalize(name)}`);
+				const xlinkValue =
+					readSvgProperty(properties, `xlink:${name}`) ??
+					readSvgProperty(properties, `xlink${capitalize(name)}`);
 				return xlinkValue == null ? null : String(xlinkValue);
 			}
 
@@ -666,10 +681,12 @@ function shouldSkipSvgLoaderNode(node) {
 	const renderAlternate = readSvgProperty(properties, 'data-render-alternate');
 	const style = parseInlineStyle(readSvgProperty(properties, 'style'));
 
-	return String(display ?? '').toLowerCase() === 'none'
-		|| String(style.display ?? '').toLowerCase() === 'none'
-		|| String(renderLayer ?? '').startsWith('alternate')
-		|| renderAlternate != null;
+	return (
+		String(display ?? '').toLowerCase() === 'none' ||
+		String(style.display ?? '').toLowerCase() === 'none' ||
+		String(renderLayer ?? '').startsWith('alternate') ||
+		renderAlternate != null
+	);
 }
 
 function assignViewportElement(node, document) {
@@ -683,18 +700,18 @@ function parseInlineStyle(styleText) {
 	const styleValues = !styleText
 		? {}
 		: String(styleText)
-			.split(';')
-			.map((entry) => entry.trim())
-			.filter(Boolean)
-			.reduce((result, entry) => {
-				const [rawKey, rawValue] = entry.split(':');
-				if (!rawKey || !rawValue) {
-					return result;
-				}
+				.split(';')
+				.map((entry) => entry.trim())
+				.filter(Boolean)
+				.reduce((result, entry) => {
+					const [rawKey, rawValue] = entry.split(':');
+					if (!rawKey || !rawValue) {
+						return result;
+					}
 
-				result[rawKey.trim()] = rawValue.trim();
-				return result;
-			}, {});
+					result[rawKey.trim()] = rawValue.trim();
+					return result;
+				}, {});
 
 	return new Proxy(styleValues, {
 		get(target, property) {
@@ -762,8 +779,8 @@ function createGlyphBoundsFromViewBox(viewBox) {
 	return {
 		width: viewBox.width,
 		depth: viewBox.height,
-		centerX: viewBox.minX + (viewBox.width / 2),
-		centerZ: viewBox.minY + (viewBox.height / 2),
+		centerX: viewBox.minX + viewBox.width / 2,
+		centerZ: viewBox.minY + viewBox.height / 2,
 	};
 }
 
@@ -781,7 +798,7 @@ async function exportSceneAsGlb(group, sceneName, outputPath) {
 	scene.name = sceneName;
 	scene.add(group);
 
-	const glb = await exporter.parseAsync(scene, { binary: true });
+	const glb = await exporter.parseAsync(scene, {binary: true});
 	fs.writeFileSync(outputPath, Buffer.from(glb));
 	emitCutterProgress({
 		phase: 'export',
@@ -832,22 +849,24 @@ function stopCutterActivityPing() {
 	cutterActivity = null;
 }
 
-function emitCutterProgress({ phase, current, total, message, activity = '', active = false, ping = false }) {
+function emitCutterProgress({phase, current, total, message, activity = '', active = false, ping = false}) {
 	const safeCurrent = Math.max(0, Number(current) || 0);
 	const safeTotal = Math.max(0, Number(total) || 0);
-	console.log(JSON.stringify({
-		event: 'assetStageProgress',
-		stage: 'svg-cutter',
-		phase,
-		current: safeCurrent,
-		total: safeTotal,
-		percent: safeTotal > 0 ? Math.round((Math.min(safeCurrent, safeTotal) / safeTotal) * 100) : 0,
-		message,
-		activity,
-		active,
-		ping,
-		timestamp: new Date().toISOString(),
-	}));
+	console.log(
+		JSON.stringify({
+			event: 'assetStageProgress',
+			stage: 'svg-cutter',
+			phase,
+			current: safeCurrent,
+			total: safeTotal,
+			percent: safeTotal > 0 ? Math.round((Math.min(safeCurrent, safeTotal) / safeTotal) * 100) : 0,
+			message,
+			activity,
+			active,
+			ping,
+			timestamp: new Date().toISOString(),
+		}),
+	);
 }
 
 function pascal(value) {
@@ -875,8 +894,8 @@ function assignProjectedTopUv(geometry, width, depth) {
 	for (let index = 0; index < positions.count; index += 1) {
 		const x = positions.getX(index);
 		const z = positions.getZ(index);
-		uvValues[(index * 2)] = (x / width) + 0.5;
-		uvValues[(index * 2) + 1] = (z / depth) + 0.5;
+		uvValues[index * 2] = x / width + 0.5;
+		uvValues[index * 2 + 1] = z / depth + 0.5;
 	}
 
 	geometry.setAttribute('uv', new THREE.BufferAttribute(uvValues, 2));
@@ -948,9 +967,8 @@ function readBaseTileVariant(variantId) {
 	}
 
 	const metadataPath = resolveRepoPath(manifestVariant.metadata || '');
-	const metadata = metadataPath && fs.existsSync(metadataPath)
-		? JSON.parse(fs.readFileSync(metadataPath, 'utf8'))
-		: {};
+	const metadata =
+		metadataPath && fs.existsSync(metadataPath) ? JSON.parse(fs.readFileSync(metadataPath, 'utf8')) : {};
 
 	return {
 		...manifestVariant,
@@ -1008,4 +1026,3 @@ function resolveRepoPath(filename) {
 function relativePath(filename) {
 	return path.relative(ROOT_DIR, filename).replaceAll('\\', '/');
 }
-

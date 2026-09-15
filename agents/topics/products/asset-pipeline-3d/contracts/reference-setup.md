@@ -83,4 +83,3 @@ Alignment consumes reference structure to know compatible targets and target
 bounds. Final rendering consumes it for generated glyph placement, color
 defaults, target boxes, and structural layout. Source review state records how
 one source tileset maps onto that reference structure.
-

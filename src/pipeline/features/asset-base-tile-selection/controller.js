@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 const ASSET_REVIEW_PAGE_ID = 'asset-review';
 
@@ -55,7 +55,7 @@ export default class AssetBaseTileSelectionController extends Service {
 	}
 
 	getState() {
-		return { ...this.state };
+		return {...this.state};
 	}
 
 	setTilesetId(tilesetId) {
@@ -84,7 +84,7 @@ export default class AssetBaseTileSelectionController extends Service {
 		callback?.();
 	}
 
-	async load({ force = false, quiet = false } = {}) {
+	async load({force = false, quiet = false} = {}) {
 		if (!force && (this.state.processing || this.state.baseTileSelection)) {
 			return;
 		}
@@ -92,7 +92,7 @@ export default class AssetBaseTileSelectionController extends Service {
 		this.setState({
 			processing: true,
 			processingLabel: quiet ? '' : 'Loading base tile options',
-			...(quiet ? {} : { status: 'Loading base tile options...' }),
+			...(quiet ? {} : {status: 'Loading base tile options...'}),
 		});
 
 		try {
@@ -113,7 +113,7 @@ export default class AssetBaseTileSelectionController extends Service {
 				status: `Base tile selection load failed: ${error.message}`,
 			});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -126,12 +126,12 @@ export default class AssetBaseTileSelectionController extends Service {
 
 	async save() {
 		if (!this.state.baseTileSelection) {
-			this.setState({ status: 'No base tile options loaded' });
+			this.setState({status: 'No base tile options loaded'});
 			return;
 		}
 
 		if (!this.state.selectedVariantId) {
-			this.setState({ status: 'Select a base tile option before saving' });
+			this.setState({status: 'Select a base tile option before saving'});
 			return;
 		}
 
@@ -162,12 +162,12 @@ export default class AssetBaseTileSelectionController extends Service {
 				},
 			});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
 	dismissMessageDialog() {
-		this.setState({ messageDialog: null });
+		this.setState({messageDialog: null});
 	}
 
 	assetUrl(path) {
@@ -178,15 +178,15 @@ export default class AssetBaseTileSelectionController extends Service {
 		const page = this.app?.requestPage(ASSET_REVIEW_PAGE_ID);
 
 		if (!page) {
-			this.setState({ status: 'Base tile selection saved, but the Asset Review page is not available.' });
+			this.setState({status: 'Base tile selection saved, but the Asset Review page is not available.'});
 			return;
 		}
 
 		const assetReview = this.registry.subscribe('asset-review-controller');
 
 		if (assetReview) {
-			await assetReview.load({ force: true, quiet: true });
-			assetReview.startGeneration({ quiet: true });
+			await assetReview.load({force: true, quiet: true});
+			assetReview.startGeneration({quiet: true});
 		}
 	}
 }

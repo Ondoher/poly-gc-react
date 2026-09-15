@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { BASE_OUTPUT } from './PipelineModel.js';
+import {BASE_OUTPUT} from './PipelineModel.js';
 
 export function tilesetOutputRoot(tilesetId) {
 	return path.resolve(BASE_OUTPUT, tilesetId);

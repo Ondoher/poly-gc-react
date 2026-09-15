@@ -174,4 +174,4 @@ This topic is doing its job if it helps us:
 - [MVP README](/c:/dev/poly-gc-react/agents/topics/archive/mvp-summary.md)
 - [MVP Implementation Checklist](/c:/dev/poly-gc-react/agents/topics/archive/mvp-summary.md)
 - [Difficulty Validation Data Collection](/c:/dev/poly-gc-react/agents/topics/products/game-collection/mahjongg-solitaire/difficulty/validation.md)
-- [Deployment Checklist](/c:/dev/poly-gc-react/agents/topics/deployment/deployment-checklist.md)
+- [Deployment Checklist](/c:/dev/poly-gc-react/agents/topics/standards/deployment/production-runbook.md)

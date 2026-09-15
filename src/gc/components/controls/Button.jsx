@@ -1,19 +1,12 @@
-
-import React from "react";
+import React from 'react';
 
 export default class Button extends React.Component {
-	constructor (props) {
+	constructor(props) {
 		super(props);
 	}
 
-	render () {
-		var {
-			id,
-			onClick,
-			className,
-			disabled,
-			selected,
-		} = this.props
+	render() {
+		var {id, onClick, className, disabled, selected} = this.props;
 
 		className = 'button ' + className + (selected ? ' selected' : '');
 		return (
@@ -22,6 +15,6 @@ export default class Button extends React.Component {
 					{this.props.children}
 				</button>
 			</React.Fragment>
-		)
+		);
 	}
 }

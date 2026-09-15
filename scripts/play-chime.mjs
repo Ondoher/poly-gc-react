@@ -1,17 +1,17 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import {mkdirSync, writeFileSync} from 'node:fs';
+import {dirname, resolve} from 'node:path';
+import {spawnSync} from 'node:child_process';
 
 const SAMPLE_RATE = 44100;
 const DEFAULT_DURATION_SECONDS = 2.4;
 const DEFAULT_OUTPUT = 'tmp/chime.wav';
 
 const CHIME_PARTIALS = [
-	{ frequency: 1046.5, gain: 0.54, delay: 0.00, decay: 1.25 },
-	{ frequency: 1318.51, gain: 0.36, delay: 0.035, decay: 1.05 },
-	{ frequency: 1567.98, gain: 0.30, delay: 0.075, decay: 0.92 },
-	{ frequency: 2093.0, gain: 0.16, delay: 0.12, decay: 0.72 },
-	{ frequency: 2637.02, gain: 0.10, delay: 0.16, decay: 0.55 },
+	{frequency: 1046.5, gain: 0.54, delay: 0.0, decay: 1.25},
+	{frequency: 1318.51, gain: 0.36, delay: 0.035, decay: 1.05},
+	{frequency: 1567.98, gain: 0.3, delay: 0.075, decay: 0.92},
+	{frequency: 2093.0, gain: 0.16, delay: 0.12, decay: 0.72},
+	{frequency: 2637.02, gain: 0.1, delay: 0.16, decay: 0.55},
 ];
 
 const args = parseArgs(process.argv.slice(2));
@@ -24,8 +24,8 @@ if (args.help) {
 const outputPath = resolve(args.output || DEFAULT_OUTPUT);
 const durationSeconds = args.duration || DEFAULT_DURATION_SECONDS;
 
-mkdirSync(dirname(outputPath), { recursive: true });
-writeFileSync(outputPath, createChimeWav({ durationSeconds }));
+mkdirSync(dirname(outputPath), {recursive: true});
+writeFileSync(outputPath, createChimeWav({durationSeconds}));
 
 console.log(`Wrote ${outputPath}`);
 
@@ -99,7 +99,7 @@ Options:
 `);
 }
 
-function createChimeWav({ durationSeconds }) {
+function createChimeWav({durationSeconds}) {
 	const frameCount = Math.ceil(durationSeconds * SAMPLE_RATE);
 	const samples = new Float32Array(frameCount);
 
@@ -165,24 +165,27 @@ function playAudioFile(filePath) {
 		return;
 	}
 
-	const candidates = process.platform === 'darwin'
-		? [['afplay', [filePath]]]
-		: [
-			['paplay', [filePath]],
-			['aplay', [filePath]],
-			['ffplay', ['-nodisp', '-autoexit', '-loglevel', 'quiet', filePath]],
-			['play', [filePath]],
-		];
+	const candidates =
+		process.platform === 'darwin'
+			? [['afplay', [filePath]]]
+			: [
+					['paplay', [filePath]],
+					['aplay', [filePath]],
+					['ffplay', ['-nodisp', '-autoexit', '-loglevel', 'quiet', filePath]],
+					['play', [filePath]],
+				];
 
 	for (const [command, commandArgs] of candidates) {
-		const result = spawnSync(command, commandArgs, { stdio: 'ignore' });
+		const result = spawnSync(command, commandArgs, {stdio: 'ignore'});
 
 		if (result.status === 0) {
 			return;
 		}
 	}
 
-	throw new Error(`Could not find an audio player for ${process.platform}. The WAV was still written to ${filePath}.`);
+	throw new Error(
+		`Could not find an audio player for ${process.platform}. The WAV was still written to ${filePath}.`,
+	);
 }
 
 function playTerminalBell() {

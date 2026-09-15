@@ -1,6 +1,6 @@
-import React from "react";
-import CssRect from "./CssRect.jsx";
-import Timer from "./Timer.jsx";
+import React from 'react';
+import CssRect from './CssRect.jsx';
+import Timer from './Timer.jsx';
 
 export default class RightHud extends React.Component {
 	constructor(props) {
@@ -83,7 +83,7 @@ export default class RightHud extends React.Component {
 	}
 
 	render() {
-		var className = "mj-right-hud";
+		var className = 'mj-right-hud';
 
 		if (this.props.className) {
 			className += ` ${this.props.className}`;
@@ -96,11 +96,7 @@ export default class RightHud extends React.Component {
 					className="mj-right-hud-timer"
 					isPaused={Boolean(this.props.isPaused)}
 				/>
-				<CssRect
-					className="mj-right-hud-rail"
-					size="large"
-					variant="inset"
-				>
+				<CssRect className="mj-right-hud-rail" size="large" variant="inset">
 					<div className="mj-right-hud-button-bar">
 						{this.renderButton('pause', 'Pause')}
 						{this.renderButton('restart', 'Restart')}
@@ -112,9 +108,7 @@ export default class RightHud extends React.Component {
 					</div>
 				</CssRect>
 				{!this.props.hideFeedback ? (
-					<div className="mj-right-hud-feedback-wrap">
-						{this.renderButton('feedback', 'Feedback')}
-					</div>
+					<div className="mj-right-hud-feedback-wrap">{this.renderButton('feedback', 'Feedback')}</div>
 				) : null}
 			</div>
 		);

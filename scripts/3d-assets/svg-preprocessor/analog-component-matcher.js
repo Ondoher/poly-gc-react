@@ -1,9 +1,7 @@
 export function groupAnalogComponents(components, options = {}) {
 	const expandedGap = options.expandedGap ?? 10;
 	const groupByColor = options.groupByColor ?? false;
-	const canJoinComponents = typeof options.canJoinComponents === 'function'
-		? options.canJoinComponents
-		: () => true;
+	const canJoinComponents = typeof options.canJoinComponents === 'function' ? options.canJoinComponents : () => true;
 	const sorted = [...components].sort(compareByPosition);
 
 	if (expandedGap <= 0) {
@@ -13,11 +11,12 @@ export function groupAnalogComponents(components, options = {}) {
 	const groups = [];
 
 	for (const component of sorted) {
-		const matchingGroups = groups.filter((group) => (
-			(!groupByColor || group.dominantColor === componentColor(component))
-			&& canJoinGroupComponent(group, component, canJoinComponents)
-			&& boundsOverlap(expandBounds(group.bounds, expandedGap), component.bounds || component)
-		));
+		const matchingGroups = groups.filter(
+			(group) =>
+				(!groupByColor || group.dominantColor === componentColor(component)) &&
+				canJoinGroupComponent(group, component, canJoinComponents) &&
+				boundsOverlap(expandBounds(group.bounds, expandedGap), component.bounds || component),
+		);
 
 		if (matchingGroups.length === 0) {
 			groups.push(makeGroup([component]));
@@ -46,9 +45,9 @@ function canJoinGroupComponent(group, component, canJoinComponents) {
 }
 
 function canJoinGroups(leftGroup, rightGroup, canJoinComponents) {
-	return (leftGroup.components || []).every((leftComponent) => (
-		(rightGroup.components || []).every((rightComponent) => canJoinComponents(leftComponent, rightComponent))
-	));
+	return (leftGroup.components || []).every((leftComponent) =>
+		(rightGroup.components || []).every((rightComponent) => canJoinComponents(leftComponent, rightComponent)),
+	);
 }
 
 function makeConstrainedGroups(components, canJoinComponents) {
@@ -92,7 +91,10 @@ export function selectAnalogComponentGrouping(sourceComponents, referenceCompone
 		matchOptions,
 	});
 
-	if (countedGroupCount(unjoinedCandidate.sourceGroups, ignoredSourceComponents) === countedGroupCount(unjoinedCandidate.referenceGroups, ignoredReferenceComponents)) {
+	if (
+		countedGroupCount(unjoinedCandidate.sourceGroups, ignoredSourceComponents) ===
+		countedGroupCount(unjoinedCandidate.referenceGroups, ignoredReferenceComponents)
+	) {
 		return unjoinedCandidate;
 	}
 
@@ -120,16 +122,17 @@ export function selectAnalogComponentGrouping(sourceComponents, referenceCompone
 		matchOptions,
 		canJoinSourceComponents: options.canJoinSourceComponents,
 	});
-	const colorHuePartCompletionCandidates = options.groupByColor === false || !options.colorHuePartCompletion
-		? []
-		: makeColorHuePartCompletionCandidates({
-			sourceComponents,
-			referenceComponents,
-			ignoredSourceComponents,
-			ignoredReferenceComponents,
-			matchOptions,
-			canJoinSourceComponents: options.canJoinSourceComponents,
-		});
+	const colorHuePartCompletionCandidates =
+		options.groupByColor === false || !options.colorHuePartCompletion
+			? []
+			: makeColorHuePartCompletionCandidates({
+					sourceComponents,
+					referenceComponents,
+					ignoredSourceComponents,
+					ignoredReferenceComponents,
+					matchOptions,
+					canJoinSourceComponents: options.canJoinSourceComponents,
+				});
 	const bestLayeredOverlapCandidate = [
 		broadLayeredOverlapCandidate,
 		partCompletionSplitCandidate,
@@ -137,8 +140,9 @@ export function selectAnalogComponentGrouping(sourceComponents, referenceCompone
 	].sort((left, right) => left.score - right.score || left.sourceGroups.length - right.sourceGroups.length)[0];
 
 	if (
-		countedGroupCount(bestLayeredOverlapCandidate.sourceGroups, ignoredSourceComponents) === countedGroupCount(bestLayeredOverlapCandidate.referenceGroups, ignoredReferenceComponents)
-		&& bestLayeredOverlapCandidate.score <= unjoinedCandidate.score
+		countedGroupCount(bestLayeredOverlapCandidate.sourceGroups, ignoredSourceComponents) ===
+			countedGroupCount(bestLayeredOverlapCandidate.referenceGroups, ignoredReferenceComponents) &&
+		bestLayeredOverlapCandidate.score <= unjoinedCandidate.score
 	) {
 		return bestLayeredOverlapCandidate;
 	}
@@ -148,34 +152,32 @@ export function selectAnalogComponentGrouping(sourceComponents, referenceCompone
 		partCompletionSplitCandidate,
 		...colorHuePartCompletionCandidates,
 		...gapCandidates.flatMap((expandedGap) => {
-		const sourceGroups = groupAnalogComponents(sourceComponents, {
-			expandedGap,
-			groupByColor: options.groupByColor ?? true,
-			canJoinComponents: options.canJoinSourceComponents,
-		});
-		const referenceGroups = groupAnalogComponents(referenceComponents, {
-			expandedGap,
-			groupByColor: options.groupByColor ?? true,
-		});
+			const sourceGroups = groupAnalogComponents(sourceComponents, {
+				expandedGap,
+				groupByColor: options.groupByColor ?? true,
+				canJoinComponents: options.canJoinSourceComponents,
+			});
+			const referenceGroups = groupAnalogComponents(referenceComponents, {
+				expandedGap,
+				groupByColor: options.groupByColor ?? true,
+			});
 
-		const baseCandidate = makeGroupingCandidate({
-			expandedGap,
-			sourceGroups,
-			referenceGroups,
-			strategy: 'gap',
-			ignoredSourceComponents,
-			ignoredReferenceComponents,
-			matchOptions,
-		});
-		const alignedCandidate = optimizeSameColorGrouping(baseCandidate);
+			const baseCandidate = makeGroupingCandidate({
+				expandedGap,
+				sourceGroups,
+				referenceGroups,
+				strategy: 'gap',
+				ignoredSourceComponents,
+				ignoredReferenceComponents,
+				matchOptions,
+			});
+			const alignedCandidate = optimizeSameColorGrouping(baseCandidate);
 
-		return alignedCandidate.score < baseCandidate.score
-			? [baseCandidate, alignedCandidate]
-			: [baseCandidate];
-	})];
+			return alignedCandidate.score < baseCandidate.score ? [baseCandidate, alignedCandidate] : [baseCandidate];
+		}),
+	];
 
-	return candidates
-		.sort((left, right) => left.score - right.score || left.expandedGap - right.expandedGap)[0];
+	return candidates.sort((left, right) => left.score - right.score || left.expandedGap - right.expandedGap)[0];
 }
 
 function makeColorHuePartCompletionCandidates({
@@ -201,39 +203,37 @@ function makeColorHuePartCompletionCandidates({
 		return [];
 	}
 
-	const sourceFragments = groupedSourceFragments(sourceComponents, { canJoinSourceComponents });
-	const fragmentsByColorHue = groupSourceGroupsByColorHue(sourceFragments)
-		.filter((groups) => groups.length > 0);
+	const sourceFragments = groupedSourceFragments(sourceComponents, {canJoinSourceComponents});
+	const fragmentsByColorHue = groupSourceGroupsByColorHue(sourceFragments).filter((groups) => groups.length > 0);
 
 	if (fragmentsByColorHue.length <= 1) {
 		return [];
 	}
 
-	return fragmentsByColorHue
-		.map((hueSourceGroups) => {
-			const sourceGroups = completeSourceGroupsForReferenceParts(hueSourceGroups, referenceGroups);
-			const candidate = makeGroupingCandidate({
-				expandedGap: 0,
-				sourceGroups,
-				referenceGroups,
-				strategy: 'color-hue-part-completion',
-				ignoredSourceComponents,
-				ignoredReferenceComponents,
-				matchOptions,
-			});
-
-			return {
-				...candidate,
-				score: candidate.score - colorHueSubsetScore(hueSourceGroups),
-			};
+	return fragmentsByColorHue.map((hueSourceGroups) => {
+		const sourceGroups = completeSourceGroupsForReferenceParts(hueSourceGroups, referenceGroups);
+		const candidate = makeGroupingCandidate({
+			expandedGap: 0,
+			sourceGroups,
+			referenceGroups,
+			strategy: 'color-hue-part-completion',
+			ignoredSourceComponents,
+			ignoredReferenceComponents,
+			matchOptions,
 		});
+
+		return {
+			...candidate,
+			score: candidate.score - colorHueSubsetScore(hueSourceGroups),
+		};
+	});
 }
 
 function colorHueSubsetScore(sourceGroups) {
 	const componentCount = sourceGroups.reduce((total, group) => total + group.components.length, 0);
 	const totalArea = sourceGroups.reduce((total, group) => total + boundsArea(group.bounds), 0);
 
-	return (sourceGroups.length * 120) + (componentCount * 20) + Math.min(totalArea / 20, 80);
+	return sourceGroups.length * 120 + componentCount * 20 + Math.min(totalArea / 20, 80);
 }
 
 function makePartCompletionSplitCandidate({
@@ -248,7 +248,7 @@ function makePartCompletionSplitCandidate({
 		expandedGap: 0,
 		groupByColor: false,
 	});
-	const sourceFragments = groupedSourceFragments(sourceComponents, { canJoinSourceComponents });
+	const sourceFragments = groupedSourceFragments(sourceComponents, {canJoinSourceComponents});
 	const sourceGroups = completeSourceGroupsForReferenceParts(sourceFragments, referenceGroups);
 
 	return makeGroupingCandidate({
@@ -263,22 +263,21 @@ function makePartCompletionSplitCandidate({
 }
 
 function groupedSourceFragments(sourceComponents, options = {}) {
-	const canJoinSourceComponents = typeof options.canJoinSourceComponents === 'function'
-		? options.canJoinSourceComponents
-		: () => true;
-	const parentGroups = groupByLeafParent(sourceComponents, { canJoinSourceComponents });
+	const canJoinSourceComponents =
+		typeof options.canJoinSourceComponents === 'function' ? options.canJoinSourceComponents : () => true;
+	const parentGroups = groupByLeafParent(sourceComponents, {canJoinSourceComponents});
 
 	if (parentGroups.length > 0 && parentGroups.length < sourceComponents.length) {
 		return parentGroups;
 	}
 
-	const centerOverlapGroups = groupByCenterOverlap(sourceComponents, { canJoinSourceComponents });
+	const centerOverlapGroups = groupByCenterOverlap(sourceComponents, {canJoinSourceComponents});
 
 	if (centerOverlapGroups.length > 0 && centerOverlapGroups.length < sourceComponents.length) {
 		return centerOverlapGroups;
 	}
 
-	const transformGroups = groupByTransformSignature(sourceComponents, { canJoinSourceComponents });
+	const transformGroups = groupByTransformSignature(sourceComponents, {canJoinSourceComponents});
 
 	if (transformGroups.length > 0 && transformGroups.length < sourceComponents.length) {
 		return transformGroups;
@@ -308,9 +307,8 @@ function groupSourceGroupsByColorHue(sourceGroups) {
 }
 
 function groupByLeafParent(sourceComponents, options = {}) {
-	const canJoinSourceComponents = typeof options.canJoinSourceComponents === 'function'
-		? options.canJoinSourceComponents
-		: () => true;
+	const canJoinSourceComponents =
+		typeof options.canJoinSourceComponents === 'function' ? options.canJoinSourceComponents : () => true;
 	const byLeafParent = new Map();
 	const ungrouped = [];
 
@@ -330,11 +328,12 @@ function groupByLeafParent(sourceComponents, options = {}) {
 		byLeafParent.get(leafParentId).push(component);
 	}
 
-	const groupedComponents = [...byLeafParent.values()]
-		.filter((components) => components.length > 1)
-		.flat();
+	const groupedComponents = [...byLeafParent.values()].filter((components) => components.length > 1).flat();
 
-	if (groupedComponents.length === 0 || (groupedComponents.length === sourceComponents.length && byLeafParent.size === 1)) {
+	if (
+		groupedComponents.length === 0 ||
+		(groupedComponents.length === sourceComponents.length && byLeafParent.size === 1)
+	) {
 		return [];
 	}
 
@@ -344,7 +343,9 @@ function groupByLeafParent(sourceComponents, options = {}) {
 			.filter((components) => components.length > 1)
 			.flatMap((components) => makeConstrainedGroups(components, canJoinSourceComponents)),
 		...sourceComponents
-			.filter((component) => !groupedIds.has(component.componentId) && (component.parentGroupIds || []).length > 0)
+			.filter(
+				(component) => !groupedIds.has(component.componentId) && (component.parentGroupIds || []).length > 0,
+			)
 			.map((component) => makeGroup([component])),
 		...ungrouped.map((component) => makeGroup([component])),
 	];
@@ -353,9 +354,8 @@ function groupByLeafParent(sourceComponents, options = {}) {
 }
 
 function groupByTransformSignature(sourceComponents, options = {}) {
-	const canJoinSourceComponents = typeof options.canJoinSourceComponents === 'function'
-		? options.canJoinSourceComponents
-		: () => true;
+	const canJoinSourceComponents =
+		typeof options.canJoinSourceComponents === 'function' ? options.canJoinSourceComponents : () => true;
 	const byTransform = new Map();
 	const ungrouped = [];
 
@@ -374,11 +374,12 @@ function groupByTransformSignature(sourceComponents, options = {}) {
 		byTransform.get(signature).push(component);
 	}
 
-	const groupedComponents = [...byTransform.values()]
-		.filter((components) => components.length > 1)
-		.flat();
+	const groupedComponents = [...byTransform.values()].filter((components) => components.length > 1).flat();
 
-	if (groupedComponents.length === 0 || (groupedComponents.length === sourceComponents.length && byTransform.size === 1)) {
+	if (
+		groupedComponents.length === 0 ||
+		(groupedComponents.length === sourceComponents.length && byTransform.size === 1)
+	) {
 		return [];
 	}
 
@@ -397,18 +398,19 @@ function groupByTransformSignature(sourceComponents, options = {}) {
 }
 
 function groupByCenterOverlap(sourceComponents, options = {}) {
-	const canJoinSourceComponents = typeof options.canJoinSourceComponents === 'function'
-		? options.canJoinSourceComponents
-		: () => true;
+	const canJoinSourceComponents =
+		typeof options.canJoinSourceComponents === 'function' ? options.canJoinSourceComponents : () => true;
 	const groups = [];
 
 	for (const component of sourceComponents) {
 		const componentBounds = component.bounds || component;
-		const matchingGroups = groups.filter((group) => group.components.some((groupComponent) => (
-			canJoinGroupComponent(group, component, canJoinSourceComponents)
-			&&
-			centersMutuallyOverlap(componentBounds, groupComponent.bounds || groupComponent)
-		)));
+		const matchingGroups = groups.filter((group) =>
+			group.components.some(
+				(groupComponent) =>
+					canJoinGroupComponent(group, component, canJoinSourceComponents) &&
+					centersMutuallyOverlap(componentBounds, groupComponent.bounds || groupComponent),
+			),
+		);
 
 		if (matchingGroups.length === 0) {
 			groups.push(makeGroup([component]));
@@ -433,7 +435,10 @@ function groupByCenterOverlap(sourceComponents, options = {}) {
 		.filter((group) => group.components.length > 1)
 		.flatMap((group) => group.components);
 
-	if (groupedComponents.length === 0 || (groups.length === 1 && groupedComponents.length === sourceComponents.length)) {
+	if (
+		groupedComponents.length === 0 ||
+		(groups.length === 1 && groupedComponents.length === sourceComponents.length)
+	) {
 		return [];
 	}
 
@@ -479,8 +484,9 @@ function completeSourceGroupsForReferenceParts(sourceGroups, referenceGroups) {
 		const bestSeed = unassigned
 			.map((sourceGroup) => ({
 				sourceGroup,
-				score: normalizedPositionDistance(sourceGroup, sourceBounds, referenceGroup, referenceBounds)
-					+ (scoreMatchTransform(sourceGroup, referenceGroup) / 120),
+				score:
+					normalizedPositionDistance(sourceGroup, sourceBounds, referenceGroup, referenceBounds) +
+					scoreMatchTransform(sourceGroup, referenceGroup) / 120,
 			}))
 			.sort((left, right) => left.score - right.score)[0];
 
@@ -496,17 +502,15 @@ function completeSourceGroupsForReferenceParts(sourceGroups, referenceGroups) {
 		const bestTarget = referenceGroups
 			.map((referenceGroup, referenceIndex) => {
 				const currentGroup = makeGroup(assigned[referenceIndex].flatMap((group) => group.components));
-				const mergedGroup = makeGroup([
-					...currentGroup.components,
-					...sourceGroup.components,
-				]);
+				const mergedGroup = makeGroup([...currentGroup.components, ...sourceGroup.components]);
 
 				return {
 					referenceIndex,
-					score: scoreMatchTransform(mergedGroup, referenceGroup)
-						- scoreMatchTransform(currentGroup, referenceGroup)
-						+ sourceJoinPenalty(currentGroup, sourceGroup)
-						+ normalizedPositionDistance(sourceGroup, sourceBounds, referenceGroup, referenceBounds),
+					score:
+						scoreMatchTransform(mergedGroup, referenceGroup) -
+						scoreMatchTransform(currentGroup, referenceGroup) +
+						sourceJoinPenalty(currentGroup, sourceGroup) +
+						normalizedPositionDistance(sourceGroup, sourceBounds, referenceGroup, referenceBounds),
 				};
 			})
 			.sort((left, right) => left.score - right.score)[0];
@@ -517,12 +521,7 @@ function completeSourceGroupsForReferenceParts(sourceGroups, referenceGroups) {
 	return assigned.map((groups) => makeGroup(groups.flatMap((group) => group.components)));
 }
 
-function splitSourceGroupsByReferencePositionBands({
-	sourceGroups,
-	referenceGroups,
-	sourceBounds,
-	referenceBounds,
-}) {
+function splitSourceGroupsByReferencePositionBands({sourceGroups, referenceGroups, sourceBounds, referenceBounds}) {
 	if (!sourceBounds || !referenceBounds || referenceGroups.length < 2) {
 		return null;
 	}
@@ -533,14 +532,16 @@ function splitSourceGroupsByReferencePositionBands({
 		return null;
 	}
 
-	const sortedReferenceGroups = [...referenceGroups].sort((left, right) => (
-		normalizedCenterOnAxis(left.bounds, referenceBounds, axis)
-		- normalizedCenterOnAxis(right.bounds, referenceBounds, axis)
-	));
-	const sortedSourceGroups = [...sourceGroups].sort((left, right) => (
-		normalizedCenterOnAxis(left.bounds, sourceBounds, axis)
-		- normalizedCenterOnAxis(right.bounds, sourceBounds, axis)
-	));
+	const sortedReferenceGroups = [...referenceGroups].sort(
+		(left, right) =>
+			normalizedCenterOnAxis(left.bounds, referenceBounds, axis) -
+			normalizedCenterOnAxis(right.bounds, referenceBounds, axis),
+	);
+	const sortedSourceGroups = [...sourceGroups].sort(
+		(left, right) =>
+			normalizedCenterOnAxis(left.bounds, sourceBounds, axis) -
+			normalizedCenterOnAxis(right.bounds, sourceBounds, axis),
+	);
 	const thresholds = [];
 
 	for (let index = 0; index < sortedReferenceGroups.length - 1; index += 1) {
@@ -556,7 +557,9 @@ function splitSourceGroupsByReferencePositionBands({
 		const sourceCenter = normalizedCenterOnAxis(sourceGroup.bounds, sourceBounds, axis);
 		const sortedReferenceIndex = thresholds.findIndex((threshold) => sourceCenter < threshold);
 
-		bySortedReferenceIndex[sortedReferenceIndex === -1 ? thresholds.length : sortedReferenceIndex].push(sourceGroup);
+		bySortedReferenceIndex[sortedReferenceIndex === -1 ? thresholds.length : sortedReferenceIndex].push(
+			sourceGroup,
+		);
 	}
 
 	if (bySortedReferenceIndex.some((groups) => groups.length === 0)) {
@@ -567,8 +570,9 @@ function splitSourceGroupsByReferencePositionBands({
 	const assigned = referenceGroups.map(() => null);
 
 	for (const [sortedIndex, referenceGroup] of sortedReferenceGroups.entries()) {
-		assigned[originalIndexByReferenceGroup.get(referenceGroup)] = makeGroup(bySortedReferenceIndex[sortedIndex]
-			.flatMap((group) => group.components));
+		assigned[originalIndexByReferenceGroup.get(referenceGroup)] = makeGroup(
+			bySortedReferenceIndex[sortedIndex].flatMap((group) => group.components),
+		);
 	}
 
 	return assigned;
@@ -596,9 +600,7 @@ function dominantReferenceSeparationAxis(referenceGroups, referenceBounds) {
 function normalizedCenterOnAxis(bounds, containingBounds, axis) {
 	const size = axis === 'x' ? containingBounds.width : containingBounds.height;
 	const start = axis === 'x' ? containingBounds.left : containingBounds.top;
-	const center = axis === 'x'
-		? bounds.left + (bounds.width / 2)
-		: bounds.top + (bounds.height / 2);
+	const center = axis === 'x' ? bounds.left + bounds.width / 2 : bounds.top + bounds.height / 2;
 
 	return size > 0 ? (center - start) / size : 0.5;
 }
@@ -612,15 +614,20 @@ function sourceJoinPenalty(currentGroup, sourceGroup) {
 		return 0;
 	}
 
-	return currentGroup.components.reduce((bestPenalty, component) => (
-		Math.min(bestPenalty, componentJoinPenalty(component, sourceGroup))
-	), 0);
+	return currentGroup.components.reduce(
+		(bestPenalty, component) => Math.min(bestPenalty, componentJoinPenalty(component, sourceGroup)),
+		0,
+	);
 }
 
 function componentJoinPenalty(component, sourceGroup) {
 	const componentBounds = component.bounds || component;
 
-	if (sourceGroup.components.some((otherComponent) => centersMutuallyOverlap(componentBounds, otherComponent.bounds || otherComponent))) {
+	if (
+		sourceGroup.components.some((otherComponent) =>
+			centersMutuallyOverlap(componentBounds, otherComponent.bounds || otherComponent),
+		)
+	) {
 		return -100;
 	}
 
@@ -632,22 +639,18 @@ function componentJoinPenalty(component, sourceGroup) {
 }
 
 function centersMutuallyOverlap(left, right) {
-	return pointInBounds(centerOfBounds(left), right)
-		&& pointInBounds(centerOfBounds(right), left);
+	return pointInBounds(centerOfBounds(left), right) && pointInBounds(centerOfBounds(right), left);
 }
 
 function centerOfBounds(bounds) {
 	return {
-		x: bounds.left + (bounds.width / 2),
-		y: bounds.top + (bounds.height / 2),
+		x: bounds.left + bounds.width / 2,
+		y: bounds.top + bounds.height / 2,
 	};
 }
 
 function pointInBounds(point, bounds) {
-	return point.x >= bounds.left
-		&& point.x <= bounds.right
-		&& point.y >= bounds.top
-		&& point.y <= bounds.bottom;
+	return point.x >= bounds.left && point.x <= bounds.right && point.y >= bounds.top && point.y <= bounds.bottom;
 }
 
 function makeGroupingCandidate({
@@ -689,11 +692,12 @@ function optimizeSameColorGrouping(candidate) {
 	}
 
 	let current = candidate;
-	const mergeSides = sourceCount > referenceCount
-		? ['source']
-		: candidate.matchOptions?.allowReferenceRegroup === false
-			? []
-			: ['reference'];
+	const mergeSides =
+		sourceCount > referenceCount
+			? ['source']
+			: candidate.matchOptions?.allowReferenceRegroup === false
+				? []
+				: ['reference'];
 
 	if (mergeSides.length === 0) {
 		return candidate;
@@ -711,15 +715,18 @@ function optimizeSameColorGrouping(candidate) {
 }
 
 function bestSameColorMergeCandidate(candidate, mergeSides) {
-	return mergeSides
-		.flatMap((side) => sameColorMergeCandidates(candidate, side))
-		.sort((left, right) => left.score - right.score)[0] || null;
+	return (
+		mergeSides
+			.flatMap((side) => sameColorMergeCandidates(candidate, side))
+			.sort((left, right) => left.score - right.score)[0] || null
+	);
 }
 
 function sameColorMergeCandidates(candidate, side) {
 	const groups = side === 'source' ? candidate.sourceGroups : candidate.referenceGroups;
 	const otherGroups = side === 'source' ? candidate.referenceGroups : candidate.sourceGroups;
-	const ignoredComponents = side === 'source' ? candidate.ignoredSourceComponents : candidate.ignoredReferenceComponents;
+	const ignoredComponents =
+		side === 'source' ? candidate.ignoredSourceComponents : candidate.ignoredReferenceComponents;
 	const candidates = [];
 
 	for (let leftIndex = 0; leftIndex < groups.length; leftIndex += 1) {
@@ -727,7 +734,10 @@ function sameColorMergeCandidates(candidate, side) {
 			const left = groups[leftIndex];
 			const right = groups[rightIndex];
 
-			if (groupHasIgnoredComponent(left, ignoredComponents) || groupHasIgnoredComponent(right, ignoredComponents)) {
+			if (
+				groupHasIgnoredComponent(left, ignoredComponents) ||
+				groupHasIgnoredComponent(right, ignoredComponents)
+			) {
 				continue;
 			}
 
@@ -743,15 +753,17 @@ function sameColorMergeCandidates(candidate, side) {
 			const sourceGroups = side === 'source' ? mergedGroups : otherGroups;
 			const referenceGroups = side === 'reference' ? mergedGroups : otherGroups;
 
-			candidates.push(makeGroupingCandidate({
-				expandedGap: candidate.expandedGap,
-				sourceGroups,
-				referenceGroups,
-				strategy: `same-color-${side}-merge`,
-				ignoredSourceComponents: candidate.ignoredSourceComponents,
-				ignoredReferenceComponents: candidate.ignoredReferenceComponents,
-				matchOptions: candidate.matchOptions,
-			}));
+			candidates.push(
+				makeGroupingCandidate({
+					expandedGap: candidate.expandedGap,
+					sourceGroups,
+					referenceGroups,
+					strategy: `same-color-${side}-merge`,
+					ignoredSourceComponents: candidate.ignoredSourceComponents,
+					ignoredReferenceComponents: candidate.ignoredReferenceComponents,
+					matchOptions: candidate.matchOptions,
+				}),
+			);
 		}
 	}
 
@@ -761,25 +773,24 @@ function sameColorMergeCandidates(candidate, side) {
 function sameColorGroupsCanMerge(left, right) {
 	const expandedLeft = expandBounds(left.bounds, sameColorMergeTolerance(left, right));
 
-	return rangesOverlap(expandedLeft.left, expandedLeft.right, right.bounds.left, right.bounds.right)
-		|| rangesOverlap(expandedLeft.top, expandedLeft.bottom, right.bounds.top, right.bounds.bottom);
+	return (
+		rangesOverlap(expandedLeft.left, expandedLeft.right, right.bounds.left, right.bounds.right) ||
+		rangesOverlap(expandedLeft.top, expandedLeft.bottom, right.bounds.top, right.bounds.bottom)
+	);
 }
 
 function sameColorMergeTolerance(left, right) {
-	return Math.min(
-		Math.max(left.bounds.width, right.bounds.width),
-		Math.max(left.bounds.height, right.bounds.height),
-	) * 0.35;
+	return (
+		Math.min(Math.max(left.bounds.width, right.bounds.width), Math.max(left.bounds.height, right.bounds.height)) *
+		0.35
+	);
 }
 
 function mergeGroupPair(groups, leftIndex, rightIndex) {
 	return groups
 		.map((group, index) => {
 			if (index === leftIndex) {
-				return makeGroup([
-					...groups[leftIndex].components,
-					...groups[rightIndex].components,
-				]);
+				return makeGroup([...groups[leftIndex].components, ...groups[rightIndex].components]);
 			}
 
 			return index === rightIndex ? null : group;
@@ -789,9 +800,7 @@ function mergeGroupPair(groups, leftIndex, rightIndex) {
 }
 
 function makeComponentSet(components) {
-	return components instanceof Set
-		? components
-		: new Set(components || []);
+	return components instanceof Set ? components : new Set(components || []);
 }
 
 function countedGroups(groups, ignoredComponents) {
@@ -827,15 +836,17 @@ export function matchAnalogComponentGroups(sourceGroups, referenceGroups, option
 				referenceGroup: referenceGroups[index],
 			})),
 			status: mergedSourceGroups.length === sourceGroups.length ? 'matched' : 'matched-merged-source',
-			message: mergedSourceGroups.length === sourceGroups.length
-				? null
-				: `Merged ${sourceGroups.length} source fragments into ${mergedSourceGroups.length} analog groups.`,
+			message:
+				mergedSourceGroups.length === sourceGroups.length
+					? null
+					: `Merged ${sourceGroups.length} source fragments into ${mergedSourceGroups.length} analog groups.`,
 		};
 	}
 
-	const regroupedReferenceGroups = options.allowReferenceRegroup === false
-		? referenceGroups
-		: regroupReferenceGroupsToSourceCount(sourceGroups, referenceGroups);
+	const regroupedReferenceGroups =
+		options.allowReferenceRegroup === false
+			? referenceGroups
+			: regroupReferenceGroupsToSourceCount(sourceGroups, referenceGroups);
 
 	if (regroupedReferenceGroups.length === sourceGroups.length) {
 		return {
@@ -843,10 +854,12 @@ export function matchAnalogComponentGroups(sourceGroups, referenceGroups, option
 				sourceGroup,
 				referenceGroup: regroupedReferenceGroups[index],
 			})),
-			status: regroupedReferenceGroups.length === referenceGroups.length ? 'matched' : 'matched-regrouped-reference',
-			message: regroupedReferenceGroups.length === referenceGroups.length
-				? null
-				: `Regrouped ${referenceGroups.length} reference fragments into ${regroupedReferenceGroups.length} analog groups.`,
+			status:
+				regroupedReferenceGroups.length === referenceGroups.length ? 'matched' : 'matched-regrouped-reference',
+			message:
+				regroupedReferenceGroups.length === referenceGroups.length
+					? null
+					: `Regrouped ${referenceGroups.length} reference fragments into ${regroupedReferenceGroups.length} analog groups.`,
 		};
 	}
 
@@ -870,42 +883,42 @@ export function matchAnalogComponentGroups(sourceGroups, referenceGroups, option
 
 function scoreAnalogGrouping(sourceGroups, referenceGroups, matchResult) {
 	const countPenalty = Math.abs(sourceGroups.length - referenceGroups.length) * 120;
-	const groupingPenalty = groupingComplexityPenalty(sourceGroups)
-		+ groupingComplexityPenalty(referenceGroups);
-	const statusPenalty = matchResult.status === 'matched'
-		? 0
-		: matchResult.status === 'matched-merged-source'
-			? 25
-			: matchResult.status === 'matched-regrouped-reference'
-				? 35
-				: 80;
-	const transformPenalty = matchResult.matches.reduce((total, match) => (
-		total + scoreMatchTransform(match.sourceGroup, match.referenceGroup)
-	), 0);
+	const groupingPenalty = groupingComplexityPenalty(sourceGroups) + groupingComplexityPenalty(referenceGroups);
+	const statusPenalty =
+		matchResult.status === 'matched'
+			? 0
+			: matchResult.status === 'matched-merged-source'
+				? 25
+				: matchResult.status === 'matched-regrouped-reference'
+					? 35
+					: 80;
+	const transformPenalty = matchResult.matches.reduce(
+		(total, match) => total + scoreMatchTransform(match.sourceGroup, match.referenceGroup),
+		0,
+	);
 
 	return countPenalty + groupingPenalty + statusPenalty + transformPenalty;
 }
 
 function groupingComplexityPenalty(groups) {
-	return groups.reduce((total, group) => (
-		total + (Math.max(1, group.components.length) - 1) * 80
-	), 0);
+	return groups.reduce((total, group) => total + (Math.max(1, group.components.length) - 1) * 80, 0);
 }
 
 function scoreMatchTransform(sourceGroup, referenceGroup) {
 	const sourceAspect = aspectRatio(sourceGroup.bounds);
 	const referenceAspect = aspectRatio(referenceGroup.bounds);
-	const aspectChange = Math.max(sourceAspect, referenceAspect) / Math.max(0.001, Math.min(sourceAspect, referenceAspect));
+	const aspectChange =
+		Math.max(sourceAspect, referenceAspect) / Math.max(0.001, Math.min(sourceAspect, referenceAspect));
 	const scaleX = referenceGroup.bounds.width / Math.max(0.001, sourceGroup.bounds.width);
 	const scaleY = referenceGroup.bounds.height / Math.max(0.001, sourceGroup.bounds.height);
 	const scaleSkew = Math.max(scaleX, scaleY) / Math.max(0.001, Math.min(scaleX, scaleY));
 	const sourceComponentCount = Math.max(1, sourceGroup.components.length);
 	const referenceComponentCount = Math.max(1, referenceGroup.components.length);
-	const componentCountChange = Math.max(sourceComponentCount, referenceComponentCount) / Math.min(sourceComponentCount, referenceComponentCount);
+	const componentCountChange =
+		Math.max(sourceComponentCount, referenceComponentCount) /
+		Math.min(sourceComponentCount, referenceComponentCount);
 
-	return ((aspectChange - 1) * 35)
-		+ ((scaleSkew - 1) * 35)
-		+ ((componentCountChange - 1) * 15);
+	return (aspectChange - 1) * 35 + (scaleSkew - 1) * 35 + (componentCountChange - 1) * 15;
 }
 
 function aspectRatio(bounds) {
@@ -935,7 +948,7 @@ function pairByNormalizedPosition(sourceGroups, referenceGroups) {
 			break;
 		}
 
-		matches.push({ sourceGroup: closest.sourceGroup, referenceGroup });
+		matches.push({sourceGroup: closest.sourceGroup, referenceGroup});
 		unmatched.splice(unmatched.indexOf(closest.sourceGroup), 1);
 	}
 
@@ -943,7 +956,7 @@ function pairByNormalizedPosition(sourceGroups, referenceGroups) {
 }
 
 function makeGroup(components) {
-	const group = { components, bounds: null, center: null };
+	const group = {components, bounds: null, center: null};
 	refreshGroup(group);
 	return group;
 }
@@ -983,10 +996,7 @@ function unionBounds(boundsList) {
 }
 
 function boundsOverlap(left, right) {
-	return left.left <= right.right
-		&& left.right >= right.left
-		&& left.top <= right.bottom
-		&& left.bottom >= right.top;
+	return left.left <= right.right && left.right >= right.left && left.top <= right.bottom && left.bottom >= right.top;
 }
 
 function boundsArea(bounds) {
@@ -1014,10 +1024,7 @@ function normalizedCenter(group, outerBounds) {
 }
 
 function normalizedPositionDistance(sourceGroup, sourceBounds, referenceGroup, referenceBounds) {
-	return distance(
-		normalizedCenter(sourceGroup, sourceBounds),
-		normalizedCenter(referenceGroup, referenceBounds),
-	);
+	return distance(normalizedCenter(sourceGroup, sourceBounds), normalizedCenter(referenceGroup, referenceBounds));
 }
 
 function distance(left, right) {
@@ -1108,11 +1115,7 @@ function mergeReferenceGroupsByRowBands(referenceGroups, sourceGroups) {
 		const closestIndex = sourceBands
 			.map((band, index) => ({
 				index,
-				distance: centerY < band.top
-					? band.top - centerY
-					: centerY > band.bottom
-						? centerY - band.bottom
-						: 0,
+				distance: centerY < band.top ? band.top - centerY : centerY > band.bottom ? centerY - band.bottom : 0,
 			}))
 			.sort((left, right) => left.distance - right.distance)[0].index;
 		assigned[closestIndex].push(referenceGroup);
@@ -1142,8 +1145,7 @@ function dominantGroupColor(components) {
 		counts.set(color, (counts.get(color) || 0) + (component.pixels || component.area || 1));
 	}
 
-	return [...counts.entries()]
-		.sort((left, right) => right[1] - left[1])[0]?.[0] || null;
+	return [...counts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] || null;
 }
 
 function uniqueValues(values) {
@@ -1164,7 +1166,7 @@ function colorHueKey(color) {
 	const max = Math.max(rgb.r, rgb.g, rgb.b);
 	const min = Math.min(rgb.r, rgb.g, rgb.b);
 	const chroma = max - min;
-	const luminance = ((0.2126 * rgb.r) + (0.7152 * rgb.g) + (0.0722 * rgb.b)) / 255;
+	const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
 	const saturation = max === 0 ? 0 : chroma / max;
 
 	if (luminance <= 0.28 && saturation <= 0.75) {
@@ -1175,10 +1177,12 @@ function colorHueKey(color) {
 }
 
 function parseColor(color) {
-	const value = String(color || '').trim().toLowerCase();
+	const value = String(color || '')
+		.trim()
+		.toLowerCase();
 
 	if (value === 'black') {
-		return { r: 0, g: 0, b: 0 };
+		return {r: 0, g: 0, b: 0};
 	}
 
 	const hex = value.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/);
@@ -1187,9 +1191,13 @@ function parseColor(color) {
 		return null;
 	}
 
-	const digits = hex[1].length === 3
-		? hex[1].split('').map((digit) => `${digit}${digit}`).join('')
-		: hex[1];
+	const digits =
+		hex[1].length === 3
+			? hex[1]
+					.split('')
+					.map((digit) => `${digit}${digit}`)
+					.join('')
+			: hex[1];
 
 	return {
 		r: Number.parseInt(digits.slice(0, 2), 16),
@@ -1198,7 +1206,7 @@ function parseColor(color) {
 	};
 }
 
-function rgbToHue({ r, g, b }) {
+function rgbToHue({r, g, b}) {
 	const rn = r / 255;
 	const gn = g / 255;
 	const bn = b / 255;
@@ -1215,9 +1223,8 @@ function rgbToHue({ r, g, b }) {
 	}
 
 	if (max === gn) {
-		return 60 * (((bn - rn) / delta) + 2);
+		return 60 * ((bn - rn) / delta + 2);
 	}
 
-	return 60 * (((rn - gn) / delta) + 4);
+	return 60 * ((rn - gn) / delta + 4);
 }
-

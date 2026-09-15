@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-	BoundsBox,
-	Button,
-	Pill,
-	ViewSelector,
-	componentSelectorSelection,
-} from '../../../components/index.js';
+import {BoundsBox, Button, Pill, ViewSelector, componentSelectorSelection} from '../../../components/index.js';
 import OptionalPartsComponentsSelector from './OptionalPartsComponentsSelector.jsx';
 import OptionalComponentAssignments from '../models/OptionalComponentAssignments.js';
 import OptionalFaceOptionsModel from '../models/OptionalFaceOptionsModel.js';
@@ -22,17 +16,17 @@ const FAMILY_LABELS = {
 };
 
 const HINT_REGION_OPTIONS = [
-	{ value: 'default', label: 'Default' },
-	{ value: 'either-corner', label: 'Either top corner' },
-	{ value: 'no-preference', label: 'No location preference' },
-	{ value: 'top-left', label: 'Top left' },
-	{ value: 'top-center', label: 'Top center' },
-	{ value: 'top-right', label: 'Top right' },
-	{ value: 'middle-left', label: 'Middle left' },
-	{ value: 'center', label: 'Center' },
-	{ value: 'middle-right', label: 'Middle right' },
-	{ value: 'bottom-left', label: 'Bottom left' },
-	{ value: 'bottom-right', label: 'Bottom right' },
+	{value: 'default', label: 'Default'},
+	{value: 'either-corner', label: 'Either top corner'},
+	{value: 'no-preference', label: 'No location preference'},
+	{value: 'top-left', label: 'Top left'},
+	{value: 'top-center', label: 'Top center'},
+	{value: 'top-right', label: 'Top right'},
+	{value: 'middle-left', label: 'Middle left'},
+	{value: 'center', label: 'Center'},
+	{value: 'middle-right', label: 'Middle right'},
+	{value: 'bottom-left', label: 'Bottom left'},
+	{value: 'bottom-right', label: 'Bottom right'},
 ];
 
 export default class OptionalPartAssignmentPage extends React.Component {
@@ -56,7 +50,7 @@ export default class OptionalPartAssignmentPage extends React.Component {
 				viewMode: 'all',
 			});
 		});
-		this.props.pageView.load({ quiet: true });
+		this.props.pageView.load({quiet: true});
 	}
 
 	componentWillUnmount() {
@@ -73,18 +67,20 @@ export default class OptionalPartAssignmentPage extends React.Component {
 					[family]: {
 						...(state.bulkOptions.families?.[family] || {}),
 						...(partKey === 'layout'
-							? { layout: value }
+							? {layout: value}
 							: {
-								[partKey]: {
-									...OptionalPartAssignmentPage.updatedOption(
-										state.bulkOptions.families?.[family]?.[partKey],
-										fieldName,
-										value,
-									),
-									[`${fieldName}Mixed`]: false,
-									...(fieldName === 'region' ? { searchSource: true, searchSourceMixed: false } : {}),
-								},
-							}),
+									[partKey]: {
+										...OptionalPartAssignmentPage.updatedOption(
+											state.bulkOptions.families?.[family]?.[partKey],
+											fieldName,
+											value,
+										),
+										[`${fieldName}Mixed`]: false,
+										...(fieldName === 'region'
+											? {searchSource: true, searchSourceMixed: false}
+											: {}),
+									},
+								}),
 					},
 				},
 			},
@@ -106,7 +102,7 @@ export default class OptionalPartAssignmentPage extends React.Component {
 								fieldName,
 								value,
 							),
-							...(fieldName === 'region' ? { searchSource: true } : {}),
+							...(fieldName === 'region' ? {searchSource: true} : {}),
 						},
 					},
 				},
@@ -132,17 +128,23 @@ export default class OptionalPartAssignmentPage extends React.Component {
 	}
 
 	pendingBindingActions() {
-		return Object.fromEntries(Object.entries(this.state.bindingActionsByFace || {})
-			.map(([faceKey, actions]) => [faceKey, Object.fromEntries(Object.entries(actions || {})
-				.filter(([, action]) => action.action && action.action !== 'none'))])
-			.filter(([, actions]) => Object.keys(actions).length > 0));
+		return Object.fromEntries(
+			Object.entries(this.state.bindingActionsByFace || {})
+				.map(([faceKey, actions]) => [
+					faceKey,
+					Object.fromEntries(
+						Object.entries(actions || {}).filter(([, action]) => action.action && action.action !== 'none'),
+					),
+				])
+				.filter(([, actions]) => Object.keys(actions).length > 0),
+		);
 	}
 
 	hasPendingBindingActions() {
 		return Object.keys(this.pendingBindingActions()).length > 0;
 	}
 
-	async savePendingBindingActions({ reload = true } = {}) {
+	async savePendingBindingActions({reload = true} = {}) {
 		const actionsByFace = this.pendingBindingActions();
 
 		if (Object.keys(actionsByFace).length === 0) {
@@ -153,57 +155,52 @@ export default class OptionalPartAssignmentPage extends React.Component {
 			? await this.props.pageView.saveBindingActionsAndReload(actionsByFace)
 			: await this.props.pageView.saveBindingActions(actionsByFace);
 
-		this.setState({ bindingActionsByFace: {} });
+		this.setState({bindingActionsByFace: {}});
 		return result;
 	}
 
 	async rebuildWithCurrentOptions() {
 		this.exitViewMode();
-		await this.savePendingBindingActions({ reload: false });
+		await this.savePendingBindingActions({reload: false});
 		this.props.pageView.rebuild(this.state.bulkOptions, this.state.manualAssignments);
 	}
 
 	async acceptWithCurrentBindings() {
 		this.exitViewMode();
-		await this.savePendingBindingActions({ reload: false });
+		await this.savePendingBindingActions({reload: false});
 		this.props.pageView.accept();
 	}
 
 	showResetDialog() {
 		this.exitViewMode();
-		this.setState({ resetDialog: true });
+		this.setState({resetDialog: true});
 	}
 
 	dismissResetDialog() {
-		this.setState({ resetDialog: false });
+		this.setState({resetDialog: false});
 	}
 
 	confirmReset() {
-		this.setState({ resetDialog: false });
+		this.setState({resetDialog: false});
 		this.props.pageView.reset();
 	}
 
 	enterViewMode() {
-		this.setState({ viewMode: 'parts' });
+		this.setState({viewMode: 'parts'});
 	}
 
 	exitViewMode() {
 		if (this.state.viewMode !== 'all') {
-			this.setState({ viewMode: 'all' });
+			this.setState({viewMode: 'all'});
 		}
 	}
 
 	setViewMode(viewMode) {
-		this.setState({ viewMode });
+		this.setState({viewMode});
 	}
 
 	renderHeader() {
-		const {
-			optionalPartAssignment,
-			summary,
-			processing,
-			viewMode,
-		} = this.state;
+		const {optionalPartAssignment, summary, processing, viewMode} = this.state;
 
 		return (
 			<header className="optional-part-assignment-header">
@@ -213,8 +210,8 @@ export default class OptionalPartAssignmentPage extends React.Component {
 						ariaLabel="Optional assignment view"
 						value={viewMode}
 						options={[
-							{ value: 'all', label: 'All' },
-							{ value: 'parts', label: 'Parts' },
+							{value: 'all', label: 'All'},
+							{value: 'parts', label: 'Parts'},
 						]}
 						onChange={(nextViewMode) => this.setViewMode(nextViewMode)}
 					/>
@@ -224,10 +221,26 @@ export default class OptionalPartAssignmentPage extends React.Component {
 					/>
 				</div>
 				<div className="optional-part-assignment-actions">
-					<Button onClick={() => this.showResetDialog()} disabled={processing}>Reset</Button>
-					<Button onClick={() => this.props.pageView.load({ force: true })} disabled={processing}>Reload</Button>
-					<Button variant="primary" onClick={() => this.rebuildWithCurrentOptions()} disabled={processing || !optionalPartAssignment}>Save</Button>
-					<Button variant="accept" onClick={() => this.acceptWithCurrentBindings()} disabled={processing || !optionalPartAssignment}>Accept</Button>
+					<Button onClick={() => this.showResetDialog()} disabled={processing}>
+						Reset
+					</Button>
+					<Button onClick={() => this.props.pageView.load({force: true})} disabled={processing}>
+						Reload
+					</Button>
+					<Button
+						variant="primary"
+						onClick={() => this.rebuildWithCurrentOptions()}
+						disabled={processing || !optionalPartAssignment}
+					>
+						Save
+					</Button>
+					<Button
+						variant="accept"
+						onClick={() => this.acceptWithCurrentBindings()}
+						disabled={processing || !optionalPartAssignment}
+					>
+						Accept
+					</Button>
 				</div>
 			</header>
 		);
@@ -239,7 +252,9 @@ export default class OptionalPartAssignmentPage extends React.Component {
 				presets={bulkPresets}
 				faces={faces}
 				bulkOptions={this.state.bulkOptions}
-				onOptionChange={(family, partKey, fieldName, value) => this.updateBulkOption(family, partKey, fieldName, value)}
+				onOptionChange={(family, partKey, fieldName, value) =>
+					this.updateBulkOption(family, partKey, fieldName, value)
+				}
 				onExitViewMode={() => this.exitViewMode()}
 			/>
 		);
@@ -256,8 +271,12 @@ export default class OptionalPartAssignmentPage extends React.Component {
 						bulkOptions={this.state.bulkOptions}
 						viewMode={this.state.viewMode}
 						onExitViewMode={() => this.exitViewMode()}
-						onFaceOptionChange={(faceKey, partKey, fieldName, value) => this.updateFaceOption(faceKey, partKey, fieldName, value)}
-						onManualAssignmentChange={(assignments) => this.updateManualAssignment(face.faceKey, assignments)}
+						onFaceOptionChange={(faceKey, partKey, fieldName, value) =>
+							this.updateFaceOption(faceKey, partKey, fieldName, value)
+						}
+						onManualAssignmentChange={(assignments) =>
+							this.updateManualAssignment(face.faceKey, assignments)
+						}
 					/>
 				))}
 			</section>
@@ -267,13 +286,14 @@ export default class OptionalPartAssignmentPage extends React.Component {
 	renderEmptyState() {
 		return (
 			<div className="empty-state">
-				No optional part assignment data is available. Run Stage 1 optional assignment before reviewing this page.
+				No optional part assignment data is available. Run Stage 1 optional assignment before reviewing this
+				page.
 			</div>
 		);
 	}
 
 	renderContent() {
-		const { optionalPartAssignment } = this.state;
+		const {optionalPartAssignment} = this.state;
 
 		if (!optionalPartAssignment?.faces) {
 			return this.renderEmptyState();
@@ -301,7 +321,12 @@ export default class OptionalPartAssignmentPage extends React.Component {
 	renderMessageDialog(messageDialog) {
 		return (
 			<div className="pipeline-dialog-overlay" role="presentation">
-				<section className="pipeline-dialog" role="dialog" aria-modal="true" aria-labelledby="optional-part-message-title">
+				<section
+					className="pipeline-dialog"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="optional-part-message-title"
+				>
 					<header>
 						<h2 id="optional-part-message-title">{messageDialog.title}</h2>
 					</header>
@@ -319,17 +344,24 @@ export default class OptionalPartAssignmentPage extends React.Component {
 
 		return (
 			<div className="pipeline-dialog-overlay" role="presentation">
-				<section className="pipeline-dialog" role="dialog" aria-modal="true" aria-labelledby="optional-part-reset-title">
+				<section
+					className="pipeline-dialog"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="optional-part-reset-title"
+				>
 					<header>
 						<h2 id="optional-part-reset-title">Reset Optional Parts</h2>
 					</header>
 					<p>
-						This will reset {tilesetId} to its intake JSON, then rerun source normalization
-						and optional part assignment. Current optional review edits for this tileset will be replaced.
+						This will reset {tilesetId} to its intake JSON, then rerun source normalization and optional
+						part assignment. Current optional review edits for this tileset will be replaced.
 					</p>
 					<footer>
 						<Button onClick={() => this.dismissResetDialog()}>Cancel</Button>
-						<Button variant="accept" onClick={() => this.confirmReset()}>Reset</Button>
+						<Button variant="accept" onClick={() => this.confirmReset()}>
+							Reset
+						</Button>
 					</footer>
 				</section>
 			</div>
@@ -337,14 +369,12 @@ export default class OptionalPartAssignmentPage extends React.Component {
 	}
 
 	render() {
-		const { processing, messageDialog, resetDialog } = this.state;
+		const {processing, messageDialog, resetDialog} = this.state;
 
 		return (
 			<section className="optional-part-assignment-page">
 				{this.renderHeader()}
-				<div className="optional-part-assignment-content">
-					{this.renderContent()}
-				</div>
+				<div className="optional-part-assignment-content">{this.renderContent()}</div>
 				{processing ? this.renderBusy() : null}
 				{resetDialog ? this.renderResetDialog() : null}
 				{messageDialog ? this.renderMessageDialog(messageDialog) : null}
@@ -358,8 +388,14 @@ export default class OptionalPartAssignmentPage extends React.Component {
 		const bulkPresets = optionalPartAssignment.bulkPresets || [];
 
 		return {
-			bulkOptions: OptionalFaceOptionsModel.initialBulkOptions(faces, bulkPresets, optionalPartAssignment.bulkOptions),
-			manualAssignments: OptionalFaceOptionsModel.initialManualAssignments(optionalPartAssignment.manualAssignments),
+			bulkOptions: OptionalFaceOptionsModel.initialBulkOptions(
+				faces,
+				bulkPresets,
+				optionalPartAssignment.bulkOptions,
+			),
+			manualAssignments: OptionalFaceOptionsModel.initialManualAssignments(
+				optionalPartAssignment.manualAssignments,
+			),
 			bindingActionsByFace: {},
 		};
 	}
@@ -369,44 +405,56 @@ export default class OptionalPartAssignmentPage extends React.Component {
 			return {};
 		}
 
-		const seedByComponentId = Object.fromEntries(Object.entries(face.bindingActions || {})
-			.map(([componentId, action]) => [componentId, action.partId || '']));
-		const nextByComponentId = componentAssignmentsByComponentId(assignments);
-		const componentIds = uniqueValues([
-			...Object.keys(seedByComponentId),
-			...Object.keys(nextByComponentId),
-		]);
-
-		return Object.fromEntries(componentIds.map((componentId) => {
-			const seedPartId = seedByComponentId[componentId] || '';
-			const nextPartId = nextByComponentId[componentId] || '';
-
-			if (nextPartId && nextPartId !== seedPartId) {
-				return [componentId, {
-					componentId,
-					partId: nextPartId,
-					action: 'bind',
-				}];
-			}
-
-			if (!nextPartId && seedPartId) {
-				return [componentId, {
-					componentId,
-					partId: seedPartId,
-					action: 'unbind',
-				}];
-			}
-
-			return [componentId, {
+		const seedByComponentId = Object.fromEntries(
+			Object.entries(face.bindingActions || {}).map(([componentId, action]) => [
 				componentId,
-				...(nextPartId || seedPartId ? { partId: nextPartId || seedPartId } : {}),
-				action: 'none',
-			}];
-		}));
+				action.partId || '',
+			]),
+		);
+		const nextByComponentId = componentAssignmentsByComponentId(assignments);
+		const componentIds = uniqueValues([...Object.keys(seedByComponentId), ...Object.keys(nextByComponentId)]);
+
+		return Object.fromEntries(
+			componentIds.map((componentId) => {
+				const seedPartId = seedByComponentId[componentId] || '';
+				const nextPartId = nextByComponentId[componentId] || '';
+
+				if (nextPartId && nextPartId !== seedPartId) {
+					return [
+						componentId,
+						{
+							componentId,
+							partId: nextPartId,
+							action: 'bind',
+						},
+					];
+				}
+
+				if (!nextPartId && seedPartId) {
+					return [
+						componentId,
+						{
+							componentId,
+							partId: seedPartId,
+							action: 'unbind',
+						},
+					];
+				}
+
+				return [
+					componentId,
+					{
+						componentId,
+						...(nextPartId || seedPartId ? {partId: nextPartId || seedPartId} : {}),
+						action: 'none',
+					},
+				];
+			}),
+		);
 	}
 
 	static updatedOption(option, fieldName, value) {
-		const nextOption = { ...(option || {}) };
+		const nextOption = {...(option || {})};
 
 		if (fieldName === 'region' && value === 'default') {
 			delete nextOption.region;
@@ -426,7 +474,7 @@ export default class OptionalPartAssignmentPage extends React.Component {
 
 class OptionalPartAssignmentHeaderSummary extends React.Component {
 	render() {
-		const { summary, onShowReview } = this.props;
+		const {summary, onShowReview} = this.props;
 
 		if (!summary) {
 			return (
@@ -473,7 +521,7 @@ class OptionalBulkPresets extends React.Component {
 	}
 
 	render() {
-		const { presets, onExitViewMode } = this.props;
+		const {presets, onExitViewMode} = this.props;
 
 		if (!presets.length) {
 			return null;
@@ -493,9 +541,14 @@ class OptionalBulkPresets extends React.Component {
 
 class OptionalBulkPresetCard extends React.Component {
 	activeOptions() {
-		const { preset, faces, options } = this.props;
+		const {preset, faces, options} = this.props;
 
-		return options || OptionalFaceOptionsModel.bulkOptions(faces.filter((face) => OptionalFaceOptionsModel.faceFamily(face.faceKey) === preset.family));
+		return (
+			options ||
+			OptionalFaceOptionsModel.bulkOptions(
+				faces.filter((face) => OptionalFaceOptionsModel.faceFamily(face.faceKey) === preset.family),
+			)
+		);
 	}
 
 	renderCounts() {
@@ -504,7 +557,9 @@ class OptionalBulkPresetCard extends React.Component {
 				{this.props.parts.map((part) => (
 					<span key={part.partId}>
 						<strong>{OptionalComponentAssignments.partLabel(part.partId)}</strong>
-						<em>{part.presetRegion || 'mixed'} / {part.foundCount}/{part.expectedCount} found</em>
+						<em>
+							{part.presetRegion || 'mixed'} / {part.foundCount}/{part.expectedCount} found
+						</em>
 					</span>
 				))}
 			</div>
@@ -512,7 +567,7 @@ class OptionalBulkPresetCard extends React.Component {
 	}
 
 	renderOptions(activeOptions, showCharacterGlyph, showPairLayout) {
-		const { preset, onOptionChange } = this.props;
+		const {preset, onOptionChange} = this.props;
 
 		return (
 			<div className="optional-bulk-options">
@@ -532,7 +587,10 @@ class OptionalBulkPresetCard extends React.Component {
 					<label className="optional-pair-layout-control">
 						<span>Layout</span>
 						<select
-							value={activeOptions.layout || OptionalFaceOptionsModel.defaultPairLayoutForFamily(preset.family)}
+							value={
+								activeOptions.layout ||
+								OptionalFaceOptionsModel.defaultPairLayoutForFamily(preset.family)
+							}
 							onChange={(event) => onOptionChange?.(preset.family, 'layout', 'value', event.target.value)}
 						>
 							<option value="label-left-character-right">Label left / Character right</option>
@@ -545,10 +603,11 @@ class OptionalBulkPresetCard extends React.Component {
 	}
 
 	render() {
-		const { preset } = this.props;
+		const {preset} = this.props;
 		const showCharacterGlyph = preset.family === 'flower' || preset.family === 'season';
 		const activeOptions = this.activeOptions();
-		const showPairLayout = showCharacterGlyph && activeOptions.label?.searchSource && activeOptions.character?.searchSource;
+		const showPairLayout =
+			showCharacterGlyph && activeOptions.label?.searchSource && activeOptions.character?.searchSource;
 
 		return (
 			<article className="optional-preset-card">
@@ -618,13 +677,13 @@ class OptionalFaceCard extends React.Component {
 	}
 
 	partsFromProps(props) {
-		const { face, bulkOptions } = props;
+		const {face, bulkOptions} = props;
 
 		return OptionalFaceOptionsModel.forFace(face, bulkOptions).visibleParts();
 	}
 
 	currentOptions() {
-		const { face, bulkOptions } = this.props;
+		const {face, bulkOptions} = this.props;
 
 		return OptionalFaceOptionsModel.forFace(face, bulkOptions).partOptions();
 	}
@@ -640,10 +699,7 @@ class OptionalFaceCard extends React.Component {
 	highlightedComponentIds() {
 		const assignedComponentIds = new Set(Object.values(this.state.componentAssignments).flat());
 
-		return new Set([
-			...assignedComponentIds,
-			...this.state.selectedComponentIds,
-		]);
+		return new Set([...assignedComponentIds, ...this.state.selectedComponentIds]);
 	}
 
 	canAssign() {
@@ -660,13 +716,18 @@ class OptionalFaceCard extends React.Component {
 
 	selectComponent(component) {
 		const assignedPartId = this.assignedPartForComponent(component.componentId);
-		this.setSelection(componentSelectorSelection({
-			partId: this.state.selectedPartId,
-			componentIds: this.state.selectedComponentIds,
-		}, {
-			id: component.componentId,
-			partIds: assignedPartId ? [assignedPartId] : [],
-		}));
+		this.setSelection(
+			componentSelectorSelection(
+				{
+					partId: this.state.selectedPartId,
+					componentIds: this.state.selectedComponentIds,
+				},
+				{
+					id: component.componentId,
+					partIds: assignedPartId ? [assignedPartId] : [],
+				},
+			),
+		);
 	}
 
 	assignSelection() {
@@ -770,8 +831,8 @@ class OptionalFaceCard extends React.Component {
 	}
 
 	renderPreview(parts, canvas) {
-		const { face, viewMode, pageView } = this.props;
-		const { componentAssignments, selectedComponentIds } = this.state;
+		const {face, viewMode, pageView} = this.props;
+		const {componentAssignments, selectedComponentIds} = this.state;
 		const highlightedComponentIds = this.highlightedComponentIds(parts);
 		const hasEnabledParts = parts.length > 0;
 		const previewPath = face.sourceFile;
@@ -783,12 +844,22 @@ class OptionalFaceCard extends React.Component {
 						'face-preview',
 						'optional-face-preview',
 						viewMode === 'parts' ? 'optional-face-parts-mode' : '',
-					].filter(Boolean).join(' ')}
-					style={{ aspectRatio: `${canvas.width} / ${canvas.height}` }}
+					]
+						.filter(Boolean)
+						.join(' ')}
+					style={{aspectRatio: `${canvas.width} / ${canvas.height}`}}
 				>
-					{previewPath ? <img className="optional-face-source-image" src={pageView.assetUrl(previewPath)} alt={face.faceKey} /> : null}
+					{previewPath ? (
+						<img
+							className="optional-face-source-image"
+							src={pageView.assetUrl(previewPath)}
+							alt={face.faceKey}
+						/>
+					) : null}
 					{(face.components || []).map((component) => {
-						const assignedPartId = new OptionalComponentAssignments(componentAssignments).assignedPartFor(component.componentId);
+						const assignedPartId = new OptionalComponentAssignments(componentAssignments).assignedPartFor(
+							component.componentId,
+						);
 						const isSelected = selectedComponentIds.includes(component.componentId);
 						const isSuggested = highlightedComponentIds.has(component.componentId);
 						const optionalPartId = assignedPartId || '';
@@ -796,9 +867,9 @@ class OptionalFaceCard extends React.Component {
 
 						return (
 							<React.Fragment key={component.componentId}>
-								{viewMode === 'parts' && isOptionalPartComponent ? (
-									this.renderOptionalPartComponent(component, canvas)
-								) : null}
+								{viewMode === 'parts' && isOptionalPartComponent
+									? this.renderOptionalPartComponent(component, canvas)
+									: null}
 								<BoundsBox
 									bounds={component.bounds}
 									canvas={canvas}
@@ -808,41 +879,48 @@ class OptionalFaceCard extends React.Component {
 										optionalPartId ? `optional-component-${optionalPartId}` : '',
 										isSelected ? 'selected-optional-component' : '',
 										isSuggested ? 'suggested-optional-component' : '',
-										viewMode === 'parts' && !isOptionalPartComponent ? 'optional-non-part-component' : '',
-										viewMode === 'parts' && isOptionalPartComponent ? 'optional-view-part-component' : '',
-									].filter(Boolean).join(' ')}
+										viewMode === 'parts' && !isOptionalPartComponent
+											? 'optional-non-part-component'
+											: '',
+										viewMode === 'parts' && isOptionalPartComponent
+											? 'optional-view-part-component'
+											: '',
+									]
+										.filter(Boolean)
+										.join(' ')}
 									title={[
 										component.componentId,
 										optionalPartId ? OptionalComponentAssignments.partLabel(optionalPartId) : '',
 										component.className || component.fill || component.stroke || 'paint',
-									].filter(Boolean).join(' / ')}
+									]
+										.filter(Boolean)
+										.join(' / ')}
 									onClick={hasEnabledParts ? () => this.selectComponent(component) : null}
 								/>
 							</React.Fragment>
 						);
 					})}
-					{parts.map((part) => part.suggestedBounds ? (
-						<BoundsBox
-							key={`${part.partId}-suggested`}
-							bounds={part.suggestedBounds}
-							canvas={canvas}
-							className={`optional-suggested optional-suggested-${part.partId}`}
-							title={`${OptionalComponentAssignments.partLabel(part.partId)} suggested bounds`}
-						/>
-					) : null)}
+					{parts.map((part) =>
+						part.suggestedBounds ? (
+							<BoundsBox
+								key={`${part.partId}-suggested`}
+								bounds={part.suggestedBounds}
+								canvas={canvas}
+								className={`optional-suggested optional-suggested-${part.partId}`}
+								title={`${OptionalComponentAssignments.partLabel(part.partId)} suggested bounds`}
+							/>
+						) : null,
+					)}
 				</div>
 			</div>
 		);
 	}
 
 	renderSelector(parts, activeOptions) {
-		const { face, onFaceOptionChange } = this.props;
+		const {face, onFaceOptionChange} = this.props;
 
 		return (
-			<div
-				className="optional-selector-shell"
-				onPointerDownCapture={() => this.props.onExitViewMode?.()}
-			>
+			<div className="optional-selector-shell" onPointerDownCapture={() => this.props.onExitViewMode?.()}>
 				<OptionalPartsComponentsSelector
 					face={face}
 					parts={parts}
@@ -851,13 +929,15 @@ class OptionalFaceCard extends React.Component {
 					componentAssignments={this.state.componentAssignments}
 					highlightedComponentIds={this.highlightedComponentIds(parts)}
 					canAssign={this.canAssign()}
-					bodyExtra={(
+					bodyExtra={
 						<OptionalFaceSourceOptions
 							face={face}
 							options={activeOptions}
-							onOptionChange={(partKey, fieldName, value) => onFaceOptionChange?.(face.faceKey, partKey, fieldName, value)}
+							onOptionChange={(partKey, fieldName, value) =>
+								onFaceOptionChange?.(face.faceKey, partKey, fieldName, value)
+							}
 						/>
-					)}
+					}
 					onAssignSelection={() => this.assignSelection()}
 					onClearAssignment={(partId, componentIds) => this.clearAssignment(partId, componentIds)}
 					onSelectionChange={(selection) => this.setSelection(selection)}
@@ -867,17 +947,22 @@ class OptionalFaceCard extends React.Component {
 	}
 
 	render() {
-		const { face } = this.props;
+		const {face} = this.props;
 		const canvas = canvasFromFace(face);
 		const activeOptions = this.currentOptions();
 		const parts = OptionalFaceOptionsModel.forFace(face, this.props.bulkOptions).visibleParts();
 
 		return (
-			<article className={[
-				'structure-card',
-				'optional-face-card',
-				face.status === 'needs-review' ? 'needs-review-optional-face' : '',
-			].filter(Boolean).join(' ')} data-review-face={face.faceKey}>
+			<article
+				className={[
+					'structure-card',
+					'optional-face-card',
+					face.status === 'needs-review' ? 'needs-review-optional-face' : '',
+				]
+					.filter(Boolean)
+					.join(' ')}
+				data-review-face={face.faceKey}
+			>
 				{this.renderPreview(parts, canvas)}
 				{this.renderSelector(parts, activeOptions)}
 			</article>
@@ -885,15 +970,22 @@ class OptionalFaceCard extends React.Component {
 	}
 
 	static assignmentSeedSignature(assignments) {
-		return JSON.stringify(Object.fromEntries(Object.entries(assignments || {})
-			.sort(([left], [right]) => left.localeCompare(right))
-			.map(([partId, componentIds]) => [partId, [...(componentIds || [])].sort((left, right) => left.localeCompare(right))])));
+		return JSON.stringify(
+			Object.fromEntries(
+				Object.entries(assignments || {})
+					.sort(([left], [right]) => left.localeCompare(right))
+					.map(([partId, componentIds]) => [
+						partId,
+						[...(componentIds || [])].sort((left, right) => left.localeCompare(right)),
+					]),
+			),
+		);
 	}
 }
 
 class OptionalFaceSourceOptions extends React.Component {
 	render() {
-		const { face, options, onOptionChange } = this.props;
+		const {face, options, onOptionChange} = this.props;
 		const partKeys = new OptionalFaceOptionsModel(face).optionKeys();
 
 		if (!partKeys.length) {
@@ -902,7 +994,7 @@ class OptionalFaceSourceOptions extends React.Component {
 
 		return (
 			<div className="optional-face-source-options">
-				{partKeys.map(({ partKey, label }) => (
+				{partKeys.map(({partKey, label}) => (
 					<OptionalFaceOption
 						key={partKey}
 						label={label}
@@ -917,7 +1009,7 @@ class OptionalFaceSourceOptions extends React.Component {
 
 class OptionalFaceOption extends React.Component {
 	render() {
-		const { label, options, onChange } = this.props;
+		const {label, options, onChange} = this.props;
 
 		return (
 			<div className="optional-face-option-row">
@@ -933,7 +1025,13 @@ class OptionalFaceOption extends React.Component {
 				<label>
 					<span>Hint</span>
 					<select
-						value={options?.regionMixed ? 'mixed' : options?.regionDefault ? 'default' : (options?.region || 'center')}
+						value={
+							options?.regionMixed
+								? 'mixed'
+								: options?.regionDefault
+									? 'default'
+									: options?.region || 'center'
+						}
 						onChange={(event) => {
 							if (event.target.value !== 'mixed') {
 								onChange('region', event.target.value);
@@ -943,7 +1041,9 @@ class OptionalFaceOption extends React.Component {
 					>
 						{options?.regionMixed ? <option value="mixed">Mixed</option> : null}
 						{HINT_REGION_OPTIONS.map((option) => (
-							<option key={option.value} value={option.value}>{option.label}</option>
+							<option key={option.value} value={option.value}>
+								{option.label}
+							</option>
 						))}
 					</select>
 				</label>
@@ -1020,12 +1120,14 @@ function componentTransformString(component) {
 }
 
 function isIdentityTransform(transform) {
-	return nearlyEqual(transform.a ?? 1, 1)
-		&& nearlyEqual(transform.b ?? 0, 0)
-		&& nearlyEqual(transform.c ?? 0, 0)
-		&& nearlyEqual(transform.d ?? 1, 1)
-		&& nearlyEqual(transform.e ?? 0, 0)
-		&& nearlyEqual(transform.f ?? 0, 0);
+	return (
+		nearlyEqual(transform.a ?? 1, 1) &&
+		nearlyEqual(transform.b ?? 0, 0) &&
+		nearlyEqual(transform.c ?? 0, 0) &&
+		nearlyEqual(transform.d ?? 1, 1) &&
+		nearlyEqual(transform.e ?? 0, 0) &&
+		nearlyEqual(transform.f ?? 0, 0)
+	);
 }
 
 function nearlyEqual(left, right) {

@@ -12,7 +12,7 @@ interface UrlService {
 	 * @param eventName - Event name.
 	 * @param callback - Event callback.
 	 */
-	listen(eventName: string, callback: (details: { pageSlug: string; segments: string[] }) => void): unknown;
+	listen(eventName: string, callback: (details: {pageSlug: string; segments: string[]}) => void): unknown;
 
 	/**
 	 * Return path segments after the app base path.

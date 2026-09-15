@@ -16,20 +16,14 @@ function ensureLoader() {
 	var loaderPath = path.join(__dirname, 'node-alias-loader.js');
 	var result = spawnSync(
 		process.execPath,
-		[
-			'--loader',
-			pathToFileURL(loaderPath).href,
-			'--no-warnings',
-			__filename,
-			...process.argv.slice(2),
-		],
+		['--loader', pathToFileURL(loaderPath).href, '--no-warnings', __filename, ...process.argv.slice(2)],
 		{
 			stdio: 'inherit',
 			env: {
 				...process.env,
 				[LOADER_ENV]: '1',
 			},
-		}
+		},
 	);
 
 	process.exit(result.status ?? 1);
@@ -89,8 +83,7 @@ function parseArgs(argv) {
 		} else if (arg === '--max-balance-margin') {
 			options.tilePickerRules.maxBalanceMargin = Number(argv[++idx]);
 		} else if (arg === '--short-horizon-probe') {
-			options.tilePickerRules.shortHorizonProbeMoves =
-				options.tilePickerRules.shortHorizonProbeMoves ?? 8;
+			options.tilePickerRules.shortHorizonProbeMoves = options.tilePickerRules.shortHorizonProbeMoves ?? 8;
 			options.tilePickerRules.shortHorizonPressureMultiplier =
 				options.tilePickerRules.shortHorizonPressureMultiplier ?? 1;
 		} else if (arg === '--short-horizon-probe-moves') {
@@ -181,7 +174,7 @@ function parseBoardList(value) {
 }
 
 function summarizeValues(values) {
-	var sorted = values.slice().sort(function(left, right) {
+	var sorted = values.slice().sort(function (left, right) {
 		return left - right;
 	});
 
@@ -195,10 +188,10 @@ function summarizeValues(values) {
 		};
 	}
 
-	var total = sorted.reduce(function(sum, value) {
+	var total = sorted.reduce(function (sum, value) {
 		return sum + value;
 	}, 0);
-	var percentile = function(percent) {
+	var percentile = function (percent) {
 		var index = Math.ceil((percent / 100) * sorted.length) - 1;
 
 		return sorted[Math.max(0, Math.min(sorted.length - 1, index))];
@@ -238,7 +231,8 @@ function compactBatchRow(summary) {
 		knownSolutionDominantStackMoves: summary.knownSolutionPath.dominantStackTimeline.dominantMoveCount,
 		initialDownstreamDeadEndRateSpread: summary.initial.pairChoiceSensitivity.downstream.maxDeadEndRateSpread,
 		initialDownstreamRemainingTilesSpread: summary.initial.pairChoiceSensitivity.downstream.maxRemainingTilesSpread,
-		initialDownstreamConsequentialGroupCount: summary.initial.pairChoiceSensitivity.downstream.consequentialGroupCount,
+		initialDownstreamConsequentialGroupCount:
+			summary.initial.pairChoiceSensitivity.downstream.consequentialGroupCount,
 		searchConsequentialPairChoiceStateCount: summary.search.consequentialPairChoiceStateCount,
 		searchDominantStackRiskRate: summary.search.dominantStackRiskRate,
 		searchDominantStackRate: summary.search.dominantStackRate,
@@ -264,95 +258,155 @@ function summarizeBatch(rows, options) {
 		layout: options.layout,
 		generator: options.generator,
 		generationDifficulty: options.generationDifficulty,
-		tilePickerRules: Object.keys(options.tilePickerRules).length
-			? options.tilePickerRules
-			: null,
+		tilePickerRules: Object.keys(options.tilePickerRules).length ? options.tilePickerRules : null,
 		faceAvoidanceRules: options.faceAvoidanceRules,
 		faceAssignmentRules: options.faceAssignmentRules,
 		suspension: options.suspension || null,
 		boardCount: rows.length,
-		validKnownSolutionCount: rows.filter(function(row) {
+		validKnownSolutionCount: rows.filter(function (row) {
 			return row.knownSolutionValid;
 		}).length,
 		suspensionStats: summarizeSuspensionStats(rows),
 		tilePickerStats: summarizeTilePickerStats(rows),
 		faceAvoidanceStats: summarizeFaceAvoidanceStats(rows),
-		score: summarizeValues(rows.map(function(row) { return row.score; })),
-		tightnessScore: summarizeValues(rows.map(function(row) { return row.tightnessScore; })),
-		choicePressureScore: summarizeValues(rows.map(function(row) {
-			return row.choicePressureScore;
-		})),
-		brutalityScore: summarizeValues(rows.map(function(row) {
-			return row.brutalityScore;
-		})),
-		playoutSolveRate: summarizeValues(rows.map(function(row) { return row.playoutSolveRate; })),
-		playoutDeadEndRate: summarizeValues(rows.map(function(row) { return row.playoutDeadEndRate; })),
-		playoutAverageRemainingTiles: summarizeValues(rows.map(function(row) {
-			return row.playoutAverageRemainingTiles;
-		})),
-		playoutAverageDeadEndMoves: summarizeValues(rows.map(function(row) {
-			return row.playoutAverageDeadEndMoves;
-		})),
-		playoutDeadEndMoveP75: summarizeValues(rows.map(function(row) {
-			return row.playoutDeadEndMoveP75;
-		})),
-		playoutDeadEndRemainingP75: summarizeValues(rows.map(function(row) {
-			return row.playoutDeadEndRemainingP75;
-		})),
-		playoutDeadEndDominantStackRiskRate: summarizeValues(rows.map(function(row) {
-			return row.playoutDeadEndDominantStackRiskRate;
-		})),
-		knownSolutionAverageBranching: summarizeValues(rows.map(function(row) {
-			return row.knownSolutionAverageBranching;
-		})),
-		knownSolutionEarlyBranching: summarizeValues(rows.map(function(row) {
-			return row.knownSolutionEarlyBranching;
-		})),
-		knownSolutionMiddleBranching: summarizeValues(rows.map(function(row) {
-			return row.knownSolutionMiddleBranching;
-		})),
-		knownSolutionLateBranching: summarizeValues(rows.map(function(row) {
-			return row.knownSolutionLateBranching;
-		})),
-		knownSolutionLongestLowBranchRun: summarizeValues(rows.map(function(row) {
-			return row.knownSolutionLongestLowBranchRun;
-		})),
-		knownSolutionDominantStackRiskMoves: summarizeValues(rows.map(function(row) {
-			return row.knownSolutionDominantStackRiskMoves;
-		})),
-		knownSolutionDominantStackMoves: summarizeValues(rows.map(function(row) {
-			return row.knownSolutionDominantStackMoves;
-		})),
-		knownSolutionAveragePairChoiceSpread: summarizeValues(rows.map(function(row) {
-			return row.knownSolutionAveragePairChoiceSpread;
-		})),
-		initialDownstreamDeadEndRateSpread: summarizeValues(rows.map(function(row) {
-			return row.initialDownstreamDeadEndRateSpread;
-		})),
-		initialDownstreamRemainingTilesSpread: summarizeValues(rows.map(function(row) {
-			return row.initialDownstreamRemainingTilesSpread;
-		})),
-		initialDownstreamConsequentialGroupCount: summarizeValues(rows.map(function(row) {
-			return row.initialDownstreamConsequentialGroupCount;
-		})),
-		searchConsequentialPairChoiceStateCount: summarizeValues(rows.map(function(row) {
-			return row.searchConsequentialPairChoiceStateCount;
-		})),
-		searchDominantStackRiskRate: summarizeValues(rows.map(function(row) {
-			return row.searchDominantStackRiskRate;
-		})),
-		searchDominantStackRate: summarizeValues(rows.map(function(row) {
-			return row.searchDominantStackRate;
-		})),
-		searchMinDominantStackBalanceMargin: summarizeValues(rows.map(function(row) {
-			return row.searchMinDominantStackBalanceMargin;
-		})),
+		score: summarizeValues(
+			rows.map(function (row) {
+				return row.score;
+			}),
+		),
+		tightnessScore: summarizeValues(
+			rows.map(function (row) {
+				return row.tightnessScore;
+			}),
+		),
+		choicePressureScore: summarizeValues(
+			rows.map(function (row) {
+				return row.choicePressureScore;
+			}),
+		),
+		brutalityScore: summarizeValues(
+			rows.map(function (row) {
+				return row.brutalityScore;
+			}),
+		),
+		playoutSolveRate: summarizeValues(
+			rows.map(function (row) {
+				return row.playoutSolveRate;
+			}),
+		),
+		playoutDeadEndRate: summarizeValues(
+			rows.map(function (row) {
+				return row.playoutDeadEndRate;
+			}),
+		),
+		playoutAverageRemainingTiles: summarizeValues(
+			rows.map(function (row) {
+				return row.playoutAverageRemainingTiles;
+			}),
+		),
+		playoutAverageDeadEndMoves: summarizeValues(
+			rows.map(function (row) {
+				return row.playoutAverageDeadEndMoves;
+			}),
+		),
+		playoutDeadEndMoveP75: summarizeValues(
+			rows.map(function (row) {
+				return row.playoutDeadEndMoveP75;
+			}),
+		),
+		playoutDeadEndRemainingP75: summarizeValues(
+			rows.map(function (row) {
+				return row.playoutDeadEndRemainingP75;
+			}),
+		),
+		playoutDeadEndDominantStackRiskRate: summarizeValues(
+			rows.map(function (row) {
+				return row.playoutDeadEndDominantStackRiskRate;
+			}),
+		),
+		knownSolutionAverageBranching: summarizeValues(
+			rows.map(function (row) {
+				return row.knownSolutionAverageBranching;
+			}),
+		),
+		knownSolutionEarlyBranching: summarizeValues(
+			rows.map(function (row) {
+				return row.knownSolutionEarlyBranching;
+			}),
+		),
+		knownSolutionMiddleBranching: summarizeValues(
+			rows.map(function (row) {
+				return row.knownSolutionMiddleBranching;
+			}),
+		),
+		knownSolutionLateBranching: summarizeValues(
+			rows.map(function (row) {
+				return row.knownSolutionLateBranching;
+			}),
+		),
+		knownSolutionLongestLowBranchRun: summarizeValues(
+			rows.map(function (row) {
+				return row.knownSolutionLongestLowBranchRun;
+			}),
+		),
+		knownSolutionDominantStackRiskMoves: summarizeValues(
+			rows.map(function (row) {
+				return row.knownSolutionDominantStackRiskMoves;
+			}),
+		),
+		knownSolutionDominantStackMoves: summarizeValues(
+			rows.map(function (row) {
+				return row.knownSolutionDominantStackMoves;
+			}),
+		),
+		knownSolutionAveragePairChoiceSpread: summarizeValues(
+			rows.map(function (row) {
+				return row.knownSolutionAveragePairChoiceSpread;
+			}),
+		),
+		initialDownstreamDeadEndRateSpread: summarizeValues(
+			rows.map(function (row) {
+				return row.initialDownstreamDeadEndRateSpread;
+			}),
+		),
+		initialDownstreamRemainingTilesSpread: summarizeValues(
+			rows.map(function (row) {
+				return row.initialDownstreamRemainingTilesSpread;
+			}),
+		),
+		initialDownstreamConsequentialGroupCount: summarizeValues(
+			rows.map(function (row) {
+				return row.initialDownstreamConsequentialGroupCount;
+			}),
+		),
+		searchConsequentialPairChoiceStateCount: summarizeValues(
+			rows.map(function (row) {
+				return row.searchConsequentialPairChoiceStateCount;
+			}),
+		),
+		searchDominantStackRiskRate: summarizeValues(
+			rows.map(function (row) {
+				return row.searchDominantStackRiskRate;
+			}),
+		),
+		searchDominantStackRate: summarizeValues(
+			rows.map(function (row) {
+				return row.searchDominantStackRate;
+			}),
+		),
+		searchMinDominantStackBalanceMargin: summarizeValues(
+			rows.map(function (row) {
+				return row.searchMinDominantStackBalanceMargin;
+			}),
+		),
 	};
 }
 
 function summarizeSuspensionStats(rows) {
 	var statsRows = rows
-		.map(function(row) { return row.suspensionStats; })
+		.map(function (row) {
+			return row.suspensionStats;
+		})
 		.filter(Boolean);
 
 	if (statsRows.length === 0) {
@@ -362,10 +416,12 @@ function summarizeSuspensionStats(rows) {
 	var names = Object.keys(statsRows[0]);
 	var summary = {};
 
-	names.forEach(function(name) {
-		summary[name] = summarizeValues(statsRows.map(function(stats) {
-			return stats[name];
-		}));
+	names.forEach(function (name) {
+		summary[name] = summarizeValues(
+			statsRows.map(function (stats) {
+				return stats[name];
+			}),
+		);
 	});
 
 	return summary;
@@ -373,7 +429,9 @@ function summarizeSuspensionStats(rows) {
 
 function summarizeTilePickerStats(rows) {
 	var statsRows = rows
-		.map(function(row) { return row.tilePickerStats; })
+		.map(function (row) {
+			return row.tilePickerStats;
+		})
 		.filter(Boolean);
 
 	if (statsRows.length === 0) {
@@ -383,10 +441,12 @@ function summarizeTilePickerStats(rows) {
 	var names = Object.keys(statsRows[0]);
 	var summary = {};
 
-	names.forEach(function(name) {
-		summary[name] = summarizeValues(statsRows.map(function(stats) {
-			return stats[name];
-		}));
+	names.forEach(function (name) {
+		summary[name] = summarizeValues(
+			statsRows.map(function (stats) {
+				return stats[name];
+			}),
+		);
 	});
 
 	return summary;
@@ -394,7 +454,9 @@ function summarizeTilePickerStats(rows) {
 
 function summarizeFaceAvoidanceStats(rows) {
 	var statsRows = rows
-		.map(function(row) { return row.faceAvoidanceStats; })
+		.map(function (row) {
+			return row.faceAvoidanceStats;
+		})
 		.filter(Boolean);
 
 	if (statsRows.length === 0) {
@@ -404,10 +466,12 @@ function summarizeFaceAvoidanceStats(rows) {
 	var names = Object.keys(statsRows[0]);
 	var summary = {};
 
-	names.forEach(function(name) {
-		summary[name] = summarizeValues(statsRows.map(function(stats) {
-			return stats[name];
-		}));
+	names.forEach(function (name) {
+		summary[name] = summarizeValues(
+			statsRows.map(function (stats) {
+				return stats[name];
+			}),
+		);
 	});
 
 	return summary;
@@ -416,7 +480,7 @@ function summarizeFaceAvoidanceStats(rows) {
 function runWithQuietLogs(callback) {
 	var log = console.log;
 
-	console.log = function() {};
+	console.log = function () {};
 
 	try {
 		return callback();
@@ -585,14 +649,16 @@ Playout p75 dead-end remaining tiles: ${summary.playouts.deadEndRemainingP75.toF
 }
 
 function printBatchSummary(batch) {
-	var percent = function(value) {
+	var percent = function (value) {
 		return `${(value * 100).toFixed(1)}%`;
 	};
-	var number = function(value) {
+	var number = function (value) {
 		return value.toFixed(2);
 	};
-	var printMetric = function(label, stats, format = number) {
-		console.log(`${label}: avg ${format(stats.average)}, median ${format(stats.median)}, p90 ${format(stats.p90)}, min ${format(stats.min)}, max ${format(stats.max)}`);
+	var printMetric = function (label, stats, format = number) {
+		console.log(
+			`${label}: avg ${format(stats.average)}, median ${format(stats.median)}, p90 ${format(stats.p90)}, min ${format(stats.min)}, max ${format(stats.max)}`,
+		);
 	};
 
 	console.log(`Mahjongg difficulty batch
@@ -620,7 +686,7 @@ Known solutions valid: ${batch.aggregate.validKnownSolutionCount}/${batch.aggreg
 	printMetric(
 		'Playout dead-end dominant-stack risk rate',
 		batch.aggregate.playoutDeadEndDominantStackRiskRate,
-		percent
+		percent,
 	);
 	printMetric('Known solution average branching', batch.aggregate.knownSolutionAverageBranching);
 	printMetric('Known solution early branching', batch.aggregate.knownSolutionEarlyBranching);
@@ -650,24 +716,24 @@ Known solutions valid: ${batch.aggregate.validKnownSolutionCount}/${batch.aggreg
 		printMetric('Picker average short-horizon moves', batch.aggregate.tilePickerStats.averageShortHorizonMoves);
 		printMetric(
 			'Picker average short-horizon remaining tiles',
-			batch.aggregate.tilePickerStats.averageShortHorizonRemainingTiles
+			batch.aggregate.tilePickerStats.averageShortHorizonRemainingTiles,
 		);
 		printMetric(
 			'Picker average short-horizon pressure',
-			batch.aggregate.tilePickerStats.averageShortHorizonPressure
+			batch.aggregate.tilePickerStats.averageShortHorizonPressure,
 		);
 		printMetric(
 			'Picker short-horizon collapse rate',
 			batch.aggregate.tilePickerStats.shortHorizonCollapseRate,
-			percent
+			percent,
 		);
 		printMetric(
 			'Picker average horizontal intersections',
-			batch.aggregate.tilePickerStats.averageHorizontalIntersections
+			batch.aggregate.tilePickerStats.averageHorizontalIntersections,
 		);
 		printMetric(
 			'Picker average vertical intersections',
-			batch.aggregate.tilePickerStats.averageVerticalIntersections
+			batch.aggregate.tilePickerStats.averageVerticalIntersections,
 		);
 		printMetric('Picker average candidates', batch.aggregate.tilePickerStats.averageCandidateCount);
 		printMetric('Picker average window size', batch.aggregate.tilePickerStats.averageWindowSize);
@@ -683,32 +749,23 @@ Known solutions valid: ${batch.aggregate.validKnownSolutionCount}/${batch.aggreg
 	}
 	if (batch.aggregate.faceAvoidanceStats) {
 		printMetric('Face avoidance marks', batch.aggregate.faceAvoidanceStats.marksAdded);
-		printMetric(
-			'Face avoidance preferred groups',
-			batch.aggregate.faceAvoidanceStats.preferredFaceGroups
-		);
-		printMetric(
-			'Face avoidance preferred draws',
-			batch.aggregate.faceAvoidanceStats.preferredFaceGroupDraws
-		);
+		printMetric('Face avoidance preferred groups', batch.aggregate.faceAvoidanceStats.preferredFaceGroups);
+		printMetric('Face avoidance preferred draws', batch.aggregate.faceAvoidanceStats.preferredFaceGroupDraws);
 		printMetric(
 			'Face avoidance preferred fallbacks',
-			batch.aggregate.faceAvoidanceStats.preferredFaceGroupFallbacks
+			batch.aggregate.faceAvoidanceStats.preferredFaceGroupFallbacks,
 		);
 		printMetric('Face avoidance draws', batch.aggregate.faceAvoidanceStats.drawCount);
 		printMetric(
 			'Face avoidance average selected penalty',
-			batch.aggregate.faceAvoidanceStats.averageSelectedPenalty
+			batch.aggregate.faceAvoidanceStats.averageSelectedPenalty,
 		);
 		printMetric(
 			'Face avoidance non-zero penalty draw rate',
 			batch.aggregate.faceAvoidanceStats.nonZeroPenaltyDrawRate,
-			percent
+			percent,
 		);
-		printMetric(
-			'Face avoidance max selected penalty',
-			batch.aggregate.faceAvoidanceStats.maxSelectedPenalty
-		);
+		printMetric('Face avoidance max selected penalty', batch.aggregate.faceAvoidanceStats.maxSelectedPenalty);
 	}
 	if (batch.aggregate.suspensionStats) {
 		printMetric('Suspension attempts', batch.aggregate.suspensionStats.attempts);
@@ -723,8 +780,14 @@ Known solutions valid: ${batch.aggregate.validKnownSolutionCount}/${batch.aggreg
 		printMetric('Suspension max nested seen', batch.aggregate.suspensionStats.maxNestedSeen);
 		printMetric('Force release avg open tiles', batch.aggregate.suspensionStats.forceReleaseAverageOpenTiles);
 		printMetric('Force release avg suspended', batch.aggregate.suspensionStats.forceReleaseAverageSuspended);
-		printMetric('Force release avg open suspended', batch.aggregate.suspensionStats.forceReleaseAverageOpenSuspended);
-		printMetric('Force release avg effective open', batch.aggregate.suspensionStats.forceReleaseAverageEffectiveOpen);
+		printMetric(
+			'Force release avg open suspended',
+			batch.aggregate.suspensionStats.forceReleaseAverageOpenSuspended,
+		);
+		printMetric(
+			'Force release avg effective open',
+			batch.aggregate.suspensionStats.forceReleaseAverageEffectiveOpen,
+		);
 		printMetric('Skip open avg open tiles', batch.aggregate.suspensionStats.skipOpenTilesAverageOpenTiles);
 		printMetric('Skip open avg suspended', batch.aggregate.suspensionStats.skipOpenTilesAverageSuspended);
 		printMetric('Skip open avg open suspended', batch.aggregate.suspensionStats.skipOpenTilesAverageOpenSuspended);
@@ -735,12 +798,8 @@ Known solutions valid: ${batch.aggregate.validKnownSolutionCount}/${batch.aggreg
 async function main() {
 	ensureLoader();
 
-	var {
-		analyzeGeneratedBoard,
-		loadLayouts,
-		SUSPENSION_RULE_PRESETS,
-		GENERATION_DIFFICULTY_PRESETS,
-	} = await import('./analyzer.js');
+	var {analyzeGeneratedBoard, loadLayouts, SUSPENSION_RULE_PRESETS, GENERATION_DIFFICULTY_PRESETS} =
+		await import('./analyzer.js');
 	var options = parseArgs(process.argv.slice(2));
 
 	if (options.help) {
@@ -779,12 +838,14 @@ async function main() {
 
 	if (options.batch) {
 		var boards = options.boards || [options.board];
-		var rows = boards.map(function(board) {
-			return runWithQuietLogs(function() {
-				return compactBatchRow(analyzeGeneratedBoard({
-					...options,
-					board,
-				}));
+		var rows = boards.map(function (board) {
+			return runWithQuietLogs(function () {
+				return compactBatchRow(
+					analyzeGeneratedBoard({
+						...options,
+						board,
+					}),
+				);
 			});
 		});
 		var batch = {

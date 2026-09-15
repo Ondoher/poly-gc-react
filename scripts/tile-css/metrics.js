@@ -1,11 +1,11 @@
-import { GRID_DEPTH, GRID_WIDTH, GRID_HEIGHT } from "./table-size.js";
+import {GRID_DEPTH, GRID_WIDTH, GRID_HEIGHT} from './table-size.js';
 
 export function normalizeSizeName(sizeName) {
-	if (typeof sizeName !== "string") {
-		return "";
+	if (typeof sizeName !== 'string') {
+		return '';
 	}
 
-	return sizeName.replace(/-size$/, "");
+	return sizeName.replace(/-size$/, '');
 }
 
 export function getSizeDefinition(sizes, sizeName) {
@@ -22,7 +22,7 @@ export function getFaceDimensions(sizeConfig) {
 }
 
 export function getCellDimensions(sizeConfig) {
-	let { faceWidth, faceHeight } = getFaceDimensions(sizeConfig);
+	let {faceWidth, faceHeight} = getFaceDimensions(sizeConfig);
 
 	return {
 		cellWidth: faceWidth / 2,
@@ -51,11 +51,11 @@ export function buildMetrics(sizeConfig) {
 
 export function gridToCssPosition(x, y, z, metrics) {
 	let depthIndex = GRID_DEPTH - 1 - z;
-	let left = x * metrics.cellWidth + (metrics.depthX * depthIndex);
-	let top = y * metrics.cellHeight + (metrics.depthY * depthIndex);
-	let zindex = (y + x) + ((z + 1) * GRID_WIDTH * GRID_HEIGHT);
+	let left = x * metrics.cellWidth + metrics.depthX * depthIndex;
+	let top = y * metrics.cellHeight + metrics.depthY * depthIndex;
+	let zindex = y + x + (z + 1) * GRID_WIDTH * GRID_HEIGHT;
 
-	return { left, top, zindex };
+	return {left, top, zindex};
 }
 
 export function getCanvasDimensions(metrics) {

@@ -1,19 +1,19 @@
 const STANDARD_COLOR_RANGES = Object.freeze({
-	'#F4F4F4': Object.freeze({ dark: '#B8B8B8', center: '#F4F4F4', light: '#FEFEFE' }),
-	'#F6F610': Object.freeze({ dark: '#9B9700', center: '#F6F610', light: '#FFFF61' }),
-	'#FF9900': Object.freeze({ dark: '#9C5200', center: '#FF9900', light: '#FFC04A' }),
-	'#8A3A12': Object.freeze({ dark: '#4A1C00', center: '#8A3A12', light: '#B8662A' }),
-	'#0505D1': Object.freeze({ dark: '#02046F', center: '#0505D1', light: '#555CFF' }),
-	'#2FC906': Object.freeze({ dark: '#004D00', center: '#2FC906', light: '#73F246' }),
-	'#FC1D05': Object.freeze({ dark: '#9C1204', center: '#FC1D05', light: '#FF6B4A' }),
-	'#BC197A': Object.freeze({ dark: '#6F0D46', center: '#BC197A', light: '#F06DB8' }),
-	'#000000': Object.freeze({ dark: '#000000', center: '#000000', light: '#6A6A6A' }),
+	'#F4F4F4': Object.freeze({dark: '#B8B8B8', center: '#F4F4F4', light: '#FEFEFE'}),
+	'#F6F610': Object.freeze({dark: '#9B9700', center: '#F6F610', light: '#FFFF61'}),
+	'#FF9900': Object.freeze({dark: '#9C5200', center: '#FF9900', light: '#FFC04A'}),
+	'#8A3A12': Object.freeze({dark: '#4A1C00', center: '#8A3A12', light: '#B8662A'}),
+	'#0505D1': Object.freeze({dark: '#02046F', center: '#0505D1', light: '#555CFF'}),
+	'#2FC906': Object.freeze({dark: '#004D00', center: '#2FC906', light: '#73F246'}),
+	'#FC1D05': Object.freeze({dark: '#9C1204', center: '#FC1D05', light: '#FF6B4A'}),
+	'#BC197A': Object.freeze({dark: '#6F0D46', center: '#BC197A', light: '#F06DB8'}),
+	'#000000': Object.freeze({dark: '#000000', center: '#000000', light: '#6A6A6A'}),
 });
 
 const RENDER_COLOR_RANGES = Object.freeze({
-	'#0505D1': Object.freeze({ dark: '#02046F', center: '#0505D1', light: '#7F85FF' }),
-	'#FC1D05': Object.freeze({ dark: '#AA0000', center: '#FC1D05', light: '#FFA2A2' }),
-	'#8A3A12': Object.freeze({ dark: '#AA0000', center: '#FC1D05', light: '#FFA2A2' }),
+	'#0505D1': Object.freeze({dark: '#02046F', center: '#0505D1', light: '#7F85FF'}),
+	'#FC1D05': Object.freeze({dark: '#AA0000', center: '#FC1D05', light: '#FFA2A2'}),
+	'#8A3A12': Object.freeze({dark: '#AA0000', center: '#FC1D05', light: '#FFA2A2'}),
 });
 
 /**
@@ -150,11 +150,7 @@ export class ColorsModel {
 	 * @param {ColorPaletteFreeformReferenceComponentMatchOptions} options - Source/reference matching context.
 	 * @returns {ColorPaletteMatchComponent | null} Best matching reference component, if any.
 	 */
-	freeformReferenceComponent({
-		sourceComponent,
-		sourceComponents = [],
-		referenceComponents = [],
-	} = {}) {
+	freeformReferenceComponent({sourceComponent, sourceComponents = [], referenceComponents = []} = {}) {
 		return freeformReferenceComponent(sourceComponent, sourceComponents, referenceComponents);
 	}
 
@@ -180,9 +176,11 @@ export class ColorsModel {
 			return targetPaint;
 		}
 
-		return nearestSameHuePalettePaint(componentPaint(sourceComponent), paletteColors, sourceHue)
-			|| sourceHueReferencePaint(sourceHue, sourceHueAverages)
-			|| componentPaint(sourceComponent);
+		return (
+			nearestSameHuePalettePaint(componentPaint(sourceComponent), paletteColors, sourceHue) ||
+			sourceHueReferencePaint(sourceHue, sourceHueAverages) ||
+			componentPaint(sourceComponent)
+		);
 	}
 
 	/**
@@ -229,12 +227,7 @@ export class ColorPalette {
 	 * @param {ColorPaletteFromMappingsOptions} options - Mapping and overlap evidence to mine.
 	 * @returns {ColorPalette} Palette for output paint decisions.
 	 */
-	static fromMappings({
-		mappings = [],
-		colors = [],
-		sourcePaints = [],
-		overlaps = [],
-	} = {}) {
+	static fromMappings({mappings = [], colors = [], sourcePaints = [], overlaps = []} = {}) {
 		return new ColorPalette({
 			hueShadesByHue: Colors.mappedHueShadesByHue(mappings, colors),
 			sourceColorCountByHue: Colors.perceivedHueColorCounts(sourcePaints),
@@ -249,7 +242,7 @@ export class ColorPalette {
 	 * @param {ColorPaletteOutputPaintOptions} options - Source, target, and palette key for the component.
 	 * @returns {string} Output paint to write into the rendered SVG.
 	 */
-	outputPaint({ paletteKey, sourcePaint, targetPaint }) {
+	outputPaint({paletteKey, sourcePaint, targetPaint}) {
 		if (!targetPaint) {
 			return sourcePaint;
 		}
@@ -319,23 +312,28 @@ function interpolatedPaletteColor(sourcePaint, targetPaint, options = {}) {
 
 	const sourceHueShade = snapHueShade(shadeOffsetFromCenter(sourceRgb, sourceRange), sourceHueShades);
 	const anchoredSourceOffset = anchoredTargetShadeOffset(sourceHueShade, sourceOnlyHueShades, targetRgb, sourceRange);
-	const targetShadeOffset = anchoredSourceOffset ?? shadeOffsetForHueShade(sourceHueShade, sourceHueShades, targetRange, hueShadesByHue);
+	const targetShadeOffset =
+		anchoredSourceOffset ?? shadeOffsetForHueShade(sourceHueShade, sourceHueShades, targetRange, hueShadesByHue);
 	const targetCenter = rgbToOklab(renderTargetRgb);
 
 	if (targetShadeOffset < 0) {
-		return formatHexColor(oklabToRgb(interpolateOklab(
-			rgbToOklab(parseCssColor(renderTargetRange.dark)),
-			targetCenter,
-			1 + targetShadeOffset,
-		)));
+		return formatHexColor(
+			oklabToRgb(
+				interpolateOklab(
+					rgbToOklab(parseCssColor(renderTargetRange.dark)),
+					targetCenter,
+					1 + targetShadeOffset,
+				),
+			),
+		);
 	}
 
 	if (targetShadeOffset > 0) {
-		return formatHexColor(oklabToRgb(interpolateOklab(
-			targetCenter,
-			rgbToOklab(parseCssColor(renderTargetRange.light)),
-			targetShadeOffset,
-		)));
+		return formatHexColor(
+			oklabToRgb(
+				interpolateOklab(targetCenter, rgbToOklab(parseCssColor(renderTargetRange.light)), targetShadeOffset),
+			),
+		);
 	}
 
 	return formatHexColor(renderTargetRgb);
@@ -389,7 +387,7 @@ function makeSourceHueShadesByHue(colors) {
 	}
 
 	for (const [key, offsets] of hueShades) {
-		hueShades.set(key, dedupeShadeOffsets(offsets, { includeZero: false }));
+		hueShades.set(key, dedupeShadeOffsets(offsets, {includeZero: false}));
 	}
 
 	return hueShades;
@@ -448,7 +446,7 @@ function makeOverlapPaletteColorMap(overlaps) {
 	const targetGroups = collectOverlapTargetGroups(overlaps);
 	const shadeTablesByTarget = shadeTablesByTargetKey(targetGroups);
 
-	for (const { targetKey, items } of targetGroups) {
+	for (const {targetKey, items} of targetGroups) {
 		const shadeRanks = rankedOverlapSourceShades(items, shadeTablesByTarget.get(targetKey));
 
 		for (const item of items) {
@@ -460,7 +458,10 @@ function makeOverlapPaletteColorMap(overlaps) {
 				continue;
 			}
 
-			colors.set(item.key, paletteColorForShadeRank(targetRgb, targetRange, rank, shadeTablesByTarget.get(targetKey)));
+			colors.set(
+				item.key,
+				paletteColorForShadeRank(targetRgb, targetRange, rank, shadeTablesByTarget.get(targetKey)),
+			);
 		}
 	}
 
@@ -486,10 +487,10 @@ function parseCssColor(value) {
 
 	return hex
 		? [
-			Number.parseInt(hex.slice(0, 2), 16),
-			Number.parseInt(hex.slice(2, 4), 16),
-			Number.parseInt(hex.slice(4, 6), 16),
-		]
+				Number.parseInt(hex.slice(0, 2), 16),
+				Number.parseInt(hex.slice(2, 4), 16),
+				Number.parseInt(hex.slice(4, 6), 16),
+			]
 		: null;
 }
 
@@ -548,11 +549,11 @@ function perceivedColorHueRangeMean(hue) {
 		return hue || null;
 	}
 
-	return formatHexColor(oklabToRgb(interpolateOklab(
-		rgbToOklab(parseCssColor(range.dark)),
-		rgbToOklab(parseCssColor(range.light)),
-		0.5,
-	)));
+	return formatHexColor(
+		oklabToRgb(
+			interpolateOklab(rgbToOklab(parseCssColor(range.dark)), rgbToOklab(parseCssColor(range.light)), 0.5),
+		),
+	);
 }
 
 /**
@@ -577,10 +578,7 @@ function makePerceivedColorHueAverages(colors) {
 		colorsByHue.set(hue, hueColors);
 	}
 
-	return new Map([...colorsByHue].map(([hue, hueColors]) => [
-		hue,
-		averageOklabColor([...hueColors.values()]),
-	]));
+	return new Map([...colorsByHue].map(([hue, hueColors]) => [hue, averageOklabColor([...hueColors.values()])]));
 }
 
 /**
@@ -629,20 +627,22 @@ function freeformReferenceComponent(sourceComponent, sourceComponents = [], refe
 	const referenceBounds = unionBounds(referenceComponents.map(matchBounds));
 	const candidateComponents = perceivedReferenceCandidates(sourceComponent, referenceComponents);
 
-	return candidateComponents
-		.map((referenceComponent) => ({
-			component: referenceComponent,
-			score: analogousReferenceScore(sourceComponent, referenceComponent, sourceBounds, referenceBounds),
-		}))
-		.sort((left, right) => left.score - right.score)[0]?.component || null;
+	return (
+		candidateComponents
+			.map((referenceComponent) => ({
+				component: referenceComponent,
+				score: analogousReferenceScore(sourceComponent, referenceComponent, sourceBounds, referenceBounds),
+			}))
+			.sort((left, right) => left.score - right.score)[0]?.component || null
+	);
 }
 
 function perceivedReferenceCandidates(sourceComponent, referenceComponents) {
 	const sourceHue = perceivedColorHue(componentPaint(sourceComponent));
 	const sameHue = sourceHue
-		? referenceComponents.filter((referenceComponent) => (
-			perceivedColorHue(referenceComponent.dominantColor) === sourceHue
-		))
+		? referenceComponents.filter(
+				(referenceComponent) => perceivedColorHue(referenceComponent.dominantColor) === sourceHue,
+			)
 		: [];
 
 	return sameHue.length > 0 ? sameHue : referenceComponents;
@@ -655,18 +655,14 @@ function analogousReferenceScore(sourceComponent, referenceComponent, sourceBoun
 	const centerScore = hasBounds ? distance(sourcePoint, referencePoint) : 0;
 	const sourceAreaRatio = hasBounds ? normalizedArea(sourceComponent, sourceBounds) : 0;
 	const referenceAreaRatio = hasBounds ? normalizedArea(referenceComponent, referenceBounds) : 0;
-	const areaScore = hasBounds
-		? Math.abs(Math.log((sourceAreaRatio + 0.0001) / (referenceAreaRatio + 0.0001)))
-		: 0;
+	const areaScore = hasBounds ? Math.abs(Math.log((sourceAreaRatio + 0.0001) / (referenceAreaRatio + 0.0001))) : 0;
 	const colorScore = perceivedColorDistance(componentPaint(sourceComponent), referenceComponent.dominantColor);
 
-	return centerScore + (areaScore * 0.04) + ((colorScore ?? 0) * 1.2);
+	return centerScore + areaScore * 0.04 + (colorScore ?? 0) * 1.2;
 }
 
 function sourceHueReferencePaint(hue, sourceHueAverages) {
-	return shouldUseCanonicalFreeformHue(hue)
-		? hue
-		: sourceHueAverages.get(hue) || hue || null;
+	return shouldUseCanonicalFreeformHue(hue) ? hue : sourceHueAverages.get(hue) || hue || null;
 }
 
 function shouldUseCanonicalFreeformHue(hue) {
@@ -678,14 +674,16 @@ function nearestSameHuePalettePaint(sourcePaint, paletteColors, sourceHue) {
 		return null;
 	}
 
-	return (paletteColors || [])
-		.filter((paint) => perceivedColorHue(paint) === sourceHue)
-		.map((paint) => ({
-			paint,
-			distance: perceivedColorDistance(sourcePaint, paint),
-		}))
-		.filter((entry) => entry.distance != null)
-		.sort((left, right) => left.distance - right.distance)[0]?.paint || null;
+	return (
+		(paletteColors || [])
+			.filter((paint) => perceivedColorHue(paint) === sourceHue)
+			.map((paint) => ({
+				paint,
+				distance: perceivedColorDistance(sourcePaint, paint),
+			}))
+			.filter((entry) => entry.distance != null)
+			.sort((left, right) => left.distance - right.distance)[0]?.paint || null
+	);
 }
 
 /**
@@ -695,7 +693,10 @@ function nearestSameHuePalettePaint(sourcePaint, paletteColors, sourceHue) {
  * @returns {string} Uppercase `#RRGGBB` paint.
  */
 function formatHexColor(rgb) {
-	return `#${rgb.map((channel) => clamp(Math.round(channel), 0, 255).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+	return `#${rgb
+		.map((channel) => clamp(Math.round(channel), 0, 255).toString(16).padStart(2, '0'))
+		.join('')
+		.toUpperCase()}`;
 }
 
 function averageOklabColor(colors) {
@@ -703,19 +704,22 @@ function averageOklabColor(colors) {
 		return null;
 	}
 
-	const total = colors
-		.map(rgbToOklab)
-		.reduce((sum, color) => ({
+	const total = colors.map(rgbToOklab).reduce(
+		(sum, color) => ({
 			L: sum.L + color.L,
 			a: sum.a + color.a,
 			b: sum.b + color.b,
-		}), { L: 0, a: 0, b: 0 });
+		}),
+		{L: 0, a: 0, b: 0},
+	);
 
-	return formatHexColor(oklabToRgb({
-		L: total.L / colors.length,
-		a: total.a / colors.length,
-		b: total.b / colors.length,
-	}));
+	return formatHexColor(
+		oklabToRgb({
+			L: total.L / colors.length,
+			a: total.a / colors.length,
+			b: total.b / colors.length,
+		}),
+	);
 }
 
 function componentPaint(component) {
@@ -731,9 +735,7 @@ function matchBounds(item) {
 }
 
 function unionBounds(boundsList) {
-	const validBounds = (boundsList || [])
-		.map((bounds) => normalizeBounds(bounds))
-		.filter(Boolean);
+	const validBounds = (boundsList || []).map((bounds) => normalizeBounds(bounds)).filter(Boolean);
 
 	if (validBounds.length === 0) {
 		return null;
@@ -761,8 +763,8 @@ function normalizeBounds(bounds) {
 
 	const left = bounds.left ?? bounds.minX ?? 0;
 	const top = bounds.top ?? bounds.minY ?? 0;
-	const right = bounds.right ?? (left + (bounds.width ?? 0));
-	const bottom = bounds.bottom ?? (top + (bounds.height ?? 0));
+	const right = bounds.right ?? left + (bounds.width ?? 0);
+	const bottom = bounds.bottom ?? top + (bounds.height ?? 0);
 
 	return {
 		left,
@@ -777,8 +779,8 @@ function normalizeBounds(bounds) {
 function normalizedCenter(item, outerBounds) {
 	const bounds = normalizeBounds(item.bounds || item);
 	const center = item.center || {
-		x: bounds.left + (bounds.width / 2),
-		y: bounds.top + (bounds.height / 2),
+		x: bounds.left + bounds.width / 2,
+		y: bounds.top + bounds.height / 2,
 	};
 
 	return {
@@ -824,12 +826,14 @@ function nearestColorRangeForRgb(rgb) {
 	const entries = Object.values(STANDARD_COLOR_RANGES);
 	const oklab = rgbToOklab(rgb);
 
-	return entries
-		.map((range) => ({
-			range,
-			distance: oklabDistance(oklab, rgbToOklab(parseCssColor(range.center))),
-		}))
-		.sort((left, right) => left.distance - right.distance)[0]?.range || null;
+	return (
+		entries
+			.map((range) => ({
+				range,
+				distance: oklabDistance(oklab, rgbToOklab(parseCssColor(range.center))),
+			}))
+			.sort((left, right) => left.distance - right.distance)[0]?.range || null
+	);
 }
 
 function hueShadesForRange(range, hueShadesByHue) {
@@ -857,25 +861,29 @@ function dedupeShadeOffsets(offsets, options = {}) {
 }
 
 function snapHueShade(offset, hueShades) {
-	return hueShades
-		.map((hueShade, index) => ({
-			hueShade,
-			rank: hueShades.length <= 1 ? 0.5 : index / (hueShades.length - 1),
-			distance: Math.abs(hueShade - offset),
-		}))
-		.sort((left, right) => left.distance - right.distance)[0] || { hueShade: 0, rank: 0.5 };
+	return (
+		hueShades
+			.map((hueShade, index) => ({
+				hueShade,
+				rank: hueShades.length <= 1 ? 0.5 : index / (hueShades.length - 1),
+				distance: Math.abs(hueShade - offset),
+			}))
+			.sort((left, right) => left.distance - right.distance)[0] || {hueShade: 0, rank: 0.5}
+	);
 }
 
 function shadeOffsetForHueShade(sourceHueShade, sourceHueShades, targetRange, hueShadesByHue) {
 	const targetHueShades = hueShadesForRange(targetRange, hueShadesByHue);
 
 	if (targetHueShades.length > 1) {
-		return targetHueShades
-			.map((hueShade) => ({
-				hueShade,
-				distance: Math.abs(hueShade - sourceHueShade.hueShade),
-			}))
-			.sort((left, right) => left.distance - right.distance)[0]?.hueShade ?? 0;
+		return (
+			targetHueShades
+				.map((hueShade) => ({
+					hueShade,
+					distance: Math.abs(hueShade - sourceHueShade.hueShade),
+				}))
+				.sort((left, right) => left.distance - right.distance)[0]?.hueShade ?? 0
+		);
 	}
 
 	return sourceHueShade.hueShade;
@@ -888,9 +896,11 @@ function anchoredTargetShadeOffset(sourceHueShade, sourceOnlyHueShades, targetRg
 
 	const targetOffset = shadeOffsetFromCenter(targetRgb, sourceRange);
 	const anchorIndex = sourceOnlyHueShades
-		.map((hueShade, index) => ({ index, distance: Math.abs(hueShade - targetOffset) }))
+		.map((hueShade, index) => ({index, distance: Math.abs(hueShade - targetOffset)}))
 		.sort((left, right) => left.distance - right.distance || left.index - right.index)[0]?.index;
-	const sourceIndex = sourceOnlyHueShades.findIndex((hueShade) => Math.abs(hueShade - sourceHueShade.hueShade) <= 0.035);
+	const sourceIndex = sourceOnlyHueShades.findIndex(
+		(hueShade) => Math.abs(hueShade - sourceHueShade.hueShade) <= 0.035,
+	);
 
 	if (anchorIndex == null || sourceIndex < 0) {
 		return null;
@@ -930,18 +940,17 @@ function groupOverlapItemsByTarget(items) {
 }
 
 function collectOverlapTargetGroups(overlaps) {
-	return (overlaps || []).flatMap((overlap) => (
-		[...groupOverlapItemsByTarget(overlap.items || [])]
-			.map(([targetKey, items]) => ({ targetKey, items }))
-	));
+	return (overlaps || []).flatMap((overlap) =>
+		[...groupOverlapItemsByTarget(overlap.items || [])].map(([targetKey, items]) => ({targetKey, items})),
+	);
 }
 
 function shadeTablesByTargetKey(targetGroups) {
 	const shadeTables = new Map();
 
-	for (const { targetKey, items } of targetGroups) {
+	for (const {targetKey, items} of targetGroups) {
 		const summary = lightnessSummaryForItems(items);
-		const previous = shadeTables.get(targetKey) || { darker: 0, lighter: 0, shadeCount: 1 };
+		const previous = shadeTables.get(targetKey) || {darker: 0, lighter: 0, shadeCount: 1};
 
 		shadeTables.set(targetKey, {
 			darker: Math.max(previous.darker, summary.darker),
@@ -958,7 +967,7 @@ function lightnessSummaryForItems(items) {
 	const centerIndex = centerLightnessIndex(entries, items[0]?.target);
 
 	if (centerIndex == null) {
-		return { darker: 0, lighter: 0, shadeCount: entries.length };
+		return {darker: 0, lighter: 0, shadeCount: entries.length};
 	}
 
 	const centerLightness = entries[centerIndex][1];
@@ -970,7 +979,7 @@ function lightnessSummaryForItems(items) {
 	};
 }
 
-function rankedOverlapSourceShades(items, shadeTable = { darker: 0, lighter: 0, shadeCount: 1 }) {
+function rankedOverlapSourceShades(items, shadeTable = {darker: 0, lighter: 0, shadeCount: 1}) {
 	return new Map(rankedLightnessShadeEntries(sourceLightnessEntries(items), shadeTable, items[0]?.target));
 }
 
@@ -999,7 +1008,10 @@ function sourceLightnessEntries(items) {
 
 		const shade = shades.get(key);
 		shade.weight += weight;
-		shade.sourceIndex = Math.min(shade.sourceIndex, Number.isFinite(item.sourceIndex) ? item.sourceIndex : Infinity);
+		shade.sourceIndex = Math.min(
+			shade.sourceIndex,
+			Number.isFinite(item.sourceIndex) ? item.sourceIndex : Infinity,
+		);
 	}
 
 	return [...shades.entries()]
@@ -1054,16 +1066,12 @@ function renderRangeAnchoredShadeEntries(entries, targetPaint) {
 	darkerEntries
 		.sort((left, right) => left[1] - right[1])
 		.forEach((entry, index) => {
-			ranks.set(entry[0], darkerEntries.length === 1
-				? 0
-				: (index / (darkerEntries.length - 1)) * 0.5);
+			ranks.set(entry[0], darkerEntries.length === 1 ? 0 : (index / (darkerEntries.length - 1)) * 0.5);
 		});
 	lighterEntries
 		.sort((left, right) => left[1] - right[1])
 		.forEach((entry, index) => {
-			ranks.set(entry[0], lighterEntries.length === 1
-				? 1
-				: 0.5 + (((index + 1) / lighterEntries.length) * 0.5));
+			ranks.set(entry[0], lighterEntries.length === 1 ? 1 : 0.5 + ((index + 1) / lighterEntries.length) * 0.5);
 		});
 
 	return entries.map((entry) => [entry[0], ranks.get(entry[0]) ?? 0.5]);
@@ -1072,27 +1080,23 @@ function renderRangeAnchoredShadeEntries(entries, targetPaint) {
 function twoSidedShadeRanks(entries, centerIndex) {
 	const centerLightness = entries[centerIndex][1];
 	const darkerEntries = entries
-		.map((entry, index) => ({ entry, index }))
-		.filter(({ index, entry }) => index !== centerIndex && entry[1] < centerLightness)
+		.map((entry, index) => ({entry, index}))
+		.filter(({index, entry}) => index !== centerIndex && entry[1] < centerLightness)
 		.sort((left, right) => left.entry[1] - right.entry[1]);
 	const lighterEntries = entries
-		.map((entry, index) => ({ entry, index }))
-		.filter(({ index, entry }) => index !== centerIndex && entry[1] > centerLightness)
+		.map((entry, index) => ({entry, index}))
+		.filter(({index, entry}) => index !== centerIndex && entry[1] > centerLightness)
 		.sort((left, right) => left.entry[1] - right.entry[1]);
 	const ranks = new Map([[entries[centerIndex][0], 0.5]]);
 
-	darkerEntries.forEach(({ entry }, index) => {
-		const rank = darkerEntries.length === 1
-			? 0
-			: (index / darkerEntries.length) * 0.5;
+	darkerEntries.forEach(({entry}, index) => {
+		const rank = darkerEntries.length === 1 ? 0 : (index / darkerEntries.length) * 0.5;
 
 		ranks.set(entry[0], rank);
 	});
 
-	lighterEntries.forEach(({ entry }, index) => {
-		const rank = lighterEntries.length === 1
-			? 1
-			: 0.5 + (((index + 1) / lighterEntries.length) * 0.5);
+	lighterEntries.forEach(({entry}, index) => {
+		const rank = lighterEntries.length === 1 ? 1 : 0.5 + ((index + 1) / lighterEntries.length) * 0.5;
 
 		ranks.set(entry[0], rank);
 	});
@@ -1129,16 +1133,16 @@ function shadeRanksForTable(shadeTable = {}) {
 
 function nearestShadeRank(lightness, entries, centerIndex, ranks) {
 	const centerLightness = entries[centerIndex][1];
-	const sideRanks = ranks.filter((rank) => lightness < centerLightness ? rank < 0.5 : rank > 0.5);
+	const sideRanks = ranks.filter((rank) => (lightness < centerLightness ? rank < 0.5 : rank > 0.5));
 
 	if (sideRanks.length === 0) {
 		return 0.5;
 	}
 
 	const sameSideEntries = entries
-		.filter((entry) => lightness < centerLightness ? entry[1] < centerLightness : entry[1] > centerLightness)
+		.filter((entry) => (lightness < centerLightness ? entry[1] < centerLightness : entry[1] > centerLightness))
 		.map((entry) => entry[1])
-		.sort((left, right) => lightness < centerLightness ? right - left : left - right);
+		.sort((left, right) => (lightness < centerLightness ? right - left : left - right));
 	const index = sameSideEntries.findIndex((value) => value === lightness);
 	const hueShadeIndex = clamp(index < 0 ? 0 : index, 0, sideRanks.length - 1);
 
@@ -1150,7 +1154,7 @@ function evenlySpacedRanks(start, end, count) {
 		return [start];
 	}
 
-	return Array.from({ length: count }, (_, index) => start + (((end - start) * index) / (count - 1)));
+	return Array.from({length: count}, (_, index) => start + ((end - start) * index) / (count - 1));
 }
 
 function centerLightnessIndex(entries, targetPaint = null) {
@@ -1169,15 +1173,19 @@ function centerLightnessIndex(entries, targetPaint = null) {
 	const targetHue = perceivedColorHue(targetPaint);
 	const sameHueAnchor = targetHue
 		? entries
-			.map((entry, index) => ({
-				index,
-				weight: entry[2] || 0,
-				distance: perceivedColorHue(entry[3]) === targetHue
-					? perceivedColorDistance(entry[3], targetPaint)
-					: null,
-			}))
-			.filter((entry) => entry.distance != null)
-			.sort((left, right) => right.weight - left.weight || left.distance - right.distance || left.index - right.index)[0]?.index
+				.map((entry, index) => ({
+					index,
+					weight: entry[2] || 0,
+					distance:
+						perceivedColorHue(entry[3]) === targetHue
+							? perceivedColorDistance(entry[3], targetPaint)
+							: null,
+				}))
+				.filter((entry) => entry.distance != null)
+				.sort(
+					(left, right) =>
+						right.weight - left.weight || left.distance - right.distance || left.index - right.index,
+				)[0]?.index
 		: null;
 
 	if (sameHueAnchor != null) {
@@ -1186,12 +1194,12 @@ function centerLightnessIndex(entries, targetPaint = null) {
 
 	const zOrderAnchor = targetHue
 		? entries
-			.map((entry, index) => ({
-				index,
-				sourceIndex: Number.isFinite(entry[4]) ? entry[4] : null,
-			}))
-			.filter((entry) => entry.sourceIndex != null)
-			.sort((left, right) => left.sourceIndex - right.sourceIndex || left.index - right.index)[0]?.index
+				.map((entry, index) => ({
+					index,
+					sourceIndex: Number.isFinite(entry[4]) ? entry[4] : null,
+				}))
+				.filter((entry) => entry.sourceIndex != null)
+				.sort((left, right) => left.sourceIndex - right.sourceIndex || left.index - right.index)[0]?.index
 		: null;
 
 	if (zOrderAnchor != null) {
@@ -1204,7 +1212,7 @@ function centerLightnessIndex(entries, targetPaint = null) {
 
 	const maxWeight = Math.max(...entries.map((entry) => entry[2] || 0));
 	const weightAnchor = entries
-		.map((entry, index) => ({ index, weight: entry[2] || 0 }))
+		.map((entry, index) => ({index, weight: entry[2] || 0}))
 		.filter((entry) => entry.weight === maxWeight)
 		.sort((left, right) => left.index - right.index)[0]?.index;
 
@@ -1212,10 +1220,10 @@ function centerLightnessIndex(entries, targetPaint = null) {
 		return weightAnchor;
 	}
 
-	const midpoint = minLightness + (lightnessSpan / 2);
+	const midpoint = minLightness + lightnessSpan / 2;
 
 	return entries
-		.map((entry, index) => ({ index, distance: Math.abs(entry[1] - midpoint) }))
+		.map((entry, index) => ({index, distance: Math.abs(entry[1] - midpoint)}))
 		.sort((left, right) => left.distance - right.distance || left.index - right.index)[0].index;
 }
 
@@ -1229,9 +1237,7 @@ function sourceShadeKey(sourcePaint) {
 }
 
 function paletteColorForShadeRank(targetRgb, targetRange, rank, shadeTable = {}) {
-	const offset = rank <= 0.5
-		? -1 + (rank * 2)
-		: (rank - 0.5) * 2;
+	const offset = rank <= 0.5 ? -1 + rank * 2 : (rank - 0.5) * 2;
 	const renderTargetRange = renderRangeForRange(targetRange);
 	const renderTargetRgb = hasRenderRangeOverride(targetRange)
 		? parseCssColor(renderTargetRange.center) || targetRgb
@@ -1240,36 +1246,50 @@ function paletteColorForShadeRank(targetRgb, targetRange, rank, shadeTable = {})
 
 	if (offset < 0) {
 		if (hasRenderRangeOverride(targetRange)) {
-			return formatHexColor(oklabToRgb(interpolateOklab(
-				rgbToOklab(parseCssColor(renderTargetRange.dark)),
-				targetCenter,
-				1 + offset,
-			)));
+			return formatHexColor(
+				oklabToRgb(
+					interpolateOklab(rgbToOklab(parseCssColor(renderTargetRange.dark)), targetCenter, 1 + offset),
+				),
+			);
 		}
 
-		return formatHexColor(constrainHueShadeRgb(oklabToRgb(applyReferenceLightnessContrast(
-			targetCenter,
-			rgbToOklab(parseCssColor(renderTargetRange.dark)),
-			-(shadeTable.darker || 0),
-			offset,
-		)), targetRange, offset));
+		return formatHexColor(
+			constrainHueShadeRgb(
+				oklabToRgb(
+					applyReferenceLightnessContrast(
+						targetCenter,
+						rgbToOklab(parseCssColor(renderTargetRange.dark)),
+						-(shadeTable.darker || 0),
+						offset,
+					),
+				),
+				targetRange,
+				offset,
+			),
+		);
 	}
 
 	if (offset > 0) {
 		if (hasRenderRangeOverride(targetRange)) {
-			return formatHexColor(oklabToRgb(interpolateOklab(
-				targetCenter,
-				rgbToOklab(parseCssColor(renderTargetRange.light)),
-				offset,
-			)));
+			return formatHexColor(
+				oklabToRgb(interpolateOklab(targetCenter, rgbToOklab(parseCssColor(renderTargetRange.light)), offset)),
+			);
 		}
 
-		return formatHexColor(constrainHueShadeRgb(oklabToRgb(applyReferenceLightnessContrast(
-			targetCenter,
-			rgbToOklab(parseCssColor(renderTargetRange.light)),
-			shadeTable.lighter || 0,
-			offset,
-		)), targetRange, offset));
+		return formatHexColor(
+			constrainHueShadeRgb(
+				oklabToRgb(
+					applyReferenceLightnessContrast(
+						targetCenter,
+						rgbToOklab(parseCssColor(renderTargetRange.light)),
+						shadeTable.lighter || 0,
+						offset,
+					),
+				),
+				targetRange,
+				offset,
+			),
+		);
 	}
 
 	return formatHexColor(renderTargetRgb);
@@ -1288,19 +1308,11 @@ function constrainHueShadeRgb(rgb, targetRange, offset) {
 		const [red, green, blue] = rgb;
 
 		if (offset < 0) {
-			return [
-				Math.min(red, 0),
-				Math.max(green, 80),
-				Math.min(blue, 10),
-			];
+			return [Math.min(red, 0), Math.max(green, 80), Math.min(blue, 10)];
 		}
 
 		if (offset > 0) {
-			return [
-				Math.min(red, 120),
-				Math.max(green, 215),
-				Math.min(blue, 90),
-			];
+			return [Math.min(red, 120), Math.max(green, 215), Math.min(blue, 90)];
 		}
 	}
 
@@ -1312,12 +1324,9 @@ function applyReferenceLightnessContrast(reference, paletteLimit, sourceLightnes
 	const direction = Math.sign(paletteDelta || sourceLightnessSpan || offset);
 	const paletteSpan = Math.abs(paletteDelta);
 	const learnedSpan = Math.abs(sourceLightnessSpan);
-	const span = Math.max(
-		paletteSpan,
-		Math.min(learnedSpan, paletteSpan > 0.001 ? paletteSpan * 1.75 : learnedSpan),
-	);
+	const span = Math.max(paletteSpan, Math.min(learnedSpan, paletteSpan > 0.001 ? paletteSpan * 1.75 : learnedSpan));
 	const amount = paletteSpan > 0.001 ? (span / paletteSpan) * Math.abs(offset) : Math.abs(offset);
-	const contrastLightness = reference.L + (direction * paletteSpan * amount);
+	const contrastLightness = reference.L + direction * paletteSpan * amount;
 
 	return {
 		L: clamp(contrastLightness, 0, 1),
@@ -1335,14 +1344,14 @@ function shadePosition(rgb, range) {
 		a: light.a - dark.a,
 		b: light.b - dark.b,
 	};
-	const lengthSquared = (axis.L ** 2) + (axis.a ** 2) + (axis.b ** 2);
+	const lengthSquared = axis.L ** 2 + axis.a ** 2 + axis.b ** 2;
 
 	if (lengthSquared <= 0) {
 		return 0.5;
 	}
 
 	return clamp(
-		(((color.L - dark.L) * axis.L) + ((color.a - dark.a) * axis.a) + ((color.b - dark.b) * axis.b)) / lengthSquared,
+		((color.L - dark.L) * axis.L + (color.a - dark.a) * axis.a + (color.b - dark.b) * axis.b) / lengthSquared,
 		0,
 		1,
 	);
@@ -1373,29 +1382,29 @@ function shadeCenterPosition(range) {
 
 function interpolateOklab(left, right, amount) {
 	return {
-		L: left.L + ((right.L - left.L) * amount),
-		a: left.a + ((right.a - left.a) * amount),
-		b: left.b + ((right.b - left.b) * amount),
+		L: left.L + (right.L - left.L) * amount,
+		a: left.a + (right.a - left.a) * amount,
+		b: left.b + (right.b - left.b) * amount,
 	};
 }
 
 function rgbToOklab(rgb) {
 	const [red, green, blue] = rgb.map((channel) => srgbToLinear(channel / 255));
-	const l = Math.cbrt((0.4122214708 * red) + (0.5363325363 * green) + (0.0514459929 * blue));
-	const m = Math.cbrt((0.2119034982 * red) + (0.6806995451 * green) + (0.1073969566 * blue));
-	const s = Math.cbrt((0.0883024619 * red) + (0.2817188376 * green) + (0.6299787005 * blue));
+	const l = Math.cbrt(0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue);
+	const m = Math.cbrt(0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue);
+	const s = Math.cbrt(0.0883024619 * red + 0.2817188376 * green + 0.6299787005 * blue);
 
 	return {
-		L: (0.2104542553 * l) + (0.7936177850 * m) - (0.0040720468 * s),
-		a: (1.9779984951 * l) - (2.4285922050 * m) + (0.4505937099 * s),
-		b: (0.0259040371 * l) + (0.7827717662 * m) - (0.8086757660 * s),
+		L: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+		a: 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+		b: 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
 	};
 }
 
 function rgbToOklch(rgb) {
 	const oklab = rgbToOklab(rgb);
 	const chroma = Math.hypot(oklab.a, oklab.b);
-	const hue = (Math.atan2(oklab.b, oklab.a) * 180 / Math.PI + 360) % 360;
+	const hue = ((Math.atan2(oklab.b, oklab.a) * 180) / Math.PI + 360) % 360;
 
 	return {
 		L: oklab.L,
@@ -1457,49 +1466,40 @@ function perceivedColorHueForOklch(oklch) {
 }
 
 function isBrownOklch(oklch) {
-	return hueInRange(oklch.H, 25, 65)
-		&& oklch.L <= 0.62
-		&& oklch.C >= 0.05
-		&& oklch.C <= 0.22;
+	return hueInRange(oklch.H, 25, 65) && oklch.L <= 0.62 && oklch.C >= 0.05 && oklch.C <= 0.22;
 }
 
 function hueInRange(hue, start, end) {
-	return start <= end
-		? hue >= start && hue < end
-		: hue >= start || hue < end;
+	return start <= end ? hue >= start && hue < end : hue >= start || hue < end;
 }
 
 function oklabToRgb(oklab) {
-	const l = oklab.L + (0.3963377774 * oklab.a) + (0.2158037573 * oklab.b);
-	const m = oklab.L - (0.1055613458 * oklab.a) - (0.0638541728 * oklab.b);
-	const s = oklab.L - (0.0894841775 * oklab.a) - (1.2914855480 * oklab.b);
+	const l = oklab.L + 0.3963377774 * oklab.a + 0.2158037573 * oklab.b;
+	const m = oklab.L - 0.1055613458 * oklab.a - 0.0638541728 * oklab.b;
+	const s = oklab.L - 0.0894841775 * oklab.a - 1.291485548 * oklab.b;
 	const l3 = l ** 3;
 	const m3 = m ** 3;
 	const s3 = s ** 3;
 
 	return [
-		linearToSrgb((4.0767416621 * l3) - (3.3077115913 * m3) + (0.2309699292 * s3)) * 255,
-		linearToSrgb((-1.2684380046 * l3) + (2.6097574011 * m3) - (0.3413193965 * s3)) * 255,
-		linearToSrgb((-0.0041960863 * l3) - (0.7034186147 * m3) + (1.7076147010 * s3)) * 255,
+		linearToSrgb(4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3) * 255,
+		linearToSrgb(-1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3) * 255,
+		linearToSrgb(-0.0041960863 * l3 - 0.7034186147 * m3 + 1.707614701 * s3) * 255,
 	];
 }
 
 function srgbToLinear(value) {
-	return value <= 0.04045
-		? value / 12.92
-		: ((value + 0.055) / 1.055) ** 2.4;
+	return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
 }
 
 function linearToSrgb(value) {
 	const clamped = clamp(value, 0, 1);
 
-	return clamped <= 0.0031308
-		? clamped * 12.92
-		: (1.055 * (clamped ** (1 / 2.4))) - 0.055;
+	return clamped <= 0.0031308 ? clamped * 12.92 : 1.055 * clamped ** (1 / 2.4) - 0.055;
 }
 
 function oklabDistance(left, right) {
-	return ((left.L - right.L) ** 2) + ((left.a - right.a) ** 2) + ((left.b - right.b) ** 2);
+	return (left.L - right.L) ** 2 + (left.a - right.a) ** 2 + (left.b - right.b) ** 2;
 }
 
 function isNeutralRgb(rgb) {
@@ -1507,9 +1507,7 @@ function isNeutralRgb(rgb) {
 }
 
 function isWhiteRgb(rgb) {
-	return !isPureWhiteRgb(rgb)
-		&& Math.min(...rgb) >= 180
-		&& Math.max(...rgb) - Math.min(...rgb) < 42;
+	return !isPureWhiteRgb(rgb) && Math.min(...rgb) >= 180 && Math.max(...rgb) - Math.min(...rgb) < 42;
 }
 
 function isPureWhiteRgb(rgb) {
@@ -1519,4 +1517,3 @@ function isPureWhiteRgb(rgb) {
 function clamp(value, min, max) {
 	return Math.max(min, Math.min(max, value));
 }
-

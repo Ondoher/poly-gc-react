@@ -1,6 +1,7 @@
 # Architecture
 
-Repo-wide architecture guidance.
+Project implementation context and canonical architecture references. The
+[manifest](../manifest.md) selects standards; topics do not select them.
 
 ## Main Documents
 

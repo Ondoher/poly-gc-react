@@ -7,20 +7,26 @@ export default class PipelinePresentationModel {
 		return `api/pipeline/reference/${encodeURIComponent(`${faceKey}.png`)}`;
 	}
 
-	static normalizeHexColor(color, { uppercase = false } = {}) {
-		const normalized = String(color || "").trim().replace(/^#/, "");
-		const hex = normalized.length === 3
-			? normalized.split("").map((digit) => digit + digit).join("")
-			: normalized;
+	static normalizeHexColor(color, {uppercase = false} = {}) {
+		const normalized = String(color || '')
+			.trim()
+			.replace(/^#/, '');
+		const hex =
+			normalized.length === 3
+				? normalized
+						.split('')
+						.map((digit) => digit + digit)
+						.join('')
+				: normalized;
 
 		if (!/^[0-9a-f]{6}$/i.test(hex)) {
-			return "";
+			return '';
 		}
 
 		return uppercase ? `#${hex.toUpperCase()}` : `#${hex.toLowerCase()}`;
 	}
 
-	static hexToRgba(color, alpha, fallback = "0, 0, 0") {
+	static hexToRgba(color, alpha, fallback = '0, 0, 0') {
 		const normalized = PipelinePresentationModel.normalizeHexColor(color);
 
 		if (!normalized) {
@@ -36,8 +42,8 @@ export default class PipelinePresentationModel {
 	}
 
 	static titleCase(value) {
-		return String(value || "")
-			.replace(/[-_]+/g, " ")
+		return String(value || '')
+			.replace(/[-_]+/g, ' ')
 			.replace(/\b\w/g, (character) => character.toUpperCase());
 	}
 }

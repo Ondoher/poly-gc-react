@@ -1,15 +1,12 @@
 import {Service} from '@polylith/core';
 import React from 'react';
-import Board from "../components/Board.jsx";
-import { ServiceDelegator } from 'common/delegators.js';
-import Random from 'utils/random.js'
+import Board from '../components/Board.jsx';
+import {ServiceDelegator} from 'common/delegators.js';
+import Random from 'utils/random.js';
 import layouts from '../data/layouts.js';
 import {TILE_SETS} from '../data/tilesets.js';
 import Engine from '../engine/Engine.js';
-import {
-	DIFFICULTY_LEVELS,
-	applyDifficultyPreset,
-} from '../engine/difficultyPresets.js';
+import {DIFFICULTY_LEVELS, applyDifficultyPreset} from '../engine/difficultyPresets.js';
 
 const DEFAULT_TIMINGS = {
 	fireworksDelay: 420,
@@ -27,17 +24,17 @@ const DEFAULT_TIMINGS = {
 	},
 };
 const TIMING_VAR_NAMES = [
-	"--mj-motion-fireworks-delay",
-	"--mj-motion-failure",
-	"--mj-motion-toast-long",
-	"--mj-motion-tile-played",
-	"--mj-motion-tile-unselected",
-	"--mj-motion-tile-blocked",
-	"--mj-motion-tile-undo",
-	"--mj-motion-tile-redo",
-	"--mj-motion-tile-restart",
-	"--mj-motion-tile-peek",
-	"--mj-motion-tile-final-played",
+	'--mj-motion-fireworks-delay',
+	'--mj-motion-failure',
+	'--mj-motion-toast-long',
+	'--mj-motion-tile-played',
+	'--mj-motion-tile-unselected',
+	'--mj-motion-tile-blocked',
+	'--mj-motion-tile-undo',
+	'--mj-motion-tile-redo',
+	'--mj-motion-tile-restart',
+	'--mj-motion-tile-peek',
+	'--mj-motion-tile-final-played',
 ];
 
 /**
@@ -53,15 +50,43 @@ const TIMING_VAR_NAMES = [
 export default class MJController extends Service {
 	constructor() {
 		super('mj:controller');
-		this.implement(['start', 'ready', 'render', 'restart', 'hint', 'undo', 'redo',
-			'solve', 'playHalfSolution', 'play', 'select', 'deselect', 'pause', 'peek', 'selectLayout',
-			'selectTileset', 'selectDifficulty', 'initialized']);
+		this.implement([
+			'start',
+			'ready',
+			'render',
+			'restart',
+			'hint',
+			'undo',
+			'redo',
+			'solve',
+			'playHalfSolution',
+			'play',
+			'select',
+			'deselect',
+			'pause',
+			'peek',
+			'selectLayout',
+			'selectTileset',
+			'selectDifficulty',
+			'initialized',
+		]);
 
 		// these methods will just fire their arguments to who ever is
 		// listening. This will be the board view component or individuals tiles
-		this.makeFireMethods(['setTime','setWon', 'setLost', 'setGameState',
-			'setTileset', 'setMessage', 'setShortMessage',
-			'showTile', 'hintTile', 'highlightTile', 'setTiles','clearBoard',]);
+		this.makeFireMethods([
+			'setTime',
+			'setWon',
+			'setLost',
+			'setGameState',
+			'setTileset',
+			'setMessage',
+			'setShortMessage',
+			'showTile',
+			'hintTile',
+			'highlightTile',
+			'setTiles',
+			'clearBoard',
+		]);
 
 		this.engine = new Engine();
 		this.layoutName = 'turtle';
@@ -74,8 +99,8 @@ export default class MJController extends Service {
 		this.engine.listen('updateState', this.updateState.bind(this));
 		this.engine.listen('addTile', this.addTile.bind(this));
 		this.engine.listen('removeTile', this.removeTile.bind(this));
-		this.engine.listen('newBoard', this.newBoard.bind(this))
-		this.boardNbr = Random.random(0xFFFFF)
+		this.engine.listen('newBoard', this.newBoard.bind(this));
+		this.boardNbr = Random.random(0xfffff);
 		this.onSizeChanged = this.onSizeChanged.bind(this);
 		this.lastTrackedElapsedSecond = -1;
 		this.finalPlayTiles = null;
@@ -120,13 +145,13 @@ export default class MJController extends Service {
 	 */
 	makeFireMethods(methods) {
 		methods.forEach(function (methodName) {
-			this[methodName] = this.fireMethod.bind(this, methodName)
+			this[methodName] = this.fireMethod.bind(this, methodName);
 		}, this);
 	}
 
 	ready() {
-		this.actionCollector = this.registry.subscribe("mj:action-collector");
-		this.cssVars = this.registry.subscribe("mj:css-vars");
+		this.actionCollector = this.registry.subscribe('mj:action-collector');
+		this.cssVars = this.registry.subscribe('mj:css-vars');
 		this.engine.setActionCollector(this.actionCollector);
 
 		if (this.cssVars && this.cssVars.precache) {
@@ -148,37 +173,35 @@ export default class MJController extends Service {
 		}
 
 		return {
-			fireworksDelay: this.getCssDurationMs("--mj-motion-fireworks-delay", DEFAULT_TIMINGS.fireworksDelay),
-			failureAnimation: this.getCssDurationMs("--mj-motion-failure", DEFAULT_TIMINGS.failureAnimation),
-			toastLong: this.getCssDurationMs("--mj-motion-toast-long", DEFAULT_TIMINGS.toastLong),
+			fireworksDelay: this.getCssDurationMs('--mj-motion-fireworks-delay', DEFAULT_TIMINGS.fireworksDelay),
+			failureAnimation: this.getCssDurationMs('--mj-motion-failure', DEFAULT_TIMINGS.failureAnimation),
+			toastLong: this.getCssDurationMs('--mj-motion-toast-long', DEFAULT_TIMINGS.toastLong),
 			tile: {
-				played: this.getCssDurationMs("--mj-motion-tile-played", DEFAULT_TIMINGS.tile.played),
-				unselected: this.getCssDurationMs("--mj-motion-tile-unselected", DEFAULT_TIMINGS.tile.unselected),
-				blocked: this.getCssDurationMs("--mj-motion-tile-blocked", DEFAULT_TIMINGS.tile.blocked),
-				undo: this.getCssDurationMs("--mj-motion-tile-undo", DEFAULT_TIMINGS.tile.undo),
-				redo: this.getCssDurationMs("--mj-motion-tile-redo", DEFAULT_TIMINGS.tile.redo),
-				restart: this.getCssDurationMs("--mj-motion-tile-restart", DEFAULT_TIMINGS.tile.restart),
-				peek: this.getCssDurationMs("--mj-motion-tile-peek", DEFAULT_TIMINGS.tile.peek),
-				finalPlayed: this.getCssDurationMs("--mj-motion-tile-final-played", DEFAULT_TIMINGS.tile.finalPlayed),
+				played: this.getCssDurationMs('--mj-motion-tile-played', DEFAULT_TIMINGS.tile.played),
+				unselected: this.getCssDurationMs('--mj-motion-tile-unselected', DEFAULT_TIMINGS.tile.unselected),
+				blocked: this.getCssDurationMs('--mj-motion-tile-blocked', DEFAULT_TIMINGS.tile.blocked),
+				undo: this.getCssDurationMs('--mj-motion-tile-undo', DEFAULT_TIMINGS.tile.undo),
+				redo: this.getCssDurationMs('--mj-motion-tile-redo', DEFAULT_TIMINGS.tile.redo),
+				restart: this.getCssDurationMs('--mj-motion-tile-restart', DEFAULT_TIMINGS.tile.restart),
+				peek: this.getCssDurationMs('--mj-motion-tile-peek', DEFAULT_TIMINGS.tile.peek),
+				finalPlayed: this.getCssDurationMs('--mj-motion-tile-final-played', DEFAULT_TIMINGS.tile.finalPlayed),
 			},
 		};
 	}
 
 	getCssDurationMs(name, fallbackMs) {
-		let rawValue = this.cssVars && this.cssVars.get
-			? this.cssVars.get(name)
-			: "";
+		let rawValue = this.cssVars && this.cssVars.get ? this.cssVars.get(name) : '';
 
 		if (!rawValue) {
 			return fallbackMs;
 		}
 
-		if (rawValue.endsWith("ms")) {
+		if (rawValue.endsWith('ms')) {
 			let valueMs = Number.parseFloat(rawValue);
 			return Number.isFinite(valueMs) ? valueMs : fallbackMs;
 		}
 
-		if (rawValue.endsWith("s")) {
+		if (rawValue.endsWith('s')) {
 			let valueSeconds = Number.parseFloat(rawValue);
 			return Number.isFinite(valueSeconds) ? valueSeconds * 1000 : fallbackMs;
 		}
@@ -214,11 +237,10 @@ export default class MJController extends Service {
 		this.updateTimerState();
 	}
 
-
 	miniTimeStr(timer = 0) {
 		var seconds = Math.floor(timer / 1000);
-		var minutes = Math.floor(seconds / 60)
-		var displayMinutes = Math.floor(minutes % 60)
+		var minutes = Math.floor(seconds / 60);
+		var displayMinutes = Math.floor(minutes % 60);
 		var displaySeconds = Math.floor(seconds % 60);
 
 		return `${displayMinutes}:${String(displaySeconds).padStart(2, '0')}`;
@@ -231,12 +253,10 @@ export default class MJController extends Service {
 	startTimer(resume) {
 		var now = Date.now();
 		var newStartTime = resume ? this.startTime + (now - this.stopTime) : this.startTime;
-		var delta = newStartTime - this.startTime
+		var delta = newStartTime - this.startTime;
 		// we only recalculate the start time when first switching paused state
-		if (resume)
-			this.startTime += now - this.stopTime;
-		else
-			this.startTime = Date.now();
+		if (resume) this.startTime += now - this.stopTime;
+		else this.startTime = Date.now();
 
 		this.timerRunning = true;
 	}
@@ -259,7 +279,7 @@ export default class MJController extends Service {
 	 * restartTimer
 	 */
 	pauseTimer() {
-		var now = Date.now()
+		var now = Date.now();
 		this.stopTime = now;
 		if (this.startTime) {
 			this.trackElapsedTime(now - this.startTime);
@@ -286,7 +306,7 @@ export default class MJController extends Service {
 
 		this.lastTrackedElapsedSecond = elapsedSeconds;
 		this.recordAction({
-			type: "session-elapsed",
+			type: 'session-elapsed',
 			elapsedTimeMs: Math.max(0, Math.floor(time)),
 		});
 	}
@@ -300,8 +320,7 @@ export default class MJController extends Service {
 	 * @param {String} event the name of the event to log
 	 * @param  {...any} args parameters to also be logged
 	 */
-	logEvent(event, ...args){
-	}
+	logEvent(event, ...args) {}
 
 	/**
 	 * Called in response to the updateState event.
@@ -314,7 +333,7 @@ export default class MJController extends Service {
 			this.setWon(true);
 			this.setLost(false);
 			if (!this.gameWon) {
-				this.recordAction({type: "session-ended", result: "won"});
+				this.recordAction({type: 'session-ended', result: 'won'});
 			}
 			this.logEvent('win');
 			this.message('YOU WIN!!!');
@@ -323,18 +342,17 @@ export default class MJController extends Service {
 			this.setWon(false);
 			this.setLost(true);
 			if (!this.gameLost) {
-				this.recordAction({type: "dead-end"});
+				this.recordAction({type: 'dead-end'});
 			}
-			this.logEvent("lose");
+			this.logEvent('lose');
 			this.gameLost = true;
 			this.message('NO MORE MOVES. THIS BOARD HAS FAILED. USE UNDO OR MOVE HISTORY TO CONTINUE.');
-
 		} else {
 			this.message('');
 			this.setWon(false);
 			this.setLost(false);
 			this.gameWon = false;
-			this.gameLost =false;
+			this.gameLost = false;
 		}
 
 		this.openTiles = state.open;
@@ -357,12 +375,12 @@ export default class MJController extends Service {
 	hideBoard(on) {
 		if (on) {
 			for (let idx = 0; idx < this.board.count; idx++) {
-				this.showTile(idx, false)
+				this.showTile(idx, false);
 			}
 		} else {
 			for (let idx = 0; idx < this.board.count; idx++) {
 				if (this.placedTiles.has(idx)) {
-					this.showTile(idx, true)
+					this.showTile(idx, true);
 				}
 			}
 		}
@@ -382,7 +400,11 @@ export default class MJController extends Service {
 			let face = board.pieces[idx].face;
 
 			tiles.push({
-				id: idx, x, y, z, face
+				id: idx,
+				x,
+				y,
+				z,
+				face,
 			});
 		}
 
@@ -479,7 +501,7 @@ export default class MJController extends Service {
 
 	restart() {
 		var history = this.engine.getUndoHistory();
-		var restoredTiles = history.flatMap(function(move) {
+		var restoredTiles = history.flatMap(function (move) {
 			return [move.tile1, move.tile2];
 		});
 
@@ -499,7 +521,7 @@ export default class MJController extends Service {
 
 		this.engine.startOver();
 
-		restoredTiles.forEach(function(tile) {
+		restoredTiles.forEach(function (tile) {
 			this.showTile(tile, true);
 			this.highlightTile(tile, 'restart');
 		}, this);
@@ -547,7 +569,6 @@ export default class MJController extends Service {
 		try {
 			this.clearBoard();
 			this.engine.generateGame(boardNbr);
-
 		} catch (err) {
 			console.log(err);
 		}
@@ -563,7 +584,7 @@ export default class MJController extends Service {
 		this.layout = this.layoutName;
 		this.engine.setLayout(layouts[this.layout]);
 		applyDifficultyPreset(this.engine, this.difficulty);
-		if (boardNbr === undefined || boardNbr === -1) boardNbr = Random.random(0xFFFFF);
+		if (boardNbr === undefined || boardNbr === -1) boardNbr = Random.random(0xfffff);
 		this.boardNbr = boardNbr;
 
 		this.selectedTile = -1;
@@ -580,7 +601,7 @@ export default class MJController extends Service {
 
 		Random.randomize(boardNbr);
 
-		this.message("Loading new game ...");
+		this.message('Loading new game ...');
 
 		this.generateGame(boardNbr);
 
@@ -595,7 +616,7 @@ export default class MJController extends Service {
 		this.setGameState({isHinting: false});
 		this.lastTrackedElapsedSecond = -1;
 		this.recordAction({
-			type: "session-started",
+			type: 'session-started',
 			boardNbr: Number.isFinite(Number(this.boardNbr)) ? Number(this.boardNbr) : null,
 			difficulty: this.difficulty,
 			layout: this.layout,
@@ -610,7 +631,7 @@ export default class MJController extends Service {
 	 * @returns {Boolean} true if open, false if not
 	 */
 	isOpen(tile) {
-		return this.openTiles.has(tile)
+		return this.openTiles.has(tile);
 	}
 
 	/**
@@ -621,7 +642,6 @@ export default class MJController extends Service {
 	 * hint, if there are any left.
 	 */
 	hint() {
-
 		if (!this.currentHint && false) {
 			this.resetTimer(false);
 			this.restartTimer();
@@ -631,7 +651,7 @@ export default class MJController extends Service {
 
 		if (this.currentHint && this.currentHints.length === 0) {
 			this.shortMessage('NO MORE HINTS');
-			this.currentHint= false;
+			this.currentHint = false;
 			this.setGameState({isHinting: false});
 			this.restoreSelectionFromHints();
 			return;
@@ -639,7 +659,9 @@ export default class MJController extends Service {
 
 		if (!this.currentHint) {
 			this.preserveSelectionForHints();
-			this.currentHints = this.engine.getHints(this.hintSelectedTile !== -1 ? this.hintSelectedTile : this.selectedTile);
+			this.currentHints = this.engine.getHints(
+				this.hintSelectedTile !== -1 ? this.hintSelectedTile : this.selectedTile,
+			);
 		}
 
 		if (this.currentHints.length === 0) {
@@ -692,7 +714,7 @@ export default class MJController extends Service {
 						[this.selectedTile, 'final-played-right'],
 					]);
 				}
-				this.engine.playTiles(tile, this.selectedTile)
+				this.engine.playTiles(tile, this.selectedTile);
 				this.selectedTile = -1;
 			} else {
 				this.highlightTile(tile, 'selected');
@@ -716,19 +738,15 @@ export default class MJController extends Service {
 		this.selectedTile = -1;
 	}
 
-
 	updatePause(on) {
 		// we have a multi-level pause flag
 		// if on does not have a value, it be will considered a toggle
-		var delta =
-			on === true ? 1 :
-			on === false ? -1 :
-			this.paused > 0 ? -1 :
-			1;
+		var delta = on === true ? 1 : on === false ? -1 : this.paused > 0 ? -1 : 1;
 
 		if (this.paused === 1 && delta === -1) {
 			this.startTimer(true);
-		} if (this.paused === 0 && delta === 1) {
+		}
+		if (this.paused === 0 && delta === 1) {
 			this.pauseTimer(true);
 		}
 		this.paused += delta;
@@ -743,7 +761,7 @@ export default class MJController extends Service {
 	}
 
 	toggleTimer(on) {
-		this.updatePause(on)
+		this.updatePause(on);
 		this.updateTimerState();
 	}
 
@@ -757,10 +775,10 @@ export default class MJController extends Service {
 		if (this.peeking) {
 			this.peeked = [];
 		} else {
-			this.peeked.forEach(function(tile) {
+			this.peeked.forEach(function (tile) {
 				this.showTile(tile, true);
 				this.highlightTile(tile, 'restart');
-			}, this)
+			}, this);
 		}
 
 		this.setGameState({isPeeking: this.peeking});
@@ -772,7 +790,6 @@ export default class MJController extends Service {
 	 * @param {Number} boardNbr
 	 */
 	play(boardNbr) {
-
 		this.boardNbr = boardNbr;
 		this.newGame(boardNbr);
 	}
@@ -804,23 +821,25 @@ export default class MJController extends Service {
 		this.engine.startOver();
 		this.drawBoard();
 		var solution = JSON.parse(JSON.stringify(this.engine.solution));
-		this.startTime = Date.now() - 124000
+		this.startTime = Date.now() - 124000;
 
-		var int = setInterval(function() {
-			var tile1, tile2;
-			if (solution.length <= 2)
-			{
-				clearInterval(int)
-				this.engine.calcValidMoves();
-				this.setState();
-			} else {
-				tile1 = solution.shift();
-				tile2 = solution.shift();
-				this.engine.playPair(tile1, tile2);
-				this.showTile(tile1, false)
-				this.showTile(tile2, false)
-			}
-		}.bind(this), 50)
+		var int = setInterval(
+			function () {
+				var tile1, tile2;
+				if (solution.length <= 2) {
+					clearInterval(int);
+					this.engine.calcValidMoves();
+					this.setState();
+				} else {
+					tile1 = solution.shift();
+					tile2 = solution.shift();
+					this.engine.playPair(tile1, tile2);
+					this.showTile(tile1, false);
+					this.showTile(tile2, false);
+				}
+			}.bind(this),
+			50,
+		);
 	}
 
 	playHalfSolution() {
@@ -860,8 +879,8 @@ export default class MJController extends Service {
 		return (
 			<Board
 				delegator={new ServiceDelegator('mj:controller')}
-				id='mj-board'
-				key='mj-board'
+				id="mj-board"
+				key="mj-board"
 				serviceName="mj:controller"
 				layouts={layouts}
 				layout={this.layoutName}
@@ -872,7 +891,7 @@ export default class MJController extends Service {
 				isBelowMinimum={this.isBelowMinimum}
 				timings={this.timings}
 			/>
-		)
+		);
 	}
 }
 

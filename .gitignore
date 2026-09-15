@@ -105,6 +105,7 @@ test
 # TernJS port file
 .tern-port
 package-lock.json
+!/package-lock.json
 
 /poly-gc-react.code-workspace
 /tests
@@ -126,3 +127,4 @@ colored-inlay
 
 archive/
 archives/
+/.codex-tmp/

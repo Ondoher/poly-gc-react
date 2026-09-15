@@ -1,5 +1,5 @@
 import React from 'react';
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 import AssetBaseTileSelectionPage from '../components/AssetBaseTileSelectionPage.jsx';
 
 export default class AssetBaseTileSelectionView extends Service {

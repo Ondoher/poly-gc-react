@@ -24,7 +24,7 @@ the current runtime ladder or the final picker/face-assignment behavior.
 
 Capture a generation-time difficulty mechanism that works within a four-of-a-kind
 Mahjongg tile model rather than treating the puzzle as if it were made of simple
- independent pairs.
+independent pairs.
 
 ## Core Problem
 
@@ -139,7 +139,7 @@ It is checked against the deterministic random generator when a generation step
 is eligible to start a new suspension:
 
 ```js
-Random.random() < frequency
+Random.random() < frequency;
 ```
 
 Examples:

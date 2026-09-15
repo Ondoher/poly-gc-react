@@ -45,5 +45,14 @@
 			"keepNest": true
 		}
 	],
-	"features": ["features/app", "features/reference-approval", "features/optional-part-assignment", "features/source-assignment", "features/final-rendering-options", "features/asset-base-tile-selection", "features/asset-review", "features/experiments"]
+	"features": [
+		"features/app",
+		"features/reference-approval",
+		"features/optional-part-assignment",
+		"features/source-assignment",
+		"features/final-rendering-options",
+		"features/asset-base-tile-selection",
+		"features/asset-review",
+		"features/experiments"
+	]
 }

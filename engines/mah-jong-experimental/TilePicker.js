@@ -1,8 +1,5 @@
 import StateGraphAnalyzer from './StateGraphAnalyzer.js';
-import {
-	getRankedWindow,
-	selectRankedCandidate,
-} from './ranked-window.js';
+import {getRankedWindow, selectRankedCandidate} from './ranked-window.js';
 
 /**
  * Rank and select open tile keys from a working game state during generation.
@@ -80,17 +77,10 @@ export default class TilePicker {
 	getSpatialRelationshipFactor(tileKey, referenceTileKeys = []) {
 		let horizontalMultiplier = this.state.getHorizontalMultiplier();
 		let depthMultiplier = this.state.getDepthMultiplier();
-		let horizontalIntersections = this.gameState.countHorizontalIntersections(
-			referenceTileKeys,
-			tileKey
-		);
-		let depthIntersections = this.gameState.countDepthIntersections(
-			referenceTileKeys,
-			tileKey
-		);
+		let horizontalIntersections = this.gameState.countHorizontalIntersections(referenceTileKeys, tileKey);
+		let depthIntersections = this.gameState.countDepthIntersections(referenceTileKeys, tileKey);
 
-		return Math.pow(horizontalMultiplier, horizontalIntersections)
-			* Math.pow(depthMultiplier, depthIntersections);
+		return Math.pow(horizontalMultiplier, horizontalIntersections) * Math.pow(depthMultiplier, depthIntersections);
 	}
 
 	/**
@@ -108,10 +98,7 @@ export default class TilePicker {
 	getOpenPressureFactor(tileKey, pendingRemovedTileKeys = []) {
 		let openPressureMultiplier = this.state.getOpenPressureMultiplier();
 		let maxFreedPressure = this.state.getMaxFreedPressure();
-		let freedCount = this.analyzer.countTilesFreedByRemoving([
-			...pendingRemovedTileKeys,
-			tileKey,
-		]);
+		let freedCount = this.analyzer.countTilesFreedByRemoving([...pendingRemovedTileKeys, tileKey]);
 
 		if (openPressureMultiplier === 0) {
 			return {
@@ -144,10 +131,7 @@ export default class TilePicker {
 	getBalanceFactor(tileKey, pendingRemovedTileKeys = []) {
 		let balancePressureMultiplier = this.state.getBalancePressureMultiplier();
 		let maxBalanceMargin = this.state.getMaxBalanceMargin();
-		let balance = this.analyzer.getStackBalanceAfterRemoving([
-			...pendingRemovedTileKeys,
-			tileKey,
-		]);
+		let balance = this.analyzer.getStackBalanceAfterRemoving([...pendingRemovedTileKeys, tileKey]);
 
 		if (balancePressureMultiplier === 0) {
 			return {
@@ -183,16 +167,10 @@ export default class TilePicker {
 	getShortHorizonFactor(tileKey, pendingRemovedTileKeys = []) {
 		let shortHorizonProbeMoves = this.state.getShortHorizonProbeMoves();
 		let shortHorizonPressureMultiplier = this.state.getShortHorizonPressureMultiplier();
-		let shortHorizon = this.analyzer.runShortHorizonProbe(
-			[
-				...pendingRemovedTileKeys,
-				tileKey,
-			],
-			{
-				shortHorizonProbeMoves,
-				shortHorizonPressureMultiplier,
-			}
-		);
+		let shortHorizon = this.analyzer.runShortHorizonProbe([...pendingRemovedTileKeys, tileKey], {
+			shortHorizonProbeMoves,
+			shortHorizonPressureMultiplier,
+		});
 
 		return {
 			shortHorizonFactor: shortHorizon.pressure,
@@ -217,13 +195,10 @@ export default class TilePicker {
 	 * @returns {AnalyzerFactor}
 	 */
 	getAnalyzerFactor(tileKey, pendingRemovedTileKeys = []) {
-		let { freedCount, openPressureFactor } = this.getOpenPressureFactor(
+		let {freedCount, openPressureFactor} = this.getOpenPressureFactor(tileKey, pendingRemovedTileKeys);
+		let {balanceMargin, balanceFactor, createsDominantStack} = this.getBalanceFactor(
 			tileKey,
-			pendingRemovedTileKeys
-		);
-		let { balanceMargin, balanceFactor, createsDominantStack } = this.getBalanceFactor(
-			tileKey,
-			pendingRemovedTileKeys
+			pendingRemovedTileKeys,
 		);
 		let {
 			shortHorizonFactor,
@@ -263,15 +238,13 @@ export default class TilePicker {
 		let referenceTileKeySet = new Set(referenceTileKeys);
 		let unavailableTileKeySet = new Set(this.state.unavailableTiles ?? []);
 
-		let rankedTiles = this.rules.getOpenTiles(this.gameState)
+		let rankedTiles = this.rules
+			.getOpenTiles(this.gameState)
 			.filter((tileKey) => !referenceTileKeySet.has(tileKey))
 			.filter((tileKey) => !unavailableTileKeySet.has(tileKey))
 			.map((tileKey) => {
 				let zIndexFactor = this.getZIndexFactor(tileKey);
-				let spatialRelationshipFactor = this.getSpatialRelationshipFactor(
-					tileKey,
-					referenceTileKeys
-				);
+				let spatialRelationshipFactor = this.getSpatialRelationshipFactor(tileKey, referenceTileKeys);
 				let {
 					freedCount,
 					analyzerFactor,
@@ -284,23 +257,14 @@ export default class TilePicker {
 					shortHorizonRemainingTiles,
 					shortHorizonEnabled,
 					shortHorizonCollapsed,
-				} = this.getAnalyzerFactor(
-					tileKey,
-					referenceTileKeys
-				);
+				} = this.getAnalyzerFactor(tileKey, referenceTileKeys);
 
 				return {
 					tileKey,
 					z: this.gameState.getPosition(tileKey)?.z ?? -1,
 					zIndexFactor,
-					horizontalIntersections: this.gameState.countHorizontalIntersections(
-						referenceTileKeys,
-						tileKey
-					),
-					depthIntersections: this.gameState.countDepthIntersections(
-						referenceTileKeys,
-						tileKey
-					),
+					horizontalIntersections: this.gameState.countHorizontalIntersections(referenceTileKeys, tileKey),
+					depthIntersections: this.gameState.countDepthIntersections(referenceTileKeys, tileKey),
 					freedCount,
 					analyzerFactor,
 					openPressureFactor,
@@ -360,13 +324,12 @@ export default class TilePicker {
 	 * @returns {RankedTileCandidate | false}
 	 */
 	selectRankedTile(rankedTiles) {
-		return selectRankedCandidate(
-			rankedTiles,
-			{
+		return (
+			selectRankedCandidate(rankedTiles, {
 				difficulty: this.state.difficulty(),
 				minWindowRatio: this.state.getMinWindowRatio(),
-			}
-		) || false;
+			}) || false
+		);
 	}
 
 	/**

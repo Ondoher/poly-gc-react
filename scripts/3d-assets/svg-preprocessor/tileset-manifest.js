@@ -1,7 +1,7 @@
-import { promises as fsPromises } from 'fs';
+import {promises as fsPromises} from 'fs';
 import fs from 'fs';
 import path from 'path';
-import { BASE_OUTPUT } from './PipelineModel.js';
+import {BASE_OUTPUT} from './PipelineModel.js';
 
 export const TILESET_MANIFEST_PATH = path.resolve(BASE_OUTPUT, 'tilesets.json');
 
@@ -26,8 +26,12 @@ export async function readTilesetManifest() {
 }
 
 export async function writeTilesetManifest(manifest) {
-	await fsPromises.mkdir(path.dirname(TILESET_MANIFEST_PATH), { recursive: true });
-	await fsPromises.writeFile(TILESET_MANIFEST_PATH, `${JSON.stringify(normalizeTilesetManifest(manifest), null, 2)}\n`, 'utf8');
+	await fsPromises.mkdir(path.dirname(TILESET_MANIFEST_PATH), {recursive: true});
+	await fsPromises.writeFile(
+		TILESET_MANIFEST_PATH,
+		`${JSON.stringify(normalizeTilesetManifest(manifest), null, 2)}\n`,
+		'utf8',
+	);
 }
 
 export async function setActiveTileset(tilesetId, now = new Date().toISOString()) {
@@ -44,10 +48,7 @@ export async function setActiveTileset(tilesetId, now = new Date().toISOString()
 	return manifest;
 }
 
-export function updateTilesetManifestSync({
-	tilesetId,
-	generatedOn = new Date().toISOString(),
-}) {
+export function updateTilesetManifestSync({tilesetId, generatedOn = new Date().toISOString()}) {
 	const manifest = readTilesetManifestSync();
 	const nextEntry = {
 		tilesetId,
@@ -61,7 +62,7 @@ export function updateTilesetManifestSync({
 		updatedOn: generatedOn,
 	});
 
-	fs.mkdirSync(path.dirname(TILESET_MANIFEST_PATH), { recursive: true });
+	fs.mkdirSync(path.dirname(TILESET_MANIFEST_PATH), {recursive: true});
 	fs.writeFileSync(TILESET_MANIFEST_PATH, `${JSON.stringify(nextManifest, null, 2)}\n`, 'utf8');
 
 	return nextManifest;
@@ -78,11 +79,11 @@ function readTilesetManifestSync() {
 function normalizeTilesetManifest(manifest) {
 	const tilesets = Array.isArray(manifest?.tilesets)
 		? manifest.tilesets
-			.filter((tileset) => tileset?.tilesetId)
-			.map((tileset) => ({
-				tilesetId: String(tileset.tilesetId),
-			}))
-			.sort((left, right) => left.tilesetId.localeCompare(right.tilesetId))
+				.filter((tileset) => tileset?.tilesetId)
+				.map((tileset) => ({
+					tilesetId: String(tileset.tilesetId),
+				}))
+				.sort((left, right) => left.tilesetId.localeCompare(right.tilesetId))
 		: [];
 	const activeTilesetId = tilesets.some((tileset) => tileset.tilesetId === manifest?.activeTilesetId)
 		? manifest.activeTilesetId

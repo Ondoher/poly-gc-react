@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export default class CssRect extends React.Component {
 	constructor(props) {
@@ -25,10 +25,7 @@ export default class CssRect extends React.Component {
 		delete props.variant;
 
 		return (
-			<Tag
-				{...props}
-				className={className}
-			>
+			<Tag {...props} className={className}>
 				{hideChildren ? null : this.props.children}
 			</Tag>
 		);

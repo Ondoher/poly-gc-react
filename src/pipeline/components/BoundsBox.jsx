@@ -2,13 +2,11 @@ import React from 'react';
 
 export default class BoundsBox extends React.Component {
 	boxStyle() {
-		const { bounds, canvas, style: customStyle = null } = this.props;
-		const boxWidth = Number.isFinite(bounds.right) && Number.isFinite(bounds.left)
-			? bounds.right - bounds.left
-			: bounds.width;
-		const boxHeight = Number.isFinite(bounds.bottom) && Number.isFinite(bounds.top)
-			? bounds.bottom - bounds.top
-			: bounds.height;
+		const {bounds, canvas, style: customStyle = null} = this.props;
+		const boxWidth =
+			Number.isFinite(bounds.right) && Number.isFinite(bounds.left) ? bounds.right - bounds.left : bounds.width;
+		const boxHeight =
+			Number.isFinite(bounds.bottom) && Number.isFinite(bounds.top) ? bounds.bottom - bounds.top : bounds.height;
 
 		return {
 			left: `${((bounds.left - canvas.left) / canvas.width) * 100}%`,
@@ -20,7 +18,7 @@ export default class BoundsBox extends React.Component {
 	}
 
 	render() {
-		const { bounds, canvas, className, title = '', onClick = null } = this.props;
+		const {bounds, canvas, className, title = '', onClick = null} = this.props;
 
 		if (!bounds || !canvas?.width || !canvas?.height) {
 			return null;

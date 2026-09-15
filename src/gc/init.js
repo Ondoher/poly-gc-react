@@ -1,5 +1,5 @@
 window.process = {
 	env: {
-		NODE_ENV: 'development'
-	}
-} // DUMMINESS I MUST SOLVE
+		NODE_ENV: 'development',
+	},
+}; // DUMMINESS I MUST SOLVE

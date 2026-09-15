@@ -8,31 +8,26 @@ export default class Pill extends React.Component {
 	}
 
 	renderExtraContent() {
-		const { extraContent = null } = this.props;
+		const {extraContent = null} = this.props;
 
 		if (!extraContent) {
 			return null;
 		}
 
-		return (
-			<span className="pipeline-pill-extra">
-				{extraContent}
-			</span>
-		);
+		return <span className="pipeline-pill-extra">{extraContent}</span>;
 	}
 
 	className() {
-		const {
-			className = '',
-			onClick = null,
-		} = this.props;
+		const {className = '', onClick = null} = this.props;
 
 		return [
 			'pipeline-pill',
 			`pipeline-pill-${this.reportLevel()}`,
 			onClick ? 'pipeline-pill-clickable' : '',
 			className,
-		].filter(Boolean).join(' ');
+		]
+			.filter(Boolean)
+			.join(' ');
 	}
 
 	render() {
@@ -48,13 +43,7 @@ export default class Pill extends React.Component {
 
 		if (onClick) {
 			return (
-				<button
-					{...pillProps}
-					type="button"
-					className={this.className()}
-					onClick={onClick}
-					disabled={disabled}
-				>
+				<button {...pillProps} type="button" className={this.className()} onClick={onClick} disabled={disabled}>
 					{children}
 					{this.renderExtraContent()}
 				</button>
@@ -62,10 +51,7 @@ export default class Pill extends React.Component {
 		}
 
 		return (
-			<span
-				{...pillProps}
-				className={this.className()}
-			>
+			<span {...pillProps} className={this.className()}>
 				{children}
 				{this.renderExtraContent()}
 			</span>

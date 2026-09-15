@@ -22,7 +22,18 @@ a:hover {
 	outline: 0;
 }
 
-article, aside, details, figcaption, figure, footer, header, hgroup, main, nav, section, summary {
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+main,
+nav,
+section,
+summary {
 	display: block;
 }
 
@@ -40,7 +51,7 @@ strong {
 }
 
 dfn {
-  font-style: italic;
+	font-style: italic;
 }
 
 mark {
@@ -68,13 +79,19 @@ sub {
 	bottom: -0.25em;
 }
 
-button, input, optgroup, select, textarea {
+button,
+input,
+optgroup,
+select,
+textarea {
 	color: inherit;
 	font: inherit;
 	margin: 0;
 }
 
-button, input, select {
+button,
+input,
+select {
 	-moz-appearance: none;
 	-moz-border-bottom-colors: none;
 	-webkit-appearance: none;
@@ -84,7 +101,7 @@ button, input, select {
 
 select {
 	-moz-box-sizing: content-box;
-			 box-sizing: content-box;
+	box-sizing: content-box;
 }
 
 button {
@@ -117,8 +134,8 @@ input {
 input[type='search'] {
 	-webkit-appearance: textfield;
 	-webkit-box-sizing: content-box;
-		 -moz-box-sizing: content-box;
-					box-sizing: content-box;
+	-moz-box-sizing: content-box;
+	box-sizing: content-box;
 }
 
 input[type='search']::-webkit-search-decoration,
@@ -173,7 +190,10 @@ pre {
 	overflow: auto;
 }
 
-code, kbd, pre, samp {
+code,
+kbd,
+pre,
+samp {
 	font-family: monospace, monospace;
 	font-size: 1em;
 }
@@ -182,7 +202,10 @@ optgroup {
 	font-weight: bold;
 }
 
-audio, canvas, progress, video {
+audio,
+canvas,
+progress,
+video {
 	display: inline-block;
 	vertical-align: baseline;
 }
@@ -192,7 +215,8 @@ audio:not([controls]) {
 	height: 0;
 }
 
-[hidden], template {
+[hidden],
+template {
 	display: none;
 }
 
@@ -216,13 +240,17 @@ th {
 	clear: both;
 }
 
-.bot.page input, .page optgroup, .page select, .page textarea {
+.bot.page input,
+.page optgroup,
+.page select,
+.page textarea {
 	color: inherit;
 	font: inherit;
 	margin: 0;
 }
 
-.page input, .page select {
+.page input,
+.page select {
 	-moz-appearance: none;
 	-moz-border-bottom-colors: none;
 	-webkit-appearance: none;
@@ -232,7 +260,7 @@ th {
 
 .page select {
 	-moz-box-sizing: content-box;
-	 box-sizing: content-box;
+	box-sizing: content-box;
 }
 
 .page input[type='reset'],
@@ -257,7 +285,7 @@ html .page input[disabled] {
 .page input[type='search'] {
 	-webkit-appearance: textfield;
 	-webkit-box-sizing: content-box;
-	 -moz-box-sizing: content-box;
+	-moz-box-sizing: content-box;
 	box-sizing: content-box;
 }
 
@@ -266,7 +294,6 @@ html .page input[disabled] {
 	box-sizing: border-box;
 	padding: 0;
 }
-
 
 .page input:focus {
 	outline: none;
@@ -303,7 +330,10 @@ figure {
 	overflow: auto;
 }
 
-.page code, .page kbd, .page pre, .page samp {
+.page code,
+.page kbd,
+.page pre,
+.page samp {
 	font-family: monospace, monospace;
 	font-size: 1em;
 }
@@ -312,7 +342,10 @@ figure {
 	font-weight: bold;
 }
 
-audio, canvas, progress, video {
+audio,
+canvas,
+progress,
+video {
 	display: inline-block;
 	vertical-align: baseline;
 }
@@ -322,7 +355,8 @@ audio:not([controls]) {
 	height: 0;
 }
 
-[hidden], template {
+[hidden],
+template {
 	display: none;
 }
 
@@ -347,7 +381,7 @@ audio:not([controls]) {
 }
 
 .dialog-open #dialog-overlay {
-	opacity: .88;
+	opacity: 0.88;
 }
 
 /* ==========================================================================
@@ -363,7 +397,7 @@ body {
 	background-color: #666666;
 	height: 100%;
 	width: 100%;
-	color: rgba(255, 255, 255, 0.8);;
+	color: rgba(255, 255, 255, 0.8);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	overflow: hidden;
@@ -377,10 +411,10 @@ body {
 	min-height: 100%;
 	position: absolute;
 	width: 100%;
-    top: 0px;
-    left: 0px;
-    right: 0px;
-    bottom: 0px;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
 }
 
 .container {
@@ -389,20 +423,22 @@ body {
 	position: relative;
 }
 
-.hide {display: none !important;}
+.hide {
+	display: none !important;
+}
 
 .page-container {
-    min-height: 100%;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    right: 0px;
-    bottom: 0px;
+	min-height: 100%;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
 }
 
 .pages {
 	position: relative;
-	height: 100%
+	height: 100%;
 }
 
 .page {

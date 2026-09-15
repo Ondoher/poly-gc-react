@@ -15,14 +15,12 @@ export default class Button extends React.Component {
 			variant && variant !== 'default' ? `pipeline-button-${variant}` : '',
 			active ? 'pipeline-button-active' : '',
 			className,
-		].filter(Boolean).join(' ');
+		]
+			.filter(Boolean)
+			.join(' ');
 
 		return (
-			<button
-				{...buttonProps}
-				type={type}
-				className={classes}
-			>
+			<button {...buttonProps} type={type} className={classes}>
 				{children}
 			</button>
 		);

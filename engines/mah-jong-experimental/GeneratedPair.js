@@ -48,7 +48,6 @@ export default class GeneratedPair {
 		 * @type {Face[]}
 		 */
 		this.faces = options.faces ? options.faces.slice() : [];
-
 	}
 
 	/**

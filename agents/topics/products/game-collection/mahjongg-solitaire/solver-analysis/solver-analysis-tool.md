@@ -130,20 +130,20 @@ The cleanest design is probably:
 Possible internal pieces:
 
 - `SolverState`
-  - board occupancy
-  - placed tiles
-  - currently playable pairs
-  - move history
+    - board occupancy
+    - placed tiles
+    - currently playable pairs
+    - move history
 
 - `Solver`
-  - explores legal moves
-  - supports backtracking
-  - reports solved and failed branches
+    - explores legal moves
+    - supports backtracking
+    - reports solved and failed branches
 
 - `AnalysisRecorder`
-  - collects branching and dead-end statistics
-  - measures pair-choice divergence
-  - aggregates results
+    - collects branching and dead-end statistics
+    - measures pair-choice divergence
+    - aggregates results
 
 ## Implementation Notes
 
@@ -167,10 +167,10 @@ This note is about the tool needed to obtain those measurements.
 In short:
 
 - `difficulty-measurement.md`
-  - what to measure and why
+    - what to measure and why
 
 - `solver-analysis-tool.md`
-  - what to build in order to measure it
+    - what to build in order to measure it
 
 ## Immediate Next Step
 
@@ -231,7 +231,7 @@ for later analysis should be closer to:
 - board number
 
 Board number alone is useful, but it is not enough once generation rules or
- implementation details change over time.
+implementation details change over time.
 
 ### Low-Friction Feedback Direction
 
@@ -255,9 +255,9 @@ The smallest useful board-session record would likely include:
 - difficulty preset or explicit generation overrides
 - board number
 - session outcome
-  - solved
-  - abandoned
-  - restarted
+    - solved
+    - abandoned
+    - restarted
 - start time and end time
 
 Dead-end handling note:
@@ -281,21 +281,21 @@ For each event, record:
 - sequence number
 - elapsed time or timestamp
 - action type
-  - play pair
-  - undo
-  - redo
-  - hint
-  - shuffle
-  - restart
-  - abandon
+    - play pair
+    - undo
+    - redo
+    - hint
+    - shuffle
+    - restart
+    - abandon
 - for pair plays:
-  - tile1
-  - tile2
+    - tile1
+    - tile2
 - for recoverable dead ends:
-  - record sentinel tile values `-1, -1`
+    - record sentinel tile values `-1, -1`
 - optional local state context:
-  - remaining tile count
-  - playable pair count
+    - remaining tile count
+    - playable pair count
 
 Because the board is deterministic, this event log can later be replayed
 against the exact board state and compared against the known solution path and
@@ -309,18 +309,18 @@ more human-grounded than search metrics alone.
 Especially promising first metrics:
 
 - `First divergence depth`
-  - the move index where the player first leaves the engine's recorded solution
-    path
+    - the move index where the player first leaves the engine's recorded solution
+      path
 - `Branch regret rate`
-  - how often a player undoes back across a prior pair choice, especially at
-    ambiguous same-face states
+    - how often a player undoes back across a prior pair choice, especially at
+      ambiguous same-face states
 - `Hint pressure`
-  - hint usage frequency and the board stage where hints are requested
+    - hint usage frequency and the board stage where hints are requested
 - `Thrash index`
-  - repeated undo/redo or long time spent with little net progress
+    - repeated undo/redo or long time spent with little net progress
 - `Collapse distance`
-  - how far a player gets after a major divergence before dead-ending,
-    abandoning, or entering heavy recovery behavior
+    - how far a player gets after a major divergence before dead-ending,
+      abandoning, or entering heavy recovery behavior
 
 These are attractive because they connect naturally to the current analyzer's
 search-space story:
@@ -435,8 +435,8 @@ One practical flow would be:
 
 1. the player chooses a difficulty
 2. the UI offers:
-   - play normally
-   - help improve this difficulty
+    - play normally
+    - help improve this difficulty
 3. if the player opts in, the game selects a deterministic board from a
    curated tuning set for that difficulty
 4. normal session and event telemetry is recorded
@@ -445,13 +445,13 @@ One practical flow would be:
 This would allow the project to maintain small curated buckets such as:
 
 - calibration boards
-  - stable reference boards used over long periods for comparison
+    - stable reference boards used over long periods for comparison
 - candidate boards
-  - boards selected because analyzer metrics suggest they are good tests for a
-    preset
+    - boards selected because analyzer metrics suggest they are good tests for a
+      preset
 - outlier boards
-  - boards whose analyzer profile or prior player sessions suggest they are
-    unusually confusing, punishing, or interesting
+    - boards whose analyzer profile or prior player sessions suggest they are
+      unusually confusing, punishing, or interesting
 
 The deterministic nature of generation makes this especially attractive.
 Sessions can be grouped by the same exact board identity and analyzed later

@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { readArgument, requireArgument } from './cli-arguments.js';
-import { PipelineModel, PIPELINE_MANIFESTS } from './PipelineModel.js';
-import { normalizePath } from './preprocessed-face-validation-utils.js';
-import { updateTilesetManifestSync } from './tileset-manifest.js';
+import {readArgument, requireArgument} from './cli-arguments.js';
+import {PipelineModel, PIPELINE_MANIFESTS} from './PipelineModel.js';
+import {normalizePath} from './preprocessed-face-validation-utils.js';
+import {updateTilesetManifestSync} from './tileset-manifest.js';
 
 const DEFAULT_REFERENCE_NAME = 'default-large-faces';
 
@@ -19,7 +19,7 @@ async function main() {
 	}
 
 	const referenceName = readArgument('--reference-name') || DEFAULT_REFERENCE_NAME;
-	const model = new PipelineModel({ referenceName, tileSetName: tilesetId });
+	const model = new PipelineModel({referenceName, tileSetName: tilesetId});
 
 	await model.start();
 
@@ -29,10 +29,10 @@ async function main() {
 	);
 	const manifest = readJson(manifestPath);
 
-	validateManifest({ manifest, tilesetId });
-	writeModelSourceSvgs({ manifest, model });
-	model.pipelineState = await model.buildPipelineStateFromBootstrap({ manifest });
-	await model.save({ preserveCurrencyDate: true });
+	validateManifest({manifest, tilesetId});
+	writeModelSourceSvgs({manifest, model});
+	model.pipelineState = await model.buildPipelineStateFromBootstrap({manifest});
+	await model.save({preserveCurrencyDate: true});
 
 	updateTilesetManifestSync({
 		tilesetId,
@@ -43,7 +43,7 @@ async function main() {
 	console.log(`Wrote ${normalizePath(model.pipelineFilename)}`);
 }
 
-function validateManifest({ manifest, tilesetId }) {
+function validateManifest({manifest, tilesetId}) {
 	if (manifest.sheetId && manifest.sheetId !== tilesetId) {
 		throw new Error(`Manifest sheetId "${manifest.sheetId}" does not match --tileset-id "${tilesetId}".`);
 	}
@@ -56,7 +56,7 @@ function readJson(filePath) {
 	return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
-function writeModelSourceSvgs({ manifest, model }) {
+function writeModelSourceSvgs({manifest, model}) {
 	for (const [faceKey, manifestFace] of Object.entries(manifest.faces || {})) {
 		writeManifestFaceSourceSvg({
 			manifest,
@@ -67,7 +67,7 @@ function writeModelSourceSvgs({ manifest, model }) {
 	}
 }
 
-function writeManifestFaceSourceSvg({ manifest, manifestFace, outputSvgPath, faceKey }) {
+function writeManifestFaceSourceSvg({manifest, manifestFace, outputSvgPath, faceKey}) {
 	const source = manifestFace?.source || manifestFace?.output;
 	if (!source) {
 		throw new Error(`Manifest face ${faceKey} is missing source/output.`);
@@ -84,7 +84,7 @@ function writeManifestFaceSourceSvg({ manifest, manifestFace, outputSvgPath, fac
 		...(manifestFace.sourceSvgHints || {}),
 	});
 
-	fs.mkdirSync(path.dirname(outputSvgPath), { recursive: true });
+	fs.mkdirSync(path.dirname(outputSvgPath), {recursive: true});
 	fs.writeFileSync(outputSvgPath, cleanHintLineEndings(outputSvg));
 }
 

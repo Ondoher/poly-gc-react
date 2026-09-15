@@ -1,8 +1,8 @@
-import { PipelineModel } from '../PipelineModel.js';
+import {PipelineModel} from '../PipelineModel.js';
 
-describe('PipelineModel', function() {
-	describe('generated asset rendering hash inputs', function() {
-		it('uses the resolved nested effective rendering options for one face', function() {
+describe('PipelineModel', function () {
+	describe('generated asset rendering hash inputs', function () {
+		it('uses the resolved nested effective rendering options for one face', function () {
 			const model = pipelineModelWithRendering({
 				defaults: {
 					color: {
@@ -53,7 +53,7 @@ describe('PipelineModel', function() {
 			});
 		});
 
-		it('does not change a face hash when an overridden global option changes', function() {
+		it('does not change a face hash when an overridden global option changes', function () {
 			const first = pipelineModelWithRendering({
 				defaults: {
 					transform: {
@@ -92,8 +92,8 @@ describe('PipelineModel', function() {
 		});
 	});
 
-	describe('generated asset queue planning', function() {
-		it('queues faces against the selected base tile when generated assets are missing', function() {
+	describe('generated asset queue planning', function () {
+		it('queues faces against the selected base tile when generated assets are missing', function () {
 			const model = pipelineModelWithRendering({});
 			model.pipelineState.assetPipeline = {
 				baseTileSelection: {
@@ -101,8 +101,14 @@ describe('PipelineModel', function() {
 				},
 				faces: {},
 			};
-			model.setFinalRenderingColorSvgPath('b-1', 'scripts/output/asset-pipeline/test/final-rendering/color/b-1.svg');
-			model.setFinalRenderingColorSvgPath('b-2', 'scripts/output/asset-pipeline/test/final-rendering/color/b-2.svg');
+			model.setFinalRenderingColorSvgPath(
+				'b-1',
+				'scripts/output/asset-pipeline/test/final-rendering/color/b-1.svg',
+			);
+			model.setFinalRenderingColorSvgPath(
+				'b-2',
+				'scripts/output/asset-pipeline/test/final-rendering/color/b-2.svg',
+			);
 
 			const plan = model.planAssetGeneration();
 
@@ -114,11 +120,12 @@ describe('PipelineModel', function() {
 				status: 'queued',
 				baseTileVariantId: 'classic-soft',
 			});
-			expect(model.getAssetPipeline().faces['b-1'].stageHashes['preview-svg'])
-				.toBe(model.hashAssetPipelineFaceInput('b-1'));
+			expect(model.getAssetPipeline().faces['b-1'].stageHashes['preview-svg']).toBe(
+				model.hashAssetPipelineFaceInput('b-1'),
+			);
 		});
 
-		it('requeues previously current faces when the selected base tile changes', function() {
+		it('requeues previously current faces when the selected base tile changes', function () {
 			const model = pipelineModelWithRendering({});
 			model.pipelineState.assetPipeline = {
 				baseTileSelection: {
@@ -126,12 +133,19 @@ describe('PipelineModel', function() {
 				},
 				faces: {},
 			};
-			model.setFinalRenderingColorSvgPath('b-1', 'scripts/output/asset-pipeline/test/final-rendering/color/b-1.svg');
+			model.setFinalRenderingColorSvgPath(
+				'b-1',
+				'scripts/output/asset-pipeline/test/final-rendering/color/b-1.svg',
+			);
 			model.updateAssetGenerationFace('b-1', {
 				inputHash: model.hashAssetPipelineFaceInput('b-1'),
-				finalHash: model.hashAssetPipelineFinalInput('b-1', { baseTileVariantId: 'classic-soft' }),
-				stageHashes: Object.fromEntries(['preview-svg', 'svg-cutter', 'stamped-body', 'colored-inlay', 'preview-png']
-					.map((stageId) => [stageId, model.hashAssetGenerationStageInput('b-1', stageId, { baseTileVariantId: 'classic-soft' })])),
+				finalHash: model.hashAssetPipelineFinalInput('b-1', {baseTileVariantId: 'classic-soft'}),
+				stageHashes: Object.fromEntries(
+					['preview-svg', 'svg-cutter', 'stamped-body', 'colored-inlay', 'preview-png'].map((stageId) => [
+						stageId,
+						model.hashAssetGenerationStageInput('b-1', stageId, {baseTileVariantId: 'classic-soft'}),
+					]),
+				),
 				artifacts: {
 					cutterMetadata: 'scripts/output/asset-pipeline/test/asset-generation/b-1/cutter.json',
 					stampedModel: 'scripts/output/asset-pipeline/test/asset-generation/b-1/stamped-body.glb',
@@ -143,7 +157,7 @@ describe('PipelineModel', function() {
 			});
 
 			model.setSelectedBaseTileVariantId('classic-sharp');
-			const plan = model.planAssetGeneration({ faceKeys: ['b-1'] });
+			const plan = model.planAssetGeneration({faceKeys: ['b-1']});
 
 			expect(plan.plannedFaces.map((face) => face.faceKey)).toEqual(['b-1']);
 			expect(model.getAssetPipeline().faces['b-1'].status).toBe('queued');

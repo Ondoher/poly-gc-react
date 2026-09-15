@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export default class OrnamentalRect extends React.Component {
 	constructor(props) {
@@ -23,10 +23,7 @@ export default class OrnamentalRect extends React.Component {
 		delete props.size;
 
 		return (
-			<Tag
-				{...props}
-				className={className}
-			>
+			<Tag {...props} className={className}>
 				{hideChildren ? null : this.props.children}
 			</Tag>
 		);

@@ -75,14 +75,14 @@ So the current system is neither purely old nor purely new:
 When the scaling docs talk about the "current live flow," prefer this split:
 
 - current runtime substrate:
-  - `layouts.css`
-  - `mj:tile-metrics-model`
-  - generated metric families
+    - `layouts.css`
+    - `mj:tile-metrics-model`
+    - generated metric families
 - current live feature wiring:
-  - automatic shell-board fit via `mj:tile-metrics-model`
-  - mounted settings preview fit via `mj:tile-metrics-model`
-  - legacy tile-size state retained around controller/persistence
-  - persisted tile-size preference
+    - automatic shell-board fit via `mj:tile-metrics-model`
+    - mounted settings preview fit via `mj:tile-metrics-model`
+    - legacy tile-size state retained around controller/persistence
+    - persisted tile-size preference
 
 If two notes disagree, the live code wins.
 

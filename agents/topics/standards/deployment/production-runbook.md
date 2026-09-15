@@ -25,20 +25,20 @@ intentionally be limited to `gc` and `sat`:
 
 ```json
 {
-  "apps": [
-    {
-      "name": "gc",
-      "filename": "gc.json",
-      "code": false,
-      "default": true
-    },
-    {
-      "name": "sat",
-      "filename": "sat.json",
-      "code": false,
-      "default": false
-    }
-  ]
+	"apps": [
+		{
+			"name": "gc",
+			"filename": "gc.json",
+			"code": false,
+			"default": true
+		},
+		{
+			"name": "sat",
+			"filename": "sat.json",
+			"code": false,
+			"default": false
+		}
+	]
 }
 ```
 
@@ -94,25 +94,26 @@ The helper:
   negative HTTP smoke checks; and
 - prints PM2 status and recent logs.
 
-The root repository intentionally uses `npm install --include=dev` because its
-lockfile is ignored and its Polylith build tooling is a development dependency.
+The deployment helper currently uses `npm install --include=dev` at the root.
+The root lockfile is now retained by repository policy; development dependencies
+include the Polylith build tooling.
 Naginator has its own committed lockfile and uses `npm ci --include=dev`.
 
 Helper defaults:
 
 - The deploy helper script assumes:
-  - app name: `poly-gc`
-  - repo dir: `~/poly-gc-react`
-  - `nvm` at `~/.nvm`
+    - app name: `poly-gc`
+    - repo dir: `~/poly-gc-react`
+    - `nvm` at `~/.nvm`
 - You can override those with:
-  - `APP_NAME`
-  - `APP_DIR`
-  - `NVM_DIR`
-  - `BASE_URL`
+    - `APP_NAME`
+    - `APP_DIR`
+    - `NVM_DIR`
+    - `BASE_URL`
 - The live process currently runs from:
-  - cwd: `/home/codex/poly-gc-react`
-  - script: `npm start`
-  - env: `NODE_ENV=prod`, `GC_ENV=prod`
+    - cwd: `/home/codex/poly-gc-react`
+    - script: `npm start`
+    - env: `NODE_ENV=prod`, `GC_ENV=prod`
 
 ## Verify
 
@@ -198,7 +199,7 @@ Run that if startup-on-reboot needs to be re-established or repaired.
 ## Current Caveats
 
 - The repo remote on the server is HTTPS GitHub:
-  - `https://github.com/Ondoher/poly-gc-react.git`
+    - `https://github.com/Ondoher/poly-gc-react.git`
 - The Naginator submodule also uses a public HTTPS GitHub remote, so the server
   does not require a separate SSH deploy key for the current repository.
 - Because the deploy flow is `git pull`, avoid overwriting the server-local untracked production files.

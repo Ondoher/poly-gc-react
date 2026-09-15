@@ -1,24 +1,9 @@
-import { findSmallIsolatedCandidates, getComponentUnionBounds } from './normalized-face-components.js';
+import {findSmallIsolatedCandidates, getComponentUnionBounds} from './normalized-face-components.js';
 
-const LABEL_ROLES = new Set([
-	'suit-label',
-	'wind-label',
-	'flower-label',
-	'season-label',
-]);
-const CHARACTER_GLYPH_ROLES = new Set([
-	'flower-character',
-	'season-character',
-]);
-const MAIN_ARTWORK_ROLES = new Set([
-	'main-artwork',
-	'dragon-artwork',
-]);
-const REPEATED_ARTWORK_ROLES = new Set([
-	'dot',
-	'bamboo-stick',
-	'bamboo-group',
-]);
+const LABEL_ROLES = new Set(['suit-label', 'wind-label', 'flower-label', 'season-label']);
+const CHARACTER_GLYPH_ROLES = new Set(['flower-character', 'season-character']);
+const MAIN_ARTWORK_ROLES = new Set(['main-artwork', 'dragon-artwork']);
+const REPEATED_ARTWORK_ROLES = new Set(['dot', 'bamboo-stick', 'bamboo-group']);
 
 /**
  * Create conservative semantic-part bindings from detected components.
@@ -34,15 +19,11 @@ const REPEATED_ARTWORK_ROLES = new Set([
  * @param {Object} [options.assignmentHints]
  * @returns {Object}
  */
-export function autoAssignComponentsToSemanticParts({
-	faceKey,
-	face,
-	parts,
-	components,
-	assignmentHints = {},
-}) {
+export function autoAssignComponentsToSemanticParts({faceKey, face, parts, components, assignmentHints = {}}) {
 	const partEntries = Object.entries(parts || {});
-	const detectedComponents = components.map(normalizeDetectedComponent).filter((component) => component.id && component.bounds);
+	const detectedComponents = components
+		.map(normalizeDetectedComponent)
+		.filter((component) => component.id && component.bounds);
 	const bindings = [];
 	const assignedComponentIds = new Set();
 	const diagnostics = [];
@@ -82,13 +63,34 @@ export function autoAssignComponentsToSemanticParts({
 	}
 
 	if (isCharacterSuitFace(face)) {
-		bindCharacterSuitParts({ partEntries, components: detectedComponents, assignedComponentIds, bind, diagnostics, face, assignmentHints });
+		bindCharacterSuitParts({
+			partEntries,
+			components: detectedComponents,
+			assignedComponentIds,
+			bind,
+			diagnostics,
+			face,
+			assignmentHints,
+		});
 	} else if (isWindFace(face)) {
-		bindWindParts({ partEntries, components: detectedComponents, assignedComponentIds, bind, diagnostics });
+		bindWindParts({partEntries, components: detectedComponents, assignedComponentIds, bind, diagnostics});
 	} else {
-		bindSpecialCharacterPart({ partEntries, components: detectedComponents, assignedComponentIds, bind, face, assignmentHints });
-		bindMainArtworkPart({ partEntries, components: detectedComponents, assignedComponentIds, bind });
-		bindRepeatedArtworkParts({ partEntries, components: detectedComponents, assignedComponentIds, bind, diagnostics });
+		bindSpecialCharacterPart({
+			partEntries,
+			components: detectedComponents,
+			assignedComponentIds,
+			bind,
+			face,
+			assignmentHints,
+		});
+		bindMainArtworkPart({partEntries, components: detectedComponents, assignedComponentIds, bind});
+		bindRepeatedArtworkParts({
+			partEntries,
+			components: detectedComponents,
+			assignedComponentIds,
+			bind,
+			diagnostics,
+		});
 	}
 
 	return applyBindings({
@@ -101,19 +103,34 @@ export function autoAssignComponentsToSemanticParts({
 	});
 }
 
-function bindCharacterSuitParts({ partEntries, components, assignedComponentIds, bind, diagnostics, face, assignmentHints }) {
+function bindCharacterSuitParts({
+	partEntries,
+	components,
+	assignedComponentIds,
+	bind,
+	diagnostics,
+	face,
+	assignmentHints,
+}) {
 	const characterPart = partEntries.find(([, part]) => part.role === 'character-body');
 	const numberGlyphPart = partEntries.find(([, part]) => part.role === 'character-number-glyph');
 	const remaining = unassignedComponents(components, assignedComponentIds);
 	const characterHint = resolveAssignmentHint(face, characterPart?.[0], characterPart?.[1], assignmentHints);
-	const characterComponent = selectComponentForPart(remaining, components, face, characterPart?.[0], characterPart?.[1], assignmentHints)
-		|| largestComponent(remaining);
+	const characterComponent =
+		selectComponentForPart(remaining, components, face, characterPart?.[0], characterPart?.[1], assignmentHints) ||
+		largestComponent(remaining);
 
 	if (characterPart && characterComponent) {
-		const characterComponents = expandLinkedColorComponents(characterComponent, remaining, components, characterHint);
-		const strategy = characterComponents.length > 1
-			? 'auto-character-body-hinted-linked-color'
-			: 'auto-character-body-hinted-largest';
+		const characterComponents = expandLinkedColorComponents(
+			characterComponent,
+			remaining,
+			components,
+			characterHint,
+		);
+		const strategy =
+			characterComponents.length > 1
+				? 'auto-character-body-hinted-linked-color'
+				: 'auto-character-body-hinted-largest';
 		bind(characterPart[0], characterComponents, strategy, 'medium');
 	}
 
@@ -135,7 +152,7 @@ function bindCharacterSuitParts({ partEntries, components, assignedComponentIds,
 	}
 }
 
-function bindWindParts({ partEntries, components, assignedComponentIds, bind, diagnostics }) {
+function bindWindParts({partEntries, components, assignedComponentIds, bind, diagnostics}) {
 	const characterPart = partEntries.find(([, part]) => part.role === 'wind-character');
 	const characterComponents = unassignedComponents(components, assignedComponentIds);
 
@@ -150,7 +167,7 @@ function bindWindParts({ partEntries, components, assignedComponentIds, bind, di
 	}
 }
 
-function bindSpecialCharacterPart({ partEntries, components, assignedComponentIds, bind, face, assignmentHints }) {
+function bindSpecialCharacterPart({partEntries, components, assignedComponentIds, bind, face, assignmentHints}) {
 	const characterPart = partEntries.find(([, part]) => CHARACTER_GLYPH_ROLES.has(part.role));
 
 	if (!characterPart) {
@@ -166,16 +183,19 @@ function bindSpecialCharacterPart({ partEntries, components, assignedComponentId
 	})
 		.filter((candidate) => candidate.topBand)
 		.filter((candidate) => candidate.normalizedCenter.y < 0.38)
-		.sort((left, right) => scoreCandidateAgainstHint(left, hint) - scoreCandidateAgainstHint(right, hint)
-			|| left.normalizedCenter.x - right.normalizedCenter.x
-			|| right.area - left.area);
+		.sort(
+			(left, right) =>
+				scoreCandidateAgainstHint(left, hint) - scoreCandidateAgainstHint(right, hint) ||
+				left.normalizedCenter.x - right.normalizedCenter.x ||
+				right.area - left.area,
+		);
 
 	if (candidates[0]?.item) {
 		bind(characterPart[0], [candidates[0].item], 'auto-special-character-hinted-isolated', 'low');
 	}
 }
 
-function bindMainArtworkPart({ partEntries, components, assignedComponentIds, bind }) {
+function bindMainArtworkPart({partEntries, components, assignedComponentIds, bind}) {
 	const mainPart = partEntries.find(([, part]) => isMainArtworkPart(part));
 
 	if (!mainPart) {
@@ -189,17 +209,14 @@ function bindMainArtworkPart({ partEntries, components, assignedComponentIds, bi
 	}
 }
 
-function bindRepeatedArtworkParts({ partEntries, components, assignedComponentIds, bind, diagnostics }) {
-	const repeatedParts = partEntries
-		.filter(([, part]) => isRepeatedArtworkPart(part))
-		.sort(comparePartEntry);
+function bindRepeatedArtworkParts({partEntries, components, assignedComponentIds, bind, diagnostics}) {
+	const repeatedParts = partEntries.filter(([, part]) => isRepeatedArtworkPart(part)).sort(comparePartEntry);
 
 	if (repeatedParts.length === 0) {
 		return;
 	}
 
-	const repeatedComponents = unassignedComponents(components, assignedComponentIds)
-		.sort(compareByPosition);
+	const repeatedComponents = unassignedComponents(components, assignedComponentIds).sort(compareByPosition);
 
 	if (repeatedComponents.length !== repeatedParts.length) {
 		diagnostics.push({
@@ -215,7 +232,7 @@ function bindRepeatedArtworkParts({ partEntries, components, assignedComponentId
 	}
 }
 
-function applyBindings({ faceKey, parts, components, bindings, diagnostics, assignmentHints }) {
+function applyBindings({faceKey, parts, components, bindings, diagnostics, assignmentHints}) {
 	const bindingByPart = new Map(bindings.map((binding) => [binding.partId, binding]));
 	const componentIdsByPart = new Map(bindings.map((binding) => [binding.partId, new Set(binding.componentIds)]));
 	const partIdsByComponent = new Map();
@@ -228,19 +245,21 @@ function applyBindings({ faceKey, parts, components, bindings, diagnostics, assi
 		}
 	}
 
-	const nextParts = Object.fromEntries(Object.entries(parts || {}).map(([partId, part]) => {
-		const componentIds = [...(componentIdsByPart.get(partId) || [])];
+	const nextParts = Object.fromEntries(
+		Object.entries(parts || {}).map(([partId, part]) => {
+			const componentIds = [...(componentIdsByPart.get(partId) || [])];
 
-		return [
-			partId,
-			{
-				...part,
-				bindingStatus: componentIds.length > 0 ? 'bound' : 'unbound',
-				reviewStatus: bindingByPart.has(partId) ? 'inferred' : 'needs-review',
-				componentIds,
-			},
-		];
-	}));
+			return [
+				partId,
+				{
+					...part,
+					bindingStatus: componentIds.length > 0 ? 'bound' : 'unbound',
+					reviewStatus: bindingByPart.has(partId) ? 'inferred' : 'needs-review',
+					componentIds,
+				},
+			];
+		}),
+	);
 	const nextComponents = components.map((component) => {
 		const componentId = component.componentId || component.id;
 		const partIds = partIdsByComponent.get(componentId) || [];
@@ -279,22 +298,26 @@ function selectLabelComponent(components, face, partId, part, assignmentHints) {
 		maxAreaRatio: 0.18,
 		minWidth: 5,
 		minHeight: 8,
-	})
-		.map((candidate) => ({
-			...candidate,
-			colorMismatch: expectedColor && candidate.item.dominantColor?.toLowerCase() !== expectedColor.toLowerCase() ? 1 : 0,
-			topLabelCandidate: candidate.topBand && candidate.normalizedCenter.y < 0.38,
-			positionDistance: scoreCandidateAgainstHint(candidate, hint),
-		}));
+	}).map((candidate) => ({
+		...candidate,
+		colorMismatch:
+			expectedColor && candidate.item.dominantColor?.toLowerCase() !== expectedColor.toLowerCase() ? 1 : 0,
+		topLabelCandidate: candidate.topBand && candidate.normalizedCenter.y < 0.38,
+		positionDistance: scoreCandidateAgainstHint(candidate, hint),
+	}));
 	const topCandidates = allCandidates.filter((candidate) => candidate.topLabelCandidate);
 	const candidates = topCandidates.length > 0 ? topCandidates : allCandidates;
 
-	return candidates
-		.sort((left, right) => left.positionDistance - right.positionDistance
-			|| left.cornerDistances.topLeft - right.cornerDistances.topLeft
-			|| left.colorMismatch - right.colorMismatch
-			|| left.normalizedCenter.y - right.normalizedCenter.y
-			|| left.area - right.area)[0]?.item || null;
+	return (
+		candidates.sort(
+			(left, right) =>
+				left.positionDistance - right.positionDistance ||
+				left.cornerDistances.topLeft - right.cornerDistances.topLeft ||
+				left.colorMismatch - right.colorMismatch ||
+				left.normalizedCenter.y - right.normalizedCenter.y ||
+				left.area - right.area,
+		)[0]?.item || null
+	);
 }
 
 function expectedLabelColor(face, part) {
@@ -317,8 +340,11 @@ function selectComponentForPart(components, allComponents, face, partId, part, a
 			normalizedCenter: normalizedCenterForComponent(component, allComponents),
 		}))
 		.filter((candidate) => isComponentInHintRegion(candidate.item, allComponents, hint, null))
-		.sort((left, right) => scoreCandidateAgainstHint(left, hint) - scoreCandidateAgainstHint(right, hint)
-			|| componentArea(right.item) - componentArea(left.item));
+		.sort(
+			(left, right) =>
+				scoreCandidateAgainstHint(left, hint) - scoreCandidateAgainstHint(right, hint) ||
+				componentArea(right.item) - componentArea(left.item),
+		);
 
 	return candidates[0]?.item || null;
 }
@@ -330,11 +356,12 @@ function expandLinkedColorComponents(anchorComponent, candidateComponents, allCo
 
 	const anchorColor = anchorComponent.dominantColor.toLowerCase();
 	const linkedComponents = candidateComponents
-		.filter((component) => component.id === anchorComponent.id
-			|| (
-				component.dominantColor?.toLowerCase() === anchorColor
-				&& isComponentInHintRegion(component, allComponents, hint, null)
-			))
+		.filter(
+			(component) =>
+				component.id === anchorComponent.id ||
+				(component.dominantColor?.toLowerCase() === anchorColor &&
+					isComponentInHintRegion(component, allComponents, hint, null)),
+		)
 		.sort(compareByPosition);
 
 	return linkedComponents.length > 0 ? linkedComponents : [anchorComponent];
@@ -354,8 +381,7 @@ function resolveAssignmentHint(face, partId, part, assignmentHints = {}) {
 }
 
 function firstMatchingPatternHint(partId, patterns = {}) {
-	return Object.entries(patterns)
-		.find(([pattern]) => wildcardMatch(pattern, partId))?.[1] || null;
+	return Object.entries(patterns).find(([pattern]) => wildcardMatch(pattern, partId))?.[1] || null;
 }
 
 function wildcardMatch(pattern, value) {
@@ -365,15 +391,19 @@ function wildcardMatch(pattern, value) {
 }
 
 function familyHintKey(family) {
-	return {
-		bamboo: 'b',
-		characters: 'c',
-		dots: 'd',
-		winds: 'wind',
-		dragons: 'dragon',
-		flowers: 'flower',
-		seasons: 'season',
-	}[family] || family || '';
+	return (
+		{
+			bamboo: 'b',
+			characters: 'c',
+			dots: 'd',
+			winds: 'wind',
+			dragons: 'dragon',
+			flowers: 'flower',
+			seasons: 'season',
+		}[family] ||
+		family ||
+		''
+	);
 }
 
 function isComponentInHintRegion(component, allComponents, hint = {}, fallbackRegion = null) {
@@ -485,8 +515,8 @@ function normalizeBounds(bounds) {
 
 	const left = bounds.left;
 	const top = bounds.top;
-	const right = bounds.right ?? (bounds.left + bounds.width);
-	const bottom = bounds.bottom ?? (bounds.top + bounds.height);
+	const right = bounds.right ?? bounds.left + bounds.width;
+	const bottom = bounds.bottom ?? bounds.top + bounds.height;
 
 	if (![left, top, right, bottom].every(Number.isFinite)) {
 		return null;
@@ -497,15 +527,15 @@ function normalizeBounds(bounds) {
 		top,
 		right,
 		bottom,
-		width: bounds.width ?? (right - left),
-		height: bounds.height ?? (bottom - top),
+		width: bounds.width ?? right - left,
+		height: bounds.height ?? bottom - top,
 	};
 }
 
 function centerOf(bounds) {
 	return {
-		x: bounds.left + (bounds.width / 2),
-		y: bounds.top + (bounds.height / 2),
+		x: bounds.left + bounds.width / 2,
+		y: bounds.top + bounds.height / 2,
 	};
 }
 
@@ -514,8 +544,7 @@ function unassignedComponents(components, assignedComponentIds) {
 }
 
 function largestComponent(components) {
-	return [...components]
-		.sort((left, right) => componentArea(right) - componentArea(left))[0] || null;
+	return [...components].sort((left, right) => componentArea(right) - componentArea(left))[0] || null;
 }
 
 function componentArea(component) {
@@ -523,7 +552,9 @@ function componentArea(component) {
 }
 
 function isCharacterSuitFace(face) {
-	return face.family === 'characters' && Object.values(face.parts || {}).some((part) => part.role === 'character-body');
+	return (
+		face.family === 'characters' && Object.values(face.parts || {}).some((part) => part.role === 'character-body')
+	);
 }
 
 function isWindFace(face) {
@@ -543,10 +574,9 @@ function isRepeatedArtworkPart(part) {
 }
 
 function comparePartEntry([leftId], [rightId]) {
-	return leftId.localeCompare(rightId, undefined, { numeric: true });
+	return leftId.localeCompare(rightId, undefined, {numeric: true});
 }
 
 function compareByPosition(left, right) {
 	return left.center.y - right.center.y || left.center.x - right.center.x;
 }
-

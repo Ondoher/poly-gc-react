@@ -1,6 +1,5 @@
-import { makeSequentialArray } from '../../src/gc/utils/arrays.js';
+import {makeSequentialArray} from '../../src/gc/utils/arrays.js';
 import Random from '../../src/gc/utils/random.js';
-
 
 /** @type {SuitSpec} */
 const SUITS = {
@@ -10,8 +9,8 @@ const SUITS = {
 	dragons: [108, 119],
 	winds: [120, 135],
 	flowers: [136, 139],
-	seasons: [140, 143]
-}
+	seasons: [140, 143],
+};
 
 /**
  * Manage generated face sets and the concrete face pairs selected from them.
@@ -26,7 +25,7 @@ export default class FaceInventory {
 	 */
 	constructor() {
 		/** @type {Map<number, FaceSet}  */
-		this.faceSets = new Map;
+		this.faceSets = new Map();
 
 		/** @type {FaceSuitMap} */
 		this.suits = {};
@@ -65,7 +64,6 @@ export default class FaceInventory {
 		let face = faceGroup * 4;
 		return this.suits[face];
 	}
-
 
 	/**
 	 * Remove all tracked face sets and therefore all available face pairs.
@@ -111,7 +109,7 @@ export default class FaceInventory {
 			this.faceSets.set(id, {
 				id,
 				suit,
-				faces
+				faces,
 			});
 		}
 
@@ -122,7 +120,7 @@ export default class FaceInventory {
 			this.faceSets.set(id, {
 				id,
 				suit,
-				faces
+				faces,
 			});
 		}
 
@@ -319,6 +317,4 @@ export default class FaceInventory {
 			faces,
 		};
 	}
-
-
 }

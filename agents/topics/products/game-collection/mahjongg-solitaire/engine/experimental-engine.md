@@ -13,77 +13,77 @@ The focus here is the generator-side architecture:
 Current shape:
 
 - `Grid`
-  - generic 3D occupancy grid
+    - generic 3D occupancy grid
 - `GameState`
-  - Mahjongg-specific board and tile state on top of the grid
+    - Mahjongg-specific board and tile state on top of the grid
 - `GameRules`
-  - stateless questions about Mahjongg game state
+    - stateless questions about Mahjongg game state
 - `StateGraphAnalyzer`
-  - hypothetical questions over copied game state
+    - hypothetical questions over copied game state
 - `TileSuspension`
-  - suspension-domain record for delayed match release
+    - suspension-domain record for delayed match release
 - `GeneratedPair`
-  - prepared tile-pair record for deferred face assignment metadata
+    - prepared tile-pair record for deferred face assignment metadata
 - `SoftLinks`
-  - generation-side registry for non-structural links between tile keys
+    - generation-side registry for non-structural links between tile keys
 - `GameEngine`
-  - runtime state machine over game state
+    - runtime state machine over game state
 - `GameGenerator`
-  - construction of a fresh generated game state
+    - construction of a fresh generated game state
 - `Tiles`
-  - orchestration of structural tile-choice behavior during generation
+    - orchestration of structural tile-choice behavior during generation
 - `Faces`
-  - orchestration of face-selection and face-assignment behavior during generation
+    - orchestration of face-selection and face-assignment behavior during generation
 - `Suspensions`
-  - cross-domain policy seam for delayed-match creation and release
+    - cross-domain policy seam for delayed-match creation and release
 
 ## Experimental Classes
 
 - `Grid`
-  - Generic sparse 3D occupancy storage for box add/remove/intersection queries.
+    - Generic sparse 3D occupancy storage for box add/remove/intersection queries.
 - `GameState`
-  - Mahjongg-specific board state layered on top of `Grid`, including tile positions, faces, placement, and cloning.
+    - Mahjongg-specific board state layered on top of `Grid`, including tile positions, faces, placement, and cloning.
 - `GameRules`
-  - Stateless Mahjongg rules for open-tile checks, playable-pair checks, and win/loss evaluation.
+    - Stateless Mahjongg rules for open-tile checks, playable-pair checks, and win/loss evaluation.
 - `GameEngine`
-  - Runtime mutation shell for loading a generated board, playing pairs, undo/redo, selection, and derived state.
+    - Runtime mutation shell for loading a generated board, playing pairs, undo/redo, selection, and derived state.
 - `GameGenerator`
-  - Active experimental board generator that prepares structural pairs backward, assigns faces, and restores the final board for play.
+    - Active experimental board generator that prepares structural pairs backward, assigns faces, and restores the final board for play.
 - `Tiles`
-  - Active top-level orchestration layer for structural tile choice. It sits above lower-level helpers such as `TilePicker` and exposes tile-selection policy to `GameGenerator`.
+    - Active top-level orchestration layer for structural tile choice. It sits above lower-level helpers such as `TilePicker` and exposes tile-selection policy to `GameGenerator`.
 - `Faces`
-  - Active top-level orchestration layer for face selection and assignment. It owns `FaceInventory`, shared `FaceAvoidance`, and `FaceRanking`.
+    - Active top-level orchestration layer for face selection and assignment. It owns `FaceInventory`, shared `FaceAvoidance`, and `FaceRanking`.
 - `Suspensions`
-  - Active infrastructure seam for delayed-match creation, reservation, and release. It composes public `Tiles` and `Faces` capabilities rather than duplicating their lower-level helpers. The algorithmic policy methods are still shells.
+    - Active infrastructure seam for delayed-match creation, reservation, and release. It composes public `Tiles` and `Faces` capabilities rather than duplicating their lower-level helpers. The algorithmic policy methods are still shells.
 - `TilePicker`
-  - Structural tile ranker and selector used during generation.
+    - Structural tile ranker and selector used during generation.
 - `StateGraphAnalyzer`
-  - Copied-state analysis helper for hypothetical removals, stack-balance questions, freed-tile counts, and short-horizon probes.
+    - Copied-state analysis helper for hypothetical removals, stack-balance questions, freed-tile counts, and short-horizon probes.
 - `FaceInventory`
-  - Face-domain-owned inventory for face sets, suit lookup, concrete face-pair selection, selected-group availability, and assignment-history storage.
+    - Face-domain-owned inventory for face sets, suit lookup, concrete face-pair selection, selected-group availability, and assignment-history storage.
 - `TileSuspension`
-  - Domain record for one suspended tile and its reserved release metadata.
+    - Domain record for one suspended tile and its reserved release metadata.
 - `GeneratedPair`
-  - Domain record for one prepared tile pair, including tile keys, assigned face pair, and preferred face group.
+    - Domain record for one prepared tile pair, including tile keys, assigned face pair, and preferred face group.
 - `SoftLinks`
-  - Simple generator-state registry for non-structural links between tile keys.
-    It is not a generic connection registry. Link type describes how the tile
-    list was formed, and link role describes the context in which it was
-    recorded.
+    - Simple generator-state registry for non-structural links between tile keys.
+      It is not a generic connection registry. Link type describes how the tile
+      list was formed, and link role describes the context in which it was
+      recorded.
 - `FaceAvoidance`
-  - Shared generation-run penalty store for soft face-assignment pressure.
+    - Shared generation-run penalty store for soft face-assignment pressure.
 - `FaceRanking`
-  - Face-group ranking helper for reuse spacing, preferred-group bias, easy duplicate expansion, and avoidance-aware ordering during face assignment.
+    - Face-group ranking helper for reuse spacing, preferred-group bias, easy duplicate expansion, and avoidance-aware ordering during face assignment.
 - `GeneratorState`
-  - `GameState` extension for generator-specific shared state such as generation rules, difficulty options, prepared pairs, active suspended records, and shared generator-side helpers. It is intended to be the shared state hub for the top-level generator orchestrators and the generator-side access path to `GameState`.
+    - `GameState` extension for generator-specific shared state such as generation rules, difficulty options, prepared pairs, active suspended records, and shared generator-side helpers. It is intended to be the shared state hub for the top-level generator orchestrators and the generator-side access path to `GameState`.
 - `ranked-window.js`
-  - Shared pure helper for difficulty-shaped ranked-window slicing and random selection. It is used by tile picking and face-group selection.
+    - Shared pure helper for difficulty-shaped ranked-window slicing and random selection. It is used by tile picking and face-group selection.
 
 Top-level generator-orchestration intent note:
 
 - the two primary generator domains are:
-  - `Tiles`
-  - `Faces`
+    - `Tiles`
+    - `Faces`
 - `Suspensions` is a higher-order generation-policy layer because delayed
   match behavior needs both structural tile selection and face reservation
 - `GameGenerator` should coordinate those concern areas rather than reaching
@@ -126,10 +126,10 @@ Generator-state intent note:
 - generator-side collaborators should access `GameState` through
   `GeneratorState`, not as a parallel direct dependency
 - current expected direct consumers are:
-  - `GameGenerator`
-  - `Tiles`
-  - `Faces`
-  - `Suspensions`
+    - `GameGenerator`
+    - `Tiles`
+    - `Faces`
+    - `Suspensions`
 
 Domain-boundary rule:
 
@@ -193,8 +193,8 @@ Folder-restructure note:
   cross-feature access, wrap the pure engine tools in a common service rather
   than making the engine tools depend on app infrastructure
 - working distinction:
-  - `tools` = pure engine analysis
-  - common services = app-facing integration around those tools
+    - `tools` = pure engine analysis
+    - common services = app-facing integration around those tools
 
 ## Class Relationships
 
@@ -293,8 +293,8 @@ Related notes:
 - [Engine Split Notes](/c:/dev/poly-gc-react/agents/topics/products/game-collection/mahjongg-solitaire/engine/split-notes.md)
 - [Common Terms](/c:/dev/poly-gc-react/agents/topics/products/game-collection/mahjongg-solitaire/engine/common-terms.md)
 - [Generation Terms](/c:/dev/poly-gc-react/agents/topics/products/game-collection/mahjongg-solitaire/engine/generation.md)
-  - human-facing generation documentation intended to become the official engine
-    `README.md` when the experimental engine is promoted
+    - human-facing generation documentation intended to become the official engine
+      `README.md` when the experimental engine is promoted
 - [Generator Build Plan](/c:/dev/poly-gc-react/agents/topics/products/game-collection/mahjongg-solitaire/engine/generator-build-plan.md)
 - [Live Face Assignment Flow](/c:/dev/poly-gc-react/agents/topics/products/game-collection/mahjongg-solitaire/engine/live-face-assignment-flow.md)
 - [Current Status](/c:/dev/poly-gc-react/agents/topics/products/game-collection/mahjongg-solitaire/engine/experimental-status.md)

@@ -1,4 +1,4 @@
-import { Service, Registry } from "@polylith/core";
+import {Service, Registry} from '@polylith/core';
 
 /**
  * Collect gameplay actions from the MJ runtime and rebroadcast them for other
@@ -9,8 +9,8 @@ export default class ActionCollectorService extends Service {
 	 * @param {Registry} [registry] - Manage service lookup and registration.
 	 */
 	constructor(registry) {
-		super("mj:action-collector", registry);
-		this.implement(["recordAction"]);
+		super('mj:action-collector', registry);
+		this.implement(['recordAction']);
 	}
 
 	/**
@@ -20,7 +20,7 @@ export default class ActionCollectorService extends Service {
 	 * @returns {MjGameplayAction | false} Return the normalized action or false when the payload is invalid.
 	 */
 	recordAction(action) {
-		if (!action || typeof action !== "object" || Array.isArray(action)) {
+		if (!action || typeof action !== 'object' || Array.isArray(action)) {
 			return false;
 		}
 
@@ -29,7 +29,7 @@ export default class ActionCollectorService extends Service {
 			...action,
 		};
 
-		this.fire("action", normalizedAction);
+		this.fire('action', normalizedAction);
 		return normalizedAction;
 	}
 }

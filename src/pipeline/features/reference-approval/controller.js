@@ -1,5 +1,5 @@
 import React from 'react';
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 export default class ReferenceApprovalController extends Service {
 	constructor(registry) {
@@ -86,20 +86,24 @@ export default class ReferenceApprovalController extends Service {
 		callback?.();
 	}
 
-	async load({ force = false, quiet = false } = {}) {
+	async load({force = false, quiet = false} = {}) {
 		if (!force && (this.state.processing || this.state.structure)) {
 			return;
 		}
 
-		if (!force && this.state.dirty && !window.confirm('Reference structure has unsaved changes. Reload and discard them?')) {
-			this.setState({ status: 'Reload cancelled; unsaved changes remain' });
+		if (
+			!force &&
+			this.state.dirty &&
+			!window.confirm('Reference structure has unsaved changes. Reload and discard them?')
+		) {
+			this.setState({status: 'Reload cancelled; unsaved changes remain'});
 			return;
 		}
 
 		this.setState({
 			processing: true,
 			processingLabel: quiet ? '' : 'Loading reference structure',
-			...(quiet ? {} : { status: 'Loading reference structure...' }),
+			...(quiet ? {} : {status: 'Loading reference structure...'}),
 		});
 
 		try {
@@ -107,27 +111,30 @@ export default class ReferenceApprovalController extends Service {
 			const structure = result.structure || null;
 			const selection = this.model.initialSelection(structure);
 
-			this.setState({
-				structure,
-				path: result.path || '',
-				selection,
-				highlightUnboundComponents: false,
-				highlightUnboundParts: false,
-				dirty: false,
-				status: structure?.faces
-					? `${Object.keys(structure.faces).length} reference faces loaded`
-					: 'No reference structure loaded',
-			}, () => {
-				if (selection.faceKey) {
-					scrollReviewItemIntoView('face', selection.faceKey);
-				}
-			});
+			this.setState(
+				{
+					structure,
+					path: result.path || '',
+					selection,
+					highlightUnboundComponents: false,
+					highlightUnboundParts: false,
+					dirty: false,
+					status: structure?.faces
+						? `${Object.keys(structure.faces).length} reference faces loaded`
+						: 'No reference structure loaded',
+				},
+				() => {
+					if (selection.faceKey) {
+						scrollReviewItemIntoView('face', selection.faceKey);
+					}
+				},
+			);
 		} catch (error) {
 			this.setState({
 				status: `Load failed: ${error.message}`,
 			});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -146,21 +153,21 @@ export default class ReferenceApprovalController extends Service {
 				structure: result.structure || this.state.structure,
 				path: result.path || this.state.path,
 				dirty: false,
-				status: result.ok ? (options.successStatus || `Saved ${result.path}`) : 'Save failed',
+				status: result.ok ? options.successStatus || `Saved ${result.path}` : 'Save failed',
 			});
 		} catch (error) {
-			this.setState({ status: `Save failed: ${error.message}` });
+			this.setState({status: `Save failed: ${error.message}`});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
 	async accept() {
-		const { structure } = this.state;
+		const {structure} = this.state;
 		const summary = this.model.summary(structure);
 
 		if (!structure) {
-			this.setState({ status: 'No reference structure loaded' });
+			this.setState({status: 'No reference structure loaded'});
 			return;
 		}
 
@@ -179,8 +186,10 @@ export default class ReferenceApprovalController extends Service {
 		}
 
 		if (
-			summary.unboundComponentCount > 0
-			&& !window.confirm(`${summary.unboundComponentCount} detected components are unbound. Accept reference structure anyway?`)
+			summary.unboundComponentCount > 0 &&
+			!window.confirm(
+				`${summary.unboundComponentCount} detected components are unbound. Accept reference structure anyway?`,
+			)
 		) {
 			this.setState({
 				highlightUnboundComponents: true,
@@ -190,8 +199,10 @@ export default class ReferenceApprovalController extends Service {
 		}
 
 		if (
-			summary.unknownPaletteColorCount > 0
-			&& !window.confirm(`${summary.unknownPaletteColorCount} unique colors are not in the active palette: ${summary.unknownPaletteColors.join(', ')}. Accept anyway?`)
+			summary.unknownPaletteColorCount > 0 &&
+			!window.confirm(
+				`${summary.unknownPaletteColorCount} unique colors are not in the active palette: ${summary.unknownPaletteColors.join(', ')}. Accept anyway?`,
+			)
 		) {
 			this.setState({
 				status: 'Acceptance cancelled; colors outside the active palette remain',
@@ -217,7 +228,7 @@ export default class ReferenceApprovalController extends Service {
 	}
 
 	bindSelection(faceKey) {
-		const { partId, componentIds } = this.state.selection;
+		const {partId, componentIds} = this.state.selection;
 
 		if (!partId || componentIds.length === 0) {
 			return;
@@ -247,24 +258,25 @@ export default class ReferenceApprovalController extends Service {
 		const faceKey = summary.incompleteFaces[0];
 
 		if (!faceKey) {
-			this.setState({ status: 'No incomplete faces' });
+			this.setState({status: 'No incomplete faces'});
 			return;
 		}
 
 		const firstUnboundPart = summary.unboundParts.find((part) => part.faceKey === faceKey);
 
-		this.setState({
-			highlightUnboundParts: true,
-			selection: {
-				faceKey,
-				partId: firstUnboundPart?.partId || '',
-				componentIds: [],
-				componentSelectionExplicit: false,
+		this.setState(
+			{
+				highlightUnboundParts: true,
+				selection: {
+					faceKey,
+					partId: firstUnboundPart?.partId || '',
+					componentIds: [],
+					componentSelectionExplicit: false,
+				},
+				status: firstUnboundPart ? `Selected ${faceKey} ${firstUnboundPart.partId}` : `Selected ${faceKey}`,
 			},
-			status: firstUnboundPart
-				? `Selected ${faceKey} ${firstUnboundPart.partId}`
-				: `Selected ${faceKey}`,
-		}, () => scrollReviewItemIntoView('face', faceKey));
+			() => scrollReviewItemIntoView('face', faceKey),
+		);
 	}
 
 	showFirstUnboundPart() {
@@ -272,20 +284,23 @@ export default class ReferenceApprovalController extends Service {
 		const first = summary.unboundParts[0];
 
 		if (!first) {
-			this.setState({ status: 'No unbound parts' });
+			this.setState({status: 'No unbound parts'});
 			return;
 		}
 
-		this.setState({
-			highlightUnboundParts: true,
-			selection: {
-				faceKey: first.faceKey,
-				partId: first.partId,
-				componentIds: [],
-				componentSelectionExplicit: false,
+		this.setState(
+			{
+				highlightUnboundParts: true,
+				selection: {
+					faceKey: first.faceKey,
+					partId: first.partId,
+					componentIds: [],
+					componentSelectionExplicit: false,
+				},
+				status: `Selected ${first.faceKey} ${first.partId}`,
 			},
-			status: `Selected ${first.faceKey} ${first.partId}`,
-		}, () => scrollReviewItemIntoView('part', first.faceKey, first.partId));
+			() => scrollReviewItemIntoView('part', first.faceKey, first.partId),
+		);
 	}
 
 	showFirstUnboundComponent() {
@@ -293,24 +308,27 @@ export default class ReferenceApprovalController extends Service {
 		const first = summary.unboundComponents[0];
 
 		if (!first) {
-			this.setState({ status: 'No unbound components' });
+			this.setState({status: 'No unbound components'});
 			return;
 		}
 
-		this.setState({
-			highlightUnboundComponents: true,
-			selection: {
-				faceKey: first.faceKey,
-				partId: '',
-				componentIds: [first.componentId],
-				componentSelectionExplicit: true,
+		this.setState(
+			{
+				highlightUnboundComponents: true,
+				selection: {
+					faceKey: first.faceKey,
+					partId: '',
+					componentIds: [first.componentId],
+					componentSelectionExplicit: true,
+				},
+				status: `Selected ${first.faceKey} ${first.componentId}`,
 			},
-			status: `Selected ${first.faceKey} ${first.componentId}`,
-		}, () => scrollReviewItemIntoView('component', first.faceKey, first.componentId));
+			() => scrollReviewItemIntoView('component', first.faceKey, first.componentId),
+		);
 	}
 
 	dismissMessageDialog() {
-		this.setState({ messageDialog: null });
+		this.setState({messageDialog: null});
 	}
 
 	assetUrl(path) {
@@ -352,11 +370,7 @@ export default class ReferenceApprovalController extends Service {
 
 function scrollReviewItemIntoView(type, faceKey, itemId) {
 	const isFace = type === 'face';
-	const attribute = isFace
-		? 'data-review-face'
-		: type === 'part'
-			? 'data-review-part'
-			: 'data-review-component';
+	const attribute = isFace ? 'data-review-face' : type === 'part' ? 'data-review-part' : 'data-review-component';
 	const value = isFace ? faceKey : `${faceKey}:${itemId}`;
 	const selector = `[${attribute}="${cssEscape(value)}"]`;
 	const element = document.querySelector(selector);

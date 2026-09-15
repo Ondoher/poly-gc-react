@@ -9,8 +9,8 @@ Current behavior is now:
 
 - accepts a size-name such as `tiny-face` plus an optional output filename
 - emits one base `.face` rule with:
-  - `background-repeat: no-repeat`
-  - `background-position: 0 0`
+    - `background-repeat: no-repeat`
+    - `background-position: 0 0`
 - emits the existing Mahjongg face-index mapping
 - supports plain `url(...)` output
 - supports retina-aware `image-set(...)` output through `--image-set`
@@ -81,8 +81,8 @@ The current intended flow is:
 
 1. keep the canonical source art in the normal-size face and body folders
 2. run `generate-tile-assets.js` with:
-   - [generate-runtime-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-runtime-assets.json)
-   - or [generate-tiny-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-tiny-assets.json)
+    - [generate-runtime-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-runtime-assets.json)
+    - or [generate-tiny-assets.json](/c:/dev/poly-gc-react/scripts/tile-css/assets/generate-tiny-assets.json)
 3. regenerate the face CSS files with `tileface.js --image-set`
 4. keep the tile layout CSS unchanged because runtime geometry still uses `1x`
    CSS pixel measurements

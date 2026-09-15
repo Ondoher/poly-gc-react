@@ -1,4 +1,4 @@
-import { MongoClient } from "mongodb";
+import {MongoClient} from 'mongodb';
 
 /**
  * Persist MJ gameplay telemetry records in a Mongo collection.
@@ -35,14 +35,12 @@ export default class TelemetryDb {
 		}
 
 		if (!this.uri || !this.dbName || !this.collectionName) {
-			throw new Error("TelemetryDb requires uri, dbName, and collectionName");
+			throw new Error('TelemetryDb requires uri, dbName, and collectionName');
 		}
 
 		this.client = new MongoClient(this.uri);
 		await this.client.connect();
-		this.collection = this.client
-			.db(this.dbName)
-			.collection(this.collectionName);
+		this.collection = this.client.db(this.dbName).collection(this.collectionName);
 	}
 
 	/**

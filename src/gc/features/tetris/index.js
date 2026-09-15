@@ -1,1 +1,1 @@
-import './tetris.js'
+import './tetris.js';

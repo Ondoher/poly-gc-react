@@ -1,24 +1,30 @@
 {
-	"resources": [{
-		"dest": "tetris/css",
-		"cwd": "assets/css",
-		"glob": "**/*.css"
-	},
-	{
-		"dest" : "tetris/images",
-		"cwd": "assets/images",
-		"glob": "**/*.{png,jpg}",
-		"keepNest": true
-	}],
-	"loadables" : [{
-		"name" : "tetris",
-		"index": "src/index.js",
-		"prefix": "tetris:",
-		"css": [{
+	"resources": [
+		{
 			"dest": "tetris/css",
 			"cwd": "assets/css",
 			"glob": "**/*.css"
-		}]
-	}],
-	"index" : "index.js"
+		},
+		{
+			"dest": "tetris/images",
+			"cwd": "assets/images",
+			"glob": "**/*.{png,jpg}",
+			"keepNest": true
+		}
+	],
+	"loadables": [
+		{
+			"name": "tetris",
+			"index": "src/index.js",
+			"prefix": "tetris:",
+			"css": [
+				{
+					"dest": "tetris/css",
+					"cwd": "assets/css",
+					"glob": "**/*.css"
+				}
+			]
+		}
+	],
+	"index": "index.js"
 }

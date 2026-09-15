@@ -19,9 +19,8 @@ Polylith server. Naginator is the first real deployed app.
   specifically enforces that ordering.
 - The CLI supplies a registry as the fourth router-entry parameter. Use of that
   registry is intentional rather than a consequence of module resolution.
-- The composing root configures an optional `deployment.setup` module. Polylith
-  invokes it once and awaits it before any app router initializes. The setup
-  module owns shared-service registration and the shared registry lifecycle.
+- The installed Polylith 1.2.1 setup behavior is described below. The accepted
+  target contract is the canonical deployment setup sequence.
 - This deployment's setup registers and starts the shared config service. GC
   attaches the ready shared registry and consumes config without owning its
   registration or lifecycle.
@@ -62,7 +61,14 @@ useful first proof of this boundary.
 
 ## Host Bootstrap Contract
 
-Polylith supports one optional server-root deployment setup module, separate
+The accepted engineering contract is [canonical deployment setup](C:/Users/gande/.codex/documentation/standards/polylith.md). Migration of the installed runtime remains separate work.
+
+### Installed 1.2.1 Behavior
+
+The following records the currently installed behavior, not a local standards
+exception or the target setup contract.
+
+Installed Polylith 1.2.1 supports one optional server-root deployment setup module, separate
 from every resident or discovered app router. Its narrow responsibility is to
 register and start host-owned services on the CLI-created shared registry.
 
@@ -70,26 +76,22 @@ The root config declares it as:
 
 ```json
 {
-    "deployment": {
-        "setup": "server/setup-deployment.js"
-    }
+	"deployment": {
+		"setup": "server/setup-deployment.js"
+	}
 }
 ```
 
-The module contract is:
+The installed module signature is:
 
 ```js
-export default async function setupDeployment({
-    sharedRegistry,
-    serverRoot,
-    config,
-}) {
-    new ConfigService(sharedRegistry);
-    await sharedRegistry.start();
+export default async function setupDeployment({sharedRegistry, serverRoot, config}) {
+	new ConfigService(sharedRegistry);
+	await sharedRegistry.start();
 }
 ```
 
-The startup sequence is:
+The installed startup sequence is:
 
 1. Create the shared registry.
 2. Load and invoke the composing root's setup module exactly once.
@@ -175,8 +177,9 @@ and support deliberate rotation and recovery.
 
 ## Required Updates
 
-- Commit and push the composed release containing Naginator pin `cae4ceb`.
-- Run the production helper and verify the updated Naginator deployment.
+- Migrate deployment setup to the accepted canonical signature/context and
+  master-then-discovered setup sequence; verify runtime adoption separately.
+
 - Complete the installed, suspended-iPhone Web Push round trip on the deployed
   `/nag/` origin.
 
@@ -200,73 +203,78 @@ make the released Naginator revision independent of the main release commit.
 - Discovered app configuration currently comes from the app's base
   `polylith.json`; it should therefore remain deployment-neutral unless
   Polylith later adds discovered-app environment overlays.
-- The root lockfile is ignored, so the deployment helper uses
-  `npm install --include=dev` there. Naginator carries its own committed
-  lockfile and is installed independently with `npm ci --include=dev`.
+- The root lockfile is now retained by repository policy. The deployment
+  helper currently uses `npm install --include=dev` there; Naginator carries
+  its own committed lockfile and uses `npm ci --include=dev`.
 - Building directly into the live `dist` directory is not atomic. A later
   hardening pass may stage and swap build output, but that is not required to
   introduce the first deployed app.
 
 ## Current Status
 
+Standards reconciliation replaced the root-only normative setup rule with a
+canonical reference and retained the installed 1.2.1 behavior below as evidence.
+No runtime, dependency, release pin, or deployment change was made by that work.
+
 - [x] Polylith discovers multiple repository apps.
 - [x] Master apps initialize before discovered apps.
 - [x] The shared registry is explicitly passed to router entry points.
 - [x] Registry `attach` and `getAttached` behavior was validated locally.
 - [x] Polylith supports and awaits the composing root's optional
-  `deployment.setup` before any app router.
+      `deployment.setup` before any app router.
 - [x] This repository configures `server/setup-deployment.js`, which registers
-  host-owned `config` and starts the shared registry.
+      host-owned `config` and starts the shared registry.
 - [x] GC no longer registers or starts shared deployment services.
 - [x] GC has no local config implementation or declaration; its feedback
-  service resolves config through the local registry's `shared` attachment.
+      service resolves config through the local registry's `shared` attachment.
 - [x] The temporary `simple-test-app` source and stale `dist/simple-test`
-  output were removed; its route now returns HTTP 404.
+      output were removed; its route now returns HTTP 404.
 - [x] Local Polylith npm links were removed and published version 1.2.1 is
-  installed for all six Polylith packages. A full build and live shared-config
-  and GC route checks passed against the installed release.
+      installed for all six Polylith packages. A full build and live shared-config
+      and GC route checks passed against the installed release.
 - [x] The Naginator notification POC is committed and published for pinning.
 - [x] Ignored development and production host configuration now supplies the
-  complete Naginator Mongo and VAPID contract. Both VAPID pairs were validated;
-  production generated its key material directly on the server.
+      complete Naginator Mongo and VAPID contract. Both VAPID pairs were validated;
+      production generated its key material directly on the server.
 - [x] Naginator is pinned at published commit `b27b151` under
-  `deployed-apps/naginator`, and its dependencies install from its committed
-  lockfile.
+      `deployed-apps/naginator`, and its dependencies install from its committed
+      lockfile.
 - [x] The composed `--all` build produced `dist/nag`. Live checks passed for
-  `/nag/`, its deep link, manifest, service worker, shared-config VAPID route,
-  GC, and the absent simple-test route.
+      `/nag/`, its deep link, manifest, service worker, shared-config VAPID route,
+      GC, and the absent simple-test route.
 - [x] The production helper now performs fast-forward pulls, pinned submodule
-  checkout, root and deployed-app installs, explicit production environment
-  selection, full generated-output cleanup, composed `--all` build, PM2
-  restart, readiness waiting, and positive/negative HTTP smoke checks. Its Bash
-  syntax passes.
+      checkout, root and deployed-app installs, explicit production environment
+      selection, full generated-output cleanup, composed `--all` build, PM2
+      restart, readiness waiting, and positive/negative HTTP smoke checks. Its Bash
+      syntax passes.
 - [x] The production runbook documents the canonical deploy helper, Naginator
-  checks, device acceptance test, and submodule-aware rollback.
+      checks, device acceptance test, and submodule-aware rollback.
 - [x] Main release `801cae0`, with Naginator pinned at `b27b151`, was deployed
-  successfully. The production helper completed dependency installation,
-  composed build, PM2 restart, positive-route checks, and retired-route 404
-  checks. Independent verification confirmed the revisions, Node v24.14.1,
-  online `poly-gc` process, route results, and an 87-character public VAPID
-  key response without exposing private key material.
+      successfully. The production helper completed dependency installation,
+      composed build, PM2 restart, positive-route checks, and retired-route 404
+      checks. Independent verification confirmed the revisions, Node v24.14.1,
+      online `poly-gc` process, route results, and an 87-character public VAPID
+      key response without exposing private key material.
 - [x] Main release `3bc4f24`, with Naginator advanced to `36aaa89`, was deployed
-  successfully. Before release, its exact lockfile install, 90 client tests,
-  24 server tests, and the root composed build passed. Production independently
-  verified the root and app revisions, online PM2 process, expected route
-  statuses, retired-route 404s, and valid public VAPID response shape.
-- [x] The next Naginator pin was advanced locally to `cae4ceb`. Its 92 client
-  tests, 24 server tests, and the root composed build completed successfully;
-  package, lockfile, and Polylith configuration were unchanged.
-- [ ] Commit and push the root release containing Naginator `cae4ceb`, then run
-  the production helper and repeat the production smoke checks.
+      successfully. Before release, its exact lockfile install, 90 client tests,
+      24 server tests, and the root composed build passed. Production independently
+      verified the root and app revisions, online PM2 process, expected route
+      statuses, retired-route 404s, and valid public VAPID response shape.
+- [x] Main release `556eab4`, with Naginator advanced to `cae4ceb`, was deployed
+      successfully. Before release, its 92 client tests, 24 server tests, and the
+      root composed build passed; package, lockfile, and Polylith configuration
+      were unchanged. Production independently verified the root and app
+      revisions, online PM2 process, expected route statuses, retired-route 404s,
+      and valid public VAPID response shape.
 - [ ] Complete the installed, suspended-iPhone Web Push round trip on the
-  deployed `/nag/` origin.
+      deployed `/nag/` origin.
 - [ ] Later, evaluate extracting shared bootstrap from GC before making GC a
-  deployed app.
+      deployed app.
 - [ ] Later, evaluate an authenticated, artifact-based push deployment
-  protocol after the pull model is operational.
+      protocol after the pull model is operational.
 - [ ] Later, design authenticated out-of-band secret provisioning so an app
-  can manage only its owned deployment namespace without putting secrets in
-  source or release artifacts.
+      can manage only its owned deployment namespace without putting secrets in
+      source or release artifacts.
 
 ## Minimal Reload Sources
 

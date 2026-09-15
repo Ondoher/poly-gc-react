@@ -24,7 +24,7 @@
 		"destination": "dist/gc/index.html"
 	},
 	"liveReload": {
-		"port":35900,
+		"port": 35900,
 		"protocol": "http",
 		"hostname": "localhost",
 		"https": null

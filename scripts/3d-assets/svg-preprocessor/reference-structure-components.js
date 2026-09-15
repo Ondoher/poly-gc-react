@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { OUTPUT_3D_DIR } from '../shared/asset-paths.js';
+import {OUTPUT_3D_DIR} from '../shared/asset-paths.js';
 
 export const DEFAULT_REFERENCE_STRUCTURE_PATH = path.resolve(
 	OUTPUT_3D_DIR,
@@ -30,9 +30,7 @@ export function loadStructureBackedReferenceComponents(faceKey, options = {}) {
 
 function structureComponentToMatcherComponent(component, parts) {
 	const bounds = component.bounds || {};
-	const componentParts = (component.partIds || [])
-		.map((partId) => parts?.[partId])
-		.filter(Boolean);
+	const componentParts = (component.partIds || []).map((partId) => parts?.[partId]).filter(Boolean);
 
 	return {
 		...bounds,
@@ -49,9 +47,7 @@ function structureComponentToMatcherComponent(component, parts) {
 }
 
 function isLabelComponent(component, parts) {
-	return (component.partIds || [])
-		.map((partId) => parts?.[partId])
-		.some((part) => part?.contentKind === 'label');
+	return (component.partIds || []).map((partId) => parts?.[partId]).some((part) => part?.contentKind === 'label');
 }
 
 function uniqueValues(values) {

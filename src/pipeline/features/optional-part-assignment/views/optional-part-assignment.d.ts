@@ -24,7 +24,7 @@ interface OptionalPartAssignmentViewService {
 	 *
 	 * @param options - Optional load behavior flags.
 	 */
-	load(options?: { force?: boolean; quiet?: boolean }): Promise<void>;
+	load(options?: {force?: boolean; quiet?: boolean}): Promise<void>;
 
 	/**
 	 * Save current optional settings and rerun optional assignment.

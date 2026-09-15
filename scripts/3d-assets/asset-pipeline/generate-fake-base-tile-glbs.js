@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import * as THREE from 'three';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { BASE_TILE_MODELS_DIR, ROOT_DIR } from '../shared/asset-paths.js';
+import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
+import {BASE_TILE_MODELS_DIR, ROOT_DIR} from '../shared/asset-paths.js';
 
 class NodeFileReader {
 	constructor() {
@@ -88,7 +88,7 @@ const BASE_TILE_VARIANTS = Object.freeze([
 await main();
 
 async function main() {
-	fs.mkdirSync(BASE_TILE_DIR, { recursive: true });
+	fs.mkdirSync(BASE_TILE_DIR, {recursive: true});
 
 	const entries = [];
 	for (const variant of BASE_TILE_VARIANTS) {
@@ -176,7 +176,7 @@ async function exportGlb(group, outputPath) {
 	const scene = new THREE.Scene();
 	scene.name = group.name;
 	scene.add(group);
-	const glb = await exporter.parseAsync(scene, { binary: true });
+	const glb = await exporter.parseAsync(scene, {binary: true});
 	fs.writeFileSync(outputPath, Buffer.from(glb));
 	console.log(`Exported ${relativePath(outputPath)}`);
 }

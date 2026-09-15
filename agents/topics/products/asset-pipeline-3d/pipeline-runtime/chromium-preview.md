@@ -73,12 +73,12 @@ const browser = await getSharedPreviewBrowser();
 const page = await browser.newPage();
 
 try {
-  // Set viewport.
-  // Load preview HTML/scene.
-  // Wait for the render-ready signal.
-  // Screenshot/export PNG.
+	// Set viewport.
+	// Load preview HTML/scene.
+	// Wait for the render-ready signal.
+	// Screenshot/export PNG.
 } finally {
-  await page.close().catch(() => {});
+	await page.close().catch(() => {});
 }
 ```
 
@@ -105,9 +105,9 @@ singleton survive across separate child-process invocations.
 The browser manager should listen for disconnects:
 
 ```js
-browser.on("disconnected", () => {
-  sharedBrowser = null;
-  sharedBrowserPromise = null;
+browser.on('disconnected', () => {
+	sharedBrowser = null;
+	sharedBrowserPromise = null;
 });
 ```
 
@@ -142,4 +142,3 @@ For a multi-face preview run:
 - Cancelling the queue should stop in-flight and pending preview jobs.
 - A simulated browser disconnect should clear cached browser state and allow a
   later render to relaunch.
-

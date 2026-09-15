@@ -1,5 +1,5 @@
-import React from "react";
-import RaisedButton from "./RaisedButton.jsx";
+import React from 'react';
+import RaisedButton from './RaisedButton.jsx';
 
 export default class SettingsButton extends React.Component {
 	constructor(props) {
@@ -18,11 +18,7 @@ export default class SettingsButton extends React.Component {
 		}
 
 		return (
-			<RaisedButton
-				className={className}
-				onClick={this.props.onClick}
-				selected={this.props.selected}
-			>
+			<RaisedButton className={className} onClick={this.props.onClick} selected={this.props.selected}>
 				{this.props.children}
 			</RaisedButton>
 		);

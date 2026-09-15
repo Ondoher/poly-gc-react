@@ -1,13 +1,13 @@
-import React from "react";
-import ModalDialog from "./ModalDialog.jsx";
-import SettingsButton from "./SettingsButton.jsx";
-import Selector from "./Selector.jsx";
-import SettingsPreview from "./SettingsPreview.jsx";
+import React from 'react';
+import ModalDialog from './ModalDialog.jsx';
+import SettingsButton from './SettingsButton.jsx';
+import Selector from './Selector.jsx';
+import SettingsPreview from './SettingsPreview.jsx';
 
 const TABS = [
-	{id: "layout", label: "Layout"},
-	{id: "tileStyle", label: "Tile Style"},
-	{id: "difficulty", label: "Difficulty"},
+	{id: 'layout', label: 'Layout'},
+	{id: 'tileStyle', label: 'Tile Style'},
+	{id: 'difficulty', label: 'Difficulty'},
 ];
 
 export default class SettingsDialog extends React.Component {
@@ -15,7 +15,7 @@ export default class SettingsDialog extends React.Component {
 		super(props);
 
 		this.state = {
-			activeTab: "layout",
+			activeTab: 'layout',
 			draftLayout: props.layout,
 			draftDifficulty: props.difficulty,
 			draftTileset: props.tileset,
@@ -31,7 +31,7 @@ export default class SettingsDialog extends React.Component {
 
 	resetDraftState() {
 		this.setState({
-			activeTab: "layout",
+			activeTab: 'layout',
 			draftLayout: this.props.layout,
 			draftDifficulty: this.props.difficulty,
 			draftTileset: this.props.tileset,
@@ -64,7 +64,7 @@ export default class SettingsDialog extends React.Component {
 	}
 
 	onToggleTelemetryConsent() {
-		this.setState(function(prevState) {
+		this.setState(function (prevState) {
 			return {
 				draftTelemetryConsent: !prevState.draftTelemetryConsent,
 			};
@@ -75,8 +75,7 @@ export default class SettingsDialog extends React.Component {
 		var layoutChanged = this.state.draftLayout !== this.props.layout;
 		var difficultyChanged = this.state.draftDifficulty !== this.props.difficulty;
 		var tilesetChanged = this.state.draftTileset !== this.props.tileset;
-		var telemetryConsentChanged =
-			this.state.draftTelemetryConsent !== (this.props.telemetryConsent === true);
+		var telemetryConsentChanged = this.state.draftTelemetryConsent !== (this.props.telemetryConsent === true);
 		var shouldRegenerateBoard = layoutChanged || difficultyChanged;
 
 		if (tilesetChanged && this.props.onSelectTileset) {
@@ -107,8 +106,8 @@ export default class SettingsDialog extends React.Component {
 	getActiveOptions() {
 		var activeTab = this.state.activeTab;
 
-		if (activeTab === "layout") {
-			return Object.keys(this.props.layouts || {}).map(function(name) {
+		if (activeTab === 'layout') {
+			return Object.keys(this.props.layouts || {}).map(function (name) {
 				var layout = this.props.layouts[name];
 				return {
 					value: layout.id,
@@ -117,8 +116,8 @@ export default class SettingsDialog extends React.Component {
 			}, this);
 		}
 
-		if (activeTab === "difficulty") {
-			return Object.keys(this.props.difficulties || {}).map(function(name) {
+		if (activeTab === 'difficulty') {
+			return Object.keys(this.props.difficulties || {}).map(function (name) {
 				var difficulty = this.props.difficulties[name];
 				return {
 					value: difficulty.id,
@@ -127,7 +126,7 @@ export default class SettingsDialog extends React.Component {
 			}, this);
 		}
 
-		return Object.keys(this.props.tilesets || {}).map(function(name) {
+		return Object.keys(this.props.tilesets || {}).map(function (name) {
 			var tileset = this.props.tilesets[name];
 			return {
 				value: name,
@@ -138,9 +137,9 @@ export default class SettingsDialog extends React.Component {
 
 	getSelectedValue() {
 		switch (this.state.activeTab) {
-			case "difficulty":
+			case 'difficulty':
 				return this.state.draftDifficulty;
-			case "tileStyle":
+			case 'tileStyle':
 				return this.state.draftTileset;
 			default:
 				return this.state.draftLayout;
@@ -149,10 +148,10 @@ export default class SettingsDialog extends React.Component {
 
 	onSelectOption(value) {
 		switch (this.state.activeTab) {
-			case "difficulty":
+			case 'difficulty':
 				this.onSelectDifficulty(value);
 				break;
-			case "tileStyle":
+			case 'tileStyle':
 				this.onSelectTileset(value);
 				break;
 			default:
@@ -182,20 +181,18 @@ export default class SettingsDialog extends React.Component {
 					type="button"
 					className="mj-settings-dialog-support-checkbox"
 					role="checkbox"
-					aria-checked={this.state.draftTelemetryConsent ? "true" : "false"}
+					aria-checked={this.state.draftTelemetryConsent ? 'true' : 'false'}
 					onClick={this.onToggleTelemetryConsent.bind(this)}
 				>
 					<span
 						className={
 							this.state.draftTelemetryConsent
-								? "mj-settings-dialog-support-checkbox-box is-checked"
-								: "mj-settings-dialog-support-checkbox-box"
+								? 'mj-settings-dialog-support-checkbox-box is-checked'
+								: 'mj-settings-dialog-support-checkbox-box'
 						}
 						aria-hidden="true"
 					>
-						<span className="mj-settings-dialog-support-checkbox-mark">
-							✓
-						</span>
+						<span className="mj-settings-dialog-support-checkbox-mark">✓</span>
 					</span>
 					<span className="mj-settings-dialog-support-checkbox-copy">
 						Help us make this game better by sending anonymous play data
@@ -228,9 +225,7 @@ export default class SettingsDialog extends React.Component {
 					</SettingsButton>
 				}
 			>
-				<div className="mj-settings-dialog-tabs">
-					{this.renderTabs()}
-				</div>
+				<div className="mj-settings-dialog-tabs">{this.renderTabs()}</div>
 				<div className="mj-settings-dialog-content">
 					<Selector
 						className="mj-settings-dialog-selector"

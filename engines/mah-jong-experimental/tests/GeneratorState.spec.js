@@ -1,8 +1,8 @@
 import FaceInventory from '../FaceInventory.js';
-import { GeneratorState } from '../GeneratorState.js';
+import {GeneratorState} from '../GeneratorState.js';
 import Grid from '../Grid.js';
 import SoftLinks from '../SoftLinks.js';
-import { DIFFICULTY_SETTINGS } from '../difficulty-settings.js';
+import {DIFFICULTY_SETTINGS} from '../difficulty-settings.js';
 
 describe('GeneratorState', () => {
 	function createLayeredLayout() {

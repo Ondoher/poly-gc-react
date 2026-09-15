@@ -1,18 +1,8 @@
-
-type Suit  =
-	"bamboo" |
-	"characters" |
-	"dots" |
-	"winds" |
-	"dragons" |
-	"seasons" |
-	"flowers";
+type Suit = 'bamboo' | 'characters' | 'dots' | 'winds' | 'dragons' | 'seasons' | 'flowers';
 
 type SuitRange = number[];
 
-type SuitSpec = {[suit: Suit]: SuitRange}
-
-
+type SuitSpec = {[suit: Suit]: SuitRange};
 
 /**
  * This is the position of where a tile can be placed on the board. The board
@@ -24,7 +14,7 @@ type TilePosition = {
 	x: number;
 	y: number;
 	z: number;
-}
+};
 
 /**
  * This represents the exact positions of where tiles can be placed for a
@@ -40,7 +30,7 @@ type Layout = {
 	id: String;
 	tiles: number;
 	positions: PositionSet;
-}
+};
 
 /**
  * This is a representation of tiles that match. When tiles are drawn to be
@@ -56,7 +46,7 @@ type FaceSet = {
 	id: FaceGroup;
 	suit: Suit;
 	faces: number[];
-}
+};
 
 /**
  * This is a reference to one set of matching faces
@@ -69,8 +59,8 @@ type FaceGroup = number;
  * pile to be placed.
  */
 type DrawPile = {
-	faceSets: Map<number, FaceSet>
-}
+	faceSets: Map<number, FaceSet>;
+};
 
 /**
  * The face represents the specific tile being shown. MahJong tiles come in three
@@ -87,12 +77,12 @@ type FaceAvoidanceRules = {
 	weight?: number;
 	suspensionWeight?: number;
 	maxWeight?: number;
-}
+};
 
 type FaceAssignmentRules = {
 	preferredMultiplier?: number;
 	easyReuseDuplicateScale?: number;
-}
+};
 
 type GeneratedPairRecord = {
 	tiles: TileKey[];
@@ -102,7 +92,7 @@ type GeneratedPairRecord = {
 	face2?: Face;
 	avoidanceTargets: TileKey[];
 	avoidanceWeight: number;
-}
+};
 
 /**
  * This represent a specific tile that has been placed on the game board
@@ -110,7 +100,7 @@ type GeneratedPairRecord = {
 type Piece = {
 	pos: TilePosition;
 	face: Face;
-}
+};
 
 /**
  * This specifies which tiles have been drawn and where.
@@ -118,7 +108,7 @@ type Piece = {
 type Board = {
 	count: number;
 	pieces: Piece[];
-}
+};
 
 /**
  * This is an index into the pieces array of a board. The board represent the
@@ -132,7 +122,7 @@ type TileKey = number;
 type TilePair = {
 	tile1: TileKey;
 	tile2: TileKey;
-}
+};
 
 /**
  * This type describes the current state of the game
@@ -146,7 +136,7 @@ type GameState = {
 	placed: NumberSet;
 	multiUndoHistory?: MultiUndoHistoryEntry[];
 	isBelowMinimum?: Boolean;
-}
+};
 
 type MultiUndoHistoryEntry = {
 	id: string;
@@ -155,7 +145,7 @@ type MultiUndoHistoryEntry = {
 	tile2: TileKey;
 	face1: Face;
 	face2: Face;
-}
+};
 
 /**
  * Defines one suspended tile
@@ -181,12 +171,12 @@ type Suspended = {
 
 	/** The stable face-group id reserved for this suspension. */
 	faceGroup: FaceGroup;
-}
+};
 
 type pickTileOptions = {
-	remove: boolean,
-	useTile: number | false
-}
+	remove: boolean;
+	useTile: number | false;
+};
 
 type TilePickScore = {
 	tile: TileKey;
@@ -206,25 +196,25 @@ type TilePickScore = {
 	shortHorizonPressure: number;
 	shortHorizonEnabled: boolean;
 	shortHorizonCollapsed: boolean;
-}
+};
 
 type TilePickPair = {
 	tile1: TileKey;
 	tile2: TileKey;
 	picks: TilePickScore[];
-}
+};
 
 type TilePickSuspensionTriple = {
 	placed: TileKey[];
 	suspended: TileKey;
 	picks: TilePickScore[];
-}
+};
 
 type AssignedFacePair = {
 	tile1: TileKey;
 	tile2: TileKey;
 	faceGroup: FaceGroup;
-}
+};
 
 type RankedFaces = {
 	faceGroup: FaceGroup;
@@ -234,7 +224,7 @@ type RankedFaces = {
 	availableFaces: number;
 	preferred: boolean;
 	sortValue: number;
-}
+};
 
 type TilePickerOptions = {
 	openTiles?: TileKey[];
@@ -251,20 +241,20 @@ type TilePickerOptions = {
 	shortHorizonPressureMultiplier?: number;
 	enforceStackBalance?: boolean;
 	pendingRemovedTiles?: TileKey[];
-}
+};
 
-type MatchType = "either" | "both"
+type MatchType = 'either' | 'both';
 
 type NumberRange = {
 	min: number;
 	max: number;
-}
+};
 
 type FacePair = {
-	faceGroup: FaceGroup,
-	face1: Face,
-	face2: Face
-}
+	faceGroup: FaceGroup;
+	face1: Face;
+	face2: Face;
+};
 
 /**
  * Defines the rules for how suspension should be initiated and released
@@ -296,18 +286,16 @@ type SuspensionRules = {
 
 	/** allow starting a suspension only when effective open tiles is at least this value */
 	suspendAtEffectiveOpen: number;
-}
+};
 
 type ToRelease = {
 	pair: Face[] | false;
 	tile: number | false;
-}
-
+};
 
 type DifficultyOptions = {
 	difficulty: number;
-}
-
+};
 
 /**
  * This event is fired when the state of the game has changed

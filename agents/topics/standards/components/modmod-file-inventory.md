@@ -55,6 +55,7 @@ From `c:\dev\modmod\src\icons`:
 - `TickCircle.svg`
 
 Supports:
+
 - `PasswordComplexity.jsx`
 
 ## Required Styles
@@ -62,17 +63,20 @@ Supports:
 - `assets/styles/code-mirror-input.css`
 
 Supports:
+
 - `CodeMirrorInput.jsx`
 
 ## Required Context / Service Support
 
 Context properties needed:
+
 - `registry`
 - `localize`
 - `editVariant`
 - `locale`
 
 Registry services needed:
+
 - `localize`
 - `data-cache`
 
@@ -98,6 +102,7 @@ Registry services needed:
 5. `code-mirror-input.css`
 
 And implement in this repo:
+
 - `localize`
 - `editVariant`
 - `locale`

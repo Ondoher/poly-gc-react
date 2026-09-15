@@ -1,6 +1,6 @@
-import React from "react";
-import { Service } from "@polylith/core";
-import Pages from "./Pages";
+import React from 'react';
+import {Service} from '@polylith/core';
+import Pages from './Pages';
 
 export default class PagesView extends Service {
 	constructor(name, registry) {
@@ -13,8 +13,8 @@ export default class PagesView extends Service {
 	get() {
 		return {
 			pages: this.pages,
-			current: this.current
-		}
+			current: this.current,
+		};
 	}
 
 	add(name, serviceName) {
@@ -30,19 +30,18 @@ export default class PagesView extends Service {
 		this.fire('added', this.pages);
 	}
 
-
 	async show(name) {
 		var service = this.pages[name] ? this.pages[name].service : false;
 		this.current = name;
 
 		if (service) {
-			service.fire('shown')
+			service.fire('shown');
 		}
 
 		this.fire('showPage', name);
 	}
 
 	getComponent(name) {
-		return <Pages id={name} serviceName={this.serviceName} className="pages" />
+		return <Pages id={name} serviceName={this.serviceName} className="pages" />;
 	}
 }

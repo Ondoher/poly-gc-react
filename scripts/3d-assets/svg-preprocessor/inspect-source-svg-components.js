@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { getFacePaths, normalizePath } from './preprocessed-face-validation-utils.js';
-import { extractSourceSvgComponents } from './source-svg-components.js';
-import { findSmallIsolatedCandidates, getComponentUnionBounds } from './normalized-face-components.js';
+import {getFacePaths, normalizePath} from './preprocessed-face-validation-utils.js';
+import {extractSourceSvgComponents} from './source-svg-components.js';
+import {findSmallIsolatedCandidates, getComponentUnionBounds} from './normalized-face-components.js';
 
 const faceKey = process.argv[2];
 
@@ -40,11 +40,10 @@ const components = extracted.components
 const paintComponents = extracted.components
 	.filter((component) => !component.tileLayerCandidate)
 	.filter((component) => !component.negativeSpaceCandidate);
-const smallIsolatedCandidates = findSmallIsolatedCandidates(
-	paintComponents,
-	getComponentUnionBounds(paintComponents),
-	{ topBandRatio: 0.4, maxAreaRatio: 0.22 },
-).map((candidate) => ({
+const smallIsolatedCandidates = findSmallIsolatedCandidates(paintComponents, getComponentUnionBounds(paintComponents), {
+	topBandRatio: 0.4,
+	maxAreaRatio: 0.22,
+}).map((candidate) => ({
 	id: candidate.item.id,
 	className: candidate.item.className,
 	fill: candidate.item.fill,
@@ -54,8 +53,12 @@ const smallIsolatedCandidates = findSmallIsolatedCandidates(
 	area: Number(candidate.area.toFixed(3)),
 	areaRatio: Number(candidate.areaRatio.toFixed(4)),
 	normalizedBottom: Number(candidate.normalizedBottom.toFixed(4)),
-	cornerDistances: Object.fromEntries(Object.entries(candidate.cornerDistances)
-		.map(([corner, distanceValue]) => [corner, Number(distanceValue.toFixed(4))])),
+	cornerDistances: Object.fromEntries(
+		Object.entries(candidate.cornerDistances).map(([corner, distanceValue]) => [
+			corner,
+			Number(distanceValue.toFixed(4)),
+		]),
+	),
 	nearestCorner: candidate.nearestCorner,
 	relativePosition: candidate.relativePosition,
 	side: candidate.side,
@@ -73,26 +76,36 @@ const report = {
 };
 
 console.log(`${faceKey}: ${components.length} source components`);
-console.log(JSON.stringify({
-	faceKey: report.faceKey,
-	sourceSvg: report.sourceSvg,
-	viewBox: report.viewBox,
-	componentCount: report.componentCount,
-	paintSummary: report.paintSummary,
-	smallIsolatedCandidates: report.smallIsolatedCandidates,
-}, null, 2));
+console.log(
+	JSON.stringify(
+		{
+			faceKey: report.faceKey,
+			sourceSvg: report.sourceSvg,
+			viewBox: report.viewBox,
+			componentCount: report.componentCount,
+			paintSummary: report.paintSummary,
+			smallIsolatedCandidates: report.smallIsolatedCandidates,
+		},
+		null,
+		2,
+	),
+);
 for (const component of components.slice(0, 12)) {
-	console.log([
-		`#${component.index}`,
-		component.id || '(no-id)',
-		component.tagName,
-		component.className || '(no-class)',
-		component.fill || '(no-fill)',
-		`area=${component.area}`,
-		`bounds=${component.bounds.left},${component.bounds.top},${component.bounds.right},${component.bounds.bottom}`,
-		component.tileLayerCandidate ? 'tile-candidate' : '',
-		component.negativeSpaceCandidate ? 'negative-space' : '',
-	].filter(Boolean).join(' '));
+	console.log(
+		[
+			`#${component.index}`,
+			component.id || '(no-id)',
+			component.tagName,
+			component.className || '(no-class)',
+			component.fill || '(no-fill)',
+			`area=${component.area}`,
+			`bounds=${component.bounds.left},${component.bounds.top},${component.bounds.right},${component.bounds.bottom}`,
+			component.tileLayerCandidate ? 'tile-candidate' : '',
+			component.negativeSpaceCandidate ? 'negative-space' : '',
+		]
+			.filter(Boolean)
+			.join(' '),
+	);
 }
 
 function summarizePaint(components) {
@@ -119,4 +132,3 @@ function summarizePaint(components) {
 		}))
 		.sort((left, right) => right.totalArea - left.totalArea);
 }
-

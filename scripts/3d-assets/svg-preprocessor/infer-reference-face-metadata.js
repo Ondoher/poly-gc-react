@@ -1,14 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import paper from 'paper';
-import {
-	ASSET_FONTS_DIR,
-	ASSETS_3D_JSON_DIR,
-	LARGE_FACES_DIR,
-	OUTPUT_3D_DIR,
-} from '../shared/asset-paths.js';
-import { findSmallIsolatedCandidates, getComponentUnionBounds } from './normalized-face-components.js';
-import { extractReferenceImageComponents } from './reference-image-components.js';
+import {ASSET_FONTS_DIR, ASSETS_3D_JSON_DIR, LARGE_FACES_DIR, OUTPUT_3D_DIR} from '../shared/asset-paths.js';
+import {findSmallIsolatedCandidates, getComponentUnionBounds} from './normalized-face-components.js';
+import {extractReferenceImageComponents} from './reference-image-components.js';
 
 const GLUTEN_FONT = path.resolve(ASSET_FONTS_DIR, 'gluten-800.ttf');
 const FACE_METADATA_PATH = path.resolve(ASSETS_3D_JSON_DIR, 'face-preprocessing-metadata.json');
@@ -18,7 +13,8 @@ const existingMetadata = JSON.parse(fs.readFileSync(FACE_METADATA_PATH, 'utf8'))
 
 paper.setup([512, 512]);
 
-const files = fs.readdirSync(LARGE_FACES_DIR)
+const files = fs
+	.readdirSync(LARGE_FACES_DIR)
 	.filter((file) => file.toLowerCase().endsWith('.png'))
 	.sort((left, right) => left.localeCompare(right));
 const metadata = {
@@ -64,13 +60,13 @@ for (const file of files) {
 
 		entry.character = character
 			? {
-				present: true,
-				color: character.dominantColor || '',
-				location: relativePosition(characterCandidate, allBounds),
-				corner: nearestCorner(characterCandidate, allBounds),
-				bounds: compactBounds(character),
-			}
-			: { present: false };
+					present: true,
+					color: character.dominantColor || '',
+					location: relativePosition(characterCandidate, allBounds),
+					corner: nearestCorner(characterCandidate, allBounds),
+					bounds: compactBounds(character),
+				}
+			: {present: false};
 	}
 
 	if (faceInfo.labelText || entry.character || existingMetadata[faceKey] || existingMetadata[fileFaceKey]) {
@@ -78,7 +74,7 @@ for (const file of files) {
 	}
 }
 
-fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+fs.mkdirSync(OUTPUT_DIR, {recursive: true});
 fs.writeFileSync(OUTPUT_PATH, `${JSON.stringify(metadata, null, 2)}\n`);
 console.log(`Wrote ${path.relative(process.cwd(), OUTPUT_PATH)}`);
 
@@ -87,7 +83,9 @@ function findReferenceCharacterCandidate(reference) {
 		? nearestCorner(referenceComponentCandidate(reference.labelComponent), referenceBounds(reference.components))
 		: null;
 	const items = reference.artworkComponents.map(referenceComponentCandidate);
-	const outerBounds = getComponentUnionBounds(reference.components.map((component) => referenceComponentCandidate(component)));
+	const outerBounds = getComponentUnionBounds(
+		reference.components.map((component) => referenceComponentCandidate(component)),
+	);
 	const candidates = findSmallIsolatedCandidates(items, outerBounds, {
 		topBandRatio: 0.4,
 		maxAreaRatio: 0.24,
@@ -97,8 +95,11 @@ function findReferenceCharacterCandidate(reference) {
 		.filter((candidate) => candidate.topBand)
 		.filter((candidate) => candidate.normalizedCenter.y < 0.34)
 		.filter((candidate) => !labelCorner || candidate.nearestCorner !== labelCorner)
-		.sort((left, right) => cornerDistance(left, oppositeTopCorner(labelCorner)) - cornerDistance(right, oppositeTopCorner(labelCorner))
-			|| right.area - left.area);
+		.sort(
+			(left, right) =>
+				cornerDistance(left, oppositeTopCorner(labelCorner)) -
+					cornerDistance(right, oppositeTopCorner(labelCorner)) || right.area - left.area,
+		);
 
 	return candidates[0]?.item.sourceComponent || null;
 }
@@ -115,26 +116,28 @@ function findReferenceLabelCandidate(reference, metadata, glyphCandidates) {
 		return null;
 	}
 
-	const expectedCorner = metadata.glyphLayout?.number?.referenceCorner || defaultReferenceNumberCorner(metadata.labelText);
-	const candidates = glyphCandidates
-		.filter((candidate) => candidate.areaRatio <= 0.16);
+	const expectedCorner =
+		metadata.glyphLayout?.number?.referenceCorner || defaultReferenceNumberCorner(metadata.labelText);
+	const candidates = glyphCandidates.filter((candidate) => candidate.areaRatio <= 0.16);
 	const sortedCandidates = candidates.sort((left, right) => {
-			const leftCorner = expectedCorner ? cornerDistance(left, expectedCorner) : Infinity;
-			const rightCorner = expectedCorner ? cornerDistance(right, expectedCorner) : Infinity;
-			const leftColorMismatch = colorMismatch(left, metadata.labelColor);
-			const rightColorMismatch = colorMismatch(right, metadata.labelColor);
+		const leftCorner = expectedCorner ? cornerDistance(left, expectedCorner) : Infinity;
+		const rightCorner = expectedCorner ? cornerDistance(right, expectedCorner) : Infinity;
+		const leftColorMismatch = colorMismatch(left, metadata.labelColor);
+		const rightColorMismatch = colorMismatch(right, metadata.labelColor);
 
-			return leftCorner - rightCorner
-				|| leftColorMismatch - rightColorMismatch
-				|| left.normalizedCenter.y - right.normalizedCenter.y
-				|| left.area - right.area;
-		});
+		return (
+			leftCorner - rightCorner ||
+			leftColorMismatch - rightColorMismatch ||
+			left.normalizedCenter.y - right.normalizedCenter.y ||
+			left.area - right.area
+		);
+	});
 
 	return sortedCandidates[0]
 		? {
-			component: sortedCandidates[0].item.sourceComponent,
-			inference: 'top-isolated-candidate',
-		}
+				component: sortedCandidates[0].item.sourceComponent,
+				inference: 'top-isolated-candidate',
+			}
 		: null;
 }
 
@@ -156,8 +159,12 @@ function formatCandidate(candidate, allBounds) {
 		color: component.dominantColor,
 		location: relativePosition(candidate.item, allBounds),
 		nearestCorner: candidate.nearestCorner,
-		cornerDistances: Object.fromEntries(Object.entries(candidate.cornerDistances)
-			.map(([corner, distanceValue]) => [corner, Number(distanceValue.toFixed(4))])),
+		cornerDistances: Object.fromEntries(
+			Object.entries(candidate.cornerDistances).map(([corner, distanceValue]) => [
+				corner,
+				Number(distanceValue.toFixed(4)),
+			]),
+		),
 		areaRatio: Number(candidate.areaRatio.toFixed(4)),
 		bounds: compactBounds(component),
 	};
@@ -190,8 +197,8 @@ function referenceComponentCandidate(component) {
 		sourceComponent: component,
 		bounds,
 		center: component.center || {
-			x: component.left + (component.width / 2),
-			y: component.top + (component.height / 2),
+			x: component.left + component.width / 2,
+			y: component.top + component.height / 2,
 		},
 	};
 }
@@ -221,10 +228,9 @@ function relativePosition(candidate, bounds) {
 	const x = (center.x - bounds.left) / Math.max(1, bounds.width);
 	const y = (center.y - bounds.top) / Math.max(1, bounds.height);
 
-	return [
-		y < 0.36 ? 'top' : y > 0.68 ? 'bottom' : 'middle',
-		x < 0.36 ? 'left' : x > 0.64 ? 'right' : 'center',
-	].join('-');
+	return [y < 0.36 ? 'top' : y > 0.68 ? 'bottom' : 'middle', x < 0.36 ? 'left' : x > 0.64 ? 'right' : 'center'].join(
+		'-',
+	);
 }
 
 function cornerDistance(candidate, corner) {
@@ -292,9 +298,7 @@ function colorMismatch(candidate, expectedColor) {
 		return 0;
 	}
 
-	return candidate.item.sourceComponent.dominantColor?.toLowerCase() === expectedColor.toLowerCase()
-		? 0
-		: 1;
+	return candidate.item.sourceComponent.dominantColor?.toLowerCase() === expectedColor.toLowerCase() ? 0 : 1;
 }
 
 function canonicalFaceKey(faceKey) {
@@ -305,4 +309,3 @@ function canonicalFaceKey(faceKey) {
 function isFlowerOrSeason(faceKey) {
 	return /^(flower|season)-[1-4]$/.test(faceKey);
 }
-

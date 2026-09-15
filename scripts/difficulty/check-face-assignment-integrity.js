@@ -8,10 +8,7 @@ import {fileURLToPath, pathToFileURL} from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '../..');
-const LAYOUTS_PATH = path.join(
-	REPO_ROOT,
-	'src/gc/features/mj/src/data/layouts.json'
-);
+const LAYOUTS_PATH = path.join(REPO_ROOT, 'src/gc/features/mj/src/data/layouts.json');
 const LOADER_ENV = 'MJ_CHECK_FACE_ASSIGNMENT_INTEGRITY_LOADER_ACTIVE';
 
 function ensureLoader() {
@@ -22,20 +19,14 @@ function ensureLoader() {
 	const loaderPath = path.join(__dirname, 'node-alias-loader.js');
 	const result = spawnSync(
 		process.execPath,
-		[
-			'--loader',
-			pathToFileURL(loaderPath).href,
-			'--no-warnings',
-			__filename,
-			...process.argv.slice(2),
-		],
+		['--loader', pathToFileURL(loaderPath).href, '--no-warnings', __filename, ...process.argv.slice(2)],
 		{
 			stdio: 'inherit',
 			env: {
 				...process.env,
 				[LOADER_ENV]: '1',
 			},
-		}
+		},
 	);
 
 	process.exit(result.status ?? 1);
@@ -79,8 +70,16 @@ function validateBoard(engine, layout, board) {
 	});
 
 	for (let pair of engine.assignedFacePairs) {
-		assert('assigned pair tile1 unique', !assignedTiles.has(pair.tile1), `layout=${layout} board=${board} tile=${pair.tile1}`);
-		assert('assigned pair tile2 unique', !assignedTiles.has(pair.tile2), `layout=${layout} board=${board} tile=${pair.tile2}`);
+		assert(
+			'assigned pair tile1 unique',
+			!assignedTiles.has(pair.tile1),
+			`layout=${layout} board=${board} tile=${pair.tile1}`,
+		);
+		assert(
+			'assigned pair tile2 unique',
+			!assignedTiles.has(pair.tile2),
+			`layout=${layout} board=${board} tile=${pair.tile2}`,
+		);
 		assignedTiles.add(pair.tile1);
 		assignedTiles.add(pair.tile2);
 	}
@@ -88,11 +87,15 @@ function validateBoard(engine, layout, board) {
 	assert(
 		'assigned face pair coverage matches board tile count',
 		assignedTiles.size === engine.board.count,
-		`layout=${layout} board=${board} assigned=${assignedTiles.size} tiles=${engine.board.count}`
+		`layout=${layout} board=${board} assigned=${assignedTiles.size} tiles=${engine.board.count}`,
 	);
 
 	for (let [face, count] of faceCounts) {
-		assert('no face used more than once', count === 1, `layout=${layout} board=${board} face=${face} count=${count}`);
+		assert(
+			'no face used more than once',
+			count === 1,
+			`layout=${layout} board=${board} face=${face} count=${count}`,
+		);
 	}
 
 	let remainingFaces = 0;
@@ -103,7 +106,7 @@ function validateBoard(engine, layout, board) {
 	assert(
 		'all faces consumed from draw pile',
 		remainingFaces === 0,
-		`layout=${layout} board=${board} remainingFaces=${remainingFaces}`
+		`layout=${layout} board=${board} remainingFaces=${remainingFaces}`,
 	);
 
 	return {
@@ -133,7 +136,9 @@ async function main() {
 	}
 
 	results.forEach((result) => {
-		console.log(`ok: ${result.layout} board ${result.board} tiles=${result.tileCount} assignedPairs=${result.assignedPairs}`);
+		console.log(
+			`ok: ${result.layout} board ${result.board} tiles=${result.tileCount} assignedPairs=${result.assignedPairs}`,
+		);
 	});
 
 	console.log('\nface assignment integrity checks passed');

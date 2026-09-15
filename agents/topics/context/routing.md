@@ -4,8 +4,7 @@ Use this file as the routing table for the reorganized topic tree.
 
 ## Main Areas
 
-- Use [Standards](../standards/README.md) for repo-wide architecture, testing,
-  deployment, React, component, and script conventions.
+- Use [Standards](../standards/README.md) for the folder manifest, local overlay, and project implementation references.
 - Use [Game Collection](../products/game-collection/README.md) for the game
   product, Mahjongg Solitaire, restored games, and shared game UI.
 - Use [Asset Pipeline 3D](../products/asset-pipeline-3d/README.md) for SVG

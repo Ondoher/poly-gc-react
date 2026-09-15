@@ -9,7 +9,7 @@ type SourceNormalizationFileSystem = {
 	/** Writes a text file with an explicit encoding. */
 	writeFile(filePath: string, content: string, encoding: string): Promise<void>;
 	/** Creates a directory, usually recursively. */
-	mkdir(dirPath: string, options?: { recursive?: boolean }): Promise<void>;
+	mkdir(dirPath: string, options?: {recursive?: boolean}): Promise<void>;
 };
 
 /**
@@ -36,20 +36,23 @@ type TilesetSuitOutputOptions = {
 	/** Suit/family key these options apply to. */
 	suitId: string;
 	/** Optional output part settings keyed by part id. */
-	parts?: Record<string, {
-		/** Optional part id. */
-		partId: string;
-		/** Semantic content kind. */
-		contentKind: string;
-		/** Semantic role. */
-		role: string;
-		/** Whether this optional part should appear in final output. */
-		outputPresent: boolean;
-		/** Provenance for the option value. */
-		source: string;
-		/** Review status for the option value. */
-		reviewStatus: string;
-	}>;
+	parts?: Record<
+		string,
+		{
+			/** Optional part id. */
+			partId: string;
+			/** Semantic content kind. */
+			contentKind: string;
+			/** Semantic role. */
+			role: string;
+			/** Whether this optional part should appear in final output. */
+			outputPresent: boolean;
+			/** Provenance for the option value. */
+			source: string;
+			/** Review status for the option value. */
+			reviewStatus: string;
+		}
+	>;
 	/** Optional suit-wide layout settings. */
 	layout?: {
 		/** Layout scaling mode to apply in final rendering. */
@@ -870,7 +873,7 @@ type OptionalPartAssignmentFileSystem = {
 	/** Writes a text file with an explicit encoding. */
 	writeFile(filePath: string, content: string, encoding: string): Promise<void>;
 	/** Creates a directory, usually recursively. */
-	mkdir(dirPath: string, options?: { recursive?: boolean }): Promise<void>;
+	mkdir(dirPath: string, options?: {recursive?: boolean}): Promise<void>;
 };
 
 /**
@@ -941,10 +944,13 @@ type PipelineModel = {
 	/** Returns the normalized component artifact pointer for a face. */
 	getNormalizedComponentsPath(faceKey: string): string | null;
 	/** Applies functional optional-part assignment facts for one face. */
-	applyOptionalPartAssignment(faceKey: string, assignment: {
-		parts?: Record<string, Partial<PipelinePartState>>;
-		bindings?: Record<string, Partial<PipelineBindingState>>;
-	}): void;
+	applyOptionalPartAssignment(
+		faceKey: string,
+		assignment: {
+			parts?: Record<string, Partial<PipelinePartState>>;
+			bindings?: Record<string, Partial<PipelineBindingState>>;
+		},
+	): void;
 	/** Persists canonical pipeline state. */
 	save(options?: Record<string, unknown>): Promise<void>;
 };
@@ -1394,7 +1400,7 @@ type OptionalPartSourceSpec = {
 	/** Expected source region. */
 	region: string;
 	/** Normalized target point for candidate scoring. */
-	targetPoint: { x: number; y: number };
+	targetPoint: {x: number; y: number};
 	/** Glyph metadata key to seed. */
 	metadataKey: string;
 	/** Expected visible label text for OCR/text evidence, when this spec is a label. */
@@ -1446,9 +1452,9 @@ type OptionalPartCandidateUnit = {
 	/** Union bounds of the represented components. */
 	bounds: SourceBounds;
 	/** Source-space center of the unit. */
-	center: { x: number; y: number };
+	center: {x: number; y: number};
 	/** Center normalized against source bounds. */
-	normalizedCenter: { x: number; y: number };
+	normalizedCenter: {x: number; y: number};
 	/** Earliest source order represented by the unit. */
 	sourceOrder: number;
 	/** Number of components represented by the unit. */
@@ -1484,7 +1490,7 @@ type OptionalPartScoredCandidate = {
 	/** Candidate bounds in source coordinate space. */
 	bounds: SourceBounds;
 	/** Candidate center normalized against source bounds. */
-	normalizedCenter: { x: number; y: number };
+	normalizedCenter: {x: number; y: number};
 	/** Nearest named source region. */
 	region: string;
 	/** Earliest source order represented by the candidate. */
@@ -1557,7 +1563,7 @@ type OptionalPartRecord = {
 		/** Expected source region. */
 		region: string;
 		/** Normalized target point for candidate scoring. */
-		targetPoint: { x: number; y: number };
+		targetPoint: {x: number; y: number};
 	};
 	/** Suggested normalized component ids. */
 	suggestedComponentIds: string[];
@@ -1594,22 +1600,25 @@ type OptionalPartComponentReservation = {
  */
 type OptionalPartMetadataSeed = {
 	/** Glyph layout seed values keyed by label/character metadata key. */
-	glyphLayout: Record<string, {
-		/** Whether source components are present for the glyph/label. */
-		sourcePresent: boolean;
-		/** Legacy source corner hint. */
-		sourceCorner: string | null;
-		/** Source bounds for the suggested candidate. */
-		sourceBounds: SourceBounds | null;
-		/** Suggested source component ids. */
-		sourceComponentIds: string[];
-		/** Candidate confidence score. */
-		confidence: number;
-		/** Binding strength for the seeded metadata. */
-		strength?: string;
-		/** Review status for the seeded metadata. */
-		reviewStatus: string;
-	}>;
+	glyphLayout: Record<
+		string,
+		{
+			/** Whether source components are present for the glyph/label. */
+			sourcePresent: boolean;
+			/** Legacy source corner hint. */
+			sourceCorner: string | null;
+			/** Source bounds for the suggested candidate. */
+			sourceBounds: SourceBounds | null;
+			/** Suggested source component ids. */
+			sourceComponentIds: string[];
+			/** Candidate confidence score. */
+			confidence: number;
+			/** Binding strength for the seeded metadata. */
+			strength?: string;
+			/** Review status for the seeded metadata. */
+			reviewStatus: string;
+		}
+	>;
 };
 
 /**
@@ -1715,7 +1724,7 @@ type SourceAlignmentFileSystem = {
 	/** Writes a text file with an explicit encoding. */
 	writeFile(filePath: string, content: string, encoding: string): Promise<void>;
 	/** Creates a directory, usually recursively. */
-	mkdir(dirPath: string, options?: { recursive?: boolean }): Promise<void>;
+	mkdir(dirPath: string, options?: {recursive?: boolean}): Promise<void>;
 };
 
 /**
@@ -1917,7 +1926,7 @@ type ReferenceStructureComponent = {
 	/** Component bounds in reference image coordinate space. */
 	bounds: SourceBounds;
 	/** Component center in reference image coordinate space. */
-	center?: { x: number; y: number };
+	center?: {x: number; y: number};
 	/** Dominant color for grouping and color transfer. */
 	dominantColor?: string | null;
 	/** Bound part ids. */

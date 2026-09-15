@@ -1,36 +1,36 @@
-import path from "node:path";
-import { mkdir, readFile, readdir } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import minimist from "minimist";
-import sharp from "sharp";
+import path from 'node:path';
+import {mkdir, readFile, readdir} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import minimist from 'minimist';
+import sharp from 'sharp';
 
 const argv = minimist(process.argv.slice(2), {
-	string: ["config"],
-	alias: { c: "config" },
+	string: ['config'],
+	alias: {c: 'config'},
 });
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 function resolveRepoPath(relativePath) {
 	return path.resolve(repoRoot, relativePath);
 }
 
 async function ensureDir(dir) {
-	await mkdir(dir, { recursive: true });
+	await mkdir(dir, {recursive: true});
 }
 
 async function loadJson(filename) {
-	const raw = await readFile(filename, "utf8");
+	const raw = await readFile(filename, 'utf8');
 	return JSON.parse(raw);
 }
 
 async function listPngBasenames(relativeDir) {
 	const dir = resolveRepoPath(relativeDir);
-	const entries = await readdir(dir, { withFileTypes: true });
+	const entries = await readdir(dir, {withFileTypes: true});
 	return entries
-		.filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".png"))
+		.filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.png'))
 		.map((entry) => path.parse(entry.name).name)
-		.filter((name) => !name.includes("@2x"))
+		.filter((name) => !name.includes('@2x'))
 		.sort((a, b) => a.localeCompare(b));
 }
 
@@ -46,15 +46,15 @@ function getVariantFilename(name, scale) {
 }
 
 function getFaceOutputRoot(config) {
-	return config.faceOutputRoot || path.join(config.outputRoot, "faces");
+	return config.faceOutputRoot || path.join(config.outputRoot, 'faces');
 }
 
 function getBodyOutputRoot(config) {
-	return config.bodyOutputRoot || path.join(config.outputRoot, "bodies");
+	return config.bodyOutputRoot || path.join(config.outputRoot, 'bodies');
 }
 
 function getCompositeOutputRoot(config) {
-	return config.compositeOutputRoot || path.join(config.outputRoot, "composite");
+	return config.compositeOutputRoot || path.join(config.outputRoot, 'composite');
 }
 
 async function writeResizedPng(sourceFile, outputFile, width, height) {
@@ -62,7 +62,7 @@ async function writeResizedPng(sourceFile, outputFile, width, height) {
 	const sourceBuffer = await readFile(sourceFile);
 	await sharp(sourceBuffer)
 		.resize(width, height, {
-			fit: "fill",
+			fit: 'fill',
 			kernel: sharp.kernel.lanczos3,
 		})
 		.png()
@@ -72,7 +72,7 @@ async function writeResizedPng(sourceFile, outputFile, width, height) {
 async function buildFaceBuffer(sourceFile, sourceKind, sourceSize, outputFaceSize) {
 	let image = sharp(sourceFile);
 
-	if (sourceKind === "full-tile") {
+	if (sourceKind === 'full-tile') {
 		image = image.extract({
 			left: 0,
 			top: 0,
@@ -83,7 +83,7 @@ async function buildFaceBuffer(sourceFile, sourceKind, sourceSize, outputFaceSiz
 
 	return image
 		.resize(outputFaceSize.width, outputFaceSize.height, {
-			fit: "fill",
+			fit: 'fill',
 			kernel: sharp.kernel.lanczos3,
 		})
 		.png()
@@ -95,11 +95,11 @@ async function generateFaceAssets(config, tileSizes) {
 	const sourceTileSize = faceSpec.sourceSize ? tileSizes[faceSpec.sourceSize] : null;
 	const sourceSize = sourceTileSize
 		? {
-			tile: sourceTileSize,
-			face: getFaceDimensions(sourceTileSize),
-		}
+				tile: sourceTileSize,
+				face: getFaceDimensions(sourceTileSize),
+			}
 		: null;
-	const faceNames = faceSpec.names || await listPngBasenames(faceSpec.sourceDir);
+	const faceNames = faceSpec.names || (await listPngBasenames(faceSpec.sourceDir));
 
 	for (const faceName of faceNames) {
 		const sourceFile = faceSpec.source
@@ -113,15 +113,10 @@ async function generateFaceAssets(config, tileSizes) {
 			for (const scale of [1, 2]) {
 				const outputDir = resolveRepoPath(path.join(getFaceOutputRoot(config), `${outputSizeName}-face`));
 				const outputFile = path.join(outputDir, getVariantFilename(faceName, scale));
-				const buffer = await buildFaceBuffer(
-					sourceFile,
-					faceSpec.sourceKind,
-					sourceSize,
-					{
-						width: faceSize.width * scale,
-						height: faceSize.height * scale,
-					}
-				);
+				const buffer = await buildFaceBuffer(sourceFile, faceSpec.sourceKind, sourceSize, {
+					width: faceSize.width * scale,
+					height: faceSize.height * scale,
+				});
 
 				await ensureDir(outputDir);
 				await sharp(buffer).png().toFile(outputFile);
@@ -132,7 +127,7 @@ async function generateFaceAssets(config, tileSizes) {
 
 async function generateBodyAssets(config, tileSizes) {
 	const bodySpec = config.body;
-	const bodyNames = bodySpec.names || await listPngBasenames(bodySpec.sourceDir);
+	const bodyNames = bodySpec.names || (await listPngBasenames(bodySpec.sourceDir));
 
 	for (const bodyName of bodyNames) {
 		const sourceFile = bodySpec.source
@@ -146,12 +141,7 @@ async function generateBodyAssets(config, tileSizes) {
 				const outputDir = resolveRepoPath(path.join(getBodyOutputRoot(config), outputSizeName));
 				const outputFile = path.join(outputDir, getVariantFilename(bodyName, scale));
 
-				await writeResizedPng(
-					sourceFile,
-					outputFile,
-					tileSize.width * scale,
-					tileSize.height * scale
-				);
+				await writeResizedPng(sourceFile, outputFile, tileSize.width * scale, tileSize.height * scale);
 			}
 		}
 	}
@@ -176,14 +166,14 @@ async function generateCompositeAssets(config, tileSizes) {
 		for (const scale of [1, 2]) {
 			const bodyBuffer = await sharp(resolveRepoPath(bodySpec.source))
 				.resize(tileSize.width * scale, tileSize.height * scale, {
-					fit: "fill",
+					fit: 'fill',
 					kernel: sharp.kernel.lanczos3,
 				})
 				.png()
 				.toBuffer();
 
 			let faceImage = sharp(resolveRepoPath(faceSpec.source));
-			if (faceSpec.sourceKind === "full-tile") {
+			if (faceSpec.sourceKind === 'full-tile') {
 				faceImage = faceImage.extract({
 					left: 0,
 					top: 0,
@@ -194,17 +184,20 @@ async function generateCompositeAssets(config, tileSizes) {
 
 			const faceBuffer = await faceImage
 				.resize(faceSize.width * scale, faceSize.height * scale, {
-					fit: "fill",
+					fit: 'fill',
 					kernel: sharp.kernel.lanczos3,
 				})
 				.png()
 				.toBuffer();
 
 			const outputRoot = getCompositeOutputRoot(config);
-			const outputFile = path.join(resolveRepoPath(path.join(outputRoot, outputSizeName)), getVariantFilename(compositeSpec.name, scale));
+			const outputFile = path.join(
+				resolveRepoPath(path.join(outputRoot, outputSizeName)),
+				getVariantFilename(compositeSpec.name, scale),
+			);
 			await ensureDir(path.dirname(outputFile));
 			await sharp(bodyBuffer)
-				.composite([{ input: faceBuffer, left: 0, top: 0 }])
+				.composite([{input: faceBuffer, left: 0, top: 0}])
 				.png()
 				.toFile(outputFile);
 		}
@@ -214,9 +207,9 @@ async function generateCompositeAssets(config, tileSizes) {
 async function main() {
 	const configFile = argv.config
 		? path.resolve(argv.config)
-		: resolveRepoPath("scripts/tile-css/test-assets/generate-test-config.json");
+		: resolveRepoPath('scripts/tile-css/test-assets/generate-test-config.json');
 	const config = await loadJson(configFile);
-	const tileSizes = await loadJson(resolveRepoPath("scripts/tile-css/tile-sizes.json"));
+	const tileSizes = await loadJson(resolveRepoPath('scripts/tile-css/tile-sizes.json'));
 
 	await generateFaceAssets(config, tileSizes);
 	await generateBodyAssets(config, tileSizes);

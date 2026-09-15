@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 const SOURCE_ASSIGNMENT_PAGE_ID = 'source-assignment';
 
@@ -89,7 +89,7 @@ export default class OptionalPartAssignmentController extends Service {
 		callback?.();
 	}
 
-	async load({ force = false, quiet = false } = {}) {
+	async load({force = false, quiet = false} = {}) {
 		if (!force && (this.state.processing || this.state.optionalPartAssignment)) {
 			return;
 		}
@@ -97,7 +97,7 @@ export default class OptionalPartAssignmentController extends Service {
 		this.setState({
 			processing: true,
 			processingLabel: quiet ? '' : 'Loading optional parts',
-			...(quiet ? {} : { status: 'Loading optional part assignment...' }),
+			...(quiet ? {} : {status: 'Loading optional part assignment...'}),
 		});
 
 		try {
@@ -111,9 +111,9 @@ export default class OptionalPartAssignmentController extends Service {
 					: 'No optional part assignment loaded',
 			});
 		} catch (error) {
-			this.setState({ status: `Load failed: ${error.message}` });
+			this.setState({status: `Load failed: ${error.message}`});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -128,7 +128,7 @@ export default class OptionalPartAssignmentController extends Service {
 			const result = await this.pipeline.rebuildOptionalPartAssignment({
 				tilesetId: this.state.tilesetId,
 				bulkOptions,
-				manualAssignments: { faces: manualAssignments },
+				manualAssignments: {faces: manualAssignments},
 			});
 
 			if (!result.ok) {
@@ -139,17 +139,17 @@ export default class OptionalPartAssignmentController extends Service {
 				optionalPartAssignment: null,
 				status: 'Optional part assignment rebuilt; reloading review data...',
 			});
-			await this.load({ force: true, quiet: true });
+			await this.load({force: true, quiet: true});
 		} catch (error) {
-			this.setState({ status: `Rebuild failed: ${error.message}` });
+			this.setState({status: `Rebuild failed: ${error.message}`});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
 	async saveBindingActions(actionsByFace = {}) {
 		if (!this.state.optionalPartAssignment?.faces) {
-			this.setState({ status: 'No optional part assignment loaded' });
+			this.setState({status: 'No optional part assignment loaded'});
 			return null;
 		}
 
@@ -163,7 +163,10 @@ export default class OptionalPartAssignmentController extends Service {
 			optionalPartAssignment: {
 				...this.state.optionalPartAssignment,
 				currencyDate: result.currencyDate || this.state.optionalPartAssignment.currencyDate,
-				sourceStateUpdatedOn: result.sourceStateUpdatedOn || result.currencyDate || this.state.optionalPartAssignment.sourceStateUpdatedOn,
+				sourceStateUpdatedOn:
+					result.sourceStateUpdatedOn ||
+					result.currencyDate ||
+					this.state.optionalPartAssignment.sourceStateUpdatedOn,
 			},
 			status: `Saved optional bindings for ${result.updatedFaceCount || 0} face${result.updatedFaceCount === 1 ? '' : 's'}`,
 		});
@@ -174,7 +177,7 @@ export default class OptionalPartAssignmentController extends Service {
 	async saveBindingActionsAndReload(actionsByFace = {}) {
 		const result = await this.saveBindingActions(actionsByFace);
 		if (result?.ok) {
-			await this.load({ force: true, quiet: true });
+			await this.load({force: true, quiet: true});
 		}
 		return result;
 	}
@@ -193,23 +196,29 @@ export default class OptionalPartAssignmentController extends Service {
 			const result = await this.pipeline.resetOptionalPartAssignment(this.state.tilesetId);
 
 			if (!result.ok) {
-				throw new Error(result.optionalPartAssignment?.stderr || result.normalization?.stderr || result.intake?.stderr || result.message || 'Optional part reset failed.');
+				throw new Error(
+					result.optionalPartAssignment?.stderr ||
+						result.normalization?.stderr ||
+						result.intake?.stderr ||
+						result.message ||
+						'Optional part reset failed.',
+				);
 			}
 
 			this.setState({
 				status: `Reset ${result.tilesetId || this.state.tilesetId}; reloading optional assignment...`,
 			});
-			await this.load({ force: true, quiet: true });
+			await this.load({force: true, quiet: true});
 		} catch (error) {
-			this.setState({ status: `Reset failed: ${error.message}` });
+			this.setState({status: `Reset failed: ${error.message}`});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
 	async accept() {
 		if (!this.state.optionalPartAssignment?.faces) {
-			this.setState({ status: 'No optional part assignment loaded' });
+			this.setState({status: 'No optional part assignment loaded'});
 			return;
 		}
 
@@ -227,21 +236,24 @@ export default class OptionalPartAssignmentController extends Service {
 
 			this.setState({
 				status: result.message || `Accepted ${result.acceptedFaceCount || 0} optional faces`,
-				messageDialog: !result.ok ? {
-					title: 'Optional Parts',
-					message: result.stderr || result.message || 'Optional part acceptance did not complete cleanly.',
-				} : null,
+				messageDialog: !result.ok
+					? {
+							title: 'Optional Parts',
+							message:
+								result.stderr || result.message || 'Optional part acceptance did not complete cleanly.',
+						}
+					: null,
 			});
 
 			if (result.ok) {
 				await this.openSourceAssignment();
 			} else {
-				await this.load({ force: true, quiet: true });
+				await this.load({force: true, quiet: true});
 			}
 		} catch (error) {
-			this.setState({ status: `Accept failed: ${error.message}` });
+			this.setState({status: `Accept failed: ${error.message}`});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -249,30 +261,31 @@ export default class OptionalPartAssignmentController extends Service {
 		const sourceAssignment = this.registry.subscribe('source-assignment-controller');
 
 		if (sourceAssignment) {
-			await sourceAssignment.load({ force: true, quiet: true });
+			await sourceAssignment.load({force: true, quiet: true});
 		}
 
 		const page = this.app.requestPage(SOURCE_ASSIGNMENT_PAGE_ID);
 
 		if (!page) {
-			this.setState({ status: 'Optional parts accepted, but the Assignment page is not available.' });
+			this.setState({status: 'Optional parts accepted, but the Assignment page is not available.'});
 		}
 	}
 
 	showFirstReviewFace() {
-		const face = this.model.assignmentFaces(this.state.optionalPartAssignment)
+		const face = this.model
+			.assignmentFaces(this.state.optionalPartAssignment)
 			.find((candidateFace) => candidateFace.status === 'needs-review');
 
 		if (!face) {
-			this.setState({ status: 'No optional faces need review' });
+			this.setState({status: 'No optional faces need review'});
 			return;
 		}
 
-		this.setState({ status: `Selected ${face.faceKey}` }, () => scrollReviewItemIntoView('face', face.faceKey));
+		this.setState({status: `Selected ${face.faceKey}`}, () => scrollReviewItemIntoView('face', face.faceKey));
 	}
 
 	dismissMessageDialog() {
-		this.setState({ messageDialog: null });
+		this.setState({messageDialog: null});
 	}
 
 	assetUrl(path) {

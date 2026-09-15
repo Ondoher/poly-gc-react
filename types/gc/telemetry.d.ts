@@ -16,7 +16,7 @@ interface MjTelemetryPayload {
 	elapsedTimeMs: number;
 
 	/** The terminal result for the session. */
-	result: "won" | "lost" | "abandoned" | "";
+	result: 'won' | 'lost' | 'abandoned' | '';
 
 	/** The replayable sequence of tile-pair actions recorded for the session. */
 	tileSequence: [number, number][];
@@ -39,7 +39,7 @@ interface MjTelemetrySubmitResult {
 	data?: object;
 
 	/** Identifies a client-side failure mode such as a thrown fetch exception. */
-	failureMode?: "exception";
+	failureMode?: 'exception';
 
 	/** Carries the original thrown error when the submit request fails locally. */
 	error?: unknown;

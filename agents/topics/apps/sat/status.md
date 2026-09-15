@@ -135,7 +135,7 @@ The root `polylith.json` `apps` list is the selection table. Each entry needs
 - The current npm `start` script runs `polylith serve --all`, so normal
   repo-wide serving includes SAT along with the other apps.
 - The current `dev` script also watches all apps and starts `npm run
-  dev:serve`, whose nodemon config executes `npm start`.
+dev:serve`, whose nodemon config executes `npm start`.
 - The server-local untracked `polylith.prod.json` intentionally replaces the
   root `apps` list when `NODE_ENV=prod`; production should be limited to `gc`
   and `sat`, with `gc` marked as the default app.

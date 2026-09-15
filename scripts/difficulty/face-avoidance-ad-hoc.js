@@ -16,20 +16,14 @@ function ensureLoader() {
 	const loaderPath = path.join(__dirname, 'node-alias-loader.js');
 	const result = spawnSync(
 		process.execPath,
-		[
-			'--loader',
-			pathToFileURL(loaderPath).href,
-			'--no-warnings',
-			__filename,
-			...process.argv.slice(2),
-		],
+		['--loader', pathToFileURL(loaderPath).href, '--no-warnings', __filename, ...process.argv.slice(2)],
 		{
 			stdio: 'inherit',
 			env: {
 				...process.env,
 				[LOADER_ENV]: '1',
 			},
-		}
+		},
 	);
 
 	process.exit(result.status ?? 1);
@@ -159,7 +153,10 @@ function testDistanceWindowFaceGroupAssignment(Engine, GameGenerator) {
 	const pair = engine.drawPreferredFacePairForRecord(record);
 	const stats = engine.getFaceAvoidanceStats();
 
-	assertTruthy('preferred face group is recorded', record.preferredFaceGroup !== false && record.preferredFaceGroup !== undefined);
+	assertTruthy(
+		'preferred face group is recorded',
+		record.preferredFaceGroup !== false && record.preferredFaceGroup !== undefined,
+	);
 	assertEqual('distance-window draw uses reused face set', selectedFaceSet(pair), 2);
 	assertEqual('resolved record stores face group', record.faceGroup, 2);
 	assertEqual('resolved record stores face1', record.face1, pair.face1);

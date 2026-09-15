@@ -37,14 +37,9 @@ export function sourceSvgPath(faceKey) {
 	}
 
 	const sourceId = sanitizeOutputScope(
-		process.env.PIPELINE_TILESET_ID
-		|| process.env.FACE_OUTPUT_SCOPE
-		|| process.env.PIPELINE_TILESET_SOURCE
-		|| '',
+		process.env.PIPELINE_TILESET_ID || process.env.FACE_OUTPUT_SCOPE || process.env.PIPELINE_TILESET_SOURCE || '',
 	);
-	const scopedSpriteSourceSvg = sourceId
-		? path.resolve(SPRITE_SOURCE_SVGS_DIR, sourceId, `${faceKey}.svg`)
-		: null;
+	const scopedSpriteSourceSvg = sourceId ? path.resolve(SPRITE_SOURCE_SVGS_DIR, sourceId, `${faceKey}.svg`) : null;
 
 	if (exists(scopedSpriteSourceSvg)) {
 		return scopedSpriteSourceSvg;

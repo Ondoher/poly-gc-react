@@ -66,15 +66,15 @@ These do not all need the same animation language.
 A useful framing is:
 
 - guidance events
-  - hints
-  - peek
+    - hints
+    - peek
 - state feedback events
-  - selection
-  - undo
-  - redo
+    - selection
+    - undo
+    - redo
 - outcome events
-  - normal pair play / tile removal
-  - solve dialog playback / solution stepping
+    - normal pair play / tile removal
+    - solve dialog playback / solution stepping
 
 That split matters because guidance effects should usually be clearer and calmer,
 while removal and playback effects can be a little more stylized.
@@ -290,13 +290,13 @@ Initial candidates:
 Free places to look first:
 
 - Kenney
-  - https://kenney.nl/assets?q=audio
+    - https://kenney.nl/assets?q=audio
 - Pixabay sound effects
-  - https://pixabay.com/sound-effects/
+    - https://pixabay.com/sound-effects/
 - Freesound
-  - https://freesound.org/
+    - https://freesound.org/
 - OpenGameArt
-  - https://opengameart.org/
+    - https://opengameart.org/
 
 Useful search terms:
 

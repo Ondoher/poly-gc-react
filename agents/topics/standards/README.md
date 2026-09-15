@@ -1,9 +1,13 @@
 # Standards
 
-This area owns repo-wide conventions that are not specific to one product or
-app.
+Engineering applicability is owned by the [manifest](manifest.md). Repository additions and replacements are owned by the [overlay](overlay.md). Canonical [governance](C:/Users/gande/.codex/documentation/standards/documentation.md) defines precedence. Topic documents below retain project facts and links to engineering authority.
 
 ## Topics
+
+- [Rules Comparison](rules-comparison.md): differences, specificity, and
+  additional local rules, grouped by rule type.
+- [Reconciliation Report](reconciliation.md): normalization findings and
+  developer decisions.
 
 - [Architecture](architecture/README.md)
 - [Testing](testing/README.md)
@@ -12,20 +16,19 @@ app.
 - [Components](components/README.md)
 - [Scripts](scripts/README.md)
 
-Domain-specific facts should live with the product or app that owns them. For
-example, script conventions belong here, but the meaning of an asset-pipeline
-generation script belongs under `products/asset-pipeline-3d`.
-
 ## Documentation State
 
-Agent-facing docs should describe the current state by default. Do not carry
-historical narrative forward unless the document explicitly exists for one of
-these purposes:
+See the [topic continuity overlay](overlay.md#add-topic-continuity) for local documentation updates and history placement. Product and app topics own domain facts.
 
-- experimental lanes used as evidence or data-mining sources;
-- status documents that intentionally track a task list, decision sequence, or
-  accepted/rejected artifact list;
-- archive documents clearly marked as historical.
+## Normalization Status
 
-When history becomes production policy, promote the durable current contract
-into the owning production document and leave the old trail behind.
+The approved standards reconciliation is applied. The [report](reconciliation.md) owns validation and completion evidence; [STANDARDS.md](../../../STANDARDS.md) is the generated developer reference.
+
+## Formatting Status
+
+Repository-local Prettier is configured by `.prettierrc.json` and
+`.prettierignore`; `package.json` owns the pinned version and formatting commands.
+The root lockfile is retained. Setup preflight passes. Repository-wide
+formatting has been applied with `npm run format`, and
+`npm run format:check` passes. Generated artifacts and independent app repositories
+remain excluded by the formatter configuration.

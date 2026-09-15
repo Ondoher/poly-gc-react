@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import paper from 'paper';
-import { parse as parseSvgAst } from 'svg-parser';
+import {parse as parseSvgAst} from 'svg-parser';
 
 const DEFAULT_INPUT = 'scripts/output/asset-pipeline/traditional/images/final-rendering-color-svg/d-1.svg';
 const DEFAULT_OUTPUT = 'scripts/output/asset-pipeline/traditional/experiments/paper-flatten/d-1.paper-united.svg';
@@ -34,16 +34,22 @@ async function main() {
 		},
 	});
 
-	console.log(JSON.stringify({
-		ok: true,
-		input: normalizePath(options.input),
-		output: normalizePath(options.output),
-		mode: options.mode,
-		flatness: options.flatness,
-		inputPathCount: inputPaths.length,
-		cutterPathCount: paperItems.length,
-		outputPathCount: outputItems.length,
-	}, null, 2));
+	console.log(
+		JSON.stringify(
+			{
+				ok: true,
+				input: normalizePath(options.input),
+				output: normalizePath(options.output),
+				mode: options.mode,
+				flatness: options.flatness,
+				inputPathCount: inputPaths.length,
+				cutterPathCount: paperItems.length,
+				outputPathCount: outputItems.length,
+			},
+			null,
+			2,
+		),
+	);
 }
 
 function readOptions() {
@@ -107,9 +113,10 @@ function visitSvgNode(node, inheritedTransforms, onNode) {
 	}
 
 	const properties = node.properties || {};
-	const nextTransforms = node.type === 'element' && properties.transform
-		? [...inheritedTransforms, String(properties.transform)]
-		: inheritedTransforms;
+	const nextTransforms =
+		node.type === 'element' && properties.transform
+			? [...inheritedTransforms, String(properties.transform)]
+			: inheritedTransforms;
 	onNode(node, inheritedTransforms);
 
 	for (const child of node.children || []) {
@@ -159,10 +166,10 @@ function unitePathsByFill(scope, items, flatness) {
 
 	const results = [];
 	for (const [fill, groupItems] of groups) {
-		let united = groupItems[0].clone({ insert: false });
+		let united = groupItems[0].clone({insert: false});
 		for (let index = 1; index < groupItems.length; index += 1) {
 			const next = groupItems[index];
-			const result = united.unite(next, { insert: false });
+			const result = united.unite(next, {insert: false});
 			united.remove();
 			united = result;
 			united.fillColor = fill;
@@ -185,9 +192,9 @@ function uniteAllPaths(scope, items, flatness) {
 		return [];
 	}
 
-	let united = items[0].clone({ insert: false });
+	let united = items[0].clone({insert: false});
 	for (let index = 1; index < items.length; index += 1) {
-		const result = united.unite(items[index], { insert: false });
+		const result = united.unite(items[index], {insert: false});
 		united.remove();
 		united = result;
 		united.flatten(flatness);
@@ -216,7 +223,10 @@ function parseMatrixTransform(transform) {
 		return null;
 	}
 
-	const values = match[1].split(/[\s,]+/).filter(Boolean).map((value) => Number.parseFloat(value));
+	const values = match[1]
+		.split(/[\s,]+/)
+		.filter(Boolean)
+		.map((value) => Number.parseFloat(value));
 	if (values.length !== 6 || values.some((value) => !Number.isFinite(value))) {
 		return null;
 	}
@@ -224,11 +234,13 @@ function parseMatrixTransform(transform) {
 	return new paper.Matrix(...values);
 }
 
-function writeSvgOutput(outputPath, { viewBox, items, metadata }) {
-	fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-	const pathMarkup = items.map((item, index) => {
-		return `\t<path id="paper-${index + 1}" fill="${escapeXml(item.data.fill || '#000000')}" fill-rule="${escapeXml(item.data.fillRule || 'nonzero')}" d="${escapeXml(item.pathData)}"/>`;
-	}).join('\n');
+function writeSvgOutput(outputPath, {viewBox, items, metadata}) {
+	fs.mkdirSync(path.dirname(outputPath), {recursive: true});
+	const pathMarkup = items
+		.map((item, index) => {
+			return `\t<path id="paper-${index + 1}" fill="${escapeXml(item.data.fill || '#000000')}" fill-rule="${escapeXml(item.data.fillRule || 'nonzero')}" d="${escapeXml(item.pathData)}"/>`;
+		})
+		.join('\n');
 	const metadataComment = escapeXml(JSON.stringify(metadata));
 	const svg = [
 		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox.minX} ${viewBox.minY} ${viewBox.width} ${viewBox.height}">`,
@@ -246,7 +258,7 @@ function parseViewBox(svgSource) {
 	const [minX = 0, minY = 0, width = 94, height = 136] = String(match?.[2] || '0 0 94 136')
 		.split(/[\s,]+/)
 		.map((value) => Number.parseFloat(value));
-	return { minX, minY, width, height };
+	return {minX, minY, width, height};
 }
 
 function normalizeFill(fill) {

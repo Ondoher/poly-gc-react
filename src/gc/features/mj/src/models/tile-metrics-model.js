@@ -1,25 +1,25 @@
-import { Service, Registry } from "@polylith/core";
+import {Service, Registry} from '@polylith/core';
 
 const TILE_SIZES = Object.freeze({
 	normal: {
-		id: "normal",
-		name: "Normal",
-		class: "normal",
+		id: 'normal',
+		name: 'Normal',
+		class: 'normal',
 	},
 	medium: {
-		id: "medium",
-		name: "Medium",
-		class: "medium",
+		id: 'medium',
+		name: 'Medium',
+		class: 'medium',
 	},
 	small: {
-		id: "small",
-		name: "Small",
-		class: "small",
+		id: 'small',
+		name: 'Small',
+		class: 'small',
 	},
 	tiny: {
-		id: "tiny",
-		name: "Tiny",
-		class: "tiny",
+		id: 'tiny',
+		name: 'Tiny',
+		class: 'tiny',
 	},
 });
 
@@ -28,14 +28,8 @@ const DEFAULT_LOGICAL_GRID = {
 	height: 16,
 	depth: 7,
 };
-const LOGICAL_GRID_CSS_VAR_NAMES = Object.freeze([
-	"gridWidth",
-	"gridHeight",
-	"gridDepth",
-]);
-const TILE_REGISTRY_CSS_VAR_NAMES = Object.freeze([
-	"string-size-order",
-]);
+const LOGICAL_GRID_CSS_VAR_NAMES = Object.freeze(['gridWidth', 'gridHeight', 'gridDepth']);
+const TILE_REGISTRY_CSS_VAR_NAMES = Object.freeze(['string-size-order']);
 
 const DEFAULT_SCALE_TOLERANCE = {
 	preferredMinScale: 0.85,
@@ -56,18 +50,18 @@ const DEFAULT_SCALE_TOLERANCE = {
  * @type {LayoutMetricCssVarNameList}
  */
 export const LAYOUT_METRIC_CSS_VAR_NAMES = Object.freeze([
-	"tileWidth",
-	"tileHeight",
-	"faceWidth",
-	"faceHeight",
-	"rightPad",
-	"bottomPad",
-	"cellWidth",
-	"cellHeight",
-	"depthX",
-	"depthY",
-	"canvasWidth",
-	"canvasHeight",
+	'tileWidth',
+	'tileHeight',
+	'faceWidth',
+	'faceHeight',
+	'rightPad',
+	'bottomPad',
+	'cellWidth',
+	'cellHeight',
+	'depthX',
+	'depthY',
+	'canvasWidth',
+	'canvasHeight',
 ]);
 
 /**
@@ -84,13 +78,8 @@ export default class TileMetricsModel extends Service {
 	 * @param {Registry} [registry] - Manage service lookup and registration.
 	 */
 	constructor(registry) {
-		super("mj:tile-metrics-model", registry);
-		this.implement([
-			"start",
-			"ready",
-			"getViewState",
-			"getDebugState",
-		]);
+		super('mj:tile-metrics-model', registry);
+		this.implement(['start', 'ready', 'getViewState', 'getDebugState']);
 	}
 
 	/**
@@ -122,9 +111,7 @@ export default class TileMetricsModel extends Service {
 	 */
 	normalizeTileMetrics(tileMetrics = {}) {
 		return {
-			metricSetId: typeof tileMetrics.metricSetId === "string"
-				? tileMetrics.metricSetId
-				: null,
+			metricSetId: typeof tileMetrics.metricSetId === 'string' ? tileMetrics.metricSetId : null,
 			tileWidth: this.normalizeNumber(tileMetrics.tileWidth),
 			tileHeight: this.normalizeNumber(tileMetrics.tileHeight),
 			faceWidth: this.normalizeNumber(tileMetrics.faceWidth),
@@ -153,7 +140,7 @@ export default class TileMetricsModel extends Service {
 			tileMetrics.tileWidth > 0 &&
 			tileMetrics.tileHeight > 0 &&
 			tileMetrics.cellWidth > 0 &&
-			tileMetrics.cellHeight > 0
+			tileMetrics.cellHeight > 0,
 		);
 	}
 
@@ -166,11 +153,11 @@ export default class TileMetricsModel extends Service {
 	 * @returns {string}
 	 */
 	buildMetricCssVarCacheKey(prefix, names, defaults = {}) {
-		let normalizedPrefix = typeof prefix === "string" ? prefix.trim() : "";
+		let normalizedPrefix = typeof prefix === 'string' ? prefix.trim() : '';
 		let normalizedNames = Array.isArray(names) ? names : [];
 		let serializedDefaults = JSON.stringify(defaults || {});
 
-		return `${normalizedPrefix}|${normalizedNames.join("|")}|${serializedDefaults}`;
+		return `${normalizedPrefix}|${normalizedNames.join('|')}|${serializedDefaults}`;
 	}
 
 	/**
@@ -186,21 +173,24 @@ export default class TileMetricsModel extends Service {
 			return {...this.logicalGridCache};
 		}
 
-		if (!this.cssVars || typeof this.cssVars.buildObject !== "function") {
+		if (!this.cssVars || typeof this.cssVars.buildObject !== 'function') {
 			this.logicalGridCache = {...DEFAULT_LOGICAL_GRID};
 			return {...this.logicalGridCache};
 		}
 
-		let rawGrid = this.cssVars.buildObject({
-			prefix: "mj",
-			names: LOGICAL_GRID_CSS_VAR_NAMES,
-		}, {
-			defaults: {
-				gridWidth: DEFAULT_LOGICAL_GRID.width,
-				gridHeight: DEFAULT_LOGICAL_GRID.height,
-				gridDepth: DEFAULT_LOGICAL_GRID.depth,
+		let rawGrid = this.cssVars.buildObject(
+			{
+				prefix: 'mj',
+				names: LOGICAL_GRID_CSS_VAR_NAMES,
 			},
-		});
+			{
+				defaults: {
+					gridWidth: DEFAULT_LOGICAL_GRID.width,
+					gridHeight: DEFAULT_LOGICAL_GRID.height,
+					gridDepth: DEFAULT_LOGICAL_GRID.depth,
+				},
+			},
+		);
 
 		this.logicalGridCache = {
 			width: this.normalizePositiveNumber(rawGrid.gridWidth, DEFAULT_LOGICAL_GRID.width),
@@ -216,22 +206,24 @@ export default class TileMetricsModel extends Service {
 			return this.metricSetIdCache.slice();
 		}
 
-		if (!this.cssVars || typeof this.cssVars.buildObject !== "function") {
+		if (!this.cssVars || typeof this.cssVars.buildObject !== 'function') {
 			this.metricSetIdCache = Object.keys(TILE_SIZES);
 			return this.metricSetIdCache.slice();
 		}
 
-		let rawRegistry = this.cssVars.buildObject({
-			prefix: "mj",
-			names: TILE_REGISTRY_CSS_VAR_NAMES,
-		}, {
-			defaults: {
-				sizeOrder: "",
+		let rawRegistry = this.cssVars.buildObject(
+			{
+				prefix: 'mj',
+				names: TILE_REGISTRY_CSS_VAR_NAMES,
 			},
-		});
-		let metricSetIds = typeof rawRegistry.sizeOrder === "string"
-			? rawRegistry.sizeOrder.split(/\s+/).filter(Boolean)
-			: [];
+			{
+				defaults: {
+					sizeOrder: '',
+				},
+			},
+		);
+		let metricSetIds =
+			typeof rawRegistry.sizeOrder === 'string' ? rawRegistry.sizeOrder.split(/\s+/).filter(Boolean) : [];
 
 		if (metricSetIds.length === 0) {
 			metricSetIds = Object.keys(TILE_SIZES);
@@ -249,16 +241,12 @@ export default class TileMetricsModel extends Service {
 	 * @param {Record<string, any>} [defaults] - Specify any fallback defaults used during object construction.
 	 * @returns {LayoutMetricSet | null}
 	 */
-	readMetricSetFromCssVars(
-		metricSetId,
-		names = LAYOUT_METRIC_CSS_VAR_NAMES,
-		defaults = {}
-	) {
-		if (!this.cssVars || typeof this.cssVars.buildObject !== "function") {
+	readMetricSetFromCssVars(metricSetId, names = LAYOUT_METRIC_CSS_VAR_NAMES, defaults = {}) {
+		if (!this.cssVars || typeof this.cssVars.buildObject !== 'function') {
 			return null;
 		}
 
-		let prefix = typeof metricSetId === "string" ? metricSetId.trim() : "";
+		let prefix = typeof metricSetId === 'string' ? metricSetId.trim() : '';
 
 		if (!prefix) {
 			return null;
@@ -270,12 +258,15 @@ export default class TileMetricsModel extends Service {
 			return this.metricSetCache[cacheKey];
 		}
 
-		let rawMetrics = this.cssVars.buildObject({
-			prefix,
-			names,
-		}, {
-			defaults,
-		});
+		let rawMetrics = this.cssVars.buildObject(
+			{
+				prefix,
+				names,
+			},
+			{
+				defaults,
+			},
+		);
 		let tileMetrics = this.normalizeTileMetrics({
 			metricSetId: prefix,
 			...rawMetrics,
@@ -299,9 +290,11 @@ export default class TileMetricsModel extends Service {
 	readMetricSetsFromCssVars(metricSetIds) {
 		let requestedIds = Array.isArray(metricSetIds) ? metricSetIds : [];
 
-		return requestedIds.map(function(metricSetId) {
-			return this.readMetricSetFromCssVars(metricSetId);
-		}, this).filter(Boolean);
+		return requestedIds
+			.map(function (metricSetId) {
+				return this.readMetricSetFromCssVars(metricSetId);
+			}, this)
+			.filter(Boolean);
 	}
 
 	/**
@@ -321,9 +314,7 @@ export default class TileMetricsModel extends Service {
 			isComfortable:
 				normalizedScale >= scaleTolerance.preferredMinScale &&
 				normalizedScale <= scaleTolerance.preferredMaxScale,
-			exceedsHardLimit:
-				normalizedScale < scaleTolerance.minScale ||
-				normalizedScale > scaleTolerance.maxScale,
+			exceedsHardLimit: normalizedScale < scaleTolerance.minScale || normalizedScale > scaleTolerance.maxScale,
 		};
 	}
 
@@ -338,24 +329,22 @@ export default class TileMetricsModel extends Service {
 	 * @returns {LayoutMetricSet | null}
 	 */
 	getScaleCeilingMetricSet(metricSets) {
-		let usableMetricSets = Array.isArray(metricSets)
-			? metricSets.filter(this.hasUsableTileMetrics.bind(this))
-			: [];
+		let usableMetricSets = Array.isArray(metricSets) ? metricSets.filter(this.hasUsableTileMetrics.bind(this)) : [];
 
 		if (usableMetricSets.length === 0) {
 			return null;
 		}
 
-		let normalMetricSet = usableMetricSets.find(function(metricSet) {
-			return metricSet.metricSetId === "normal";
+		let normalMetricSet = usableMetricSets.find(function (metricSet) {
+			return metricSet.metricSetId === 'normal';
 		});
 
 		if (normalMetricSet) {
 			return normalMetricSet;
 		}
 
-		return usableMetricSets.slice().sort(function(left, right) {
-			return (right.tileWidth * right.tileHeight) - (left.tileWidth * left.tileHeight);
+		return usableMetricSets.slice().sort(function (left, right) {
+			return right.tileWidth * right.tileHeight - left.tileWidth * left.tileHeight;
 		})[0];
 	}
 
@@ -445,8 +434,8 @@ export default class TileMetricsModel extends Service {
 			return leftQualityScore - rightQualityScore;
 		}
 
-		let leftMetricSetId = left.metricSetId || "";
-		let rightMetricSetId = right.metricSetId || "";
+		let leftMetricSetId = left.metricSetId || '';
+		let rightMetricSetId = right.metricSetId || '';
 
 		if (leftMetricSetId < rightMetricSetId) {
 			return -1;
@@ -477,7 +466,7 @@ export default class TileMetricsModel extends Service {
 		let minZ = Infinity;
 		let maxZ = -Infinity;
 
-		positions.forEach(function(position) {
+		positions.forEach(function (position) {
 			minX = Math.min(minX, position.x);
 			maxX = Math.max(maxX, position.x);
 			minY = Math.min(minY, position.y);
@@ -493,9 +482,9 @@ export default class TileMetricsModel extends Service {
 			maxY,
 			minZ,
 			maxZ,
-			gridWidth: (maxX - minX) + 2,
-			gridHeight: (maxY - minY) + 2,
-			gridDepth: (maxZ - minZ) + 1,
+			gridWidth: maxX - minX + 2,
+			gridHeight: maxY - minY + 2,
+			gridDepth: maxZ - minZ + 1,
 		};
 	}
 
@@ -530,11 +519,13 @@ export default class TileMetricsModel extends Service {
 			return null;
 		}
 
-		let width = ((logicalGrid.width - 1) * tileMetrics.cellWidth) +
-			(tileMetrics.depthX * (logicalGrid.depth - 1)) +
+		let width =
+			(logicalGrid.width - 1) * tileMetrics.cellWidth +
+			tileMetrics.depthX * (logicalGrid.depth - 1) +
 			tileMetrics.tileWidth;
-		let height = ((logicalGrid.height - 1) * tileMetrics.cellHeight) +
-			(tileMetrics.depthY * (logicalGrid.depth - 1)) +
+		let height =
+			(logicalGrid.height - 1) * tileMetrics.cellHeight +
+			tileMetrics.depthY * (logicalGrid.depth - 1) +
 			tileMetrics.tileHeight;
 
 		return {
@@ -580,8 +571,8 @@ export default class TileMetricsModel extends Service {
 		let y = this.normalizeNumber(position.y);
 		let z = this.normalizeNumber(position.z);
 		let depthOffset = logicalGrid.depth - 1 - z;
-		let left = (x * tileMetrics.cellWidth) + (tileMetrics.depthX * depthOffset);
-		let top = (y * tileMetrics.cellHeight) + (tileMetrics.depthY * depthOffset);
+		let left = x * tileMetrics.cellWidth + tileMetrics.depthX * depthOffset;
+		let top = y * tileMetrics.cellHeight + tileMetrics.depthY * depthOffset;
 
 		return {
 			left,
@@ -617,7 +608,7 @@ export default class TileMetricsModel extends Service {
 		let minTop = Infinity;
 		let maxBottom = -Infinity;
 
-		positions.forEach(function(position) {
+		positions.forEach(function (position) {
 			let tileRect = this.calculateTilePixelRect(position, tileMetrics, logicalGrid);
 
 			if (!tileRect) {
@@ -630,12 +621,7 @@ export default class TileMetricsModel extends Service {
 			maxBottom = Math.max(maxBottom, tileRect.bottom);
 		}, this);
 
-		if (
-			minLeft === Infinity ||
-			maxRight === -Infinity ||
-			minTop === Infinity ||
-			maxBottom === -Infinity
-		) {
+		if (minLeft === Infinity || maxRight === -Infinity || minTop === Infinity || maxBottom === -Infinity) {
 			return null;
 		}
 
@@ -662,11 +648,11 @@ export default class TileMetricsModel extends Service {
 		let pendingInputs = [];
 
 		if (context.availableSpace.width <= 0 || context.availableSpace.height <= 0) {
-			pendingInputs.push("live playfield measurement source is not wired yet");
+			pendingInputs.push('live playfield measurement source is not wired yet');
 		}
 
 		if (context.tileMetricSets.length === 0) {
-			pendingInputs.push("generated tile metrics are unavailable");
+			pendingInputs.push('generated tile metrics are unavailable');
 		}
 
 		return pendingInputs;
@@ -688,62 +674,58 @@ export default class TileMetricsModel extends Service {
 		let metricSets = this.getCandidateMetricSets(context);
 		let ceilingMetricSet = this.getScaleCeilingMetricSet(metricSets);
 
-		return metricSets.map(function(tileMetrics) {
-			let boardPixelCenter = this.calculateBoardPixelCenterForMetrics(
-				tileMetrics,
-				context.logicalGrid
-			);
-			let layoutPixelSize = this.calculateLayoutPixelSizeForMetrics(
-				context.positions,
-				tileMetrics,
-				context.logicalGrid
-			);
-			let scaleX = layoutPixelSize && layoutPixelSize.width > 0
-				? innerAvailableSpace.width / layoutPixelSize.width
-				: 0;
-			let scaleY = layoutPixelSize && layoutPixelSize.height > 0
-				? innerAvailableSpace.height / layoutPixelSize.height
-				: 0;
-			let requestedScale = layoutPixelSize
-				? Math.min(scaleX, scaleY)
-				: 0;
-			let maxRenderedScale = this.calculateMaxRenderedScale(
-				tileMetrics,
-				ceilingMetricSet,
-				context.scaleTolerance
-			);
-			let scale = requestedScale > 0
-				? Math.min(requestedScale, maxRenderedScale)
-				: 0;
-			let fitsScaleRange =
-				requestedScale >= context.scaleTolerance.minScale &&
-				requestedScale <= maxRenderedScale;
-			let inPreferredScaleRange =
-				scale >= context.scaleTolerance.preferredMinScale &&
-				scale <= context.scaleTolerance.preferredMaxScale;
-			let scaleQuality = this.buildScaleQuality(scale, {
-				...context.scaleTolerance,
-				maxScale: maxRenderedScale,
-			});
+		return metricSets
+			.map(function (tileMetrics) {
+				let boardPixelCenter = this.calculateBoardPixelCenterForMetrics(tileMetrics, context.logicalGrid);
+				let layoutPixelSize = this.calculateLayoutPixelSizeForMetrics(
+					context.positions,
+					tileMetrics,
+					context.logicalGrid,
+				);
+				let scaleX =
+					layoutPixelSize && layoutPixelSize.width > 0
+						? innerAvailableSpace.width / layoutPixelSize.width
+						: 0;
+				let scaleY =
+					layoutPixelSize && layoutPixelSize.height > 0
+						? innerAvailableSpace.height / layoutPixelSize.height
+						: 0;
+				let requestedScale = layoutPixelSize ? Math.min(scaleX, scaleY) : 0;
+				let maxRenderedScale = this.calculateMaxRenderedScale(
+					tileMetrics,
+					ceilingMetricSet,
+					context.scaleTolerance,
+				);
+				let scale = requestedScale > 0 ? Math.min(requestedScale, maxRenderedScale) : 0;
+				let fitsScaleRange =
+					requestedScale >= context.scaleTolerance.minScale && requestedScale <= maxRenderedScale;
+				let inPreferredScaleRange =
+					scale >= context.scaleTolerance.preferredMinScale &&
+					scale <= context.scaleTolerance.preferredMaxScale;
+				let scaleQuality = this.buildScaleQuality(scale, {
+					...context.scaleTolerance,
+					maxScale: maxRenderedScale,
+				});
 
-			return {
-				metricSetId: tileMetrics.metricSetId || null,
-				tileMetrics,
-				boardPixelCenter,
-				layoutPixelSize,
-				availableSpace: innerAvailableSpace,
-				scaleX,
-				scaleY,
-				requestedScale,
-				maxRenderedScale,
-				scale,
-				fitsScaleRange,
-				inPreferredScaleRange,
-				scaledWidth: layoutPixelSize ? layoutPixelSize.width * scale : 0,
-				scaledHeight: layoutPixelSize ? layoutPixelSize.height * scale : 0,
-				scaleQuality,
-			};
-		}, this).sort(this.compareCandidateFits.bind(this));
+				return {
+					metricSetId: tileMetrics.metricSetId || null,
+					tileMetrics,
+					boardPixelCenter,
+					layoutPixelSize,
+					availableSpace: innerAvailableSpace,
+					scaleX,
+					scaleY,
+					requestedScale,
+					maxRenderedScale,
+					scale,
+					fitsScaleRange,
+					inPreferredScaleRange,
+					scaledWidth: layoutPixelSize ? layoutPixelSize.width * scale : 0,
+					scaledHeight: layoutPixelSize ? layoutPixelSize.height * scale : 0,
+					scaleQuality,
+				};
+			}, this)
+			.sort(this.compareCandidateFits.bind(this));
 	}
 
 	/**
@@ -764,13 +746,17 @@ export default class TileMetricsModel extends Service {
 		let layout = config.layout || null;
 		let positions = Array.isArray(config.positions)
 			? config.positions.slice()
-			: (Array.isArray(layout?.positions) ? layout.positions.slice() : []);
+			: Array.isArray(layout?.positions)
+				? layout.positions.slice()
+				: [];
 		let sizeNames = Array.isArray(config.sizeNames)
-			? config.sizeNames.filter(function(name) {
-				return typeof name === "string" && name.trim();
-			}).map(function(name) {
-				return name.trim();
-			})
+			? config.sizeNames
+					.filter(function (name) {
+						return typeof name === 'string' && name.trim();
+					})
+					.map(function (name) {
+						return name.trim();
+					})
 			: this.readMetricSetIdsFromCssVars();
 		let availableSpace = {
 			width: this.normalizeNumber(config.availableSpace?.width),
@@ -786,20 +772,14 @@ export default class TileMetricsModel extends Service {
 		let scaleTolerance = {
 			preferredMinScale: this.normalizePositiveNumber(
 				config.scaleTolerance?.preferredMinScale,
-				DEFAULT_SCALE_TOLERANCE.preferredMinScale
+				DEFAULT_SCALE_TOLERANCE.preferredMinScale,
 			),
 			preferredMaxScale: this.normalizePositiveNumber(
 				config.scaleTolerance?.preferredMaxScale,
-				DEFAULT_SCALE_TOLERANCE.preferredMaxScale
+				DEFAULT_SCALE_TOLERANCE.preferredMaxScale,
 			),
-			minScale: this.normalizePositiveNumber(
-				config.scaleTolerance?.minScale,
-				DEFAULT_SCALE_TOLERANCE.minScale
-			),
-			maxScale: this.normalizePositiveNumber(
-				config.scaleTolerance?.maxScale,
-				DEFAULT_SCALE_TOLERANCE.maxScale
-			),
+			minScale: this.normalizePositiveNumber(config.scaleTolerance?.minScale, DEFAULT_SCALE_TOLERANCE.minScale),
+			maxScale: this.normalizePositiveNumber(config.scaleTolerance?.maxScale, DEFAULT_SCALE_TOLERANCE.maxScale),
 		};
 
 		return {
@@ -822,10 +802,7 @@ export default class TileMetricsModel extends Service {
 	calculate(config = {}) {
 		let context = this.normalizeConfig(config);
 		let layoutBounds = this.calculateLayoutBounds(context.positions);
-		let innerAvailableSpace = this.calculateInnerAvailableSpace(
-			context.availableSpace,
-			context.padding
-		);
+		let innerAvailableSpace = this.calculateInnerAvailableSpace(context.availableSpace, context.padding);
 		let candidateFits = this.evaluateMetricSets(context, layoutBounds, innerAvailableSpace);
 		let selectedFit = candidateFits[0] || null;
 		let layoutPixelSize = selectedFit?.layoutPixelSize || null;
@@ -867,7 +844,7 @@ export default class TileMetricsModel extends Service {
 	 * Mark the service ready for use by wiring dependent services.
 	 */
 	ready() {
-		this.cssVars = this.registry.subscribe("mj:css-vars");
+		this.cssVars = this.registry.subscribe('mj:css-vars');
 	}
 
 	/**

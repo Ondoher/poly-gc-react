@@ -4,10 +4,7 @@ const durationMs = parseDuration(process.argv.slice(2));
 
 const browser = await puppeteer.launch({
 	headless: false,
-	args: [
-		'--autoplay-policy=no-user-gesture-required',
-		'--window-size=420,240',
-	],
+	args: ['--autoplay-policy=no-user-gesture-required', '--window-size=420,240'],
 	defaultViewport: {
 		width: 420,
 		height: 240,
@@ -52,10 +49,10 @@ try {
 		const compressor = audio.createDynamicsCompressor();
 		const now = audio.currentTime;
 		const partials = [
-			{ frequency: 1046.5, gain: 0.38, delay: 0.00, decay: 1.20 },
-			{ frequency: 1318.51, gain: 0.26, delay: 0.04, decay: 1.05 },
-			{ frequency: 1567.98, gain: 0.22, delay: 0.08, decay: 0.92 },
-			{ frequency: 2093.0, gain: 0.13, delay: 0.13, decay: 0.68 },
+			{frequency: 1046.5, gain: 0.38, delay: 0.0, decay: 1.2},
+			{frequency: 1318.51, gain: 0.26, delay: 0.04, decay: 1.05},
+			{frequency: 1567.98, gain: 0.22, delay: 0.08, decay: 0.92},
+			{frequency: 2093.0, gain: 0.13, delay: 0.13, decay: 0.68},
 		];
 
 		master.gain.setValueAtTime(0.0, now);

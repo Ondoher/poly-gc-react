@@ -1,5 +1,5 @@
-import React from "react";
-import CssRect from "./CssRect.jsx";
+import React from 'react';
+import CssRect from './CssRect.jsx';
 
 export default class RaisedButton extends React.Component {
 	constructor(props) {
@@ -28,9 +28,7 @@ export default class RaisedButton extends React.Component {
 				aria-pressed={this.props.selected ? 'true' : 'false'}
 			>
 				<span className="mj-raised-button-face"></span>
-				<span className="mj-raised-button-label">
-					{this.props.children}
-				</span>
+				<span className="mj-raised-button-label">{this.props.children}</span>
 			</CssRect>
 		);
 	}

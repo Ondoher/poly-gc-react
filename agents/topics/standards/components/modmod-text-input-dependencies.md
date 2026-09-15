@@ -29,5 +29,5 @@ Focused dependency inventory for `c:\dev\modmod\src\components\TextInput.jsx`.
 1. `TextInput.jsx`
 2. `@mui/material`
 3. context support for:
-   - `localize.t(...)`
-   - `editVariant`
+    - `localize.t(...)`
+    - `editVariant`

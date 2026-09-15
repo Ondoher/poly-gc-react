@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 const ASSET_PIPELINE_NAMESPACE = '/asset-pipeline';
 

@@ -1,11 +1,11 @@
-import { Service } from "@polylith/core";
+import {Service} from '@polylith/core';
 
-const SOCKET_IO_CLIENT_SCRIPT = "/socket.io/socket.io.js";
+const SOCKET_IO_CLIENT_SCRIPT = '/socket.io/socket.io.js';
 
 export default class StreamService extends Service {
 	constructor(registry) {
-		super("stream", registry);
-		this.implement(["start", "namespace", "on", "off", "send", "get"]);
+		super('stream', registry);
+		this.implement(['start', 'namespace', 'on', 'off', 'send', 'get']);
 	}
 
 	/**
@@ -25,7 +25,7 @@ export default class StreamService extends Service {
 	 */
 	async namespace(name) {
 		if (!name) {
-			throw new Error("A Socket.IO namespace is required.");
+			throw new Error('A Socket.IO namespace is required.');
 		}
 
 		if (!this.namespaces[name]) {
@@ -33,7 +33,7 @@ export default class StreamService extends Service {
 			const socket = io(name);
 			this.namespaces[name] = socket;
 			socket.onAny((eventName, ...args) => {
-				this.fire("message", name, eventName, ...args);
+				this.fire('message', name, eventName, ...args);
 				this.fire(`message::${name}`, name, eventName, ...args);
 			});
 		}
@@ -98,8 +98,8 @@ export default class StreamService extends Service {
 	}
 
 	async loadClient() {
-		if (typeof window === "undefined") {
-			throw new Error("Socket.IO client is only available in the browser.");
+		if (typeof window === 'undefined') {
+			throw new Error('Socket.IO client is only available in the browser.');
 		}
 
 		if (window.io) {
@@ -108,7 +108,7 @@ export default class StreamService extends Service {
 
 		if (!this.clientLoader) {
 			this.clientLoader = new Promise((resolve, reject) => {
-				const script = document.createElement("script");
+				const script = document.createElement('script');
 				script.src = SOCKET_IO_CLIENT_SCRIPT;
 				script.async = true;
 				script.onload = () => resolve(window.io);

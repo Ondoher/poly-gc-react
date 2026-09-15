@@ -19,8 +19,8 @@ $$N(\phi) = \frac{a}{\sqrt{1 - e^2 \sin^2(\phi)}}$$
 
 ### Verification References
 
-* **Institutional Standard:** WGS84 is maintained by the National Geospatial-Intelligence Agency (NGA). NGA describes WGS84 as the targeting and navigation grid used for GPS positioning in its [GPS and Earth Orientation Products](https://www.nga.mil/resources/GPS_and_Earth_Orientation_Products.html) resource page.
-* **Current WGS84 Reference Frame:** NGA publishes the current terrestrial reference frame details in [WGS 84 (G2296) Terrestrial Reference Frame](https://earth-info.nga.mil/php/download.php?file=WGS+84%28G2296%29.pdf).
+- **Institutional Standard:** WGS84 is maintained by the National Geospatial-Intelligence Agency (NGA). NGA describes WGS84 as the targeting and navigation grid used for GPS positioning in its [GPS and Earth Orientation Products](https://www.nga.mil/resources/GPS_and_Earth_Orientation_Products.html) resource page.
+- **Current WGS84 Reference Frame:** NGA publishes the current terrestrial reference frame details in [WGS 84 (G2296) Terrestrial Reference Frame](https://earth-info.nga.mil/php/download.php?file=WGS+84%28G2296%29.pdf).
 
 ---
 
@@ -42,8 +42,8 @@ $$e = \sin^{-1}\left(\frac{U}{\rho}\right)$$
 
 ### Verification References
 
-* **Coordinate Frame Derivation:** ESA Navipedia's [Transformations between ECEF and ENU coordinates](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates) gives the East/North/Up basis vectors, the ECEF-to-ENU rotation matrix, and the azimuth/elevation formulas used by the app.
-* **Implementation Cross-Check:** Fixposition's [Converting from ECEF to ENU](https://docs.fixposition.com/fd/converting-from-ecef-to-enu-local-frame) summarizes the same ECEF/local-frame conversion pattern used in GNSS tooling.
+- **Coordinate Frame Derivation:** ESA Navipedia's [Transformations between ECEF and ENU coordinates](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates) gives the East/North/Up basis vectors, the ECEF-to-ENU rotation matrix, and the azimuth/elevation formulas used by the app.
+- **Implementation Cross-Check:** Fixposition's [Converting from ECEF to ENU](https://docs.fixposition.com/fd/converting-from-ecef-to-enu-local-frame) summarizes the same ECEF/local-frame conversion pattern used in GNSS tooling.
 
 ---
 
@@ -61,8 +61,8 @@ $$\mathbf{p}_{\text{opt}} = \left( \sum_{i=1}^N (\mathbf{I} - \mathbf{u}_i\mathb
 
 ### Verification References
 
-* **Least-Squares Form:** The [Least-Squares Intersection of Lines](https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Least-Squares_Intersection_of_Lines) section of the line-line intersection reference derives the projection-matrix form for the point closest to many lines.
-* **Implementation Reference:** MATLAB Central's [Line-Line Intersection (N lines, D space)](https://www.mathworks.com/matlabcentral/fileexchange/59805-line-line-intersection-n-lines-d-space) documents the same "nearest to all lines by minimum sum of squared distances" problem in implementation form.
+- **Least-Squares Form:** The [Least-Squares Intersection of Lines](https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Least-Squares_Intersection_of_Lines) section of the line-line intersection reference derives the projection-matrix form for the point closest to many lines.
+- **Implementation Reference:** MATLAB Central's [Line-Line Intersection (N lines, D space)](https://www.mathworks.com/matlabcentral/fileexchange/59805-line-line-intersection-n-lines-d-space) documents the same "nearest to all lines by minimum sum of squared distances" problem in implementation form.
 
 ---
 
@@ -74,5 +74,5 @@ reference slot is ASTRA 2E/2F/2G at 28.2 degrees East.
 
 ### Verification References
 
-* **GEO Altitude:** NASA describes geosynchronous equatorial orbit as a circular orbit [22,236 miles above Earth](https://www.nasa.gov/science-research/tech-research/groundbreaking-technology-may-add-years-to-earth-orbiting-satellites/), the same altitude scale as the app's 35,786 km GEO assumption.
-* **Operational Satellite Neighborhood:** SES lists [ASTRA 2E/2F/2G at 28.2 degrees East](https://www.ses.com/v2/solutions/media-broadcasters/reach-neighborhoods) in its media reach and orbital-neighborhood material.
+- **GEO Altitude:** NASA describes geosynchronous equatorial orbit as a circular orbit [22,236 miles above Earth](https://www.nasa.gov/science-research/tech-research/groundbreaking-technology-may-add-years-to-earth-orbiting-satellites/), the same altitude scale as the app's 35,786 km GEO assumption.
+- **Operational Satellite Neighborhood:** SES lists [ASTRA 2E/2F/2G at 28.2 degrees East](https://www.ses.com/v2/solutions/media-broadcasters/reach-neighborhoods) in its media reach and orbital-neighborhood material.

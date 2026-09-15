@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type {ReactElement} from 'react';
 
 /**
  * Define the exported service contract for the Mahjongg controller.

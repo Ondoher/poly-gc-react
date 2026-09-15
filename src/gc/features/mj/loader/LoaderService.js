@@ -3,7 +3,7 @@ import {load} from '@polylith/loader';
 import {shouldDirectLaunch} from 'common/startup.js';
 
 export default class Loader extends Service {
-	constructor (registry) {
+	constructor(registry) {
 		super('mahjongg-loader', registry);
 		this.implement(['ready', 'clicked']);
 	}

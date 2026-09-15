@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 const RENDER_REVIEW_PAGE_ID = 'final-rendering-options';
 
@@ -123,7 +123,7 @@ export default class SourceAssignmentController extends Service {
 		callback?.();
 	}
 
-	async load({ force = false, quiet = false } = {}) {
+	async load({force = false, quiet = false} = {}) {
 		if (!force && (this.state.processing || this.state.sourceAcceptance)) {
 			return;
 		}
@@ -131,7 +131,7 @@ export default class SourceAssignmentController extends Service {
 		this.setState({
 			processing: true,
 			processingLabel: quiet ? '' : 'Loading source assignment',
-			...(quiet ? {} : { status: 'Loading source assignment...' }),
+			...(quiet ? {} : {status: 'Loading source assignment...'}),
 		});
 
 		try {
@@ -169,7 +169,7 @@ export default class SourceAssignmentController extends Service {
 				status: `Source load failed: ${error.message}`,
 			});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -185,7 +185,7 @@ export default class SourceAssignmentController extends Service {
 	}
 
 	bindSelection(faceKey) {
-		const { partId, componentIds } = this.state.selection;
+		const {partId, componentIds} = this.state.selection;
 
 		if (!partId || componentIds.length === 0) {
 			return;
@@ -199,7 +199,7 @@ export default class SourceAssignmentController extends Service {
 				partId,
 				componentIds,
 			}),
-			selection: { faceKey, partId: '', componentIds: [], componentSelectionExplicit: false },
+			selection: {faceKey, partId: '', componentIds: [], componentSelectionExplicit: false},
 			dirty: true,
 			status: `${faceKey} source assignment updated`,
 		});
@@ -214,7 +214,7 @@ export default class SourceAssignmentController extends Service {
 				partId,
 				componentIds,
 			}),
-			selection: { faceKey, partId: '', componentIds: [], componentSelectionExplicit: false },
+			selection: {faceKey, partId: '', componentIds: [], componentSelectionExplicit: false},
 			dirty: true,
 			status: `${faceKey} source assignment component${componentIds.length === 1 ? '' : 's'} unbound`,
 		});
@@ -223,7 +223,8 @@ export default class SourceAssignmentController extends Service {
 	sourceWritePayload() {
 		return {
 			tilesetId: this.state.sourceAcceptance?.tilesetId || this.state.tilesetId,
-			currencyDate: this.state.sourceAcceptance?.currencyDate || this.state.sourceAcceptance?.sourceStateUpdatedOn || '',
+			currencyDate:
+				this.state.sourceAcceptance?.currencyDate || this.state.sourceAcceptance?.sourceStateUpdatedOn || '',
 			actionsByFace: this.sourceBindingActions(),
 		};
 	}
@@ -237,7 +238,7 @@ export default class SourceAssignmentController extends Service {
 
 	async save() {
 		if (!this.state.sourceAcceptance?.faces) {
-			this.setState({ status: 'No source assignment data loaded' });
+			this.setState({status: 'No source assignment data loaded'});
 			return;
 		}
 
@@ -258,12 +259,12 @@ export default class SourceAssignmentController extends Service {
 			});
 
 			if (result.ok) {
-				await this.load({ force: true, quiet: true });
+				await this.load({force: true, quiet: true});
 			}
 		} catch (error) {
-			this.setState({ status: `Source assignment save failed: ${error.message}` });
+			this.setState({status: `Source assignment save failed: ${error.message}`});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -271,7 +272,7 @@ export default class SourceAssignmentController extends Service {
 		const summary = this.summary();
 
 		if (!this.state.sourceAcceptance?.faces) {
-			this.setState({ status: 'No source assignment data loaded' });
+			this.setState({status: 'No source assignment data loaded'});
 			return;
 		}
 
@@ -295,9 +296,9 @@ export default class SourceAssignmentController extends Service {
 				await this.openRenderReview();
 			}
 		} catch (error) {
-			this.setState({ status: `Source assignment acceptance failed: ${error.message}` });
+			this.setState({status: `Source assignment acceptance failed: ${error.message}`});
 		} finally {
-			this.setState({ processing: false, processingLabel: '' });
+			this.setState({processing: false, processingLabel: ''});
 		}
 	}
 
@@ -305,14 +306,14 @@ export default class SourceAssignmentController extends Service {
 		const page = this.app.requestPage(RENDER_REVIEW_PAGE_ID);
 
 		if (!page) {
-			this.setState({ status: 'Source assignment accepted, but the Render Review page is not available.' });
+			this.setState({status: 'Source assignment accepted, but the Render Review page is not available.'});
 			return;
 		}
 
 		const finalRendering = this.registry.subscribe('final-rendering-options-controller');
 
 		if (finalRendering) {
-			await finalRendering.load({ force: true, quiet: true });
+			await finalRendering.load({force: true, quiet: true});
 		}
 	}
 
@@ -320,44 +321,50 @@ export default class SourceAssignmentController extends Service {
 		const first = this.summary().unboundParts[0];
 
 		if (!first) {
-			this.setState({ status: 'No unbound source parts' });
+			this.setState({status: 'No unbound source parts'});
 			return;
 		}
 
-		this.setState({
-			highlightUnboundParts: true,
-			selection: {
-				faceKey: first.faceKey,
-				partId: first.partId,
-				componentIds: [],
-				componentSelectionExplicit: false,
+		this.setState(
+			{
+				highlightUnboundParts: true,
+				selection: {
+					faceKey: first.faceKey,
+					partId: first.partId,
+					componentIds: [],
+					componentSelectionExplicit: false,
+				},
+				status: `Selected ${first.faceKey} ${first.partId}`,
 			},
-			status: `Selected ${first.faceKey} ${first.partId}`,
-		}, () => scrollReviewItemIntoView('part', first.faceKey, first.partId));
+			() => scrollReviewItemIntoView('part', first.faceKey, first.partId),
+		);
 	}
 
 	showFirstUnboundComponent() {
 		const first = this.summary().unboundComponents[0];
 
 		if (!first) {
-			this.setState({ status: 'No unbound source components' });
+			this.setState({status: 'No unbound source components'});
 			return;
 		}
 
-		this.setState({
-			highlightUnboundComponents: true,
-			selection: {
-				faceKey: first.faceKey,
-				partId: '',
-				componentIds: [first.componentId],
-				componentSelectionExplicit: true,
+		this.setState(
+			{
+				highlightUnboundComponents: true,
+				selection: {
+					faceKey: first.faceKey,
+					partId: '',
+					componentIds: [first.componentId],
+					componentSelectionExplicit: true,
+				},
+				status: `Selected ${first.faceKey} ${first.componentId}`,
 			},
-			status: `Selected ${first.faceKey} ${first.componentId}`,
-		}, () => scrollReviewItemIntoView('component', first.faceKey, first.componentId));
+			() => scrollReviewItemIntoView('component', first.faceKey, first.componentId),
+		);
 	}
 
 	dismissMessageDialog() {
-		this.setState({ messageDialog: null });
+		this.setState({messageDialog: null});
 	}
 
 	assetUrl(path) {
@@ -367,11 +374,7 @@ export default class SourceAssignmentController extends Service {
 
 function scrollReviewItemIntoView(type, faceKey, itemId) {
 	const isFace = type === 'face';
-	const attribute = isFace
-		? 'data-review-face'
-		: type === 'part'
-			? 'data-review-part'
-			: 'data-review-component';
+	const attribute = isFace ? 'data-review-face' : type === 'part' ? 'data-review-part' : 'data-review-component';
 	const value = isFace ? faceKey : `${faceKey}:${itemId}`;
 	const selector = `[${attribute}="${cssEscape(value)}"]`;
 	const element = document.querySelector(selector);

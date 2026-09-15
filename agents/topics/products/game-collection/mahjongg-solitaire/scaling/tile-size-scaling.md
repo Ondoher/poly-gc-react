@@ -29,25 +29,25 @@ older tile-size assumptions.
 - the tile CSS pipeline now generates a shared metric surface in
   [layouts.css](/c:/dev/poly-gc-react/src/gc/features/mj/assets/css/tile-layout/layouts.css)
 - the generator path now includes:
-  - [metrics.js](/c:/dev/poly-gc-react/scripts/tile-css/metrics.js)
-  - [generate-layouts.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-layouts.js)
+    - [metrics.js](/c:/dev/poly-gc-react/scripts/tile-css/metrics.js)
+    - [generate-layouts.js](/c:/dev/poly-gc-react/scripts/tile-css/generate-layouts.js)
 - the runtime now has a real
   [tile metrics model](/c:/dev/poly-gc-react/src/gc/features/mj/src/models/tile-metrics-model.js)
   that:
-  - reads metric-family objects from `mj:css-vars`
-  - reads generated logical-grid dimensions from CSS vars
-  - projects occupied tile pixels against a stable board center
-  - scores candidate metric families
-  - selects the best family and scale
+    - reads metric-family objects from `mj:css-vars`
+    - reads generated logical-grid dimensions from CSS vars
+    - projects occupied tile pixels against a stable board center
+    - scores candidate metric families
+    - selects the best family and scale
 - the service now has broad direct coverage in
   [tile-metrics-model.spec.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/models/_tests/tile-metrics-model.spec.js)
 - the shell board now consumes `mj:tile-metrics-model` from
   [Board.jsx](/c:/dev/poly-gc-react/src/gc/features/mj/src/components/Board.jsx)
   to select:
-  - the generated metric family CSS class
-  - the fitted canvas width and height
-  - the CSS `zoom` scale
-  - the full generated board-canvas offset inside the occupied layout viewport
+    - the generated metric family CSS class
+    - the fitted canvas width and height
+    - the CSS `zoom` scale
+    - the full generated board-canvas offset inside the occupied layout viewport
 - auto-fit currently runs on startup, game generation, expanded-mode changes,
   portrait/landscape switches, and debounced resize
 - the settings dialog no longer exposes user-selectable tile size

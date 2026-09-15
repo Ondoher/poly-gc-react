@@ -1,19 +1,11 @@
 import React from 'react';
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 import ExperimentsPage from '../components/ExperimentsPage.jsx';
 
 export default class ExperimentsView extends Service {
 	constructor(registry) {
 		super('experiments-view', registry);
-		this.implement([
-			'ready',
-			'getComponent',
-			'getState',
-			'assetUrl',
-			'load',
-			'generate',
-			'dismissMessageDialog',
-		]);
+		this.implement(['ready', 'getComponent', 'getState', 'assetUrl', 'load', 'generate', 'dismissMessageDialog']);
 	}
 
 	ready() {

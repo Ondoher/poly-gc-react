@@ -7,9 +7,7 @@ Current focus: prepare the existing `poly-gc-react` production process to
 deploy separately owned Polylith app repositories, beginning with Naginator,
 while keeping deployment orchestration in this repository.
 
-## Fresh Agent Route
+## Work Context
 
-1. Read this file.
-2. Read the active topic README.
-3. Load only the files under its `Minimal Reload Sources` section before
-   continuing deployment work.
+The linked topic README owns the focused reload paths. Session initialization
+and recovery follow the canonical [loading procedure](C:/Users/gande/.codex/documentation/standards/documentation.md#loading-procedure).

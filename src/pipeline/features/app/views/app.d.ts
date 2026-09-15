@@ -30,7 +30,7 @@ type AppShellProps = {
 	/**
 	 * Carry manifest-backed source tilesets for the shell selector.
 	 */
-	tilesets?: Array<{ id: string; label?: string; active?: boolean }>;
+	tilesets?: Array<{id: string; label?: string; active?: boolean}>;
 
 	/**
 	 * Indicate that tileset manifest state is loading.
@@ -57,7 +57,7 @@ interface AppViewService {
 		pageComponent: import('react').ReactNode;
 		pages: AppPageRecord[];
 		activeTilesetId: string;
-		tilesets: Array<{ id: string; label?: string; active?: boolean }>;
+		tilesets: Array<{id: string; label?: string; active?: boolean}>;
 		tilesetsLoading: boolean;
 	};
 

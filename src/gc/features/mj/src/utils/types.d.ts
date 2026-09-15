@@ -33,7 +33,7 @@ type LayoutMetricSet = {
 	canvasWidth?: number;
 	/** Full generated canvas height for the complete logical grid. */
 	canvasHeight?: number;
-}
+};
 
 /**
  * Describe the plain metric object returned from `cssVars.buildObject(...)`
@@ -46,7 +46,7 @@ type LayoutMetricSet = {
  * - `--tiny-faceHeight`
  * - `--tiny-depthX`
  */
-type LayoutMetricCssVarObject = Omit<LayoutMetricSet, "metricSetId">;
+type LayoutMetricCssVarObject = Omit<LayoutMetricSet, 'metricSetId'>;
 
 /** One layout-metric CSS-variable name relative to the family prefix. */
 type LayoutMetricCssVarName = keyof LayoutMetricCssVarObject;
@@ -64,7 +64,7 @@ type LayoutMetricCatalog = {
 	order: LayoutMetricSetId[];
 	/** Id of the largest generated metric family when known. */
 	maxMetricSetId: LayoutMetricSetId | null;
-}
+};
 
 /**
  * Describe one usable rectangle measured from the live DOM.
@@ -74,7 +74,7 @@ type LayoutAvailableSpace = {
 	width: number;
 	/** Usable height in pixels. */
 	height: number;
-}
+};
 
 /**
  * Describe edge padding that should be subtracted from available space.
@@ -88,7 +88,7 @@ type LayoutPadding = {
 	top: number;
 	/** Bottom padding in pixels. */
 	bottom: number;
-}
+};
 
 /**
  * Describe preferred and hard scale limits for fit evaluation.
@@ -102,7 +102,7 @@ type LayoutScaleTolerance = {
 	minScale: number;
 	/** Absolute maximum allowed scale. */
 	maxScale: number;
-}
+};
 
 /**
  * Describe the occupied logical extents of one active layout.
@@ -126,7 +126,7 @@ type LayoutBounds = {
 	gridHeight: number;
 	/** Occupied layout depth in logical z layers. */
 	gridDepth: number;
-}
+};
 
 /**
  * Describe one unscaled or scaled layout size in pixels.
@@ -136,7 +136,7 @@ type LayoutPixelSize = {
 	width: number;
 	/** Height in pixels. */
 	height: number;
-}
+};
 
 /**
  * Summarize the visual quality characteristics of one scale decision.
@@ -152,7 +152,7 @@ type LayoutScaleQuality = {
 	isComfortable: boolean;
 	/** Whether the fit exceeds the hard visual ceiling. */
 	exceedsHardLimit: boolean;
-}
+};
 
 /**
  * Describe one candidate fit result for one metric family.
@@ -191,7 +191,7 @@ type LayoutCandidateFit = {
 	scaledHeight: number;
 	/** Optional quality summary for chooser logic. */
 	scaleQuality?: LayoutScaleQuality;
-}
+};
 
 /**
  * Describe the full output of one tile-metrics calculation.
@@ -213,7 +213,7 @@ type TileMetricsResult = {
 	scaleTolerance: LayoutScaleTolerance;
 	/** List of unresolved required inputs that blocked a complete calculation. */
 	pendingInputs: string[];
-}
+};
 
 /**
  * Describe the stable app-facing payload that the controller can map into view state.
@@ -229,7 +229,7 @@ type TileMetricsViewState = {
 	scale: number;
 	/** Whether the calculator found a usable fit. */
 	hasFit: boolean;
-}
+};
 
 /**
  * Describe the app-facing inputs accepted by the tile-metrics model.
@@ -250,7 +250,7 @@ type TileMetricsConfig = {
 	padding?: Partial<LayoutPadding>;
 	/** Optional scale-tolerance policy override. */
 	scaleTolerance?: Partial<LayoutScaleTolerance>;
-}
+};
 
 /** One CSS-variable name relative to the shared prefix. */
 type LayoutCssVarName = string;
@@ -266,7 +266,7 @@ type LayoutCssVarGroupDescriptor = {
 	prefix: string;
 	/** Variable names relative to the shared prefix. */
 	names: LayoutCssVarNameList;
-}
+};
 
 /**
  * Describe the CSS-variable names needed to construct one layout metric set.
@@ -276,7 +276,7 @@ type LayoutMetricCssVarDescriptor = {
 	prefix: string;
 	/** Flat camelCase variable names for one metric-family object. */
 	names: LayoutMetricCssVarNameList;
-}
+};
 
 /**
  * Control how one CSS-variable group is read into a plain object.
@@ -288,4 +288,4 @@ type LayoutCssVarBuildOptions = {
 	coerceNumbers?: boolean;
 	/** Fallback values to use when one field has no CSS variable value. */
 	defaults?: Record<string, any>;
-}
+};

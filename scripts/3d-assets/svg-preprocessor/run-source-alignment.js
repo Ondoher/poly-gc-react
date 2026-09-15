@@ -1,6 +1,6 @@
-import { SourceAlignmentRunner } from './SourceAlignmentRunner.js';
-import { readArgument, requireArgument } from './cli-arguments.js';
-import { PipelineModel } from './PipelineModel.js';
+import {SourceAlignmentRunner} from './SourceAlignmentRunner.js';
+import {readArgument, requireArgument} from './cli-arguments.js';
+import {PipelineModel} from './PipelineModel.js';
 
 const DEFAULT_REFERENCE_NAME = 'default-large-faces';
 
@@ -14,10 +14,12 @@ async function main() {
 		throw new Error('--pipeline-state is no longer accepted. Source Alignment writes through PipelineModel.');
 	}
 	if (legacyReferenceStructure) {
-		throw new Error('--reference-structure is no longer accepted. Source Alignment reads the model-owned reference.');
+		throw new Error(
+			'--reference-structure is no longer accepted. Source Alignment reads the model-owned reference.',
+		);
 	}
 
-	const model = new PipelineModel({ referenceName, tileSetName: tilesetId });
+	const model = new PipelineModel({referenceName, tileSetName: tilesetId});
 	const runner = new SourceAlignmentRunner();
 
 	await model.start();

@@ -579,36 +579,36 @@ Shape derivation runs over normalized components that have `pathData` and
 The current grouping order is:
 
 1. **Source-use instance grouping**
-   - Inspect each component's `sourceUseInstances` ancestry from innermost to
-     outermost.
-   - Pick the first instance that has both `sourceUseId` and
-     `sourceUseInstanceId` and whose `sourceUseId` is not structural.
-   - Structural source-use ids currently include `facesize` and `rect2236`.
-   - Components with the same useful `sourceUseInstanceId` form one
-     `source-use-instance` shape.
-   - Ignore source-use groups that contain no visibly painted component.
-   - `compound-path-band` subcomponents are separable and must not be forced
-     into one shape merely because they share a source-use instance.
+    - Inspect each component's `sourceUseInstances` ancestry from innermost to
+      outermost.
+    - Pick the first instance that has both `sourceUseId` and
+      `sourceUseInstanceId` and whose `sourceUseId` is not structural.
+    - Structural source-use ids currently include `facesize` and `rect2236`.
+    - Components with the same useful `sourceUseInstanceId` form one
+      `source-use-instance` shape.
+    - Ignore source-use groups that contain no visibly painted component.
+    - `compound-path-band` subcomponents are separable and must not be forced
+      into one shape merely because they share a source-use instance.
 
 2. **Contained-layer grouping**
-   - Consider only components not already consumed by source-use grouping.
-   - Reject pairs when either component lacks bounds.
-   - Reject pairs when either component is a tile-layer candidate or
-     negative-space candidate.
-   - Reject pairs unless their `parentGroupIds` arrays are exactly equal and
-     in the same order.
-   - One component must contain the other component's bounds with a current
-     tolerance of `0.75` source units.
-   - The inner component's area divided by the outer component's area must be
-     at least `0.35` and at most `0.95`.
-   - The normalized center distance between the outer and inner bounds must be
-     at most `0.08`, where x/y deltas are divided by the larger bounds width
-     and height before computing Euclidean distance.
-   - A component with one or more contained partners forms one
-     `contained-layer` shape with those partners, sorted by source order.
+    - Consider only components not already consumed by source-use grouping.
+    - Reject pairs when either component lacks bounds.
+    - Reject pairs when either component is a tile-layer candidate or
+      negative-space candidate.
+    - Reject pairs unless their `parentGroupIds` arrays are exactly equal and
+      in the same order.
+    - One component must contain the other component's bounds with a current
+      tolerance of `0.75` source units.
+    - The inner component's area divided by the outer component's area must be
+      at least `0.35` and at most `0.95`.
+    - The normalized center distance between the outer and inner bounds must be
+      at most `0.08`, where x/y deltas are divided by the larger bounds width
+      and height before computing Euclidean distance.
+    - A component with one or more contained partners forms one
+      `contained-layer` shape with those partners, sorted by source order.
 
 3. **Single-component fallback**
-   - Any unconsumed component becomes one `single-component` shape.
+    - Any unconsumed component becomes one `single-component` shape.
 
 After grouping:
 
@@ -962,9 +962,9 @@ npm run build
 - Updated tests and fixtures.
 - Updated docs if the contract changes.
 - A short implementation note listing:
-  - contract behaviors preserved,
-  - weaknesses addressed,
-  - intentional normalized output differences and downstream recreation
-    performed,
-  - remaining unsupported SVG semantics,
-  - commands run and results.
+    - contract behaviors preserved,
+    - weaknesses addressed,
+    - intentional normalized output differences and downstream recreation
+      performed,
+    - remaining unsupported SVG semantics,
+    - commands run and results.

@@ -1,8 +1,8 @@
-import React from "react";
-import GameCenterContext from "common/GameCenterContext.js";
-import CssRect from "./CssRect.jsx";
-import ScrollPane from "./ScrollPane.jsx";
-import SettingsButton from "./SettingsButton.jsx";
+import React from 'react';
+import GameCenterContext from 'common/GameCenterContext.js';
+import CssRect from './CssRect.jsx';
+import ScrollPane from './ScrollPane.jsx';
+import SettingsButton from './SettingsButton.jsx';
 
 export default class Selector extends React.Component {
 	static contextType = GameCenterContext;
@@ -23,7 +23,7 @@ export default class Selector extends React.Component {
 		}
 
 		var registry = this.getRegistry();
-		this.sizeWatcher = registry?.subscribe("size-watcher");
+		this.sizeWatcher = registry?.subscribe('size-watcher');
 
 		if (!this.sizeWatcher) {
 			return;
@@ -33,15 +33,12 @@ export default class Selector extends React.Component {
 			viewportMode: this.sizeWatcher.getMode(),
 		});
 
-		this.modeChangedListener = this.sizeWatcher.listen(
-			"mode-changed",
-			this.onViewportModeChanged
-		);
+		this.modeChangedListener = this.sizeWatcher.listen('mode-changed', this.onViewportModeChanged);
 	}
 
 	componentWillUnmount() {
 		if (this.sizeWatcher && this.modeChangedListener) {
-			this.sizeWatcher.unlisten("mode-changed", this.modeChangedListener);
+			this.sizeWatcher.unlisten('mode-changed', this.modeChangedListener);
 		}
 	}
 
@@ -54,7 +51,7 @@ export default class Selector extends React.Component {
 	}
 
 	normalizeOrientation(orientation) {
-		return orientation === "horizontal" ? "horizontal" : "vertical";
+		return orientation === 'horizontal' ? 'horizontal' : 'vertical';
 	}
 
 	getOrientation() {
@@ -83,7 +80,7 @@ export default class Selector extends React.Component {
 			};
 		}
 
-		var selectedIndex = options.findIndex(function(option) {
+		var selectedIndex = options.findIndex(function (option) {
 			return option.value === selectedValue;
 		});
 
@@ -118,21 +115,17 @@ export default class Selector extends React.Component {
 		var selectedValue = this.props.selectedValue;
 
 		if (options.length === 0) {
-			return (
-				<div className="mj-settings-selector-empty">
-					{this.props.emptyLabel || "No options available"}
-				</div>
-			);
+			return <div className="mj-settings-selector-empty">{this.props.emptyLabel || 'No options available'}</div>;
 		}
 
-		var optionButtons = options.map(function(option) {
-			var className = "mj-settings-dialog-list-option";
-			var labelLength = (option.label || "").length;
+		var optionButtons = options.map(function (option) {
+			var className = 'mj-settings-dialog-list-option';
+			var labelLength = (option.label || '').length;
 
 			if (labelLength >= 16) {
-				className += " is-very-long";
+				className += ' is-very-long';
 			} else if (labelLength >= 11) {
-				className += " is-long";
+				className += ' is-long';
 			}
 
 			return (
@@ -148,13 +141,11 @@ export default class Selector extends React.Component {
 		}, this);
 
 		if (displayState.showPinnedSeparator) {
-			optionButtons.splice(1, 0, (
-				<div
-					key="selected-separator"
-					className="mj-settings-dialog-list-separator"
-					aria-hidden="true"
-				></div>
-			));
+			optionButtons.splice(
+				1,
+				0,
+				<div key="selected-separator" className="mj-settings-dialog-list-separator" aria-hidden="true"></div>,
+			);
 		}
 
 		return optionButtons;
@@ -183,7 +174,7 @@ export default class Selector extends React.Component {
 
 		return (
 			<CssRect
-				className={`mj-settings-dialog-selector is-${orientation}${this.props.className ? ` ${this.props.className}` : ""}`}
+				className={`mj-settings-dialog-selector is-${orientation}${this.props.className ? ` ${this.props.className}` : ''}`}
 				size="medium"
 				variant="inset"
 			>

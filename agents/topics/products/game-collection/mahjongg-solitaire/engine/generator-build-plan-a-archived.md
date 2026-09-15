@@ -52,21 +52,21 @@ Contract decisions to settle:
 Recommended public input contract:
 
 - `layout`
-  - required board blueprint
+    - required board blueprint
 - `boardNbr`
-  - required deterministic seed / game number
+    - required deterministic seed / game number
 - `parameters`
-  - optional generation controls
-  - should remain limited to public concepts such as:
-    - `difficulty`
-    - `settingsOverrides`
+    - optional generation controls
+    - should remain limited to public concepts such as:
+        - `difficulty`
+        - `settingsOverrides`
 
 Recommended public output contract:
 
 - `gameState`
-  - the generated board restored to runtime-play occupancy
+    - the generated board restored to runtime-play occupancy
 - `solution`
-  - one known valid authored removal path
+    - one known valid authored removal path
 
 Optional future output fields to avoid exposing too early:
 
@@ -114,8 +114,8 @@ Suggested tasks:
 - confirm whether `gameState` alone is the runtime handoff object or whether a
   richer payload object is the long-term contract
 - decide whether `solution` should remain duplicated both:
-  - in the returned payload
-  - and inside `gameState`
+    - in the returned payload
+    - and inside `gameState`
 - confirm which parameter names are public and should be treated as stable
 - keep top-level generation stages explicit in `GameGenerator.generate(...)`
 - keep lower-level setup methods internal even if they remain test-visible
@@ -231,9 +231,9 @@ Definition of done:
 Goal:
 
 - shape one method around the three intended generated-step paths:
-  - release a suspension
-  - create a suspension
-  - place a normal pair
+    - release a suspension
+    - create a suspension
+    - place a normal pair
 
 Why this matters:
 
@@ -294,11 +294,11 @@ Suggested tasks:
 
 - use `TileSuspension` consistently for suspended records
 - create a generated-pair record type or class for:
-  - tile ids
-  - preferred face group
-  - avoidance targets
-  - avoidance weight
-  - resolved face assignment if already chosen
+    - tile ids
+    - preferred face group
+    - avoidance targets
+    - avoidance weight
+    - resolved face assignment if already chosen
 
 Definition of done:
 
@@ -365,9 +365,9 @@ Target outcomes:
 
 - `TileSuspension` becomes active rather than only preparatory
 - generator can choose among:
-  - normal pair
-  - suspension creation
-  - suspension release
+    - normal pair
+    - suspension creation
+    - suspension release
 
 Suggested tasks:
 

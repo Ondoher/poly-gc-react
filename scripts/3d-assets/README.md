@@ -15,214 +15,214 @@ asset it describes.
 Current scripts:
 
 - `validate-preprocessed-face.js`
-  - validates one preprocessed face SVG against the preprocessing contract
-  - checks that the canonical `large-faces/<face-key>.png` reference exists
-  - checks the `viewBox`, path-only expectations, unsupported SVG effects, and
-    recognized preprocessing color families
-  - writes `scripts/output/3d-assets/preprocessed/validation/<tileset-id>/reports/<face-key>-validation-report.json`
+    - validates one preprocessed face SVG against the preprocessing contract
+    - checks that the canonical `large-faces/<face-key>.png` reference exists
+    - checks the `viewBox`, path-only expectations, unsupported SVG effects, and
+      recognized preprocessing color families
+    - writes `scripts/output/3d-assets/preprocessed/validation/<tileset-id>/reports/<face-key>-validation-report.json`
 - `compare-preprocessed-face.js`
-  - renders the canonical reference PNG and preprocessed SVG onto the reference
-    image canvas
-  - uses the lighter local `sharp` dependency from `scripts/node_modules`
-    rather than browser automation
-  - writes side-by-side, source/reference/result, overlay, and diff images for
-    agent/human review
-  - reports visible bounds, named group bounds, bottom/left/right deltas, top
-    label deltas, and rendered/component label overlaps
-  - updates `scripts/output/3d-assets/preprocessed/validation/<tileset-id>/reports/<face-key>-validation-report.json`
+    - renders the canonical reference PNG and preprocessed SVG onto the reference
+      image canvas
+    - uses the lighter local `sharp` dependency from `scripts/node_modules`
+      rather than browser automation
+    - writes side-by-side, source/reference/result, overlay, and diff images for
+      agent/human review
+    - reports visible bounds, named group bounds, bottom/left/right deltas, top
+      label deltas, and rendered/component label overlaps
+    - updates `scripts/output/3d-assets/preprocessed/validation/<tileset-id>/reports/<face-key>-validation-report.json`
 - `inspect-source-svg-components.js`
-  - parses the raw source SVG into normalized component records
-  - writes `scripts/output/3d-assets/preprocessed/validation/<tileset-id>/source-components/<face-key>-source-components.json`
+    - parses the raw source SVG into normalized component records
+    - writes `scripts/output/3d-assets/preprocessed/validation/<tileset-id>/source-components/<face-key>-source-components.json`
 - `visual-component-alignment.js`
-  - shared helper for converting canonical reference-image component bounds
-    into prepared-SVG viewBox transforms
-  - used when source SVG components need to align to the same visual component
-    model exposed by validation overlays
+    - shared helper for converting canonical reference-image component bounds
+      into prepared-SVG viewBox transforms
+    - used when source SVG components need to align to the same visual component
+      model exposed by validation overlays
 - `reference-image-components.js`
-  - extracts visible canonical reference PNG components using the canonical
-    face color set, so checkerboard/background pixels do not become artwork
-  - records each component's bounds and dominant canonical color
+    - extracts visible canonical reference PNG components using the canonical
+      face color set, so checkerboard/background pixels do not become artwork
+    - records each component's bounds and dominant canonical color
 - `analog-component-matcher.js`
-  - groups and pairs source SVG components with canonical reference components
-    for generic face preprocessing
-  - tries candidate groupings and scores them against the reference so nearby
-    same-color strokes can merge without collapsing repeated suit symbols into
-    one distorted group
+    - groups and pairs source SVG components with canonical reference components
+      for generic face preprocessing
+    - tries candidate groupings and scores them against the reference so nearby
+      same-color strokes can merge without collapsing repeated suit symbols into
+      one distorted group
 - `export-preprocessed-generic-face-svg.js`
-  - face-agnostic exporter for ordinary/non-special faces
-  - uses semantic metadata from
-    `scripts/data/3d-assets/json/face-preprocessing-metadata.json`
-  - treats `glyphLayout.number.sourcePresent` as the preferred source-label
-    contract; `sourceContainsLabel` remains a compatibility shorthand
-  - source numbers/letters are removed only when metadata says they are
-    present; when metadata says they are absent, the canonical generated label
-    is still emitted but all source paint is treated as artwork
-  - derives label placement, artwork targets, and reference color anchors from
-    the canonical reference PNG instead of per-face geometry config
-  - matches analogous source/reference parts primarily by geometry; source
-    color can help break ties, but it must not override a positional reference
-    match
-  - maps source colors through perceived color families and OKLCH/OKLab
-    lightness so source shading can survive while landing on the analogous
-    reference color family
-  - uses active reference glyph metadata, when supplied with `--metadata`, to
-    keep generated labels out of artwork matching
-  - aligns source/reference analog groups with uniform scaling; whole-artwork
-    transforms are only a fallback when the face behaves as one inseparable
-    part
+    - face-agnostic exporter for ordinary/non-special faces
+    - uses semantic metadata from
+      `scripts/data/3d-assets/json/face-preprocessing-metadata.json`
+    - treats `glyphLayout.number.sourcePresent` as the preferred source-label
+      contract; `sourceContainsLabel` remains a compatibility shorthand
+    - source numbers/letters are removed only when metadata says they are
+      present; when metadata says they are absent, the canonical generated label
+      is still emitted but all source paint is treated as artwork
+    - derives label placement, artwork targets, and reference color anchors from
+      the canonical reference PNG instead of per-face geometry config
+    - matches analogous source/reference parts primarily by geometry; source
+      color can help break ties, but it must not override a positional reference
+      match
+    - maps source colors through perceived color families and OKLCH/OKLab
+      lightness so source shading can survive while landing on the analogous
+      reference color family
+    - uses active reference glyph metadata, when supplied with `--metadata`, to
+      keep generated labels out of artwork matching
+    - aligns source/reference analog groups with uniform scaling; whole-artwork
+      transforms are only a fallback when the face behaves as one inseparable
+      part
 - `export-preprocessed-generic-special-face-svg.js`
-  - metadata-driven exporter for special-case face categories that still
-    benefit from generic component parsing
-  - handles flowers/seasons as generated label, optional generated or source
-    Chinese character, and main-artwork roles rather than hard-coded source
-    classes
-  - flowers/seasons use `characterText` plus
-    `glyphLayout.character.sourcePresent`; when the source character is absent,
-    the exporter emits a path-backed generated character using the project
-    local `cjk-label.ttf` override when present, then local CJK fallbacks such
-    as `STKAITI.TTF`
-  - handles dragons with a category rule: the white dragon box is the sizing
-    calibration frame; red/green dragons reuse the source white-dragon family
-    transform with uniform scale so source aspect ratio is preserved, instead
-    of shrinking to their smaller canonical reference glyph bounds; simulated
-    white-box calibration is only a fallback when no source white dragon is
-    available, and non-frame-like canonical white dragons use a safe simulated
-    reference box instead of tight glyph bounds
+    - metadata-driven exporter for special-case face categories that still
+      benefit from generic component parsing
+    - handles flowers/seasons as generated label, optional generated or source
+      Chinese character, and main-artwork roles rather than hard-coded source
+      classes
+    - flowers/seasons use `characterText` plus
+      `glyphLayout.character.sourcePresent`; when the source character is absent,
+      the exporter emits a path-backed generated character using the project
+      local `cjk-label.ttf` override when present, then local CJK fallbacks such
+      as `STKAITI.TTF`
+    - handles dragons with a category rule: the white dragon box is the sizing
+      calibration frame; red/green dragons reuse the source white-dragon family
+      transform with uniform scale so source aspect ratio is preserved, instead
+      of shrinking to their smaller canonical reference glyph bounds; simulated
+      white-box calibration is only a fallback when no source white dragon is
+      available, and non-frame-like canonical white dragons use a safe simulated
+      reference box instead of tight glyph bounds
 - `run-preprocessed-face-pipeline.js`
-  - metadata-driven batch runner for all currently supported face
-    preprocessors, or for the face keys passed on the command line
-  - reads `scripts/data/3d-assets/json/face-preprocessing-metadata.json`
-  - accepts `--metadata <metadata-json>`; active metadata is merged with the
-    base face metadata and should be treated as the authority
-  - routes `exporter: "generic"` faces through
-    `export-preprocessed-generic-face-svg.js`
-  - routes `exporter: "generic-special"` faces through
-    `export-preprocessed-generic-special-face-svg.js`
-  - runs export, source component inspection, and comparison/validation
-  - this is the preferred entry point for preprocessing; current metadata
-    should use only `generic` or `generic-special`
+    - metadata-driven batch runner for all currently supported face
+      preprocessors, or for the face keys passed on the command line
+    - reads `scripts/data/3d-assets/json/face-preprocessing-metadata.json`
+    - accepts `--metadata <metadata-json>`; active metadata is merged with the
+      base face metadata and should be treated as the authority
+    - routes `exporter: "generic"` faces through
+      `export-preprocessed-generic-face-svg.js`
+    - routes `exporter: "generic-special"` faces through
+      `export-preprocessed-generic-special-face-svg.js`
+    - runs export, source component inspection, and comparison/validation
+    - this is the preferred entry point for preprocessing; current metadata
+      should use only `generic` or `generic-special`
 - `run-asset-pipeline.js`
-  - JSON-driven runner for downstream 3D POC asset generation
-  - reads `scripts/data/3d-assets/json/asset-pipeline.json` by default
-  - can run preprocessing, cutter export, stamped-pair export, and inlay export
-    with the correct tileset scope/env
-  - writes `scripts/output/3d-assets/models/poc-models.json`, which the
-    `3d-poc` viewer loads to decide which generated tiles to display
-  - can sync generated model files to `dist/3d-poc/models` for the currently
-    running dev server when `poc.syncDist` is true
-  - current jobs include `wiki-season-2` and `wiki-b-8`; both produce scoped
-    model names such as `mj-tile-stamp-pair-wiki-b-8-baseline-inlay.glb`
+    - JSON-driven runner for downstream 3D POC asset generation
+    - reads `scripts/data/3d-assets/json/asset-pipeline.json` by default
+    - can run preprocessing, cutter export, stamped-pair export, and inlay export
+      with the correct tileset scope/env
+    - writes `scripts/output/3d-assets/models/poc-models.json`, which the
+      `3d-poc` viewer loads to decide which generated tiles to display
+    - can sync generated model files to `dist/3d-poc/models` for the currently
+      running dev server when `poc.syncDist` is true
+    - current jobs include `wiki-season-2` and `wiki-b-8`; both produce scoped
+      model names such as `mj-tile-stamp-pair-wiki-b-8-baseline-inlay.glb`
 - `infer-reference-face-metadata.js`
-  - creates an active reference-glyph metadata file from canonical
-    `large-faces` PNGs
-  - writes `scripts/output/3d-assets/metadata-inference/reference-glyphs.json`
-  - writes active metadata that can be edited before use as preprocessing authority
+    - creates an active reference-glyph metadata file from canonical
+      `large-faces` PNGs
+    - writes `scripts/output/3d-assets/metadata-inference/reference-glyphs.json`
+    - writes active metadata that can be edited before use as preprocessing authority
 - `infer-tileset-face-metadata.js`
-  - creates an active source/tileset glyph metadata file from source SVGs
-  - records whether source labels and flower/season characters are present,
-    absent, or likely candidates
-  - preserves explicit `number.present: false` and `character.present: false`
-    so the normalizers generate canonical glyphs instead of misidentifying
-    source artwork as top glyphs
-  - writes under `scripts/output/3d-assets/metadata-inference`
+    - creates an active source/tileset glyph metadata file from source SVGs
+    - records whether source labels and flower/season characters are present,
+      absent, or likely candidates
+    - preserves explicit `number.present: false` and `character.present: false`
+      so the normalizers generate canonical glyphs instead of misidentifying
+      source artwork as top glyphs
+    - writes under `scripts/output/3d-assets/metadata-inference`
 - Polylith `pipeline` app
-  - active metadata review UI served through the normal repo Polylith server
-    at `/pipeline/`
-  - has separate `Tileset` and `Reference` modes; `Tileset` is the normal
-    source-SVG review workflow, while `Reference` is mostly one-time canonical
-    reference calibration
-  - can recreate metadata, save metadata, run "Save + Preprocess", and show
-    existing generated validation comparisons
-  - uses server routes in `server/pipeline/index.js` for JSON writes, process
-    execution, and image/JSON resources that should not be copied into `dist`
+    - active metadata review UI served through the normal repo Polylith server
+      at `/pipeline/`
+    - has separate `Tileset` and `Reference` modes; `Tileset` is the normal
+      source-SVG review workflow, while `Reference` is mostly one-time canonical
+      reference calibration
+    - can recreate metadata, save metadata, run "Save + Preprocess", and show
+      existing generated validation comparisons
+    - uses server routes in `server/pipeline/index.js` for JSON writes, process
+      execution, and image/JSON resources that should not be copied into `dist`
 - `split-tileset-sprite-sheet.js`
-  - splits a semantically grouped SVG sprite sheet into one source SVG per
-    canonical face key
-  - currently targets sheets with group ids such as `CHARACTER_1`,
-    `BAMBOO_9`, `ROD_7`, `FLOWER_2`, `SEASON_4`, `WIND_3`, and `DRAGON_1`
-  - expands `<use>` clones so each extracted face SVG is self-contained
-  - defaults to `scripts/data/3d-assets/sprite-sheets/default.svg`
-  - writes per-face source SVGs and `manifest.json` under
-    `scripts/data/3d-assets/sprite-source-svgs/<sheet-id>`
-  - these extracted SVGs are source candidates only; run metadata review and
-    normal prepared-SVG preprocessing before using them for cutter/inlay work
+    - splits a semantically grouped SVG sprite sheet into one source SVG per
+      canonical face key
+    - currently targets sheets with group ids such as `CHARACTER_1`,
+      `BAMBOO_9`, `ROD_7`, `FLOWER_2`, `SEASON_4`, `WIND_3`, and `DRAGON_1`
+    - expands `<use>` clones so each extracted face SVG is self-contained
+    - defaults to `scripts/data/3d-assets/sprite-sheets/default.svg`
+    - writes per-face source SVGs and `manifest.json` under
+      `scripts/data/3d-assets/sprite-source-svgs/<sheet-id>`
+    - these extracted SVGs are source candidates only; run metadata review and
+      normal prepared-SVG preprocessing before using them for cutter/inlay work
 - `archive/review-reference-glyph-metadata-server.js`
-  - archived standalone fallback for reference-glyph review
-  - starts a local review helper at `http://localhost:4328/` by default
-  - displays editable metadata cards with reference/source previews and color
-    swatches
-  - saves metadata to
-    `scripts/output/3d-assets/metadata-inference/reference-glyphs.json`
-  - can run "Save + Preprocess" to regenerate the validation comparison images
-  - note: prefer the Polylith `pipeline` app for current work; do not leave
-    this server running in an internal terminal without stopping it or
-    giving the user control of the process
+    - archived standalone fallback for reference-glyph review
+    - starts a local review helper at `http://localhost:4328/` by default
+    - displays editable metadata cards with reference/source previews and color
+      swatches
+    - saves metadata to
+      `scripts/output/3d-assets/metadata-inference/reference-glyphs.json`
+    - can run "Save + Preprocess" to regenerate the validation comparison images
+    - note: prefer the Polylith `pipeline` app for current work; do not leave
+      this server running in an internal terminal without stopping it or
+      giving the user control of the process
 - `export-mj-tile-bodies.js`
-  - generates simple reusable `.glb` tile body variants
-  - also contains the structural-relief POC path for `flower-1`; that
-    path requires regenerated top-map PNGs and is not part of the current
-    preprocessed-SVG cutter/inlay pipeline
-  - also generates a simple watertight boolean-test body with a flat top
-  - writes them to `scripts/output/3d-assets/models`
+    - generates simple reusable `.glb` tile body variants
+    - also contains the structural-relief POC path for `flower-1`; that
+      path requires regenerated top-map PNGs and is not part of the current
+      preprocessed-SVG cutter/inlay pipeline
+    - also generates a simple watertight boolean-test body with a flat top
+    - writes them to `scripts/output/3d-assets/models`
 - `export-svg-cutter.js`
-  - generates an SVG-derived cutter GLB for a preprocessed face
-  - defaults to `flower-1`; pass a face key such as `d-7` to generate that
-    face
-  - uses the path-only preprocessed face SVG at
-    `scripts/output/3d-assets/prepared-svgs/<tileset-id>/<face-key>.svg`
-  - normalizes the preprocessed SVG `viewBox` into an aspect-matched full face
-    rectangle so the preprocessed internal label/art alignment is preserved
-  - skips white SVG paths for cutter geometry; white paths are visual negative
-    space, not recesses
-  - unions normalized SVG path solids before export so subtraction sees one
-    cleaned cutter volume
-  - writes cutter outputs to `scripts/output/3d-assets/models`
+    - generates an SVG-derived cutter GLB for a preprocessed face
+    - defaults to `flower-1`; pass a face key such as `d-7` to generate that
+      face
+    - uses the path-only preprocessed face SVG at
+      `scripts/output/3d-assets/prepared-svgs/<tileset-id>/<face-key>.svg`
+    - normalizes the preprocessed SVG `viewBox` into an aspect-matched full face
+      rectangle so the preprocessed internal label/art alignment is preserved
+    - skips white SVG paths for cutter geometry; white paths are visual negative
+      space, not recesses
+    - unions normalized SVG path solids before export so subtraction sees one
+      cleaned cutter volume
+    - writes cutter outputs to `scripts/output/3d-assets/models`
 - `archive/boolean-carve-tile.js`
-  - archived offline boolean subtraction experiment
-  - subtracts the SVG-derived `flower-1` cutter from the simple experimental tile body
-  - writes the carved result to `scripts/output/3d-assets/models`
+    - archived offline boolean subtraction experiment
+    - subtracts the SVG-derived `flower-1` cutter from the simple experimental tile body
+    - writes the carved result to `scripts/output/3d-assets/models`
 - `export-stamped-tile-pair.js`
-  - recreates one controlled softened base body per experiment
-  - subtracts the selected face cutter from each paired body
-  - defaults to `flower-1`; pass a face key such as `d-7` to generate prefixed
-    outputs for that face
-  - writes `mj-tile-stamp-pair-<face-prefix><variant>-basic.glb` and
-    `mj-tile-stamp-pair-<face-prefix><variant>-stamped.glb`
-  - writes `mj-tile-stamp-pair-<face-prefix>experiments.json`
-  - writes all outputs to `scripts/output/3d-assets/models`
+    - recreates one controlled softened base body per experiment
+    - subtracts the selected face cutter from each paired body
+    - defaults to `flower-1`; pass a face key such as `d-7` to generate prefixed
+      outputs for that face
+    - writes `mj-tile-stamp-pair-<face-prefix><variant>-basic.glb` and
+      `mj-tile-stamp-pair-<face-prefix><variant>-stamped.glb`
+    - writes `mj-tile-stamp-pair-<face-prefix>experiments.json`
+    - writes all outputs to `scripts/output/3d-assets/models`
 - `export-stamped-tile-inlay.js`
-  - loads the baseline stamped tile
-  - generates ordered per-path colored inlay meshes from
-    `scripts/output/3d-assets/prepared-svgs/<tileset-id>/<face-key>.svg`
-  - defaults to `flower-1`; pass a face key such as `d-7` to generate prefixed
-    outputs for that face
-  - emits material colors directly from the prepared SVG, including standard
-    anchor colors and generated shade colors
-  - accepts generated PNG/top-map red/green input colors for
-    preprocessed SVGs produced by the top-map branch
-  - can map white paths to tile-body-colored material when
-    regenerating older SVGs, but current preprocessed dot SVGs bake negative
-    space into transparent compound-path holes instead of emitting white paint
-    paths
-  - writes `mj-tile-stamp-pair-<face-prefix>baseline-inlay.glb`
-  - writes all outputs to `scripts/output/3d-assets/models`
+    - loads the baseline stamped tile
+    - generates ordered per-path colored inlay meshes from
+      `scripts/output/3d-assets/prepared-svgs/<tileset-id>/<face-key>.svg`
+    - defaults to `flower-1`; pass a face key such as `d-7` to generate prefixed
+      outputs for that face
+    - emits material colors directly from the prepared SVG, including standard
+      anchor colors and generated shade colors
+    - accepts generated PNG/top-map red/green input colors for
+      preprocessed SVGs produced by the top-map branch
+    - can map white paths to tile-body-colored material when
+      regenerating older SVGs, but current preprocessed dot SVGs bake negative
+      space into transparent compound-path holes instead of emitting white paint
+      paths
+    - writes `mj-tile-stamp-pair-<face-prefix>baseline-inlay.glb`
+    - writes all outputs to `scripts/output/3d-assets/models`
 - `archive/download-wiki-full-set-svgs.js`
-  - archived one-time acquisition helper that downloaded SVG originals linked
-    from the Wikipedia Mahjong tiles "Full set" section
-  - wrote files and `manifest.json` to
-    `scripts/data/3d-assets/wiki-source-svgs`
-  - the active wiki path now starts from the checked-in source SVGs and
-    intakes them with `svg-preprocessor/intake-source-svg-manifest.js`
+    - archived one-time acquisition helper that downloaded SVG originals linked
+      from the Wikipedia Mahjong tiles "Full set" section
+    - wrote files and `manifest.json` to
+      `scripts/data/3d-assets/wiki-source-svgs`
+    - the active wiki path now starts from the checked-in source SVGs and
+      intakes them with `svg-preprocessor/intake-source-svg-manifest.js`
 - `archive/extract-mjt7-face.js`
-  - archived one-off experiment that extracts face art from
-    `scripts/data/3d-assets/wiki-source-svgs/d-7.svg`
-  - flips/recolors it to match local `d-7.png` orientation and palette
-  - adds a path-backed upper-left red number marker generated from the local
-    Gluten font asset
-  - writes one-off overlays under `scripts/output/3d-assets/overlays`
-    and `scripts/output/3d-assets/prepared-svgs/d-7.svg`
-  - use `run-preprocessed-face-pipeline.js` for current prepared SVG generation
-Standard preprocessed face color families:
+    - archived one-off experiment that extracts face art from
+      `scripts/data/3d-assets/wiki-source-svgs/d-7.svg`
+    - flips/recolors it to match local `d-7.png` orientation and palette
+    - adds a path-backed upper-left red number marker generated from the local
+      Gluten font asset
+    - writes one-off overlays under `scripts/output/3d-assets/overlays`
+      and `scripts/output/3d-assets/prepared-svgs/d-7.svg`
+    - use `run-preprocessed-face-pipeline.js` for current prepared SVG generation
+      Standard preprocessed face color families:
 
 - black: `#000000`
 - white/near-white paint: `#F4F4F4`
@@ -291,20 +291,20 @@ Current preprocessing status:
 Generated output convention:
 
 - `scripts/output/3d-assets/models`
-  - generated GLB/JSON model assets consumed by the 3D POC build
-  - `poc-models.json` is the generated viewer manifest consumed by
-    `src/3d-poc/main/App.jsx`
+    - generated GLB/JSON model assets consumed by the 3D POC build
+    - `poc-models.json` is the generated viewer manifest consumed by
+      `src/3d-poc/main/App.jsx`
 - `scripts/output/3d-assets/preprocessed/validation`
-  - generated validation artifacts, grouped first by tileset id and then by
-    artifact type:
-    - `reports`
-    - `side-by-side`
-    - `source-reference-result`
-    - `overlays`
-    - `diffs`
-    - `source-components`
+    - generated validation artifacts, grouped first by tileset id and then by
+      artifact type:
+        - `reports`
+        - `side-by-side`
+        - `source-reference-result`
+        - `overlays`
+        - `diffs`
+        - `source-components`
 - `scripts/output/3d-assets/overlays`
-  - older one-off comparison overlay SVGs
+    - older one-off comparison overlay SVGs
 
 Everything under `scripts/output` is disposable and should be regenerable if
 the folder is deleted.
@@ -319,46 +319,46 @@ survive.
 Checked-in input asset convention:
 
 - `scripts/data/3d-assets/reference-faces/large-faces`
-  - canonical PNG face references used for visual authority and validation
+    - canonical PNG face references used for visual authority and validation
 - `scripts/data/3d-assets/reference-faces/faces`
-  - smaller PNG references for placement spot checks
+    - smaller PNG references for placement spot checks
 - `scripts/data/3d-assets/reference-faces/bodies`
-  - body/chrome reference images used by asset research
+    - body/chrome reference images used by asset research
 - `scripts/data/3d-assets/wiki-source-svgs`
-  - downloaded/source SVG artwork named with canonical face keys
-  - `flower-*.svg` and `season-*.svg` may come from different Wikimedia page
-    sections or other source packs; the downloader treats existing local
-    copies as protected and must not overwrite them during a full-set refresh
+    - downloaded/source SVG artwork named with canonical face keys
+    - `flower-*.svg` and `season-*.svg` may come from different Wikimedia page
+      sections or other source packs; the downloader treats existing local
+      copies as protected and must not overwrite them during a full-set refresh
 - `scripts/data/3d-assets/other-source-svgs`
-  - non-Wikimedia source SVGs needed by current preprocessors
+    - non-Wikimedia source SVGs needed by current preprocessors
 - `scripts/data/3d-assets/sprite-sheets`
-  - structured source sprite sheets, such as KDE/libkmahjongg-style full
-    tileset SVGs
+    - structured source sprite sheets, such as KDE/libkmahjongg-style full
+      tileset SVGs
 - `scripts/data/3d-assets/sprite-source-svgs`
-  - per-face source SVGs extracted from structured sprite sheets
-  - these are source candidates, not canonical prepared SVGs
+    - per-face source SVGs extracted from structured sprite sheets
+    - these are source candidates, not canonical prepared SVGs
 - `scripts/output/3d-assets/prepared-svgs`
-  - canonical path-only prepared face SVGs consumed by cutter and inlay
-    exporters
-  - current prepared SVGs are stored by tileset id, for example
-    `scripts/output/3d-assets/prepared-svgs/default/b-1.svg`
+    - canonical path-only prepared face SVGs consumed by cutter and inlay
+      exporters
+    - current prepared SVGs are stored by tileset id, for example
+      `scripts/output/3d-assets/prepared-svgs/default/b-1.svg`
 - `scripts/data/3d-assets/generated-images`
-  - checked-in generated face reference data used by current scripts
-  - currently expected face files are `face-color-full.png`,
-    `face-metadata.json`, and limited helper files such as
-    `face-color-symbol.png` / `face-cavity.png` where a script still needs them
-  - `face-normal.png`, `face-roughness.png`, and `face-height.png` are not
-    needed by the current 3D pipeline and have been removed
-  - top-map PNGs are not part of the current pipeline; regenerate them
-    with `scripts/psd-maps/generate-top-map-resource.js` only when revisiting
-    the older heightmap/relief branch
+    - checked-in generated face reference data used by current scripts
+    - currently expected face files are `face-color-full.png`,
+      `face-metadata.json`, and limited helper files such as
+      `face-color-symbol.png` / `face-cavity.png` where a script still needs them
+    - `face-normal.png`, `face-roughness.png`, and `face-height.png` are not
+      needed by the current 3D pipeline and have been removed
+    - top-map PNGs are not part of the current pipeline; regenerate them
+      with `scripts/psd-maps/generate-top-map-resource.js` only when revisiting
+      the older heightmap/relief branch
 - `scripts/data/3d-assets/fonts`
-  - font files needed to convert numbers/letters to path geometry
+    - font files needed to convert numbers/letters to path geometry
 - `scripts/data/3d-assets/json/asset-pipeline.json`
-  - JSON job/config source for downstream 3D asset generation and current POC
-    model layout
-  - currently defines `wiki-season-2` and `wiki-b-8` jobs using
-    `tileset-glyphs.json`
+    - JSON job/config source for downstream 3D asset generation and current POC
+      model layout
+    - currently defines `wiki-season-2` and `wiki-b-8` jobs using
+      `tileset-glyphs.json`
 
 Current stamped branch notes:
 

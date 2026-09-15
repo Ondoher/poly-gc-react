@@ -1,7 +1,7 @@
 import FaceInventory from '../FaceInventory.js';
-import { FaceRanking } from '../FaceRanking.js';
+import {FaceRanking} from '../FaceRanking.js';
 import GeneratedPair from '../GeneratedPair.js';
-import { GeneratorState } from '../GeneratorState.js';
+import {GeneratorState} from '../GeneratorState.js';
 import Grid from '../Grid.js';
 
 describe('FaceRanking', () => {
@@ -32,8 +32,7 @@ describe('FaceRanking', () => {
 	});
 
 	it('honors custom preferred multipliers from generator state', () => {
-		let state = createState()
-			.setupFaceAssignmentRules({preferredMultiplier: 0.25});
+		let state = createState().setupFaceAssignmentRules({preferredMultiplier: 0.25});
 		let ranking = new FaceRanking(state);
 
 		expect(ranking.getAdjustedDistanceFactor(20, true)).toBe(5);
@@ -61,41 +60,32 @@ describe('FaceRanking', () => {
 	it('requires the ranked face group to exist in the face inventory', () => {
 		let ranking = new FaceRanking(createState());
 
-		expect(() => ranking.getAvoidancePenalty(99, [1]))
-			.toThrowError(TypeError);
+		expect(() => ranking.getAvoidancePenalty(99, [1])).toThrowError(TypeError);
 	});
 
 	it('does not duplicate reused face groups when duplicate scaling is off', () => {
-		let state = createState()
-			.setupDifficulty(0.1)
-			.setupFaceAssignmentRules({easyReuseDuplicateScale: 0});
+		let state = createState().setupDifficulty(0.1).setupFaceAssignmentRules({easyReuseDuplicateScale: 0});
 		let ranking = new FaceRanking(state);
 
 		expect(ranking.getFaceGroupDuplicateCount(0, 4)).toBe(1);
 	});
 
 	it('does not duplicate reused face groups outside easy-side pressure', () => {
-		let state = createState()
-			.setupDifficulty(0.5)
-			.setupFaceAssignmentRules({easyReuseDuplicateScale: 4});
+		let state = createState().setupDifficulty(0.5).setupFaceAssignmentRules({easyReuseDuplicateScale: 4});
 		let ranking = new FaceRanking(state);
 
 		expect(ranking.getFaceGroupDuplicateCount(0, 4)).toBe(1);
 	});
 
 	it('does not duplicate reused face groups without reuse history', () => {
-		let state = createState()
-			.setupDifficulty(0.1)
-			.setupFaceAssignmentRules({easyReuseDuplicateScale: 4});
+		let state = createState().setupDifficulty(0.1).setupFaceAssignmentRules({easyReuseDuplicateScale: 4});
 		let ranking = new FaceRanking(state);
 
 		expect(ranking.getFaceGroupDuplicateCount(0, 0)).toBe(1);
 	});
 
 	it('duplicates closer reused face groups more strongly on easy settings', () => {
-		let state = createState()
-			.setupDifficulty(0)
-			.setupFaceAssignmentRules({easyReuseDuplicateScale: 4});
+		let state = createState().setupDifficulty(0).setupFaceAssignmentRules({easyReuseDuplicateScale: 4});
 		let ranking = new FaceRanking(state);
 
 		expect(ranking.getFaceGroupDuplicateCount(0, 4)).toBe(5);
@@ -103,9 +93,7 @@ describe('FaceRanking', () => {
 	});
 
 	it('uses generator-state difficulty when calculating reused face-group duplicates', () => {
-		let state = createState()
-			.setupDifficulty(0)
-			.setupFaceAssignmentRules({easyReuseDuplicateScale: 4});
+		let state = createState().setupDifficulty(0).setupFaceAssignmentRules({easyReuseDuplicateScale: 4});
 		let ranking = new FaceRanking(state);
 
 		expect(ranking.getFaceGroupDuplicateCount(0, 4)).toBe(5);
@@ -136,8 +124,7 @@ describe('FaceRanking', () => {
 
 	it('keeps the live preferred-face-group bias inside ranking output', () => {
 		let faceInventory = new FaceInventory();
-		let state = createState(faceInventory)
-			.setupFaceAssignmentRules({preferredMultiplier: 0.25});
+		let state = createState(faceInventory).setupFaceAssignmentRules({preferredMultiplier: 0.25});
 		let ranking = new FaceRanking(state);
 		let preparedPair = new GeneratedPair({
 			tile1: 0,
@@ -155,10 +142,7 @@ describe('FaceRanking', () => {
 			suit: 'bamboo',
 			faces: [8, 9],
 		});
-		faceInventory.assignedFacePairs = [
-			{faceGroup: 1},
-			{faceGroup: 2},
-		];
+		faceInventory.assignedFacePairs = [{faceGroup: 1}, {faceGroup: 2}];
 
 		expect(ranking.rankFaceGroups(2, preparedPair)).toEqual([1, 2]);
 	});
@@ -180,19 +164,9 @@ describe('FaceRanking', () => {
 			suit: 'bamboo',
 			faces: [8, 9],
 		});
-		faceInventory.assignedFacePairs = [
-			{faceGroup: 1},
-			{faceGroup: 2},
-		];
+		faceInventory.assignedFacePairs = [{faceGroup: 1}, {faceGroup: 2}];
 
-		expect(ranking.rankFaceGroups(2)).toEqual([
-			2,
-			2,
-			2,
-			2,
-			2,
-			1,
-		]);
+		expect(ranking.rankFaceGroups(2)).toEqual([2, 2, 2, 2, 2, 1]);
 	});
 
 	it('orders reused face groups by most recent assignment first', () => {
@@ -214,11 +188,7 @@ describe('FaceRanking', () => {
 			suit: 'bamboo',
 			faces: [12, 13],
 		});
-		faceInventory.assignedFacePairs = [
-			{faceGroup: 1},
-			{faceGroup: 2},
-			{faceGroup: 3},
-		];
+		faceInventory.assignedFacePairs = [{faceGroup: 1}, {faceGroup: 2}, {faceGroup: 3}];
 
 		expect(ranking.rankFaceGroups(2)).toEqual([3, 2, 1]);
 	});
@@ -247,11 +217,13 @@ describe('FaceRanking', () => {
 			faces: [12, 13],
 		});
 		spyOn(ranking, 'getAvoidancePenalty').and.callFake((faceGroup) => {
-			return {
-				1: 4,
-				2: 2,
-				3: 0,
-			}[faceGroup] ?? 0;
+			return (
+				{
+					1: 4,
+					2: 2,
+					3: 0,
+				}[faceGroup] ?? 0
+			);
 		});
 
 		expect(ranking.rankFaceGroups(2, preparedPair)).toEqual([3, 1, 2]);
@@ -259,9 +231,7 @@ describe('FaceRanking', () => {
 
 	it('returns difficulty-window details for ranked face groups', () => {
 		let faceInventory = new FaceInventory();
-		let state = createState(faceInventory)
-			.setupDifficulty(1)
-			.setupTilePickerRules({minWindowRatio: 0.25});
+		let state = createState(faceInventory).setupDifficulty(1).setupTilePickerRules({minWindowRatio: 0.25});
 		let ranking = new FaceRanking(state);
 
 		faceInventory.faceSets.set(1, {
@@ -292,9 +262,7 @@ describe('FaceRanking', () => {
 
 	it('selects one face group from the ranked face-group window', () => {
 		let faceInventory = new FaceInventory();
-		let state = createState(faceInventory)
-			.setupDifficulty(1)
-			.setupTilePickerRules({minWindowRatio: 0.25});
+		let state = createState(faceInventory).setupDifficulty(1).setupTilePickerRules({minWindowRatio: 0.25});
 		let ranking = new FaceRanking(state);
 
 		faceInventory.faceSets.set(1, {

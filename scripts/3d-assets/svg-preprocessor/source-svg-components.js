@@ -1,9 +1,9 @@
 import path from 'path';
 import opentype from 'opentype.js';
 import paper from 'paper';
-import { ASSET_FONTS_DIR } from '../shared/asset-paths.js';
+import {ASSET_FONTS_DIR} from '../shared/asset-paths.js';
 
-const IDENTITY = Object.freeze({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
+const IDENTITY = Object.freeze({a: 1, b: 0, c: 0, d: 1, e: 0, f: 0});
 const GEOMETRY_TAGS = new Set(['path', 'circle', 'ellipse', 'rect', 'polygon', 'polyline', 'line']);
 const TEXT_TAGS = new Set(['text']);
 const INVISIBLE_DUST_MAX_AREA = 0.25;
@@ -19,7 +19,10 @@ const TEXT_FONT_DIRECTORIES = [
 ];
 const TEXT_FONT_CANDIDATES_BY_FAMILY = new Map([
 	['bitstream vera sans', ['Vera.ttf', 'DejaVuSans.ttf', 'arial.ttf']],
-	['century schoolbook l', ['C059-Roman.otf', 'CenturySchL-Roma.otf', 'CENTURY.TTF', 'BOOKOS.TTF', 'times.ttf', 'DejaVuSerif.ttf']],
+	[
+		'century schoolbook l',
+		['C059-Roman.otf', 'CenturySchL-Roma.otf', 'CENTURY.TTF', 'BOOKOS.TTF', 'times.ttf', 'DejaVuSerif.ttf'],
+	],
 	['dejavu sans', ['DejaVuSans.ttf', 'DejaVuSansCondensed.ttf']],
 	['dejavu serif', ['DejaVuSerif.ttf']],
 	['arial', ['arial.ttf', 'Arial.ttf']],
@@ -35,15 +38,17 @@ export function extractSourceSvgComponents(svgSource, options = {}) {
 	const classStyles = parseClassStyles(source);
 	const viewBox = readViewBox(source);
 	const components = [];
-	const stack = [{
-		id: null,
-		className: null,
-		matrix: { ...IDENTITY },
-		groupIds: [],
-		sourceLayerRoles: [],
-		sourceUseInstances: [],
-		paint: {},
-	}];
+	const stack = [
+		{
+			id: null,
+			className: null,
+			matrix: {...IDENTITY},
+			groupIds: [],
+			sourceLayerRoles: [],
+			sourceUseInstances: [],
+			paint: {},
+		},
+	];
 	const tagPattern = /<[^>]+>/g;
 	let match;
 	let sourceElementIndex = 0;
@@ -65,9 +70,7 @@ export function extractSourceSvgComponents(svgSource, options = {}) {
 
 		if (TEXT_TAGS.has(tagName)) {
 			const textElementEnd = findTextElementEnd(source, tagPattern.lastIndex);
-			const textElementSource = textElementEnd
-				? source.slice(match.index, textElementEnd)
-				: tag;
+			const textElementSource = textElementEnd ? source.slice(match.index, textElementEnd) : tag;
 			const componentRecords = buildComponentRecords({
 				tagName,
 				tag: textElementSource,
@@ -98,12 +101,12 @@ export function extractSourceSvgComponents(svgSource, options = {}) {
 			const sourceUseId = attributes['data-source-use'] || null;
 			const sourceUseInstances = sourceUseId
 				? [
-					...parent.sourceUseInstances,
-					{
-						sourceUseId,
-						sourceUseInstanceId: `source-use.${String(sourceUseInstanceIndex += 1).padStart(4, '0')}.${sourceUseId}`,
-					},
-				]
+						...parent.sourceUseInstances,
+						{
+							sourceUseId,
+							sourceUseInstanceId: `source-use.${String((sourceUseInstanceIndex += 1)).padStart(4, '0')}.${sourceUseId}`,
+						},
+					]
 				: parent.sourceUseInstances;
 			const matrix = composeMatrices(parent.matrix, parseTransform(attributes.transform || ''));
 			stack.push({
@@ -111,7 +114,9 @@ export function extractSourceSvgComponents(svgSource, options = {}) {
 				className,
 				matrix,
 				groupIds: id ? [...parent.groupIds, id] : parent.groupIds,
-				sourceLayerRoles: sourceLayerRole ? [...parent.sourceLayerRoles, sourceLayerRole] : parent.sourceLayerRoles,
+				sourceLayerRoles: sourceLayerRole
+					? [...parent.sourceLayerRoles, sourceLayerRole]
+					: parent.sourceLayerRoles,
 				sourceUseInstances,
 				paint: resolvePaint({
 					attributes,
@@ -167,7 +172,7 @@ export function sanitizeSvgSource(svgSource) {
 }
 
 export function parseTransform(transform) {
-	let matrix = { ...IDENTITY };
+	let matrix = {...IDENTITY};
 
 	for (const match of transform.matchAll(/(matrix|translate|scale|rotate)\(([^)]+)\)/g)) {
 		const [, command, rawValues] = match;
@@ -178,11 +183,11 @@ export function parseTransform(transform) {
 		let next = null;
 
 		if (command === 'matrix') {
-			next = { a: values[0], b: values[1], c: values[2], d: values[3], e: values[4], f: values[5] };
+			next = {a: values[0], b: values[1], c: values[2], d: values[3], e: values[4], f: values[5]};
 		} else if (command === 'translate') {
-			next = { a: 1, b: 0, c: 0, d: 1, e: values[0] || 0, f: values[1] || 0 };
+			next = {a: 1, b: 0, c: 0, d: 1, e: values[0] || 0, f: values[1] || 0};
 		} else if (command === 'scale') {
-			next = { a: values[0], b: 0, c: 0, d: values[1] ?? values[0], e: 0, f: 0 };
+			next = {a: values[0], b: 0, c: 0, d: values[1] ?? values[0], e: 0, f: 0};
 		} else if (command === 'rotate') {
 			const angle = ((values[0] || 0) * Math.PI) / 180;
 			const rotation = {
@@ -196,11 +201,8 @@ export function parseTransform(transform) {
 
 			if (values.length >= 3) {
 				next = composeMatrices(
-					composeMatrices(
-						{ a: 1, b: 0, c: 0, d: 1, e: values[1], f: values[2] },
-						rotation,
-					),
-					{ a: 1, b: 0, c: 0, d: 1, e: -values[1], f: -values[2] },
+					composeMatrices({a: 1, b: 0, c: 0, d: 1, e: values[1], f: values[2]}, rotation),
+					{a: 1, b: 0, c: 0, d: 1, e: -values[1], f: -values[2]},
 				);
 			} else {
 				next = rotation;
@@ -219,12 +221,12 @@ export function parseTransform(transform) {
 
 export function composeMatrices(outer, inner) {
 	return {
-		a: (outer.a * inner.a) + (outer.c * inner.b),
-		b: (outer.b * inner.a) + (outer.d * inner.b),
-		c: (outer.a * inner.c) + (outer.c * inner.d),
-		d: (outer.b * inner.c) + (outer.d * inner.d),
-		e: (outer.a * inner.e) + (outer.c * inner.f) + outer.e,
-		f: (outer.b * inner.e) + (outer.d * inner.f) + outer.f,
+		a: outer.a * inner.a + outer.c * inner.b,
+		b: outer.b * inner.a + outer.d * inner.b,
+		c: outer.a * inner.c + outer.c * inner.d,
+		d: outer.b * inner.c + outer.d * inner.d,
+		e: outer.a * inner.e + outer.c * inner.f + outer.e,
+		f: outer.b * inner.e + outer.d * inner.f + outer.f,
 	};
 }
 
@@ -261,7 +263,7 @@ function buildComponentRecords({
 		return [];
 	}
 
-	if (isInvisibleDustPath({ tagName, paint, bounds })) {
+	if (isInvisibleDustPath({tagName, paint, bounds})) {
 		return [];
 	}
 
@@ -279,7 +281,7 @@ function buildComponentRecords({
 		strokeOpacity: paint.strokeOpacity ?? null,
 		textValue: tagName === 'text' ? readTextValue(tag) : null,
 		fontSize: tagName === 'text' ? textFontSize(paint, attributes) : null,
-		fontFamily: tagName === 'text' ? paint.fontFamily ?? attributes['font-family'] ?? null : null,
+		fontFamily: tagName === 'text' ? (paint.fontFamily ?? attributes['font-family'] ?? null) : null,
 		fontPath: tagName === 'text' ? resolveTextFontPath(paint, attributes, textFontOptions) : null,
 		pathData,
 		bounds,
@@ -317,8 +319,9 @@ function classifyTileLayerCandidates(components, viewBox) {
 
 	return components.map((component, index) => ({
 		...component,
-		tileLayerCandidate: baseCandidates.has(component)
-			|| isLargeBackgroundLayer(component, components, index, baseCandidates, viewBox),
+		tileLayerCandidate:
+			baseCandidates.has(component) ||
+			isLargeBackgroundLayer(component, components, index, baseCandidates, viewBox),
 	}));
 }
 
@@ -412,9 +415,13 @@ function splitPathComponent(baseComponent, pathData, transform) {
 }
 
 function splitCompoundPathByContainedBands(baseComponent, pathData, transform, childRecords) {
-	const topLevelRecords = childRecords.filter((record, index) => !childRecords.some((candidate, candidateIndex) => (
-		candidateIndex !== index && containsBounds(candidate.localBounds, record.localBounds)
-	)));
+	const topLevelRecords = childRecords.filter(
+		(record, index) =>
+			!childRecords.some(
+				(candidate, candidateIndex) =>
+					candidateIndex !== index && containsBounds(candidate.localBounds, record.localBounds),
+			),
+	);
 
 	if (topLevelRecords.length !== 1 || childRecords.length <= 2) {
 		return [];
@@ -444,8 +451,14 @@ function splitCompoundPathByContainedBands(baseComponent, pathData, transform, c
 }
 
 function separatedClusterAxis(boundsList) {
-	const yClusters = clusterBoundsByAxis(boundsList.map((bounds, index) => ({ localBounds: bounds, subcomponentIndex: index })), 'y');
-	const xClusters = clusterBoundsByAxis(boundsList.map((bounds, index) => ({ localBounds: bounds, subcomponentIndex: index })), 'x');
+	const yClusters = clusterBoundsByAxis(
+		boundsList.map((bounds, index) => ({localBounds: bounds, subcomponentIndex: index})),
+		'y',
+	);
+	const xClusters = clusterBoundsByAxis(
+		boundsList.map((bounds, index) => ({localBounds: bounds, subcomponentIndex: index})),
+		'x',
+	);
 
 	if (yClusters.length > 1 && yClusters.length >= xClusters.length) {
 		return 'y';
@@ -461,10 +474,11 @@ function separatedClusterAxis(boundsList) {
 function clusterBoundsByAxis(records, axis) {
 	const startKey = axis === 'y' ? 'top' : 'left';
 	const endKey = axis === 'y' ? 'bottom' : 'right';
-	const sorted = [...records].sort((left, right) => (
-		left.localBounds[startKey] - right.localBounds[startKey]
-		|| left.subcomponentIndex - right.subcomponentIndex
-	));
+	const sorted = [...records].sort(
+		(left, right) =>
+			left.localBounds[startKey] - right.localBounds[startKey] ||
+			left.subcomponentIndex - right.subcomponentIndex,
+	);
 	const clusters = [];
 
 	for (const record of sorted) {
@@ -519,20 +533,14 @@ function hasContainedShapeMass(cluster, axis) {
 	const span = cluster.end - cluster.start;
 	const crossStartKey = axis === 'y' ? 'left' : 'top';
 	const crossEndKey = axis === 'y' ? 'right' : 'bottom';
-	const crossSpan = Math.max(...cluster.records.map((record) => record.localBounds[crossEndKey]))
-		- Math.min(...cluster.records.map((record) => record.localBounds[crossStartKey]));
+	const crossSpan =
+		Math.max(...cluster.records.map((record) => record.localBounds[crossEndKey])) -
+		Math.min(...cluster.records.map((record) => record.localBounds[crossStartKey]));
 
 	return span > 0 && crossSpan > 0;
 }
 
-function intersectCompoundPathWithClusterBands({
-	baseComponent,
-	pathData,
-	transform,
-	axis,
-	clusters,
-	outerBounds,
-}) {
+function intersectCompoundPathWithClusterBands({baseComponent, pathData, transform, axis, clusters, outerBounds}) {
 	let item;
 
 	try {
@@ -553,16 +561,17 @@ function intersectCompoundPathWithClusterBands({
 	});
 	const splitComponents = bandLimits
 		.map((limit, index) => {
-			const rectangle = axis === 'y'
-				? new paper.Path.Rectangle(
-					new paper.Point(outerBounds.left - 1, limit.start),
-					new paper.Size(outerBounds.width + 2, limit.end - limit.start),
-				)
-				: new paper.Path.Rectangle(
-					new paper.Point(limit.start, outerBounds.top - 1),
-					new paper.Size(limit.end - limit.start, outerBounds.height + 2),
-				);
-			const intersection = item.intersect(rectangle, { insert: false });
+			const rectangle =
+				axis === 'y'
+					? new paper.Path.Rectangle(
+							new paper.Point(outerBounds.left - 1, limit.start),
+							new paper.Size(outerBounds.width + 2, limit.end - limit.start),
+						)
+					: new paper.Path.Rectangle(
+							new paper.Point(limit.start, outerBounds.top - 1),
+							new paper.Size(limit.end - limit.start, outerBounds.height + 2),
+						);
+			const intersection = item.intersect(rectangle, {insert: false});
 			rectangle.remove();
 
 			if (!intersection || intersection.isEmpty()) {
@@ -598,9 +607,13 @@ function intersectCompoundPathWithClusterBands({
 }
 
 function clusterContainedSubpaths(records) {
-	const topLevelRecords = records.filter((record, index) => !records.some((candidate, candidateIndex) => (
-		candidateIndex !== index && containsBounds(candidate.bounds, record.bounds)
-	)));
+	const topLevelRecords = records.filter(
+		(record, index) =>
+			!records.some(
+				(candidate, candidateIndex) =>
+					candidateIndex !== index && containsBounds(candidate.bounds, record.bounds),
+			),
+	);
 
 	return topLevelRecords.map((topLevel, clusterIndex) => {
 		const members = records
@@ -618,10 +631,12 @@ function clusterContainedSubpaths(records) {
 function containsBounds(outer, inner) {
 	const tolerance = 0.01;
 
-	return inner.left >= outer.left - tolerance
-		&& inner.right <= outer.right + tolerance
-		&& inner.top >= outer.top - tolerance
-		&& inner.bottom <= outer.bottom + tolerance;
+	return (
+		inner.left >= outer.left - tolerance &&
+		inner.right <= outer.right + tolerance &&
+		inner.top >= outer.top - tolerance &&
+		inner.bottom <= outer.bottom + tolerance
+	);
 }
 
 function geometryToPathData(tagName, attributes, tag, paint, textFontOptions) {
@@ -637,9 +652,7 @@ function geometryToPathData(tagName, attributes, tag, paint, textFontOptions) {
 		const cx = readNumber(attributes.cx);
 		const cy = readNumber(attributes.cy);
 		const r = readNumber(attributes.r);
-		return Number.isFinite(cx) && Number.isFinite(cy) && Number.isFinite(r)
-			? circlePath(cx, cy, r)
-			: null;
+		return Number.isFinite(cx) && Number.isFinite(cy) && Number.isFinite(r) ? circlePath(cx, cy, r) : null;
 	}
 
 	if (tagName === 'ellipse') {
@@ -675,9 +688,7 @@ function geometryToPathData(tagName, attributes, tag, paint, textFontOptions) {
 		const y1 = readNumber(attributes.y1);
 		const x2 = readNumber(attributes.x2);
 		const y2 = readNumber(attributes.y2);
-		return [x1, y1, x2, y2].every(Number.isFinite)
-			? `M${x1},${y1} L${x2},${y2}`
-			: null;
+		return [x1, y1, x2, y2].every(Number.isFinite) ? `M${x1},${y1} L${x2},${y2}` : null;
 	}
 
 	return null;
@@ -700,8 +711,7 @@ function loadTextFont(fontPath) {
 function textToPathData(tag, attributes, paint, textFontOptions = {}) {
 	const text = readTextValue(tag);
 	const fontPath = resolveTextFontPath(paint, attributes, textFontOptions);
-	const textFont = textFontOptions.textFont
-		|| (fontPath ? loadTextFont(fontPath) : null);
+	const textFont = textFontOptions.textFont || (fontPath ? loadTextFont(fontPath) : null);
 
 	if (!text || !textFont) {
 		return null;
@@ -744,7 +754,12 @@ function findFontPathForFamily(fontFamily) {
 function fontFamilyNames(fontFamily) {
 	return String(fontFamily || '')
 		.split(',')
-		.map((family) => family.trim().replace(/^['"]|['"]$/g, '').toLowerCase())
+		.map((family) =>
+			family
+				.trim()
+				.replace(/^['"]|['"]$/g, '')
+				.toLowerCase(),
+		)
 		.filter(Boolean);
 }
 
@@ -773,11 +788,13 @@ function fsExists(filePath) {
 }
 
 function readTextValue(tag) {
-	return decodeXmlEntities(tag
-		.replace(/<style\b[\s\S]*?<\/style>/gi, '')
-		.replace(/<[^>]+>/g, '')
-		.replace(/\s+/g, ' ')
-		.trim());
+	return decodeXmlEntities(
+		tag
+			.replace(/<style\b[\s\S]*?<\/style>/gi, '')
+			.replace(/<[^>]+>/g, '')
+			.replace(/\s+/g, ' ')
+			.trim(),
+	);
 }
 
 function readFirstTspanAttributes(tag) {
@@ -786,12 +803,7 @@ function readFirstTspanAttributes(tag) {
 }
 
 function textFontSize(paint, attributes, tspanAttributes = {}) {
-	return readLength(
-		tspanAttributes['font-size']
-		?? attributes['font-size']
-		?? paint.fontSize,
-		16,
-	);
+	return readLength(tspanAttributes['font-size'] ?? attributes['font-size'] ?? paint.fontSize, 16);
 }
 
 function readCoordinateList(value) {
@@ -834,13 +846,9 @@ function parseClassStyles(svgSource) {
 	return styles;
 }
 
-function resolvePaint({ attributes, className, classStyles, parentPaint }) {
-	const classPaint = className
-		? classStyles[className] || {}
-		: {};
-	const inlinePaint = attributes.style
-		? parseStyleDeclaration(attributes.style)
-		: {};
+function resolvePaint({attributes, className, classStyles, parentPaint}) {
+	const classPaint = className ? classStyles[className] || {} : {};
+	const inlinePaint = attributes.style ? parseStyleDeclaration(attributes.style) : {};
 
 	return {
 		...parentPaint,
@@ -908,7 +916,8 @@ function readTagName(tag) {
 }
 
 function readViewBox(svgSource) {
-	const values = /\bviewBox\s*=\s*"([^"]+)"/i.exec(svgSource)?.[1]
+	const values = /\bviewBox\s*=\s*"([^"]+)"/i
+		.exec(svgSource)?.[1]
 		?.trim()
 		.split(/[\s,]+/)
 		.map((value) => Number.parseFloat(value));
@@ -932,10 +941,10 @@ function circlePath(cx, cy, radius) {
 function ellipsePath(cx, cy, rx, ry) {
 	return [
 		`M${cx - rx},${cy}`,
-		`C${cx - rx},${cy - (ry * 0.5522847498)} ${cx - (rx * 0.5522847498)},${cy - ry} ${cx},${cy - ry}`,
-		`C${cx + (rx * 0.5522847498)},${cy - ry} ${cx + rx},${cy - (ry * 0.5522847498)} ${cx + rx},${cy}`,
-		`C${cx + rx},${cy + (ry * 0.5522847498)} ${cx + (rx * 0.5522847498)},${cy + ry} ${cx},${cy + ry}`,
-		`C${cx - (rx * 0.5522847498)},${cy + ry} ${cx - rx},${cy + (ry * 0.5522847498)} ${cx - rx},${cy}`,
+		`C${cx - rx},${cy - ry * 0.5522847498} ${cx - rx * 0.5522847498},${cy - ry} ${cx},${cy - ry}`,
+		`C${cx + rx * 0.5522847498},${cy - ry} ${cx + rx},${cy - ry * 0.5522847498} ${cx + rx},${cy}`,
+		`C${cx + rx},${cy + ry * 0.5522847498} ${cx + rx * 0.5522847498},${cy + ry} ${cx},${cy + ry}`,
+		`C${cx - rx * 0.5522847498},${cy + ry} ${cx - rx},${cy + ry * 0.5522847498} ${cx - rx},${cy}`,
 		'Z',
 	].join(' ');
 }
@@ -949,7 +958,7 @@ function parsePoints(points) {
 
 	for (let index = 0; index < values.length - 1; index += 2) {
 		if (Number.isFinite(values[index]) && Number.isFinite(values[index + 1])) {
-			result.push({ x: values[index], y: values[index + 1] });
+			result.push({x: values[index], y: values[index + 1]});
 		}
 	}
 
@@ -986,40 +995,44 @@ function isBaseTileLayerCandidate(component, viewBox) {
 }
 
 function isLargeBackgroundLayer(component, components, index, baseCandidates, viewBox) {
-	return isLargeViewBoxLayer(component, viewBox)
-		&& (
-			(isBackgroundPaint(component)
-				&& components.slice(index + 1).some((candidate) => isLaterFacePaintLayer(candidate, component, baseCandidates)))
-			|| isEarlierTileShellLayer(component, components, index, baseCandidates, viewBox)
-		);
+	return (
+		isLargeViewBoxLayer(component, viewBox) &&
+		((isBackgroundPaint(component) &&
+			components
+				.slice(index + 1)
+				.some((candidate) => isLaterFacePaintLayer(candidate, component, baseCandidates))) ||
+			isEarlierTileShellLayer(component, components, index, baseCandidates, viewBox))
+	);
 }
 
 function isLaterFacePaintLayer(candidate, backgroundCandidate, baseCandidates) {
-	return !baseCandidates.has(candidate)
-		&& !candidate.negativeSpaceCandidate
-		&& (isPaint(candidate.fill) || isPaint(candidate.stroke))
-		&& boundsOverlap(candidate.bounds, backgroundCandidate.bounds);
+	return (
+		!baseCandidates.has(candidate) &&
+		!candidate.negativeSpaceCandidate &&
+		(isPaint(candidate.fill) || isPaint(candidate.stroke)) &&
+		boundsOverlap(candidate.bounds, backgroundCandidate.bounds)
+	);
 }
 
 function isEarlierTileShellLayer(component, components, index, baseCandidates, viewBox) {
-	return components.slice(index + 1).some((candidate) => (
-		baseCandidates.has(candidate)
-		&& !isViewBoxOutline(candidate, viewBox)
-		&& boundsOverlap(component.bounds, candidate.bounds)
-	));
+	return components
+		.slice(index + 1)
+		.some(
+			(candidate) =>
+				baseCandidates.has(candidate) &&
+				!isViewBoxOutline(candidate, viewBox) &&
+				boundsOverlap(component.bounds, candidate.bounds),
+		);
 }
 
-function isInvisibleDustPath({ tagName, paint, bounds }) {
+function isInvisibleDustPath({tagName, paint, bounds}) {
 	const area = bounds.width * bounds.height;
 
-	return tagName === 'path'
-		&& (
-			area <= TINY_PATH_DUST_MAX_AREA
-			|| (
-				area <= INVISIBLE_DUST_MAX_AREA
-				&& maxEffectivePaintAlpha(paint) <= INVISIBLE_DUST_MAX_ALPHA
-			)
-		);
+	return (
+		tagName === 'path' &&
+		(area <= TINY_PATH_DUST_MAX_AREA ||
+			(area <= INVISIBLE_DUST_MAX_AREA && maxEffectivePaintAlpha(paint) <= INVISIBLE_DUST_MAX_ALPHA))
+	);
 }
 
 function maxEffectivePaintAlpha(paint) {
@@ -1051,24 +1064,20 @@ function isLargeViewBoxLayer(component, viewBox) {
 		return false;
 	}
 
-	return component.bounds.width >= viewBox.width * 0.65
-		&& component.bounds.height >= viewBox.height * 0.7;
+	return component.bounds.width >= viewBox.width * 0.65 && component.bounds.height >= viewBox.height * 0.7;
 }
 
 function isBackgroundPaint(component) {
 	const fill = String(component.fill || '').toLowerCase();
 	const stroke = String(component.stroke || '').toLowerCase();
 
-	return isVisibleBackgroundPaint(fill)
-		|| (!isPaint(fill) && isVisibleBackgroundPaint(stroke));
+	return isVisibleBackgroundPaint(fill) || (!isPaint(fill) && isVisibleBackgroundPaint(stroke));
 }
 
 function isVisibleBackgroundPaint(value) {
-	return Boolean(value)
-		&& (value.startsWith('url(')
-			|| isWhitePaint(value)
-			|| value === '#eeeeee'
-			|| value === '#eee');
+	return (
+		Boolean(value) && (value.startsWith('url(') || isWhitePaint(value) || value === '#eeeeee' || value === '#eee')
+	);
 }
 
 function isTilePaintServerReference(value) {
@@ -1087,21 +1096,20 @@ function viewBoxBounds(viewBox) {
 }
 
 function boundsOverlap(left, right) {
-	return left.left < right.right
-		&& left.right > right.left
-		&& left.top < right.bottom
-		&& left.bottom > right.top;
+	return left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
 }
 
 function isViewBoxOutline(component, viewBox) {
-	return component.tagName === 'rect'
-		&& viewBox
-		&& isEmptyPaint(component.fill)
-		&& isPaint(component.stroke)
-		&& nearlyEqual(component.bounds.left, viewBox.minX)
-		&& nearlyEqual(component.bounds.top, viewBox.minY)
-		&& nearlyEqual(component.bounds.right, viewBox.minX + viewBox.width)
-		&& nearlyEqual(component.bounds.bottom, viewBox.minY + viewBox.height);
+	return (
+		component.tagName === 'rect' &&
+		viewBox &&
+		isEmptyPaint(component.fill) &&
+		isPaint(component.stroke) &&
+		nearlyEqual(component.bounds.left, viewBox.minX) &&
+		nearlyEqual(component.bounds.top, viewBox.minY) &&
+		nearlyEqual(component.bounds.right, viewBox.minX + viewBox.width) &&
+		nearlyEqual(component.bounds.bottom, viewBox.minY + viewBox.height)
+	);
 }
 
 function isEmptyPaint(value) {
@@ -1147,7 +1155,10 @@ function normalizePaint(value) {
 	const shorthandHex = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(normalized);
 
 	if (shorthandHex) {
-		return `#${shorthandHex.slice(1).map((digit) => digit + digit).join('')}`;
+		return `#${shorthandHex
+			.slice(1)
+			.map((digit) => digit + digit)
+			.join('')}`;
 	}
 
 	return normalized;
@@ -1173,7 +1184,7 @@ function parseRgbPaint(value) {
 		return null;
 	}
 
-	return { r, g, b };
+	return {r, g, b};
 }
 
 function readNumber(value, fallback = NaN) {
@@ -1190,4 +1201,3 @@ function pickDefined(values) {
 function round(value) {
 	return Number(value.toFixed(3));
 }
-

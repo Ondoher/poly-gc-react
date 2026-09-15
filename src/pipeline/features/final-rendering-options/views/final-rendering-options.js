@@ -1,5 +1,5 @@
 import React from 'react';
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 import FinalRenderingOptionsPage from '../components/FinalRenderingOptionsPage.jsx';
 
 export default class FinalRenderingOptionsView extends Service {

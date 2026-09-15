@@ -1,5 +1,5 @@
-import { Service, Registry } from "@polylith/core";
-import { readMjPreferencesCookie } from "../utils/preferencesCookies.js";
+import {Service, Registry} from '@polylith/core';
+import {readMjPreferencesCookie} from '../utils/preferencesCookies.js';
 
 /**
  * Send feedback records from the MJ frontend to the GC server.
@@ -9,8 +9,8 @@ export default class FeedbackModelService extends Service {
 	 * @param {Registry} [registry] - Manage service lookup and registration.
 	 */
 	constructor(registry) {
-		super("mj:feedback-model", registry);
-		this.implement(["start", "ready", "submit", "submitTelemetry", "getTelemetryReference"]);
+		super('mj:feedback-model', registry);
+		this.implement(['start', 'ready', 'submit', 'submitTelemetry', 'getTelemetryReference']);
 	}
 
 	/**
@@ -25,10 +25,10 @@ export default class FeedbackModelService extends Service {
 	 * Mark the feedback-model service as ready by wiring its dependent services.
 	 */
 	ready() {
-		this.trackingModel = this.registry.subscribe("mj:tracking-model");
+		this.trackingModel = this.registry.subscribe('mj:tracking-model');
 
 		if (this.trackingModel) {
-			this.trackingModel.listen("session-complete", this.onSessionComplete.bind(this));
+			this.trackingModel.listen('session-complete', this.onSessionComplete.bind(this));
 		}
 	}
 
@@ -39,28 +39,20 @@ export default class FeedbackModelService extends Service {
 	 * @returns {string} Return one stable serialized session key or an empty string when unavailable.
 	 */
 	buildSessionKey(session) {
-		if (!session || typeof session !== "object") {
-			return "";
+		if (!session || typeof session !== 'object') {
+			return '';
 		}
 
 		let boardNbr = Number(session.boardNbr);
 		let elapsedTimeMs = Number(session.elapsedTimeMs);
-		let tileSequence = Array.isArray(session.tileSequence)
-			? session.tileSequence
-			: [];
+		let tileSequence = Array.isArray(session.tileSequence) ? session.tileSequence : [];
 
 		return JSON.stringify({
 			boardNbr: Number.isFinite(boardNbr) ? boardNbr : null,
-			difficulty: typeof session.difficulty === "string" ? session.difficulty : "",
-			layout: typeof session.layout === "string" ? session.layout : "",
-			elapsedTimeMs: Number.isFinite(elapsedTimeMs)
-				? Math.max(0, Math.floor(elapsedTimeMs))
-				: 0,
-			result:
-				session.result === "won" ||
-				session.result === "abandoned"
-					? session.result
-					: "",
+			difficulty: typeof session.difficulty === 'string' ? session.difficulty : '',
+			layout: typeof session.layout === 'string' ? session.layout : '',
+			elapsedTimeMs: Number.isFinite(elapsedTimeMs) ? Math.max(0, Math.floor(elapsedTimeMs)) : 0,
+			result: session.result === 'won' || session.result === 'abandoned' ? session.result : '',
 			tileSequence,
 		});
 	}
@@ -90,7 +82,7 @@ export default class FeedbackModelService extends Service {
 		};
 		let result = await this.submitTelemetry(telemetry);
 
-		if (result && result.success && typeof result.id === "string") {
+		if (result && result.success && typeof result.id === 'string') {
 			this.lastTelemetrySubmission = {
 				sessionKey: this.buildSessionKey(telemetry),
 				id: result.id,
@@ -106,12 +98,12 @@ export default class FeedbackModelService extends Service {
 	 */
 	getTelemetryReference(session) {
 		if (!this.lastTelemetrySubmission) {
-			return "";
+			return '';
 		}
 
 		return this.lastTelemetrySubmission.sessionKey === this.buildSessionKey(session)
 			? this.lastTelemetrySubmission.id
-			: "";
+			: '';
 	}
 
 	/**
@@ -122,11 +114,11 @@ export default class FeedbackModelService extends Service {
 	 */
 	async submit(payload) {
 		try {
-			let response = await fetch("/gc/api/feedback", {
-				method: "POST",
+			let response = await fetch('/gc/api/feedback', {
+				method: 'POST',
 				headers: {
-					"Accept": "application/json",
-					"Content-Type": "application/json",
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify(payload),
 			});
@@ -143,11 +135,11 @@ export default class FeedbackModelService extends Service {
 
 			return data;
 		} catch (error) {
-			console.warn("Feedback submit failed");
+			console.warn('Feedback submit failed');
 			console.warn(error);
 			return {
 				success: false,
-				failureMode: "exception",
+				failureMode: 'exception',
 				error,
 			};
 		}
@@ -161,11 +153,11 @@ export default class FeedbackModelService extends Service {
 	 */
 	async submitTelemetry(payload) {
 		try {
-			let response = await fetch("/gc/api/telemetry", {
-				method: "POST",
+			let response = await fetch('/gc/api/telemetry', {
+				method: 'POST',
 				headers: {
-					"Accept": "application/json",
-					"Content-Type": "application/json",
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify(payload),
 			});
@@ -182,11 +174,11 @@ export default class FeedbackModelService extends Service {
 
 			return data;
 		} catch (error) {
-			console.warn("Telemetry submit failed");
+			console.warn('Telemetry submit failed');
 			console.warn(error);
 			return {
 				success: false,
-				failureMode: "exception",
+				failureMode: 'exception',
 				error,
 			};
 		}

@@ -1,34 +1,34 @@
-import React from "react";
-import { act } from "react-dom/test-utils";
+import React from 'react';
+import {act} from 'react-dom/test-utils';
 
-import { createTestHarness } from "testing/TestHarness.js";
-import ScrollPane from "../ScrollPane.jsx";
+import {createTestHarness} from 'testing/TestHarness.js';
+import ScrollPane from '../ScrollPane.jsx';
 
 function stubHorizontalScrollMetrics(scrollEl) {
-	Object.defineProperty(scrollEl, "clientWidth", {
+	Object.defineProperty(scrollEl, 'clientWidth', {
 		value: 100,
 		configurable: true,
 	});
-	Object.defineProperty(scrollEl, "scrollWidth", {
+	Object.defineProperty(scrollEl, 'scrollWidth', {
 		value: 300,
 		configurable: true,
 	});
-	Object.defineProperty(scrollEl, "scrollLeft", {
+	Object.defineProperty(scrollEl, 'scrollLeft', {
 		value: 0,
 		writable: true,
 		configurable: true,
 	});
 }
 
-describe("ScrollPane", function() {
-	it("should translate mouse wheel movement into horizontal scrolling", function() {
+describe('ScrollPane', function () {
+	it('should translate mouse wheel movement into horizontal scrolling', function () {
 		var harness = createTestHarness();
 		var result = harness.render(ScrollPane, {
-			orientation: "horizontal",
-			children: <div style={{width: "300px"}}>Scrollable</div>,
+			orientation: 'horizontal',
+			children: <div style={{width: '300px'}}>Scrollable</div>,
 		});
-		var scrollEl = result.container.querySelector(".mj-scroll-pane-scroll");
-		var wheelEvent = new WheelEvent("wheel", {
+		var scrollEl = result.container.querySelector('.mj-scroll-pane-scroll');
+		var wheelEvent = new WheelEvent('wheel', {
 			deltaY: 25,
 			bubbles: true,
 			cancelable: true,
@@ -45,13 +45,13 @@ describe("ScrollPane", function() {
 		result.unmount();
 	});
 
-	it("should leave wheel movement alone for vertical scrolling", function() {
+	it('should leave wheel movement alone for vertical scrolling', function () {
 		var harness = createTestHarness();
 		var result = harness.render(ScrollPane, {
 			children: <div>Scrollable</div>,
 		});
-		var scrollEl = result.container.querySelector(".mj-scroll-pane-scroll");
-		var wheelEvent = new WheelEvent("wheel", {
+		var scrollEl = result.container.querySelector('.mj-scroll-pane-scroll');
+		var wheelEvent = new WheelEvent('wheel', {
 			deltaY: 25,
 			bubbles: true,
 			cancelable: true,

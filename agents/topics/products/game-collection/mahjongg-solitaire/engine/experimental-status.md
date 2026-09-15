@@ -19,40 +19,40 @@ Related roadmap:
 The experiment now has a working, test-backed baseline for the core layers:
 
 - `Grid`
-  - sparse 3D occupancy with point/box operations
+    - sparse 3D occupancy with point/box operations
 - `GameState`
-  - the only layer that owns direct access to `grid` and `board`
+    - the only layer that owns direct access to `grid` and `board`
 - `GeneratorState`
-  - generator-side extension of `GameState` for shared settings and generator
-    collaborators, including prepared pairs and active suspended records
+    - generator-side extension of `GameState` for shared settings and generator
+      collaborators, including prepared pairs and active suspended records
 - `GameRules`
-  - stateless Mahjongg rule interpretation over `GameState`, including guarded
-    null-state behavior
+    - stateless Mahjongg rule interpretation over `GameState`, including guarded
+      null-state behavior
 - `StateGraphAnalyzer`
-  - hypothetical copied-state analysis with chainable removals and guarded
-    short-horizon solved-state behavior
+    - hypothetical copied-state analysis with chainable removals and guarded
+      short-horizon solved-state behavior
 - `Tiles`
-  - structural tile orchestration over lower-level candidate ranking
+    - structural tile orchestration over lower-level candidate ranking
 - `TilePicker`
-  - weighted candidate ranking and selection helper for `Tiles`
+    - weighted candidate ranking and selection helper for `Tiles`
 - `Faces`
-  - face initialization and ranked face-pair assignment orchestration over
-    domain-owned inventory, ranking, and avoidance helpers
+    - face initialization and ranked face-pair assignment orchestration over
+      domain-owned inventory, ranking, and avoidance helpers
 - `FaceInventory`
-  - face-set inventory, selected-group face-pair selection, and assignment-history
-    helper for `Faces`
+    - face-set inventory, selected-group face-pair selection, and assignment-history
+      helper for `Faces`
 - `FaceRanking`
-  - face-group ranking and difficulty-windowed group selection for `Faces`
+    - face-group ranking and difficulty-windowed group selection for `Faces`
 - `FaceAvoidance`
-  - shared generation-run soft-penalty store owned by `Faces`
+    - shared generation-run soft-penalty store owned by `Faces`
 - `ranked-window.js`
-  - shared difficulty-window helper used by tile and face selection
+    - shared difficulty-window helper used by tile and face selection
 - `GeneratedPair`
-  - normal generated tile-pair record for deferred face assignment metadata
+    - normal generated tile-pair record for deferred face assignment metadata
 - `GameGenerator`
-  - simplified solved-by-construction generator with deterministic baseline flow
+    - simplified solved-by-construction generator with deterministic baseline flow
 - `GameEngine`
-  - initial runtime state-machine shell
+    - initial runtime state-machine shell
 
 The non-UI Jasmine lane is also in place:
 
@@ -68,22 +68,22 @@ As of this update, the experimental lane passes:
   repo-root `engines` workspace
 - set up a lightweight Jasmine test lane for UI-less engine work
 - established glossary terms for:
-  - `layout`
-  - `board`
-  - `play state`
-  - `tileKey`
-  - `face`
-  - `difficulty settings`
+    - `layout`
+    - `board`
+    - `play state`
+    - `tileKey`
+    - `face`
+    - `difficulty settings`
 - shaped and implemented first-pass class interfaces for:
-  - `Grid`
-  - `GameState`
-  - `GameRules`
-  - `GameEngine`
-  - `GameGenerator`
+    - `Grid`
+    - `GameState`
+    - `GameRules`
+    - `GameEngine`
+    - `GameGenerator`
 - extracted generation support classes:
-  - `FaceInventory`
-  - `TilePicker`
-  - `StateGraphAnalyzer`
+    - `FaceInventory`
+    - `TilePicker`
+    - `StateGraphAnalyzer`
 - introduced `Tiles` as the structural tile-selection orchestrator above
   `TilePicker`
 - introduced `Faces` as the face initialization and assignment orchestrator
@@ -118,32 +118,32 @@ As of this update, the experimental lane passes:
 - shifted runtime code toward `tileKey` terminology for board-local tile
   handles
 - implemented a first-pass deterministic generator with:
-  - simple tile-pair removal
-  - ranked face assignment
-  - final-state restoration for play
+    - simple tile-pair removal
+    - ranked face assignment
+    - final-state restoration for play
 - implemented Stage 1 soft linking:
-  - `SoftLinks` owns generation soft-link records through `GeneratorState`
-  - `Tiles` records `open-tiles` / `after-removal` links automatically when a
-    tile pair is selected
-  - `GeneratedPair` no longer carries structural soft-link payloads
-  - `Faces` no longer discovers structural face-avoidance targets
+    - `SoftLinks` owns generation soft-link records through `GeneratorState`
+    - `Tiles` records `open-tiles` / `after-removal` links automatically when a
+      tile pair is selected
+    - `GeneratedPair` no longer carries structural soft-link payloads
+    - `Faces` no longer discovers structural face-avoidance targets
 - implemented Stage 2 face-avoidance consumption:
-  - `Faces.applyFaceAvoidance()` queries `GeneratorState.softLinks`
-  - assigned face groups add soft pressure to linked open tiles through
-    `FaceAvoidance`
+    - `Faces.applyFaceAvoidance()` queries `GeneratorState.softLinks`
+    - assigned face groups add soft pressure to linked open tiles through
+      `FaceAvoidance`
 - added neutral full-face-set selection:
-  - `FaceInventory.canSelectFullFaceSet()`
-  - `FaceInventory.selectFullFaceSet()`
-  - `Faces.selectFullFaceSet()`
+    - `FaceInventory.canSelectFullFaceSet()`
+    - `FaceInventory.selectFullFaceSet()`
+    - `Faces.selectFullFaceSet()`
 - added reason-agnostic unavailable-tile selection state:
-  - `GeneratorState.unavailableTiles`
-  - `Tiles.markTileUnavailable(tileKey)`
-  - `Tiles.markTilesUnavailable(tileKeys)`
-  - `Tiles.markTileAvailable(tileKey)`
-  - `Tiles.clearUnavailableTiles()`
-  - `Tiles.isTileUnavailable(tileKey)`
-  - `Tiles.getUnavailableTiles()`
-  - `TilePicker.rankOpenTiles()` and selection now exclude unavailable tiles
+    - `GeneratorState.unavailableTiles`
+    - `Tiles.markTileUnavailable(tileKey)`
+    - `Tiles.markTilesUnavailable(tileKeys)`
+    - `Tiles.markTileAvailable(tileKey)`
+    - `Tiles.clearUnavailableTiles()`
+    - `Tiles.isTileUnavailable(tileKey)`
+    - `Tiles.getUnavailableTiles()`
+    - `TilePicker.rankOpenTiles()` and selection now exclude unavailable tiles
 
 ## Tile Picker Progress
 
@@ -154,8 +154,8 @@ Implemented buckets:
 
 - z-index / elevation factor
 - spatial relationship factor
-  - horizontal intersections
-  - depth intersections
+    - horizontal intersections
+    - depth intersections
 - open-pressure factor
 - stack-balance factor
 - short-horizon factor
@@ -340,39 +340,39 @@ available through `Faces.selectFullFaceSet()`. The remaining work is suspension
 policy, release-time assignment, and telemetry.
 
 1. Completed: make `FaceRanking` construct cleanly.
-   - Verify it stores `GeneratorState`.
-   - Verify it reads inventory from `state.faceInventory`.
+    - Verify it stores `GeneratorState`.
+    - Verify it reads inventory from `state.faceInventory`.
 2. Completed: fix and test `getAdjustedDistanceFactor()`.
-   - Unpreferred groups should keep their base value.
-   - Preferred groups should apply `faceAssignmentRules.preferredMultiplier`.
-   - Custom multipliers should be honored.
+    - Unpreferred groups should keep their base value.
+    - Preferred groups should apply `faceAssignmentRules.preferredMultiplier`.
+    - Custom multipliers should be honored.
 3. Completed: fix and test `getAvoidancePenalty()`.
-   - Use `faceSet.id` or `faceGroup` directly instead of a missing helper.
-   - Sum penalties across all relevant tiles.
-   - Decide and test missing-face-group behavior.
+    - Use `faceSet.id` or `faceGroup` directly instead of a missing helper.
+    - Sum penalties across all relevant tiles.
+    - Decide and test missing-face-group behavior.
 4. Completed: fix and test `getFaceGroupDuplicateCount()`.
-   - Use `GeneratorState.difficulty()` as the real difficulty source.
-   - Return `1` when duplicate scaling is off.
-   - Return `1` when difficulty does not create easy-side pressure.
-   - Return extra duplicates on easy settings when reuse history exists.
+    - Use `GeneratorState.difficulty()` as the real difficulty source.
+    - Return `1` when duplicate scaling is off.
+    - Return `1` when difficulty does not create easy-side pressure.
+    - Return extra duplicates on easy settings when reuse history exists.
 5. Completed: make `rankFaceGroups()` minimally correct.
-   - Use `this.state`.
-   - Handle missing prepared-pair input.
-   - Skip groups without enough remaining faces.
-   - Return deterministic `FaceGroup[]` output.
+    - Use `this.state`.
+    - Handle missing prepared-pair input.
+    - Skip groups without enough remaining faces.
+    - Return deterministic `FaceGroup[]` output.
 6. Completed: reintroduce weighting behavior one concern at a time.
-   - Preferred group bias.
-   - Assigned-history distance factor.
-   - Easy duplicate expansion.
-   - Avoidance penalty.
-   - Note: the live-shaped avoidance branch currently uses `1 / penalty` for
-     unused face groups. This means the current difficulty settings were tuned
-     against inverse penalty ranking. Revisit deliberately later before changing
-     the formula.
+    - Preferred group bias.
+    - Assigned-history distance factor.
+    - Easy duplicate expansion.
+    - Avoidance penalty.
+    - Note: the live-shaped avoidance branch currently uses `1 / penalty` for
+      unused face groups. This means the current difficulty settings were tuned
+      against inverse penalty ranking. Revisit deliberately later before changing
+      the formula.
 7. Completed: update status after stabilization.
-   - Mark `FaceRanking` as test-backed.
-   - Wire it into active `Faces` selection through `ranked-window.js` and
-     `FaceInventory.selectPairFromGroup()`.
+    - Mark `FaceRanking` as test-backed.
+    - Wire it into active `Faces` selection through `ranked-window.js` and
+      `FaceInventory.selectPairFromGroup()`.
 
 ### Suspensions
 
@@ -409,9 +409,9 @@ Planned generator integration contract:
 - `GameGenerator.preparePair()` should give `Suspensions` one chance to act for
   the current generation step
 - `Suspensions.step()` should return either:
-  - `false` when suspension policy has nothing to do
-  - the suspended pair created by suspension policy
-  - the resolved pair released from an active suspension
+    - `false` when suspension policy has nothing to do
+    - the suspended pair created by suspension policy
+    - the resolved pair released from an active suspension
 - `GameGenerator.commitGeneratedPair(pair)` should remain generic and should
   not branch on suspension-specific details
 - if suspension creation needs a third tile to be held, `Suspensions` tells
@@ -469,47 +469,47 @@ Future direction:
 Planned staged work:
 
 1. Completed: add a reason-agnostic unavailable-tile API to `Tiles`.
-   - Store unavailable tile keys in `GeneratorState`.
-   - Add `markTileUnavailable(tileKey)`.
-   - Add `markTilesUnavailable(tileKeys)`.
-   - Add `markTileAvailable(tileKey)`.
-   - Add `clearUnavailableTiles()`.
-   - Add `isTileUnavailable(tileKey)`.
-   - Add `getUnavailableTiles()`.
-   - Make tile ranking and selection avoid unavailable tiles.
+    - Store unavailable tile keys in `GeneratorState`.
+    - Add `markTileUnavailable(tileKey)`.
+    - Add `markTilesUnavailable(tileKeys)`.
+    - Add `markTileAvailable(tileKey)`.
+    - Add `clearUnavailableTiles()`.
+    - Add `isTileUnavailable(tileKey)`.
+    - Add `getUnavailableTiles()`.
+    - Make tile ranking and selection avoid unavailable tiles.
 2. Completed: add the generic `GameGenerator.preparePair()` seam.
-   - Ask `Suspensions.step()`.
-   - Use the returned pair when present.
-   - Otherwise use `Tiles.selectGeneratedPair()`.
-   - Throw if no pair is returned.
-   - Keep `commitGeneratedPair(pair)` generic.
+    - Ask `Suspensions.step()`.
+    - Use the returned pair when present.
+    - Otherwise use `Tiles.selectGeneratedPair()`.
+    - Throw if no pair is returned.
+    - Keep `commitGeneratedPair(pair)` generic.
 3. Completed: update `Suspensions` to the step contract.
-   - Add `step()`.
-   - Add `canReleaseSuspension()`.
-   - Keep `canCreateSuspension()`.
-   - Route `step()` through release first, then create, then `false`.
-   - Keep creation/release behavior shell-only until eligibility exists.
+    - Add `step()`.
+    - Add `canReleaseSuspension()`.
+    - Keep `canCreateSuspension()`.
+    - Route `step()` through release first, then create, then `false`.
+    - Keep creation/release behavior shell-only until eligibility exists.
 4. Implement the first suspension creation path.
-   - Select a tile to hold.
-   - Tell `Tiles` to mark it unavailable.
-   - Add a `TileSuspension` record to `GeneratorState.suspended`.
-   - Return a normal `GeneratedPair` for the generator to commit.
+    - Select a tile to hold.
+    - Tell `Tiles` to mark it unavailable.
+    - Add a `TileSuspension` record to `GeneratorState.suspended`.
+    - Return a normal `GeneratedPair` for the generator to commit.
 5. Implement suspension release.
-   - Pick a releasable suspension.
-   - Make the held tile available through `Tiles` or use a public `Tiles`
-     method that can select a pair including it.
-   - Return the resolved `GeneratedPair`.
-   - Remove the resolved suspension record.
+    - Pick a releasable suspension.
+    - Make the held tile available through `Tiles` or use a public `Tiles`
+      method that can select a pair including it.
+    - Return the resolved `GeneratedPair`.
+    - Remove the resolved suspension record.
 6. Add face-set reservation only after structural creation/release works.
-   - Use `Faces.selectFullFaceSet()` as the public face-domain seam.
-   - If reservation needs tile linkage, use `SoftLinks.createLink('grouped',
-     { role: 'reservation', ... })`.
+    - Use `Faces.selectFullFaceSet()` as the public face-domain seam.
+    - If reservation needs tile linkage, use `SoftLinks.createLink('grouped',
+{ role: 'reservation', ... })`.
 7. Add live parity and safety checks.
-   - forced-release behavior
-   - max suspended count
-   - open-count thresholds
-   - placement-count thresholds
-   - fixed-input comparison against the live generator
+    - forced-release behavior
+    - max suspended count
+    - open-count thresholds
+    - placement-count thresholds
+    - fixed-input comparison against the live generator
 
 Still left:
 

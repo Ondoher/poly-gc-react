@@ -1,5 +1,5 @@
 export default class RenderingGeometryModel {
-	static canvasFromSourceViewBox(viewBox, fallbackBounds = null, defaultSize = { width: 94, height: 136 }) {
+	static canvasFromSourceViewBox(viewBox, fallbackBounds = null, defaultSize = {width: 94, height: 136}) {
 		const bounds = fallbackBounds || {};
 		const left = viewBox?.minX ?? viewBox?.left ?? bounds.left ?? 0;
 		const top = viewBox?.minY ?? viewBox?.top ?? bounds.top ?? 0;
@@ -47,15 +47,17 @@ export default class RenderingGeometryModel {
 	}
 
 	static boundsOverlap(left, right) {
-		return Boolean(left && right)
-			&& left.right >= right.left
-			&& left.left <= right.right
-			&& left.bottom >= right.top
-			&& left.top <= right.bottom;
+		return (
+			Boolean(left && right) &&
+			left.right >= right.left &&
+			left.left <= right.right &&
+			left.bottom >= right.top &&
+			left.top <= right.bottom
+		);
 	}
 
 	static boundsArea(bounds) {
-		return bounds?.area || ((bounds?.width || 0) * (bounds?.height || 0));
+		return bounds?.area || (bounds?.width || 0) * (bounds?.height || 0);
 	}
 
 	static boundsToTransformString(sourceBounds, targetBounds) {
@@ -63,12 +65,12 @@ export default class RenderingGeometryModel {
 			targetBounds.width / Math.max(0.001, sourceBounds.width),
 			targetBounds.height / Math.max(0.001, sourceBounds.height),
 		);
-		const sourceCenterX = sourceBounds.left + (sourceBounds.width / 2);
-		const sourceCenterY = sourceBounds.top + (sourceBounds.height / 2);
-		const targetCenterX = targetBounds.left + (targetBounds.width / 2);
-		const targetCenterY = targetBounds.top + (targetBounds.height / 2);
-		const translateX = targetCenterX - (sourceCenterX * scale);
-		const translateY = targetCenterY - (sourceCenterY * scale);
+		const sourceCenterX = sourceBounds.left + sourceBounds.width / 2;
+		const sourceCenterY = sourceBounds.top + sourceBounds.height / 2;
+		const targetCenterX = targetBounds.left + targetBounds.width / 2;
+		const targetCenterY = targetBounds.top + targetBounds.height / 2;
+		const translateX = targetCenterX - sourceCenterX * scale;
+		const translateY = targetCenterY - sourceCenterY * scale;
 
 		return `matrix(${[
 			RenderingGeometryModel.roundTransformNumber(scale),
@@ -77,7 +79,7 @@ export default class RenderingGeometryModel {
 			RenderingGeometryModel.roundTransformNumber(scale),
 			RenderingGeometryModel.roundTransformNumber(translateX),
 			RenderingGeometryModel.roundTransformNumber(translateY),
-		].join(" ")})`;
+		].join(' ')})`;
 	}
 
 	static roundTransformNumber(value) {
@@ -85,17 +87,16 @@ export default class RenderingGeometryModel {
 	}
 
 	static alignedComponentTransform(alignmentTransform, component) {
-		return [
-			alignmentTransform || "",
-			RenderingGeometryModel.componentTransformString(component),
-		].filter(Boolean).join(" ");
+		return [alignmentTransform || '', RenderingGeometryModel.componentTransformString(component)]
+			.filter(Boolean)
+			.join(' ');
 	}
 
 	static componentTransformString(component) {
 		const transform = component.transform;
 
 		if (!transform || RenderingGeometryModel.identityTransform(transform)) {
-			return "";
+			return '';
 		}
 
 		return `matrix(${[
@@ -105,16 +106,18 @@ export default class RenderingGeometryModel {
 			transform.d ?? 1,
 			transform.e ?? 0,
 			transform.f ?? 0,
-		].join(" ")})`;
+		].join(' ')})`;
 	}
 
 	static identityTransform(transform) {
-		return RenderingGeometryModel.nearlyEqual(transform.a ?? 1, 1)
-			&& RenderingGeometryModel.nearlyEqual(transform.b ?? 0, 0)
-			&& RenderingGeometryModel.nearlyEqual(transform.c ?? 0, 0)
-			&& RenderingGeometryModel.nearlyEqual(transform.d ?? 1, 1)
-			&& RenderingGeometryModel.nearlyEqual(transform.e ?? 0, 0)
-			&& RenderingGeometryModel.nearlyEqual(transform.f ?? 0, 0);
+		return (
+			RenderingGeometryModel.nearlyEqual(transform.a ?? 1, 1) &&
+			RenderingGeometryModel.nearlyEqual(transform.b ?? 0, 0) &&
+			RenderingGeometryModel.nearlyEqual(transform.c ?? 0, 0) &&
+			RenderingGeometryModel.nearlyEqual(transform.d ?? 1, 1) &&
+			RenderingGeometryModel.nearlyEqual(transform.e ?? 0, 0) &&
+			RenderingGeometryModel.nearlyEqual(transform.f ?? 0, 0)
+		);
 	}
 
 	static nearlyEqual(left, right) {
@@ -122,14 +125,13 @@ export default class RenderingGeometryModel {
 	}
 
 	static componentPaintOrder(component) {
-		return component.sourceIndex
-			?? component.sourceElementIndex
-			?? Number.MAX_SAFE_INTEGER;
+		return component.sourceIndex ?? component.sourceElementIndex ?? Number.MAX_SAFE_INTEGER;
 	}
 
 	static sortComponentsForPaintOrder(components) {
-		return [...components].sort((left, right) => (
-			RenderingGeometryModel.componentPaintOrder(left) - RenderingGeometryModel.componentPaintOrder(right)
-		));
+		return [...components].sort(
+			(left, right) =>
+				RenderingGeometryModel.componentPaintOrder(left) - RenderingGeometryModel.componentPaintOrder(right),
+		);
 	}
 }

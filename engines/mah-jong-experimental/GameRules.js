@@ -37,8 +37,10 @@ export default class GameRules {
 			return false;
 		}
 
-		return !gameState.hasAboveAdjacent(tileKey)
-			&& (!gameState.hasLeftAdjacent(tileKey) || !gameState.hasRightAdjacent(tileKey));
+		return (
+			!gameState.hasAboveAdjacent(tileKey) &&
+			(!gameState.hasLeftAdjacent(tileKey) || !gameState.hasRightAdjacent(tileKey))
+		);
 	}
 
 	/**
@@ -50,10 +52,12 @@ export default class GameRules {
 	 * @returns {boolean}
 	 */
 	isPlayablePair(gameState, tileKey1, tileKey2) {
-		return tileKey1 !== tileKey2
-			&& this.isTileOpen(gameState, tileKey1)
-			&& this.isTileOpen(gameState, tileKey2)
-			&& this.doFacesMatch(gameState.getFace(tileKey1), gameState.getFace(tileKey2));
+		return (
+			tileKey1 !== tileKey2 &&
+			this.isTileOpen(gameState, tileKey1) &&
+			this.isTileOpen(gameState, tileKey2) &&
+			this.doFacesMatch(gameState.getFace(tileKey1), gameState.getFace(tileKey2))
+		);
 	}
 
 	/**

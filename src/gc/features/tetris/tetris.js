@@ -2,7 +2,7 @@ import {Service} from '@polylith/core';
 import {load} from '@polylith/loader';
 
 export default class TetrisLoader extends Service {
-	constructor (registry) {
+	constructor(registry) {
 		super('tetris-loader', registry);
 		this.implement(['ready', 'clicked']);
 	}

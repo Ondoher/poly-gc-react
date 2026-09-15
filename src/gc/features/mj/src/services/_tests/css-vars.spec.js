@@ -1,11 +1,11 @@
 import CssVarsService from '../css-vars.js';
 
-describe('CssVarsService', function() {
-	it('should prove the service test folder is wired into the browser lane', function() {
+describe('CssVarsService', function () {
+	it('should prove the service test folder is wired into the browser lane', function () {
 		expect(1).toBe(1);
 	});
 
-	it('should normalize CSS variable names to the --name form', function() {
+	it('should normalize CSS variable names to the --name form', function () {
 		var service = new CssVarsService();
 
 		expect(service.normalizeCssVarName('mj-layout-scale')).toBe('--mj-layout-scale');
@@ -13,11 +13,11 @@ describe('CssVarsService', function() {
 		expect(service.normalizeCssVarName('')).toBe('');
 	});
 
-	it('should read element-scoped values without caching them in the root cache', function() {
+	it('should read element-scoped values without caching them in the root cache', function () {
 		var service = new CssVarsService();
 		var element = {id: 'preview'};
 
-		service.readCssVarFromElement = function(target, name) {
+		service.readCssVarFromElement = function (target, name) {
 			if (target === element && name === '--mj-layout-scale') {
 				return '1.125';
 			}
@@ -29,10 +29,10 @@ describe('CssVarsService', function() {
 		expect(service.vars['--mj-layout-scale']).toBeUndefined();
 	});
 
-	it('should cache root-scoped values when they are read', function() {
+	it('should cache root-scoped values when they are read', function () {
 		var service = new CssVarsService();
 
-		service.readCssVarFromElement = function(_target, name) {
+		service.readCssVarFromElement = function (_target, name) {
 			if (name === '--mj-layout-scale') {
 				return '1.25';
 			}
@@ -44,10 +44,10 @@ describe('CssVarsService', function() {
 		expect(service.vars['--mj-layout-scale']).toBe('1.25');
 	});
 
-	it('should build an object from root-scoped CSS variables', function() {
+	it('should build an object from root-scoped CSS variables', function () {
 		var service = new CssVarsService();
 
-		service.readCssVarFromElement = function(_target, name) {
+		service.readCssVarFromElement = function (_target, name) {
 			let values = {
 				'--tiny-size-width': '32',
 				'--tiny-size-height': '44',
@@ -62,14 +62,7 @@ describe('CssVarsService', function() {
 
 		let result = service.buildObject({
 			prefix: 'tiny',
-			names: [
-				'size-width',
-				'size-height',
-				'face-width',
-				'face-height',
-				'padding-right',
-				'padding-bottom',
-			],
+			names: ['size-width', 'size-height', 'face-width', 'face-height', 'padding-right', 'padding-bottom'],
 		});
 
 		expect(result).toEqual({
@@ -88,11 +81,11 @@ describe('CssVarsService', function() {
 		});
 	});
 
-	it('should build an object from element-scoped CSS variables', function() {
+	it('should build an object from element-scoped CSS variables', function () {
 		var service = new CssVarsService();
 		var element = {id: 'preview'};
 
-		service.readCssVarFromElement = function(target, name) {
+		service.readCssVarFromElement = function (target, name) {
 			if (target !== element) {
 				return '';
 			}
@@ -109,13 +102,9 @@ describe('CssVarsService', function() {
 		let result = service.buildObject(
 			{
 				prefix: '--mj-layout-',
-				names: [
-					'scale',
-					'offset-x',
-					'offset-y',
-				],
+				names: ['scale', 'offset-x', 'offset-y'],
 			},
-			{element}
+			{element},
 		);
 
 		expect(result).toEqual({
@@ -128,10 +117,10 @@ describe('CssVarsService', function() {
 		expect(service.vars['--mj-layout-scale']).toBeUndefined();
 	});
 
-	it('should preserve raw string values when number coercion is disabled', function() {
+	it('should preserve raw string values when number coercion is disabled', function () {
 		var service = new CssVarsService();
 
-		service.readCssVarFromElement = function(_target, name) {
+		service.readCssVarFromElement = function (_target, name) {
 			let values = {
 				'--mj-layout-scale': '1.125',
 				'--mj-layout-mode': 'portrait',
@@ -143,12 +132,9 @@ describe('CssVarsService', function() {
 		let result = service.buildObject(
 			{
 				prefix: '--mj-layout-',
-				names: [
-					'scale',
-					'mode',
-				],
+				names: ['scale', 'mode'],
 			},
-			{coerceNumbers: false}
+			{coerceNumbers: false},
 		);
 
 		expect(result).toEqual({
@@ -157,10 +143,10 @@ describe('CssVarsService', function() {
 		});
 	});
 
-	it('should ignore blank or invalid variable names', function() {
+	it('should ignore blank or invalid variable names', function () {
 		var service = new CssVarsService();
 
-		service.readCssVarFromElement = function() {
+		service.readCssVarFromElement = function () {
 			throw new Error('buildObject should not read CSS vars for blank names');
 		};
 
@@ -172,10 +158,10 @@ describe('CssVarsService', function() {
 		expect(result).toEqual({});
 	});
 
-	it('should use defaults when CSS variables are missing', function() {
+	it('should use defaults when CSS variables are missing', function () {
 		var service = new CssVarsService();
 
-		service.readCssVarFromElement = function(_target, name) {
+		service.readCssVarFromElement = function (_target, name) {
 			let values = {
 				'--mj-layout-scale': '',
 				'--mj-layout-mode': '',
@@ -187,11 +173,7 @@ describe('CssVarsService', function() {
 		let result = service.buildObject(
 			{
 				prefix: '--mj-layout-',
-				names: [
-					'scale',
-					'mode',
-					'offset-x',
-				],
+				names: ['scale', 'mode', 'offset-x'],
 			},
 			{
 				defaults: {
@@ -201,7 +183,7 @@ describe('CssVarsService', function() {
 						x: 0,
 					},
 				},
-			}
+			},
 		);
 
 		expect(result).toEqual({
@@ -213,10 +195,10 @@ describe('CssVarsService', function() {
 		});
 	});
 
-	it('should prefer CSS variable values over defaults when both are present', function() {
+	it('should prefer CSS variable values over defaults when both are present', function () {
 		var service = new CssVarsService();
 
-		service.readCssVarFromElement = function(_target, name) {
+		service.readCssVarFromElement = function (_target, name) {
 			let values = {
 				'--mj-layout-scale': '1.125',
 				'--mj-layout-mode': 'portrait',
@@ -228,17 +210,14 @@ describe('CssVarsService', function() {
 		let result = service.buildObject(
 			{
 				prefix: '--mj-layout-',
-				names: [
-					'scale',
-					'mode',
-				],
+				names: ['scale', 'mode'],
 			},
 			{
 				defaults: {
 					scale: 1,
 					mode: 'landscape',
 				},
-			}
+			},
 		);
 
 		expect(result).toEqual({
@@ -247,10 +226,10 @@ describe('CssVarsService', function() {
 		});
 	});
 
-	it('should derive object shape directly from typed variable names', function() {
+	it('should derive object shape directly from typed variable names', function () {
 		var service = new CssVarsService();
 
-		service.readCssVarFromElement = function(_target, name) {
+		service.readCssVarFromElement = function (_target, name) {
 			let values = {
 				'--tiny-number-size-width': '32',
 				'--tiny-number-size-height': '44',
@@ -263,12 +242,7 @@ describe('CssVarsService', function() {
 
 		let result = service.buildObject({
 			prefix: 'tiny',
-			names: [
-				'number-size-width',
-				'number-size-height',
-				'string-name',
-				'boolean-enabled',
-			],
+			names: ['number-size-width', 'number-size-height', 'string-name', 'boolean-enabled'],
 		});
 
 		expect(result).toEqual({

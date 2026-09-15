@@ -12,11 +12,11 @@ Primary spec:
 - deep stack end-to-end cases now have direct coverage in
   [tile-metrics-model.spec.js](/c:/dev/poly-gc-react/src/gc/features/mj/src/models/_tests/tile-metrics-model.spec.js:1)
   including:
-  - a realistic stacked multi-`z` layout through `getDebugState()`
-  - a case where depth contribution forces a larger family out of hard range
+    - a realistic stacked multi-`z` layout through `getDebugState()`
+    - a case where depth contribution forces a larger family out of hard range
 - malformed metric-family integration now has direct coverage including:
-  - mixed valid and malformed families in one request
-  - fully malformed-family requests surfacing as unavailable generated metrics
+    - mixed valid and malformed families in one request
+    - fully malformed-family requests surfacing as unavailable generated metrics
 
 ## Still-Useful Tests
 

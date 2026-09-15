@@ -1,14 +1,14 @@
-import { registry } from "@polylith/core";
-import React from "react";
-import { debounce } from "../../../../common/utils.js";
-import Canvas from "./Canvas.jsx";
+import {registry} from '@polylith/core';
+import React from 'react';
+import {debounce} from '../../../../common/utils.js';
+import Canvas from './Canvas.jsx';
 
 export default class ScalingCanvas extends React.Component {
 	constructor(props) {
 		super(props);
 
 		this.state = {
-			metricSetId: "tiny",
+			metricSetId: 'tiny',
 			canvasWidth: null,
 			canvasHeight: null,
 			canvasScale: null,
@@ -23,27 +23,28 @@ export default class ScalingCanvas extends React.Component {
 		this.resizeObserver = null;
 		this.isUnmounted = false;
 		this.scheduleFit = this.scheduleFit.bind(this);
-		this.runFitDebounced = debounce(function() {
-			if (this.isUnmounted) {
-				return;
-			}
+		this.runFitDebounced = debounce(
+			function () {
+				if (this.isUnmounted) {
+					return;
+				}
 
-			this.runFit();
-		}.bind(this), 80, 300);
+				this.runFit();
+			}.bind(this),
+			80,
+			300,
+		);
 	}
 
 	componentDidMount() {
 		this.isUnmounted = false;
-		this.tileMetricsModel = registry.subscribe("mj:tile-metrics-model");
+		this.tileMetricsModel = registry.subscribe('mj:tile-metrics-model');
 		this.observeContainer();
 		this.scheduleFit();
 	}
 
 	componentDidUpdate(prevProps) {
-		if (
-			prevProps.tiles !== this.props.tiles ||
-			prevProps.scaleTiles !== this.props.scaleTiles
-		) {
+		if (prevProps.tiles !== this.props.tiles || prevProps.scaleTiles !== this.props.scaleTiles) {
 			this.scheduleFit();
 		}
 	}
@@ -56,19 +57,19 @@ export default class ScalingCanvas extends React.Component {
 			this.resizeObserver = null;
 		}
 
-		if (typeof window !== "undefined") {
-			window.removeEventListener("resize", this.scheduleFit);
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('resize', this.scheduleFit);
 		}
 	}
 
 	observeContainer() {
-		if (typeof ResizeObserver !== "undefined" && this.containerRef.current) {
+		if (typeof ResizeObserver !== 'undefined' && this.containerRef.current) {
 			this.resizeObserver = new ResizeObserver(this.scheduleFit);
 			this.resizeObserver.observe(this.containerRef.current);
 		}
 
-		if (typeof window !== "undefined") {
-			window.addEventListener("resize", this.scheduleFit);
+		if (typeof window !== 'undefined') {
+			window.addEventListener('resize', this.scheduleFit);
 		}
 	}
 
@@ -82,15 +83,12 @@ export default class ScalingCanvas extends React.Component {
 			};
 		}
 
-		let style = typeof window !== "undefined" && typeof window.getComputedStyle === "function"
-			? window.getComputedStyle(container)
-			: null;
-		let horizontalPadding =
-			this.toCssPixelNumber(style?.paddingLeft) +
-			this.toCssPixelNumber(style?.paddingRight);
-		let verticalPadding =
-			this.toCssPixelNumber(style?.paddingTop) +
-			this.toCssPixelNumber(style?.paddingBottom);
+		let style =
+			typeof window !== 'undefined' && typeof window.getComputedStyle === 'function'
+				? window.getComputedStyle(container)
+				: null;
+		let horizontalPadding = this.toCssPixelNumber(style?.paddingLeft) + this.toCssPixelNumber(style?.paddingRight);
+		let verticalPadding = this.toCssPixelNumber(style?.paddingTop) + this.toCssPixelNumber(style?.paddingBottom);
 
 		return {
 			width: Math.max((container.clientWidth || 0) - horizontalPadding, 0),
@@ -106,12 +104,14 @@ export default class ScalingCanvas extends React.Component {
 	getScaleTiles() {
 		return Array.isArray(this.props.scaleTiles)
 			? this.props.scaleTiles
-			: (Array.isArray(this.props.tiles) ? this.props.tiles : []);
+			: Array.isArray(this.props.tiles)
+				? this.props.tiles
+				: [];
 	}
 
 	getScaleConfig() {
 		return {
-			positions: this.getScaleTiles().map(function(tile) {
+			positions: this.getScaleTiles().map(function (tile) {
 				return {
 					x: tile.x,
 					y: tile.y,
@@ -123,32 +123,20 @@ export default class ScalingCanvas extends React.Component {
 	}
 
 	runFit() {
-		if (!this.tileMetricsModel || typeof this.tileMetricsModel.getDebugState !== "function") {
+		if (!this.tileMetricsModel || typeof this.tileMetricsModel.getDebugState !== 'function') {
 			return;
 		}
 
 		let result = this.tileMetricsModel.getDebugState(this.getScaleConfig());
-		let metricSetId = result?.selectedFit?.metricSetId ||
-			this.state.metricSetId ||
-			"tiny";
+		let metricSetId = result?.selectedFit?.metricSetId || this.state.metricSetId || 'tiny';
 		let layoutPixelSize = result?.layoutPixelSize || null;
 		let tileMetrics = result?.selectedFit?.tileMetrics || null;
 		let boardPixelCenter = result?.selectedFit?.boardPixelCenter || null;
-		let canvasWidth = Number.isFinite(layoutPixelSize?.width)
-			? layoutPixelSize.width
-			: this.state.canvasWidth;
-		let canvasHeight = Number.isFinite(layoutPixelSize?.height)
-			? layoutPixelSize.height
-			: this.state.canvasHeight;
-		let canvasScale = Number.isFinite(result?.scale)
-			? result.scale
-			: this.state.canvasScale;
-		let boardCanvasWidth = Number.isFinite(tileMetrics?.canvasWidth)
-			? tileMetrics.canvasWidth
-			: canvasWidth;
-		let boardCanvasHeight = Number.isFinite(tileMetrics?.canvasHeight)
-			? tileMetrics.canvasHeight
-			: canvasHeight;
+		let canvasWidth = Number.isFinite(layoutPixelSize?.width) ? layoutPixelSize.width : this.state.canvasWidth;
+		let canvasHeight = Number.isFinite(layoutPixelSize?.height) ? layoutPixelSize.height : this.state.canvasHeight;
+		let canvasScale = Number.isFinite(result?.scale) ? result.scale : this.state.canvasScale;
+		let boardCanvasWidth = Number.isFinite(tileMetrics?.canvasWidth) ? tileMetrics.canvasWidth : canvasWidth;
+		let boardCanvasHeight = Number.isFinite(tileMetrics?.canvasHeight) ? tileMetrics.canvasHeight : canvasHeight;
 		let fallbackBoardCanvasOffsetX =
 			Number.isFinite(canvasWidth) && Number.isFinite(boardCanvasWidth)
 				? (canvasWidth - boardCanvasWidth) / 2
@@ -159,11 +147,11 @@ export default class ScalingCanvas extends React.Component {
 				: this.state.boardCanvasOffsetY;
 		let boardCanvasOffsetX =
 			Number.isFinite(canvasWidth) && Number.isFinite(boardPixelCenter?.x)
-				? (canvasWidth / 2) - boardPixelCenter.x
+				? canvasWidth / 2 - boardPixelCenter.x
 				: fallbackBoardCanvasOffsetX;
 		let boardCanvasOffsetY =
 			Number.isFinite(canvasHeight) && Number.isFinite(boardPixelCenter?.y)
-				? (canvasHeight / 2) - boardPixelCenter.y
+				? canvasHeight / 2 - boardPixelCenter.y
 				: fallbackBoardCanvasOffsetY;
 
 		this.setFitState({
@@ -198,15 +186,15 @@ export default class ScalingCanvas extends React.Component {
 	}
 
 	getCanvasClassName() {
-		if (typeof this.props.getCanvasClassName === "function") {
+		if (typeof this.props.getCanvasClassName === 'function') {
 			return this.props.getCanvasClassName(this.state.metricSetId);
 		}
 
-		return this.props.canvasClassName || "";
+		return this.props.canvasClassName || '';
 	}
 
 	getStyle() {
-		let prefix = this.props.cssVarPrefix || "mj-scaling-canvas";
+		let prefix = this.props.cssVarPrefix || 'mj-scaling-canvas';
 		let style = {};
 
 		if (Number.isFinite(this.state.canvasWidth) && this.state.canvasWidth > 0) {
@@ -265,11 +253,7 @@ export default class ScalingCanvas extends React.Component {
 
 	render() {
 		return (
-			<div
-				className={this.props.className}
-				ref={this.containerRef}
-				style={this.getStyle()}
-			>
+			<div className={this.props.className} ref={this.containerRef} style={this.getStyle()}>
 				{this.renderCanvas()}
 			</div>
 		);

@@ -1,8 +1,3 @@
-This folder contains shared Jasmine helpers for non-UI test lanes.
+# Shared Jasmine Helpers
 
-Use helpers here for setup that should apply across `engines` specs, such as:
-
-- custom matchers
-- shared fixture builders
-- common test bootstrapping
-- optional reporters that do not require browser tooling
+This folder holds shared non-browser Jasmine support loaded by configs in `spec/support`. Examples include custom matchers, fixture builders, and test bootstrapping. Placement and reuse follow [canonical testing](C:/Users/gande/.codex/documentation/standards/testing.md).

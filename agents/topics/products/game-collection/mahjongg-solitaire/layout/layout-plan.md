@@ -92,20 +92,20 @@ Current implementation note:
 ### Extract or Introduce
 
 - `GameNumberControl`
-  - small always-visible positive-integer input
-  - placeholder text `Game #`
-  - styled to match the PSD
-  - visually grouped with a randomize-layout action on its right
+    - small always-visible positive-integer input
+    - placeholder text `Game #`
+    - styled to match the PSD
+    - visually grouped with a randomize-layout action on its right
 
 - `SettingsDialog`
-  - overlay container for settings mode
-  - now owns the dialog shell and selection draft state while still delegating final apply behavior back out to MJ board logic
+    - overlay container for settings mode
+    - now owns the dialog shell and selection draft state while still delegating final apply behavior back out to MJ board logic
 
 - `Toast`
-  - transient short-message presentation for lightweight notifications
+    - transient short-message presentation for lightweight notifications
 
 - optional compact large-message or win-state presentation layer
-  - if larger `message` states move away from legacy page/header placement
+    - if larger `message` states move away from legacy page/header placement
 
 ## Proposed Refactor Sequence
 
@@ -136,8 +136,8 @@ Completed:
 - `Toast.jsx` was introduced for transient short-message display
 - `SettingsDialog.jsx` was introduced and now holds the tabbed settings overlay structure
 - a two-size ornamental rectangle system exists:
-  - `small` from `edit-rect.png`
-  - `large` from `standard-rect.png`
+    - `small` from `edit-rect.png`
+    - `large` from `standard-rect.png`
 - the live `Game #` field is now using `CssRect` rather than the image-cut rectangle treatment
 - the live `Game #` field and shuffle action now render as one composite control with an internal separator
 - the left-side setup controls are now split into a dedicated `LeftHud` with a focused `GameNumberControl`
@@ -158,11 +158,11 @@ Completed:
 - the move-history dialog now uses a reusable custom scrollbar shared with the settings selector
 - a temporary localhost-only half-solve/debug path was introduced for multi-undo testing and later hidden from the normal UI
 - a first-pass expand/contract mode now exists:
-  - the board can expand into a borderless red-field view
-  - the left HUD is hidden in expanded mode
-  - the right HUD remains available
-  - the contract control reuses the same corner slot as expand
-  - feedback is intentionally hidden in expanded mode for now while the layout is still being tuned
+    - the board can expand into a borderless red-field view
+    - the left HUD is hidden in expanded mode
+    - the right HUD remains available
+    - the contract control reuses the same corner slot as expand
+    - feedback is intentionally hidden in expanded mode for now while the layout is still being tuned
 - the expand/contract affordance now uses Tabler `window-maximize` / `window-minimize` SVG assets
 - the first pass of expand/contract motion now animates board scale and surrounding layout changes rather than snapping immediately
 
@@ -193,9 +193,9 @@ Responsive-mode note:
 - that same responsive decision should adjust the settings dialog size as well, so the dialog and its preview area stay intentional rather than keeping one fixed desktop-sized treatment
 - when larger icon assets are introduced, prefer a parent mode class such as `mj-ui-large` on the page or frame shell rather than duplicating base rules
 - use that mode class to override only the dimensions that need to change, for example:
-  - larger `Game #` control dimensions
-  - larger shuffle button and icon sizing
-  - larger right-HUD rail sizing and icon dimensions
+    - larger `Game #` control dimensions
+    - larger shuffle button and icon sizing
+    - larger right-HUD rail sizing and icon dimensions
 - this keeps icon scale, tile-size availability, and layout-density decisions in the same responsive system
 
 Naming cleanup note:
@@ -220,37 +220,37 @@ Current implementation note:
 - the original image-cut ornamental rectangle system is still present in the codebase, but the live MJ feature currently renders its rectangles through `CssRect`
 - the CSS-based rectangle path is being tuned because it is proving easier to iterate against the PSD for borders, transparency, and join behavior
 - the settings dialog preview now uses `SettingsPreview` directly:
-  - mounts a live preview render through `Canvas`
-  - creates board data through a local `Engine` instance
-  - chooses metric family and scale through `mj:layout-scaling`
-  - avoids the older bitmap-capture preview path
+    - mounts a live preview render through `Canvas`
+    - creates board data through a local `Engine` instance
+    - chooses metric family and scale through `mj:layout-scaling`
+    - avoids the older bitmap-capture preview path
 - the current right HUD should now be read as the gameplay rail:
-  - `Pause`
-  - `Restart`
-  - `Undo`
-  - `Redo`
-  - `Multi-level undo`
-  - `Hint`
-  - `Peek`
+    - `Pause`
+    - `Restart`
+    - `Undo`
+    - `Redo`
+    - `Multi-level undo`
+    - `Hint`
+    - `Peek`
 - the current left HUD should now be read as the setup/utility side:
-  - difficulty label
-  - `Game #` field plus shuffle/new-board action
-  - `Solution`
-  - `Settings`
-  - `Help`
+    - difficulty label
+    - `Game #` field plus shuffle/new-board action
+    - `Solution`
+    - `Settings`
+    - `Help`
 - the current expand mode is intentionally still a tuning pass:
-  - it removes the ornamental frame
-  - it keeps the standard red-field family rather than introducing a new color system
-  - it uses a simple borderless board surface so sizing can be tuned before decorative decisions are reintroduced
+    - it removes the ornamental frame
+    - it keeps the standard red-field family rather than introducing a new color system
+    - it uses a simple borderless board surface so sizing can be tuned before decorative decisions are reintroduced
 
 ### Current Layout Constraint
 
 - the current `tiny` tile-size play layout has been tested down to approximately `730x410`
 - `730x410` should be treated as the current minimum supported viewport for the in-game screen when using `tiny` tiles
 - the current practical minimum app sizes for the larger tile sizes are:
-  - `small`: `870x540`
-  - `medium`: `950x590`
-  - `normal`: `1080x690`
+    - `small`: `870x540`
+    - `medium`: `950x590`
+    - `normal`: `1080x690`
 - larger tile sizes will require larger minimum supported viewports unless further adaptation is introduced
 - below that size, the `tiny` board fit becomes unreliable without further adaptation
 - future mobile work may lower this minimum, but it is the current practical floor for `tiny`
@@ -293,9 +293,9 @@ Current implementation note:
 - refine control rail ornament/states
 - refine board centering and scale
 - add touch-specific follow-up for custom settings selector interactions
-  - verify thumb dragging on phones/tablets
-  - add `touch-action` tuning where needed
-  - consider larger touch targets or tap-to-scroll behavior for the custom scrollbar
+    - verify thumb dragging on phones/tablets
+    - add `touch-action` tuning where needed
+    - consider larger touch targets or tap-to-scroll behavior for the custom scrollbar
 - revisit decorative details only after the main layout is correct
 
 ## Expected File Impact
@@ -328,8 +328,8 @@ Possible future additions:
 - dialog-specific decorative assets if CSS is not enough
 - small and large ornamental rectangle asset sets under `src/gc/features/mj/assets/images/rect`
 - additional rectangle cut sets for smaller target sizes and aspect ratios
-  - the current rectangle assets begin to blur once the corner pieces separate before reaching the stretched middle segments
-  - future cuts should cover square, portrait, and landscape use cases rather than assuming one generic rectangle family
+    - the current rectangle assets begin to blur once the corner pieces separate before reaching the stretched middle segments
+    - future cuts should cover square, portrait, and landscape use cases rather than assuming one generic rectangle family
 - alternate PNG icon exports for larger UI modes derived directly from PSD shape layers when the Photoshop effects need to be preserved
 
 ## Open Questions

@@ -1,7 +1,7 @@
-import React from "react";
-import CssRect from "./CssRect.jsx";
-import ModalDialog from "./ModalDialog.jsx";
-import ScrollPane from "./ScrollPane.jsx";
+import React from 'react';
+import CssRect from './CssRect.jsx';
+import ModalDialog from './ModalDialog.jsx';
+import ScrollPane from './ScrollPane.jsx';
 
 export default class MultiUndoDialog extends React.Component {
 	renderTile(face, which) {
@@ -21,9 +21,7 @@ export default class MultiUndoDialog extends React.Component {
 	 * @return {JSX}
 	 */
 	renderSequence(sequence) {
-		return (
-			<span className="mj-redo-sequence">{sequence}</span>
-		);
+		return <span className="mj-redo-sequence">{sequence}</span>;
 	}
 
 	/**
@@ -60,19 +58,11 @@ export default class MultiUndoDialog extends React.Component {
 	renderHistory(pairs) {
 		let tiles = pairs.map((pair, idx) => this.renderPair(pair, idx));
 
-		return (
-			<div className="mj-redo-history">
-				{tiles}
-			</div>
-		);
+		return <div className="mj-redo-history">{tiles}</div>;
 	}
 
 	renderNoHistory() {
-		return (
-			<div className="mj-redo-history mj-history-empty">
-				Nothing to undo.
-			</div>
-		);
+		return <div className="mj-redo-history mj-history-empty">Nothing to undo.</div>;
 	}
 
 	renderHistoryRows() {
@@ -101,17 +91,14 @@ export default class MultiUndoDialog extends React.Component {
 					<div className="mj-multi-undo-dialog-copy">
 						<h3 className="mj-multi-undo-dialog-copy-title">Undo To</h3>
 						<p className="mj-multi-undo-dialog-copy-text">
-							Choose any move in the played history to rewind the board back to just before that pair was removed.
+							Choose any move in the played history to rewind the board back to just before that pair was
+							removed.
 						</p>
 						<p className="mj-multi-undo-dialog-copy-text">
 							All later moves will be added back automatically and can still be redone afterward.
 						</p>
 					</div>
-					<CssRect
-						className="mj-multi-undo-dialog-history-frame"
-						size="large"
-						variant="inset"
-					>
+					<CssRect className="mj-multi-undo-dialog-history-frame" size="large" variant="inset">
 						<ScrollPane
 							className="mj-multi-undo-dialog-history-scroll-pane"
 							viewportClassName="mj-multi-undo-dialog-history-viewport"

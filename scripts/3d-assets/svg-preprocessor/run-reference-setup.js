@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { OUTPUT_3D_DIR, ROOT_DIR } from '../shared/asset-paths.js';
-import { extractReferenceImageComponents } from './reference-image-components.js';
-import { autoAssignComponentsToSemanticParts } from './component-auto-assignment.js';
-import { requireArgument } from './cli-arguments.js';
+import {OUTPUT_3D_DIR, ROOT_DIR} from '../shared/asset-paths.js';
+import {extractReferenceImageComponents} from './reference-image-components.js';
+import {autoAssignComponentsToSemanticParts} from './component-auto-assignment.js';
+import {requireArgument} from './cli-arguments.js';
 
 async function main() {
 	const descriptorPath = path.resolve(process.cwd(), requireArgument('--descriptor'));
@@ -49,7 +49,7 @@ async function main() {
 	let componentCount = 0;
 	let bindingCount = 0;
 
-	fs.mkdirSync(componentsDir, { recursive: true });
+	fs.mkdirSync(componentsDir, {recursive: true});
 
 	for (const faceKey of faceKeys) {
 		const sourceFile = filenameForFace(descriptor, faceKey);
@@ -112,43 +112,51 @@ async function main() {
 
 	fs.writeFileSync(structurePath, `${JSON.stringify(structure, null, 2)}\n`);
 
-	console.log(JSON.stringify({
-		referenceSetId,
-		faceCount: faceKeys.length,
-		componentCount,
-		bindingCount,
-		structurePath: formatPath(structurePath),
-		componentsDir: formatPath(componentsDir),
-	}, null, 2));
+	console.log(
+		JSON.stringify(
+			{
+				referenceSetId,
+				faceCount: faceKeys.length,
+				componentCount,
+				bindingCount,
+				structurePath: formatPath(structurePath),
+				componentsDir: formatPath(componentsDir),
+			},
+			null,
+			2,
+		),
+	);
 }
 
 function addPartGeometry(parts, components, image, preparedViewBox) {
 	const componentById = new Map(components.map((component) => [component.componentId, component]));
 
-	return Object.fromEntries(Object.entries(parts || {}).map(([partId, part]) => {
-		const partComponents = (part.componentIds || [])
-			.map((componentId) => componentById.get(componentId))
-			.filter(Boolean);
-		const componentBounds = unionBounds(partComponents.map((component) => component.bounds));
+	return Object.fromEntries(
+		Object.entries(parts || {}).map(([partId, part]) => {
+			const partComponents = (part.componentIds || [])
+				.map((componentId) => componentById.get(componentId))
+				.filter(Boolean);
+			const componentBounds = unionBounds(partComponents.map((component) => component.bounds));
 
-		return [
-			partId,
-			{
-				...part,
-				componentBounds,
-				targetBounds: componentBounds ? referencePixelsToViewBox(componentBounds, image, preparedViewBox) : null,
-				dominantColor: dominantColor(partComponents),
-				paletteColors: uniqueValues(partComponents.flatMap((component) => component.paletteColors || [])),
-			},
-		];
-	}));
+			return [
+				partId,
+				{
+					...part,
+					componentBounds,
+					targetBounds: componentBounds
+						? referencePixelsToViewBox(componentBounds, image, preparedViewBox)
+						: null,
+					dominantColor: dominantColor(partComponents),
+					paletteColors: uniqueValues(partComponents.flatMap((component) => component.paletteColors || [])),
+				},
+			];
+		}),
+	);
 }
 
 function addComponentSemanticMetadata(components, parts) {
 	return components.map((component) => {
-		const componentParts = (component.partIds || [])
-			.map((partId) => parts[partId])
-			.filter(Boolean);
+		const componentParts = (component.partIds || []).map((partId) => parts[partId]).filter(Boolean);
 
 		return {
 			...component,
@@ -216,14 +224,16 @@ function uniqueValues(values) {
 }
 
 function formatParts(face) {
-	return Object.fromEntries(Object.entries(face.parts || {}).map(([partId, part]) => [
-		partId,
-		{
-			...part,
-			bindingStatus: 'unbound',
-			reviewStatus: 'needs-review',
-		},
-	]));
+	return Object.fromEntries(
+		Object.entries(face.parts || {}).map(([partId, part]) => [
+			partId,
+			{
+				...part,
+				bindingStatus: 'unbound',
+				reviewStatus: 'needs-review',
+			},
+		]),
+	);
 }
 
 function formatComponent(faceKey, component, index) {
@@ -238,8 +248,8 @@ function formatComponent(faceKey, component, index) {
 			height: component.height,
 		},
 		center: {
-			x: round(component.center?.x ?? component.left + (component.width / 2)),
-			y: round(component.center?.y ?? component.top + (component.height / 2)),
+			x: round(component.center?.x ?? component.left + component.width / 2),
+			y: round(component.center?.y ?? component.top + component.height / 2),
 		},
 		pixels: component.pixels,
 		area: component.area,
@@ -288,4 +298,3 @@ function formatPath(filename) {
 }
 
 await main();
-

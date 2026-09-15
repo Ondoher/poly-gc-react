@@ -1,5 +1,5 @@
 import React from 'react';
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 import ReferenceApprovalPage from '../components/ReferenceApprovalPage.jsx';
 
 export default class ReferenceApprovalView extends Service {

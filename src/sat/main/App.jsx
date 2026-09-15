@@ -6,7 +6,7 @@ import remarkMath from 'remark-math';
 const WGS84_A = 6378.137;
 const WGS84_F = 1 / 298.257223563;
 const WGS84_B = WGS84_A * (1 - WGS84_F);
-const WGS84_E2 = (WGS84_A ** 2 - WGS84_B ** 2) / (WGS84_A ** 2);
+const WGS84_E2 = (WGS84_A ** 2 - WGS84_B ** 2) / WGS84_A ** 2;
 const DEFAULT_GEO_ALTITUDE = 35786;
 const ASTRA_NEIGHBORHOODS = Object.freeze([
 	{
@@ -42,8 +42,10 @@ const ASTRA_NEIGHBORHOODS = Object.freeze([
 		spacecraft: ['ASTRA 2E', 'ASTRA 2F', 'ASTRA 2G'],
 	},
 ]);
-const ASTRA_SPACECRAFT_COUNT = ASTRA_NEIGHBORHOODS
-	.reduce((count, neighborhood) => count + neighborhood.spacecraft.length, 0);
+const ASTRA_SPACECRAFT_COUNT = ASTRA_NEIGHBORHOODS.reduce(
+	(count, neighborhood) => count + neighborhood.spacecraft.length,
+	0,
+);
 const MEME_COUNTER_SATELLITE_ID = 'astra-28-2e';
 const MEME_COUNTER_CITIES = Object.freeze([
 	{
@@ -63,11 +65,11 @@ const MEME_CLAIMED_RANGE_MILES = 1397.59;
 const KM_TO_MILES = 0.621371;
 
 function degreesToRadians(value) {
-	return value * Math.PI / 180;
+	return (value * Math.PI) / 180;
 }
 
 function radiansToDegrees(value) {
-	return value * 180 / Math.PI;
+	return (value * 180) / Math.PI;
 }
 
 function formatNumber(value, digits = 2) {
@@ -168,7 +170,7 @@ function topocentricFromEcef(lat, lon, delta) {
 	const azimuth = (radiansToDegrees(Math.atan2(east, north)) + 360) % 360;
 	const elevation = radiansToDegrees(Math.asin(up / range));
 
-	return { east, north, up, range, azimuth, elevation };
+	return {east, north, up, range, azimuth, elevation};
 }
 
 function calculateCityResult(city, satellite) {
@@ -199,14 +201,16 @@ function bestAstraForCity(city) {
 		const satellite = satelliteEcef(neighborhood.longitude, neighborhood.altitude);
 		const result = calculateCityResult(city, satellite);
 
-		return result ? {
-			neighborhood,
-			satellite,
-			result: {
-				...result,
-				neighborhood,
-			},
-		} : null;
+		return result
+			? {
+					neighborhood,
+					satellite,
+					result: {
+						...result,
+						neighborhood,
+					},
+				}
+			: null;
 	}).filter(Boolean);
 
 	if (candidates.length === 0) {
@@ -227,12 +231,12 @@ function bestAstraForCity(city) {
 	return visibleCandidates.sort((left, right) => right.result.elevation - left.result.elevation)[0];
 }
 
-function MathMarkdown({ children, className = '' }) {
+function MathMarkdown({children, className = ''}) {
 	return (
 		<ReactMarkdown
 			className={className}
 			remarkPlugins={[remarkMath]}
-			rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
+			rehypePlugins={[[rehypeKatex, {throwOnError: false}]]}
 		>
 			{children}
 		</ReactMarkdown>
@@ -242,7 +246,7 @@ function MathMarkdown({ children, className = '' }) {
 class MarkdownReference extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = { markdown: '', error: '' };
+		this.state = {markdown: '', error: ''};
 	}
 
 	componentDidMount() {
@@ -255,9 +259,9 @@ class MarkdownReference extends React.Component {
 			if (!response.ok) {
 				throw new Error(`Unable to load ${this.props.source}.`);
 			}
-			this.setState({ markdown: await response.text(), error: '' });
+			this.setState({markdown: await response.text(), error: ''});
 		} catch (error) {
-			this.setState({ error: error.message });
+			this.setState({error: error.message});
 		}
 	}
 
@@ -270,11 +274,7 @@ class MarkdownReference extends React.Component {
 			return <p className="sat-note">Loading reference notes...</p>;
 		}
 
-		return (
-			<MathMarkdown className="sat-markdown">
-				{this.state.markdown}
-			</MathMarkdown>
-		);
+		return <MathMarkdown className="sat-markdown">{this.state.markdown}</MathMarkdown>;
 	}
 }
 
@@ -308,7 +308,7 @@ export default class App extends React.Component {
 	}
 
 	handleHashChange() {
-		this.setState({ page: this.getPageFromHash() });
+		this.setState({page: this.getPageFromHash()});
 	}
 
 	async loadCityRecords() {
@@ -334,7 +334,9 @@ export default class App extends React.Component {
 	}
 
 	cityMatches(query) {
-		const normalizedQuery = String(query || '').trim().toLowerCase();
+		const normalizedQuery = String(query || '')
+			.trim()
+			.toLowerCase();
 		if (!normalizedQuery || this.state.cityLoadState !== 'loaded') {
 			return [];
 		}
@@ -374,8 +376,10 @@ export default class App extends React.Component {
 	}
 
 	getSatellite() {
-		return this.getRecommendation()?.satellite ||
-			satelliteEcef(ASTRA_NEIGHBORHOODS[0].longitude, ASTRA_NEIGHBORHOODS[0].altitude);
+		return (
+			this.getRecommendation()?.satellite ||
+			satelliteEcef(ASTRA_NEIGHBORHOODS[0].longitude, ASTRA_NEIGHBORHOODS[0].altitude)
+		);
 	}
 
 	getCityForCalculation() {
@@ -425,17 +429,14 @@ export default class App extends React.Component {
 
 			const entry = {
 				id: signature,
-				city: { ...state.city },
+				city: {...state.city},
 				neighborhoodName: recommendation.neighborhood.name,
 				longitude: recommendation.neighborhood.longitude,
 				elevation: result.elevation,
 				azimuth: result.azimuth,
 				range: result.range,
 			};
-			const history = [
-				entry,
-				...state.history.filter((item) => item.id !== signature),
-			].slice(0, 8);
+			const history = [entry, ...state.history.filter((item) => item.id !== signature)].slice(0, 8);
 
 			return {
 				history,
@@ -446,7 +447,7 @@ export default class App extends React.Component {
 
 	updateCity(patch) {
 		this.setState((state) => ({
-			city: { ...state.city, ...patch },
+			city: {...state.city, ...patch},
 		}));
 	}
 
@@ -486,7 +487,7 @@ export default class App extends React.Component {
 
 	selectHistory(entry) {
 		this.setState({
-			city: { ...entry.city },
+			city: {...entry.city},
 			activeHistoryId: entry.id,
 			typeaheadOpen: false,
 		});
@@ -499,7 +500,7 @@ export default class App extends React.Component {
 		}
 
 		if (event.key === 'Escape') {
-			this.setState({ typeaheadOpen: false });
+			this.setState({typeaheadOpen: false});
 		}
 	}
 
@@ -508,8 +509,12 @@ export default class App extends React.Component {
 
 		return (
 			<nav className="sat-top-nav" aria-label="SAT app sections">
-				<a className={!onMemePage ? 'is-active' : ''} href="#/calculator">Calculator</a>
-				<a className={onMemePage ? 'is-active' : ''} href="#/meme-check">Meme check</a>
+				<a className={!onMemePage ? 'is-active' : ''} href="#/calculator">
+					Calculator
+				</a>
+				<a className={onMemePage ? 'is-active' : ''} href="#/meme-check">
+					Meme check
+				</a>
 			</nav>
 		);
 	}
@@ -519,7 +524,10 @@ export default class App extends React.Component {
 			<header className="sat-header">
 				<div className="sat-title-block">
 					<h1>ASTRA Satellite Pointing Calculator</h1>
-					<p>Pick a city and the app selects the best ASTRA orbital neighborhood by elevation, then calculates WGS84 station coordinates, look vector, azimuth, elevation, and slant range.</p>
+					<p>
+						Pick a city and the app selects the best ASTRA orbital neighborhood by elevation, then
+						calculates WGS84 station coordinates, look vector, azimuth, elevation, and slant range.
+					</p>
 					<a className="sat-title-link" href="#/meme-check">
 						Check the 1,397 mile satellite meme with the same 3D geometry.
 					</a>
@@ -531,11 +539,23 @@ export default class App extends React.Component {
 					</div>
 					<div className="sat-metric">
 						<span>Selected slot</span>
-						<strong>{recommendation?.neighborhood ? `${formatNumber(recommendation.neighborhood.longitude, 1)} deg E` : recommendation?.noVisibleAstra ? 'None visible' : 'Pick a city'}</strong>
+						<strong>
+							{recommendation?.neighborhood
+								? `${formatNumber(recommendation.neighborhood.longitude, 1)} deg E`
+								: recommendation?.noVisibleAstra
+									? 'None visible'
+									: 'Pick a city'}
+						</strong>
 					</div>
 					<div className="sat-metric">
 						<span>Elevation</span>
-						<strong>{result ? `${formatNumber(result.elevation)} deg` : recommendation?.noVisibleAstra ? 'Below horizon' : 'Pick a city'}</strong>
+						<strong>
+							{result
+								? `${formatNumber(result.elevation)} deg`
+								: recommendation?.noVisibleAstra
+									? 'Below horizon'
+									: 'Pick a city'}
+						</strong>
 					</div>
 				</div>
 			</header>
@@ -564,14 +584,22 @@ export default class App extends React.Component {
 				</div>
 				{neighborhood ? (
 					<React.Fragment>
-						<p className="sat-note">{neighborhood.description}. Selection is based on the highest elevation angle from the observer city.</p>
+						<p className="sat-note">
+							{neighborhood.description}. Selection is based on the highest elevation angle from the
+							observer city.
+						</p>
 						<p className="sat-note">Spacecraft at this slot: {neighborhood.spacecraft.join(', ')}.</p>
 						<p className="sat-note">Satellite ECEF: {formatVector(satellite)}</p>
 					</React.Fragment>
 				) : recommendation?.noVisibleAstra ? (
-					<p className="sat-note">No modeled ASTRA neighborhood is above the local horizon for this city. The best geometric candidate still points below the horizon, so a dish would point through the Earth.</p>
+					<p className="sat-note">
+						No modeled ASTRA neighborhood is above the local horizon for this city. The best geometric
+						candidate still points below the horizon, so a dish would point through the Earth.
+					</p>
 				) : (
-					<p className="sat-note">Enter a city to choose the visible ASTRA orbital neighborhood with the highest elevation.</p>
+					<p className="sat-note">
+						Enter a city to choose the visible ASTRA orbital neighborhood with the highest elevation.
+					</p>
 				)}
 			</section>
 		);
@@ -581,11 +609,12 @@ export default class App extends React.Component {
 		const city = this.state.city;
 		const matches = this.cityMatches(city.query);
 		const showMatches = this.state.typeaheadOpen && matches.length > 0;
-		const cityLoadMessage = this.state.cityLoadState === 'loading'
-			? 'Loading city index...'
-			: this.state.cityLoadState === 'error'
-				? `City search unavailable: ${this.state.cityLoadError}`
-				: 'City search uses a trimmed local index generated from the npm `cities.json` dataset. Type a city name to see matches, or enter latitude and longitude manually.';
+		const cityLoadMessage =
+			this.state.cityLoadState === 'loading'
+				? 'Loading city index...'
+				: this.state.cityLoadState === 'error'
+					? `City search unavailable: ${this.state.cityLoadError}`
+					: 'City search uses a trimmed local index generated from the npm `cities.json` dataset. Type a city name to see matches, or enter latitude and longitude manually.';
 
 		return (
 			<section className="sat-panel">
@@ -596,11 +625,13 @@ export default class App extends React.Component {
 						<input
 							id="city-query"
 							value={city.query}
-							placeholder={this.state.cityLoadState === 'loaded' ? 'Start typing a city...' : 'Loading cities...'}
+							placeholder={
+								this.state.cityLoadState === 'loaded' ? 'Start typing a city...' : 'Loading cities...'
+							}
 							autoComplete="off"
 							disabled={this.state.cityLoadState !== 'loaded'}
-							onFocus={() => this.setState({ typeaheadOpen: true })}
-							onBlur={() => window.setTimeout(() => this.setState({ typeaheadOpen: false }), 120)}
+							onFocus={() => this.setState({typeaheadOpen: true})}
+							onBlur={() => window.setTimeout(() => this.setState({typeaheadOpen: false}), 120)}
 							onChange={(event) => this.updateCityQuery(event.target.value)}
 							onKeyDown={(event) => this.handleTypeaheadKeyDown(event, matches)}
 						/>
@@ -628,7 +659,7 @@ export default class App extends React.Component {
 								type="number"
 								step="0.0001"
 								value={city.lat}
-								onChange={(event) => this.updateCity({ cityId: 'manual', lat: event.target.value })}
+								onChange={(event) => this.updateCity({cityId: 'manual', lat: event.target.value})}
 							/>
 						</div>
 						<div className="sat-field">
@@ -638,7 +669,7 @@ export default class App extends React.Component {
 								type="number"
 								step="0.0001"
 								value={city.lon}
-								onChange={(event) => this.updateCity({ cityId: 'manual', lon: event.target.value })}
+								onChange={(event) => this.updateCity({cityId: 'manual', lon: event.target.value})}
 							/>
 						</div>
 					</div>
@@ -667,7 +698,9 @@ export default class App extends React.Component {
 								onClick={() => this.selectHistory(entry)}
 							>
 								<span>{cityLabel(entry.city)}</span>
-								<strong>{entry.neighborhoodName} | {formatNumber(entry.elevation)} deg</strong>
+								<strong>
+									{entry.neighborhoodName} | {formatNumber(entry.elevation)} deg
+								</strong>
 							</button>
 						))}
 					</div>
@@ -683,7 +716,10 @@ export default class App extends React.Component {
 					<h2>Calculated View</h2>
 					<div className="sat-empty-state">
 						<strong>No visible ASTRA pointing solution</strong>
-						<p>Search for a city or enter latitude and longitude. If every modeled ASTRA slot is below the local horizon, no dish angle is recommended.</p>
+						<p>
+							Search for a city or enter latitude and longitude. If every modeled ASTRA slot is below the
+							local horizon, no dish angle is recommended.
+						</p>
 					</div>
 				</section>
 			);
@@ -695,10 +731,22 @@ export default class App extends React.Component {
 				<div className="sat-result-card sat-result-card-static">
 					<h3>{result.label}</h3>
 					<div className="sat-result-values">
-						<div><span>Azimuth</span><strong>{formatNumber(result.azimuth)} deg</strong></div>
-						<div><span>Elevation</span><strong>{formatNumber(result.elevation)} deg</strong></div>
-						<div><span>Slant range</span><strong>{formatNumber(result.range, 1)} km</strong></div>
-						<div><span>Status</span><strong>{result.visible ? 'Visible' : 'Below horizon'}</strong></div>
+						<div>
+							<span>Azimuth</span>
+							<strong>{formatNumber(result.azimuth)} deg</strong>
+						</div>
+						<div>
+							<span>Elevation</span>
+							<strong>{formatNumber(result.elevation)} deg</strong>
+						</div>
+						<div>
+							<span>Slant range</span>
+							<strong>{formatNumber(result.range, 1)} km</strong>
+						</div>
+						<div>
+							<span>Status</span>
+							<strong>{result.visible ? 'Visible' : 'Below horizon'}</strong>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -764,14 +812,8 @@ export default class App extends React.Component {
 			},
 			{
 				title: '3. Build the station-to-satellite vector',
-				formula: [
-					'$$',
-					'\\Delta\\mathbf{r}=\\mathbf{r}_{sat}-\\mathbf{r}_{station}',
-					'$$',
-				].join('\n'),
-				results: [
-					['Line-of-sight delta', formatVector(result.delta)],
-				],
+				formula: ['$$', '\\Delta\\mathbf{r}=\\mathbf{r}_{sat}-\\mathbf{r}_{station}', '$$'].join('\n'),
+				results: [['Line-of-sight delta', formatVector(result.delta)]],
 			},
 			{
 				title: '4. Rotate ECEF delta into local east, north, up axes',
@@ -849,8 +891,8 @@ export default class App extends React.Component {
 		const neighborhood = findAstraNeighborhood(MEME_COUNTER_SATELLITE_ID);
 		const satellite = satelliteEcef(neighborhood.longitude, neighborhood.altitude);
 		const cityResults = MEME_COUNTER_CITIES.map((city) => calculateCityResult(city, satellite));
-		const averageRangeMiles = cityResults
-			.reduce((sum, result) => sum + result.range * KM_TO_MILES, 0) / cityResults.length;
+		const averageRangeMiles =
+			cityResults.reduce((sum, result) => sum + result.range * KM_TO_MILES, 0) / cityResults.length;
 		const errorFactor = averageRangeMiles / MEME_CLAIMED_RANGE_MILES;
 
 		return (
@@ -860,7 +902,11 @@ export default class App extends React.Component {
 					<header className="sat-header sat-counter-hero">
 						<div className="sat-title-block">
 							<h1>The 1,397 mile satellite meme uses the wrong geometry</h1>
-							<p>The image turns local dish bearings into a flat triangle between Bristol, London, and ASTRA 28.2E. The real calculation is Earth-centered 3D geometry with a separate local horizon at each city.</p>
+							<p>
+								The image turns local dish bearings into a flat triangle between Bristol, London, and
+								ASTRA 28.2E. The real calculation is Earth-centered 3D geometry with a separate local
+								horizon at each city.
+							</p>
 						</div>
 						<div className="sat-summary">
 							<div className="sat-metric">
@@ -880,7 +926,11 @@ export default class App extends React.Component {
 					<section className="sat-panel sat-meme-reference">
 						<div>
 							<h2>The claim being checked</h2>
-							<p>The meme compares dish-pointing directions from Bristol and London, then treats them as one flat triangle. The numbers below recalculate the same ASTRA neighborhood with the app's 3D Earth-centered method.</p>
+							<p>
+								The meme compares dish-pointing directions from Bristol and London, then treats them as
+								one flat triangle. The numbers below recalculate the same ASTRA neighborhood with the
+								app's 3D Earth-centered method.
+							</p>
 						</div>
 						<img
 							src="assets/images/meme.jpg"
@@ -894,15 +944,30 @@ export default class App extends React.Component {
 								<div className="sat-counter-city" key={result.name}>
 									<h3>{result.label}</h3>
 									<div className="sat-result-values">
-										<div><span>Azimuth</span><strong>{formatNumber(result.azimuth, 2)} deg</strong></div>
-										<div><span>Elevation</span><strong>{formatNumber(result.elevation, 2)} deg</strong></div>
-										<div><span>Slant range</span><strong>{formatNumber(result.range, 1)} km</strong></div>
-										<div><span>Slant range</span><strong>{formatMiles(result.range, 1)}</strong></div>
+										<div>
+											<span>Azimuth</span>
+											<strong>{formatNumber(result.azimuth, 2)} deg</strong>
+										</div>
+										<div>
+											<span>Elevation</span>
+											<strong>{formatNumber(result.elevation, 2)} deg</strong>
+										</div>
+										<div>
+											<span>Slant range</span>
+											<strong>{formatNumber(result.range, 1)} km</strong>
+										</div>
+										<div>
+											<span>Slant range</span>
+											<strong>{formatMiles(result.range, 1)}</strong>
+										</div>
 									</div>
 								</div>
 							))}
 						</div>
-						<p className="sat-note">These values use ASTRA 2E/2F/2G at 28.2 deg east, the same orbital neighborhood shown in the image.</p>
+						<p className="sat-note">
+							These values use ASTRA 2E/2F/2G at 28.2 deg east, the same orbital neighborhood shown in the
+							image.
+						</p>
 					</section>
 					<div className="sat-counter-grid">
 						<section className="sat-panel">
@@ -910,15 +975,26 @@ export default class App extends React.Component {
 							<div className="sat-callout-list">
 								<div>
 									<strong>It flattens the Earth.</strong>
-									<p>Bristol and London do not share one horizon line. Each city has its own tangent plane, and each local vertical points away from Earth at a different angle.</p>
+									<p>
+										Bristol and London do not share one horizon line. Each city has its own tangent
+										plane, and each local vertical points away from Earth at a different angle.
+									</p>
 								</div>
 								<div>
 									<strong>It misuses azimuth bearings.</strong>
-									<p>The DishPointer values around 142.7 deg and 145.5 deg are compass directions. Turning their offsets into one planar triangle does not solve the satellite distance.</p>
+									<p>
+										The DishPointer values around 142.7 deg and 145.5 deg are compass directions.
+										Turning their offsets into one planar triangle does not solve the satellite
+										distance.
+									</p>
 								</div>
 								<div>
 									<strong>It ignores the satellite's 3D position.</strong>
-									<p>A geostationary satellite sits over the equator at a fixed longitude. The line of sight from each city has east, north, and up components, not just a flat map angle.</p>
+									<p>
+										A geostationary satellite sits over the equator at a fixed longitude. The line
+										of sight from each city has east, north, and up components, not just a flat map
+										angle.
+									</p>
 								</div>
 							</div>
 						</section>
@@ -927,23 +1003,40 @@ export default class App extends React.Component {
 							<div className="sat-callout-list">
 								<div>
 									<strong>Convert each city to WGS84 ECEF.</strong>
-									<p>The app places Bristol, London, or any selected city in an Earth-centered coordinate system using the WGS84 ellipsoid.</p>
+									<p>
+										The app places Bristol, London, or any selected city in an Earth-centered
+										coordinate system using the WGS84 ellipsoid.
+									</p>
 								</div>
 								<div>
 									<strong>Place ASTRA on the GEO ring.</strong>
-									<p>ASTRA 28.2E is modeled above the equator at 35,786 km altitude, giving a real satellite position in the same coordinate frame.</p>
+									<p>
+										ASTRA 28.2E is modeled above the equator at 35,786 km altitude, giving a real
+										satellite position in the same coordinate frame.
+									</p>
 								</div>
 								<div>
 									<strong>Compute the actual look vector.</strong>
-									<p>The app subtracts city position from satellite position, rotates the vector into the city's local east/north/up frame, and derives azimuth, elevation, and slant range.</p>
+									<p>
+										The app subtracts city position from satellite position, rotates the vector into
+										the city's local east/north/up frame, and derives azimuth, elevation, and slant
+										range.
+									</p>
 								</div>
 							</div>
 						</section>
 					</div>
 					<section className="sat-panel sat-counter-applicability">
 						<h2>What the rest of the app is for</h2>
-						<p>The main calculator applies this same geometry to any city in the city dataset or any manually entered latitude and longitude. It checks the modeled ASTRA orbital neighborhoods, rejects slots below the local horizon, and recommends the visible slot with the highest elevation.</p>
-						<a className="sat-action-link" href="#/calculator">Back to the general ASTRA calculator</a>
+						<p>
+							The main calculator applies this same geometry to any city in the city dataset or any
+							manually entered latitude and longitude. It checks the modeled ASTRA orbital neighborhoods,
+							rejects slots below the local horizon, and recommends the visible slot with the highest
+							elevation.
+						</p>
+						<a className="sat-action-link" href="#/calculator">
+							Back to the general ASTRA calculator
+						</a>
 					</section>
 				</main>
 			</div>
@@ -976,8 +1069,6 @@ export default class App extends React.Component {
 	}
 
 	render() {
-		return this.state.page === 'meme-check'
-			? this.renderMemeCounterPage()
-			: this.renderCalculatorPage();
+		return this.state.page === 'meme-check' ? this.renderMemeCounterPage() : this.renderCalculatorPage();
 	}
 }

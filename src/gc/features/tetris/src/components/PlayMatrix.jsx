@@ -1,16 +1,16 @@
-import React, { Component } from "react";
-import Matrix from "./Matrix";
-import * as consts from "../consts/consts.js"
+import React, {Component} from 'react';
+import Matrix from './Matrix';
+import * as consts from '../consts/consts.js';
 
 var counter = 0;
 
 export default class PlayMatrix extends Component {
-	constructor (props) {
+	constructor(props) {
 		super(props);
 		counter++;
-		this.uniqueId = `play-matrix-${counter}`
+		this.uniqueId = `play-matrix-${counter}`;
 
-		this.state = {matrix: [[]]}
+		this.state = {matrix: [[]]};
 		this.keyPress = this.keyPress.bind(this);
 		this.keyDown = this.keyDown.bind(this);
 		this.state = {};
@@ -21,17 +21,19 @@ export default class PlayMatrix extends Component {
 
 		if (props.delegator) {
 			props.delegator.delegateInbound(this, [
-				'drawTetronimo', 'drawBoard', 'drawShadow', 'hideShadow',
-				'hideTetronimo', 'drawWhoop',
+				'drawTetronimo',
+				'drawBoard',
+				'drawShadow',
+				'hideShadow',
+				'hideTetronimo',
+				'drawWhoop',
 			]);
 
-			props.delegator.delegateOutbound(this, [
-				'move', 'down', 'rotate', 'harddown', 'hold', 'mounted', 'escape'
-			]);
+			props.delegator.delegateOutbound(this, ['move', 'down', 'rotate', 'harddown', 'hold', 'mounted', 'escape']);
 		}
 
-		document.addEventListener('keydown', this.keyDown)
-		document.addEventListener('keypress', this.keyPress)
+		document.addEventListener('keydown', this.keyDown);
+		document.addEventListener('keypress', this.keyPress);
 		this.mounted();
 	}
 
@@ -39,15 +41,14 @@ export default class PlayMatrix extends Component {
 		if (this.props.delegator) {
 			this.props.delegator.freeDelegator();
 		}
-		document.removeEventListener('keydown', this.keyDown)
-		document.removeEventListener('keypress', this.keyPress)
+		document.removeEventListener('keydown', this.keyDown);
+		document.removeEventListener('keypress', this.keyPress);
 	}
 
 	keyDown(event) {
 		var keyID = event.keyCode;
 		var handled = true;
-		switch(keyID)
-		{
+		switch (keyID) {
 			case 27:
 				this.escape();
 				break;
@@ -61,7 +62,7 @@ export default class PlayMatrix extends Component {
 				this.move(consts.RIGHT);
 				break;
 			case 40:
-				this.down()
+				this.down();
 				break;
 			default:
 				handled = false;
@@ -76,9 +77,7 @@ export default class PlayMatrix extends Component {
 
 		var keyChar = event.key;
 
-
-		switch(keyChar)
-		{
+		switch (keyChar) {
 			case ' ':
 				this.harddown();
 				break;
@@ -112,11 +111,11 @@ export default class PlayMatrix extends Component {
 
 	drawWhoop(x, y, width, height) {
 		this.setState({
-			whoop: {x, y, width, height, start: Date.now(), opacity: 1}
+			whoop: {x, y, width, height, start: Date.now(), opacity: 1},
 		});
 
 		if (this.whoopTimer) clearInterval(this.whoopTimer);
-		this.whoopTimer = setInterval(this.whoopTick.bind(this), 50)
+		this.whoopTimer = setInterval(this.whoopTick.bind(this), 50);
 	}
 
 	whoopTick() {
@@ -128,34 +127,34 @@ export default class PlayMatrix extends Component {
 
 		var delta = Date.now() - whoop.start;
 		if (delta > timeout) {
-			this.setState({whoop: false})
+			this.setState({whoop: false});
 			clearInterval(this.whoopTimer);
 			return;
 		}
 
 		var opacity = 1 - delta / timeout;
 		whoop.opacity = opacity;
-		this.setState({whoop: whoop})
+		this.setState({whoop: whoop});
 	}
 
 	drawTetronimo(row, col, matrix, force) {
-		this.setState({tetronimo: {row, col, matrix, force}})
+		this.setState({tetronimo: {row, col, matrix, force}});
 	}
 
 	drawBoard(matrix) {
-		this.setState({matrix})
+		this.setState({matrix});
 	}
 
 	drawShadow(row, col, matrix) {
-		this.setState({shadow: {row, col, matrix}})
+		this.setState({shadow: {row, col, matrix}});
 	}
 
 	hideShadow() {
-		this.setState({shadow: false})
+		this.setState({shadow: false});
 	}
 
 	hideTetronimo() {
-		this.setState({tetronimo: false})
+		this.setState({tetronimo: false});
 	}
 
 	renderWhoop() {
@@ -167,23 +166,21 @@ export default class PlayMatrix extends Component {
 			width: width * 25 + 'px',
 			height: height * 25 + 'px',
 			opacity: opacity,
-		}
+		};
 
-		return (
-			<div className="whoop" style={styles}/>
-		)
+		return <div className="whoop" style={styles} />;
 	}
 	renderShadow() {
 		if (!this.state.shadow) return;
-		var {col: offsetX, row: offsetY, matrix} = this.state.shadow
-		return <Matrix shadow={true} offsetX={offsetX} offsetY={offsetY} matrix={matrix} />
+		var {col: offsetX, row: offsetY, matrix} = this.state.shadow;
+		return <Matrix shadow={true} offsetX={offsetX} offsetY={offsetY} matrix={matrix} />;
 	}
 
 	renderTetronimo() {
 		if (!this.state.tetronimo) return;
-		var {col: offsetX, row: offsetY, matrix} = this.state.tetronimo
+		var {col: offsetX, row: offsetY, matrix} = this.state.tetronimo;
 
-		return <Matrix className="normal tetronimo" offsetX={offsetX} offsetY={offsetY} matrix={matrix} />
+		return <Matrix className="normal tetronimo" offsetX={offsetX} offsetY={offsetY} matrix={matrix} />;
 	}
 
 	render() {
@@ -191,7 +188,7 @@ export default class PlayMatrix extends Component {
 		if (!this.state.matrix) return;
 		return (
 			<div className={className}>
-				<Matrix matrix={this.state.matrix} >
+				<Matrix matrix={this.state.matrix}>
 					{this.renderTetronimo()}
 					{this.renderShadow()}
 					{this.renderWhoop()}

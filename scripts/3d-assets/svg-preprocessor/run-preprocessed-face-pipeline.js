@@ -1,8 +1,8 @@
 import path from 'path';
 import fs from 'fs';
-import { spawnSync } from 'child_process';
-import { loadFacePreprocessingMetadata } from './face-preprocessing-metadata.js';
-import { sanitizeOutputScope } from '../shared/asset-paths.js';
+import {spawnSync} from 'child_process';
+import {loadFacePreprocessingMetadata} from './face-preprocessing-metadata.js';
+import {sanitizeOutputScope} from '../shared/asset-paths.js';
 
 const EXPORTER_BY_KIND = Object.freeze({
 	generic: 'export-preprocessed-generic-face-svg.js',
@@ -13,16 +13,14 @@ const metadataOverride = readMetadataOverride(metadataPath);
 const metadataEnv = buildMetadataEnv(metadataPath, metadataOverride);
 const metadata = loadFacePreprocessingMetadata(metadataPath);
 const requestedFaceKeys = readPositionalArguments();
-const faceKeys = requestedFaceKeys.length > 0
-	? requestedFaceKeys
-	: Object.keys(metadata);
+const faceKeys = requestedFaceKeys.length > 0 ? requestedFaceKeys : Object.keys(metadata);
 const results = [];
 
 for (const faceKey of faceKeys) {
 	const faceMetadata = metadata[faceKey];
 
 	if (!faceMetadata) {
-		results.push({ faceKey, status: 'skipped', reason: 'no-metadata' });
+		results.push({faceKey, status: 'skipped', reason: 'no-metadata'});
 		continue;
 	}
 
@@ -30,7 +28,7 @@ for (const faceKey of faceKeys) {
 	const exporter = EXPORTER_BY_KIND[exporterKind];
 
 	if (!exporter) {
-		results.push({ faceKey, status: 'skipped', reason: `unsupported-exporter-${exporterKind}` });
+		results.push({faceKey, status: 'skipped', reason: `unsupported-exporter-${exporterKind}`});
 		continue;
 	}
 
@@ -52,7 +50,7 @@ for (const faceKey of faceKeys) {
 		}
 	}
 
-	results.push({ faceKey, status, exporter: exporterKind, failedStep });
+	results.push({faceKey, status, exporter: exporterKind, failedStep});
 }
 
 console.log('\nPreprocessed face pipeline summary');
@@ -97,9 +95,7 @@ function readMetadataOverride(filename) {
 }
 
 function buildMetadataEnv(filename, override) {
-	const env = filename
-		? { FACE_PREPROCESSING_METADATA: path.resolve(process.cwd(), filename) }
-		: {};
+	const env = filename ? {FACE_PREPROCESSING_METADATA: path.resolve(process.cwd(), filename)} : {};
 	const sourceDir = override?.sourceDir;
 	const outputScope = deriveOutputScope(override);
 
@@ -148,5 +144,3 @@ function readPositionalArguments() {
 	}
 	return positional;
 }
-
-

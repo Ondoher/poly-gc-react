@@ -1,7 +1,7 @@
-import { checkBoolean, getOption, getOptions } from '../options.js';
+import {checkBoolean, getOption, getOptions} from '../options.js';
 
-describe('script shared options', function() {
-	it('converts supported boolean option values', function() {
+describe('script shared options', function () {
+	it('converts supported boolean option values', function () {
 		expect(checkBoolean(true)).toBe(true);
 		expect(checkBoolean(false)).toBe(false);
 		expect(checkBoolean('true')).toBe(true);
@@ -12,13 +12,13 @@ describe('script shared options', function() {
 		expect(checkBoolean('clear')).toBe(false);
 	});
 
-	it('leaves unsupported values unchanged', function() {
+	it('leaves unsupported values unchanged', function () {
 		expect(checkBoolean('yes')).toBe('yes');
 		expect(checkBoolean('TRUE')).toBe('TRUE');
 		expect(checkBoolean(1)).toBe(1);
 	});
 
-	it('prefers the long option name over the short option name', function() {
+	it('prefers the long option name over the short option name', function () {
 		const argv = {
 			include: 'false',
 			i: 'true',
@@ -27,7 +27,7 @@ describe('script shared options', function() {
 		expect(getOption(argv, 'include', 'i')).toBe(false);
 	});
 
-	it('reads the short option name when the long option is absent', function() {
+	it('reads the short option name when the long option is absent', function () {
 		const argv = {
 			i: 'on',
 		};
@@ -35,7 +35,7 @@ describe('script shared options', function() {
 		expect(getOption(argv, 'include', 'i')).toBe(true);
 	});
 
-	it('applies defaults for undefined options', function() {
+	it('applies defaults for undefined options', function () {
 		const defaults = {
 			include: true,
 			output: false,
@@ -56,7 +56,7 @@ describe('script shared options', function() {
 		});
 	});
 
-	it('keeps explicit false values instead of replacing them with defaults', function() {
+	it('keeps explicit false values instead of replacing them with defaults', function () {
 		const defaults = {
 			include: true,
 		};

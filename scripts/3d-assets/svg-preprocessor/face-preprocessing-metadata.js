@@ -1,13 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { ASSETS_3D_JSON_DIR, OUTPUT_3D_DIR } from '../shared/asset-paths.js';
+import {ASSETS_3D_JSON_DIR, OUTPUT_3D_DIR} from '../shared/asset-paths.js';
 
 const BASE_METADATA_PATH = path.resolve(ASSETS_3D_JSON_DIR, 'face-preprocessing-metadata.json');
-const DEFAULT_REFERENCE_METADATA_PATH = path.resolve(
-	OUTPUT_3D_DIR,
-	'metadata-inference',
-	'reference-glyphs.json',
-);
+const DEFAULT_REFERENCE_METADATA_PATH = path.resolve(OUTPUT_3D_DIR, 'metadata-inference', 'reference-glyphs.json');
 
 export function loadFacePreprocessingMetadata(metadataPath = process.env.FACE_PREPROCESSING_METADATA) {
 	const base = JSON.parse(fs.readFileSync(BASE_METADATA_PATH, 'utf8'));
@@ -18,7 +14,9 @@ export function loadFacePreprocessingMetadata(metadataPath = process.env.FACE_PR
 
 	const resolvedPath = path.resolve(process.cwd(), metadataPath);
 	if (!fs.existsSync(resolvedPath)) {
-		throw new Error(`Face preprocessing metadata override not found: ${path.relative(process.cwd(), resolvedPath)}`);
+		throw new Error(
+			`Face preprocessing metadata override not found: ${path.relative(process.cwd(), resolvedPath)}`,
+		);
 	}
 
 	const override = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
@@ -56,9 +54,7 @@ function mergeMetadataEntries(merged, entries, kind) {
 
 		merged[faceKey] = {
 			...(merged[faceKey] || {}),
-			...(kind === 'tileset'
-				? metadataFromTilesetEntry(reviewEntry)
-				: metadataFromReferenceEntry(reviewEntry)),
+			...(kind === 'tileset' ? metadataFromTilesetEntry(reviewEntry) : metadataFromReferenceEntry(reviewEntry)),
 		};
 		if (reviewEntry.exporter) {
 			merged[faceKey].exporter = normalizeExporter(reviewEntry.exporter);
@@ -86,39 +82,38 @@ function metadataFromReferenceEntry(entry) {
 	if (entry.sourceContainsLabel != null) {
 		metadata.sourceContainsLabel = Boolean(entry.sourceContainsLabel);
 	}
-	const sourceNumberPresent = entry.number?.sourcePresent ?? (
-		entry.sourceContainsLabel != null ? Boolean(entry.sourceContainsLabel) : null
-	);
+	const sourceNumberPresent =
+		entry.number?.sourcePresent ?? (entry.sourceContainsLabel != null ? Boolean(entry.sourceContainsLabel) : null);
 
 	if (entry.number || entry.character) {
 		metadata.referenceGlyphs = {
 			...(entry.number
 				? {
-					number: {
-						present: Boolean(entry.number.present),
-						location: entry.number.location || null,
-						color: entry.number.color || null,
-						bounds: entry.number.bounds || null,
-					},
-				}
+						number: {
+							present: Boolean(entry.number.present),
+							location: entry.number.location || null,
+							color: entry.number.color || null,
+							bounds: entry.number.bounds || null,
+						},
+					}
 				: {}),
 			...(entry.character
 				? {
-					character: {
-						present: Boolean(entry.character.present),
-						location: entry.character.location || null,
-						color: entry.character.color || null,
-						bounds: entry.character.bounds || null,
-					},
-				}
+						character: {
+							present: Boolean(entry.character.present),
+							location: entry.character.location || null,
+							color: entry.character.color || null,
+							bounds: entry.character.bounds || null,
+						},
+					}
 				: {}),
 		};
 	}
 
 	if (entry.number || entry.character) {
 		const glyphOutputColors = {
-			...(outputColor(entry.number) ? { number: outputColor(entry.number) } : {}),
-			...(outputColor(entry.character) ? { character: outputColor(entry.character) } : {}),
+			...(outputColor(entry.number) ? {number: outputColor(entry.number)} : {}),
+			...(outputColor(entry.character) ? {character: outputColor(entry.character)} : {}),
 		};
 
 		if (Object.keys(glyphOutputColors).length > 0) {
@@ -129,35 +124,35 @@ function metadataFromReferenceEntry(entry) {
 			...(metadata.glyphLayout || {}),
 			...(entry.number
 				? {
-					number: {
-						...(entry.number.location
-							? { referenceCorner: locationToCorner(entry.number.location) }
-							: {}),
-						...(entry.number.outputPresent != null
-							? { outputPresent: Boolean(entry.number.outputPresent) }
-							: {}),
-						...(sourceNumberPresent != null
-							? {
-								sourcePresent: Boolean(sourceNumberPresent),
-								...(sourceNumberPresent && entry.number.location
-									? { sourceCorner: locationToCorner(entry.number.location) }
-									: {}),
-							}
-							: {}),
-					},
-				}
+						number: {
+							...(entry.number.location
+								? {referenceCorner: locationToCorner(entry.number.location)}
+								: {}),
+							...(entry.number.outputPresent != null
+								? {outputPresent: Boolean(entry.number.outputPresent)}
+								: {}),
+							...(sourceNumberPresent != null
+								? {
+										sourcePresent: Boolean(sourceNumberPresent),
+										...(sourceNumberPresent && entry.number.location
+											? {sourceCorner: locationToCorner(entry.number.location)}
+											: {}),
+									}
+								: {}),
+						},
+					}
 				: {}),
 			...(entry.character
 				? {
-					character: {
-						...(entry.character.location
-							? { referenceCorner: locationToCorner(entry.character.location) }
-							: {}),
-						...(entry.character.outputPresent != null
-							? { outputPresent: Boolean(entry.character.outputPresent) }
-							: {}),
-					},
-				}
+						character: {
+							...(entry.character.location
+								? {referenceCorner: locationToCorner(entry.character.location)}
+								: {}),
+							...(entry.character.outputPresent != null
+								? {outputPresent: Boolean(entry.character.outputPresent)}
+								: {}),
+						},
+					}
 				: {}),
 		};
 	}
@@ -175,12 +170,12 @@ function metadataFromTilesetEntry(entry) {
 	}
 
 	const sourceBackgroundColors = normalizeColorList(
-		entry.sourceBackgroundColors
-			|| entry.sourceTileBackgroundColors
-			|| entry.tileBackgroundColors
-			|| entry.sourceBackgroundColor
-			|| entry.sourceTileBackgroundColor
-			|| entry.tileBackgroundColor,
+		entry.sourceBackgroundColors ||
+			entry.sourceTileBackgroundColors ||
+			entry.tileBackgroundColors ||
+			entry.sourceBackgroundColor ||
+			entry.sourceTileBackgroundColor ||
+			entry.tileBackgroundColor,
 	);
 
 	if (sourceBackgroundColors.length > 0) {
@@ -209,8 +204,8 @@ function metadataFromTilesetEntry(entry) {
 
 	if (entry.number || entry.character) {
 		const glyphOutputColors = {
-			...(outputColor(entry.number) ? { number: outputColor(entry.number) } : {}),
-			...(outputColor(entry.character) ? { character: outputColor(entry.character) } : {}),
+			...(outputColor(entry.number) ? {number: outputColor(entry.number)} : {}),
+			...(outputColor(entry.character) ? {character: outputColor(entry.character)} : {}),
 		};
 
 		if (Object.keys(glyphOutputColors).length > 0) {
@@ -221,35 +216,35 @@ function metadataFromTilesetEntry(entry) {
 			...(metadata.glyphLayout || {}),
 			...(entry.number
 				? {
-					number: {
-						sourcePresent: sourceHasNumber,
-						...(entry.number.outputPresent != null
-							? { outputPresent: Boolean(entry.number.outputPresent) }
-							: {}),
-						...(sourceHasNumber
-							? {
-								sourceCorner: locationToCorner(entry.number.location),
-								sourceBounds: entry.number.bounds || null,
-							}
-							: {}),
-					},
-				}
+						number: {
+							sourcePresent: sourceHasNumber,
+							...(entry.number.outputPresent != null
+								? {outputPresent: Boolean(entry.number.outputPresent)}
+								: {}),
+							...(sourceHasNumber
+								? {
+										sourceCorner: locationToCorner(entry.number.location),
+										sourceBounds: entry.number.bounds || null,
+									}
+								: {}),
+						},
+					}
 				: {}),
 			...(entry.character
 				? {
-					character: {
-						sourcePresent: sourceHasCharacter,
-						...(entry.character.outputPresent != null
-							? { outputPresent: Boolean(entry.character.outputPresent) }
-							: {}),
-						...(sourceHasCharacter
-							? {
-								sourceCorner: locationToCorner(entry.character.location),
-								sourceBounds: entry.character.bounds || null,
-							}
-							: {}),
-					},
-				}
+						character: {
+							sourcePresent: sourceHasCharacter,
+							...(entry.character.outputPresent != null
+								? {outputPresent: Boolean(entry.character.outputPresent)}
+								: {}),
+							...(sourceHasCharacter
+								? {
+										sourceCorner: locationToCorner(entry.character.location),
+										sourceBounds: entry.character.bounds || null,
+									}
+								: {}),
+						},
+					}
 				: {}),
 		};
 	}
@@ -269,9 +264,7 @@ function locationToCorner(location) {
 }
 
 function outputColor(entrySection) {
-	return typeof entrySection?.outputColor === 'string'
-		? entrySection.outputColor.trim()
-		: null;
+	return typeof entrySection?.outputColor === 'string' ? entrySection.outputColor.trim() : null;
 }
 
 function normalizeColorList(value) {
@@ -280,7 +273,6 @@ function normalizeColorList(value) {
 	}
 
 	return (Array.isArray(value) ? value : [value])
-		.map((color) => typeof color === 'string' ? color.trim().toLowerCase() : null)
+		.map((color) => (typeof color === 'string' ? color.trim().toLowerCase() : null))
 		.filter(Boolean);
 }
-

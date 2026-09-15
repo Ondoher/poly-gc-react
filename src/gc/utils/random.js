@@ -21,7 +21,7 @@ class Random {
 	 * @param {Number} value for the seed,
 	 */
 	randomize(value) {
-		value = (value === undefined) ? Date.now() : value;
+		value = value === undefined ? Date.now() : value;
 
 		this.randSeed = value;
 	}
@@ -36,16 +36,15 @@ class Random {
 	 * @returns {Number} the randomized value as either an integer or a decimal
 	 *     value depending on how it was called.
 	 */
-	random(limit)
-	{
+	random(limit) {
 		var randPow = Math.pow(2, -31);
 		var randLimit = Math.pow(2, 31);
 		var magic = 0x8088405;
 		var rand = this.randSeed * magic + 1;
 
-		this.randSeed = rand % randLimit
+		this.randSeed = rand % randLimit;
 
-		rand = rand % randLimit
+		rand = rand % randLimit;
 		rand = rand * randPow;
 
 		if (limit) {
@@ -69,7 +68,7 @@ class Random {
 	 */
 	randomCurve(dice, faces, zeroBased = false) {
 		let result = 0;
-		let adjust = zeroBased ? 0 : 1
+		let adjust = zeroBased ? 0 : 1;
 		for (let idx = 0; idx < dice; idx++) {
 			result += this.random(faces) + adjust;
 		}
@@ -195,7 +194,7 @@ class Random {
 
 		let width = end - start;
 		let center = mean ?? (start + end) / 2;
-		let spread = stddev ?? (width / 6);
+		let spread = stddev ?? width / 6;
 
 		while (true) {
 			let value = this.randomNormalInt(center, spread);
@@ -216,8 +215,6 @@ class Random {
 	randomBell(start, end) {
 		return this.randomNormalRange(start, end);
 	}
-
-
 
 	/**
 	 * call this method to pick a random number from an array and remove it
@@ -252,10 +249,7 @@ class Random {
 			return [this.pickOne(list)];
 		}
 
-		return [
-			this.pickOne(list),
-			this.pickOne(list)
-		]
+		return [this.pickOne(list), this.pickOne(list)];
 	}
 
 	/**
@@ -271,14 +265,13 @@ class Random {
 	 */
 	pick(count, list) {
 		let result = [];
-		let limit = Math.min(list.length, count)
-		for(let idx = 0; idx < limit; idx++) {
+		let limit = Math.min(list.length, count);
+		for (let idx = 0; idx < limit; idx++) {
 			result.push(this.pickOne(list));
 		}
 
 		return result;
 	}
-
 
 	/**
 	 * Call this method to randomly pick a set of item pairs. The items
@@ -295,7 +288,7 @@ class Random {
 		/** @type {T[][]} */
 		let result = [];
 
-		for(let idx = 0; idx < count; idx++) {
+		for (let idx = 0; idx < count; idx++) {
 			result.push(this.pickPair(list));
 		}
 
@@ -337,7 +330,6 @@ class Random {
 		}
 
 		return [list[first], list[second]];
-
 	}
 
 	/**
@@ -351,7 +343,7 @@ class Random {
 	 * return {T[]}
 	 */
 	chooseRange(count, list) {
-		let start = this.random(list.length) -  count;
+		let start = this.random(list.length) - count;
 
 		return list.slice(start, start + count).join(' ');
 	}
@@ -367,14 +359,14 @@ class Random {
 	 *
 	 * @returns {T[]} the list of items chosen
 	 */
-	choose(count, list){
+	choose(count, list) {
 		let result = [];
-		for(let idx = 0; idx < count; idx++) {
+		for (let idx = 0; idx < count; idx++) {
 			result.push(this.chooseOne(list));
 		}
 
 		return result;
 	}
-};
+}
 
 export default new Random();

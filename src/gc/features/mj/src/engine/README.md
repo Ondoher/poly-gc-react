@@ -13,20 +13,20 @@ choice landscape around that solution.
 
 - [Problem Space](#problem-space)
 - [Overview](#overview)
-  - [Building Backward: Generation](#building-backward-generation)
-  - [Coming Back Forward: Face Assignment](#coming-back-forward-face-assignment)
-  - [End Result](#end-result)
+    - [Building Backward: Generation](#building-backward-generation)
+    - [Coming Back Forward: Face Assignment](#coming-back-forward-face-assignment)
+    - [End Result](#end-result)
 - [Analytic Targets](#analytic-targets)
-  - [Known Valid Solutions](#known-valid-solutions)
-  - [Playout Solve Rate](#playout-solve-rate)
-  - [Playout Dead-End Rate](#playout-dead-end-rate)
-  - [Playout Average Remaining Tiles](#playout-average-remaining-tiles)
-  - [P75 Dead-End Remaining Tiles](#p75-dead-end-remaining-tiles)
-  - [Initial Downstream Dead-End Spread](#initial-downstream-dead-end-spread)
-  - [Initial Downstream Remaining Spread](#initial-downstream-remaining-spread)
-  - [Search Consequential Pair-Choice States](#search-consequential-pair-choice-states)
-  - [Score](#score)
-  - [Brutality](#brutality)
+    - [Known Valid Solutions](#known-valid-solutions)
+    - [Playout Solve Rate](#playout-solve-rate)
+    - [Playout Dead-End Rate](#playout-dead-end-rate)
+    - [Playout Average Remaining Tiles](#playout-average-remaining-tiles)
+    - [P75 Dead-End Remaining Tiles](#p75-dead-end-remaining-tiles)
+    - [Initial Downstream Dead-End Spread](#initial-downstream-dead-end-spread)
+    - [Initial Downstream Remaining Spread](#initial-downstream-remaining-spread)
+    - [Search Consequential Pair-Choice States](#search-consequential-pair-choice-states)
+    - [Score](#score)
+    - [Brutality](#brutality)
 - [Current Level Ladder](#current-level-ladder)
 - [Current Metric Shape](#current-metric-shape)
 - [Outcome Summary](#outcome-summary)
@@ -463,80 +463,80 @@ stacking signals to make it a strong hard-side choice.
 The factors mean:
 
 - `freedCount`
-  - how many new tiles become open if this candidate is removed
-  - this is the raw "what did this move unlock?" count
-  - higher values usually mean the board opens up and becomes easier to manage
+    - how many new tiles become open if this candidate is removed
+    - this is the raw "what did this move unlock?" count
+    - higher values usually mean the board opens up and becomes easier to manage
 
 - `freedRank`
-  - the rank of `freedCount` within the current open-candidate set
-  - lower unlock counts get a larger rank number
-  - this is the base structural opinion of the picker: low-unlock removals are
-    naturally tighter and therefore heavier on the hard side
+    - the rank of `freedCount` within the current open-candidate set
+    - lower unlock counts get a larger rank number
+    - this is the base structural opinion of the picker: low-unlock removals are
+      naturally tighter and therefore heavier on the hard side
 
 - `openPressure`
-  - an extra difficulty-scaled multiplier derived from `freedCount`
-  - on the easy side it stays neutral
-  - on the hard side it increasingly rewards candidates that open fewer tiles
-  - this is not the same thing as `freedRank`: `freedRank` is always present,
-    while `openPressure` is the explicit hard-side amplifier
+    - an extra difficulty-scaled multiplier derived from `freedCount`
+    - on the easy side it stays neutral
+    - on the hard side it increasingly rewards candidates that open fewer tiles
+    - this is not the same thing as `freedRank`: `freedRank` is always present,
+      while `openPressure` is the explicit hard-side amplifier
 
 - `z`
-  - the tile's current stack level from the board position
-  - lower `z` means closer to the base of the layout, higher `z` means nearer
-    the top
+    - the tile's current stack level from the board position
+    - lower `z` means closer to the base of the layout, higher `z` means nearer
+      the top
 
 - `zWeight`
-  - calculated as a fractional stack position: `(z + 0.5) / highestZOrder`
-  - lower layers are below `0.5`, higher layers are above `0.5`
-  - the midpoint therefore stays fractional instead of going negative
+    - calculated as a fractional stack position: `(z + 0.5) / highestZOrder`
+    - lower layers are below `0.5`, higher layers are above `0.5`
+    - the midpoint therefore stays fractional instead of going negative
 
 - `zPressure`
-  - converts the fractional `zWeight` into a centered positive multiplier using
-    difficulty bias
-  - easy levels make higher-stack tiles lighter and lower support tiles heavier
-  - hard levels make higher-stack tiles heavier and lower support tiles lighter
-  - neutral difficulty keeps z order close to a no-op
+    - converts the fractional `zWeight` into a centered positive multiplier using
+      difficulty bias
+    - easy levels make higher-stack tiles lighter and lower support tiles heavier
+    - hard levels make higher-stack tiles heavier and lower support tiles lighter
+    - neutral difficulty keeps z order close to a no-op
 
 - `horizontalIntersections`
-  - how many reference-row masks the candidate intersects on the same level
-  - this measures horizontal entanglement with tiles already chosen for the
-    current pair or suspension step
-  - more intersections imply that the candidate lives in the same local lane as
-    the reference choice
+    - how many reference-row masks the candidate intersects on the same level
+    - this measures horizontal entanglement with tiles already chosen for the
+      current pair or suspension step
+    - more intersections imply that the candidate lives in the same local lane as
+      the reference choice
 
 - `verticalIntersections`
-  - how many quarter-overlap masks the candidate intersects in x/y against the
-    reference tiles
-  - this measures vertical and offset overlap pressure, which tends to be more
-    structurally significant than simple same-row overlap
-  - the default vertical multiplier is stronger than the horizontal one because
-    quarter overlaps often imply more consequential later accessibility
+    - how many quarter-overlap masks the candidate intersects in x/y against the
+      reference tiles
+    - this measures vertical and offset overlap pressure, which tends to be more
+      structurally significant than simple same-row overlap
+    - the default vertical multiplier is stronger than the horizontal one because
+      quarter overlaps often imply more consequential later accessibility
 
 - `balanceMargin`
-  - how far the post-removal board would remain from the dominant-stack danger
-    condition
-  - larger margin means safer and more balanced
-  - smaller margin means the board is closer to an end-shape that would become
-    structurally risky
+    - how far the post-removal board would remain from the dominant-stack danger
+      condition
+    - larger margin means safer and more balanced
+    - smaller margin means the board is closer to an end-shape that would become
+      structurally risky
 
 - `balancePressure`
-  - a hard-side multiplier derived from `balanceMargin`
-  - neutral unless explicit balance pressure is enabled
-  - once active, it rewards candidates that move closer to the balance edge
-    without crossing into an invalid dominant-stack state
+    - a hard-side multiplier derived from `balanceMargin`
+    - neutral unless explicit balance pressure is enabled
+    - once active, it rewards candidates that move closer to the balance edge
+      without crossing into an invalid dominant-stack state
 
 - `shortHorizonMoves`, `shortHorizonRemainingTiles`, `shortHorizonCollapsed`
-  - probe outputs from a small greedy local simulation after temporarily taking
-    the candidate
-  - these are not used directly as the weight, but they describe why the
-    resulting `shortHorizonPressure` was assigned
+    - probe outputs from a small greedy local simulation after temporarily taking
+      the candidate
+    - these are not used directly as the weight, but they describe why the
+      resulting `shortHorizonPressure` was assigned
 
 - `shortHorizonPressure`
-  - neutral unless the short-horizon probe is enabled and the probe collapses
-    quickly
-  - earlier collapses produce larger hard-side pressure
-  - this is the only picker factor that explicitly asks "does this choice seem
-    to make the near future run out of air?"
+    - neutral unless the short-horizon probe is enabled and the probe collapses
+      quickly
+    - earlier collapses produce larger hard-side pressure
+    - this is the only picker factor that explicitly asks "does this choice seem
+      to make the near future run out of air?"
 
 The practical interpretation is:
 
@@ -686,14 +686,14 @@ the raw count suggests.
 Two suspension thresholds protect these late-board states:
 
 - `suspendAtEffectiveOpen`
-  - do not create a new suspension unless the board still has enough
-    uncommitted open space
-  - this prevents the generator from over-reserving the frontier
+    - do not create a new suspension unless the board still has enough
+      uncommitted open space
+    - this prevents the generator from over-reserving the frontier
 
 - `forceReleaseAtEffectiveOpen`
-  - if effective open space gets too low, release an existing suspension early
-  - this gives the board back a usable match before the frontier hardens too
-    far
+    - if effective open space gets too low, release an existing suspension early
+    - this gives the board back a usable match before the frontier hardens too
+      far
 
 These are not just arbitrary caps. They are late-board shape controls. Their
 job is to let suspension create delayed pressure without letting the generator
@@ -714,15 +714,15 @@ than a satisfying difficult one.
 So the engine tries to distinguish between:
 
 - good hard end states
-  - few open tiles
-  - tight order pressure
-  - meaningful consequence for wrong late choices
-  - still structurally valid if the authored line is followed
+    - few open tiles
+    - tight order pressure
+    - meaningful consequence for wrong late choices
+    - still structurally valid if the authored line is followed
 
 - bad hard end states
-  - few open tiles because too many matches were over-reserved
-  - dominant-stack geometry
-  - terminal imbalance rather than authored pressure
+    - few open tiles because too many matches were over-reserved
+    - dominant-stack geometry
+    - terminal imbalance rather than authored pressure
 
 That distinction matters a lot in tuning. The goal is not simply to make the
 late board sparse. The goal is to make it sparse in a way that still preserves
@@ -734,17 +734,17 @@ not to a malformed final shape.
 This is why the late-board metrics matter so much:
 
 - `Playout average remaining tiles`
-  - tells us how early bad lines are dying
+    - tells us how early bad lines are dying
 
 - `P75 dead-end remaining tiles`
-  - tells us how harsh the upper tier of those bad failures is
+    - tells us how harsh the upper tier of those bad failures is
 
 - dominant-stack risk metrics
-  - tell us whether the board is tightening into authored pressure or into a
-    structurally dubious shape
+    - tell us whether the board is tightening into authored pressure or into a
+      structurally dubious shape
 
 - known-solution late branching
-  - tells us how constrained the intended ending actually is
+    - tells us how constrained the intended ending actually is
 
 Put differently: low open-tile counts are good difficulty material only if the
 remaining board shape is still honest. The endgame work in this engine is about
@@ -979,13 +979,13 @@ These settings are the current recommended starting point. They were sampled on
 turtle boards `1..20` with analysis depth `3`, state cap `500`, `16` playouts,
 and `2` pair-choice playouts.
 
-| Level | Generation Difficulty | Suspension | Tile Picker Rules | Face Assignment | Face Avoidance |
-| --- | ---: | --- | --- | --- | --- |
-| Easy | `0` | off | default | `preferredMultiplier: 0.5` | off |
-| Standard | `0.35` | off | default | `preferredMultiplier: 0.5` | off |
-| Challenging | `0.55` | aggressive | default | `preferredMultiplier: 0.5` | off |
-| Expert | `0.75` | aggressive | `openPressureMultiplier: 1`, `maxFreedPressure: 6`, `balancePressureMultiplier: 1`, `maxBalanceMargin: 48` | `preferredMultiplier: 0.33` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
-| Nightmare | `1` | aggressive with `forceReleaseAtEffectiveOpen: 3`, `suspendAtEffectiveOpen: 5` | Expert rules plus `shortHorizonProbeMoves: 8`, `shortHorizonPressureMultiplier: 1` | `preferredMultiplier: 0.33` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
+| Level       | Generation Difficulty | Suspension                                                                    | Tile Picker Rules                                                                                          | Face Assignment             | Face Avoidance                                     |
+| ----------- | --------------------: | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------- | -------------------------------------------------- |
+| Easy        |                   `0` | off                                                                           | default                                                                                                    | `preferredMultiplier: 0.5`  | off                                                |
+| Standard    |                `0.35` | off                                                                           | default                                                                                                    | `preferredMultiplier: 0.5`  | off                                                |
+| Challenging |                `0.55` | aggressive                                                                    | default                                                                                                    | `preferredMultiplier: 0.5`  | off                                                |
+| Expert      |                `0.75` | aggressive                                                                    | `openPressureMultiplier: 1`, `maxFreedPressure: 6`, `balancePressureMultiplier: 1`, `maxBalanceMargin: 48` | `preferredMultiplier: 0.33` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
+| Nightmare   |                   `1` | aggressive with `forceReleaseAtEffectiveOpen: 3`, `suspendAtEffectiveOpen: 5` | Expert rules plus `shortHorizonProbeMoves: 8`, `shortHorizonPressureMultiplier: 1`                         | `preferredMultiplier: 0.33` | `weight: 1`, `suspensionWeight: 3`, `maxWeight: 8` |
 
 ### Easy
 
@@ -1033,17 +1033,17 @@ Expert.
 
 The latest 20-board turtle sweep produced this shape:
 
-| Metric | Random | Easy | Standard | Challenging | Expert | Nightmare |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| [Playout solve rate](#playout-solve-rate) | `3.8%` | `47.5%` | `37.8%` | `18.1%` | `17.5%` | `7.2%` |
-| [Playout dead-end rate](#playout-dead-end-rate) | `96.3%` | `52.5%` | `62.2%` | `81.9%` | `82.5%` | `92.8%` |
-| [Playout average remaining tiles](#playout-average-remaining-tiles) | `59.07` | `15.06` | `18.15` | `40.63` | `41.77` | `49.49` |
-| [P75 dead-end remaining tiles](#p75-dead-end-remaining-tiles) | `73.40` | `34.40` | `40.40` | `64.30` | `66.50` | `69.60` |
-| [Initial downstream dead-end spread](#initial-downstream-dead-end-spread) | `6.9%` | `57.2%` | `53.6%` | `40.2%` | `30.9%` | `19.5%` |
-| [Initial downstream remaining spread](#initial-downstream-remaining-spread) | `21.99` | `24.16` | `21.68` | `35.04` | `34.20` | `36.50` |
-| [Search consequential pair-choice states](#search-consequential-pair-choice-states) | `129.20` | `496.10` | `420.80` | `455.40` | `364.55` | `321.35` |
-| [Score](#score) avg | `37.00` | `44.75` | `39.50` | `43.75` | `40.90` | `39.85` |
-| [Brutality](#brutality) avg | `51.75` | `31.54` | `37.05` | `51.41` | `52.13` | `57.25` |
+| Metric                                                                              |   Random |     Easy | Standard | Challenging |   Expert | Nightmare |
+| ----------------------------------------------------------------------------------- | -------: | -------: | -------: | ----------: | -------: | --------: |
+| [Playout solve rate](#playout-solve-rate)                                           |   `3.8%` |  `47.5%` |  `37.8%` |     `18.1%` |  `17.5%` |    `7.2%` |
+| [Playout dead-end rate](#playout-dead-end-rate)                                     |  `96.3%` |  `52.5%` |  `62.2%` |     `81.9%` |  `82.5%` |   `92.8%` |
+| [Playout average remaining tiles](#playout-average-remaining-tiles)                 |  `59.07` |  `15.06` |  `18.15` |     `40.63` |  `41.77` |   `49.49` |
+| [P75 dead-end remaining tiles](#p75-dead-end-remaining-tiles)                       |  `73.40` |  `34.40` |  `40.40` |     `64.30` |  `66.50` |   `69.60` |
+| [Initial downstream dead-end spread](#initial-downstream-dead-end-spread)           |   `6.9%` |  `57.2%` |  `53.6%` |     `40.2%` |  `30.9%` |   `19.5%` |
+| [Initial downstream remaining spread](#initial-downstream-remaining-spread)         |  `21.99` |  `24.16` |  `21.68` |     `35.04` |  `34.20` |   `36.50` |
+| [Search consequential pair-choice states](#search-consequential-pair-choice-states) | `129.20` | `496.10` | `420.80` |    `455.40` | `364.55` |  `321.35` |
+| [Score](#score) avg                                                                 |  `37.00` |  `44.75` |  `39.50` |     `43.75` |  `40.90` |   `39.85` |
+| [Brutality](#brutality) avg                                                         |  `51.75` |  `31.54` |  `37.05` |     `51.41` |  `52.13` |   `57.25` |
 
 The score column does not fully express the intended progression. For
 human-facing difficulty, the more important pattern is:
@@ -1085,7 +1085,7 @@ becomes. The result is not just solvable generation, but authored difficulty.
 - `agents/topics/difficulty/strategy-advice-proxy-research.md` summarizes public
   Mahjong Solitaire strategy advice and maps repeated human-facing themes back
   to the current heuristics.
-- [engine-design-notes.md](/c:/dev/poly-gc-react/agents/topics/difficulty/engine-design-notes.md) holds
+- [Engine Design Notes](/c:/dev/poly-gc-react/agents/topics/products/game-collection/mahjongg-solitaire/engine/design-notes.md) holds
   design framing, cleanup ideas, and future considerations.
 - `scripts/difficulty/cli.js` runs direct board analysis.
 - `scripts/difficulty/tune-levels.js` runs the current ladder comparison.

@@ -6,11 +6,7 @@
  * - **experienced** - the player considers themselves highly experienced
  * - **""** - no skill level was selected
  */
-type MjFeedbackSkillLevel =
-	| "beginner"
-	| "intermediate"
-	| "experienced"
-	| "";
+type MjFeedbackSkillLevel = 'beginner' | 'intermediate' | 'experienced' | '';
 
 /**
  * Defines how difficult the player felt the board was.
@@ -20,11 +16,7 @@ type MjFeedbackSkillLevel =
  * - **too-hard** - the board felt harder than the player wanted
  * - **""** - no difficulty rating was selected
  */
-type MjFeedbackDifficultyFeeling =
-	| "too-easy"
-	| "about-right"
-	| "too-hard"
-	| "";
+type MjFeedbackDifficultyFeeling = 'too-easy' | 'about-right' | 'too-hard' | '';
 
 /**
  * Defines how fair or frustrating the player felt the board was.
@@ -34,11 +26,7 @@ type MjFeedbackDifficultyFeeling =
  * - **very-frustrating** - the board felt strongly frustrating
  * - **""** - no fairness rating was selected
  */
-type MjFeedbackFairnessFeeling =
-	| "fair"
-	| "frustrating"
-	| "very-frustrating"
-	| "";
+type MjFeedbackFairnessFeeling = 'fair' | 'frustrating' | 'very-frustrating' | '';
 
 /**
  * This is the compact gameplay session snapshot that can optionally travel
@@ -58,11 +46,11 @@ type MjFeedbackContext = {
 	elapsedTimeMs: number;
 
 	/** The terminal result for the session when one is known. */
-	result: "won" | "lost" | "abandoned" | "";
+	result: 'won' | 'lost' | 'abandoned' | '';
 
 	/** The replayable sequence of tile-pair actions recorded for the session. */
 	tileSequence: [number, number][];
-}
+};
 
 /**
  * This is the feedback payload shared between the MJ frontend and the GC server.
@@ -113,7 +101,7 @@ interface MjFeedbackSubmitResult {
 	data?: object;
 
 	/** Identifies a client-side failure mode such as a thrown fetch exception. */
-	failureMode?: "exception";
+	failureMode?: 'exception';
 
 	/** Carries the original thrown error when the submit request fails locally. */
 	error?: unknown;

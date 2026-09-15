@@ -1,5 +1,5 @@
 import React from 'react';
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 import SourceAssignmentPage from '../components/SourceAssignmentPage.jsx';
 
 export default class SourceAssignmentView extends Service {

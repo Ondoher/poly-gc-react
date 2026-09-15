@@ -1,34 +1,46 @@
-import fs from "node:fs/promises";
-import crypto from "node:crypto";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import {
-	normalizePath,
-	resolvePath,
-} from "../../shared/paths.js";
+import fs from 'node:fs/promises';
+import crypto from 'node:crypto';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {normalizePath, resolvePath} from '../../shared/paths.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-export const BASE_DATA = path.join(here, "..", "..", "data", "asset-pipeline");
-export const BASE_OUTPUT = path.join(here, "..", "..", "output", "asset-pipeline");
-export const BASE_REFERENCE = path.join(BASE_DATA, "references");
-export const PIPELINE_BOOTSTRAP = path.join(BASE_DATA, "bootstrap");
-export const PIPELINE_MANIFESTS = path.join(BASE_DATA, "manifests");
-export const PIPELINE_SOURCE_SVGS = path.join(BASE_OUTPUT, "source-svgs");
-export const PIPELINE_PREPARED_SVGS = path.join(BASE_OUTPUT, "prepared-svgs");
+export const BASE_DATA = path.join(here, '..', '..', 'data', 'asset-pipeline');
+export const BASE_OUTPUT = path.join(here, '..', '..', 'output', 'asset-pipeline');
+export const BASE_REFERENCE = path.join(BASE_DATA, 'references');
+export const PIPELINE_BOOTSTRAP = path.join(BASE_DATA, 'bootstrap');
+export const PIPELINE_MANIFESTS = path.join(BASE_DATA, 'manifests');
+export const PIPELINE_SOURCE_SVGS = path.join(BASE_OUTPUT, 'source-svgs');
+export const PIPELINE_PREPARED_SVGS = path.join(BASE_OUTPUT, 'prepared-svgs');
 
 const SCHEMA_VERSION = 3;
-const VALID_BINDING_STRENGTHS = new Set(["none", "tentative", "strong", "accepted"]);
-const DATE_FIELD_NAMES = new Set(["generatedOn", "updatedOn", "acceptedOn"]);
-const GENERATED_ASSET_STAGE_IDS = Object.freeze(["preview-svg", "cutter-2d", "svg-cutter", "stamped-body", "colored-inlay", "preview-png"]);
+const VALID_BINDING_STRENGTHS = new Set(['none', 'tentative', 'strong', 'accepted']);
+const DATE_FIELD_NAMES = new Set(['generatedOn', 'updatedOn', 'acceptedOn']);
+const GENERATED_ASSET_STAGE_IDS = Object.freeze([
+	'preview-svg',
+	'cutter-2d',
+	'svg-cutter',
+	'stamped-body',
+	'colored-inlay',
+	'preview-png',
+]);
 const GENERATED_ASSET_STAGE_VERSIONS = Object.freeze({
-	"cutter-2d": 2,
-	"svg-cutter": 3,
-	"stamped-body": 3,
-	"colored-inlay": 5,
-	"preview-png": 5,
+	'cutter-2d': 2,
+	'svg-cutter': 3,
+	'stamped-body': 3,
+	'colored-inlay': 5,
+	'preview-png': 5,
 });
-const REQUIRED_GENERATED_ASSET_ARTIFACTS = Object.freeze(["cutterSvg", "cutterMetadata", "stampedModel", "stampedMetadata", "inlayModel", "inlayMetadata", "previewPng"]);
+const REQUIRED_GENERATED_ASSET_ARTIFACTS = Object.freeze([
+	'cutterSvg',
+	'cutterMetadata',
+	'stampedModel',
+	'stampedMetadata',
+	'inlayModel',
+	'inlayMetadata',
+	'previewPng',
+]);
 
 /**
  * Constructor options for a tileset pipeline model.
@@ -140,11 +152,11 @@ export class PipelineModel {
 	 */
 	async start() {
 		this.pipelineDir = path.join(BASE_OUTPUT, this.tileSetName);
-		this.pipelineFilename = path.join(this.pipelineDir, "pipeline.json");
+		this.pipelineFilename = path.join(this.pipelineDir, 'pipeline.json');
 		this.referenceDir = path.join(BASE_REFERENCE, this.referenceName);
-		this.faceDir = path.join(this.referenceDir, "faces");
-		this.referenceFile = path.join(this.referenceDir, "reference.json");
-		this.tileSetBootstrapFile = path.join(PIPELINE_BOOTSTRAP, "pipeline.json");
+		this.faceDir = path.join(this.referenceDir, 'faces');
+		this.referenceFile = path.join(this.referenceDir, 'reference.json');
+		this.tileSetBootstrapFile = path.join(PIPELINE_BOOTSTRAP, 'pipeline.json');
 
 		await this.ensureDirectories();
 
@@ -153,13 +165,13 @@ export class PipelineModel {
 		this.checkFile(this.reference, this.referenceFile);
 		this.checkFile(this.bootstrap, this.tileSetBootstrapFile);
 
-		this.pipelineState = await this.fileExists(this.pipelineFilename)
+		this.pipelineState = (await this.fileExists(this.pipelineFilename))
 			? await this.safeLoadJson(this.pipelineFilename)
 			: false;
 
 		if (this.pipelineState === false) {
 			this.pipelineState = await this.buildPipelineStateFromBootstrap();
-			await this.save({ preserveCurrencyDate: true });
+			await this.save({preserveCurrencyDate: true});
 			return;
 		}
 
@@ -175,14 +187,14 @@ export class PipelineModel {
 	 * @returns {Promise<void>}
 	 */
 	async ensureDirectories() {
-		await fs.mkdir(BASE_DATA, { recursive: true });
-		await fs.mkdir(BASE_OUTPUT, { recursive: true });
-		await fs.mkdir(this.pipelineDir, { recursive: true });
-		await fs.mkdir(this.referenceDir, { recursive: true });
-		await fs.mkdir(this.faceDir, { recursive: true });
-		await fs.mkdir(PIPELINE_MANIFESTS, { recursive: true });
-		await fs.mkdir(PIPELINE_SOURCE_SVGS, { recursive: true });
-		await fs.mkdir(PIPELINE_PREPARED_SVGS, { recursive: true });
+		await fs.mkdir(BASE_DATA, {recursive: true});
+		await fs.mkdir(BASE_OUTPUT, {recursive: true});
+		await fs.mkdir(this.pipelineDir, {recursive: true});
+		await fs.mkdir(this.referenceDir, {recursive: true});
+		await fs.mkdir(this.faceDir, {recursive: true});
+		await fs.mkdir(PIPELINE_MANIFESTS, {recursive: true});
+		await fs.mkdir(PIPELINE_SOURCE_SVGS, {recursive: true});
+		await fs.mkdir(PIPELINE_PREPARED_SVGS, {recursive: true});
 	}
 
 	/**
@@ -192,9 +204,9 @@ export class PipelineModel {
 	 * @param {object | null} [options.manifest] - Manifest override for callers that just loaded one.
 	 * @returns {Promise<object>} Rebuilt phase-one pipeline state.
 	 */
-	async resetToIntake({ manifest = null } = {}) {
-		this.pipelineState = await this.buildPipelineStateFromBootstrap({ manifest });
-		await this.save({ preserveCurrencyDate: true });
+	async resetToIntake({manifest = null} = {}) {
+		this.pipelineState = await this.buildPipelineStateFromBootstrap({manifest});
+		await this.save({preserveCurrencyDate: true});
 		return this.pipelineState;
 	}
 
@@ -204,7 +216,7 @@ export class PipelineModel {
 	 * @param {PipelineModelSaveOptions} [options] - Save behavior options.
 	 * @returns {Promise<object>} Saved pipeline state.
 	 */
-	async save({ preserveCurrencyDate = false } = {}) {
+	async save({preserveCurrencyDate = false} = {}) {
 		this.normalizeForPhaseOne();
 		if (!preserveCurrencyDate || !this.getCurrencyDate()) {
 			this.setCurrencyDate();
@@ -224,7 +236,7 @@ export class PipelineModel {
 	async safeLoadJson(filename) {
 		const resolved = resolvePath(filename);
 		try {
-			const json = await fs.readFile(resolved, "utf-8");
+			const json = await fs.readFile(resolved, 'utf-8');
 			return JSON.parse(json);
 		} catch (error) {
 			console.warn(error.message);
@@ -243,8 +255,8 @@ export class PipelineModel {
 	async safeWriteJson(content, filename) {
 		const resolved = resolvePath(filename);
 		try {
-			await fs.mkdir(path.dirname(resolved), { recursive: true });
-			await fs.writeFile(resolved, `${JSON.stringify(content, null, 2)}\n`, "utf-8");
+			await fs.mkdir(path.dirname(resolved), {recursive: true});
+			await fs.writeFile(resolved, `${JSON.stringify(content, null, 2)}\n`, 'utf-8');
 			return content;
 		} catch (error) {
 			console.warn(error.message);
@@ -302,13 +314,13 @@ export class PipelineModel {
 	}
 
 	/**
- * Returns the standard normalized component artifact path for a face.
+	 * Returns the standard normalized component artifact path for a face.
 	 *
 	 * @param {string} faceKey - Canonical face key.
 	 * @returns {string} Absolute normalized component JSON path.
 	 */
 	normalizedComponentsPath(faceKey) {
-		return path.join(this.pipelineDir, "json", "normalized-components", `${faceKey}.json`);
+		return path.join(this.pipelineDir, 'json', 'normalized-components', `${faceKey}.json`);
 	}
 
 	/**
@@ -340,7 +352,9 @@ export class PipelineModel {
 	 */
 	assertCurrencyDate(expectedCurrencyDate) {
 		if (!expectedCurrencyDate || expectedCurrencyDate !== this.getCurrencyDate()) {
-			throw new Error(`Pipeline state currency mismatch. Expected ${expectedCurrencyDate || "(missing)"}; current ${this.getCurrencyDate() || "(missing)"}.`);
+			throw new Error(
+				`Pipeline state currency mismatch. Expected ${expectedCurrencyDate || '(missing)'}; current ${this.getCurrencyDate() || '(missing)'}.`,
+			);
 		}
 	}
 
@@ -420,7 +434,7 @@ export class PipelineModel {
 	 * @returns {void}
 	 */
 	setConfiguration(configuration) {
-		this.requireObject(configuration, "configuration");
+		this.requireObject(configuration, 'configuration');
 		this.requireState().configuration = stripDateFields(configuration);
 	}
 
@@ -440,7 +454,7 @@ export class PipelineModel {
 	 * @returns {void}
 	 */
 	setOptionalPartAssignmentConfig(config) {
-		this.requireObject(config, "optional part assignment config");
+		this.requireObject(config, 'optional part assignment config');
 		const configuration = this.getConfiguration();
 		configuration.optionalPartAssignment = stripDateFields(config);
 		delete configuration.stages;
@@ -463,7 +477,7 @@ export class PipelineModel {
 	 * @returns {void}
 	 */
 	setRendering(rendering) {
-		this.requireObject(rendering, "rendering");
+		this.requireObject(rendering, 'rendering');
 		this.requireState().rendering = stripDateFields(rendering);
 	}
 
@@ -474,7 +488,7 @@ export class PipelineModel {
 	 * @returns {void}
 	 */
 	setRenderingOptions(options) {
-		this.requireObject(options, "rendering options");
+		this.requireObject(options, 'rendering options');
 		this.setRendering({
 			...this.getRendering(),
 			...stripDateFields(options),
@@ -532,11 +546,13 @@ export class PipelineModel {
 	 * @param {string} [options.baseTileVariantId] - Selected base tile variant.
 	 * @returns {string} SHA-256 hash of face input plus generated-asset inputs.
 	 */
-	hashAssetPipelineFinalInput(faceKey, { baseTileVariantId = this.getSelectedBaseTileVariantId() } = {}) {
-		return sha256(stableJson({
-			faceHash: this.hashAssetPipelineFaceInput(faceKey),
-			baseTileVariantId,
-		}));
+	hashAssetPipelineFinalInput(faceKey, {baseTileVariantId = this.getSelectedBaseTileVariantId()} = {}) {
+		return sha256(
+			stableJson({
+				faceHash: this.hashAssetPipelineFaceInput(faceKey),
+				baseTileVariantId,
+			}),
+		);
 	}
 
 	/**
@@ -548,10 +564,10 @@ export class PipelineModel {
 	 * @param {string} [options.baseTileVariantId] - Selected base tile variant.
 	 * @returns {string} SHA-256 hash expected for the stage output.
 	 */
-	hashAssetGenerationStageInput(faceKey, stageId, { baseTileVariantId = this.getSelectedBaseTileVariantId() } = {}) {
+	hashAssetGenerationStageInput(faceKey, stageId, {baseTileVariantId = this.getSelectedBaseTileVariantId()} = {}) {
 		const inputHash = this.hashAssetPipelineFaceInput(faceKey);
-		const finalHash = this.hashAssetPipelineFinalInput(faceKey, { baseTileVariantId });
-		return expectedGeneratedAssetStageHash(stageId, { inputHash, finalHash });
+		const finalHash = this.hashAssetPipelineFinalInput(faceKey, {baseTileVariantId});
+		return expectedGeneratedAssetStageHash(stageId, {inputHash, finalHash});
 	}
 
 	/**
@@ -561,9 +577,11 @@ export class PipelineModel {
 	 * @param {string[]} [options.faceKeys] - Face keys to initialize. Defaults to all source faces.
 	 * @returns {AssetPipelineInitializationResult} Initialization summary.
 	 */
-	initializeAssetPipelineFromRenderingAcceptance({ faceKeys = null } = {}) {
+	initializeAssetPipelineFromRenderingAcceptance({faceKeys = null} = {}) {
 		const state = this.requireState();
-		const selectedFaceKeys = (faceKeys || Object.keys(this.faces())).sort((left, right) => left.localeCompare(right));
+		const selectedFaceKeys = (faceKeys || Object.keys(this.faces())).sort((left, right) =>
+			left.localeCompare(right),
+		);
 		const assetPipeline = cleanAssetPipeline(state.assetPipeline || {});
 		assetPipeline.schemaVersion = 1;
 		assetPipeline.faces = assetPipeline.faces || {};
@@ -582,24 +600,23 @@ export class PipelineModel {
 				inputHash,
 				stageHashes: {
 					...(existing.stageHashes || {}),
-					"preview-svg": inputHash,
+					'preview-svg': inputHash,
 				},
 			};
 
-			if (existing.inputHash === inputHash
-				&& existing.stageHashes?.["preview-svg"] === inputHash) {
+			if (existing.inputHash === inputHash && existing.stageHashes?.['preview-svg'] === inputHash) {
 				assetPipeline.faces[faceKey] = nextFace;
 				skippedFaceKeys.push(faceKey);
 				continue;
 			}
 
-			nextFace.status = existing.inputHash ? "stale" : "missing";
+			nextFace.status = existing.inputHash ? 'stale' : 'missing';
 			assetPipeline.faces[faceKey] = nextFace;
 			updatedFaceKeys.push(faceKey);
 		}
 
 		state.assetPipeline = assetPipeline;
-		return { skippedFaceKeys, updatedFaceKeys };
+		return {skippedFaceKeys, updatedFaceKeys};
 	}
 
 	/**
@@ -617,7 +634,7 @@ export class PipelineModel {
 	 * @returns {string} Selected variant id, or an empty string when unselected.
 	 */
 	getSelectedBaseTileVariantId() {
-		return this.getAssetPipeline().baseTileSelection?.variantId || "";
+		return this.getAssetPipeline().baseTileSelection?.variantId || '';
 	}
 
 	/**
@@ -627,9 +644,9 @@ export class PipelineModel {
 	 * @returns {boolean} True when the selected variant changed.
 	 */
 	setSelectedBaseTileVariantId(variantId) {
-		const cleanVariantId = String(variantId || "").trim();
+		const cleanVariantId = String(variantId || '').trim();
 		if (!cleanVariantId) {
-			throw new Error("Base tile variant id is required.");
+			throw new Error('Base tile variant id is required.');
 		}
 
 		const state = this.requireState();
@@ -659,13 +676,17 @@ export class PipelineModel {
 	clearAssetGenerationRuntimeState() {
 		const state = this.requireState();
 		const assetPipeline = cleanAssetPipeline(state.assetPipeline || {});
-		assetPipeline.faces = Object.fromEntries(Object.entries(assetPipeline.faces || {})
-			.map(([faceKey, face]) => [faceKey, cleanAssetPipelineFace({
-				...face,
-				status: null,
-				queue: null,
-				build: null,
-			})]));
+		assetPipeline.faces = Object.fromEntries(
+			Object.entries(assetPipeline.faces || {}).map(([faceKey, face]) => [
+				faceKey,
+				cleanAssetPipelineFace({
+					...face,
+					status: null,
+					queue: null,
+					build: null,
+				}),
+			]),
+		);
 		state.assetPipeline = assetPipeline;
 	}
 
@@ -678,7 +699,7 @@ export class PipelineModel {
 		const state = this.requireState();
 		const baseTileSelection = cleanBaseTileSelection(state.assetPipeline?.baseTileSelection);
 		state.assetPipeline = cleanAssetPipeline({
-			...(baseTileSelection ? { baseTileSelection } : {}),
+			...(baseTileSelection ? {baseTileSelection} : {}),
 			faces: {},
 		});
 	}
@@ -692,24 +713,26 @@ export class PipelineModel {
 	 */
 	async clearGeneratedAssetArtifacts() {
 		const directories = [
-			path.join(this.pipelineDir, "models", "svg-cutter"),
-			path.join(this.pipelineDir, "models", "stamped-body"),
-			path.join(this.pipelineDir, "models", "colored-inlay"),
-			path.join(this.pipelineDir, "json", "svg-cutter"),
-			path.join(this.pipelineDir, "json", "stamped-body"),
-			path.join(this.pipelineDir, "json", "colored-inlay"),
-			path.join(this.pipelineDir, "images", "cutter-2d-svg"),
-			path.join(this.pipelineDir, "images", "cutter-simplified-svg"),
-			path.join(this.pipelineDir, "images", "generated-asset-preview-png"),
+			path.join(this.pipelineDir, 'models', 'svg-cutter'),
+			path.join(this.pipelineDir, 'models', 'stamped-body'),
+			path.join(this.pipelineDir, 'models', 'colored-inlay'),
+			path.join(this.pipelineDir, 'json', 'svg-cutter'),
+			path.join(this.pipelineDir, 'json', 'stamped-body'),
+			path.join(this.pipelineDir, 'json', 'colored-inlay'),
+			path.join(this.pipelineDir, 'images', 'cutter-2d-svg'),
+			path.join(this.pipelineDir, 'images', 'cutter-simplified-svg'),
+			path.join(this.pipelineDir, 'images', 'generated-asset-preview-png'),
 		];
 
 		for (const directory of directories) {
 			if (!isInsideDirectory(directory, this.pipelineDir)) {
-				throw new Error(`Refusing to clear generated assets outside the tileset output directory: ${directory}`);
+				throw new Error(
+					`Refusing to clear generated assets outside the tileset output directory: ${directory}`,
+				);
 			}
 
-			await fs.rm(directory, { recursive: true, force: true });
-			await fs.mkdir(directory, { recursive: true });
+			await fs.rm(directory, {recursive: true, force: true});
+			await fs.mkdir(directory, {recursive: true});
 		}
 
 		return directories;
@@ -722,35 +745,37 @@ export class PipelineModel {
 	 * @param {string[]} [options.faceKeys] - Face keys to plan. Defaults to all faces.
 	 * @returns {{plannedFaces: object[], skippedFaces: object[], totalFaceCount: number, baseTileVariantId: string}} Plan summary.
 	 */
-	planAssetGeneration({ faceKeys = null } = {}) {
+	planAssetGeneration({faceKeys = null} = {}) {
 		const baseTileVariantId = this.getSelectedBaseTileVariantId();
 		if (!baseTileVariantId) {
-			throw new Error("Select a base tile variant before starting asset generation.");
+			throw new Error('Select a base tile variant before starting asset generation.');
 		}
 
 		const state = this.requireState();
 		const assetPipeline = cleanAssetPipeline(state.assetPipeline || {});
 		assetPipeline.schemaVersion = 1;
 		assetPipeline.faces = assetPipeline.faces || {};
-		const selectedFaceKeys = (faceKeys || Object.keys(this.faces())).sort((left, right) => left.localeCompare(right));
+		const selectedFaceKeys = (faceKeys || Object.keys(this.faces())).sort((left, right) =>
+			left.localeCompare(right),
+		);
 		const plannedFaces = [];
 		const skippedFaces = [];
 
 		for (const faceKey of selectedFaceKeys) {
 			const existing = assetPipeline.faces[faceKey] || {};
 			const inputHash = this.hashAssetPipelineFaceInput(faceKey);
-			const finalHash = this.hashAssetPipelineFinalInput(faceKey, { baseTileVariantId });
+			const finalHash = this.hashAssetPipelineFinalInput(faceKey, {baseTileVariantId});
 			const renderedSvg = this.getFinalRenderingColorSvgPath(faceKey);
 			const baseFace = {
 				...existing,
 				inputHash,
 				stageHashes: {
 					...(existing.stageHashes || {}),
-					"preview-svg": inputHash,
+					'preview-svg': inputHash,
 				},
 			};
 
-			if (this.isAssetGenerationFaceReady(existing, { inputHash, finalHash, renderedSvg })) {
+			if (this.isAssetGenerationFaceReady(existing, {inputHash, finalHash, renderedSvg})) {
 				assetPipeline.faces[faceKey] = cleanAssetPipelineFace({
 					...baseFace,
 					status: null,
@@ -758,19 +783,19 @@ export class PipelineModel {
 					build: null,
 					failure: null,
 				});
-				skippedFaces.push({ faceKey, status: "skipped" });
+				skippedFaces.push({faceKey, status: 'skipped'});
 				continue;
 			}
 
 			assetPipeline.faces[faceKey] = {
 				...baseFace,
-				status: "queued",
+				status: 'queued',
 				queue: {
-					status: "queued",
+					status: 'queued',
 					baseTileVariantId,
 				},
 			};
-			plannedFaces.push({ faceKey, status: "queued" });
+			plannedFaces.push({faceKey, status: 'queued'});
 		}
 
 		state.assetPipeline = assetPipeline;
@@ -792,17 +817,21 @@ export class PipelineModel {
 	 * @param {string} expected.renderedSvg - Current rendered SVG artifact.
 	 * @returns {boolean} Whether the face can be skipped.
 	 */
-	isAssetGenerationFaceReady(face, { inputHash, finalHash, renderedSvg }) {
-		return Boolean(face)
-			&& face.inputHash === inputHash
-			&& face.finalHash === finalHash
-			&& Boolean(renderedSvg)
-			&& REQUIRED_GENERATED_ASSET_ARTIFACTS.every((artifactName) => face.artifacts?.[artifactName])
-			&& GENERATED_ASSET_STAGE_IDS.every((stageId) => this.isAssetGenerationStageReady(face, {
-				stageId,
-				inputHash,
-				finalHash,
-			}));
+	isAssetGenerationFaceReady(face, {inputHash, finalHash, renderedSvg}) {
+		return (
+			Boolean(face) &&
+			face.inputHash === inputHash &&
+			face.finalHash === finalHash &&
+			Boolean(renderedSvg) &&
+			REQUIRED_GENERATED_ASSET_ARTIFACTS.every((artifactName) => face.artifacts?.[artifactName]) &&
+			GENERATED_ASSET_STAGE_IDS.every((stageId) =>
+				this.isAssetGenerationStageReady(face, {
+					stageId,
+					inputHash,
+					finalHash,
+				}),
+			)
+		);
 	}
 
 	/**
@@ -816,13 +845,14 @@ export class PipelineModel {
 	 * @param {string} [expected.stageHash] - Explicit expected stage input hash.
 	 * @returns {boolean} Whether the stage output matches the current face hash.
 	 */
-	isAssetGenerationStageReady(face, { stageId, inputHash, finalHash = "", stageHash = "" }) {
-		const expectedHash = stageHash || expectedGeneratedAssetStageHash(stageId, { inputHash, finalHash });
-		return Boolean(face)
-			&& expectedHash
-			&& face.stageHashes?.[stageId] === expectedHash
-			&& requiredArtifactsForGeneratedAssetStage(stageId)
-				.every((artifactName) => face.artifacts?.[artifactName]);
+	isAssetGenerationStageReady(face, {stageId, inputHash, finalHash = '', stageHash = ''}) {
+		const expectedHash = stageHash || expectedGeneratedAssetStageHash(stageId, {inputHash, finalHash});
+		return (
+			Boolean(face) &&
+			expectedHash &&
+			face.stageHashes?.[stageId] === expectedHash &&
+			requiredArtifactsForGeneratedAssetStage(stageId).every((artifactName) => face.artifacts?.[artifactName])
+		);
 	}
 
 	/**
@@ -1007,7 +1037,7 @@ export class PipelineModel {
 	 * @returns {void}
 	 */
 	setParts(faceKey, parts) {
-		this.requireObject(parts, "parts");
+		this.requireObject(parts, 'parts');
 		this.getFaceState(faceKey).parts = cleanParts(parts);
 	}
 
@@ -1031,7 +1061,7 @@ export class PipelineModel {
 	 * @returns {void}
 	 */
 	setPart(faceKey, partId, part) {
-		this.requireObject(part, "part");
+		this.requireObject(part, 'part');
 		const parts = {
 			...this.getParts(faceKey),
 			[partId]: cleanPart({
@@ -1052,7 +1082,7 @@ export class PipelineModel {
 	 */
 	updatePart(faceKey, partId, patch) {
 		this.setPart(faceKey, partId, {
-			...(this.getPart(faceKey, partId) || { partId }),
+			...(this.getPart(faceKey, partId) || {partId}),
 			...patch,
 		});
 	}
@@ -1075,7 +1105,7 @@ export class PipelineModel {
 	 * @returns {void}
 	 */
 	setBindings(faceKey, bindings) {
-		this.requireObject(bindings, "bindings");
+		this.requireObject(bindings, 'bindings');
 		this.getFaceState(faceKey).bindings = cleanBindings(bindings);
 	}
 
@@ -1100,12 +1130,12 @@ export class PipelineModel {
 	 * @param {PipelineBindingStrength} binding.strength - Binding strength.
 	 * @returns {void}
 	 */
-	setBinding(faceKey, componentId, { partId = null, strength }) {
+	setBinding(faceKey, componentId, {partId = null, strength}) {
 		const bindings = {
 			...this.getBindings(faceKey),
 			[componentId]: cleanBinding(componentId, {
 				componentId,
-				...(partId ? { partId } : {}),
+				...(partId ? {partId} : {}),
 				strength,
 			}),
 		};
@@ -1120,7 +1150,7 @@ export class PipelineModel {
 	 * @returns {void}
 	 */
 	removeBinding(faceKey, componentId) {
-		const bindings = { ...this.getBindings(faceKey) };
+		const bindings = {...this.getBindings(faceKey)};
 		delete bindings[componentId];
 		this.setBindings(faceKey, bindings);
 	}
@@ -1133,33 +1163,31 @@ export class PipelineModel {
 	 * @param {ApplyBindingActionOptions} [options] - Binding action behavior.
 	 * @returns {void}
 	 */
-	applySourceBindingActions(faceKey, actions, { unbindMode = "exclude" } = {}) {
-		const actionList = Array.isArray(actions)
-			? actions
-			: Object.values(actions || {});
+	applySourceBindingActions(faceKey, actions, {unbindMode = 'exclude'} = {}) {
+		const actionList = Array.isArray(actions) ? actions : Object.values(actions || {});
 
 		for (const action of actionList) {
-			if (!action || action.action === "none") {
+			if (!action || action.action === 'none') {
 				continue;
 			}
-			if (action.action === "unbind") {
-				if (unbindMode === "reserve") {
+			if (action.action === 'unbind') {
+				if (unbindMode === 'reserve') {
 					this.setBinding(faceKey, action.componentId, {
-						strength: "strong",
+						strength: 'strong',
 					});
-				} else if (unbindMode === "exclude") {
+				} else if (unbindMode === 'exclude') {
 					this.setBinding(faceKey, action.componentId, {
-						strength: "none",
+						strength: 'none',
 					});
 				} else {
 					throw new Error(`Unknown binding unbind mode: ${unbindMode}`);
 				}
 				continue;
 			}
-			if (action.action === "bind") {
+			if (action.action === 'bind') {
 				this.setBinding(faceKey, action.componentId, {
 					partId: action.partId,
-					strength: "strong",
+					strength: 'strong',
 				});
 				continue;
 			}
@@ -1186,7 +1214,7 @@ export class PipelineModel {
 	 */
 	setAlignmentMatches(faceKey, matches) {
 		if (!Array.isArray(matches)) {
-			throw new Error("Alignment matches must be an array.");
+			throw new Error('Alignment matches must be an array.');
 		}
 
 		const state = this.getFaceState(faceKey);
@@ -1214,9 +1242,16 @@ export class PipelineModel {
 	 * @returns {void}
 	 */
 	applyAlignmentPlacement(faceKey, placementsByPartId) {
-		this.requireObject(placementsByPartId, "alignment placements");
-		this.setParts(faceKey, Object.fromEntries(Object.entries(this.getParts(faceKey))
-			.map(([partId, part]) => [partId, stripAlignmentPlacementFields(part)])));
+		this.requireObject(placementsByPartId, 'alignment placements');
+		this.setParts(
+			faceKey,
+			Object.fromEntries(
+				Object.entries(this.getParts(faceKey)).map(([partId, part]) => [
+					partId,
+					stripAlignmentPlacementFields(part),
+				]),
+			),
+		);
 		for (const [partId, placement] of Object.entries(placementsByPartId)) {
 			this.updatePart(faceKey, partId, cleanPlacement(placement));
 		}
@@ -1229,7 +1264,7 @@ export class PipelineModel {
 	 * @param {NormalizationResult} result - Normalization result.
 	 * @returns {void}
 	 */
-	recordNormalizationResult(faceKey, { normalizedComponentsPath }) {
+	recordNormalizationResult(faceKey, {normalizedComponentsPath}) {
 		this.setNormalizedComponentsPath(faceKey, normalizedComponentsPath);
 		this.pruneAfterNormalization(faceKey);
 	}
@@ -1243,9 +1278,12 @@ export class PipelineModel {
 	 * @param {Object<string, PipelineBinding>} [assignment.bindings] - Binding records keyed by component id.
 	 * @returns {void}
 	 */
-	applyOptionalPartAssignment(faceKey, { parts = {}, bindings = {} }) {
-		const reservedBindings = Object.fromEntries(Object.entries(this.getBindings(faceKey))
-			.filter(([, binding]) => binding.strength === "strong" && !binding.partId));
+	applyOptionalPartAssignment(faceKey, {parts = {}, bindings = {}}) {
+		const reservedBindings = Object.fromEntries(
+			Object.entries(this.getBindings(faceKey)).filter(
+				([, binding]) => binding.strength === 'strong' && !binding.partId,
+			),
+		);
 		this.setParts(faceKey, {
 			...this.getParts(faceKey),
 			...parts,
@@ -1254,7 +1292,7 @@ export class PipelineModel {
 			...bindings,
 			...reservedBindings,
 		});
-		this.clearDownstreamSourceState(faceKey, "optionalPartAssignment");
+		this.clearDownstreamSourceState(faceKey, 'optionalPartAssignment');
 	}
 
 	/**
@@ -1266,33 +1304,35 @@ export class PipelineModel {
 	 */
 	acceptOptionalPartAssignment(faceKey) {
 		const parts = this.getParts(faceKey);
-		const optionalPartIds = new Set(Object.entries(parts)
-			.filter(([, part]) => part?.optional === true)
-			.map(([partId]) => partId));
+		const optionalPartIds = new Set(
+			Object.entries(parts)
+				.filter(([, part]) => part?.optional === true)
+				.map(([partId]) => partId),
+		);
 		const nextBindings = {};
 		const nextParts = {};
 
 		for (const [componentId, binding] of Object.entries(this.getBindings(faceKey))) {
-			if (!binding.partId || !optionalPartIds.has(binding.partId) || binding.strength === "none") {
+			if (!binding.partId || !optionalPartIds.has(binding.partId) || binding.strength === 'none') {
 				continue;
 			}
 			nextBindings[componentId] = {
 				componentId,
 				partId: binding.partId,
-				strength: "accepted",
+				strength: 'accepted',
 			};
 		}
 
 		for (const [partId, part] of Object.entries(parts)) {
-			const { accepted, ...partWithoutAccepted } = part;
+			const {accepted, ...partWithoutAccepted} = part;
 			nextParts[partId] = optionalPartIds.has(partId)
-				? { ...partWithoutAccepted, accepted: true }
+				? {...partWithoutAccepted, accepted: true}
 				: partWithoutAccepted;
 		}
 
 		this.setParts(faceKey, nextParts);
 		this.setBindings(faceKey, nextBindings);
-		this.clearDownstreamSourceState(faceKey, "optionalPartAssignment");
+		this.clearDownstreamSourceState(faceKey, 'optionalPartAssignment');
 	}
 
 	/**
@@ -1304,7 +1344,7 @@ export class PipelineModel {
 	 * @param {Object<string, PipelineBinding>} [assignment.bindings] - Binding records keyed by component id.
 	 * @returns {void}
 	 */
-	applySemanticAssignment(faceKey, { parts = {}, bindings = {} }) {
+	applySemanticAssignment(faceKey, {parts = {}, bindings = {}}) {
 		this.setParts(faceKey, {
 			...this.getParts(faceKey),
 			...parts,
@@ -1322,16 +1362,22 @@ export class PipelineModel {
 	acceptSourceAssignment(faceKey) {
 		const nextBindings = {};
 		for (const [componentId, binding] of Object.entries(this.getBindings(faceKey))) {
-			nextBindings[componentId] = binding.partId && binding.strength !== "none"
-				? { ...binding, strength: "accepted" }
-				: binding;
+			nextBindings[componentId] =
+				binding.partId && binding.strength !== 'none' ? {...binding, strength: 'accepted'} : binding;
 		}
 		this.setBindings(faceKey, nextBindings);
-		this.setParts(faceKey, Object.fromEntries(Object.entries(this.getParts(faceKey))
-			.map(([partId, part]) => [partId, {
-				...part,
-				accepted: true,
-			}])));
+		this.setParts(
+			faceKey,
+			Object.fromEntries(
+				Object.entries(this.getParts(faceKey)).map(([partId, part]) => [
+					partId,
+					{
+						...part,
+						accepted: true,
+					},
+				]),
+			),
+		);
 	}
 
 	/**
@@ -1346,7 +1392,7 @@ export class PipelineModel {
 			...(rendering.faces || {}),
 			[faceKey]: {
 				...(rendering.faces?.[faceKey] || {}),
-				reviewStatus: "accepted",
+				reviewStatus: 'accepted',
 			},
 		};
 		this.setRendering(rendering);
@@ -1394,10 +1440,10 @@ export class PipelineModel {
 	 */
 	clearDownstreamSourceState(faceKey, fromStage) {
 		const state = this.getFaceState(faceKey);
-		if (fromStage === "normalization" || fromStage === "optionalPartAssignment") {
+		if (fromStage === 'normalization' || fromStage === 'optionalPartAssignment') {
 			delete state.alignment;
 		}
-		if (fromStage === "normalization") {
+		if (fromStage === 'normalization') {
 			state.bindings = {};
 		}
 	}
@@ -1409,9 +1455,9 @@ export class PipelineModel {
 	 * @param {object | null} [options.manifest] - Manifest override for callers that just loaded one.
 	 * @returns {Promise<object>} Canonical pipeline state.
 	 */
-	async buildPipelineStateFromBootstrap({ manifest = null } = {}) {
+	async buildPipelineStateFromBootstrap({manifest = null} = {}) {
 		const manifestFile = path.join(PIPELINE_MANIFESTS, `${this.tileSetName}.json`);
-		const activeManifest = manifest || await this.safeLoadJson(manifestFile);
+		const activeManifest = manifest || (await this.safeLoadJson(manifestFile));
 		this.checkFile(activeManifest, manifestFile);
 
 		const currencyDate = new Date().toISOString();
@@ -1445,7 +1491,7 @@ export class PipelineModel {
 	 * @returns {object} Normalized phase-one state.
 	 */
 	normalizeForPhaseOne(state = this.pipelineState) {
-		if (!state || typeof state !== "object") {
+		if (!state || typeof state !== 'object') {
 			return state;
 		}
 
@@ -1459,11 +1505,11 @@ export class PipelineModel {
 			referenceSetId: state.referenceSetId || this.referenceName || null,
 			currencyDate: state.currencyDate || new Date().toISOString(),
 			configuration: cleanConfiguration(configuration),
-			...(Object.keys(rendering).length > 0 ? { rendering } : {}),
+			...(Object.keys(rendering).length > 0 ? {rendering} : {}),
 			svgPipeline: {
 				faces: {},
 			},
-			...(isEmptyAssetPipeline(assetPipeline) ? {} : { assetPipeline }),
+			...(isEmptyAssetPipeline(assetPipeline) ? {} : {assetPipeline}),
 		};
 
 		for (const [faceKey, face] of Object.entries(state.svgPipeline?.faces || state.faces || {})) {
@@ -1481,7 +1527,7 @@ export class PipelineModel {
 	 */
 	requireState() {
 		if (!this.pipelineState) {
-			throw new Error("PipelineModel has not been started.");
+			throw new Error('PipelineModel has not been started.');
 		}
 		return this.pipelineState;
 	}
@@ -1515,7 +1561,7 @@ export class PipelineModel {
 	 * @returns {void}
 	 */
 	requireObject(value, label) {
-		if (!value || typeof value !== "object" || Array.isArray(value)) {
+		if (!value || typeof value !== 'object' || Array.isArray(value)) {
 			throw new Error(`Expected ${label} to be an object.`);
 		}
 	}
@@ -1548,9 +1594,8 @@ function migrateConfiguration(configuration, review = null) {
 	const migrated = {
 		...(configuration || {}),
 	};
-	const optionalPartAssignment = migrated.optionalPartAssignment
-		|| migrated.stages?.optionalPartAssignment
-		|| review?.optionalPartAssignment;
+	const optionalPartAssignment =
+		migrated.optionalPartAssignment || migrated.stages?.optionalPartAssignment || review?.optionalPartAssignment;
 
 	if (optionalPartAssignment) {
 		migrated.optionalPartAssignment = optionalPartAssignment;
@@ -1582,7 +1627,7 @@ function cleanFace(face) {
 	const configuration = cleanFaceConfiguration(face?.configuration || {});
 
 	return {
-		...(Object.keys(configuration).length > 0 ? { configuration } : {}),
+		...(Object.keys(configuration).length > 0 ? {configuration} : {}),
 		artifacts: cleanArtifacts(face?.artifacts || {}),
 		state: cleanFaceState(face?.state || {}),
 	};
@@ -1596,7 +1641,7 @@ function cleanFace(face) {
  */
 function cleanFaceConfiguration(configuration) {
 	const sourceMetadata = stripDateFields(configuration.sourceMetadata || {});
-	return Object.keys(sourceMetadata).length > 0 ? { sourceMetadata } : {};
+	return Object.keys(sourceMetadata).length > 0 ? {sourceMetadata} : {};
 }
 
 /**
@@ -1629,14 +1674,16 @@ function cleanArtifacts(artifacts) {
  * @returns {object} Clean asset pipeline state.
  */
 function cleanAssetPipeline(assetPipeline) {
-	const faces = Object.fromEntries(Object.entries(assetPipeline?.faces || {})
-		.map(([faceKey, face]) => [faceKey, cleanAssetPipelineFace(face)])
-		.filter(([, face]) => face));
+	const faces = Object.fromEntries(
+		Object.entries(assetPipeline?.faces || {})
+			.map(([faceKey, face]) => [faceKey, cleanAssetPipelineFace(face)])
+			.filter(([, face]) => face),
+	);
 	const baseTileSelection = cleanBaseTileSelection(assetPipeline?.baseTileSelection);
 
 	return {
 		schemaVersion: assetPipeline?.schemaVersion || 1,
-		...(baseTileSelection ? { baseTileSelection } : {}),
+		...(baseTileSelection ? {baseTileSelection} : {}),
 		faces,
 	};
 }
@@ -1648,13 +1695,12 @@ function cleanAssetPipeline(assetPipeline) {
  * @returns {boolean} True when the state can be omitted from canonical JSON.
  */
 function isEmptyAssetPipeline(assetPipeline) {
-	return !assetPipeline?.baseTileSelection
-		&& Object.keys(assetPipeline?.faces || {}).length === 0;
+	return !assetPipeline?.baseTileSelection && Object.keys(assetPipeline?.faces || {}).length === 0;
 }
 
 function isInsideDirectory(filename, directory) {
 	const relative = path.relative(directory, filename);
-	return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+	return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
 /**
@@ -1664,8 +1710,8 @@ function isInsideDirectory(filename, directory) {
  * @returns {{variantId: string} | null} Clean base tile selection.
  */
 function cleanBaseTileSelection(selection) {
-	const variantId = String(selection?.variantId || "").trim();
-	return variantId ? { variantId } : null;
+	const variantId = String(selection?.variantId || '').trim();
+	return variantId ? {variantId} : null;
 }
 
 /**
@@ -1675,7 +1721,7 @@ function cleanBaseTileSelection(selection) {
  * @returns {object | null} Clean face state.
  */
 function cleanAssetPipelineFace(face) {
-	if (!face || typeof face !== "object" || Array.isArray(face)) {
+	if (!face || typeof face !== 'object' || Array.isArray(face)) {
 		return null;
 	}
 
@@ -1709,16 +1755,16 @@ function cleanAssetPipelineFace(face) {
 	const status = cleanGeneratedAssetStatus(cleanFace.status);
 
 	return {
-		...(status ? { status } : {}),
-		...(cleanFace.inputHash ? { inputHash: cleanFace.inputHash } : {}),
-		...(cleanFace.finalHash ? { finalHash: cleanFace.finalHash } : {}),
-		...(Object.keys(stageHashes).length > 0 ? { stageHashes } : {}),
-		...(Object.keys(artifacts).length > 0 ? { artifacts } : {}),
-		...(cleanFace.queue ? { queue: cleanFace.queue } : {}),
-		...(cleanFace.build ? { build: cleanFace.build } : {}),
-		...(cleanFace.failure ? { failure: cleanFace.failure } : {}),
-		...(cleanFace.review ? { review: cleanFace.review } : {}),
-		...(cleanFace.publication ? { publication: cleanFace.publication } : {}),
+		...(status ? {status} : {}),
+		...(cleanFace.inputHash ? {inputHash: cleanFace.inputHash} : {}),
+		...(cleanFace.finalHash ? {finalHash: cleanFace.finalHash} : {}),
+		...(Object.keys(stageHashes).length > 0 ? {stageHashes} : {}),
+		...(Object.keys(artifacts).length > 0 ? {artifacts} : {}),
+		...(cleanFace.queue ? {queue: cleanFace.queue} : {}),
+		...(cleanFace.build ? {build: cleanFace.build} : {}),
+		...(cleanFace.failure ? {failure: cleanFace.failure} : {}),
+		...(cleanFace.review ? {review: cleanFace.review} : {}),
+		...(cleanFace.publication ? {publication: cleanFace.publication} : {}),
 	};
 }
 
@@ -1729,10 +1775,12 @@ function cleanAssetPipelineFace(face) {
  * @returns {Object<string, string>} Clean stage hash map.
  */
 function cleanStageHashes(stageHashes) {
-	return Object.fromEntries(Object.entries(stageHashes || {})
-		.filter(([stageId, hash]) => stageId && typeof hash === "string" && hash.trim())
-		.map(([stageId, hash]) => [stageId, hash.trim()])
-		.sort((left, right) => left[0].localeCompare(right[0])));
+	return Object.fromEntries(
+		Object.entries(stageHashes || {})
+			.filter(([stageId, hash]) => stageId && typeof hash === 'string' && hash.trim())
+			.map(([stageId, hash]) => [stageId, hash.trim()])
+			.sort((left, right) => left[0].localeCompare(right[0])),
+	);
 }
 
 /**
@@ -1742,8 +1790,8 @@ function cleanStageHashes(stageHashes) {
  * @returns {string} Clean status.
  */
 function cleanGeneratedAssetStatus(status) {
-	if (!status || status === "ready" || String(status).endsWith("-ready")) {
-		return "";
+	if (!status || status === 'ready' || String(status).endsWith('-ready')) {
+		return '';
 	}
 	return String(status);
 }
@@ -1755,23 +1803,23 @@ function cleanGeneratedAssetStatus(status) {
  * @returns {string[]} Required artifact names.
  */
 function requiredArtifactsForGeneratedAssetStage(stageId) {
-	if (stageId === "preview-svg") {
+	if (stageId === 'preview-svg') {
 		return [];
 	}
-	if (stageId === "cutter-2d") {
-		return ["cutterSvg"];
+	if (stageId === 'cutter-2d') {
+		return ['cutterSvg'];
 	}
-	if (stageId === "svg-cutter") {
-		return ["cutterMetadata"];
+	if (stageId === 'svg-cutter') {
+		return ['cutterMetadata'];
 	}
-	if (stageId === "stamped-body") {
-		return ["stampedModel", "stampedMetadata"];
+	if (stageId === 'stamped-body') {
+		return ['stampedModel', 'stampedMetadata'];
 	}
-	if (stageId === "colored-inlay") {
-		return ["inlayModel", "inlayMetadata"];
+	if (stageId === 'colored-inlay') {
+		return ['inlayModel', 'inlayMetadata'];
 	}
-	if (stageId === "preview-png") {
-		return ["previewPng"];
+	if (stageId === 'preview-png') {
+		return ['previewPng'];
 	}
 	return [];
 }
@@ -1785,15 +1833,11 @@ function requiredArtifactsForGeneratedAssetStage(stageId) {
  * @param {string} [hashes.finalHash] - Current final generated asset hash.
  * @returns {string} Expected stage hash.
  */
-function expectedGeneratedAssetStageHash(stageId, { inputHash, finalHash = "" }) {
-	const baseHash = generatedAssetStageUsesFinalInput(stageId)
-		? finalHash
-		: inputHash;
+function expectedGeneratedAssetStageHash(stageId, {inputHash, finalHash = ''}) {
+	const baseHash = generatedAssetStageUsesFinalInput(stageId) ? finalHash : inputHash;
 	const version = GENERATED_ASSET_STAGE_VERSIONS[stageId] || 1;
 
-	return version > 1
-		? sha256(stableJson({ stageId, version, inputHash: baseHash }))
-		: baseHash;
+	return version > 1 ? sha256(stableJson({stageId, version, inputHash: baseHash})) : baseHash;
 }
 
 /**
@@ -1803,10 +1847,12 @@ function expectedGeneratedAssetStageHash(stageId, { inputHash, finalHash = "" })
  * @returns {boolean} Whether the stage uses final generated input.
  */
 function generatedAssetStageUsesFinalInput(stageId) {
-	return stageId === "svg-cutter"
-		|| stageId === "stamped-body"
-		|| stageId === "colored-inlay"
-		|| stageId === "preview-png";
+	return (
+		stageId === 'svg-cutter' ||
+		stageId === 'stamped-body' ||
+		stageId === 'colored-inlay' ||
+		stageId === 'preview-png'
+	);
 }
 
 /**
@@ -1819,11 +1865,13 @@ function cleanFaceState(state) {
 	return {
 		parts: cleanParts(state.parts || {}),
 		bindings: cleanBindings(state.bindings || {}),
-		...(state.alignment?.matches ? {
-			alignment: {
-				matches: state.alignment.matches.map(cleanAlignmentMatch),
-			},
-		} : {}),
+		...(state.alignment?.matches
+			? {
+					alignment: {
+						matches: state.alignment.matches.map(cleanAlignmentMatch),
+					},
+				}
+			: {}),
 	};
 }
 
@@ -1834,8 +1882,9 @@ function cleanFaceState(state) {
  * @returns {Object<string, object>} Clean part records.
  */
 function cleanParts(parts) {
-	return Object.fromEntries(Object.entries(parts || {})
-		.map(([partId, part]) => [partId, cleanPart({ partId, ...part })]));
+	return Object.fromEntries(
+		Object.entries(parts || {}).map(([partId, part]) => [partId, cleanPart({partId, ...part})]),
+	);
 }
 
 /**
@@ -1846,7 +1895,7 @@ function cleanParts(parts) {
  */
 function cleanPart(part) {
 	const cleaned = stripDateFields(part || {});
-	if (cleaned.reviewStatus === "accepted") {
+	if (cleaned.reviewStatus === 'accepted') {
 		cleaned.accepted = true;
 	}
 	delete cleaned.reviewStatus;
@@ -1871,9 +1920,11 @@ function cleanPart(part) {
  * @returns {Object<string, PipelineBinding>} Clean binding records.
  */
 function cleanBindings(bindings) {
-	return Object.fromEntries(Object.entries(bindings || {})
-		.map(([componentId, binding]) => [componentId, cleanBinding(componentId, binding)])
-		.filter(([, binding]) => binding));
+	return Object.fromEntries(
+		Object.entries(bindings || {})
+			.map(([componentId, binding]) => [componentId, cleanBinding(componentId, binding)])
+			.filter(([, binding]) => binding),
+	);
 }
 
 /**
@@ -1884,21 +1935,21 @@ function cleanBindings(bindings) {
  * @returns {PipelineBinding | null} Clean binding record.
  */
 function cleanBinding(componentId, binding) {
-	if (!binding || typeof binding !== "object" || Array.isArray(binding)) {
+	if (!binding || typeof binding !== 'object' || Array.isArray(binding)) {
 		return null;
 	}
 
-	const strength = binding.strength || "tentative";
+	const strength = binding.strength || 'tentative';
 	if (!VALID_BINDING_STRENGTHS.has(strength)) {
 		throw new Error(`Invalid binding strength for ${componentId}: ${strength}`);
 	}
-	if (strength !== "none" && strength !== "strong" && !binding.partId) {
+	if (strength !== 'none' && strength !== 'strong' && !binding.partId) {
 		throw new Error(`Binding ${componentId} requires partId for strength ${strength}.`);
 	}
 
 	return {
 		componentId,
-		...(binding.partId ? { partId: binding.partId } : {}),
+		...(binding.partId ? {partId: binding.partId} : {}),
 		strength,
 	};
 }
@@ -1910,21 +1961,21 @@ function cleanBinding(componentId, binding) {
  * @returns {AlignmentMatch} Clean alignment match.
  */
 function cleanAlignmentMatch(match) {
-	if (!match || typeof match !== "object" || Array.isArray(match)) {
-		throw new Error("Alignment match must be an object.");
+	if (!match || typeof match !== 'object' || Array.isArray(match)) {
+		throw new Error('Alignment match must be an object.');
 	}
 	if (!match.id) {
-		throw new Error("Alignment match requires id.");
+		throw new Error('Alignment match requires id.');
 	}
 
 	return {
 		id: match.id,
 		source: uniqueStrings(match.source || match.sourceComponentIds || []),
 		reference: uniqueStrings(match.reference || match.referenceComponentIds || []),
-		...(match.transform ? { transform: cloneJson(match.transform) } : {}),
-		...(match.sourceBounds ? { sourceBounds: cloneJson(match.sourceBounds) } : {}),
-		...(match.targetBounds ? { targetBounds: cloneJson(match.targetBounds) } : {}),
-		...(match.alignedBounds ? { alignedBounds: cloneJson(match.alignedBounds) } : {}),
+		...(match.transform ? {transform: cloneJson(match.transform)} : {}),
+		...(match.sourceBounds ? {sourceBounds: cloneJson(match.sourceBounds)} : {}),
+		...(match.targetBounds ? {targetBounds: cloneJson(match.targetBounds)} : {}),
+		...(match.alignedBounds ? {alignedBounds: cloneJson(match.alignedBounds)} : {}),
 	};
 }
 
@@ -1961,13 +2012,8 @@ function cleanPlacement(placement) {
  * @returns {object} Part without alignment placement fields.
  */
 function stripAlignmentPlacementFields(part) {
-	const {
-		alignmentSourceBounds,
-		alignmentTargetBounds,
-		alignmentAlignedBounds,
-		alignmentTransform,
-		...rest
-	} = part || {};
+	const {alignmentSourceBounds, alignmentTargetBounds, alignmentAlignedBounds, alignmentTransform, ...rest} =
+		part || {};
 	return rest;
 }
 
@@ -1978,9 +2024,7 @@ function stripAlignmentPlacementFields(part) {
  * @returns {object | null} Clean transform object.
  */
 function cleanPlacementTransform(transform) {
-	return Array.isArray(transform?.matrix)
-		? { matrix: cloneJson(transform.matrix) }
-		: null;
+	return Array.isArray(transform?.matrix) ? {matrix: cloneJson(transform.matrix)} : null;
 }
 
 /**
@@ -1993,13 +2037,15 @@ function stripDateFields(value) {
 	if (Array.isArray(value)) {
 		return value.map(stripDateFields);
 	}
-	if (!value || typeof value !== "object") {
+	if (!value || typeof value !== 'object') {
 		return value;
 	}
 
-	return Object.fromEntries(Object.entries(value)
-		.filter(([key]) => !DATE_FIELD_NAMES.has(key))
-		.map(([key, child]) => [key, stripDateFields(child)]));
+	return Object.fromEntries(
+		Object.entries(value)
+			.filter(([key]) => !DATE_FIELD_NAMES.has(key))
+			.map(([key, child]) => [key, stripDateFields(child)]),
+	);
 }
 
 /**
@@ -2012,13 +2058,15 @@ function stripExpectedFields(value) {
 	if (Array.isArray(value)) {
 		return value.map(stripExpectedFields);
 	}
-	if (!value || typeof value !== "object") {
+	if (!value || typeof value !== 'object') {
 		return value;
 	}
 
-	return Object.fromEntries(Object.entries(value)
-		.filter(([key]) => key !== "expected")
-		.map(([key, child]) => [key, stripExpectedFields(child)]));
+	return Object.fromEntries(
+		Object.entries(value)
+			.filter(([key]) => key !== 'expected')
+			.map(([key, child]) => [key, stripExpectedFields(child)]),
+	);
 }
 
 /**
@@ -2028,13 +2076,7 @@ function stripExpectedFields(value) {
  * @returns {object} Global-only rendering options.
  */
 function renderingGlobalOptions(options) {
-	const {
-		schemaVersion,
-		tilesetId,
-		suits,
-		faces,
-		...globalOptions
-	} = options || {};
+	const {schemaVersion, tilesetId, suits, faces, ...globalOptions} = options || {};
 	return globalOptions;
 }
 
@@ -2046,8 +2088,7 @@ function renderingGlobalOptions(options) {
  * @returns {object} Effective suit options.
  */
 function renderingSuitOptionsForFamily(suits, family) {
-	return renderingFamilyOptionKeys(family)
-		.reduce((merged, key) => mergeObjects(merged, suits?.[key] || {}), {});
+	return renderingFamilyOptionKeys(family).reduce((merged, key) => mergeObjects(merged, suits?.[key] || {}), {});
 }
 
 /**
@@ -2059,12 +2100,12 @@ function renderingSuitOptionsForFamily(suits, family) {
 function renderingFamilyOptionKeys(family) {
 	const canonical = canonicalRenderingFamily(family);
 	const aliases = {
-		character: ["characters", "character"],
-		dot: ["dots", "dot"],
-		wind: ["winds", "wind"],
-		dragon: ["dragons", "dragon"],
-		flower: ["flowers", "flower"],
-		season: ["seasons", "season"],
+		character: ['characters', 'character'],
+		dot: ['dots', 'dot'],
+		wind: ['winds', 'wind'],
+		dragon: ['dragons', 'dragon'],
+		flower: ['flowers', 'flower'],
+		season: ['seasons', 'season'],
 	};
 	return aliases[canonical] || [canonical];
 }
@@ -2076,17 +2117,19 @@ function renderingFamilyOptionKeys(family) {
  * @returns {string} Canonical rendering family.
  */
 function canonicalRenderingFamily(family) {
-	return {
-		b: "bamboo",
-		c: "character",
-		d: "dot",
-		characters: "character",
-		dots: "dot",
-		winds: "wind",
-		dragons: "dragon",
-		flowers: "flower",
-		seasons: "season",
-	}[family] || family;
+	return (
+		{
+			b: 'bamboo',
+			c: 'character',
+			d: 'dot',
+			characters: 'character',
+			dots: 'dot',
+			winds: 'wind',
+			dragons: 'dragon',
+			flowers: 'flower',
+			seasons: 'season',
+		}[family] || family
+	);
 }
 
 /**
@@ -2107,11 +2150,10 @@ function mergeObjects(...objects) {
  * @returns {object} Merged object.
  */
 function deepMerge(left, right) {
-	const merged = { ...(left || {}) };
+	const merged = {...(left || {})};
 	for (const [key, value] of Object.entries(right || {})) {
-		merged[key] = value && typeof value === "object" && !Array.isArray(value)
-			? deepMerge(merged[key] || {}, value)
-			: value;
+		merged[key] =
+			value && typeof value === 'object' && !Array.isArray(value) ? deepMerge(merged[key] || {}, value) : value;
 	}
 	return merged;
 }
@@ -2123,9 +2165,11 @@ function deepMerge(left, right) {
  * @returns {string[]} Unique strings.
  */
 function uniqueStrings(values) {
-	return [...new Set((values || [])
-		.filter((value) => typeof value === "string" && value.trim())
-		.map((value) => value.trim()))];
+	return [
+		...new Set(
+			(values || []).filter((value) => typeof value === 'string' && value.trim()).map((value) => value.trim()),
+		),
+	];
 }
 
 /**
@@ -2158,13 +2202,15 @@ function sortJsonValue(value) {
 	if (Array.isArray(value)) {
 		return value.map(sortJsonValue);
 	}
-	if (!value || typeof value !== "object") {
+	if (!value || typeof value !== 'object') {
 		return value;
 	}
 
-	return Object.fromEntries(Object.keys(value)
-		.sort((left, right) => left.localeCompare(right))
-		.map((key) => [key, sortJsonValue(value[key])]));
+	return Object.fromEntries(
+		Object.keys(value)
+			.sort((left, right) => left.localeCompare(right))
+			.map((key) => [key, sortJsonValue(value[key])]),
+	);
 }
 
 /**
@@ -2174,5 +2220,5 @@ function sortJsonValue(value) {
  * @returns {string} SHA-256 hex digest.
  */
 function sha256(value) {
-	return crypto.createHash("sha256").update(value).digest("hex");
+	return crypto.createHash('sha256').update(value).digest('hex');
 }

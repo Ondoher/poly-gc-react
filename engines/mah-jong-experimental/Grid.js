@@ -84,9 +84,7 @@ export default class Grid {
 				let yIndex = y + heightOffset;
 				let row = this.occupied[zIndex][yIndex] || new NumberSet([]);
 
-				row.union(new NumberSet(
-					Array.from({length: width}, (_, index) => x + index)
-				));
+				row.union(new NumberSet(Array.from({length: width}, (_, index) => x + index)));
 
 				this.occupied[zIndex][yIndex] = row;
 			}
@@ -117,9 +115,7 @@ export default class Grid {
 					continue;
 				}
 
-				row.difference(new NumberSet(
-					Array.from({length: width}, (_, index) => x + index)
-				));
+				row.difference(new NumberSet(Array.from({length: width}, (_, index) => x + index)));
 			}
 		}
 	}
@@ -148,11 +144,13 @@ export default class Grid {
 		for (let depthOffset = 0; depthOffset < depth; depthOffset++) {
 			for (let heightOffset = 0; heightOffset < height; heightOffset++) {
 				for (let widthOffset = 0; widthOffset < width; widthOffset++) {
-					if (this.has({
-						x: x + widthOffset,
-						y: y + heightOffset,
-						z: z + depthOffset,
-					})) {
+					if (
+						this.has({
+							x: x + widthOffset,
+							y: y + heightOffset,
+							z: z + depthOffset,
+						})
+					) {
 						return true;
 					}
 				}

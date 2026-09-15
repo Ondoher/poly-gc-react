@@ -1,19 +1,19 @@
 const SOURCE_DETECTION_HUE_RANGES = Object.freeze({
-	'#F4F4F4': Object.freeze({ dark: '#B8B8B8', center: '#F4F4F4', light: '#FEFEFE' }),
-	'#F6F610': Object.freeze({ dark: '#9B9700', center: '#F6F610', light: '#FFFF61' }),
-	'#FF9900': Object.freeze({ dark: '#9C5200', center: '#FF9900', light: '#FFC04A' }),
-	'#8A3A12': Object.freeze({ dark: '#4A1C00', center: '#8A3A12', light: '#B8662A' }),
-	'#0505D1': Object.freeze({ dark: '#02046F', center: '#0505D1', light: '#555CFF' }),
-	'#2FC906': Object.freeze({ dark: '#004D00', center: '#2FC906', light: '#73F246' }),
-	'#FC1D05': Object.freeze({ dark: '#9C1204', center: '#FC1D05', light: '#FF6B4A' }),
-	'#BC197A': Object.freeze({ dark: '#6F0D46', center: '#BC197A', light: '#F06DB8' }),
-	'#000000': Object.freeze({ dark: '#000000', center: '#000000', light: '#6A6A6A' }),
+	'#F4F4F4': Object.freeze({dark: '#B8B8B8', center: '#F4F4F4', light: '#FEFEFE'}),
+	'#F6F610': Object.freeze({dark: '#9B9700', center: '#F6F610', light: '#FFFF61'}),
+	'#FF9900': Object.freeze({dark: '#9C5200', center: '#FF9900', light: '#FFC04A'}),
+	'#8A3A12': Object.freeze({dark: '#4A1C00', center: '#8A3A12', light: '#B8662A'}),
+	'#0505D1': Object.freeze({dark: '#02046F', center: '#0505D1', light: '#555CFF'}),
+	'#2FC906': Object.freeze({dark: '#004D00', center: '#2FC906', light: '#73F246'}),
+	'#FC1D05': Object.freeze({dark: '#9C1204', center: '#FC1D05', light: '#FF6B4A'}),
+	'#BC197A': Object.freeze({dark: '#6F0D46', center: '#BC197A', light: '#F06DB8'}),
+	'#000000': Object.freeze({dark: '#000000', center: '#000000', light: '#6A6A6A'}),
 });
 
 const RENDER_OUTPUT_HUE_RANGES = Object.freeze({
-	'#0505D1': Object.freeze({ dark: '#02046F', center: '#0505D1', light: '#7F85FF' }),
-	'#FC1D05': Object.freeze({ dark: '#AA0000', center: '#FC1D05', light: '#FFA2A2' }),
-	'#8A3A12': Object.freeze({ dark: '#AA0000', center: '#FC1D05', light: '#FFA2A2' }),
+	'#0505D1': Object.freeze({dark: '#02046F', center: '#0505D1', light: '#7F85FF'}),
+	'#FC1D05': Object.freeze({dark: '#AA0000', center: '#FC1D05', light: '#FFA2A2'}),
+	'#8A3A12': Object.freeze({dark: '#AA0000', center: '#FC1D05', light: '#FFA2A2'}),
 });
 const SOURCE_DETECTION_HUE_CENTERS = new Set(Object.values(SOURCE_DETECTION_HUE_RANGES).map((range) => range.center));
 
@@ -28,11 +28,7 @@ export class PaletteBuilder {
 	 *
 	 * @param {PaletteBuilderOptions} options - Mapping and overlap evidence to mine.
 	 */
-	constructor({
-		mappings = [],
-		colors = [],
-		overlaps = [],
-	} = {}) {
+	constructor({mappings = [], colors = [], overlaps = []} = {}) {
 		this.mappings = mappings;
 		this.colors = colors;
 		this.overlaps = overlaps;
@@ -72,10 +68,9 @@ export class PaletteBuilder {
 	}
 
 	seedHueCollections() {
-		return new Map(Object.values(SOURCE_DETECTION_HUE_RANGES).map((range) => [
-			range.center,
-			newHueCollection(range.center),
-		]));
+		return new Map(
+			Object.values(SOURCE_DETECTION_HUE_RANGES).map((range) => [range.center, newHueCollection(range.center)]),
+		);
 	}
 
 	ensureHueCollection(collections, hue) {
@@ -197,9 +192,10 @@ function rankedSourceShades(items) {
 		paintGroups.set(sourcePaint, group);
 	}
 
-	const paintItems = [...paintGroups.values()]
-		.sort((left, right) => left.shade - right.shade
-			|| String(left.keys[0] || '').localeCompare(String(right.keys[0] || '')));
+	const paintItems = [...paintGroups.values()].sort(
+		(left, right) =>
+			left.shade - right.shade || String(left.keys[0] || '').localeCompare(String(right.keys[0] || '')),
+	);
 
 	if (paintItems.length === 0) {
 		return [];
@@ -215,11 +211,7 @@ function rankedSourceShades(items) {
 
 	return roleItems.flatMap((item) => {
 		const side = sideForShade(item.shade);
-		const rank = side === 'dark'
-			? darkRanks.get(item.shade)
-			: side === 'light'
-			? lightRanks.get(item.shade)
-			: 0;
+		const rank = side === 'dark' ? darkRanks.get(item.shade) : side === 'light' ? lightRanks.get(item.shade) : 0;
 
 		return item.keys.map((key) => ({
 			key,
@@ -231,12 +223,9 @@ function rankedSourceShades(items) {
 }
 
 function rankedSideShades(items, side) {
-	const sideShades = [...new Set(items
-		.map((item) => item.shade)
-		.filter((shade) => sideForShade(shade) === side))]
-		.sort((left, right) => side === 'dark'
-			? right - left
-			: left - right);
+	const sideShades = [
+		...new Set(items.map((item) => item.shade).filter((shade) => sideForShade(shade) === side)),
+	].sort((left, right) => (side === 'dark' ? right - left : left - right));
 
 	return new Map(sideShades.map((shade, index) => [shade, index + 1]));
 }
@@ -280,66 +269,65 @@ function centerShadeClosestToHueCenter(shadeItems) {
 		return 0;
 	}
 
-	return uniqueItems.reduce((closest, item) => {
-		if (closest === null) {
-			return item;
-		}
+	return (
+		uniqueItems.reduce((closest, item) => {
+			if (closest === null) {
+				return item;
+			}
 
-		const itemDistance = Math.abs(item.shade);
-		const closestDistance = Math.abs(closest.shade);
+			const itemDistance = Math.abs(item.shade);
+			const closestDistance = Math.abs(closest.shade);
 
-		return itemDistance < closestDistance
-			|| (itemDistance === closestDistance && item.shade < closest.shade)
-			? item
-			: closest;
-	}, null)?.shade || 0;
+			return itemDistance < closestDistance || (itemDistance === closestDistance && item.shade < closest.shade)
+				? item
+				: closest;
+		}, null)?.shade || 0
+	);
 }
 
 function buildHuePalette(collection) {
 	const outputRange = outputRangeForHue(collection.hue);
 	const count = Math.max(collection.count, collection.darkCount + collection.lightCount + 1);
-	const { darkSlots, lightSlots } = allocateSideSlots({
+	const {darkSlots, lightSlots} = allocateSideSlots({
 		count,
 		darkCount: collection.darkCount,
 		lightCount: collection.lightCount,
 		darkDistance: collection.maxDarkDelta,
 		lightDistance: collection.maxLightDelta,
 	});
-	const darkEntries = darkSlots === 0
-		? []
-		: Array.from({ length: darkSlots }, (_, index) => {
-			const shade = -(collection.maxDarkDelta * ((darkSlots - index) / darkSlots));
-			const amount = index / darkSlots;
+	const darkEntries =
+		darkSlots === 0
+			? []
+			: Array.from({length: darkSlots}, (_, index) => {
+					const shade = -(collection.maxDarkDelta * ((darkSlots - index) / darkSlots));
+					const amount = index / darkSlots;
 
-			return {
-				shade,
-				color: interpolateColor(outputRange.dark, outputRange.center, amount),
-			};
-		});
-	const lightEntries = lightSlots === 0
-		? []
-		: Array.from({ length: lightSlots }, (_, index) => {
-			const shade = collection.maxLightDelta * ((index + 1) / lightSlots);
-			const amount = (index + 1) / lightSlots;
+					return {
+						shade,
+						color: interpolateColor(outputRange.dark, outputRange.center, amount),
+					};
+				});
+	const lightEntries =
+		lightSlots === 0
+			? []
+			: Array.from({length: lightSlots}, (_, index) => {
+					const shade = collection.maxLightDelta * ((index + 1) / lightSlots);
+					const amount = (index + 1) / lightSlots;
 
-			return {
-				shade,
-				color: interpolateColor(outputRange.center, outputRange.light, amount),
-			};
-		});
+					return {
+						shade,
+						color: interpolateColor(outputRange.center, outputRange.light, amount),
+					};
+				});
 
 	return {
 		hue: collection.hue,
 		center: outputRange.center,
-		entries: [
-			...darkEntries,
-			{ shade: 0, color: normalizeColor(outputRange.center) },
-			...lightEntries,
-		],
+		entries: [...darkEntries, {shade: 0, color: normalizeColor(outputRange.center)}, ...lightEntries],
 	};
 }
 
-function allocateSideSlots({ count, darkCount, lightCount, darkDistance, lightDistance }) {
+function allocateSideSlots({count, darkCount, lightCount, darkDistance, lightDistance}) {
 	const sideSlots = Math.max(0, count - 1);
 	let darkSlots = Math.min(darkCount, sideSlots);
 	let lightSlots = Math.min(lightCount, sideSlots - darkSlots);
@@ -347,10 +335,11 @@ function allocateSideSlots({ count, darkCount, lightCount, darkDistance, lightDi
 
 	while (remaining > 0) {
 		const totalDistance = darkDistance + lightDistance;
-		const preferDark = totalDistance <= 0
-			? darkSlots <= lightSlots
-			: ((darkSlots + 1) / Math.max(darkDistance, SHADE_EPSILON))
-				<= ((lightSlots + 1) / Math.max(lightDistance, SHADE_EPSILON));
+		const preferDark =
+			totalDistance <= 0
+				? darkSlots <= lightSlots
+				: (darkSlots + 1) / Math.max(darkDistance, SHADE_EPSILON) <=
+					(lightSlots + 1) / Math.max(lightDistance, SHADE_EPSILON);
 
 		if (preferDark && darkDistance > 0) {
 			darkSlots += 1;
@@ -365,7 +354,7 @@ function allocateSideSlots({ count, darkCount, lightCount, darkDistance, lightDi
 		remaining -= 1;
 	}
 
-	return { darkSlots, lightSlots };
+	return {darkSlots, lightSlots};
 }
 
 function groupItemsByTargetHue(items) {
@@ -388,7 +377,7 @@ function groupItemsByTargetHue(items) {
 }
 
 function outputRangeForHue(hue) {
-	return RENDER_OUTPUT_HUE_RANGES[hue] || SOURCE_DETECTION_HUE_RANGES[hue] || { dark: hue, center: hue, light: hue };
+	return RENDER_OUTPUT_HUE_RANGES[hue] || SOURCE_DETECTION_HUE_RANGES[hue] || {dark: hue, center: hue, light: hue};
 }
 
 function targetHueForPaint(paint) {
@@ -416,12 +405,14 @@ function sourceShadeOffset(rgb, targetPaint) {
 }
 
 function colorRangeForRgb(rgb) {
-	return Object.values(SOURCE_DETECTION_HUE_RANGES)
-		.map((range) => ({
-			range,
-			distance: colorDistance(rgb, parseColor(range.center)),
-		}))
-		.sort((left, right) => left.distance - right.distance)[0]?.range || null;
+	return (
+		Object.values(SOURCE_DETECTION_HUE_RANGES)
+			.map((range) => ({
+				range,
+				distance: colorDistance(rgb, parseColor(range.center)),
+			}))
+			.sort((left, right) => left.distance - right.distance)[0]?.range || null
+	);
 }
 
 function shadeOffsetFromCenter(rgb, range) {
@@ -435,7 +426,7 @@ function shadeOffsetFromCenter(rgb, range) {
 	}
 
 	if (shade > center) {
-		return light === center ? 0 : ((shade - center) / (light - center));
+		return light === center ? 0 : (shade - center) / (light - center);
 	}
 
 	return 0;
@@ -445,15 +436,15 @@ function interpolateColor(leftColor, rightColor, amount) {
 	const left = parseColor(leftColor);
 	const right = parseColor(rightColor);
 
-	return formatColor(left.map((channel, index) => Math.round(channel + ((right[index] - channel) * amount))));
+	return formatColor(left.map((channel, index) => Math.round(channel + (right[index] - channel) * amount)));
 }
 
 function colorDistance(left, right) {
-	return Math.sqrt(left.reduce((total, channel, index) => total + ((channel - right[index]) ** 2), 0));
+	return Math.sqrt(left.reduce((total, channel, index) => total + (channel - right[index]) ** 2, 0));
 }
 
 function calculateShade(rgb) {
-	return ((0.2126 * rgb[0]) + (0.7152 * rgb[1]) + (0.0722 * rgb[2])) / 255;
+	return (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
 }
 
 function parseColor(value) {
@@ -467,10 +458,10 @@ function parseColor(value) {
 
 	return hex
 		? [
-			Number.parseInt(hex.slice(0, 2), 16),
-			Number.parseInt(hex.slice(2, 4), 16),
-			Number.parseInt(hex.slice(4, 6), 16),
-		]
+				Number.parseInt(hex.slice(0, 2), 16),
+				Number.parseInt(hex.slice(2, 4), 16),
+				Number.parseInt(hex.slice(4, 6), 16),
+			]
 		: null;
 }
 

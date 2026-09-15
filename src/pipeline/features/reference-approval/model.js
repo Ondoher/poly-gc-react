@@ -1,4 +1,4 @@
-import { Service } from '@polylith/core';
+import {Service} from '@polylith/core';
 
 const COLOR_WIGGLE_DISTANCE_SQUARED = 2500;
 
@@ -21,22 +21,23 @@ export default class ReferenceApprovalModel extends Service {
 
 	summary(structure) {
 		const faces = Object.values(structure?.faces || {});
-		const incompleteFaces = faces.filter((face) => (
-			Object.values(face.parts || {}).some((part) => (part.componentIds || []).length === 0)
-		));
-		const unboundParts = faces.flatMap((face) => (
+		const incompleteFaces = faces.filter((face) =>
+			Object.values(face.parts || {}).some((part) => (part.componentIds || []).length === 0),
+		);
+		const unboundParts = faces.flatMap((face) =>
 			Object.values(face.parts || {})
 				.filter((part) => (part.componentIds || []).length === 0)
-				.map((part) => ({ faceKey: face.faceKey, partId: part.partId }))
-		));
-		const unboundComponents = faces.flatMap((face) => (
+				.map((part) => ({faceKey: face.faceKey, partId: part.partId})),
+		);
+		const unboundComponents = faces.flatMap((face) =>
 			(face.components || [])
 				.filter((component) => (component.partIds || []).length === 0)
-				.map((component) => ({ faceKey: face.faceKey, componentId: component.componentId }))
-		));
+				.map((component) => ({faceKey: face.faceKey, componentId: component.componentId})),
+		);
 		const paletteColorSet = this.paletteColorSet(structure?.referenceSet?.palette);
-		const unknownPaletteColors = this.collectReferenceStructureColors(structure)
-			.filter((color) => !paletteColorSet.has(color));
+		const unknownPaletteColors = this.collectReferenceStructureColors(structure).filter(
+			(color) => !paletteColorSet.has(color),
+		);
 
 		return {
 			faceCount: faces.length,
@@ -107,7 +108,9 @@ export default class ReferenceApprovalModel extends Service {
 				.filter((entry) => entry.partId !== partId)
 				.map((entry) => ({
 					...entry,
-					componentIds: (entry.componentIds || []).filter((componentId) => !selectedComponentIds.has(componentId)),
+					componentIds: (entry.componentIds || []).filter(
+						(componentId) => !selectedComponentIds.has(componentId),
+					),
 				}))
 				.filter((entry) => entry.componentIds.length > 0),
 			binding,
@@ -127,9 +130,12 @@ export default class ReferenceApprovalModel extends Service {
 
 				return {
 					...binding,
-					componentIds: selectedComponentIds.size > 0
-						? (binding.componentIds || []).filter((componentId) => !selectedComponentIds.has(componentId))
-						: [],
+					componentIds:
+						selectedComponentIds.size > 0
+							? (binding.componentIds || []).filter(
+									(componentId) => !selectedComponentIds.has(componentId),
+								)
+							: [],
 					updatedOn: new Date().toISOString(),
 				};
 			})
@@ -139,7 +145,7 @@ export default class ReferenceApprovalModel extends Service {
 	}
 
 	addPaletteColor(structure, color) {
-		const normalizedColor = this.normalizeHexColor(color, { uppercase: true });
+		const normalizedColor = this.normalizeHexColor(color, {uppercase: true});
 
 		if (!normalizedColor || !structure?.referenceSet) {
 			return {
@@ -153,12 +159,14 @@ export default class ReferenceApprovalModel extends Service {
 		const nextStructure = structuredClone(structure);
 		const palette = nextStructure.referenceSet.palette || {};
 		const paletteColors = palette.colors || [];
-		const existing = paletteColors.find((entry) => this.normalizeHexColor(entry.color, { uppercase: true }) === normalizedColor);
+		const existing = paletteColors.find(
+			(entry) => this.normalizeHexColor(entry.color, {uppercase: true}) === normalizedColor,
+		);
 
 		if (existing) {
 			delete existing.disabled;
 		} else {
-			paletteColors.push({ color: normalizedColor });
+			paletteColors.push({color: normalizedColor});
 		}
 
 		nextStructure.referenceSet.palette = {
@@ -233,10 +241,12 @@ export default class ReferenceApprovalModel extends Service {
 	}
 
 	paletteColorSet(palette) {
-		return new Set((palette?.colors || [])
-			.filter((entry) => entry.disabled !== true)
-			.map((entry) => this.normalizeHexColor(entry.color, { uppercase: true }))
-			.filter(Boolean));
+		return new Set(
+			(palette?.colors || [])
+				.filter((entry) => entry.disabled !== true)
+				.map((entry) => this.normalizeHexColor(entry.color, {uppercase: true}))
+				.filter(Boolean),
+		);
 	}
 
 	referenceColorSwatch(item, paletteColorSet) {
@@ -244,7 +254,7 @@ export default class ReferenceApprovalModel extends Service {
 		const color = paletteColors.includes(item?.dominantColor)
 			? item.dominantColor
 			: paletteColors[0] || item?.dominantColor || '';
-		const known = Boolean(color && paletteColorSet?.has(this.normalizeHexColor(color, { uppercase: true })));
+		const known = Boolean(color && paletteColorSet?.has(this.normalizeHexColor(color, {uppercase: true})));
 
 		return {
 			color,
@@ -291,9 +301,7 @@ export default class ReferenceApprovalModel extends Service {
 		}
 
 		for (const component of face.components || []) {
-			const componentParts = (component.partIds || [])
-				.map((partId) => face.parts?.[partId])
-				.filter(Boolean);
+			const componentParts = (component.partIds || []).map((partId) => face.parts?.[partId]).filter(Boolean);
 			component.globalPartIds = uniqueValues(componentParts.map((part) => part.globalPartId));
 			component.semanticRoles = uniqueValues(componentParts.map((part) => part.role));
 		}
@@ -317,7 +325,7 @@ export default class ReferenceApprovalModel extends Service {
 
 	addReferenceColors(colors, item) {
 		for (const color of [item?.dominantColor, ...(item?.paletteColors || [])]) {
-			const normalized = this.normalizeHexColor(color, { uppercase: true });
+			const normalized = this.normalizeHexColor(color, {uppercase: true});
 
 			if (normalized) {
 				colors.add(normalized);
@@ -345,32 +353,33 @@ export default class ReferenceApprovalModel extends Service {
 			}
 		}
 
-		return { partCount, componentCount };
+		return {partCount, componentCount};
 	}
 
 	colorMatchesReference(item, color) {
-		const candidateColors = [
-			item?.dominantColor,
-			...(item?.paletteColors || []),
-		].filter(Boolean);
+		const candidateColors = [item?.dominantColor, ...(item?.paletteColors || [])].filter(Boolean);
 
 		return candidateColors.some((candidateColor) => colorsWithinWiggle(candidateColor, color));
 	}
 
 	componentSemanticOrder(component, partOrder) {
 		const partIds = component.partIds || [];
-		const orders = partIds
-			.map((partId) => partOrder.get(partId))
-			.filter(Number.isFinite);
+		const orders = partIds.map((partId) => partOrder.get(partId)).filter(Number.isFinite);
 
 		return orders.length > 0 ? Math.min(...orders) : Number.POSITIVE_INFINITY;
 	}
 
-	normalizeHexColor(color, { uppercase = false } = {}) {
-		const normalized = String(color || '').trim().replace(/^#/, '');
-		const hex = normalized.length === 3
-			? normalized.split('').map((digit) => digit + digit).join('')
-			: normalized;
+	normalizeHexColor(color, {uppercase = false} = {}) {
+		const normalized = String(color || '')
+			.trim()
+			.replace(/^#/, '');
+		const hex =
+			normalized.length === 3
+				? normalized
+						.split('')
+						.map((digit) => digit + digit)
+						.join('')
+				: normalized;
 
 		if (!/^[0-9a-f]{6}$/i.test(hex)) {
 			return '';
@@ -445,7 +454,7 @@ function colorsWithinWiggle(left, right) {
 	const rightRgb = hexToRgb(right);
 	const distanceSquared = leftRgb.reduce((total, channel, index) => {
 		const delta = channel - rightRgb[index];
-		return total + (delta * delta);
+		return total + delta * delta;
 	}, 0);
 
 	return distanceSquared <= COLOR_WIGGLE_DISTANCE_SQUARED;
@@ -453,20 +462,20 @@ function colorsWithinWiggle(left, right) {
 
 function hexToRgb(color) {
 	const normalized = String(color || '').replace(/^#/, '');
-	const hex = normalized.length === 3
-		? normalized.split('').map((digit) => digit + digit).join('')
-		: normalized;
+	const hex =
+		normalized.length === 3
+			? normalized
+					.split('')
+					.map((digit) => digit + digit)
+					.join('')
+			: normalized;
 	const value = Number.parseInt(hex, 16);
 
 	if (!Number.isFinite(value) || hex.length !== 6) {
 		return [0, 0, 0];
 	}
 
-	return [
-		(value >> 16) & 255,
-		(value >> 8) & 255,
-		value & 255,
-	];
+	return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
 }
 
 function addUniqueColor(colors = [], color) {

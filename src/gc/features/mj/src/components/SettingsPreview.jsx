@@ -1,9 +1,9 @@
-import React from "react";
-import ScalingCanvas from "./ScalingCanvas.jsx";
-import layouts from "../data/layouts.js";
-import { TILE_SETS } from "../data/tilesets.js";
-import Engine from "../engine/Engine.js";
-import { applyDifficultyPreset } from "../engine/difficultyPresets.js";
+import React from 'react';
+import ScalingCanvas from './ScalingCanvas.jsx';
+import layouts from '../data/layouts.js';
+import {TILE_SETS} from '../data/tilesets.js';
+import Engine from '../engine/Engine.js';
+import {applyDifficultyPreset} from '../engine/difficultyPresets.js';
 
 class SettingsPreviewDelegator {
 	delegateInbound() {}
@@ -32,10 +32,7 @@ export default class SettingsPreview extends React.Component {
 	}
 
 	componentDidUpdate(prevProps) {
-		if (
-			prevProps.layout !== this.props.layout ||
-			prevProps.difficulty !== this.props.difficulty
-		) {
+		if (prevProps.layout !== this.props.layout || prevProps.difficulty !== this.props.difficulty) {
 			this.buildPreviewTiles();
 			return;
 		}
@@ -46,7 +43,7 @@ export default class SettingsPreview extends React.Component {
 			return null;
 		}
 
-		if (typeof this.props.layout === "string") {
+		if (typeof this.props.layout === 'string') {
 			return layouts[this.props.layout] || null;
 		}
 
@@ -69,17 +66,17 @@ export default class SettingsPreview extends React.Component {
 		engine.generateGame(1);
 
 		let tiles = Array.isArray(engine.board?.pieces)
-			? engine.board.pieces.map(function(piece, idx) {
-				let {x, y, z} = piece.pos;
+			? engine.board.pieces.map(function (piece, idx) {
+					let {x, y, z} = piece.pos;
 
-				return {
-					id: idx,
-					x,
-					y,
-					z,
-					face: piece.face,
-				};
-			})
+					return {
+						id: idx,
+						x,
+						y,
+						z,
+						face: piece.face,
+					};
+				})
 			: [];
 
 		this.setState({
@@ -89,18 +86,18 @@ export default class SettingsPreview extends React.Component {
 
 	getTilesetClass() {
 		let tileset = TILE_SETS[this.props.tileset];
-		return tileset?.class || "ivory";
+		return tileset?.class || 'ivory';
 	}
 
 	getCanvasClassName(metricSetId) {
-		let selectedMetricSetId = metricSetId || "tiny";
+		let selectedMetricSetId = metricSetId || 'tiny';
 
 		return [
 			`${this.getTilesetClass()}-${selectedMetricSetId}`,
 			`${selectedMetricSetId}-face`,
 			`${selectedMetricSetId}-size`,
-			"mj-settings-dialog-preview-canvas",
-		].join(" ");
+			'mj-settings-dialog-preview-canvas',
+		].join(' ');
 	}
 
 	render() {
@@ -115,11 +112,7 @@ export default class SettingsPreview extends React.Component {
 					delegator={this.delegator}
 					tiles={this.state.tiles}
 					getCanvasClassName={this.getCanvasClassName.bind(this)}
-					placeholder={
-						<div className="mj-settings-dialog-placeholder">
-							Layout preview
-						</div>
-					}
+					placeholder={<div className="mj-settings-dialog-placeholder">Layout preview</div>}
 				/>
 			</div>
 		);

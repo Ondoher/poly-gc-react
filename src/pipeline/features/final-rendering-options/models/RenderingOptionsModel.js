@@ -1,5 +1,5 @@
-const DEFAULT_PART_IDS = ["label"];
-const FLOWER_SEASON_PART_IDS = ["label", "glyph"];
+const DEFAULT_PART_IDS = ['label'];
+const FLOWER_SEASON_PART_IDS = ['label', 'glyph'];
 
 export default class RenderingOptionsModel {
 	constructor(renderingOptions = null) {
@@ -20,25 +20,34 @@ export default class RenderingOptionsModel {
 
 			return {
 				...groups,
-				[family]: [
-					...(groups[family] || []),
-					face,
-				],
+				[family]: [...(groups[family] || []), face],
 			};
 		}, {});
 	}
 
 	static faces(renderingOptions) {
-		return Object.values(renderingOptions?.faces || {})
-			.sort((left, right) => left.faceKey.localeCompare(right.faceKey));
+		return Object.values(renderingOptions?.faces || {}).sort((left, right) =>
+			left.faceKey.localeCompare(right.faceKey),
+		);
 	}
 
 	static initialOptions(renderingOptions) {
 		return {
-			suits: Object.fromEntries(Object.entries(renderingOptions?.suitOptions || {})
-				.map(([family, options]) => [family, RenderingOptionsModel.normalizeOptionGroup(options, { suitId: family })])),
-			faces: Object.fromEntries(Object.entries(renderingOptions?.faceOptions || {})
-				.map(([faceKey, options]) => [faceKey, RenderingOptionsModel.normalizeFaceOptionGroup(options, { faceKey, suitId: options?.suitId || RenderingOptionsModel.faceFamily(faceKey) })])),
+			suits: Object.fromEntries(
+				Object.entries(renderingOptions?.suitOptions || {}).map(([family, options]) => [
+					family,
+					RenderingOptionsModel.normalizeOptionGroup(options, {suitId: family}),
+				]),
+			),
+			faces: Object.fromEntries(
+				Object.entries(renderingOptions?.faceOptions || {}).map(([faceKey, options]) => [
+					faceKey,
+					RenderingOptionsModel.normalizeFaceOptionGroup(options, {
+						faceKey,
+						suitId: options?.suitId || RenderingOptionsModel.faceFamily(faceKey),
+					}),
+				]),
+			),
 		};
 	}
 
@@ -48,10 +57,15 @@ export default class RenderingOptionsModel {
 		return {
 			...identity,
 			...(group || {}),
-			parts: Object.fromEntries(partIds.map((partId) => [
-				partId,
-				RenderingOptionsModel.partOptionForMode(partId, RenderingOptionsModel.renderModeForPart(group?.parts?.[partId])),
-			])),
+			parts: Object.fromEntries(
+				partIds.map((partId) => [
+					partId,
+					RenderingOptionsModel.partOptionForMode(
+						partId,
+						RenderingOptionsModel.renderModeForPart(group?.parts?.[partId]),
+					),
+				]),
+			),
 			transform: RenderingOptionsModel.normalizeTransformOptions(group?.transform),
 			artwork: RenderingOptionsModel.normalizeArtworkOptions(group?.artwork),
 		};
@@ -63,9 +77,14 @@ export default class RenderingOptionsModel {
 		return {
 			...identity,
 			...(group || {}),
-			parts: Object.fromEntries(Object.entries(group?.parts || {})
-				.filter(([partId]) => partIds.has(partId))
-				.map(([partId, part]) => [partId, RenderingOptionsModel.partOptionForMode(partId, RenderingOptionsModel.renderModeForPart(part))])),
+			parts: Object.fromEntries(
+				Object.entries(group?.parts || {})
+					.filter(([partId]) => partIds.has(partId))
+					.map(([partId, part]) => [
+						partId,
+						RenderingOptionsModel.partOptionForMode(partId, RenderingOptionsModel.renderModeForPart(part)),
+					]),
+			),
 			transform: RenderingOptionsModel.normalizeTransformOptions(group?.transform),
 			artwork: RenderingOptionsModel.normalizeArtworkOptions(group?.artwork),
 		};
@@ -87,7 +106,7 @@ export default class RenderingOptionsModel {
 			return null;
 		}
 
-		const parts = { ...(group.parts || {}) };
+		const parts = {...(group.parts || {})};
 		delete parts[partId];
 
 		return {
@@ -133,47 +152,49 @@ export default class RenderingOptionsModel {
 	}
 
 	static hasFaceOverrides(group) {
-		return Object.keys(group?.parts || {}).length > 0
-			|| Object.keys(RenderingOptionsModel.normalizeTransformOptions(group?.transform)).length > 0
-			|| Object.keys(RenderingOptionsModel.normalizeArtworkOptions(group?.artwork)).length > 0;
+		return (
+			Object.keys(group?.parts || {}).length > 0 ||
+			Object.keys(RenderingOptionsModel.normalizeTransformOptions(group?.transform)).length > 0 ||
+			Object.keys(RenderingOptionsModel.normalizeArtworkOptions(group?.artwork)).length > 0
+		);
 	}
 
 	static normalizeTransformOptions(transform) {
-		if (!transform || typeof transform !== "object") {
+		if (!transform || typeof transform !== 'object') {
 			return {};
 		}
 
 		return {
-			...("reflectX" in transform ? { reflectX: Boolean(transform.reflectX) } : {}),
+			...('reflectX' in transform ? {reflectX: Boolean(transform.reflectX)} : {}),
 		};
 	}
 
 	static normalizeArtworkOptions(artwork) {
-		if (!artwork || typeof artwork !== "object") {
+		if (!artwork || typeof artwork !== 'object') {
 			return {};
 		}
 
 		return {
-			...("preserveColors" in artwork ? { preserveColors: Boolean(artwork.preserveColors) } : {}),
+			...('preserveColors' in artwork ? {preserveColors: Boolean(artwork.preserveColors)} : {}),
 		};
 	}
 
 	static partOptionForMode(partId, renderMode) {
-		const mode = renderMode === "omit" || renderMode === "generated" ? renderMode : "source-preferred";
+		const mode = renderMode === 'omit' || renderMode === 'generated' ? renderMode : 'source-preferred';
 
 		return {
 			partId,
-			contentKind: partId === "glyph" ? "glyph" : "label",
-			outputPresent: mode !== "omit",
-			source: mode === "omit" ? "omit" : mode === "generated" ? "generated" : "source-preferred",
+			contentKind: partId === 'glyph' ? 'glyph' : 'label',
+			outputPresent: mode !== 'omit',
+			source: mode === 'omit' ? 'omit' : mode === 'generated' ? 'generated' : 'source-preferred',
 			renderMode: mode,
-			reviewStatus: "reviewed",
+			reviewStatus: 'reviewed',
 		};
 	}
 
 	static renderModeForPart(part) {
 		if (!part) {
-			return "source-preferred";
+			return 'source-preferred';
 		}
 
 		if (part.renderMode) {
@@ -181,36 +202,38 @@ export default class RenderingOptionsModel {
 		}
 
 		if (part.outputPresent === false) {
-			return "omit";
+			return 'omit';
 		}
 
-		if (part.source === "generated") {
-			return "generated";
+		if (part.source === 'generated') {
+			return 'generated';
 		}
 
-		return "source-preferred";
+		return 'source-preferred';
 	}
 
 	static optionPartIdsForFamily(family) {
-		return family === "flower" || family === "season"
-			? FLOWER_SEASON_PART_IDS
-			: DEFAULT_PART_IDS;
+		return family === 'flower' || family === 'season' ? FLOWER_SEASON_PART_IDS : DEFAULT_PART_IDS;
 	}
 
 	static faceFamily(faceKey) {
-		const prefix = String(faceKey || "").split("-")[0];
-		return {
-			b: "bamboo",
-			c: "character",
-			d: "dot",
-			dragon: "dragon",
-			flower: "flower",
-			season: "season",
-			wind: "wind",
-		}[prefix] || prefix || "other";
+		const prefix = String(faceKey || '').split('-')[0];
+		return (
+			{
+				b: 'bamboo',
+				c: 'character',
+				d: 'dot',
+				dragon: 'dragon',
+				flower: 'flower',
+				season: 'season',
+				wind: 'wind',
+			}[prefix] ||
+			prefix ||
+			'other'
+		);
 	}
 
 	static partLabel(partId) {
-		return partId === "glyph" ? "Glyph" : "Character";
+		return partId === 'glyph' ? 'Glyph' : 'Character';
 	}
 }
