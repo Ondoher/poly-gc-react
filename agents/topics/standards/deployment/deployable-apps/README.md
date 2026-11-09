@@ -19,8 +19,8 @@ Polylith server. Naginator is the first real deployed app.
   specifically enforces that ordering.
 - The CLI supplies a registry as the fourth router-entry parameter. Use of that
   registry is intentional rather than a consequence of module resolution.
-- The installed Polylith 1.2.1 setup behavior is described below. The accepted
-  target contract is the canonical deployment setup sequence.
+- Local development uses published Polylith 1.3.0 for all six packages, pinned
+  in the manifest and lockfile. Production has not changed.
 - This deployment's setup registers and starts the shared config service. GC
   attaches the ready shared registry and consumes config without owning its
   registration or lifecycle.
@@ -61,59 +61,55 @@ useful first proof of this boundary.
 
 ## Host Bootstrap Contract
 
-The accepted engineering contract is [canonical deployment setup](C:/Users/gande/.codex/documentation/standards/polylith.md). Migration of the installed runtime remains separate work.
+Polylith 1.3.0 implements the [canonical deployment setup contract](C:/Users/gande/.codex/documentation/standards/polylith.md#repository-and-deployment-roles):
 
-### Installed 1.2.1 Behavior
+1. Await the master's optional setup with `isMaster = true`.
+2. Await each selected discovered repository's optional setup with
+   `isMaster = false`, once per repository even when it supplies multiple apps.
+3. Initialize resident routers, then discovered routers, then listen.
 
-The following records the currently installed behavior, not a local standards
-exception or the target setup contract.
+Every setup receives the same shared registry, the master `serverRoot`, its
+own `appRoot`, and its owning configuration. Setup paths resolve from
+`appRoot`. Missing, invalid, or rejecting setup aborts startup before routers.
+Setup modules retain ownership of service registration and lifecycle work.
 
-Installed Polylith 1.2.1 supports one optional server-root deployment setup module, separate
-from every resident or discovered app router. Its narrow responsibility is to
-register and start host-owned services on the CLI-created shared registry.
+This host's `server/setup-deployment.js` remains compatible: it registers
+`ConfigService` with the supplied shared registry and server root and awaits
+that registry's startup. The production release still uses 1.2.1, which
+invokes only master setup; deploying this upgrade is a separate step.
 
-The root config declares it as:
+## Published Framework Verification
 
-```json
-{
-	"deployment": {
-		"setup": "server/setup-deployment.js"
-	}
-}
-```
+All six root Polylith dependencies are pinned to published 1.3.0. A clean
+lockfile install replaced the local framework links and temporary Babel
+preset junctions with packages under this repository's `node_modules`.
+Framework source and the Naginator release pin were not changed.
 
-The installed module signature is:
+Naginator's submodule and local checkout are intact. It was excluded through
+an in-memory discovery override in this trial; normal root discovery remains
+unchanged. Its existing setup assumes standalone-only invocation and will
+need to honor `isMaster` before the complete discovered-app deployment is
+trialed with this framework. It was not loaded, modified, or tested here.
 
-```js
-export default async function setupDeployment({sharedRegistry, serverRoot, config}) {
-	new ConfigService(sharedRegistry);
-	await sharedRegistry.start();
-}
-```
+Verification completed against installed Polylith 1.3.0:
 
-The installed startup sequence is:
+- All four resident apps and two temporary app entries from one discovered
+  repository built successfully. Build did not invoke setup.
+- Recorded order: master start/ready, discovered start/ready, resident routers
+  (GC, 3D POC, Pipeline, SAT), both discovered routers, then listening.
+- The discovered setup ran once for its two apps. Role flags, owning root and
+  configuration, asynchronous readiness, and shared-registry identity passed.
+- An intentionally rejecting discovered setup prevented router initialization
+  and listening.
+- Eight local HTTPS checks returned 200: the four resident app roots, temporary
+  app index and deep link, and two probe APIs reporting ready shared services.
 
-1. Create the shared registry.
-2. Load and invoke the composing root's setup module exactly once.
-3. Let setup register services, run the shared lifecycle, and resolve only when
-   shared services are ready.
-4. Initialize resident app routers in declaration order.
-5. Initialize discovered app routers in discovery order.
-
-App entry points still receive the shared registry as their fourth parameter
-so they can deliberately attach it to their own registry. Apps consume shared
-services; they do not start the shared registry or own its lifecycle.
-
-Host selection replaces application-level environment fallback. When
-Naginator runs alone, Polylith invokes Naginator's development host bootstrap.
-When Naginator is discovered by this deployment repository, Polylith invokes
-only this repository's host bootstrap. Naginator's application services follow
-the same unconditional config lookup in both cases and fail loudly if the
-selected host did not satisfy the contract.
-
-If setup is configured but missing, invalid, or rejected, deployment startup
-fails. A discovered app's own setup entry is ignored by the composing root and
-is used only when that app runs as the standalone root.
+The HTTPS server used an ephemeral loopback port and was closed afterward.
+Temporary source fixtures and their generated `dist/startup-probe-*` output
+were removed after verification. Session-only runner/log/result artifacts live
+under ignored `.codex-tmp/polylith-startup`; the runner recreates the fixture
+when explicitly rerun. A normal root `npm ci` reproduces the published
+dependency installation from the updated lockfile.
 
 ## Recommended Deployment Shape
 
@@ -177,8 +173,9 @@ and support deliberate rotation and recovery.
 
 ## Required Updates
 
-- Migrate deployment setup to the accepted canonical signature/context and
-  master-then-discovered setup sequence; verify runtime adoption separately.
+- When Naginator re-enters the local trial, adapt its standalone setup to the
+  role-aware invocation before testing full discovery. The isolated framework
+  startup trial is complete.
 
 - Complete the installed, suspended-iPhone Web Push round trip on the deployed
   `/nag/` origin.
@@ -212,9 +209,17 @@ make the released Naginator revision independent of the main release commit.
 
 ## Current Status
 
-Standards reconciliation replaced the root-only normative setup rule with a
-canonical reference and retained the installed 1.2.1 behavior below as evidence.
-No runtime, dependency, release pin, or deployment change was made by that work.
+Local verification of published Polylith 1.3.0 is complete. The checked release
+items below retain historical deployment evidence for 1.2.1. This local
+upgrade has not changed production or advanced its release pins.
+
+Production HTTPS uses the reissued RSA-4096 certificate for
+`apps.uber-geek.com`, valid through May 26, 2027 at 23:59:59 UTC. The matching
+private key and leaf/intermediate chain are installed in the server-local
+configuration, and `poly-gc` is online after its certificate-only restart.
+Strict origin TLS verification and all ten production route checks passed.
+The [production runbook](../production-runbook.md#tls-certificate) records the
+certificate fingerprint, protected recovery copy, and renewal procedure.
 
 - [x] Polylith discovers multiple repository apps.
 - [x] Master apps initialize before discovered apps.

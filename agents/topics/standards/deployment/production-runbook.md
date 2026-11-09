@@ -42,7 +42,8 @@ intentionally be limited to `gc` and `sat`:
 }
 ```
 
-The same server-local file may also hold production certificate configuration.
+The same server-local file holds production certificate configuration. TLS
+terminates directly in Polylith's Node HTTPS server.
 Because the overlay is shallow, top-level keys such as `apps` and `https`
 replace the matching values from `polylith.json` completely.
 
@@ -64,6 +65,46 @@ After login, load the `nvm` environment before using `node`, `npm`, or `pm2`:
 ```bash
 source ~/.nvm/nvm.sh
 ```
+
+## TLS Certificate
+
+The active production certificate covers `apps.uber-geek.com`, uses RSA 4096,
+and expires May 26, 2027 at 23:59:59 UTC. Its issuer is RapidSSL TLS RSA CA G1,
+chaining to DigiCert Global Root G2. Its SHA-256 fingerprint is
+`DE:93:2C:E0:62:D6:A8:57:BB:5F:6A:3D:DD:11:8B:6C:7F:1D:98:0E:05:AD:38:42:1E:84:CE:5B:5E:9B:F6:15`.
+
+Polylith reads inline PEM contents from `https.key` and `https.cert` in the
+server-local `polylith.prod.json`; these fields are not filenames. The `cert`
+value contains the leaf certificate followed by the RapidSSL intermediate,
+without the root. The configuration contains the private key and has mode
+`0600`.
+
+Strict Node and OpenSSL checks on the production host verified the active
+certificate and hostname. External checks passed all seven active endpoints
+and all three absent routes listed below. On this development workstation,
+Norton TLS inspection substitutes its own leaf certificate; use Node's
+`--use-system-ca` for strict local HTTPS checks and verify the origin
+fingerprint from the production host.
+
+For a certificate-only renewal:
+
+1. Verify the hostname, validity, RSA 4096 key size, matching private key, and
+   issuer chain. Validate the proposed TLS context with the production Node
+   runtime before activation.
+2. Save a verified, mode-`0600` backup in a private directory outside the Git
+   checkout. Update only `https.key` and `https.cert`, preserving other
+   production settings, and replace the configuration atomically.
+3. Run `pm2 restart poly-gc` after loading `nvm`. No application build, Git
+   update, or framework upgrade is needed.
+4. Verify the live certificate fingerprint and trusted HTTPS connection, PM2
+   health, and the positive and absent routes listed below.
+
+The current rotation's recovery copy is
+`/home/codex/.local/state/poly-gc-tls/2026-11-09T03-48-31-074Z/polylith.prod.json`.
+It contains the previous, expired certificate and private key; restoring it
+recovers the previous configuration but does not provide valid public TLS.
+Keep this copy private. If rollback is required, restore it atomically with
+mode `0600`, restart `poly-gc`, and verify the restored process and listener.
 
 ## Deploy
 

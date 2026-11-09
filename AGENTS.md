@@ -7,3 +7,5 @@ Repository work context starts at [Active Topic](agents/topics/active-topic.md).
 Engineering applicability comes only from the [folder manifest](agents/topics/standards/manifest.md); local engineering additions and replacements live only in the [overlay](agents/topics/standards/overlay.md). Topics provide project facts and navigation.
 
 For repository working conventions, consult the overlay entries for topic continuity, existing development processes, and temporary live asset refresh. Naming, placement, types, JSDoc, ownership, and React layout rules come from the canonical standards selected by the manifest.
+
+Topics folder: agents/topics
